@@ -31,7 +31,8 @@ public:
    * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes should be read/written.
+   * @param flag Indicates whether or not p-nodes and s-nodes should be
+   * read/written.
    */
   UnscentedKalmanFilterNetCDFBuffer(const BayesNet& m,
       const std::string& file, const FileMode mode = READ_ONLY,
@@ -44,7 +45,8 @@ public:
    * @param T Number of time points in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes should be read/written.
+   * @param flag Indicates whether or not p-nodes and s-nodes should be
+   * read/written.
    */
   UnscentedKalmanFilterNetCDFBuffer(const BayesNet& m, const int T,
       const std::string& file, const FileMode mode = READ_ONLY,
@@ -129,7 +131,7 @@ protected:
   const BayesNet& m;
 
   /**
-   * Size of state, excluding random variates and observations.
+   * Number of variables.
    */
   int M;
 

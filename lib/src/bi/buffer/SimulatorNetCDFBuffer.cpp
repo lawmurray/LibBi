@@ -12,8 +12,9 @@
 using namespace bi;
 
 SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m,
-    const std::string& file, const FileMode mode) :
-    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES) {
+    const std::string& file, const FileMode mode,
+    const StaticHandling flag) :
+    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES), flag(flag) {
   /* pre-condition */
   assert (mode == READ_ONLY || mode == WRITE);
 
@@ -21,8 +22,9 @@ SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m,
 }
 
 SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m, const int P,
-    const int T, const std::string& file, const FileMode mode) :
-    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES) {
+    const int T, const std::string& file, const FileMode mode,
+    const StaticHandling flag) :
+    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES), flag(flag) {
   if (mode == NEW || mode == REPLACE) {
     create(P, T); // set up structure of new file
   } else {
@@ -54,7 +56,8 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
   for (i = 0; i < NUM_NODE_TYPES; ++i) {
     type = static_cast<NodeType>(i);
     vars[type].resize(m.getNumNodes(type), NULL);
-    if (type == D_NODE || type == C_NODE || type == R_NODE) {
+    if (type == D_NODE || type == C_NODE || type == R_NODE ||
+        (flag == STATIC_OWN && (type == P_NODE || type == S_NODE))) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         vars[type][id] = createVar(m.getNode(type, id));
       }
@@ -89,7 +92,8 @@ void SimulatorNetCDFBuffer::map(const long P, const long T) {
   /* other variables */
   for (i = 0; i < NUM_NODE_TYPES; ++i) {
     type = static_cast<NodeType>(i);
-    if (type == D_NODE || type == C_NODE || type == R_NODE) {
+    if (type == D_NODE || type == C_NODE || type == R_NODE ||
+        (flag == STATIC_OWN && (type == P_NODE || type == S_NODE))) {
       vars[type].resize(m.getNumNodes(type), NULL);
       for (id = 0; id < m.getNumNodes(type); ++id) {
         node = m.getNode(type, id);

@@ -13,6 +13,7 @@
 #include "../math/locatable.hpp"
 #include "../misc/Pipelineable.hpp"
 #include "../math/temp_matrix.hpp"
+#include "../method/misc.hpp"
 
 #include <vector>
 
@@ -36,9 +37,12 @@ public:
    * @param m BayesNet.
    * @param file NetCDF file name.
    * @param mode File open mode.
+   * @param flag Indicates whether or not p-nodes and s-nodes should be
+   * read/written.
    */
   SimulatorNetCDFBuffer(const BayesNet& m, const std::string& file,
-      const FileMode mode = READ_ONLY);
+      const FileMode mode = READ_ONLY,
+      const StaticHandling flag = STATIC_SHARED);
 
   /**
    * Constructor.
@@ -48,9 +52,12 @@ public:
    * @param T Number of time points to hold in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
+   * @param flag Indicates whether or not p-nodes and s-nodes should be
+   * read/written.
    */
   SimulatorNetCDFBuffer(const BayesNet& m, const int P, const int T,
-      const std::string& file, const FileMode mode = READ_ONLY);
+      const std::string& file, const FileMode mode = READ_ONLY,
+      const StaticHandling flag = STATIC_SHARED);
 
   /**
    * Destructor.
@@ -173,6 +180,11 @@ protected:
    * Node variables, indexed by type.
    */
   std::vector<std::vector<NcVar*> > vars;
+
+  /**
+   * Static handling flag.
+   */
+  StaticHandling flag;
 };
 }
 
@@ -190,24 +202,35 @@ inline int bi::SimulatorNetCDFBuffer::size2() const {
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
     const int t, M1& s) {
-  long offsets[] = { t, 0, 0, 0, 0 };
-  long counts[] = { 1, 1, 1, 1, 1 };
+  long offsets[5], counts[5];
   BI_UNUSED NcBool ret;
 
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
-    j = 1;
-    size = 1;
+    j = 0;
+    size = 0;
 
+    if (vars[type][id]->get_dim(j) == nrDim) {
+      offsets[j] = t;
+      counts[j] = 1;
+      size *= nrDim->size();
+      ++j;
+    }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
+      counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
+      counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
+      counts[j] = nxDim->size();
       size *= nxDim->size();
       ++j;
     }
@@ -233,24 +256,35 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
 template<class M1>
 void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
     const int t, const M1& s, const int p) {
-  long offsets[] = { t, 0, 0, 0, 0 };
-  long counts[] = { 1, 1, 1, 1, 1 };
+  long offsets[5], counts[5];
   BI_UNUSED NcBool ret;
 
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
-    j = 1;
-    size = 1;
+    j = 0;
+    size = 0;
 
+    if (vars[type][id]->get_dim(j) == nrDim) {
+      offsets[j] = t;
+      counts[j] = 1;
+      size *= nrDim->size();
+      ++j;
+    }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
+      counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
+      counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
+      counts[j] = nxDim->size();
       size *= nxDim->size();
       ++j;
     }
@@ -284,7 +318,7 @@ void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
   assert (x.size2() == nrDim->size());
 
   int id, j, start, size;
-  long offsets[5] = { 0, 0, 0, 0, 0 };
+  long offsets[5];
   long counts[5];
   BI_UNUSED NcBool ret;
 

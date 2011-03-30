@@ -148,6 +148,16 @@ public:
   void advance(const real tnxt, State<L>& s);
 
   /**
+   * Output static state.
+   *
+   * @tparam L Location.
+   *
+   * @param theta Static state.
+   */
+  template<bi::Location L>
+  void output0(const Static<L>& theta);
+
+  /**
    * Output state.
    *
    * @tparam L Location.
@@ -313,10 +323,10 @@ bi::Simulator<B,IO1,IO2,CL,SH>::Simulator(B& m, RUpdater<B>* rUpdater,
 
 template<class B, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
 bi::Simulator<B,IO1,IO2,CL,SH>::~Simulator() {
-  flush(D_NODE);
-  flush(C_NODE);
-  flush(R_NODE);
-
+  int i;
+  for (i = 0; i < NUM_NODE_TYPES; ++i) {
+    flush((NodeType)i);
+  }
   delete fUpdater;
 }
 
@@ -348,6 +358,7 @@ void bi::Simulator<B,IO1,IO2,CL,SH>::simulate(const real tnxt, Static<L>& theta,
   int k;
 
   init(theta);
+  output0(theta);
   if (K > 1) {
     output(0, s);
   }
@@ -416,6 +427,16 @@ void bi::Simulator<B,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
 
   /* post-condition */
   assert (state.t == tnxt);
+}
+
+template<class B, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
+template<bi::Location L>
+void bi::Simulator<B,IO1,IO2,CL,SH>::output0(const Static<L>& theta) {
+  if (haveOut) {
+    setCacheMode(cache_type::STATE_MODE);
+    caches[P_NODE].writeState(0, theta.get(P_NODE));
+    caches[S_NODE].writeState(0, theta.get(S_NODE));
+  }
 }
 
 template<class B, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
