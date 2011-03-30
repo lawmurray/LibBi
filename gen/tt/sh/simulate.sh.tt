@@ -18,11 +18,23 @@ else
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source config.sh
+source $ROOT/config.sh
 export OMP_NUM_THREADS
 
-INIT_FILE=$DATA_DIR/$INIT_FILENAME
-FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+if `test "$INIT_FILENAME" != ""`
+then
+    INIT_FILE=$DATA_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
+
+if `test "$FORCE_FILENAME" != ""`
+then
+    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/simulate -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME
+$ROOT/build/simulate -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME --include-parameters $INCLUDE_PARAMETERS
