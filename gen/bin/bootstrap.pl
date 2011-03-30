@@ -36,11 +36,11 @@ print "Setting up directories...\n";
 system("mkdir -p $SRCDIR $BUILDDIR $RESULTSDIR");
 
 print "Interpreting model...\n";
-system("$Bin/csv2sql --model $name --outdir $BUILDDIR < $model");
+system("$Bin/csv2sql.pl --model $name --outdir $BUILDDIR < $model");
 
 print "Visualising model...";
 if (system('dot < /dev/null') == 0) {
-    system("$Bin/sql2dot --model $name --dbfile $BUILDDIR/$name.db > $BUILDDIR/$name.dot");
+    system("$Bin/sql2dot.pl --model $name --dbfile $BUILDDIR/$name.db > $BUILDDIR/$name.dot");
     system("dot -Tpdf -o $name.pdf < $BUILDDIR/$name.dot");
 } else {
     print " dot not found, skipping";
@@ -48,19 +48,19 @@ if (system('dot < /dev/null') == 0) {
 print "\n";
 
 print "Generating model code...\n";
-system("$Bin/sql2cpp --outdir $MODELDIR --model $BUILDDIR/$name.db");
+system("$Bin/sql2cpp.pl --outdir $MODELDIR --model $BUILDDIR/$name.db");
 
 print "Generating client code...\n";
-system("$Bin/sql2client --outdir $SRCDIR --model $BUILDDIR/$name.db");
+system("$Bin/sql2client.pl --outdir $SRCDIR --model $BUILDDIR/$name.db");
 
 print "Generating Makefile...\n";
-system("perl $Bin/sql2make $name > Makefile");
+system("perl $Bin/sql2make.pl $name > Makefile");
 
 print "Copying compile config from library...\n";
 system("cp $Bin/../../lib/config.mk .");
 
 print "Generating scripts...\n";
-system("$Bin/sql2sh --outdir . --model $BUILDDIR/$name.db");
+system("$Bin/sql2sh.pl --outdir . --model $BUILDDIR/$name.db");
 system("chmod +x *.sh");
 
 print "Restoring previous config...\n";
