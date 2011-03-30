@@ -208,12 +208,11 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
     j = 0;
-    size = 0;
+    size = 1;
 
     if (vars[type][id]->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
-      size *= nrDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
@@ -262,12 +261,11 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
     j = 0;
-    size = 0;
+    size = 1;
 
     if (vars[type][id]->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
-      size *= nrDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
