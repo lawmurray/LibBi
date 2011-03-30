@@ -34,30 +34,34 @@ int main(int argc, char* argv[]) {
   enum {
     ATOLER_ARG,
     RTOLER_ARG,
-    NS_ARG,
+    INIT_NS_ARG,
+    FORCE_NS_ARG,
     SEED_ARG,
     INIT_FILE_ARG,
     FORCE_FILE_ARG,
     OUTPUT_FILE_ARG,
     OUTPUT_ARG,
-    TIME_ARG
+    TIME_ARG,
+    INCLUDE_PARAMETERS_ARG
   };
   real T = 0.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
-  int P = 0, K = 0, NS = 0, SEED = 0;
+  int P = 0, K = 0, INIT_NS = 0, FORCE_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OUTPUT_FILE;
-  bool OUTPUT = false, TIME = false;
+  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
   int c, option_index;
 
   option long_options[] = {
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
-      {"ns", required_argument, 0, NS_ARG },
+      {"init-ns", required_argument, 0, INIT_NS_ARG },
+      {"force-ns", required_argument, 0, FORCE_NS_ARG },
       {"seed", required_argument, 0, SEED_ARG },
       {"init-file", required_argument, 0, INIT_FILE_ARG },
       {"force-file", required_argument, 0, FORCE_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
-      {"time", required_argument, 0, TIME_ARG }
+      {"time", required_argument, 0, TIME_ARG },
+      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
   };
   const char* short_options = "T:P:K:h:";
 
@@ -70,8 +74,11 @@ int main(int argc, char* argv[]) {
     case RTOLER_ARG:
       RTOLER = atof(optarg);
       break;
-    case NS_ARG:
-      NS = atoi(optarg);
+    case INIT_NS_ARG:
+      INIT_NS = atoi(optarg);
+      break;
+    case FORCE_NS_ARG:
+      FORCE_NS = atoi(optarg);
       break;
     case SEED_ARG:
       SEED = atoi(optarg);
@@ -90,6 +97,9 @@ int main(int argc, char* argv[]) {
       break;
     case TIME_ARG:
       TIME = atoi(optarg);
+      break;
+    case INCLUDE_PARAMETERS_ARG:
+      INCLUDE_PARAMETERS = atoi(optarg);
       break;
     case 'T':
       T = atof(optarg);
@@ -123,33 +133,48 @@ int main(int argc, char* argv[]) {
   [% ClassName %]<> m;
 
   /* state */
-  Static<LOCATION> theta(m);
+  Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
 
   /* inputs */
-  SparseInputNetCDFBuffer inForce(m, FORCE_FILE, NS);
-  SparseInputNetCDFBuffer inInit(m, INIT_FILE, NS);
-
-  /* initialise state from inputs */
-  inInit.read(P_NODE, theta.get(P_NODE));
-  inInit.read(D_NODE, s.get(D_NODE));
-  inInit.read(C_NODE, s.get(C_NODE));
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read(P_NODE, theta.get(P_NODE));
+    inInit->read(D_NODE, s.get(D_NODE));
+    inInit->read(C_NODE, s.get(C_NODE));
+  }
 
   /* output */
-  SimulatorNetCDFBuffer* out;
-  if (OUTPUT) {
-    out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  } else {
-    out = NULL;
+  SimulatorNetCDFBuffer* out = NULL;
+  if (OUTPUT && !OUTPUT_FILE.empty()) {
+    out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE,
+        NetCDFBuffer::REPLACE,
+        INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
+  }
+
+  /* initialise trajectories */
+  m.getPrior(D_NODE).samples(rng, s.get(D_NODE));
+  m.getPrior(C_NODE).samples(rng, s.get(C_NODE));
+  if (INCLUDE_PARAMETERS) {
+    m.getPrior(P_NODE).samples(rng, theta.get(P_NODE));
   }
 
   /* simulate */
   RUpdater<[% ClassName %]<> > rUpdater(rng);
-  BOOST_AUTO(sim, SimulatorFactory<LOCATION>::create(m, &rUpdater, &inForce, out));
-
-  /* simulate */
   TicToc timer;
-  sim->simulate(T, theta, s);
+  if (INCLUDE_PARAMETERS) {
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m, &rUpdater, inForce, out)));
+    sim->simulate(T, theta, s);
+    delete sim;
+  } else {
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_SHARED>::create(m, &rUpdater, inForce, out)));
+    sim->simulate(T, theta, s);
+    delete sim;
+  }
 
   /* output timing results */
   if (TIME) {
@@ -157,7 +182,6 @@ int main(int argc, char* argv[]) {
     std::cout << timer.toc() << std::endl;
   }
 
-  delete sim;
   delete out;
   return 0;
 }

@@ -33,6 +33,7 @@ P=1024         # number of particles
 H=1.0          # initial step size for ODE integrator
 ATOLER=1.0e-3  # absolute error tolerance for ODE integrator
 RTOLER=1.0e-3  # relative error tolerance for ODE integrator
+INCLUDE_PARAMETERS=1
 
 ##
 ## Particle filter settings
