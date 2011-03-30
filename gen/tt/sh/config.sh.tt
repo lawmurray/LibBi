@@ -15,9 +15,9 @@ TIME=1    # produce timings?
 DATA_DIR=data        # directory containing data files
 RESULTS_DIR=results  # directory to contain result files
 
-INIT_FILENAME=C7_initHP2.nc    # init file
-FORCE_FILENAME=C7_force.nc     # forcings file
-OBS_FILENAME=C7_S1_obs_HP2.nc  # observations file
+INIT_FILENAME=   # init file
+FORCE_FILENAME=  # forcings file
+OBS_FILENAME=    # observations file
 
 INIT_NS=0   # record along ns dimension to use for init file
 FORCE_NS=0  # record along ns dimension to use for forcings file

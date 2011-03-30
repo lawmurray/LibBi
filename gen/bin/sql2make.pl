@@ -335,3 +335,9 @@ print <<End;
 restore:
 \tcp -f \$(OLDDIR)/config.mk \$(OLDDIR)/config.sh .
 End
+
+# Regenerate target
+print <<End;
+regen:
+\t$Bin/bootstrap.pl --model $NAME.csv
+End
