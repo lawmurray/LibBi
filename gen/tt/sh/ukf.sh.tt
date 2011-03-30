@@ -1,0 +1,29 @@
+#!/bin/sh
+#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -j oe
+
+##
+## System config
+##
+if [[ "`hostname`" == gpu* ]]
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    NAME=ukf
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source config.sh
+export OMP_NUM_THREADS
+
+INIT_FILE=$DATA_DIR/$INIT_FILENAME
+FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+OBS_FILE=$DATA_DIR/$OBS_FILENAME
+OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
+
+$ROOT/build/ukf -T $T -h $H --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --estimate-parameters=$ESTIMATE_PARAMETERS

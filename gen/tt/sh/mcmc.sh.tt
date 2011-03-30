@@ -1,0 +1,43 @@
+#!/bin/bash
+#PBS -l walltime=24:00:00,nodes=1:ppn=8,vmem=16gb
+#PBS -j oe
+
+##
+## System config
+##
+if [[ "`hostname`" == gpu* ]]
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    LOCAL_DIR=$TMPDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    LOCAL_DIR=/tmp
+    NAME=mcmc
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source config.sh
+export OMP_NUM_THREADS
+
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+
+INIT_FILE=$DATA_DIR/$INIT_FILENAME
+FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+OBS_FILE=$DATA_DIR/$OBS_FILENAME
+
+# copy forcings and observations to local file system
+#pbsdsh -u
+cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
+
+# record
+cat config.sh
+
+# run
+$ROOT/build/mcmc --id=$ID -P $P -T $T --sd=$SD --scale=$SCALE --resampler=$RESAMPLER -L $L -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE
+
+# copy results back from local directory
+cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.

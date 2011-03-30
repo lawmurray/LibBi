@@ -1,0 +1,26 @@
+#!/bin/sh
+#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -j oe
+
+##
+## System config
+##
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    NAME=ukf
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source config.sh
+export OMP_NUM_THREADS
+
+INPUT_FILE=$RESULTS_DIR/ukf${SUFFIX}.nc.$ID # UKF results file
+OUTPUT_FILE=$RESULTS_DIR/$NAME.nc # output file
+
+$ROOT/build/urts --seed=$SEED --input-file=$INPUT_FILE --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --estimate-parameters=$ESTIMATE_PARAMETERS

@@ -1,0 +1,28 @@
+#!/bin/sh
+#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -j oe
+
+##
+## System config
+##
+if [[ "`hostname`" == gpu* ]]
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    NAME=simulate
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source config.sh
+export OMP_NUM_THREADS
+
+INIT_FILE=$DATA_DIR/$INIT_FILENAME
+FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
+
+$ROOT/build/simulate -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME
