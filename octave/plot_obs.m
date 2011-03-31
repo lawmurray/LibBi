@@ -44,7 +44,7 @@ function plot_obs (in, invars, ns)
             
             subplot(length(invars), 1, i);
             hold on;
-            plot(t, y, 'ok');
+            plot(t, y, 'ok', 'markersize', 3.0);
         end
     end
     
