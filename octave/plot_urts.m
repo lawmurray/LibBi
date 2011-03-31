@@ -4,20 +4,20 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_ukf (@var{in}, @var{invars})
+% @deftypefn {Function File} plot_urts (@var{in}, @var{invars})
 %
-% Plot output of the ukf program.
+% Plot output of the urts program.
 %
 % @itemize
 % @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
-% ukf.}
+% urts.}
 %
 % @bullet{ @var{invars} Cell array of strings naming the variables
 % of this file to plot. Empty strings may be used to produce empty plots.}
 % @end itemize
 % @end deftypefn
 %
-function plot_ukf (in, invars)
+function plot_urts (in, invars)
     % check arguments
     if (nargin != 2)
         print_usage ();
@@ -32,8 +32,8 @@ function plot_ukf (in, invars)
     for i = 1:length(invars)
         if (!strcmp(invars{i}, ''))
             id = nci{invars{i}}(:) + 1;
-            mu = nci{'filter.mu'}(:,id);
-            sigma = sqrt(nci{'filter.Sigma'}(:,id,id));
+            mu = nci{'smooth.mu'}(:,id);
+            sigma = sqrt(nci{'smooth.Sigma'}(:,id,id));
             for n = 1:length(t)
                 Q(n,:) = logninv(P, mu(n), sigma(n));
             end
