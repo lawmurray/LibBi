@@ -36,8 +36,8 @@ function area_between (x, y1, y2, c)
     b = [y1 y2(end:-1:1)];
         
     if (nargin >= 4)
-        patch(a, b, c, 'linewidth', 0);
+        patch(a, b, c, 'linewidth', 0.1);
     else
-        patch(a, b, 'linewidth', 0);
+        patch(a, b, 'linewidth', 0.1);
     end
 end

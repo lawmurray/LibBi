@@ -58,16 +58,18 @@ function twindata (in, invars, out, outvars, p, S, logn)
     nco('nr') = nci('nr')(:);
     nco('np') = 1;
     nco{'time'} = ncdouble('nr');
-    %nco{'time'}(:) = nci{'time'}(:);
+    nco{'time'}(:) = nci{'time'}(:);
 
     % construct data
     for i = 1:length(invars)
         x = nci{invars{i}}(:,p)';
-        U = normrnd(0.0, 1.0, length(S), length(x));
+        u = normrnd(0.0, 1.0, 1, length(x));
+        U = repmat(u, length(S), 1);
+        X = repmat(x, length(S), 1);
         if logn
-            Y = exp(repmat(log(x), length(S), 1) + repmat(S, 1, length(x)).*U);
+            Y = exp(log(X) + repmat(S, 1, length(x)).*U);
         else
-            Y = repmat(x, length(S), 1) + repmat(S, 1, length(x)).*U;
+            Y = X + repmat(S, 1, length(x)).*U;
         end
         
         nco{outvars{i}} = ncdouble('ns', 'nr');
