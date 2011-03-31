@@ -5,6 +5,7 @@
 ##
 ## System config
 ##
+if [[ "`hostname`" == gpu* ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
@@ -12,15 +13,15 @@ then
     ID=$PBS_ARRAYID
 else
     ROOT=.
-    NAME=ukf
+    NAME=urts
     ID=0
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source config.sh
+source $ROOT/config.sh
 export OMP_NUM_THREADS
 
-INPUT_FILE=$RESULTS_DIR/ukf${SUFFIX}.nc.$ID # UKF results file
-OUTPUT_FILE=$RESULTS_DIR/$NAME.nc # output file
+INPUT_FILE=$RESULTS_DIR/ukf${SUFFIX}.nc.$ID
+OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
 $ROOT/build/urts --seed=$SEED --input-file=$INPUT_FILE --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --estimate-parameters=$ESTIMATE_PARAMETERS

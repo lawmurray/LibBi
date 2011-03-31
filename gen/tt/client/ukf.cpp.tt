@@ -143,12 +143,15 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* inputs */
-  SparseInputNetCDFBuffer inForce(m, FORCE_FILE, FORCE_NS);
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read(P_NODE, theta.get(P_NODE));
+  }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
-  SparseInputNetCDFBuffer inInit(m, INIT_FILE, INIT_NS);
-
-  /* initialise state */
-  inInit.read(P_NODE, theta.get(P_NODE));
 
   /* output */
   UnscentedKalmanFilterNetCDFBuffer* out;
@@ -164,12 +167,12 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   if (ESTIMATE_PARAMETERS) {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(m, rng,
-        &inForce, &inObs, out)));
+        inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   } else {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_SHARED>::create(m, rng,
-        &inForce, &inObs, out)));
+        inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   }
@@ -179,6 +182,8 @@ int main(int argc, char* argv[]) {
     std::cout << timer.toc() << std::endl;
   }
 
+  delete inForce;
+  delete inInit;
   delete out;
 
   return 0;
