@@ -14,7 +14,6 @@
 #include "bi/random/Random.hpp"
 #include "bi/pdf/AdditiveExpGaussianPdf.hpp"
 #include "bi/pdf/ExpGaussianMixturePdf.hpp"
-
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
@@ -22,7 +21,6 @@
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/method/MultinomialResampler.hpp"
 #include "bi/method/MetropolisResampler.hpp"
-
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/AuxiliaryParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"

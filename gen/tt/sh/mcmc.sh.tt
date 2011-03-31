@@ -20,24 +20,55 @@ else
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source config.sh
+source $ROOT/config.sh
 export OMP_NUM_THREADS
 
-OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+if `test "$INIT_FILENAME" != ""`
+then
+    INIT_FILE=$DATA_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
 
-INIT_FILE=$DATA_DIR/$INIT_FILENAME
-FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+if `test "$FORCE_FILENAME" != ""`
+then
+    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
 OBS_FILE=$DATA_DIR/$OBS_FILENAME
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
 
 # copy forcings and observations to local file system
 #pbsdsh -u
 cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
 
+if `test "$INIT_FILENAME" != ""`
+then
+    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
+
+if `test "$FORCE_FILENAME" != ""`
+then
+    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
+OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
+FILTER_FILE=$LOCAL_DIR/$FILTER_FILENAME
+
 # record
-cat config.sh
+if [[ "`hostname`" == gpu* ]]
+then
+	cat $ROOT/config.sh
+fi
 
 # run
-$ROOT/build/mcmc --id=$ID -P $P -T $T --sd=$SD --scale=$SCALE --resampler=$RESAMPLER -L $L -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE
+$ROOT/build/mcmc --id=$ID -P $P -T $T --sd=$SD --scale=$SCALE --resampler=$RESAMPLER -L $L -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE
 
 # copy results back from local directory
 cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.

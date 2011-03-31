@@ -56,10 +56,10 @@ ESTIMATE_PARAMETERS=1  # estimate parameters as well as state?
 SCALE=0.09  # scale of initial proposal relative to prior
 SD=0.09     # adaptive proposal parameter (zero triggers default)
 C=1000      # number of samples to draw
-A=100       # number of steps before starting adaptation
+A=10000     # number of steps before starting adaptation
 
 PROPOSAL_FILE=$RESULTS_DIR/urts${SUFFIX}.nc.$ID
-FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
+FILTER_FILENAME=pf${SUFFIX}.nc.$ID
 
 ##
 ## Random number settings

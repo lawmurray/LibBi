@@ -18,7 +18,7 @@ else
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source config.sh
+source $ROOT/config.sh
 export OMP_NUM_THREADS
 
 INIT_FILE=$DATA_DIR/$INIT_FILENAME

@@ -14,17 +14,13 @@
 #include "bi/random/Random.hpp"
 #include "bi/pdf/AdditiveExpGaussianPdf.hpp"
 #include "bi/pdf/ExpGaussianMixturePdf.hpp"
-
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
-#include "bi/method/MultinomialResampler.hpp"
-#include "bi/method/MetropolisResampler.hpp"
-
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-#include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -167,8 +163,7 @@ int main(int argc, char* argv[]) {
 
   /* bi init */
   #ifdef __CUDACC__
-  int dev = chooseDevice(ID);
-  std::cerr << "Using device " << dev << std::endl;
+  chooseDevice(ID);
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
   bi_omp_init();
@@ -194,79 +189,76 @@ int main(int argc, char* argv[]) {
   State<LOCATION> s(m, P);
 
   /* inputs and outputs */
-  SparseInputNetCDFBuffer inForce(m, FORCE_FILE, FORCE_NS);
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read(P_NODE, theta.get(P_NODE));
+  }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
-  SparseInputNetCDFBuffer inInit(m, INIT_FILE, INIT_NS);
   const int Y = inObs.countUniqueTimes(T);
   ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
-  /* proposal distribution and Markov chain initialisation */
-  AdditiveExpGaussianPdf<> q(NP);
-  if (PROPOSAL_FILE.compare("") != 0) {
-    /* construct from proposal file */
-    /**
-     * @todo Online UKF is run with a different model (p-nodes as d-nodes),
-     * the approach here works only if ND + NC >= NP.
-     */
-    UnscentedKalmanFilterNetCDFBuffer inProposal(m, PROPOSAL_FILE);
-    host_vector<real> mu(ND + NC);
-    host_matrix<real> Sigma(ND + NC, ND + NC);
-
-    inProposal.readCorrectedState(inProposal.size2() - 1, mu, Sigma);
-    int j;
-    for (j = 0; j < Sigma.size2(); ++j) {
-      scal(SD, column(Sigma, j));
-    }
-    q.setCov(subrange(Sigma, 0, NP, 0, NP));
-
-    /* initialise chain from mean of online posterior... */
-    //expVec(mu, m.getPrior(P_NODE).getLogs());
-    //row(theta.get(P_NODE), 0) = subrange(mu, 0, NP);
-
-    /* ...or sample from online posterior */
-    m.getPrior(P_NODE).samples(rng, theta.get(P_NODE));
-  } else {
-    /* construct from scaled prior */
-    host_matrix<real> Sigma(NP,NP);
-    Sigma = m.getPrior(P_NODE).cov();
-
-    int j;
-    for (j = 0; j < Sigma.size2(); ++j) {
-      scal(SCALE, column(Sigma, j));
-    }
-    //////// add next two lines for PZ model ////////
-    //diagonal(Sigma)(0) = pow(0.01,2);
-    //diagonal(Sigma)(1) = pow(0.005,2);
-
-    q.setCov(Sigma);
-
-    /* initialise chain from file... */
-    //inInit.read(theta.get(P_NODE));
-
-    /* ...or prior... */
-    m.getPrior(P_NODE).samples(rng, theta.get(P_NODE));
-
-    /* ...or special case */
-    //////// add next two lines for PZ model ////////
-    //s.get(P_NODE)(0,0) = 0.2;
-    //s.get(P_NODE)(0,1) = 0.15;
-  }
-
-  ///////// remove next line for PZ model ////////
-  q.setLogs(m.getPrior(P_NODE).getLogs());
-
   /* filter */
   StratifiedResampler resam(rng);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, &inForce, &inObs, &outFilter));
+  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, inForce, &inObs, &outFilter));
 
   /* sampler */
-  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out));
-  mcmc->sample(q, C, T, theta, s, filter, &resam, SD, A);
+  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out, INITIAL_CONDITIONED));
+  
+  /* proposal */
+  BOOST_AUTO(p0, mcmc->getPrior()); // prior
+  AdditiveExpGaussianPdf<> q(p0.size());
+  host_vector<real> x(p0.size());
+  
+  if (!PROPOSAL_FILE.empty()) {
+    /* construct from online posterior */
+    ExpGaussianPdf<> p1(p0.size()); // online posterior
+    UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE,
+        NetCDFBuffer::READ_ONLY, STATIC_OWN);   
+    inProposal.readSmoothState(0, p1.mean(), p1.cov());
+    p1.addLogs(m.getPrior(D_NODE).getLogs(), 0);
+    p1.addLogs(m.getPrior(C_NODE).getLogs(), ND);
+    p1.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+    p1.init();
+    
+    /* initialise chain */
+    p1.sample(rng, x);
+    
+    /* initialise proposal */
+    q.cov() = p1.cov();
+    q.addLogs(m.getPrior(D_NODE).getLogs(), 0);
+    q.addLogs(m.getPrior(C_NODE).getLogs(), ND);
+    q.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+    matrix_scal(SD, q.cov());
+  } else {
+    /* construct from scaled prior */
+    /* initialise chain */
+    p0.sample(rng, x);
 
+    /* initialise proposal */
+    subrange(q.cov(), 0, ND, 0, ND) = subrange(m.getPrior(D_NODE).cov(), 0, ND, 0, ND);
+    subrange(q.cov(), ND, NC, ND, NC) = subrange(m.getPrior(C_NODE).cov(), ND, NC, ND, NC);
+    subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(m.getPrior(P_NODE).cov(), ND + NC, NP, ND + NC, NP);
+    q.addLogs(m.getPrior(D_NODE).getLogs(), 0);
+    q.addLogs(m.getPrior(C_NODE).getLogs(), ND);
+    q.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+    matrix_scal(SCALE, q.cov());
+  }
+  q.init();
+  
+  /* sample */
+  mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD, A);
+
+  /* wrap up */
   std::cout << mcmc->getNumAccepted() << " of " << mcmc->getNumSteps() <<
       " proposals accepted" << std::endl;
 
+  delete inForce;
+  delete inInit;
   delete mcmc;
   delete filter;
 

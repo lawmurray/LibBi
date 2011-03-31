@@ -20,13 +20,24 @@ else
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source config.sh
+source $ROOT/config.sh
 export OMP_NUM_THREADS
 
-OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+if `test "$INIT_FILENAME" != ""`
+then
+    INIT_FILE=$DATA_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
 
-INIT_FILE=$DATA_DIR/$INIT_FILENAME
-FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+if `test "$FORCE_FILENAME" != ""`
+then
+    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
 OBS_FILE=$DATA_DIR/$OBS_FILENAME
 
 # copy forcings and observations to local file system
@@ -37,7 +48,7 @@ cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
 cat config.sh
 
 # run
-$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME
+$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$LOCAL_DIR/$FILTER_FILENAME --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME
 
 # copy results from local to network file system
 cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.
