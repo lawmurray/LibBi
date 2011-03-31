@@ -682,7 +682,7 @@ void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x, const int C,
     propose(q);
     prior();
     likelihood(T, theta, s, filter, resampler);
-    metropolisHastings();
+    metropolisHastings(filter);
     adapt(q, sd, A);
     output(c);
   }
@@ -850,7 +850,7 @@ void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const real sd,
   real s;
 
   if (A >= 0) {
-    BOOST_AUTO(theta, host_temp_vector<real>(m.getNetSize(P_NODE)));
+    BOOST_AUTO(theta, host_temp_vector<real>(this->x1.theta.size()));
     *theta = this->x1.theta;
 
     if (total == 1) {
@@ -873,10 +873,7 @@ void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const real sd,
       axpy(1.0 / total, sumMu, mu, true);
       Sigma = sumSigma;
       syr(-1.0*total, mu, Sigma);
-      int j;
-      for (j = 0; j < Sigma.size2(); ++j) {
-        scal(s/(total - 1), column(Sigma, j));
-      }
+      matrix_scal(s/(total - 1), Sigma);
       q.setCov(Sigma);
     }
     delete theta;
@@ -885,9 +882,9 @@ void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const real sd,
 
 template<class B, class IO1, bi::Location CL>
 void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
-//  const int T = out->size2();
-//  int n;
-//  real t;
+  const int T = out->size2();
+  int n;
+  real t;
 
   if (haveOut) {
     out->writeSample(c, subrange(x1.theta, M - NP, NP)); // only p-node portion
@@ -897,13 +894,13 @@ void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
     out->writeTimeLogLikelihoods(c, x1.lls);
     out->writeTimeEss(c, x1.ess);
     out->writeTimeStamp(c, x1.timeStamp);
-//    if (c == 0) {
-//      /* write time variable also */
-//      for (n = 0; n < T; ++n) {
-//        filter->getOutput()->readTime(n, t);
-//        out->writeTime(n, t);
-//      }
-//    }
+    if (c == 0) {
+      /* write time variable also */
+      for (n = 0; n < T; ++n) {
+        filter->getOutput()->readTime(n, t);
+        out->writeTime(n, t);
+      }
+    }
   }
 }
 

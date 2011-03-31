@@ -96,6 +96,7 @@ public:
   template<class M2>
   AdditiveExpGaussianPdf<V1,M1>& operator=(const AdditiveExpGaussianPdf<M2>& o);
 
+  using ExpGaussianPdf<V1,M1>::init;
   using ExpGaussianPdf<V1,M1>::size;
   using ExpGaussianPdf<V1,M1>::mean;
   using ExpGaussianPdf<V1,M1>::cov;
@@ -103,21 +104,34 @@ public:
   using ExpGaussianPdf<V1,M1>::prec;
   using ExpGaussianPdf<V1,M1>::setMean;
   using ExpGaussianPdf<V1,M1>::setCov;
-  using ExpGaussianPdf<V1,M1>::setLog;
   using ExpGaussianPdf<V1,M1>::getLogs;
   using ExpGaussianPdf<V1,M1>::setLogs;
+  using ExpGaussianPdf<V1,M1>::addLog;
+  using ExpGaussianPdf<V1,M1>::addLogs;
 
   /**
    * @copydoc concept::ConditionalPdf::sample()
    */
   template<class V2, class V3>
-  void sample(Random& rng, const V2& x1, V3& x2);
+  void sample(Random& rng, const V2 x1, V3 x2);
+
+  /**
+   * @copydoc concept::ConditionalPdf::density()
+   */
+  template<class V2, class V3>
+  real density(const V2 x, const V3 x2);
+
+  /**
+   * @copydoc concept::ConditionalPdf::logDensity()
+   */
+  template<class V2, class V3>
+  real logDensity(const V2 x, const V3 x2);
 
   /**
    * @copydoc concept::ConditionalPdf::operator()()
    */
   template<class V2, class V3>
-  real operator()(const V2& x1, const V3& x2);
+  real operator()(const V2 x1, const V3 x2);
 
 private:
   #ifndef __CUDACC__
@@ -194,8 +208,8 @@ bi::AdditiveExpGaussianPdf<V1,M1>& bi::AdditiveExpGaussianPdf<V1,M1>::operator=(
 
 template<class V1, class M1>
 template<class V2, class V3>
-void bi::AdditiveExpGaussianPdf<V1,M1>::sample(Random& rng, const V2& x1,
-    V3& x2) {
+void bi::AdditiveExpGaussianPdf<V1,M1>::sample(Random& rng, const V2 x1,
+    V3 x2) {
   BOOST_AUTO(z, temp_vector<V2>(x1.size()));
   *z = x1;
   logVec(*z, this->getLogs());
@@ -208,8 +222,8 @@ void bi::AdditiveExpGaussianPdf<V1,M1>::sample(Random& rng, const V2& x1,
 
 template<class V1, class M1>
 template<class V2, class V3>
-real bi::AdditiveExpGaussianPdf<V1,M1>::operator()(const V2& x1,
-    const V3& x2) {
+real bi::AdditiveExpGaussianPdf<V1,M1>::density(const V2 x1,
+    const V3 x2) {
   BOOST_AUTO(z1, temp_vector<V2>(x1.size()));
   BOOST_AUTO(z2, temp_vector<V3>(x2.size()));
 
@@ -233,6 +247,20 @@ real bi::AdditiveExpGaussianPdf<V1,M1>::operator()(const V2& x1,
   assert(p >= 0.0);
 
   return p;
+}
+
+template<class V1, class M1>
+template<class V2, class V3>
+real bi::AdditiveExpGaussianPdf<V1,M1>::logDensity(const V2 x1,
+    const V3 x2) {
+  return log(density(x1, x2));
+}
+
+template<class V1, class M1>
+template<class V2, class V3>
+real bi::AdditiveExpGaussianPdf<V1,M1>::operator()(const V2 x1,
+    const V3 x2) {
+  return density(x1, x2);
 }
 
 #ifndef __CUDACC__
