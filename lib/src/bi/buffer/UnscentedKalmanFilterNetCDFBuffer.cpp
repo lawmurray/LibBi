@@ -87,6 +87,23 @@ void UnscentedKalmanFilterNetCDFBuffer::create(const long T) {
       nxrowDim);
   BI_ERROR(SigmaXXVar != NULL && SigmaXXVar->is_valid(),
       "Could not create SigmaXX variable");
+
+  /* index variables */
+  int id, size = 0;
+  for (id = 0; id < m.getNetSize(D_NODE); ++id) {
+    ncFile->add_var(m.getNode(D_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
+    size += m.getNodeSize(D_NODE, id);
+  }
+  for (id = 0; id < m.getNetSize(C_NODE); ++id) {
+    ncFile->add_var(m.getNode(C_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
+    size += m.getNodeSize(C_NODE, id);
+  }
+  if (M > m.getNetSize(D_NODE) + m.getNetSize(C_NODE)) {
+    for (id = 0; id < m.getNetSize(P_NODE); ++id) {
+      ncFile->add_var(m.getNode(P_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
+      size += m.getNodeSize(P_NODE, id);
+    }
+  }
 }
 
 void UnscentedKalmanFilterNetCDFBuffer::map(const long T) {

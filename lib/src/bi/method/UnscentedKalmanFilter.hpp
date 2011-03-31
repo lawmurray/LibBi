@@ -714,20 +714,21 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correct(
   if (oyUpdater.getTime() == state.t) {
     assert (W > 0);
     BOOST_AUTO(y, temp_vector<V1>(W)); // vector for contiguous observations of selected o-nodes
+    BOOST_AUTO(diff, host_temp_vector<typename V1::value_type>(W));
     oyUpdater.update(s, *y);
 
     BI_ERROR(W == ids.size() && W == observed.size(),
         "Previous prediction step does not match current correction step");
 
-    host_vector<real> diff(W);
-    diff = *y;
-    logVec(diff, oLogs);
-    axpy(-1.0, observed.mean(), diff);
+    *diff = *y;
+    logVec(*diff, oLogs);
+    axpy(-1.0, observed.mean(), *diff);
 
     /* condition state on observation */
     condition(uncorrected, observed, SigmaXY, *y, corrected);
 
     delete y;
+    delete diff;
   }
 }
 

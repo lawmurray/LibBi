@@ -276,10 +276,14 @@ template<class V1, class M1>
 void bi::UnscentedKalmanFilterNetCDFBuffer::writeUncorrectedState(const int k,
     const V1& mu, const M1& Sigma) {
   /* pre-condition */
-  assert (!V1::on_device);
-  assert (!M1::on_device);
   assert (mu.size() == M);
   assert (Sigma.size1() == M && Sigma.size2() == M);
+
+  BOOST_AUTO(mu1, host_map_vector(mu));
+  BOOST_AUTO(Sigma1, host_map_matrix(Sigma));
+  if (V1::on_device || M1::on_device) {
+    synchronize();
+  }
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
@@ -287,14 +291,17 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeUncorrectedState(const int k,
 
   ret = muX2Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << muX2Var->name());
-  ret = muX2Var->put(mu.buf(), counts);
+  ret = muX2Var->put(mu1->buf(), counts);
   BI_ASSERT(ret, "Inconvertible type reading " << muX2Var->name());
 
-  assert (Sigma.lead() == M);
+  assert (Sigma1->lead() == M);
   ret = SigmaX2Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << SigmaX2Var->name());
-  ret = SigmaX2Var->put(Sigma.buf(), counts);
+  ret = SigmaX2Var->put(Sigma1->buf(), counts);
   BI_ASSERT(ret, "Inconvertible type reading " << SigmaX2Var->name());
+
+  delete mu1;
+  delete Sigma1;
 }
 
 template<class M1>
@@ -319,19 +326,25 @@ template<class M1>
 void bi::UnscentedKalmanFilterNetCDFBuffer::writeCrossState(const int k,
     const M1& Sigma) {
   /* pre-condition */
-  assert (!M1::on_device);
   assert (Sigma.size1() == M && Sigma.size2() == M);
+
+  BOOST_AUTO(Sigma1, host_map_matrix(Sigma));
+  if (M1::on_device) {
+    synchronize();
+  }
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
   NcBool ret;
 
   /* write covariance matrix */
-  assert (Sigma.lead() == M);
+  assert (Sigma1->lead() == M);
   ret = SigmaXXVar->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << SigmaXXVar->name());
-  ret = SigmaXXVar->put(Sigma.buf(), counts);
+  ret = SigmaXXVar->put(Sigma1->buf(), counts);
   BI_ASSERT(ret, "Inconvertible type reading " << SigmaXXVar->name());
+
+  delete Sigma1;
 }
 
 #endif
