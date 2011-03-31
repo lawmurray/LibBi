@@ -41,8 +41,8 @@ function plot_urts (in, invars)
             % plot
             subplot(length(invars), 1, i);
             hold on;
-            area_between(t, Q(:,1), Q(:,3), watercolour(1, 0.5));
-            plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(1));
+            area_between(t, Q(:,1), Q(:,3), watercolour(6, 0.5));
+            plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(6));
             title(invars{i});
         end
     end
