@@ -88,39 +88,39 @@ public:
    * @copydoc concept::SimulatorBuffer::readState()
    */
   template<class M1>
-  void readState(const NodeType type, const int t, M1& s);
+  void readState(const NodeType type, const int t, M1 s);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeState()
    */
   template<class M1>
-  void writeState(const NodeType type, const int t, const M1& s,
+  void writeState(const NodeType type, const int t, const M1 s,
       const int p = 0);
 
   /**
    * @copydoc concept::SimulatorBuffer::readTrajectory()
    */
   template<class M1>
-  void readTrajectory(const NodeType type, const int p, M1& x);
+  void readTrajectory(const NodeType type, const int p, M1 x);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeTrajectory()
    */
   template<class M1>
-  void writeTrajectory(const NodeType type, const int p, const M1& x);
+  void writeTrajectory(const NodeType type, const int p, const M1 x);
 
   /**
    * @copydoc concept::SimulatorBuffer::readSingle()
    */
   template<class V1>
-  void readSingle(const NodeType type, const int p, const int t, V1& x);
+  void readSingle(const NodeType type, const int p, const int t, V1 x);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeSingle()
    */
   template<class V1>
   void writeSingle(const NodeType type, const int p, const int t,
-      const V1& x);
+      const V1 x);
 
 protected:
   /**
@@ -201,7 +201,7 @@ inline int bi::SimulatorNetCDFBuffer::size2() const {
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
-    const int t, M1& s) {
+    const int t, M1 s) {
   long offsets[5], counts[5];
   BI_UNUSED NcBool ret;
 
@@ -254,7 +254,7 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
-    const int t, const M1& s, const int p) {
+    const int t, const M1 s, const int p) {
   long offsets[5], counts[5];
   BI_UNUSED NcBool ret;
 
@@ -309,7 +309,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
-    const int p, M1& x) {
+    const int p, M1 x) {
   /* pre-conditions */
   assert (p < npDim->size());
   assert (x.size1() == m.getNetSize(type));
@@ -359,7 +359,7 @@ void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
-    const int p, const M1& x) {
+    const int p, const M1 x) {
   /* pre-conditions */
   assert (p < npDim->size());
   assert (x.size1() == m.getNetSize(type));
@@ -409,24 +409,20 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
-    const int p, const int t, V1& x) {
+    const int p, const int t, V1 x) {
   /* pre-conditions */
   assert (t >= 0 && t < nrDim->size());
   assert (p >= 0 && p < npDim->size());
-  assert (x.size() == m.getNetSize(type) && x.inc() == 1);
-  assert (!V1::on_device);
+  assert (x.size() == m.getNetSize(type));
 
-  int id, j, start;
+  int id, j, start, size;
   long offsets[5];
   long counts[5];
   BI_UNUSED NcBool ret;
 
-  if (V1::on_device) {
-    clean();
-  }
-
   for (id = 0; id < m.getNumNodes(type); ++id) {
     start = m.getNodeStart(type, id);
+    size = 1;
     j = 0;
 
     if (vars[type][id]->get_dim(j) == nrDim) {
@@ -436,14 +432,17 @@ void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
       counts[j] = nzDim->size();
+      size *= nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
       counts[j] = nyDim->size();
+      size *= nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
       counts[j] = nxDim->size();
+      size *= nxDim->size();
       ++j;
     }
     offsets[j] = p;
@@ -451,16 +450,24 @@ void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
 
     ret = vars[type][id]->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
-    ret = vars[type][id]->get(x.buf() + start, counts);
+
+    if (V1::on_device || x.inc() > 1) {
+      clean();
+      BOOST_AUTO(buf, host_temp_matrix<real>(size, 1));
+      ret = vars[type][id]->get(buf->buf(), counts);
+      subrange(x, start, size) = column(*buf, 0);
+      add(buf);
+    } else {
+      ret = vars[type][id]->get(x.buf() + start, counts);
+    }
     BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
   }
 }
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::writeSingle(const NodeType type,
-    const int p, const int t, const V1& x) {
+    const int p, const int t, const V1 x) {
   /* pre-conditions */
-  //BOOST_STATIC_ASSERT(!V1::on_device);
   assert (t >= 0 && t < nrDim->size());
   assert (p >= 0 && p < npDim->size());
   assert (x.size() == m.getNetSize(type) && x.inc() == 1);

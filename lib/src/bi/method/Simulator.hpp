@@ -87,6 +87,13 @@ public:
   real getTime();
 
   /**
+   * Set the current time.
+   *
+   * @param t The time.
+   */
+  void setTime(const real t);
+
+  /**
    * Reset to starting point.
    */
   void reset();
@@ -340,6 +347,13 @@ inline real bi::Simulator<B,IO1,IO2,CL,SH>::getTime() {
   return state.t;
 }
 
+template<class B, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
+inline void bi::Simulator<B,IO1,IO2,CL,SH>::setTime(const real t) {
+  state.t = t;
+  if (haveFUpdater) {
+    fUpdater->setTime(t);
+  }
+}
 template<class B, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
 inline void bi::Simulator<B,IO1,IO2,CL,SH>::reset() {
   Markable<SimulatorState>::unmark();

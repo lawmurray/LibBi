@@ -82,6 +82,15 @@ public:
   real getTime();
 
   /**
+   * Set time.
+   *
+   * @param t The time.
+   *
+   * Advances through the file until the given time is reached.
+   */
+  void setTime(const real t);
+
+  /**
    * @copydoc concept::Markable::mark()
    */
   void mark();
@@ -153,6 +162,19 @@ inline void bi::FUpdater<B,IO,CL>::reset() {
 template<class B, class IO, bi::Location CL>
 inline real bi::FUpdater<B,IO,CL>::getTime() {
   return in.getTime();
+}
+
+template<class B, class IO, bi::Location CL>
+void bi::FUpdater<B,IO,CL>::setTime(const real t) {
+  if (t < in.getTime()) {
+    /* return to start */
+    in.reset();
+    state.p = 0;
+  }
+  while (in.hasNext() && in.getNextTime() <= t) {
+    in.next();
+    ++state.p;
+  }
 }
 
 template<class B, class IO, bi::Location CL>

@@ -465,6 +465,16 @@ public:
   void output(const int c);
 
   /**
+   * Output initial state.
+   *
+   * @tparam F Filter type.
+   *
+   * @param filter Filter.
+   */
+  template<class F>
+  void output0(F* filter);
+
+  /**
    * Report progress on stderr.
    *
    * @param c Number of steps taken.
@@ -677,6 +687,7 @@ void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x, const int C,
 
   timer.tic();
   init(x, T, theta, s, filter, resampler);
+  output0(filter);
   for (c = 0; c < C; ++c) {
     report(c);
     propose(q);
@@ -881,11 +892,23 @@ void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const real sd,
 }
 
 template<class B, class IO1, bi::Location CL>
-void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
-  const int T = out->size2();
-  int n;
-  real t;
+template<class F>
+void bi::ParticleMCMC<B,IO1,CL>::output0(F* filter) {
+  if (haveOut) {
+    /* write out times */
+    const int T = out->size2();
+    int n;
+    real t;
 
+    for (n = 0; n < T; ++n) {
+      filter->getOutput()->readTime(n, t);
+      out->writeTime(n, t);
+    }
+  }
+}
+
+template<class B, class IO1, bi::Location CL>
+void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
   if (haveOut) {
     out->writeSample(c, subrange(x1.theta, M - NP, NP)); // only p-node portion
     out->writeLogLikelihood(c, x1.ll);
@@ -894,13 +917,6 @@ void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
     out->writeTimeLogLikelihoods(c, x1.lls);
     out->writeTimeEss(c, x1.ess);
     out->writeTimeStamp(c, x1.timeStamp);
-    if (c == 0) {
-      /* write time variable also */
-      for (n = 0; n < T; ++n) {
-        filter->getOutput()->readTime(n, t);
-        out->writeTime(n, t);
-      }
-    }
   }
 }
 
