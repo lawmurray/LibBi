@@ -40,6 +40,7 @@ function plot_mcmc (in, invars)
             area_between(t, Q(:,1), Q(:,3), watercolour(6, 0.5));
             plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(6));
             title(invars{i});
+            grid on;
         end
     end
     
