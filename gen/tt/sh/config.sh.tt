@@ -36,6 +36,12 @@ RTOLER=1.0e-3  # relative error tolerance for ODE integrator
 INCLUDE_PARAMETERS=1
 
 ##
+## Prediction settings
+##
+
+U=730.0  # time to which to predict
+
+##
 ## Particle filter settings
 ##
 
@@ -55,7 +61,7 @@ ESTIMATE_PARAMETERS=1  # estimate parameters as well as state?
 
 SCALE=0.09  # scale of initial proposal relative to prior
 SD=0.09     # adaptive proposal parameter (zero triggers default)
-C=1000      # number of samples to draw
+C=1024      # number of samples to draw
 A=10000     # number of steps before starting adaptation
 
 PROPOSAL_FILE=$RESULTS_DIR/urts${SUFFIX}.nc.$ID

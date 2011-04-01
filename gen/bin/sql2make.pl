@@ -277,7 +277,7 @@ End
 
 # Default targets
 print <<End;
-default: \$(BUILDDIR)/simulate \$(BUILDDIR)/pf \$(BUILDDIR)/ukf \$(BUILDDIR)/urts \$(BUILDDIR)/mcmc \$(BUILDDIR)/likelihood
+default: \$(BUILDDIR)/simulate \$(BUILDDIR)/pf \$(BUILDDIR)/ukf \$(BUILDDIR)/urts \$(BUILDDIR)/mcmc \$(BUILDDIR)/likelihood \$(BUILDDIR)/predict
 
 End
 
@@ -300,6 +300,9 @@ print "\$(BUILDDIR)/mcmc: \$(BUILDDIR)/mcmc.\$(EXT).o \$(BUILDDIR)/device.cu.o $
 print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
 
 print "\$(BUILDDIR)/likelihood: \$(BUILDDIR)/likelihood.\$(EXT).o \$(BUILDDIR)/device.cu.o $models\n";
+print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
+
+print "\$(BUILDDIR)/predict: \$(BUILDDIR)/predict.\$(EXT).o $models\n";
 print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
 
 # Targets
