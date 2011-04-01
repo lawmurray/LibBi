@@ -67,8 +67,8 @@ function hist_ukf (in, invars, m, n, logn)
             subplot(m, n, i);
             hold on;
             plot(x, y, 'linewidth', 3, 'color', watercolour(3));
-            grid on;
             title(invars{i});
+            hist_defaults;
         end
     end
     

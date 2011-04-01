@@ -99,11 +99,11 @@ function hist_mcmc (in, invars, m, n)
             % plot
             subplot(m, n, i);
             hold on;
-            grid on;
             h = bar(xx,mm / sum(xsize/BINS*mm), 1.0); % normalised histogram
             set(h, 'FaceColor', watercolour(6,0.5), ...
                    'EdgeColor', watercolour(6));
             title(invars{i});
+            hist_defaults;
         end
     end
     
