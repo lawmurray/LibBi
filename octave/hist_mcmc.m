@@ -97,7 +97,9 @@ function hist_mcmc (in, invars, m, n)
             %peak = max(max(nn) / sum(xsize/BINS*mm), max(y));
                         
             % plot
-            subplot(m, n, i);
+            if length(invars) > 1
+                subplot(m, n, i);
+            end
             hold on;
             h = bar(xx,mm / sum(xsize/BINS*mm), 1.0); % normalised histogram
             set(h, 'FaceColor', watercolour(6,0.5), ...

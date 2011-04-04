@@ -34,11 +34,13 @@ function plot_mcmc (in, invars)
             Q = quantile(X, P, 2);
         
             % plot
-            subplot(length(invars), 1, i);
+            if length(invars) > 1
+                subplot(length(invars), 1, i);
+            end
             hold on;
             
-            area_between(t, Q(:,1), Q(:,3), watercolour(6, 0.5));
-            plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(6));
+            area_between(t, Q(:,1), Q(:,3), watercolour(2, 0.5));
+            plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(2));
             title(invars{i});
             plot_defaults;
         end

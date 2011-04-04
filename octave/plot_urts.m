@@ -39,7 +39,9 @@ function plot_urts (in, invars)
             end
             
             % plot
-            subplot(length(invars), 1, i);
+            if length(invars) > 1
+                subplot(length(invars), 1, i);
+            end
             hold on;
             grid on;
             area_between(t, Q(:,1), Q(:,3), watercolour(6, 0.5));

@@ -64,7 +64,9 @@ function hist_ukf (in, invars, m, n, logn)
             end
             
             % plot
-            subplot(m, n, i);
+            if length(invars) > 1
+                subplot(m, n, i);
+            end
             hold on;
             plot(x, y, 'linewidth', 3, 'color', watercolour(3));
             title(invars{i});

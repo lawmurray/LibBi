@@ -34,7 +34,9 @@ function plot_simulate (in, invars)
             Q = quantile(X, P, 2);
         
             % plot
-            subplot(length(invars), 1, i);
+            if length(invars) > 1
+                subplot(length(invars), 1, i);
+            end
             hold on;
             
             area_between(t, Q(:,1), Q(:,3), watercolour(1, 0.5));

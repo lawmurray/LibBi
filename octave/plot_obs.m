@@ -42,7 +42,9 @@ function plot_obs (in, invars, ns)
         if (!strcmp(invars{i}, ''))
             y = nci{invars{i}}(ns,:);
             
-            subplot(length(invars), 1, i);
+            if length(invars) > 1
+                subplot(length(invars), 1, i);
+            end
             hold on;
             plot(t, y, 'ok', 'markersize', 3.0);
             plot_defaults;
