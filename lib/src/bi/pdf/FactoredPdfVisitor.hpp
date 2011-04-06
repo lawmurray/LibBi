@@ -42,7 +42,7 @@ public:
    *
    * @param factors Factors.
    */
-  static int acceptSize(void** const factors);
+  static int acceptSize(void* const* factors);
 
   /**
    * Sample.
@@ -177,8 +177,8 @@ public:
     //
   }
 
-  static int acceptSize(void** const factors) {
-    return 0u;
+  static int acceptSize(void* const* factors) {
+    return 0;
   }
 
   template<class V1>
@@ -281,7 +281,7 @@ inline void bi::FactoredPdfVisitor<S,I>::acceptCopy(void** dst,
 }
 
 template<class S, int I>
-int bi::FactoredPdfVisitor<S,I>::acceptSize(void** const factors) {
+int bi::FactoredPdfVisitor<S,I>::acceptSize(void* const* factors) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
 
@@ -458,7 +458,7 @@ void bi::FactoredPdfVisitor<S,I>::acceptSet(const int i,
       *oldFactor = factor;
     } else {
       oldFactor = new P(factor);
-      factors[i] = oldFactor;
+      factors[I] = oldFactor;
     }
   } else {
     FactoredPdfVisitor<pop_front,I+1>::acceptSet(i, factor, factors);

@@ -81,6 +81,36 @@ struct has_log_normal_prior {
     static const bool value = true; \
   }; }
 
+/**
+ * @internal
+ *
+ * Uniform prior.
+ *
+ * @ingroup model_trait
+ *
+ * @tparam X Node type.
+ */
+template<class X>
+struct has_uniform_prior {
+  static const bool value = false;
+};
+
+/**
+ * @def HAS_UNIFORM_PRIOR(X)
+ *
+ * Attach uniform prior trait to node type.
+ *
+ * @ingroup model_trait
+ *
+ * @arg @c X Node type.
+ */
+#define HAS_UNIFORM_PRIOR(X, ...) \
+  namespace bi { \
+  template<> \
+  struct has_uniform_prior< X, ##__VA_ARGS__ > { \
+    static const bool value = true; \
+  }; }
+
 }
 
 #endif

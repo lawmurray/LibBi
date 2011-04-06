@@ -135,7 +135,7 @@ protected:
   /**
    * Factors.
    */
-  void** factors;
+  std::vector<void*> factors;
 
 private:
   #ifndef __CUDACC__
@@ -160,28 +160,18 @@ private:
 #include "../math/primitive.hpp"
 
 template<class S>
-bi::FactoredPdf<S>::FactoredPdf() {
-  factors = new void*[bi::size<S>::value];
-  int i;
-  for (i = 0; i < bi::size<S>::value; ++i) {
-    factors[i] = NULL;
-  }
+bi::FactoredPdf<S>::FactoredPdf() : factors(bi::size<S>::value, NULL) {
+  //
 }
 
 template<class S>
-bi::FactoredPdf<S>::FactoredPdf(const FactoredPdf<S>& o) {
-  factors = new void*[bi::size<S>::value];
-  int i;
-  for (i = 0; i < bi::size<S>::value; ++i) {
-    factors[i] = NULL;
-  }
-  FactoredPdfVisitor<S>::acceptCopy(factors, o.factors);
+bi::FactoredPdf<S>::FactoredPdf(const FactoredPdf<S>& o) : factors(bi::size<S>::value, NULL) {
+  FactoredPdfVisitor<S>::acceptCopy(&factors[0], &o.factors[0]);
 }
 
 template<class S>
 bi::FactoredPdf<S>::~FactoredPdf() {
-  FactoredPdfVisitor<S>::acceptDestroy(factors);
-  delete[] factors;
+  FactoredPdfVisitor<S>::acceptDestroy(&factors[0]);
 }
 
 template<class S>
@@ -190,14 +180,14 @@ bi::FactoredPdf<S>& bi::FactoredPdf<S>::operator=(
   /* pre-condition */
   assert (size() == o.size());
 
-  FactoredPdfVisitor<S>::acceptCopy(factors, o.factors);
+  FactoredPdfVisitor<S>::acceptCopy(&factors[0], &o.factors[0]);
 
   return *this;
 }
 
 template<class S>
 inline int bi::FactoredPdf<S>::size() const {
-  return FactoredPdfVisitor<S>::acceptSize(factors);
+  return FactoredPdfVisitor<S>::acceptSize(&factors[0]);
 }
 
 template<class S>
@@ -206,7 +196,7 @@ void bi::FactoredPdf<S>::sample(Random& rng, V2 x) {
   /* pre-condition */
   assert (x.size() == size());
 
-  FactoredPdfVisitor<S>::acceptSample(rng, x, factors);
+  FactoredPdfVisitor<S>::acceptSample(rng, x, &factors[0]);
 }
 
 template<class S>
@@ -215,7 +205,7 @@ void bi::FactoredPdf<S>::samples(Random& rng, M2 X) {
   /* pre-conditions */
   assert (X.size2() == size());
 
-  FactoredPdfVisitor<S>::acceptSample(rng, X, factors);
+  FactoredPdfVisitor<S>::acceptSamples(rng, X, &factors[0]);
 }
 
 template<class S>
@@ -224,7 +214,7 @@ real bi::FactoredPdf<S>::density(const V2 x) {
   /* pre-condition */
   assert (x.size() == size());
 
-  return FactoredPdfVisitor<S>::acceptDensity(x, factors);
+  return FactoredPdfVisitor<S>::acceptDensity(x, &factors[0]);
 }
 
 template<class S>
@@ -234,7 +224,7 @@ void bi::FactoredPdf<S>::densities(const M2 X, V2 p) {
   assert (X.size2() == size());
 
   bi::fill(p.begin(), p.end(), 1.0);
-  FactoredPdfVisitor<S>::acceptDensities(X, p, factors);
+  FactoredPdfVisitor<S>::acceptDensities(X, p, &factors[0]);
 }
 
 template<class S>
@@ -243,7 +233,7 @@ real bi::FactoredPdf<S>::logDensity(const V2 x) {
   /* pre-condition */
   assert (x.size() == size());
 
-  return FactoredPdfVisitor<S>::acceptLogDensity(x, factors);
+  return FactoredPdfVisitor<S>::acceptLogDensity(x, &factors[0]);
 }
 
 template<class S>
@@ -253,7 +243,7 @@ void bi::FactoredPdf<S>::logDensities(const M2 X, V2 p) {
   assert (X.size2() == size());
 
   p.clear();
-  FactoredPdfVisitor<S>::acceptLogDensities(X, p, factors);
+  FactoredPdfVisitor<S>::acceptLogDensities(X, p, &factors[0]);
 }
 
 template<class S>
@@ -271,14 +261,14 @@ void bi::FactoredPdf<S>::set(const int i, const Q1& factor) {
   BI_ASSERT(runtime<S>::check(factor, i),
       "Factor type does not match index " << i << " in type list");
 
-  FactoredPdfVisitor<S>::acceptSet(i, factor, factors);
+  FactoredPdfVisitor<S>::acceptSet(i, factor, &factors[0]);
 }
 
 #ifndef __CUDACC__
 template<class S>
 template<class Archive>
 void bi::FactoredPdf<S>::serialize(Archive& ar, const unsigned version) {
-  FactoredPdfVisitor<S>::acceptSerialize(ar, version, factors);
+  FactoredPdfVisitor<S>::acceptSerialize(ar, version, &factors[0]);
 }
 #endif
 

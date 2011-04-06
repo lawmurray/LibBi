@@ -344,10 +344,15 @@ bi::GaussianPdf<V1,M1>::GaussianPdf(const real sigma2) :
 template<class V1, class M1>
 template<class V2, class M2>
 bi::GaussianPdf<V1,M1>::GaussianPdf(const V2 mu, const M2 Sigma) :
-    N(mu.size()), mu(mu), Sigma(Sigma), U(N,N), invU(N,N), invSigma(N,N) {
+    N(mu.size()), mu(N), Sigma(N,N), U(N,N), invU(N,N), invSigma(N,N) {
   /* pre-condition */
   assert(mu.size() == Sigma.size1());
   assert(Sigma.size1() == Sigma.size2());
+
+  /* note cannot simply use copy constructors, as this will be shallow if
+   * V1 == V2 or M1 == M2 */
+  this->mu = mu;
+  this->Sigma = Sigma;
 
   init();
 }
@@ -355,8 +360,15 @@ bi::GaussianPdf<V1,M1>::GaussianPdf(const V2 mu, const M2 Sigma) :
 template<class V1, class M1>
 template<class M2>
 bi::GaussianPdf<V1,M1>::GaussianPdf(const M2 Sigma) :
-    N(Sigma.size1()), mu(N), Sigma(Sigma), U(N,N), invU(N,N), invSigma(N,N) {
-  mu.clear();
+    N(Sigma.size1()), mu(N), Sigma(N,N), U(N,N), invU(N,N), invSigma(N,N) {
+  /* pre-condition */
+  assert (Sigma.size1() == Sigma.size2());
+
+  /* note cannot simply use copy constructors, as this will be shallow if
+   * V1 == V2 */
+  this->mu.clear();
+  this->Sigma = Sigma;
+
   init();
 }
 

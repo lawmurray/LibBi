@@ -19,6 +19,31 @@
 
 namespace bi {
 /**
+ * Parent node reference in BayesNet.
+ */
+struct BayesNetParent {
+  /**
+   * Parent node id.
+   */
+  int id;
+
+  /**
+   * Offset on x dimension.
+   */
+  int x;
+
+  /**
+   * Offset on y dimension.
+   */
+  int y;
+
+  /**
+   * Offset on z dimension.
+   */
+  int z;
+};
+
+/**
  * Bayesian network model.
  *
  * @ingroup model_high
@@ -186,9 +211,9 @@ public:
    * @param childType Child type.
    * @param id Child node id.
    *
-   * @return Ids of the parent nodes of the given type for the given node.
+   * @return List of parent nodes, containing ids and dimension offsets.
    */
-  const std::vector<int>& getParents(const NodeType parentType,
+  const std::vector<BayesNetParent>& getParents(const NodeType parentType,
       const NodeType childType, const int id);
 
 protected:
@@ -221,9 +246,13 @@ protected:
    *
    * @param parent The parent node.
    * @param child The child node.
+   * @param x Offset on x dimension.
+   * @param y Offset on y dimension.
+   * @param z Offset on z dimension.
    */
   template<class X1, class X2>
-  void addArc(const X1& parent, const X2& child);
+  void addArc(const X1& parent, const X2& child, const int x = 0,
+      const int y = 0, const int z = 0);
 
 private:
   /**
@@ -235,6 +264,11 @@ private:
    * Sub-net sizes, indexed by NodeType.
    */
   std::vector<int> netSizes;
+
+  /**
+   * Number of nodes in each sub-net size, indexed by NodeType.
+   */
+  std::vector<int> netNumNodes;
 
   /**
    * Nodes, indexed by type and id.
@@ -259,7 +293,7 @@ private:
   /**
    * Node parent lists, indexed by parent type, child type and id.
    */
-  std::vector<std::vector<std::vector<std::vector<int> > > > arcs;
+  std::vector<std::vector<std::vector<std::vector<BayesNetParent> > > > arcs;
 
   /**
    * Arc counts, indexed by parent type and child type.
@@ -282,6 +316,7 @@ void bi::BayesNet::init() {
 
   dimSizes.resize(NUM_DIMENSIONS);
   netSizes.resize(NUM_NODE_TYPES);
+  netNumNodes.resize(NUM_NODE_TYPES);
   nodesById.resize(NUM_NODE_TYPES);
   nodesByName.resize(NUM_NODE_TYPES);
   nodeSizes.resize(NUM_NODE_TYPES);
@@ -301,18 +336,26 @@ void bi::BayesNet::init() {
   netSizes[O_NODE] = net_size<B,typename B::OTypeList>::value;
   netSizes[P_NODE] = net_size<B,typename B::PTypeList>::value;
 
+  netNumNodes[S_NODE] = size<typename B::STypeList>::value;
+  netNumNodes[D_NODE] = size<typename B::DTypeList>::value;
+  netNumNodes[C_NODE] = size<typename B::CTypeList>::value;
+  netNumNodes[R_NODE] = size<typename B::RTypeList>::value;
+  netNumNodes[F_NODE] = size<typename B::FTypeList>::value;
+  netNumNodes[O_NODE] = size<typename B::OTypeList>::value;
+  netNumNodes[P_NODE] = size<typename B::PTypeList>::value;
+
   for (i = 0; i < NUM_NODE_TYPES; ++i) {
     type1 = static_cast<NodeType>(i);
 
-    nodesById[type1].resize(netSizes[type1]);
-    nodeSizes[type1].resize(netSizes[type1]);
-    nodeStarts[type1].resize(netSizes[type1]);
+    nodesById[type1].resize(netNumNodes[type1]);
+    nodeSizes[type1].resize(netNumNodes[type1]);
+    nodeStarts[type1].resize(netNumNodes[type1]);
     arcs[type1].resize(NUM_NODE_TYPES);
     numArcs[type1].resize(NUM_NODE_TYPES, 0u);
 
     for (j = 0; j < NUM_NODE_TYPES; ++j) {
       type2 = static_cast<NodeType>(j);
-      arcs[type1][type2].resize(netSizes[type2]);
+      arcs[type1][type2].resize(netNumNodes[type2]);
     }
   }
 }
@@ -330,8 +373,8 @@ void bi::BayesNet::addNode(X& node) {
 }
 
 template<class X1, class X2>
-void bi::BayesNet::addArc(const X1& parent,
-    const X2& child) {
+void bi::BayesNet::addArc(const X1& parent, const X2& child, const int x,
+    const int y, const int z) {
   BI_ASSERT(!is_r_node<X2>::value, "r-nodes cannot have parents");
   BI_ASSERT(!is_f_node<X2>::value, "f-nodes cannot have parents");
   BI_ASSERT(!is_p_node<X2>::value, "p-nodes cannot have parents");
@@ -383,7 +426,8 @@ void bi::BayesNet::addArc(const X1& parent,
       "topological order, parents before children");
 
   ++numArcs[parentType][childType];
-  arcs[parentType][childType][child.getId()].push_back(parent.getId());
+  BayesNetParent arc = { parent.getId(), x, y, z };
+  arcs[parentType][childType][child.getId()].push_back(arc);
 }
 
 inline int bi::BayesNet::getDimSize(const Dimension dim) const {
@@ -395,13 +439,13 @@ inline int bi::BayesNet::getNetSize(const NodeType type) const {
 }
 
 inline int bi::BayesNet::getNumNodes(const NodeType type) const {
-  return nodesById[type].size();
+  return netNumNodes[type];
 }
 
 inline int bi::BayesNet::getNodeSize(const NodeType type,
     const int id) const {
   /* pre-condition */
-  assert (id < (int)nodesById[type].size());
+  assert (id < netNumNodes[type]);
 
   return nodeSizes[type][id];
 }
@@ -409,7 +453,7 @@ inline int bi::BayesNet::getNodeSize(const NodeType type,
 inline int bi::BayesNet::getNodeStart(const NodeType type,
     const int id) const {
   /* pre-condition */
-  assert (id < (int)nodesById[type].size());
+  assert (id < netNumNodes[type]);
 
   return nodeStarts[type][id];
 }
@@ -437,7 +481,7 @@ inline bi::BayesNode* bi::BayesNet::getNode(const NodeType type,
   return iter->second;
 }
 
-inline const std::vector<int>& bi::BayesNet::getParents(
+inline const std::vector<bi::BayesNetParent>& bi::BayesNet::getParents(
     const NodeType parentType, const NodeType childType,
     const int id) {
   /* pre-condition */

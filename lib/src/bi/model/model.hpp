@@ -16,6 +16,16 @@
 
 #include "boost/mpl/if.hpp"
 
+#ifndef X_LEN
+#define X_LEN 1
+#endif
+#ifndef Y_LEN
+#define Y_LEN 1
+#endif
+#ifndef Z_LEN
+#define Z_LEN 1
+#endif
+
 namespace bi {
 /**
  * Node types.
@@ -158,7 +168,7 @@ struct node_typelist {
 /**
  * @internal
  *
- * Dimension length of node.
+ * Length of node along dimension.
  *
  * @ingroup model_low
  *
@@ -178,6 +188,25 @@ struct node_dimlen {
 template<int DimLen>
 struct node_dimlen<0,DimLen> {
   static const int value = 1;
+};
+
+/**
+ * @internal
+ *
+ * Length of node along all dimensions.
+ *
+ * @ingroup model_low
+ *
+ * @tparam X Node type.
+ *
+ * @see While node_size gives the same as node_dimlens, it requires the
+ * containing model type to have already been declared in order to obtain
+ * dimension sizes, node_dimlens instead uses the macros X_LEN, Y_LEN and
+ * Z_LEN.
+ */
+template<class X>
+struct node_dimlens {
+  static const int value = node_dimlen<node_has_x<X>::value,X_LEN>::value*node_dimlen<node_has_y<X>::value,Y_LEN>::value*node_dimlen<node_has_z<X>::value,Z_LEN>::value;
 };
 
 /**
@@ -343,7 +372,7 @@ struct net_size_impl<B,empty_typelist> {
 /**
  * @internal
  *
- * Size of model (no. nodes).
+ * Size of net of given type (sum of sizes of all nodes of that type).
  *
  * @ingroup model_low
  *

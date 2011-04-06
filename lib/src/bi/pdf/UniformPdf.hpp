@@ -10,7 +10,7 @@
 #ifndef BI_PDF_UNIFORMTREEPDF_HPP
 #define BI_PDF_UNIFORMTREEPDF_HPP
 
-#include "../math/vector.hpp"
+#include "../math/host_vector.hpp"
 #include "../random/Random.hpp"
 
 #ifndef __CUDACC__
@@ -24,7 +24,6 @@ namespace bi {
  * @ingroup math_pdf
  *
  * @tparam V1 Vector type.
- * @tparam V2 Vector type.
  *
  * @section UniformPdf_serialization Serialization
  *
@@ -35,7 +34,7 @@ namespace bi {
  *
  * #concept::Pdf
  */
-template<class V1 = host_vector<>, class V2 = host_vector<> >
+template<class V1 = host_vector<> >
 class UniformPdf {
 public:
   /**
@@ -50,18 +49,34 @@ public:
   /**
    * Constructor.
    *
+   * @param lower Lower bound.
+   * @param upper Upper bound.
+   */
+  UniformPdf(const real lower, const real upper);
+
+  /**
+   * Constructor.
+   *
+   * @tparam V2 Vector type.
+   *
    * @param lower Lower corner of the hyper-rectangle under the
    * distribution.
    * @param upper Upper corner of the hyper-rectangle under the
    * distribution.
    */
-  UniformPdf(const V1 lower, const V2 upper);
+  template<class V2>
+  UniformPdf(const V2 lower, const V2 upper);
+
+  /**
+   * Copy constructor.
+   */
+  UniformPdf(const UniformPdf<V1>& o);
 
   /**
    * Assignment operator. Both sides must have the same dimensionality.
    */
-  template<class V3, class V4>
-  UniformPdf<V1,V2>& operator=(const UniformPdf<V3,V4>& o);
+  template<class V2>
+  UniformPdf<V1>& operator=(const UniformPdf<V2>& o);
 
   /**
    * @copydoc concept::Pdf::size()
@@ -80,14 +95,44 @@ public:
   /**
    * @copydoc concept::Pdf::sample()
    */
-  template<class V3>
-  void sample(Random& rng, V3 s);
+  template<class V2>
+  void sample(Random& rng, V2 x);
+
+  /**
+   * @copydoc concept::Pdf::samples()
+   */
+  template<class M2>
+  void samples(Random& rng, M2 X);
+
+  /**
+   * @copydoc concept::Pdf::density()
+   */
+  template<class V2>
+  double density(const V2 x);
+
+  /**
+   * @copydoc concept::Pdf::densities()
+   */
+  template<class M2, class V2>
+  double densities(const M2 X, V2 p);
+
+  /**
+   * @copydoc concept::Pdf::logDensity()
+   */
+  template<class V2>
+  double logDensity(const V2 x);
+
+  /**
+   * @copydoc concept::Pdf::logDensities()
+   */
+  template<class M2, class V2>
+  double logDensities(const M2 X, V2 p);
 
   /**
    * @copydoc concept::Pdf::operator()()
    */
-  template<class V3>
-  real operator()(const V3 x);
+  template<class V2>
+  double operator()(const V2 x);
 
 private:
   /**
@@ -98,7 +143,7 @@ private:
   /**
    * Density of the distribution.
    */
-  real p;
+  double p;
 
   /**
    * Lower corner of the hyper-rectangle under the distribution.
@@ -108,7 +153,12 @@ private:
   /**
    * Upper corner of the hyper-rectangle under the distribution.
    */
-  V2 upper;
+  V1 upper;
+
+  /**
+   * Length along each dimension of hyper-rectangle.
+   */
+  V1 length;
 
   /**
    * Perform precalculations.
@@ -137,91 +187,193 @@ private:
 };
 }
 
-template<class V1, class V2>
-bi::UniformPdf<V1,V2>::UniformPdf() : p(0.0), lower(0), upper(0) {
+template<class V1>
+bi::UniformPdf<V1>::UniformPdf() : p(0.0), lower(0), upper(0), length(0) {
   //
 }
 
-template<class V1, class V2>
-bi::UniformPdf<V1,V2>::UniformPdf(const V1 lower, const V2 upper) :
-    N(lower.size()), lower(lower), upper(upper) {
-  /* pre-condition */
-  assert(lower.size() == upper.size());
+template<class V1>
+bi::UniformPdf<V1>::UniformPdf(const real lower, const real upper) : N(1),
+    lower(1), upper(1), length(1) {
+  *this->lower.begin() = lower;
+  *this->upper.begin() = upper;
 
   init();
 }
 
-template<class V1, class V2>
-template<class V3, class V4>
-bi::UniformPdf<V1,V2>& bi::UniformPdf<V1,V2>::operator=(
-    const UniformPdf<V3,V4>& o) {
+template<class V1>
+template<class V2>
+bi::UniformPdf<V1>::UniformPdf(const V2 lower, const V2 upper) :
+    N(lower.size()), lower(N), upper(N), length(N) {
+  /* pre-condition */
+  assert(lower.size() == upper.size());
+
+  /* note cannot simply use copy constructors, as this will be shallow if
+   * V1 == V2 */
+  this->lower = lower;
+  this->upper = upper;
+
+  init();
+}
+
+template<class V1>
+bi::UniformPdf<V1>::UniformPdf(const UniformPdf<V1>& o) : N(o.N), p(o.p),
+    lower(N), upper(N), length(N) {
+  /* note cannot simply use copy constructors, as this will be shallow if
+   * V1 == V2 */
+  lower = o.lower;
+  upper = o.upper;
+  length = o.length;
+}
+
+template<class V1>
+template<class V2>
+bi::UniformPdf<V1>& bi::UniformPdf<V1>::operator=(const UniformPdf<V2>& o) {
   /* pre-condition */
   assert (o.N == N);
 
   p = o.p;
   lower = o.lower;
   upper = o.upper;
+  length = o.length;
 
   return *this;
 }
 
-template<class V1, class V2>
-inline int bi::UniformPdf<V1,V2>::size() const {
+template<class V1>
+inline int bi::UniformPdf<V1>::size() const {
   return N;
 }
 
-template<class V1, class V2>
-void bi::UniformPdf<V1,V2>::resize(const int N, const bool preserve) {
+template<class V1>
+void bi::UniformPdf<V1>::resize(const int N, const bool preserve) {
   this->N = N;
 
   lower.resize(N, preserve);
   upper.resize(N, preserve);
+  length.resize(N, preserve);
 
   init();
 }
 
-template<class V1, class V2>
-template<class V3>
-void bi::UniformPdf<V1,V2>::sample(Random& rng, V3 s) {
-  int i;
-  for (i = 0; i < N; i++) {
-    s(i) = rng.uniform(lower(i), upper(i));
+template<class V1>
+template<class V2>
+void bi::UniformPdf<V1>::sample(Random& rng, V2 x) {
+  /* pre-condition */
+  assert (x.size() == N);
+
+  BOOST_AUTO(z, temp_vector<V2>(N));
+  rng.uniforms(*z);
+  gdmv(1.0, length, z, 0.0, x);
+  axpy(1.0, lower, x);
+
+  if (V2::on_device) {
+    synchronize();
   }
-}
-
-template<class V1, class V2>
-template<class V3>
-real bi::UniformPdf<V1,V2>::operator()(const V3 x) {
-  bool inside = true;
-  int i;
-
-  for (i = 0; i < N && inside; i++) {
-    inside = inside && lower(i) <= x(i) && x(i) < upper(i);
-  }
-  return inside ? p : 0.0;
-}
-
-template<class V1, class V2>
-void bi::UniformPdf<V1,V2>::init() {
-  BOOST_AUTO(z, temp_vector<V1>(N));
-  *z = upper;
-  axpy(-1.0, lower, *z);
-  p = std::pow(bi::prod(z->begin(), z->end()), -1.0);
   delete z;
 }
 
+template<class V1>
+template<class M2>
+void bi::UniformPdf<V1>::samples(Random& rng, M2 X) {
+  /* pre-condition */
+  assert (X.size2() == N);
+
+  BOOST_AUTO(Z, temp_matrix<M2>(X.size1(), X.size2()));
+  rng.uniforms(matrix_as_vector(*Z));
+  gdmm(1.0, length, *Z, 0.0, X, 'R');
+  add_rows(X, lower);
+
+  if (M2::on_device) {
+    synchronize();
+  }
+  delete Z;
+}
+
+template<class V1>
+template<class V2>
+double bi::UniformPdf<V1>::density(const V2 x) {
+  /* pre-condition */
+  assert (x.size() == N);
+
+  typedef typename V2::value_type T2;
+
+  /* check whether within hyper-rectangle of uniform distribution */
+  double result;
+  BOOST_AUTO(z, temp_vector<V2>(N));
+  *z = x;
+  axpy(-1.0, lower, *z);
+  int numin = thrust::inner_product(z->begin(), z->end(), length.begin(), 0, thrust::plus<T2>(), thrust::less<T2>());
+  assert (numin >= 0 && numin <= N);
+  result = (numin == N) ? p : 0.0;
+
+  synchronize();
+  delete z;
+
+  return result;
+}
+
+template<class V1>
+template<class M3, class V3>
+double bi::UniformPdf<V1>::densities(const M3 X, V3 p) {
+  /* pre-condition */
+  assert (X.size1() == p.size() && X.size2() == N);
+
+  typename V3::iterator iter = p.begin();
+
+  int i;
+  for (i = 0; i < X.size1(); ++i) {
+    *iter = density(row(X, i));
+    ++iter;
+  }
+}
+
+template<class V1>
+template<class V3>
+double bi::UniformPdf<V1>::logDensity(const V3 x) {
+  return log(density(x));
+}
+
+template<class V1>
+template<class M3, class V3>
+double bi::UniformPdf<V1>::logDensities(const M3 X, V3 p) {
+  /* pre-condition */
+  assert (X.size1() == p.size() && X.size2() == N);
+
+  typename V3::iterator iter = p.begin();
+
+  int i;
+  for (i = 0; i < X.size1(); ++i) {
+    *iter = logDensity(row(X, i));
+    ++iter;
+  }
+}
+
+template<class V1>
+template<class V3>
+real bi::UniformPdf<V1>::operator()(const V3 x) {
+  return density(x);
+}
+
+template<class V1>
+void bi::UniformPdf<V1>::init() {
+  length = upper;
+  axpy(-1.0, lower, length);
+  p = 1.0/bi::prod(length.begin(), length.end(), 1.0);
+}
+
 #ifndef __CUDACC__
-template<class V1, class V2>
+template<class V1>
 template<class Archive>
-void bi::UniformPdf<V1,V2>::save(Archive& ar, const unsigned version) const {
+void bi::UniformPdf<V1>::save(Archive& ar, const unsigned version) const {
   ar & p;
   ar & lower;
   ar & upper;
 }
 
-template<class V1, class V2>
+template<class V1>
 template<class Archive>
-void bi::UniformPdf<V1,V2>::load(Archive& ar, const unsigned version) {
+void bi::UniformPdf<V1>::load(Archive& ar, const unsigned version) {
   ar & p;
   ar & lower;
   ar & upper;
