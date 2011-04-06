@@ -59,7 +59,7 @@ struct resample_offspring : public std::unary_function<T,int> {
  * @ingroup method
  *
  * Determistic, stratified resampler based on the scheme of
- * @ref Kitagawa1996 "Kitagawa (1996)", without pre-sorting.
+ * @ref Kitagawa1996 "Kitagawa (1996)", with or without pre-sorting.
  */
 class StratifiedResampler : public Resampler {
 public:
