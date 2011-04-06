@@ -30,6 +30,9 @@
 using namespace bi;
 
 int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+  
   /* command line arguments */
   enum {
     ATOLER_ARG,
@@ -130,7 +133,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* model */
-  [% ClassName %]<> m;
+  model_type m;
 
   /* state */
   Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
@@ -157,14 +160,14 @@ int main(int argc, char* argv[]) {
   }
 
   /* initialise trajectories */
-  m.getPrior(D_NODE).samples(rng, s.get(D_NODE));
-  m.getPrior(C_NODE).samples(rng, s.get(C_NODE));
+  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
   if (INCLUDE_PARAMETERS) {
-    m.getPrior(P_NODE).samples(rng, theta.get(P_NODE));
+    m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));
   }
 
   /* simulate */
-  RUpdater<[% ClassName %]<> > rUpdater(rng);
+  RUpdater<model_type> rUpdater(rng);
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
     BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m, &rUpdater, inForce, out)));

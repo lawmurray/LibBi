@@ -1,14 +1,16 @@
 [%-ClassName = "${Name}Model" | ucfirst-%]
-[%-PriorTypes = [ 'S', 'D', 'C', 'R', 'F', 'O', 'P' ]-%]
+[%-PriorTypes = [ 'D', 'C', 'P' ]-%]
 
 [%-USE DBI(dbh = dbh)-%]
 
 [%-GetNodes = DBI.prepare("SELECT Name, HasX, HasY, HasZ FROM Node WHERE Category <> 'Intermediate result' AND Category <> 'Constant' ORDER BY Position ASC")-%]
 [%-GetDistinctNodes = DBI.prepare("SELECT DISTINCT Name FROM Node WHERE Category <> 'Intermediate result' AND Category <> 'Constant' ORDER BY Position ASC")-%]
 [%-GetNodesWithTrait = DBI.prepare('SELECT * FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name')-%]
-[%-GetNodesWithPrior = DBI.prepare("SELECT DISTINCT Name, Position FROM Node, NodeTrait WHERE Trait IN ('HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR', 'HAS_LOG_NORMAL_PRIOR') AND NodeTrait.Node = Node.Name INTERSECT SELECT Name, Position FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name ORDER BY Position")-%]
+[%-GetNodesWithPrior = DBI.prepare("SELECT DISTINCT Name, Position, Trait FROM Node, NodeTrait WHERE Trait IN ('HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR', 'HAS_LOG_NORMAL_PRIOR', 'HAS_UNIFORM_PRIOR') AND NodeTrait.Node = Node.Name INTERSECT SELECT Name, Position, Trait FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name ORDER BY Position")-%]
 [%-GetParentsWithTrait = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset, Parent.Position FROM Parent, Node, NodeTrait WHERE NodeTrait.Trait = ? AND NodeTrait.Node = Parent.ParentNode AND Parent.ChildNode = Node.Name ORDER BY Node.Position, Parent.Position")-%]
 [%-GetEdges = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset FROM Node, Parent WHERE Node.Category <> 'Intermediate result' AND Node.Category <> 'Constant' AND Parent.ParentNode = Node.Name ORDER BY Parent.Position")-%]
+[%-CheckTrait = DBI.prepare('SELECT 1 FROM NodeTrait WHERE Node = ? AND Trait = ?')-%]
+[%-CheckTraits3 = DBI.prepare('SELECT DISTINCT 1 FROM NodeTrait WHERE Node = ? AND Trait IN (?,?,?)')-%]
 
 /**
  * @file
@@ -27,7 +29,9 @@
 #include "bi/model/BayesNet.hpp"
 #include "bi/model/model.hpp"
 #include "bi/typelist/TypeList.hpp"
+#include "bi/pdf/FactoredPdf.hpp"
 #include "bi/pdf/ExpGaussianPdf.hpp"
+#include "bi/pdf/UniformPdf.hpp"
 
 #include <vector>
 
@@ -40,6 +44,7 @@ BEGIN_TYPELIST([% Name %][% Type %]TypeList)
 SINGLE_TYPE(1, [% Node.Name | ucfirst %]Node)
 [% END-%]
 END_TYPELIST()
+
 [% END-%]
 
 [%-FOREACH Type IN [ 'S', 'D', 'C', 'R', 'F', 'P'] %]
@@ -47,6 +52,37 @@ END_TYPELIST()
 [% FOREACH Parent = GetParentsWithTrait.execute("IS_${Type}_NODE")-%]
 SET_PA([% Type | lower %], [% Parent.ChildNode | ucfirst %]Node, [% Parent.Position %], [% Parent.ParentNode | ucfirst %]Node, [% Parent.XOffset %], [% Parent.YOffset %], [% Parent.ZOffset %])
 [% END-%]
+[% END-%]
+
+[%-FOREACH Type IN PriorTypes %]
+BEGIN_TYPELIST([% Name %][% Type %]PriorTypeList)
+[% FOREACH Node = GetNodesWithTrait.execute("IS_${Type}_NODE")-%]
+[%-FOREACH CheckTrait.execute(Node.Name, 'HAS_UNIFORM_PRIOR')-%]
+SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::UniformPdf<>)
+[% END-%]
+[%-FOREACH CheckTraits3.execute(Node.Name, 'HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR', 'HAS_LOG_NORMAL_PRIOR')-%]
+SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::ExpGaussianPdf<>)
+[% END-%]
+[%-END-%]
+END_TYPELIST()
+
+[% END-%]
+
+/**
+ * Prior type selector for [% ClassName %].
+ *
+ * @tparam type Node type.
+ */
+template<bi::NodeType type>
+struct [% ClassName %]PriorType {
+  //
+};
+
+[%-FOREACH Type IN PriorTypes %]
+template<>
+struct [% ClassName %]PriorType<bi::[% Type %]_NODE> {
+  typedef bi::FactoredPdf<GET_TYPELIST([% Name %][% Type %]PriorTypeList)> type; 
+};
 [% END-%]
 
 /**
@@ -59,11 +95,6 @@ SET_PA([% Type | lower %], [% Parent.ChildNode | ucfirst %]Node, [% Parent.Posit
 template<int XN = 1, int YN = 1, int ZN = 1>
 class [% ClassName %] : public bi::BayesNet {
 public:
-  /**
-   * Type of prior distributions.
-   */
- typedef bi::ExpGaussianPdf<> prior_type;
-
   [%-FOREACH Type IN [ 'S', 'D', 'C', 'R', 'F', 'O', 'P' ] %]
   /**
    * Type list for [% Type | lower %]-net.
@@ -71,6 +102,13 @@ public:
   typedef GET_TYPELIST([% Name %][% Type %]TypeList) [% Type %]TypeList;
   [% END-%]
 
+  [%-FOREACH Type IN PriorTypes %]
+  /**
+   * Type list for factored prior over [% Type | lower %]-net.
+   */
+  typedef typename [% ClassName %]PriorType<bi::[% Type %]_NODE>::type [% Type %]PriorTypeList;
+  [% END-%]
+  
   [%-FOREACH Dim IN [ 'X', 'Y', 'Z' ] %]
   /**
    * Size of [% Dim | lower %]-dimension.
@@ -82,15 +120,21 @@ public:
    * Constructor.
    */
   [% ClassName %]();
+  
+  /**
+   * Destructor.
+   */
+  ~[% ClassName %]();
 
   /**
-   * Get prior.
+   * Get prior over nodes of given type.
    *
-   * @param type Node type.
+   * @tparam type Node type.
    *
    * @return Prior over nodes of given type.
    */
-  prior_type& getPrior(const bi::NodeType type);
+  template<bi::NodeType type>
+  typename [% ClassName %]PriorType<type>::type& getPrior();
 
 private:
   /*
@@ -101,9 +145,9 @@ private:
   [% END-%]
 
   /**
-   * Node priors, indexed by type.
+   * Priors.
    */
-  std::vector<bi::ExpGaussianPdf<> > priors;
+  std::vector<void*> priors;
 
 };
 
@@ -113,49 +157,69 @@ private:
 #include "bi/math/host_matrix.hpp"
 
 template<int XN, int YN, int ZN>
-[% ClassName %]<XN,YN,ZN>::[% ClassName %]() {
+[% ClassName %]<XN,YN,ZN>::[% ClassName %]() : priors(bi::NUM_NODE_TYPES, NULL) {
   using namespace bi;
+  int i;
 
   init<[% ClassName %]>();
 
   /* nodes */
-  [% FOREACH Node = GetNodes.execute-%]
-addNode<[% ClassName %],[% Node.Name | ucfirst %]Node>(node[% Node.Name %]);
-  [% END-%]
+  [%-FOREACH Node = GetNodes.execute %]
+  addNode<[% ClassName %],[% Node.Name | ucfirst %]Node>(node[% Node.Name %]);
+  [%-END %]
 
   /* edges */
-  [% FOREACH Edge = GetEdges.execute-%]
-addArc(node[% Edge.ParentNode %], node[% Edge.ChildNode %]);
-  [% END %]
+  [%-FOREACH Edge = GetEdges.execute %]
+  addArc(node[% Edge.ParentNode %], node[% Edge.ChildNode %], [% Edge.XOffset %], [% Edge.YOffset %], [% Edge.ZOffset %]);
+  [%-END %]
 
-  /* priors */
-  [% FOREACH Type IN PriorTypes-%]
-  [%-Size = "getNetSize(${Type}_NODE)"-%]
-  priors.push_back(prior_type([% Size %]));
-  prior_type& [% Type | lower %]0 = priors.back();
-  host_vector<>& mu_[% Type | lower %] = [% Type | lower %]0.mean();
-  host_matrix<>& Sigma_[% Type | lower %] = [% Type | lower %]0.cov();
-
-  [% FOREACH Node = GetNodesWithPrior.execute("IS_${Type}_NODE") %]
-  mu_[% Type | lower %]([% loop.index %]) = node[% Node.Name %].mu0();
-  Sigma_[% Type | lower %]([% loop.index %],[% loop.index %]) = std::pow(node[% Node.Name %].sigma0(), 2);
-  [% END %]
-
-  [% FOREACH Node = GetNodesWithTrait.execute("IS_${Type}_NODE") %]
-  if (has_log_normal_prior<[% Node.Name | ucfirst %]Node>::value ||
-      is_log_normal_likelihood<[% Node.Name | ucfirst %]Node>::value) {
-    [% Type |lower %]0.addLog([% loop.index %]);
+  /* priors */ 
+  [%-FOREACH Type IN PriorTypes %]
+  priors[[% Type %]_NODE] = new typename [% ClassName %]PriorType<[% Type %]_NODE>::type();
+  [%-END %]
+  
+  [%-FOREACH Type IN PriorTypes-%]
+  [%-FOREACH Node = GetNodesWithTrait.execute("IS_${Type}_NODE")-%]
+  [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_UNIFORM_PRIOR') %]
+  UniformPdf<> [% Type | lower %][% loop.index %](node[% Node.Name %].lower0(), node[% Node.Name %].upper0());
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
   }
-  [% END %]
-  [% Type | lower %]0.setMean(mu_[% Type | lower %]);
-  [% Type | lower %]0.setCov(Sigma_[% Type | lower %]);
   [% END-%]
+  [%-FOREACH CheckTraits2.execute(Node.Name, 'HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR') %]
+  ExpGaussianPdf<> [% Type | lower %][% Node.Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0());
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
+  }
+  [% END-%]
+  [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_LOG_NORMAL_PRIOR') %]
+  ExpGaussianPdf<> [% Type | lower %][% loop.index %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0(), true);
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
+  }
+  [% END-%]
+  [%-END-%]
+  [% END %]
 }
 
 template<int XN, int YN, int ZN>
-inline typename [% ClassName %]<XN,YN,ZN>::prior_type& [% ClassName %]<XN,YN,ZN>::getPrior(
-    const bi::NodeType type) {
-  return priors[type];
+[% ClassName %]<XN,YN,ZN>::~[% ClassName %]() {
+  using namespace bi;
+
+  delete &getPrior<D_NODE>();
+  delete &getPrior<C_NODE>();
+  delete &getPrior<P_NODE>();
+}
+
+template<int XN, int YN, int ZN>
+template<bi::NodeType type>
+inline typename [% ClassName %]PriorType<type>::type& [% ClassName %]<XN,YN,ZN>::getPrior() {
+  using namespace bi;
+
+  /* pre-condition */
+  assert ([%-FOREACH Type IN PriorTypes %]type == [% Type %]_NODE || [% END-%]false);
+
+  return *static_cast<typename [% ClassName %]PriorType<type>::type*>(priors[type]);
 }
 
 #endif

@@ -90,6 +90,18 @@ public:
   static real sigma0();
   [% END-%]
 
+  [%-FOREACH CheckTrait.execute(Name, 'HAS_UNIFORM_PRIOR') %]
+  /**
+   * Lower bound on prior uniform distribution.
+   */
+  static real lower0();
+
+  /**
+   * Upper bound on prior uniform distribution.
+   */
+  static real upper0();
+  [% END-%]
+  
   [%-FOREACH CheckTraits3.execute(Name, 'IS_GAUSSIAN_LIKELIHOOD', 'IS_NORMAL_LIKELIHOOD', 'IS_LOG_NORMAL_LIKELIHOOD') %]
   /**
    * @see bi::GaussianLikelihoodMuFunction::mu
@@ -139,9 +151,9 @@ public:
 [% END-%]
 
 [%#-Dimension declaration-%]
-[% IF Node.HasX %]HAS_X([% ClassName %])[% END %]
-[% IF Node.HasY %]HAS_Y([% ClassName %])[% END %]
-[% IF Node.HasZ %]HAS_Z([% ClassName %])[% END %]
+[% IF HasX %]HAS_X([% ClassName %])[% END %]
+[% IF HasY %]HAS_Y([% ClassName %])[% END %]
+[% IF HasZ %]HAS_Z([% ClassName %])[% END %]
 
 [%#-Trait declarations-%]
 [%-FOREACH Trait = GetTraits.execute(Name)-%]
@@ -234,6 +246,22 @@ inline real [% ClassName %]::mu0() {
 inline real [% ClassName %]::sigma0() {
   real result;
   [% INCLUDE Formulae Function = 'sigma0' Result = 'result' %]
+
+  return result;
+}
+[%-END %]
+
+[% FOREACH CheckTrait.execute(Name, 'HAS_UNIFORM_PRIOR')-%]
+inline real [% ClassName %]::lower0() {
+  real result;
+  [% INCLUDE Formulae Function = 'lower0' Result = 'result' %]
+
+  return result;
+}
+
+inline real [% ClassName %]::upper0() {
+  real result;
+  [% INCLUDE Formulae Function = 'upper0' Result = 'result' %]
 
   return result;
 }

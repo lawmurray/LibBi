@@ -33,7 +33,7 @@ my $name = ucfirst($1);
 # connect to database
 $ENV{'DBI_DSN'} = "dbi:SQLite:dbname=$model";
 my $dbh = DBI->connect($ENV{'DBI_DSN'});
-my $sth = $dbh->prepare("SELECT Name FROM Node " .
+my $sth = $dbh->prepare("SELECT Name, HasX, HasY, HasZ FROM Node " .
     "WHERE Category <> 'Intermediate result' AND Category <> 'Constant'")
     || die();
 
@@ -57,9 +57,8 @@ $tt->process('Model.hpp.tt', $vars, "$outdir/${name}Model.hpp")
 
 # node sources
 $sth->execute;
-while ($name = $sth->fetchrow_array) {
-  $$vars{'Name'} = $name;
-  $name = ucfirst($name);
+while ($vars = $sth->fetchrow_hashref) {
+  $name = ucfirst($$vars{'Name'});
   $tt->process('Node.hpp.tt', $vars, "$outdir/${name}Node.hpp")
       || die $tt->error(), "\n";
   $tt->process('Node.cpp.tt', $vars, "$outdir/${name}Node.cpp")
