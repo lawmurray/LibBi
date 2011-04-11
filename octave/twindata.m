@@ -10,19 +10,15 @@
 % program.
 %
 % @itemize
-% @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
-% simulate.}
+% @bullet{ @var{in} Input file. Name of a NetCDF file output by simulate.}
 %
-% @bullet{ @var{invars} Cell array of strings naming the variables
-% of this file to disturb.}
+% @bullet{ @var{invar} Name of variable from input file to disturb.}
 %
 % @bullet{ @var{out} Output file. Name of a NetCDF file to create.}
 %
-% @bullet{ @var{outvars} Cell array of strings naming the variables
-% to create in the output file. Its length must match that of
-% @var{invars}.}
+% @bullet{ @var{outvar} Name of variable in output file to create.}
 %
-% @bullet{ @var{p} Index along the @t{nr} dimension of the
+% @bullet{ @var{p} Index along the @t{np} dimension of the
 % input file, indicating the trajectory to disturb to create
 % observations.}
 %
@@ -30,17 +26,25 @@
 % noise. Each value produces a corresponding record along the @t{ns}
 % dimension of the output file.}
 %
-% @bullet{ @var{logn} True for log-normal noise, false for normal noise.}
+% @bullet{ @var{logn} (optional) True for log-normal noise, false for normal
+% noise.}
+%
+% @bullet{ @var{coords} (optional) Matrix of spatial coordinates of zero
+% to three columns. Each row gives the x, y and z coordinates of a
+% component of @var{invar} to disturb.}
 % @end itemize
 % @end deftypefn
 %
-function twindata (in, invars, out, outvars, p, S, logn)
+function twindata (in, invar, out, outvar, p, S, logn, coords)
     % check arguments
-    if (nargin < 6)
+    if (nargin < 6 || nargin > 8)
         print_usage ();
     end
-    if (length (invars) != length (outvars))
-        error ('Lengths of invars and outvars must match');
+    if (!ischar (invar))
+        error ('invar must be a string');
+    end
+    if (!ischar (outvar))
+        error ('outvar must be a string');
     end
     if (!isscalar (p))
         error ('p must be scalar');
@@ -48,34 +52,65 @@ function twindata (in, invars, out, outvars, p, S, logn)
     if (!columns (S) == 1)
         error ('S must be scalar or column vector');
     end
-    
+    if nargin < 7
+        logn = 0;
+    end
+    if nargin < 8
+        coords = [];
+        M = 1;
+    elseif !ismatrix (coords) || columns (coords) > 3
+        error ('coords should be a matrix with at most three columns');
+    else
+        M = rows (coords);
+    end
+        
     % input file
     nci = netcdf(in, 'r');
-    
+    T = nci('nr')(:);
+   
     % output file
     nco = netcdf(out, 'c');
-    nco('ns') = length(S);
-    nco('nr') = nci('nr')(:);
-    nco('np') = 1;
-    nco{'time'} = ncdouble('nr');
-    nco{'time'}(:) = nci{'time'}(:);
+
+    % dimensions
+    rdim = sprintf('nr_%s', outvar);
+    cdim = sprintf('nc_%s', outvar);
+    
+    nco('ns') = length (S);
+    nco(rdim) = M*T;
+    if columns (coords) > 1
+        nco(cdim) = columns (coords);
+    end
+    
+    % time variable
+    tvar = sprintf('time_%s', outvar);
+    nco{tvar} = ncdouble(rdim);
+    nco{tvar}(:) = repmat(nci{'time'}(:)', M, 1)(:);
+    
+    % coordinate variable
+    cvar = sprintf('coord_%s', outvar);
+    if columns (coords) > 1
+        nco{cvar} = ncdouble(rdim, cdim);
+        nco{cvar}(:,:) = repmat(coords, T, 1);
+    elseif columns (coords) > 0
+        nco{cvar} = ncdouble(rdim);
+        nco{cvar}(:) = repmat(coords(:), T, 1);
+    end
 
     % construct data
-    for i = 1:length(invars)
-        x = nci{invars{i}}(:,p)';
+    nco{outvar} = ncdouble('ns', rdim);
+    for j = 1:M
+        coord = coords(j,:);
+        x = read_var(nci, invar, p, coord)';
         u = normrnd(0.0, 1.0, 1, length(x));
         U = repmat(u, length(S), 1);
         X = repmat(x, length(S), 1);
         if logn
-            Y = exp(log(X) + repmat(S, 1, length(x)).*U);
+            Y = exp(log(X) + repmat(S(:), 1, length(x)).*U);
         else
-            Y = X + repmat(S, 1, length(x)).*U;
+            Y = X + repmat(S(:), 1, length(x)).*U;
         end
-        
-        nco{outvars{i}} = ncdouble('ns', 'nr');
-        nco{outvars{i}}(:,:) = Y;
-    end
-    
+        nco{outvar}(:,j:M:end) = Y;
+    end    
     ncclose(nci);
     ncclose(nco);
 end

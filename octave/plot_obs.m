@@ -12,17 +12,27 @@
 % @bullet{ @var{in} Input file. Gives the name of a NetCDF file containing
 % observations.}
 %
-% @bullet{ @var{invars} Cell array of strings naming the variables
-% of this file to plot. Empty strings may be used to produce empty plots.}
+% @bullet{ @var{invar} Name of variable from input file to plot.
+%
+% @bullet{ @var{coord} (optional) Vector of spatial coordinates of zero
+% to three elements, giving the x, y and z coordinates of a
+% component of @var{invar} to plot.}
+%
+% @bullet{ @var{ns} (optional) Index along ns dimension of input file.}
 % @end itemize
 % @end deftypefn
 %
-function plot_obs (in, invars, ns)
+function plot_obs (in, invar, coord, ns)
     % check arguments
-    if (nargin < 2 || nargin > 3)
+    if nargin < 2 || nargin > 4
         print_usage ();
     end
-    if (nargin == 3)
+    if nargin == 2
+        coord = [];
+        ns = 1;
+    elseif nargin == 3
+        ns = 1;
+    else
         if (!isscalar(ns))
             error ('ns must be scalar');
         end
@@ -30,26 +40,43 @@ function plot_obs (in, invars, ns)
             error ('ns must be positive');
         end
     end
-    if (nargin == 2)
-        ns = 1;
-    end 
 
     % input file
     nci = netcdf(in, 'r');
 
-    t = nci{'time'}(:)'; % times
-    for i = 1:length(invars)
-        if (!strcmp(invars{i}, ''))
-            y = nci{invars{i}}(ns,:);
-            
-            if length(invars) > 1
-                subplot(length(invars), 1, i);
+    % time variable
+    tvar = sprintf('time_%s', invar);
+    K = length(nci{tvar}(:));
+    ts = nci{tvar}(:);
+
+    % coordinate variable
+    cvar = sprintf('coord_%s', invar);
+    if length(coord) > 1
+        coords = nci{cvar}(:,:);
+    else
+        coords = nci{cvar}(:);
+    end
+    
+    % observed variables
+    ys = nci{invar}(ns,:);
+    
+    % mask based on coordinates
+    if isempty(coords)
+        mask = ones(K,1);
+    else
+        mask = zeros(K,1);
+        for k = 1:K
+            if coords(k,:) == coord
+                mask(k) = 1;
             end
-            hold on;
-            plot(t, y, 'ok', 'markersize', 3.0);
-            plot_defaults;
         end
     end
+    t = ts(find(mask));
+    y = ys(find(mask));
+    
+    % plot
+    plot(t, y, 'ok', 'markersize', 3.0);
+    %plot_defaults;
     
     ncclose(nci);
 end

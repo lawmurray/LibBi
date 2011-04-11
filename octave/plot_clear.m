@@ -15,5 +15,5 @@ function plot_clear ()
         print_usage ();
     end
 
-    subplot(1,1,1);
+    clf;
 end
