@@ -54,6 +54,8 @@ function twindata (in, invar, out, outvar, p, S, logn, coords)
     end
     if nargin < 7
         logn = 0;
+        coords = [];
+        M = 1;
     end
     if nargin < 8
         coords = [];
@@ -90,10 +92,10 @@ function twindata (in, invar, out, outvar, p, S, logn, coords)
     cvar = sprintf('coord_%s', outvar);
     if columns (coords) > 1
         nco{cvar} = ncdouble(rdim, cdim);
-        nco{cvar}(:,:) = repmat(coords, T, 1);
+        nco{cvar}(:,:) = repmat(coords - 1, T, 1);
     elseif columns (coords) > 0
         nco{cvar} = ncdouble(rdim);
-        nco{cvar}(:) = repmat(coords(:), T, 1);
+        nco{cvar}(:) = repmat(coords(:) - 1, T, 1);
     end
 
     % construct data
