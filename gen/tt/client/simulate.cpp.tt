@@ -186,5 +186,7 @@ int main(int argc, char* argv[]) {
   }
 
   delete out;
+  delete inForce;
+  delete inInit;
   return 0;
 }

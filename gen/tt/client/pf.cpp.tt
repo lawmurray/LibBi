@@ -37,6 +37,9 @@
 using namespace bi;
 
 int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+  
   /* command line arguments */
   enum {
     ATOLER_ARG,
@@ -51,12 +54,13 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     RESAMPLER_ARG,
     OUTPUT_ARG,
-    TIME_ARG
+    TIME_ARG,
+    INCLUDE_PARAMETERS_ARG
   };
   real T = 0.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
   int P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE, RESAMPLER = std::string("stratified");
-  bool OUTPUT = false, TIME = false;
+  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
   int c, option_index;
 
   option long_options[] = {
@@ -72,7 +76,8 @@ int main(int argc, char* argv[]) {
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
-      {"time", required_argument, 0, TIME_ARG }
+      {"time", required_argument, 0, TIME_ARG },
+      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
   };
   const char* short_options = "T:h:P:L:";
 
@@ -118,6 +123,9 @@ int main(int argc, char* argv[]) {
     case TIME_ARG:
       TIME = atoi(optarg);
       break;
+    case INCLUDE_PARAMETERS_ARG:
+      INCLUDE_PARAMETERS = atoi(optarg);
+      break;
     case 'T':
       T = atof(optarg);
       break;
@@ -144,35 +152,40 @@ int main(int argc, char* argv[]) {
   NcError ncErr(NcError::silent_nonfatal);
 
   /* model */
-  [% ClassName %]<> m;
+  model_type m;
 
   /* state and intermediate results */
-  Static<LOCATION> theta(m);
+  Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
 
   /* random number generator */
   Random rng(SEED);
 
   /* inputs */
-  SparseInputNetCDFBuffer inForce(m, FORCE_FILE, FORCE_NS);
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
-  SparseInputNetCDFBuffer inInit(m, INIT_FILE, INIT_NS);
-
-  /* initialise state */
-  inInit.read(P_NODE, theta.get(P_NODE));
-  inInit.read(D_NODE, s.get(D_NODE));
-  inInit.read(C_NODE, s.get(C_NODE));
-
-//  m.getPrior(D_NODE).samples(rng, s.get(D_NODE));
-//  m.getPrior(C_NODE).samples(rng, s.get(C_NODE));
-//  set_rows(s.get(D_NODE), row(s.get(D_NODE), 895));
-//  set_rows(s.get(C_NODE), row(s.get(C_NODE), 895));
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read(P_NODE, theta.get(P_NODE));
+    inInit->read(D_NODE, s.get(D_NODE));
+    inInit->read(C_NODE, s.get(C_NODE));
+  } else {
+    m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+    m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+    if (INCLUDE_PARAMETERS) {
+      m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));      
+    }
+  }
 
   /* output */
   ParticleFilterNetCDFBuffer* out;
   if (OUTPUT) {
     out = new ParticleFilterNetCDFBuffer(m, P, inObs.countUniqueTimes(T),
-        OUTPUT_FILE, NetCDFBuffer::REPLACE);
+        OUTPUT_FILE, NetCDFBuffer::REPLACE,
+        INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
   } else {
     out = NULL;
   }
@@ -180,27 +193,28 @@ int main(int argc, char* argv[]) {
   /* set filter */
   //ExactStratifiedResampler resam(rng);
   StratifiedResampler resam(rng);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, &inForce, &inObs, out));
 
   /* do filter */
   TicToc timer;
-  filter->filter(T, theta, s, &resam);
+  if (INCLUDE_PARAMETERS) {
+    BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m, rng, inForce, &inObs, out)));
+    filter->filter(T, theta, s, &resam);
+    delete filter;
+  } else {
+    BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_SHARED>::create(m, rng, inForce, &inObs, out)));
+    filter->filter(T, theta, s, &resam);
+    delete filter;
+  }
+  
+  /* output timing results */
   if (TIME) {
     synchronize();
     std::cout << timer.toc() << std::endl;
   }
-//  filter->reset();
-//  timer.tic();
-//  filter->filter(T, theta, s, &resam);
-//
-//  /* output timing results */
-//  if (TIME) {
-//    synchronize();
-//    std::cout << timer.toc() << std::endl;
-//  }
 
-  delete filter;
   delete out;
+  delete inForce;
+  delete inInit;
 
   return 0;
 }
