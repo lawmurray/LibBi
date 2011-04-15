@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
     StratifiedResampler base(rng);
-    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, 1.0);
+    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, hopt(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(P_NODE), P));
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m, rng, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam);
     delete filter;
