@@ -52,7 +52,13 @@ function plot_pf (in, invar, coord)
     for i = 1:T
         % build weighted empirical cdf
         for j = 1:length(q)
-            Q(i,j) = X(i, find(Wc(i,:) < q(j))(end) + 1);
+            is = find(Wc(i,:) < q(j));
+            if length(is) > 0
+                k = is(end) + 1;
+            else
+                k = 1;
+            end
+            Q(i,j) = X(i,k);
         end
     end
     
