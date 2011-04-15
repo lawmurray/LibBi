@@ -1,16 +1,16 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev$
-% $Date$
+% $Rev: 1390 $
+% $Date: 2011-04-11 16:06:40 +0800 (Mon, 11 Apr 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_simulate (@var{in}, @var{invars}, @var{coord})
+% @deftypefn {Function File} plot_pf (@var{in}, @var{invars}, @var{coord})
 %
-% Plot output of the simulate program.
+% Plot output of the pf program.
 %
 % @itemize
 % @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
-% simulate.}
+% pf.}
 %
 % @bullet{ @var{invar} Name of variable from input file to plot.
 %
@@ -20,7 +20,7 @@
 % @end itemize
 % @end deftypefn
 %
-function plot_simulate (in, invar, coord)
+function plot_pf (in, invar, coord)
     % check arguments
     if nargin < 2 || nargin > 3
         print_usage ();
@@ -38,15 +38,29 @@ function plot_simulate (in, invar, coord)
     t = nci{'time'}(:)'; % times
     q = [0.025 0.5 0.975]'; % quantiles (median and 95%)
     P = nci('np')(:);
+    T = nci('nr')(:);
 
     X = read_var (nci, invar, [1:P], coord);
-    Q = quantile (X, q, 2);
+    Ws = exp(nci{'logweight'}(:,:));
+    Q = zeros (rows (X), length(q));
+    
+    [X I] = sort (X, 2);
+    Ws = Ws(I);
+    Wt = sum(Ws, 2);
+    Wc = cumsum(Ws, 2) ./ repmat(Wt, 1, P);
+   
+    for i = 1:T
+        % build weighted empirical cdf
+        for j = 1:length(q)
+            Q(i,j) = X(i, find(Wc(i,:) < q(j))(end) + 1);
+        end
+    end
     
     % plot
     ish = ishold;
-    area_between(t, Q(:,1), Q(:,3), watercolour(1, 0.5));
+    area_between(t, Q(:,1), Q(:,3), watercolour(2, 0.5));
     hold on
-    plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(1));
+    plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(2));
     if ish
         hold on
     else
