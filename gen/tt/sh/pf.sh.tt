@@ -38,4 +38,4 @@ fi
 OBS_FILE=$DATA_DIR/$OBS_FILENAME
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/pf -P $P -T $T -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --resampler=$RESAMPLER -L $L --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME
+$ROOT/build/pf -P $P -T $T -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --resampler=$RESAMPLER -L $L --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --include-parameters=$INCLUDE_PARAMETERS

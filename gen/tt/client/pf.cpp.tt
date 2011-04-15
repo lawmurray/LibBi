@@ -17,6 +17,7 @@
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/method/MultinomialResampler.hpp"
 #include "bi/method/MetropolisResampler.hpp"
+#include "bi/method/KernelResampler.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -190,17 +191,16 @@ int main(int argc, char* argv[]) {
     out = NULL;
   }
 
-  /* set filter */
-  //ExactStratifiedResampler resam(rng);
-  StratifiedResampler resam(rng);
-
   /* do filter */
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
+    StratifiedResampler base(rng);
+    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, 1.0);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m, rng, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam);
     delete filter;
   } else {
+    StratifiedResampler resam(rng);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_SHARED>::create(m, rng, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam);
     delete filter;
