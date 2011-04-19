@@ -180,22 +180,23 @@ template<int XN, int YN, int ZN>
   
   [%-FOREACH Type IN PriorTypes-%]
   [%-FOREACH Node = GetNodesWithTrait.execute("IS_${Type}_NODE")-%]
+  [%-Position = loop.index-%]
   [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_UNIFORM_PRIOR') %]
-  UniformPdf<> [% Type | lower %][% loop.index %](node[% Node.Name %].lower0(), node[% Node.Name %].upper0());
-  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
-    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
+  UniformPdf<> [% Type | lower %][% Position %](node[% Node.Name %].lower0(), node[% Node.Name %].upper0());
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% loop.index %]);
   }
   [% END-%]
   [%-FOREACH CheckTraits2.execute(Node.Name, 'HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR') %]
-  ExpGaussianPdf<> [% Type | lower %][% Node.Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0());
-  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
-    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
+  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0());
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% loop.index %]);
   }
   [% END-%]
   [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_LOG_NORMAL_PRIOR') %]
-  ExpGaussianPdf<> [% Type | lower %][% loop.index %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0(), true);
-  for (i = 0; i < getNodeSize([% Type %]_NODE, [% loop.index %]); ++i) {
-    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% loop.index %]) + i, [% Type | lower %][% loop.index %]);
+  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0(), true);
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% loop.index %]);
   }
   [% END-%]
   [%-END-%]

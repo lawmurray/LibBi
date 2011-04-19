@@ -302,27 +302,11 @@ End
 
 # Artifacts
 my $models = join(' ', @models);
-
-print "\$(BUILDDIR)/simulate: \$(BUILDDIR)/simulate.\$(EXT).o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/pf: \$(BUILDDIR)/pf.\$(EXT).o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/ukf: \$(BUILDDIR)/ukf.\$(EXT).o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/urts: \$(BUILDDIR)/urts.\$(EXT).o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/mcmc: \$(BUILDDIR)/mcmc.\$(EXT).o \$(BUILDDIR)/device.cu.o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/likelihood: \$(BUILDDIR)/likelihood.\$(EXT).o \$(BUILDDIR)/device.cu.o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
-
-print "\$(BUILDDIR)/predict: \$(BUILDDIR)/predict.\$(EXT).o $models\n";
-print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
+my $artifact;
+foreach $artifact ('simulate', 'predict', 'pf', 'kfb', 'ukf', 'urts', 'mcmc', 'likelihood') {
+  print "\$(BUILDDIR)/$artifact: \$(BUILDDIR)/$artifact.\$(EXT).o \$(BUILDDIR)/device.cu.o $models\n";
+  print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
+}
 
 # Targets
 print join("\n", @commands);
