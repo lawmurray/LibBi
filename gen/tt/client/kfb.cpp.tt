@@ -50,9 +50,8 @@ int main(int argc, char* argv[]) {
     TIME_ARG,
     INCLUDE_PARAMETERS_ARG
   };
-  real H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
+  real H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3, B = 0.0;
   int FORCE_NS = 0, SEED = 0;
-  real B;
   std::string INPUT_FILE, FORCE_FILE, OUTPUT_FILE;
   bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
   int c, option_index;
@@ -155,6 +154,9 @@ int main(int argc, char* argv[]) {
   }
 
   /* smooth */
+  if (B == 0) {
+    B = hopt(N, P);
+  }
   FastGaussianKernel K(N, B);
   MedianPartitioner partitioner;
   StratifiedResampler resam(rng);

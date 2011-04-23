@@ -1,0 +1,34 @@
+#!/bin/sh
+#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -j oe
+
+##
+## System config
+##
+if [[ "`hostname`" == gpu* ]]
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    NAME=kfb
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source $ROOT/config.sh
+export OMP_NUM_THREADS
+
+if `test "$FORCE_FILENAME" != ""`
+then
+    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
+INPUT_FILE=$RESULTS_DIR/pf${SUFFIX}.nc.$ID
+OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
+
+$ROOT/build/kfb -h $H --atoler=$ATOLER --rtoler=$RTOLER -b $B --seed=$SEED --input-file=$INPUT_FILE --force-file=$FORCE_FILE --force-ns=$FORCE_NS --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --include-parameters=$INCLUDE_PARAMETERS

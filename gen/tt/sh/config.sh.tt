@@ -50,6 +50,12 @@ L=0                   # number of steps for Metropolis resampler
 MIN_ESS=1.0           # minimum ESS to trigger resampling
 
 ##
+## Kernel smoother settings
+##
+
+B=0 # kernel bandwidth (0 for default)
+
+##
 ## Unscented filter and smoother settings
 ##
 
