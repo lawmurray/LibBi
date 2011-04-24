@@ -70,8 +70,8 @@ __END__
 
 =head1 NAME
 
-sql2client -- C++ code generator from SQLite model specification for bi client
-programs.
+sql2sh -- Shell script code generator from SQLite model specification for bi
+client programs.
 
 =head1 SYNOPSIS
 
@@ -104,7 +104,7 @@ Specify directory containing templates.
 
 =head1 DESCRIPTION
 
-Reads an SQLite database model specification and generates C++ code
-implementing the model for the bi library.
+Reads an SQLite database model specification and generates shell scripts for
+executing client programs.
 
 =cut

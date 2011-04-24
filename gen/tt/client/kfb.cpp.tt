@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
       {"time", required_argument, 0, TIME_ARG },
-      {"estimate-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
+      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
   };
   const char* short_options = "b:h:";
 

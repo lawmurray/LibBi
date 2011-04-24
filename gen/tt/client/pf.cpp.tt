@@ -9,6 +9,7 @@
 
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/ode.hpp"
+#include "bi/kd/kde.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
