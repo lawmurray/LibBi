@@ -170,11 +170,11 @@ int main(int argc, char* argv[]) {
   if (INCLUDE_PARAMETERS) {
     StratifiedResampler base(rng);
     KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B, P);
-    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_OWN>::create(m, rng, DELTA, K, partitioner, inForce, out)));
+    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_OWN>::create(m, rng, K, partitioner, DELTA, inForce, out)));
     smoother->smooth(theta, s, &in, &resam);
     delete smoother;
   } else {
-    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(m, rng, DELTA, K, partitioner, inForce, out)));
+    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(m, rng, K, partitioner, DELTA, inForce, out)));
     smoother->smooth(theta, s, &in, &resam);
     delete smoother;
   }

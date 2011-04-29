@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
     TIME_ARG,
     INCLUDE_PARAMETERS_ARG
   };
-  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
+  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3, B = 0.0;
   int P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE, RESAMPLER = std::string("stratified");
   bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
       {"time", required_argument, 0, TIME_ARG },
       {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
   };
-  const char* short_options = "T:h:P:L:";
+  const char* short_options = "T:b:h:P:L:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
@@ -139,6 +139,9 @@ int main(int argc, char* argv[]) {
     case 'h':
       H = atof(optarg);
       break;
+    case 'b':
+      B = atof(optarg);
+      break;
     case 'P':
       P = atoi(optarg);
       break;
@@ -174,17 +177,20 @@ int main(int argc, char* argv[]) {
   if (!FORCE_FILE.empty()) {
     inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
   }
+  
+  /* initialise from prior */
+  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+  if (INCLUDE_PARAMETERS) {
+    m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));      
+  }
+
+  /* overwrite with init file if given */
   if (!INIT_FILE.empty()) {
     inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
     inInit->read0(P_NODE, theta.get(P_NODE));
     inInit->read0(D_NODE, s.get(D_NODE));
     inInit->read0(C_NODE, s.get(C_NODE));
-  } else {
-    m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
-    m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
-    if (INCLUDE_PARAMETERS) {
-      m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));      
-    }
   }
 
   /* output */
@@ -200,8 +206,11 @@ int main(int argc, char* argv[]) {
   /* do filter */
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
+    if (B == 0) {
+      B = hopt(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(P_NODE), P);
+    }
     StratifiedResampler base(rng);
-    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, hopt(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(P_NODE), P));
+    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m, rng, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam);
     delete filter;
