@@ -55,17 +55,25 @@ The following macros may be defined during compilation to adjust behaviour:
 * RELEASE=1 builds in release mode.
 * PROFILE=1 builds in profile mode.
 * NDEBUG=1 will disable assertion checking.
+
+* USE_CPU=1 will use CPU code, otherwise GPU code is used where possible.
+* USE_SSE=1 will use SSE extensions for some host code.
 * USE_DOUBLE=1 will use double precision arithmetic on the GPU, otherwise
   single precision is used.
-* USE_FAST_MATH=1 will use intrinsic CUDA functions throughout, as long as
-  USE_DOUBLE is not defined (intrinsics are available only for single
+* USE_FAST_MATH=1 will use intrinsic CUDA math functions for device code, as
+  long as USE_DOUBLE is not defined (intrinsics are available only for single
   precision).
-* USE_TEXTURE=1 will use textures for some variables which may or may not,
-  improve performance.
-* USE_CPU=1 will use CPU code, otherwise GPU code is used where possible.
-* USE_SSE=1, combined with USE_CPU=1, will use SSE extensions for some CPU
-  replacement code.
+* USE_TEXTURE=1 will use textures for some device code, as long as USE_DOUBLE
+  is not defined (textures support single precision only).
 * USE_INTEL=1 uses icpc instead of gcc for compilation.
+* USE_ODE=rk43|dopri5|rk4 sets the numerical integrator to use for ODE
+  integration: low-storage adaptive RK4(3)5[2R+]C, adaptive DOPRI5(4) or
+  classic fourth-order Runge-Kutta, respectively, with the first being the
+  default.
+
+* X_LEN=val sets the length of the x-dimension.
+* Y_LEN=val sets the length of the y-dimension.
+* Z_LEN=val sets the length of the z-dimension.
 
 For example, a typical production build of GPU code, in double precision,
 would use:
@@ -79,6 +87,11 @@ make USE_CONFIG=1 -j
 Usage of config.mk is recommended. The procedure described below will copy
 this file across to be used for compilation of model-specific generated code
 also, ensuring compatibility between client code and library.
+
+Note that USE_SSE=1 and USE_TEXTURE=1 will not necessarily improve, and may
+degrade, performance, depending on the model. USE_FAST_MATH=1 will certainly
+improve performance of device code, but may significantly degrade floating
+point accuracy.
 
 
 Usage
