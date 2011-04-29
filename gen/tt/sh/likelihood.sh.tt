@@ -48,7 +48,7 @@ cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
 cat config.sh
 
 # run
-$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C -A $A -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$LOCAL_DIR/$FILTER_FILENAME --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME
+$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C -A $A --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$LOCAL_DIR/$FILTER_FILENAME --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME
 
 # copy results from local to network file system
 cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.

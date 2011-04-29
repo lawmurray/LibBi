@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
   
   /* command line arguments */
   enum {
+    DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
     INIT_NS_ARG,
@@ -47,13 +48,14 @@ int main(int argc, char* argv[]) {
     TIME_ARG,
     INCLUDE_PARAMETERS_ARG
   };
-  real T = 0.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
+  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
   int P = 0, K = 0, INIT_NS = 0, FORCE_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OUTPUT_FILE;
   bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
   int c, option_index;
 
   option long_options[] = {
+      {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
@@ -71,6 +73,9 @@ int main(int argc, char* argv[]) {
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
     switch(c) {
+    case DELTA_ARG:
+      DELTA = atof(optarg);
+      break;
     case ATOLER_ARG:
       ATOLER = atof(optarg);
       break;
@@ -170,11 +175,11 @@ int main(int argc, char* argv[]) {
   RUpdater<model_type> rUpdater(rng);
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
-    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m, &rUpdater, inForce, out)));
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m, DELTA, &rUpdater, inForce, out)));
     sim->simulate(T, theta, s);
     delete sim;
   } else {
-    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_SHARED>::create(m, &rUpdater, inForce, out)));
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_SHARED>::create(m, DELTA, &rUpdater, inForce, out)));
     sim->simulate(T, theta, s);
     delete sim;
   }

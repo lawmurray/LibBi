@@ -37,4 +37,4 @@ fi
 
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/simulate -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME --include-parameters $INCLUDE_PARAMETERS
+$ROOT/build/simulate --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME --include-parameters $INCLUDE_PARAMETERS
