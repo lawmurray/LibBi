@@ -38,9 +38,13 @@
 using namespace bi;
 
 int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+  
   /* command line arguments */
   enum {
     ID_ARG,
+    DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
     SCALE_ARG,
@@ -57,7 +61,7 @@ int main(int argc, char* argv[]) {
     PROPOSAL_FILE_ARG,
     RESAMPLER_ARG
   };
-  real T = 0.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
+  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
       SCALE = 0.01, SD = 0.0;
   int ID = 0, P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 100, A = 1000;
@@ -67,6 +71,7 @@ int main(int argc, char* argv[]) {
 
   option long_options[] = {
       {"id", required_argument, 0, ID_ARG },
+      {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
       {"sd", required_argument, 0, SD_ARG },
@@ -90,6 +95,9 @@ int main(int argc, char* argv[]) {
     switch(c) {
     case ID_ARG:
       ID = atoi(optarg);
+      break;
+    case DELTA_ARG:
+      DELTA = atof(optarg);
       break;
     case ATOLER_ARG:
       ATOLER = atof(optarg);
@@ -176,7 +184,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* model */
-  [% ClassName %]<> m;
+  model_type m;
   const int NP = m.getNetSize(P_NODE);
   const int ND = m.getNetSize(D_NODE);
   const int NC = m.getNetSize(C_NODE);
@@ -204,53 +212,53 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   StratifiedResampler resam(rng);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, inForce, &inObs, &outFilter));
+  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA, inForce, &inObs, &outFilter));
 
   /* sampler */
   BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out, INITIAL_CONDITIONED));
   
+  /* prior */
+  BOOST_AUTO(p0, mcmc->getPrior());
+
+  /* starting distribution */
+  ExpGaussianPdf<> p1(p0.size());
+  p1.addLogs(m.getLogs(D_NODE), 0);
+  p1.addLogs(m.getLogs(C_NODE), ND);
+  p1.addLogs(m.getLogs(P_NODE), ND + NC);
+  
   /* proposal */
-  BOOST_AUTO(p0, mcmc->getPrior()); // prior
   AdditiveExpGaussianPdf<> q(p0.size());
-  host_vector<real> x(p0.size());
+  q.addLogs(m.getLogs(D_NODE), 0);
+  q.addLogs(m.getLogs(C_NODE), ND);
+  q.addLogs(m.getLogs(P_NODE), ND + NC);
+
+  host_vector<real> x(p0.size()); // initial state of chain
   
   if (!PROPOSAL_FILE.empty()) {
-    /* construct from online posterior */
-    ExpGaussianPdf<> p1(p0.size()); // online posterior
+    /* use online posterior for starting distribution */
     UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE,
         NetCDFBuffer::READ_ONLY, STATIC_OWN);   
-    inProposal.readSmoothState(0, p1.mean(), p1.cov());
-    p1.addLogs(m.getPrior(D_NODE).getLogs(), 0);
-    p1.addLogs(m.getPrior(C_NODE).getLogs(), ND);
-    p1.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+    inProposal.readSmoothState(0, p1.mean(), p1.cov());    
     p1.init();
-    
-    /* initialise chain */
-    p1.sample(rng, x);
-    
+        
     /* initialise proposal */
     q.cov() = p1.cov();
-    q.addLogs(m.getPrior(D_NODE).getLogs(), 0);
-    q.addLogs(m.getPrior(C_NODE).getLogs(), ND);
-    q.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
     matrix_scal(SD, q.cov());
   } else {
-    /* construct from scaled prior */
-    /* initialise chain */
-    p0.sample(rng, x);
+    /* use prior for starting distribution */
+    ///@todo Don't assume prior is Gaussian in initialising
+    mean(p0, p1.mean());
+    cov(p0, p1.cov());
 
     /* initialise proposal */
-    subrange(q.cov(), 0, ND, 0, ND) = subrange(m.getPrior(D_NODE).cov(), 0, ND, 0, ND);
-    subrange(q.cov(), ND, NC, ND, NC) = subrange(m.getPrior(C_NODE).cov(), ND, NC, ND, NC);
-    subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(m.getPrior(P_NODE).cov(), ND + NC, NP, ND + NC, NP);
-    q.addLogs(m.getPrior(D_NODE).getLogs(), 0);
-    q.addLogs(m.getPrior(C_NODE).getLogs(), ND);
-    q.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+    cov(p0, q.cov());
     matrix_scal(SCALE, q.cov());
   }
+  p1.init();
   q.init();
   
   /* sample */
+  p1.sample(rng, x);
   mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD, A);
 
   /* wrap up */

@@ -28,7 +28,7 @@
 
 #include "bi/model/BayesNet.hpp"
 #include "bi/model/model.hpp"
-#include "bi/typelist/TypeList.hpp"
+#include "bi/typelist/macro_typelist.hpp"
 #include "bi/pdf/FactoredPdf.hpp"
 #include "bi/pdf/ExpGaussianPdf.hpp"
 #include "bi/pdf/UniformPdf.hpp"
@@ -106,7 +106,7 @@ public:
   /**
    * Type list for factored prior over [% Type | lower %]-net.
    */
-  typedef typename [% ClassName %]PriorType<bi::[% Type %]_NODE>::type [% Type %]PriorTypeList;
+  typedef typename [% ClassName %]PriorType<bi::[% Type %]_NODE>::type [% Type %]PriorType;
   [% END-%]
   
   [%-FOREACH Dim IN [ 'X', 'Y', 'Z' ] %]

@@ -44,9 +44,13 @@
 using namespace bi;
 
 int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+  
   /* command line arguments */
   enum {
     ID_ARG,
+    DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
     SCALE_ARG,
@@ -63,7 +67,7 @@ int main(int argc, char* argv[]) {
     PROPOSAL_FILE_ARG,
     RESAMPLER_ARG
   };
-  real T = 0.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
+  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
   int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 1000, M = 10;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
@@ -72,6 +76,7 @@ int main(int argc, char* argv[]) {
 
   option long_options[] = {
       {"id", required_argument, 0, ID_ARG },
+      {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
@@ -93,6 +98,9 @@ int main(int argc, char* argv[]) {
     switch(c) {
     case ID_ARG:
       ID = atoi(optarg);
+      break;
+    case DELTA_ARG:
+      DELTA = atof(optarg);
       break;
     case ATOLER_ARG:
       ATOLER = atof(optarg);
@@ -170,7 +178,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* model */
-  [% ClassName %]<> m;
+  model_type m;
   const int ND = m.getNetSize(D_NODE);
   const int NC = m.getNetSize(C_NODE);
   const int NP = m.getNetSize(P_NODE);
@@ -186,13 +194,13 @@ int main(int argc, char* argv[]) {
   UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE, NetCDFBuffer::READ_ONLY, STATIC_OWN);
   const int Y = inObs.countUniqueTimes(T);
   ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  AuxiliaryParticleFilterNetCDFBuffer tmp(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+  ParticleFilterNetCDFBuffer tmp(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
   /* set up resampler, filter and MCMC */
   StratifiedResampler resam(rng);
   //MultinomialResampler resam(rng);
   //MetropolisResampler resam(rng, 5);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, &inForce, &inObs, &tmp));
+  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA, &inForce, &inObs, &tmp));
   BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out, INITIAL_CONDITIONED));
 
   /* initialise state */
@@ -202,9 +210,9 @@ int main(int argc, char* argv[]) {
 
   inProposal.readSmoothState(0, q.mean(), q.cov());
 
-  q.addLogs(m.getPrior(D_NODE).getLogs(), 0);
-  q.addLogs(m.getPrior(C_NODE).getLogs(), ND);
-  q.addLogs(m.getPrior(P_NODE).getLogs(), ND + NC);
+  q.addLogs(m.getLogs(D_NODE), 0);
+  q.addLogs(m.getLogs(C_NODE), ND);
+  q.addLogs(m.getLogs(P_NODE), ND + NC);
   q.init();
 
   //p0.sample(rng, x);
