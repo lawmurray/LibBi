@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_obs (@var{in}, @var{invars})
+% @deftypefn {Function File} plot_obs (@var{in}, @var{invars}, @var{coord}, @var{ns})
 %
 % Plot observations.
 %
