@@ -10,6 +10,7 @@
 [%-GetParentsWithTrait = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset, Parent.Position FROM Parent, Node, NodeTrait WHERE NodeTrait.Trait = ? AND NodeTrait.Node = Parent.ParentNode AND Parent.ChildNode = Node.Name ORDER BY Node.Position, Parent.Position")-%]
 [%-GetEdges = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset FROM Node, Parent WHERE Node.Category <> 'Intermediate result' AND Node.Category <> 'Constant' AND Parent.ParentNode = Node.Name ORDER BY Parent.Position")-%]
 [%-CheckTrait = DBI.prepare('SELECT 1 FROM NodeTrait WHERE Node = ? AND Trait = ?')-%]
+[%-CheckTraits2 = DBI.prepare('SELECT 1 FROM NodeTrait WHERE Node = ? AND Trait IN (?,?)')-%]
 [%-CheckTraits3 = DBI.prepare('SELECT DISTINCT 1 FROM NodeTrait WHERE Node = ? AND Trait IN (?,?,?)')-%]
 
 /**
@@ -188,13 +189,13 @@ template<int XN, int YN, int ZN>
   }
   [% END-%]
   [%-FOREACH CheckTraits2.execute(Node.Name, 'HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR') %]
-  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0());
+  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), std::pow(node[% Node.Name %].sigma0(), 2));
   for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
     getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% Position %]);
   }
   [% END-%]
   [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_LOG_NORMAL_PRIOR') %]
-  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), node[% Node.Name %].sigma0(), true);
+  ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), std::pow(node[% Node.Name %].sigma0(), 2), true);
   for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
     getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% Position %]);
   }
