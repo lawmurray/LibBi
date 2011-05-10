@@ -4,7 +4,7 @@
 % $Date: 2011-04-11 16:06:40 +0800 (Mon, 11 Apr 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_pf (@var{in}, @var{invars}, @var{coord})
+% @deftypefn {Function File} plot_pf (@var{in}, @var{invar}, @var{coord})
 %
 % Plot output of the pf program.
 %
@@ -64,6 +64,9 @@ function plot_pf (in, invar, coord)
     
     % plot
     ish = ishold;
+    if !ish
+        clf % patch doesn't clear otherwise
+    end
     area_between(t, Q(:,1), Q(:,3), watercolour(2, 0.5));
     hold on
     plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(2));
