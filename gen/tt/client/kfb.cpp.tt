@@ -5,7 +5,7 @@
  * $Rev: 1251 $
  * $Date: 2011-01-31 18:40:46 +0800 (Mon, 31 Jan 2011) $
  */
-#include "model/[% Name %]Model.hpp"
+#include "model/[% ClassName %].hpp"
 
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/ode.hpp"
@@ -75,43 +75,45 @@ int main(int argc, char* argv[]) {
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
-    switch(c) {
-    case DELTA_ARG:
-      DELTA = atof(optarg);
-      break;
-    case ATOLER_ARG:
-      ATOLER = atof(optarg);
-      break;
-    case RTOLER_ARG:
-      RTOLER = atof(optarg);
-      break;
-    case FORCE_NS_ARG:
-      FORCE_NS = atoi(optarg);
-      break;
-    case SEED_ARG:
-      SEED = atoi(optarg);
-      break;
-    case INPUT_FILE_ARG:
-      INPUT_FILE = std::string(optarg);
-      break;
-    case OUTPUT_FILE_ARG:
-      OUTPUT_FILE = std::string(optarg);
-      break;
-    case OUTPUT_ARG:
-      OUTPUT = atoi(optarg);
-      break;
-    case TIME_ARG:
-      TIME = atoi(optarg);
-      break;
-    case INCLUDE_PARAMETERS_ARG:
-      INCLUDE_PARAMETERS = atoi(optarg);
-      break;
-    case 'h':
-      H = atof(optarg);
-      break;
-    case 'b':
-      B = atof(optarg);
-      break;
+    if (optarg) {
+      switch (c) {
+      case DELTA_ARG:
+        DELTA = atof(optarg);
+        break;
+      case ATOLER_ARG:
+        ATOLER = atof(optarg);
+        break;
+      case RTOLER_ARG:
+        RTOLER = atof(optarg);
+        break;
+      case FORCE_NS_ARG:
+        FORCE_NS = atoi(optarg);
+        break;
+      case SEED_ARG:
+        SEED = atoi(optarg);
+        break;
+      case INPUT_FILE_ARG:
+        INPUT_FILE = std::string(optarg);
+        break;
+      case OUTPUT_FILE_ARG:
+        OUTPUT_FILE = std::string(optarg);
+        break;
+      case OUTPUT_ARG:
+        OUTPUT = atoi(optarg);
+        break;
+      case TIME_ARG:
+        TIME = atoi(optarg);
+        break;
+      case INCLUDE_PARAMETERS_ARG:
+        INCLUDE_PARAMETERS = atoi(optarg);
+        break;
+      case 'h':
+        H = atof(optarg);
+        break;
+      case 'b':
+        B = atof(optarg);
+        break;
+      }
     }
   } while (c != -1);
 
@@ -170,11 +172,13 @@ int main(int argc, char* argv[]) {
   if (INCLUDE_PARAMETERS) {
     StratifiedResampler base(rng);
     KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B, P);
-    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_OWN>::create(m, rng, K, partitioner, DELTA, inForce, out)));
+    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_OWN>::create(
+        m, rng, K, partitioner, DELTA, inForce, out)));
     smoother->smooth(theta, s, &in, &resam);
     delete smoother;
   } else {
-    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(m, rng, K, partitioner, DELTA, inForce, out)));
+    BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(
+        m, rng, K, partitioner, DELTA, inForce, out)));
     smoother->smooth(theta, s, &in, &resam);
     delete smoother;
   }
@@ -184,6 +188,7 @@ int main(int argc, char* argv[]) {
     std::cout << timer.toc() << std::endl;
   }
 
+  delete inForce;
   delete out;
 
   return 0;

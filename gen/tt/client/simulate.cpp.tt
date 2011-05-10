@@ -72,55 +72,57 @@ int main(int argc, char* argv[]) {
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
-    switch(c) {
-    case DELTA_ARG:
-      DELTA = atof(optarg);
-      break;
-    case ATOLER_ARG:
-      ATOLER = atof(optarg);
-      break;
-    case RTOLER_ARG:
-      RTOLER = atof(optarg);
-      break;
-    case INIT_NS_ARG:
-      INIT_NS = atoi(optarg);
-      break;
-    case FORCE_NS_ARG:
-      FORCE_NS = atoi(optarg);
-      break;
-    case SEED_ARG:
-      SEED = atoi(optarg);
-      break;
-    case INIT_FILE_ARG:
-      INIT_FILE = std::string(optarg);
-      break;
-    case FORCE_FILE_ARG:
-      FORCE_FILE = std::string(optarg);
-      break;
-    case OUTPUT_FILE_ARG:
-      OUTPUT_FILE = std::string(optarg);
-      break;
-    case OUTPUT_ARG:
-      OUTPUT = atoi(optarg);
-      break;
-    case TIME_ARG:
-      TIME = atoi(optarg);
-      break;
-    case INCLUDE_PARAMETERS_ARG:
-      INCLUDE_PARAMETERS = atoi(optarg);
-      break;
-    case 'T':
-      T = atof(optarg);
-      break;
-    case 'P':
-      P = atoi(optarg);
-      break;
-    case 'K':
-      K = atoi(optarg);
-      break;
-    case 'h':
-      H = atof(optarg);
-      break;
+    if (optarg) {
+      switch (c) {
+      case DELTA_ARG:
+        DELTA = atof(optarg);
+        break;
+      case ATOLER_ARG:
+        ATOLER = atof(optarg);
+        break;
+      case RTOLER_ARG:
+        RTOLER = atof(optarg);
+        break;
+      case INIT_NS_ARG:
+        INIT_NS = atoi(optarg);
+        break;
+      case FORCE_NS_ARG:
+        FORCE_NS = atoi(optarg);
+        break;
+      case SEED_ARG:
+        SEED = atoi(optarg);
+        break;
+      case INIT_FILE_ARG:
+        INIT_FILE = std::string(optarg);
+        break;
+      case FORCE_FILE_ARG:
+        FORCE_FILE = std::string(optarg);
+        break;
+      case OUTPUT_FILE_ARG:
+        OUTPUT_FILE = std::string(optarg);
+        break;
+      case OUTPUT_ARG:
+        OUTPUT = atoi(optarg);
+        break;
+      case TIME_ARG:
+        TIME = atoi(optarg);
+        break;
+      case INCLUDE_PARAMETERS_ARG:
+        INCLUDE_PARAMETERS = atoi(optarg);
+        break;
+      case 'T':
+        T = atof(optarg);
+        break;
+      case 'P':
+        P = atoi(optarg);
+        break;
+      case 'K':
+        K = atoi(optarg);
+        break;
+      case 'h':
+        H = atof(optarg);
+        break;
+      }
     }
   } while (c != -1);
 
@@ -175,11 +177,13 @@ int main(int argc, char* argv[]) {
   RUpdater<model_type> rUpdater(rng);
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
-    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m, DELTA, &rUpdater, inForce, out)));
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_OWN>::create(m,
+        DELTA, &rUpdater, inForce, out)));
     sim->simulate(T, theta, s);
     delete sim;
   } else {
-    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_SHARED>::create(m, DELTA, &rUpdater, inForce, out)));
+    BOOST_AUTO(sim, (SimulatorFactory<LOCATION,STATIC_SHARED>::create(m,
+        DELTA, &rUpdater, inForce, out)));
     sim->simulate(T, theta, s);
     delete sim;
   }
@@ -193,5 +197,6 @@ int main(int argc, char* argv[]) {
   delete out;
   delete inForce;
   delete inInit;
+
   return 0;
 }

@@ -16,14 +16,8 @@
 #include "bi/pdf/ExpGaussianMixturePdf.hpp"
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
-#include "bi/method/AuxiliaryParticleFilter.hpp"
-#include "bi/method/DisturbanceParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
-#include "bi/method/MultinomialResampler.hpp"
-#include "bi/method/MetropolisResampler.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-#include "bi/buffer/AuxiliaryParticleFilterNetCDFBuffer.hpp"
-#include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
@@ -95,69 +89,69 @@ int main(int argc, char* argv[]) {
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
-    switch(c) {
-    case ID_ARG:
-      ID = atoi(optarg);
-      break;
-    case DELTA_ARG:
-      DELTA = atof(optarg);
-      break;
-    case ATOLER_ARG:
-      ATOLER = atof(optarg);
-      break;
-    case RTOLER_ARG:
-      RTOLER = atof(optarg);
-      break;
-    case INIT_NS_ARG:
-      INIT_NS = atoi(optarg);
-      break;
-    case FORCE_NS_ARG:
-      FORCE_NS = atoi(optarg);
-      break;
-    case OBS_NS_ARG:
-      OBS_NS = atoi(optarg);
-      break;
-    case SEED_ARG:
-      SEED = atoi(optarg);
-      break;
-    case INIT_FILE_ARG:
-      if (optarg) {
+    if (optarg) {
+      switch (c) {
+      case ID_ARG:
+        ID = atoi(optarg);
+        break;
+      case DELTA_ARG:
+        DELTA = atof(optarg);
+        break;
+      case ATOLER_ARG:
+        ATOLER = atof(optarg);
+        break;
+      case RTOLER_ARG:
+        RTOLER = atof(optarg);
+        break;
+      case INIT_NS_ARG:
+        INIT_NS = atoi(optarg);
+        break;
+      case FORCE_NS_ARG:
+        FORCE_NS = atoi(optarg);
+        break;
+      case OBS_NS_ARG:
+        OBS_NS = atoi(optarg);
+        break;
+      case SEED_ARG:
+        SEED = atoi(optarg);
+        break;
+      case INIT_FILE_ARG:
         INIT_FILE = std::string(optarg);
+        break;
+      case FORCE_FILE_ARG:
+        FORCE_FILE = std::string(optarg);
+        break;
+      case OBS_FILE_ARG:
+        OBS_FILE = std::string(optarg);
+        break;
+      case OUTPUT_FILE_ARG:
+        OUTPUT_FILE = std::string(optarg);
+        break;
+      case FILTER_FILE_ARG:
+        FILTER_FILE = std::string(optarg);
+        break;
+      case PROPOSAL_FILE_ARG:
+        PROPOSAL_FILE = std::string(optarg);
+        break;
+      case RESAMPLER_ARG:
+        RESAMPLER = std::string(optarg);
+        break;
+      case 'T':
+        T = atof(optarg);
+        break;
+      case 'h':
+        H = atof(optarg);
+        break;
+      case 'P':
+        P = atoi(optarg);
+        break;
+      case 'C':
+        C = atoi(optarg);
+        break;
+      case 'M':
+        M = atoi(optarg);
+        break;
       }
-      break;
-    case FORCE_FILE_ARG:
-      FORCE_FILE = std::string(optarg);
-      break;
-    case OBS_FILE_ARG:
-      OBS_FILE = std::string(optarg);
-      break;
-    case OUTPUT_FILE_ARG:
-      OUTPUT_FILE = std::string(optarg);
-      break;
-    case FILTER_FILE_ARG:
-      FILTER_FILE = std::string(optarg);
-      break;
-    case PROPOSAL_FILE_ARG:
-      PROPOSAL_FILE = std::string(optarg);
-      break;
-    case RESAMPLER_ARG:
-      RESAMPLER = std::string(optarg);
-      break;
-    case 'T':
-      T = atof(optarg);
-      break;
-    case 'h':
-      H = atof(optarg);
-      break;
-    case 'P':
-      P = atoi(optarg);
-      break;
-    case 'C':
-      C = atoi(optarg);
-      break;
-    case 'M':
-      M = atoi(optarg);
-      break;
     }
   } while (c != -1);
 
@@ -188,44 +182,57 @@ int main(int argc, char* argv[]) {
   State<LOCATION> s(m, P);
 
   /* inputs and outputs */
-  SparseInputNetCDFBuffer inForce(m, FORCE_FILE, FORCE_NS);
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read(P_NODE, theta.get(P_NODE));
+  }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
-  SparseInputNetCDFBuffer inInit(m, INIT_FILE, INIT_NS);
-  UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE, NetCDFBuffer::READ_ONLY, STATIC_OWN);
   const int Y = inObs.countUniqueTimes(T);
   ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  ParticleFilterNetCDFBuffer tmp(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+  ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
-  /* set up resampler, filter and MCMC */
+  /* filter */
   StratifiedResampler resam(rng);
-  //MultinomialResampler resam(rng);
-  //MetropolisResampler resam(rng, 5);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA, &inForce, &inObs, &tmp));
-  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out, INITIAL_CONDITIONED));
+  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+      inForce, &inObs, &outFilter));
 
-  /* initialise state */
+  /* sampler */
+  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
+      INITIAL_CONDITIONED));
+  
+  /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
+  
+  /* proposal */
   ExpGaussianPdf<> q(p0.size());
-  host_vector<real> x(p0.size());
-
-  inProposal.readSmoothState(0, q.mean(), q.cov());
-
   q.addLogs(m.getLogs(D_NODE), 0);
   q.addLogs(m.getLogs(C_NODE), ND);
   q.addLogs(m.getLogs(P_NODE), ND + NC);
+
+  host_vector<real> x(p0.size()); // initial state of chain
+  
+  if (!PROPOSAL_FILE.empty()) {
+    /* use online posterior for starting distribution */
+    UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE,
+        NetCDFBuffer::READ_ONLY, STATIC_OWN);   
+    inProposal.readSmoothState(0, q.mean(), q.cov());    
+    q.init();
+  } else {
+    /* use prior for starting distribution */
+    mean(p0, q.mean());
+    cov(p0, q.cov());
+  }
   q.init();
 
-  //p0.sample(rng, x);
+  /* sample */
   q.sample(rng, x);
-
-//  inInit.read(D_NODE, vector_as_row_matrix(subrange(x, 0, ND)));
-//  inInit.read(C_NODE, vector_as_row_matrix(subrange(x, ND, NC)));
-//  inInit.read(P_NODE, vector_as_row_matrix(subrange(x, ND + NC, NP)));
-
   mcmc->init(x, T, theta, s, filter, &resam);
   for (c = 0; c < C; ++c) {
     if ((c % M) == 0) {
-      //p0.sample(rng, x);
       q.sample(rng, x);
     }
     mcmc->proposal(x);
@@ -239,6 +246,8 @@ int main(int argc, char* argv[]) {
 
   delete mcmc;
   delete filter;
+  delete inForce;
+  delete inInit;
 
   return 0;
 }

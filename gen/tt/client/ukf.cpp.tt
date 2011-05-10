@@ -5,7 +5,7 @@
  * $Rev: 1294 $
  * $Date: 2011-02-22 16:42:27 +0800 (Tue, 22 Feb 2011) $
  */
-#include "model/[% Name %]Model.hpp"
+#include "model/[% ClassName %].hpp"
 
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/ode.hpp"
@@ -49,12 +49,12 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     OUTPUT_ARG,
     TIME_ARG,
-    ESTIMATE_PARAMETERS_ARG
+    INCLUDE_PARAMETERS_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
   int INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE;
-  bool OUTPUT = false, TIME = false, ESTIMATE_PARAMETERS = false;
+  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
   int c, option_index;
 
   option long_options[] = {
@@ -71,61 +71,63 @@ int main(int argc, char* argv[]) {
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
       {"time", required_argument, 0, TIME_ARG },
-      {"estimate-parameters", required_argument, 0, ESTIMATE_PARAMETERS_ARG }
+      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
   };
   const char* short_options = "T:h:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
-    switch(c) {
-    case DELTA_ARG:
-      DELTA = atof(optarg);
-      break;
-    case ATOLER_ARG:
-      ATOLER = atof(optarg);
-      break;
-    case RTOLER_ARG:
-      RTOLER = atof(optarg);
-      break;
-    case INIT_NS_ARG:
-      INIT_NS = atoi(optarg);
-      break;
-    case FORCE_NS_ARG:
-      FORCE_NS = atoi(optarg);
-      break;
-    case OBS_NS_ARG:
-      OBS_NS = atoi(optarg);
-      break;
-    case SEED_ARG:
-      SEED = atoi(optarg);
-      break;
-    case INIT_FILE_ARG:
-      INIT_FILE = std::string(optarg);
-      break;
-    case FORCE_FILE_ARG:
-      FORCE_FILE = std::string(optarg);
-      break;
-    case OBS_FILE_ARG:
-      OBS_FILE = std::string(optarg);
-      break;
-    case OUTPUT_FILE_ARG:
-      OUTPUT_FILE = std::string(optarg);
-      break;
-    case OUTPUT_ARG:
-      OUTPUT = atoi(optarg);
-      break;
-    case TIME_ARG:
-      TIME = atoi(optarg);
-      break;
-    case ESTIMATE_PARAMETERS_ARG:
-      ESTIMATE_PARAMETERS = atoi(optarg);
-      break;
-    case 'T':
-      T = atof(optarg);
-      break;
-    case 'h':
-      H = atof(optarg);
-      break;
+    if (optarg) {
+      switch (c) {
+      case DELTA_ARG:
+        DELTA = atof(optarg);
+        break;
+      case ATOLER_ARG:
+        ATOLER = atof(optarg);
+        break;
+      case RTOLER_ARG:
+        RTOLER = atof(optarg);
+        break;
+      case INIT_NS_ARG:
+        INIT_NS = atoi(optarg);
+        break;
+      case FORCE_NS_ARG:
+        FORCE_NS = atoi(optarg);
+        break;
+      case OBS_NS_ARG:
+        OBS_NS = atoi(optarg);
+        break;
+      case SEED_ARG:
+        SEED = atoi(optarg);
+        break;
+      case INIT_FILE_ARG:
+        INIT_FILE = std::string(optarg);
+        break;
+      case FORCE_FILE_ARG:
+        FORCE_FILE = std::string(optarg);
+        break;
+      case OBS_FILE_ARG:
+        OBS_FILE = std::string(optarg);
+        break;
+      case OUTPUT_FILE_ARG:
+        OUTPUT_FILE = std::string(optarg);
+        break;
+      case OUTPUT_ARG:
+        OUTPUT = atoi(optarg);
+        break;
+      case TIME_ARG:
+        TIME = atoi(optarg);
+        break;
+      case INCLUDE_PARAMETERS_ARG:
+        INCLUDE_PARAMETERS = atoi(optarg);
+        break;
+      case 'T':
+        T = atof(optarg);
+        break;
+      case 'h':
+        H = atof(optarg);
+        break;
+      }
     }
   } while (c != -1);
 
@@ -141,6 +143,9 @@ int main(int argc, char* argv[]) {
 
   /* model */
   model_type m;
+  const int ND = m.getNetSize(D_NODE);
+  const int NC = m.getNetSize(C_NODE);
+  const int NP = m.getNetSize(P_NODE);
 
   /* state and intermediate results */
   int P = 1;
@@ -166,21 +171,21 @@ int main(int argc, char* argv[]) {
   if (OUTPUT) {
     out = new UnscentedKalmanFilterNetCDFBuffer(m, inObs.countUniqueTimes(T),
         OUTPUT_FILE, NetCDFBuffer::REPLACE,
-        ESTIMATE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
+        INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
   } else {
     out = NULL;
   }
 
   /* filter */
   TicToc timer;
-  if (ESTIMATE_PARAMETERS) {
-    BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(m, rng,
-        DELTA, inForce, &inObs, out)));
+  if (INCLUDE_PARAMETERS) {
+    BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(
+        m, rng, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   } else {
-    BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_SHARED>::create(m, rng,
-        DELTA, inForce, &inObs, out)));
+    BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_SHARED>::create(
+        m, rng, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   }

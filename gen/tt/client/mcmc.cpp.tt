@@ -92,80 +92,78 @@ int main(int argc, char* argv[]) {
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
-    switch(c) {
-    case ID_ARG:
-      ID = atoi(optarg);
-      break;
-    case DELTA_ARG:
-      DELTA = atof(optarg);
-      break;
-    case ATOLER_ARG:
-      ATOLER = atof(optarg);
-      break;
-    case RTOLER_ARG:
-      RTOLER = atof(optarg);
-      break;
-    case SD_ARG:
-      SD = atof(optarg);
-      break;
-    case SCALE_ARG:
-      SCALE = atof(optarg);
-      break;
-    case INIT_NS_ARG:
-      INIT_NS = atoi(optarg);
-      break;
-    case FORCE_NS_ARG:
-      FORCE_NS = atoi(optarg);
-      break;
-    case OBS_NS_ARG:
-      OBS_NS = atoi(optarg);
-      break;
-    case SEED_ARG:
-      SEED = atoi(optarg);
-      break;
-    case INIT_FILE_ARG:
-      if (optarg) {
+    if (optarg) {
+      switch (c) {
+      case ID_ARG:
+        ID = atoi(optarg);
+        break;
+      case DELTA_ARG:
+        DELTA = atof(optarg);
+        break;
+      case ATOLER_ARG:
+        ATOLER = atof(optarg);
+        break;
+      case RTOLER_ARG:
+        RTOLER = atof(optarg);
+        break;
+      case SD_ARG:
+        SD = atof(optarg);
+        break;
+      case SCALE_ARG:
+        SCALE = atof(optarg);
+        break;
+      case INIT_NS_ARG:
+        INIT_NS = atoi(optarg);
+        break;
+      case FORCE_NS_ARG:
+        FORCE_NS = atoi(optarg);
+        break;
+      case OBS_NS_ARG:
+        OBS_NS = atoi(optarg);
+        break;
+      case SEED_ARG:
+        SEED = atoi(optarg);
+        break;
+      case INIT_FILE_ARG:
         INIT_FILE = std::string(optarg);
-      }
-      break;
-    case FORCE_FILE_ARG:
-      FORCE_FILE = std::string(optarg);
-      break;
-    case OBS_FILE_ARG:
-      OBS_FILE = std::string(optarg);
-      break;
-    case OUTPUT_FILE_ARG:
-      OUTPUT_FILE = std::string(optarg);
-      break;
-    case FILTER_FILE_ARG:
-      FILTER_FILE = std::string(optarg);
-      break;
-    case PROPOSAL_FILE_ARG:
-      if (optarg) {
+        break;
+      case FORCE_FILE_ARG:
+        FORCE_FILE = std::string(optarg);
+        break;
+      case OBS_FILE_ARG:
+        OBS_FILE = std::string(optarg);
+        break;
+      case OUTPUT_FILE_ARG:
+        OUTPUT_FILE = std::string(optarg);
+        break;
+      case FILTER_FILE_ARG:
+        FILTER_FILE = std::string(optarg);
+        break;
+      case PROPOSAL_FILE_ARG:
         PROPOSAL_FILE = std::string(optarg);
+        break;
+      case RESAMPLER_ARG:
+        RESAMPLER = std::string(optarg);
+        break;
+      case 'T':
+        T = atof(optarg);
+        break;
+      case 'h':
+        H = atof(optarg);
+        break;
+      case 'P':
+        P = atoi(optarg);
+        break;
+      case 'L':
+        L = atoi(optarg);
+        break;
+      case 'C':
+        C = atoi(optarg);
+        break;
+      case 'A':
+        A = atoi(optarg);
+        break;
       }
-      break;
-    case RESAMPLER_ARG:
-      RESAMPLER = std::string(optarg);
-      break;
-    case 'T':
-      T = atof(optarg);
-      break;
-    case 'h':
-      H = atof(optarg);
-      break;
-    case 'P':
-      P = atoi(optarg);
-      break;
-    case 'L':
-      L = atoi(optarg);
-      break;
-    case 'C':
-      C = atoi(optarg);
-      break;
-    case 'A':
-      A = atoi(optarg);
-      break;
     }
   } while (c != -1);
 
@@ -189,7 +187,7 @@ int main(int argc, char* argv[]) {
   const int ND = m.getNetSize(D_NODE);
   const int NC = m.getNetSize(C_NODE);
   if (SD <= 0.0) {
-    SD = 2.4*2.4/NP;
+    SD = std::pow(2.4,2)/NP;
   }
 
   /* state and intermediate results */
@@ -212,10 +210,12 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   StratifiedResampler resam(rng);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA, inForce, &inObs, &outFilter));
+  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+      inForce, &inObs, &outFilter));
 
   /* sampler */
-  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out, INITIAL_CONDITIONED));
+  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
+      INITIAL_CONDITIONED));
   
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
@@ -246,7 +246,6 @@ int main(int argc, char* argv[]) {
     matrix_scal(SD, q.cov());
   } else {
     /* use prior for starting distribution */
-    ///@todo Don't assume prior is Gaussian in initialising
     mean(p0, p1.mean());
     cov(p0, p1.cov());
 
@@ -265,10 +264,10 @@ int main(int argc, char* argv[]) {
   std::cout << mcmc->getNumAccepted() << " of " << mcmc->getNumSteps() <<
       " proposals accepted" << std::endl;
 
-  delete inForce;
-  delete inInit;
   delete mcmc;
   delete filter;
+  delete inForce;
+  delete inInit;
 
   return 0;
 }
