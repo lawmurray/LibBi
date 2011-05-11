@@ -143,17 +143,11 @@ int main(int argc, char* argv[]) {
 
   /* model */
   model_type m;
-  const int ND = m.getNetSize(D_NODE);
-  const int NC = m.getNetSize(C_NODE);
-  const int NP = m.getNetSize(P_NODE);
 
   /* state and intermediate results */
   int P = 1;
   Static<LOCATION> theta(m);
   State<LOCATION> s(m, P);
-
-  /* random number generator */
-  Random rng(SEED);
 
   /* inputs */
   SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
@@ -180,12 +174,12 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(
-        m, rng, DELTA, inForce, &inObs, out)));
+        m, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   } else {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_SHARED>::create(
-        m, rng, DELTA, inForce, &inObs, out)));
+        m, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s);
     delete filter;
   }
