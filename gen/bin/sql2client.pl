@@ -60,8 +60,17 @@ foreach $prog ('simulate', 'predict', 'pf', 'kfb', 'ukf', 'urts', 'mcmc', 'likel
     $tt->process("$prog.cu.tt", $vars, "$outdir/$prog.cu")
 	|| die $tt->error(), "\n";
 }
+
+# device selection functions
 $prog = 'device';
 $tt->process("$prog.cu.tt", $vars, "$outdir/$prog.cu")
+    || die $tt->error(), "\n";
+$tt->process("$prog.hpp.tt", $vars, "$outdir/$prog.hpp")
+    || die $tt->error(), "\n";
+    
+# distro initialisation functions
+$prog = 'distros';
+$tt->process("$prog.cpp.tt", $vars, "$outdir/$prog.cpp")
     || die $tt->error(), "\n";
 $tt->process("$prog.hpp.tt", $vars, "$outdir/$prog.hpp")
     || die $tt->error(), "\n";

@@ -1,0 +1,206 @@
+/**
+ * @file
+ *
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * $Rev: 1274 $
+ * $Date: 2011-02-18 12:29:09 +0800 (Fri, 18 Feb 2011) $
+ */
+#include "bi/pdf/AdditiveExpGaussianPdf.hpp"
+#include "bi/pdf/ExpGaussianPdf.hpp"
+
+#include <string>
+
+#include "boost/typeof/typeof.hpp"
+
+/**
+ * Initialise proposal distribution.
+ */
+template<class B>
+bi::AdditiveExpGaussianPdf<> init_proposal(const B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial);
+
+/**
+ * Initialise starting distribution.
+ */
+template<class B>
+bi::ExpGaussianPdf<> init_starting(const B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial);
+
+#include "bi/math/host_vector.hpp"
+#include "bi/math/host_matrix.hpp"
+
+template<class B>
+bi::AdditiveExpGaussianPdf<> init_proposal(const B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial) { 
+  using namespace bi;
+  
+  const int ND = m.getNetSize(D_NODE);
+  const int NC = m.getNetSize(C_NODE);
+  const int NP = m.getNetSize(P_NODE);
+  const int N = (includeInitial) ? ND + NC + NP : NP;
+  
+  AdditiveExpGaussianPdf<> q(N);
+  host_vector<real> mu(ND + NC + NP);
+  host_matrix<real> Sigma(ND + NC + NP, ND + NC + NP);
+  
+  /* log-variables */
+  if (includeInitial) {
+    q.addLogs(m.getLogs(D_NODE), 0);
+    q.addLogs(m.getLogs(C_NODE), ND);
+    q.addLogs(m.getLogs(P_NODE), ND + NC);
+  } else {
+    q.addLogs(m.getLogs(P_NODE));
+  }
+  
+  /* covariance */
+  if (type.equals("ukf")) {
+    UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    in.readState(in.size2() - 1, mu, Sigma);
+  } else if (type.equals("urts")) {
+    UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    in.readSmoothState(0, mu, Sigma);
+  } else if (type.equals("pf")) {
+    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    
+    host_matrix<real> X(in.size1(), ND + NC + NP);
+    host_vector<real> w(in.size1());
+    
+    in.readState(D_NODE, in.size2() - 1, columns(X, 0, ND));
+    in.readState(C_NODE, in.size2() - 1, columns(X, ND, NC));
+    in.readState(P_NODE, in.size2() - 1, columns(X, ND + NC, NP));
+    
+    log_columns(columns(X, 0, ND), m.getLogs(D_NODE));
+    log_columns(columns(X, ND, NC), m.getLogs(C_NODE));
+    log_columns(columns(X, ND + NC, NP), m.getLogs(P_NODE));
+
+    in.readLogWeights(in.size2() - 1, w);    
+    element_exp(w.begin(), w.end(), w.begin());
+    
+    mean(X, w, mu);
+    cov(X, w, mu, Sigma);
+  } else if (type.equals("kfb")) {
+    KernelForwardBackwardSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    
+    host_matrix<real> X(in.size1(), ND + NC + NR + NP);
+    host_vector<real> w(in.size1());
+    
+    in.readState(D_NODE, 0, columns(X, 0, ND));
+    in.readState(C_NODE, 0, columns(X, ND, NC));
+    in.readState(P_NODE, 0, columns(X, ND + NC + NR, NP));
+    
+    log_columns(columns(X, 0, ND), m.getLogs(D_NODE));
+    log_columns(columns(X, ND, NC), m.getLogs(C_NODE));
+    log_columns(columns(X, ND + NC, NP), m.getLogs(P_NODE));
+    
+    in.readLogWeights(0, w);    
+    element_exp(w.begin(), w.end(), w.begin());
+    
+    mean(X, w, mu);
+    cov(X, w, mu, Sigma);    
+  } else {
+    assert (type.equals("prior"));
+    cov(m.getPrior<D_NODE>(), subrange(Sigma, 0, ND, 0, ND));
+    cov(m.getPrior<C_NODE>(), subrange(Sigma, ND, NC, ND, NC));
+    cov(m.getPrior<P_NODE>(), subrange(Sigma, ND + NC, NP, ND + NC, NP));
+  }
+  if (includeInitial) {  
+    q.cov() = Sigma;
+  } else {
+    q.cov() = subrange(Sigma, ND + NC, NP, ND + NC, NP);
+  }
+  matrix_scal(sd, q.cov());
+  q.init();
+  
+  return q;
+}
+
+template<class B>
+bi::ExpGaussianPdf<> init_starting(const B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial) { 
+  using namespace bi;
+  
+  const int ND = m.getNetSize(D_NODE);
+  const int NC = m.getNetSize(C_NODE);
+  const int NP = m.getNetSize(P_NODE);
+  const int N = (includeInitial) ? ND + NC + NP : NP;
+  
+  ExpGaussianPdf<> q0(N);
+  host_vector<real> mu(ND + NC + NP);
+  host_matrix<real> Sigma(ND + NC + NP, ND + NC + NP);
+  
+  /* log-variables */
+  if (includeInitial) {
+    q0.addLogs(m.getLogs(D_NODE), 0);
+    q0.addLogs(m.getLogs(C_NODE), ND);
+    q0.addLogs(m.getLogs(P_NODE), ND + NC);
+  } else {
+    q0.addLogs(m.getLogs(P_NODE));
+  }
+  
+  /* covariance */
+  if (type.equals("ukf")) {
+    UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    in.readState(in.size2() - 1, mu, Sigma);
+  } else if (type.equals("urts")) {
+    UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    in.readSmoothState(0, mu, Sigma);
+  } else if (type.equals("pf")) {
+    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    
+    host_matrix<real> X(in.size1(), ND + NC + NP);
+    host_vector<real> w(in.size1());
+    
+    in.readState(D_NODE, in.size2() - 1, columns(X, 0, ND));
+    in.readState(C_NODE, in.size2() - 1, columns(X, ND, NC));
+    in.readState(P_NODE, in.size2() - 1, columns(X, ND + NC, NP));
+    
+    log_columns(columns(X, 0, ND), m.getLogs(D_NODE));
+    log_columns(columns(X, ND, NC), m.getLogs(C_NODE));
+    log_columns(columns(X, ND + NC, NP), m.getLogs(P_NODE));
+
+    in.readLogWeights(in.size2() - 1, w);    
+    element_exp(w.begin(), w.end(), w.begin());
+    
+    mean(X, w, mu);
+    cov(X, w, mu, Sigma);
+  } else if (type.equals("kfb")) {
+    KernelForwardBackwardSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    
+    host_matrix<real> X(in.size1(), ND + NC + NR + NP);
+    host_vector<real> w(in.size1());
+    
+    in.readState(D_NODE, 0, columns(X, 0, ND));
+    in.readState(C_NODE, 0, columns(X, ND, NC));
+    in.readState(P_NODE, 0, columns(X, ND + NC + NR, NP));
+    
+    log_columns(columns(X, 0, ND), m.getLogs(D_NODE));
+    log_columns(columns(X, ND, NC), m.getLogs(C_NODE));
+    log_columns(columns(X, ND + NC, NP), m.getLogs(P_NODE));
+    
+    in.readLogWeights(0, w);    
+    element_exp(w.begin(), w.end(), w.begin());
+    
+    mean(X, w, mu);
+    cov(X, w, mu, Sigma);    
+  } else {
+    assert (type.equals("prior"));
+    cov(m.getPrior<D_NODE>(), subrange(Sigma, 0, ND, 0, ND));
+    cov(m.getPrior<C_NODE>(), subrange(Sigma, ND, NC, ND, NC));
+    cov(m.getPrior<P_NODE>(), subrange(Sigma, ND + NC, NP, ND + NC, NP));
+  }
+  if (includeInitial) {
+    q0.mean() = mu;
+    q0.cov() = Sigma;
+  } else {
+    q0.mean() = subrange(mu, ND + NC, NP);
+    q0.cov() = subrange(Sigma, ND + NC, NP, ND + NC, NP);
+  }
+  matrix_scal(sd, q0.cov());
+  q0.init();
+  
+  return q0;
+}

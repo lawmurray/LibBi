@@ -6,21 +6,22 @@
  * $Date: 2011-02-18 12:29:09 +0800 (Fri, 18 Feb 2011) $
  */
 #include "device.hpp"
+#include "distros.hpp"
 #include "model/[% ClassName %].hpp"
 
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/ode.hpp"
 #include "bi/state/State.hpp"
 #include "bi/random/Random.hpp"
-#include "bi/pdf/AdditiveExpGaussianPdf.hpp"
-#include "bi/pdf/ExpGaussianMixturePdf.hpp"
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
-#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleSmootherNetCDFBuffer.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -47,8 +48,8 @@ int main(int argc, char* argv[]) {
     DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
-    SCALE_ARG,
-    SD_ARG,
+    SD1_ARG,
+    SD2_ARG,
     INIT_NS_ARG,
     FORCE_NS_ARG,
     OBS_NS_ARG,
@@ -58,15 +59,20 @@ int main(int argc, char* argv[]) {
     OBS_FILE_ARG,
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
+    RESAMPLER_ARG,
+    PROPOSAL_TYPE_ARG,
+    STARTING_TYPE_ARG,
     PROPOSAL_FILE_ARG,
-    RESAMPLER_ARG
+    STARTING_FILE_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      SCALE = 0.01, SD = 0.0;
+      SD1 = 1.0, SD2 = 0.0;
   int ID = 0, P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 100, A = 1000;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
-      PROPOSAL_FILE, RESAMPLER = std::string("stratified");
+      PROPOSAL_FILE, STARTING_FILE;
+  std::string PROPOSAL_TYPE("prior"), STARTING_TYPE("prior"), RESAMPLER("stratified");
+  bool INCLUDE_INITIAL = true;
   int c, option_index;
 
   option long_options[] = {
@@ -74,8 +80,8 @@ int main(int argc, char* argv[]) {
       {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
-      {"sd", required_argument, 0, SD_ARG },
-      {"scale", required_argument, 0, SCALE_ARG },
+      {"sd1", required_argument, 0, SD1_ARG },
+      {"sd2", required_argument, 0, SD2_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
       {"obs-ns", required_argument, 0, OBS_NS_ARG },
@@ -85,8 +91,12 @@ int main(int argc, char* argv[]) {
       {"obs-file", required_argument, 0, OBS_FILE_ARG },
       {"filter-file", required_argument, 0, FILTER_FILE_ARG },
       {"proposal-file", optional_argument, 0, PROPOSAL_FILE_ARG },
+      {"starting-file", optional_argument, 0, STARTING_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
-      {"resampler", required_argument, 0, RESAMPLER_ARG }
+      {"proposal-type", required_argument, 0, PROPOSAL_TYPE_ARG },
+      {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
+      {"resampler", required_argument, 0, RESAMPLER_ARG },
+      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG }
   };
   const char* short_options = "T:h:P:L:C:A:";
 
@@ -106,11 +116,11 @@ int main(int argc, char* argv[]) {
       case RTOLER_ARG:
         RTOLER = atof(optarg);
         break;
-      case SD_ARG:
-        SD = atof(optarg);
+      case SD1_ARG:
+        SD1 = atof(optarg);
         break;
-      case SCALE_ARG:
-        SCALE = atof(optarg);
+      case SD2_ARG:
+        SD2 = atof(optarg);
         break;
       case INIT_NS_ARG:
         INIT_NS = atoi(optarg);
@@ -142,8 +152,20 @@ int main(int argc, char* argv[]) {
       case PROPOSAL_FILE_ARG:
         PROPOSAL_FILE = std::string(optarg);
         break;
+      case STARTING_FILE_ARG:
+        STARTING_FILE = std::string(optarg);
+        break;
+      case PROPOSAL_TYPE_ARG:
+        PROPOSAL_TYPE = std::string(optarg);
+        break;
+      case STARTING_TYPE_ARG:
+        STARTING_TYPE = std::string(optarg);
+        break;
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
+        break;
+      case INCLUDE_INITIAL_ARG:
+        INCLUDE_INITIAL = atoi(optarg);
         break;
       case 'T':
         T = atof(optarg);
@@ -217,48 +239,17 @@ int main(int argc, char* argv[]) {
 
   /* sampler */
   BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
-      INITIAL_CONDITIONED));
+      INCLUDE_INITIAL ? INITIAL_CONDITIONED : INITIAL_SAMPLED));
   
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
-
-  /* starting distribution */
-  ExpGaussianPdf<> p1(p0.size());
-  p1.addLogs(m.getLogs(D_NODE), 0);
-  p1.addLogs(m.getLogs(C_NODE), ND);
-  p1.addLogs(m.getLogs(P_NODE), ND + NC);
   
-  /* proposal */
-  AdditiveExpGaussianPdf<> q(p0.size());
-  q.addLogs(m.getLogs(D_NODE), 0);
-  q.addLogs(m.getLogs(C_NODE), ND);
-  q.addLogs(m.getLogs(P_NODE), ND + NC);
-
-  host_vector<real> x(p0.size()); // initial state of chain
-  
-  if (!PROPOSAL_FILE.empty()) {
-    /* use online posterior for starting distribution */
-    UnscentedRTSSmootherNetCDFBuffer inProposal(m, PROPOSAL_FILE,
-        NetCDFBuffer::READ_ONLY, STATIC_OWN);   
-    inProposal.readSmoothState(0, p1.mean(), p1.cov());    
-    p1.init();
-        
-    /* initialise proposal */
-    q.cov() = p1.cov();
-    matrix_scal(SD, q.cov());
-  } else {
-    /* use prior for starting distribution */
-    mean(p0, p1.mean());
-    cov(p0, p1.cov());
-
-    /* initialise proposal */
-    cov(p0, q.cov());
-    matrix_scal(SCALE, q.cov());
-  }
-  p1.init();
-  q.init();
+  /* proposal and starting distributions */
+  BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, SD1, INCLUDE_INITIAL));
+  BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL));  
   
   /* sample */
+  host_vector<real> x(p0.size()); // initial state of chain
   p1.sample(rng, x);
   mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD, A);
 
