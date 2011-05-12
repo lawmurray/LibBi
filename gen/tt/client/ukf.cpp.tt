@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
   }
   if (!INIT_FILE.empty()) {
     inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
-    inInit->read(P_NODE, theta.get(P_NODE));
+    inInit->read0(P_NODE, theta.get(P_NODE));
   }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
 

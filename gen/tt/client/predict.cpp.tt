@@ -160,9 +160,9 @@ int main(int argc, char* argv[]) {
   }
   if (!INIT_FILE.empty()) {
     inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
-    inInit->read(P_NODE, theta.get(P_NODE));
-    inInit->read(D_NODE, s.get(D_NODE));
-    inInit->read(C_NODE, s.get(C_NODE));
+    inInit->read0(P_NODE, theta.get(P_NODE));
+    inInit->read0(D_NODE, s.get(D_NODE));
+    inInit->read0(C_NODE, s.get(C_NODE));
   }
   
   /* output */
