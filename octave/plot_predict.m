@@ -67,7 +67,7 @@ function plot_predict (in, invar, coord)
     if !ish
         clf % patch doesn't clear otherwise
     end
-    area_between(t, Q(:,1), Q(:,3), watercolour(4, 0.5));
+    area_between(t, Q(:,1), Q(:,3), watercolour(4));
     hold on
     plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(4));
     if ish

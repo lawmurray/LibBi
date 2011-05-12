@@ -18,14 +18,11 @@
 %
 function c = watercolour (i, fade)
     % check arguments
-    if (nargin < 1 || nargin > 2)
+    if (nargin != 1)
         print_usage ();
     end
     if (!isscalar(i))
         error ('i must be scalar');
-    end
-    if (nargin == 2 && (fade < 0.0 || fade > 1.0))
-        error ('fade must be between 0 and 1');
     end
     
     % full palette
@@ -38,10 +35,5 @@ function c = watercolour (i, fade)
                0.8000, 0.4745, 0.6549];
     
     % select from palette
-    rgb = palette(mod(i - 1, rows(palette)) + 1, :);
-    if (nargin == 2)
-        rgb = fade*rgb + (1.0 - fade);
-    end
-    
-    c = rgb;
+    c = palette(mod(i - 1, rows(palette)) + 1, :);
 end

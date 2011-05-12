@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_ukf (@var{in}, @var{invar}, @var{coord})
+% @deftypefn {Function File} plot_ukf (@var{in}, @var{invar}, @var{coord}, @var{islog})
 %
 % Plot output of the ukf program.
 %
@@ -17,18 +17,24 @@
 % @bullet{ @var{coord} (optional) Vector of spatial coordinates of zero
 % to three elements, giving the x, y and z coordinates of a
 % component of @var{invar} to plot.}
+%
+% @bullet{ @var{islog} (optional) True if this is a log-variable, false
+% otherwise.
 % @end itemize
 % @end deftypefn
 %
-function plot_ukf (in, invar, coord)
+function plot_ukf (in, invar, coord, islog)
     % check arguments
-    if nargin < 2 || nargin > 3
+    if nargin < 2 || nargin > 4
         print_usage ();
     end
     if nargin < 3
         coord = [];
     elseif !isvector (coord) || length (coord) > 3
         error ('coord should be a vector with at most three elements');
+    end
+    if nargin < 4
+        islog = 0;
     end
 
     % input file
@@ -54,10 +60,18 @@ function plot_ukf (in, invar, coord)
     mu = nci{'filter.mu'}(:,id);
     sigma = sqrt(nci{'filter.Sigma'}(:,id,id));
     for n = 1:length(t)
-        if isreal(sigma(n))
-            Q(n,:) = norminv(P, mu(n), sigma(n));
+        if islog
+            if sigma(n) > 0
+                Q(n,:) = logninv(P, mu(n), sigma(n));
+            else
+                Q(n,:) = exp(mu(n));
+            end
         else
-            Q(n,:) = mu(n);
+            if sigma(n) > 0
+                Q(n,:) = norminv(P, mu(n), sigma(n));
+            else
+                Q(n,:) = mu(n);
+            end
         end
     end
             
@@ -66,7 +80,7 @@ function plot_ukf (in, invar, coord)
     if !ish
         clf % patch doesn't clear otherwise
     end
-    area_between(t, Q(:,1), Q(:,3), watercolour(2, 0.5));
+    area_between(t, Q(:,1), Q(:,3), watercolour(2));
     hold on;
     plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(2));
     if ish
