@@ -66,6 +66,12 @@ STARTING_TYPE=prior  # starting distribution type: prior, ukf, urts, pf or kfb
 INCLUDE_INITIAL=1    # include initial conditions in MCMC rather than filter
 
 ##
+## Likelihood settings
+##
+
+M=10  # frequency with which to change samples
+
+##
 ## Random number settings
 ##
 

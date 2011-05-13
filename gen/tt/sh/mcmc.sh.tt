@@ -23,26 +23,9 @@ LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
 source $ROOT/config.sh
 export OMP_NUM_THREADS
 
-if `test "$INIT_FILENAME" != ""`
-then
-    INIT_FILE=$DATA_DIR/$INIT_FILENAME
-else
-    INIT_FILE=
-fi
-
-if `test "$FORCE_FILENAME" != ""`
-then
-    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
-else
-    FORCE_FILE=
-fi
-
 OBS_FILE=$DATA_DIR/$OBS_FILENAME
 OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
-
-# copy forcings and observations to local file system
-#pbsdsh -u
-cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
+FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
 if `test "$INIT_FILENAME" != ""`
 then
@@ -58,9 +41,6 @@ else
     FORCE_FILE=
 fi
 
-OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
-FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
-
 if `test "$PROPOSAL_TYPE" != "prior"`
 then
     PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
@@ -74,6 +54,10 @@ then
 else
     STARTING_FILE=
 fi
+
+# copy forcings and observations to local file system
+#pbsdsh -u
+cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
 
 # record
 if [[ "`hostname`" == gpu* ]]

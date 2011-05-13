@@ -23,32 +23,50 @@ LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
 source $ROOT/config.sh
 export OMP_NUM_THREADS
 
+OBS_FILE=$DATA_DIR/$OBS_FILENAME
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
+
 if `test "$INIT_FILENAME" != ""`
 then
-    INIT_FILE=$DATA_DIR/$INIT_FILENAME
+    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
 else
     INIT_FILE=
 fi
 
 if `test "$FORCE_FILENAME" != ""`
 then
-    FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
+    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
 else
     FORCE_FILE=
 fi
 
-OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
-OBS_FILE=$DATA_DIR/$OBS_FILENAME
+if `test "$PROPOSAL_TYPE" != "prior"`
+then
+    PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
+else
+    PROPOSAL_FILE=
+fi
 
 # copy forcings and observations to local file system
 #pbsdsh -u
 cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
 
 # record
-cat config.sh
+if [[ "`hostname`" == gpu* ]]
+then
+	cat $ROOT/config.sh
+fi
 
 # run
-$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C -A $A --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$LOCAL_DIR/$INIT_FILENAME --force-file=$LOCAL_DIR/$FORCE_FILENAME --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$LOCAL_DIR/$FILTER_FILENAME --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME
+$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C \
+    --sd1=$SD1 --sd2=$SD2 --proposal-type=$PROPOSAL_TYPE \
+    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
+    --init-file=$INIT_FILE --force-file=$FORCE_FILE \
+    --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$FILTER_FILE \
+    --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
+    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE \
+    --include-initial=$INCLUDE_INITIAL
 
 # copy results from local to network file system
 cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.
