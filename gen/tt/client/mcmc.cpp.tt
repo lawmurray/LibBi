@@ -246,14 +246,22 @@ int main(int argc, char* argv[]) {
   
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
-  
-  /* proposal and starting distributions */
+
+  /* proposal */
   BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, SD1, INCLUDE_INITIAL));
-  BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL));  
+
+  /* start */
+  host_vector<real> x(p0.size()); // initial state of chain
+  if (STARTING_TYPE.compare("prior") == 0) {
+    mcmc->getPrior().sample(rng, x);
+  } else {
+    BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL));
+    do {
+      q0.sample(rng, x);
+    } while (mcmc->getPrior().density(x) <= 0.0);
+  }
   
   /* sample */
-  host_vector<real> x(p0.size()); // initial state of chain
-  q0.sample(rng, x);
   mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD1, A);
 
   /* wrap up */

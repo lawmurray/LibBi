@@ -54,14 +54,18 @@ int main(int argc, char* argv[]) {
     RESAMPLER_ARG,
     OUTPUT_ARG,
     TIME_ARG,
-    INCLUDE_PARAMETERS_ARG
+    INCLUDE_PARAMETERS_ARG,
+    B_ABS_ARG,
+    B_REL_ARG,
+    SHRINK_ARG,
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      B = 0.0;
+      B_ABS = 0.0, B_REL = 1.0, B;
   int P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE,
       RESAMPLER = std::string("stratified");
-  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
+  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false,
+      SHRINK = true;
   int c, option_index;
 
   option long_options[] = {
@@ -79,9 +83,12 @@ int main(int argc, char* argv[]) {
       {"resampler", required_argument, 0, RESAMPLER_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
       {"time", required_argument, 0, TIME_ARG },
-      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG }
+      {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG },
+      {"b-rel", required_argument, 0, B_REL_ARG },
+      {"b-abs", required_argument, 0, B_ABS_ARG },
+      {"shrink", required_argument, 0, SHRINK_ARG }
   };
-  const char* short_options = "T:b:h:P:L:";
+  const char* short_options = "T:h:P:L:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
@@ -132,14 +139,20 @@ int main(int argc, char* argv[]) {
       case INCLUDE_PARAMETERS_ARG:
         INCLUDE_PARAMETERS = atoi(optarg);
         break;
-      case 'T':
+      case B_ABS_ARG:
+        B_ABS = atof(optarg);
+        break;
+      case B_REL_ARG:
+        B_REL = atof(optarg);
+        break;
+      case SHRINK_ARG:
+        SHRINK = atof(optarg);
+        break;
+        case 'T':
         T = atof(optarg);
         break;
       case 'h':
         H = atof(optarg);
-        break;
-      case 'b':
-        B = atof(optarg);
         break;
       case 'P':
         P = atoi(optarg);
@@ -166,7 +179,8 @@ int main(int argc, char* argv[]) {
   const int ND = m.getNetSize(D_NODE);
   const int NC = m.getNetSize(C_NODE);
   const int NP = m.getNetSize(P_NODE);
-
+  const int N = ND + NC + (INCLUDE_PARAMETERS ? NP : 0);
+  
   /* state and intermediate results */
   Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
@@ -209,11 +223,14 @@ int main(int argc, char* argv[]) {
   /* do filter */
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
-    if (B == 0) {
-      B = hopt(ND + NC + NP, P);
+    if (B_ABS > 0.0) {
+      B = B_ABS;
+    } else {
+      B = B_REL*hopt(N, P);
     }
     StratifiedResampler base(rng);
-    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B);
+    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B,
+        SHRINK);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m,
         rng, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam);

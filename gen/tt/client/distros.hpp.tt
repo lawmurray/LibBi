@@ -155,7 +155,7 @@ bi::ExpGaussianPdf<> init_distro(const B& m, const std::string& type,
   /* project down to required components */
   if (includeInitial) {
     subrange(q.mean(), 0, ND + NC) = subrange(mu, 0, ND + NC);
-    subrange(q.mean(), ND + NC, NP) = subrange(mu, ND + NR + NR, NP);
+    subrange(q.mean(), ND + NC, NP) = subrange(mu, ND + NC + NR, NP);
     
     subrange(q.cov(), 0, ND + NC, 0, ND + NC) = subrange(Sigma, 0, ND + NC, 0, ND + NC);
     subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP);
