@@ -70,8 +70,6 @@ $tt->process("$prog.hpp.tt", $vars, "$outdir/$prog.hpp")
     
 # distro initialisation functions
 $prog = 'distros';
-$tt->process("$prog.cpp.tt", $vars, "$outdir/$prog.cpp")
-    || die $tt->error(), "\n";
 $tt->process("$prog.hpp.tt", $vars, "$outdir/$prog.hpp")
     || die $tt->error(), "\n";
 

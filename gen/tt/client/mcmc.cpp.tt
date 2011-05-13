@@ -18,10 +18,6 @@
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"
-#include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
-#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-#include "bi/buffer/ParticleSmootherNetCDFBuffer.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -63,7 +59,8 @@ int main(int argc, char* argv[]) {
     PROPOSAL_TYPE_ARG,
     STARTING_TYPE_ARG,
     PROPOSAL_FILE_ARG,
-    STARTING_FILE_ARG
+    STARTING_FILE_ARG,
+    INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
       SD1 = 1.0, SD2 = 0.0;
@@ -208,8 +205,14 @@ int main(int argc, char* argv[]) {
   const int NP = m.getNetSize(P_NODE);
   const int ND = m.getNetSize(D_NODE);
   const int NC = m.getNetSize(C_NODE);
-  if (SD <= 0.0) {
-    SD = std::pow(2.4,2)/NP;
+  const int N = (INCLUDE_INITIAL) ? ND + NC + NP : NP;
+  
+  /* scaling factors */
+  if (SD1 <= 0.0) {
+    SD1 = std::pow(2.4,2)/N;
+  }
+  if (SD2 <= 0.0) {
+    SD2 = std::pow(2.4,2)/N;
   }
 
   /* state and intermediate results */
@@ -250,8 +253,8 @@ int main(int argc, char* argv[]) {
   
   /* sample */
   host_vector<real> x(p0.size()); // initial state of chain
-  p1.sample(rng, x);
-  mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD, A);
+  q0.sample(rng, x);
+  mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD1, A);
 
   /* wrap up */
   std::cout << mcmc->getNumAccepted() << " of " << mcmc->getNumSteps() <<

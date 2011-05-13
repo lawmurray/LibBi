@@ -1,8 +1,0 @@
-/**
- * @file
- *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1274 $
- * $Date: 2011-02-18 12:29:09 +0800 (Fri, 18 Feb 2011) $
- */
-#include "distros.hpp"

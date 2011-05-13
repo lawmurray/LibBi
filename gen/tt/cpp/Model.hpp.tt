@@ -135,6 +135,16 @@ public:
    * @return Prior over nodes of given type.
    */
   template<bi::NodeType type>
+  const typename [% ClassName %]PriorType<type>::type& getPrior() const;
+
+  /**
+   * Get prior over nodes of given type.
+   *
+   * @tparam type Node type.
+   *
+   * @return Prior over nodes of given type.
+   */
+  template<bi::NodeType type>
   typename [% ClassName %]PriorType<type>::type& getPrior();
 
 private:
@@ -216,6 +226,17 @@ template<int XN, int YN, int ZN>
 template<int XN, int YN, int ZN>
 template<bi::NodeType type>
 inline typename [% ClassName %]PriorType<type>::type& [% ClassName %]<XN,YN,ZN>::getPrior() {
+  using namespace bi;
+
+  /* pre-condition */
+  assert ([%-FOREACH Type IN PriorTypes %]type == [% Type %]_NODE || [% END-%]false);
+
+  return *static_cast<typename [% ClassName %]PriorType<type>::type*>(priors[type]);
+}
+
+template<int XN, int YN, int ZN>
+template<bi::NodeType type>
+inline const typename [% ClassName %]PriorType<type>::type& [% ClassName %]<XN,YN,ZN>::getPrior() const {
   using namespace bi;
 
   /* pre-condition */

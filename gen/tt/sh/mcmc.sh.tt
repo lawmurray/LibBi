@@ -61,14 +61,14 @@ fi
 OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
 FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
-if `text "$PROPOSAL_TYPE" != "prior"`
+if `test "$PROPOSAL_TYPE" != "prior"`
 then
     PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
 else
     PROPOSAL_FILE=
 fi
 
-if `text "$STARTING_TYPE" != "prior"`
+if `test "$STARTING_TYPE" != "prior"`
 then
     STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
 else
