@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} twindata (@var{in}, @var{invars}, @var{out}, @var{outvars}, @var{p}, @var{S}, @var{logs})
+% @deftypefn {Function File} twindata (@var{in}, @var{invars}, @var{out}, @var{outvars}, @var{p}, @var{S}, @var{logn}, @var{coords})
 %
 % Generate a data set for twin experiments from the output of the simulate
 % program.
@@ -35,7 +35,7 @@
 % @end itemize
 % @end deftypefn
 %
-function twindata (in, invar, out, outvar, p, S, logn, coords)
+function gen_obs (in, invar, out, outvar, p, S, logn, coords)
     % check arguments
     if (nargin < 6 || nargin > 8)
         print_usage ();

@@ -56,6 +56,7 @@ function plot_obs (in, invar, coord, ns)
     else
         coords = nci{cvar}(:);
     end
+    coords = coords + 1; % offset for move from base 0 to base 1 indexing
     
     % observed variables
     ys = nci{invar}(ns,:);

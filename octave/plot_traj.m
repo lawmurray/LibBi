@@ -15,7 +15,8 @@
 %
 % @bullet{ @var{invar} Name of variable from input file to plot.
 %
-% @bullet{ @var{range} (optional) Vector of indexes of trajectories to
+% @bullet{ @var{range} (optional) Vector of indices of trajectories to
+% plot.
 %
 % @bullet{ @var{coord} (optional) Vector of spatial coordinates of zero
 % to three elements, giving the x, y and z coordinates of a
