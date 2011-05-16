@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} twindata (@var{in}, @var{invars}, @var{out}, @var{outvars}, @var{p}, @var{S}, @var{logn}, @var{coords})
+% @deftypefn {Function File} gen_obs (@var{in}, @var{invars}, @var{out}, @var{outvars}, @var{p}, @var{S}, @var{logn}, @var{coords})
 %
 % Generate a data set for twin experiments from the output of the simulate
 % program.

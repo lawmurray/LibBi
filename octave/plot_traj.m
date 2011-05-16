@@ -4,7 +4,7 @@
 % $Date: 2011-04-15 12:35:42 +0800 (Fri, 15 Apr 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_simulate (@var{in}, @var{invars}, @var{range}, @var{coord})
+% @deftypefn {Function File} plot_simulate (@var{in}, @var{invars}, @var{coord}, @var{rang})
 %
 % Plot trajectories output by simulate, predict, pf, mcmc or likelihood
 % program.
@@ -15,26 +15,26 @@
 %
 % @bullet{ @var{invar} Name of variable from input file to plot.
 %
-% @bullet{ @var{range} (optional) Vector of indices of trajectories to
-% plot.
-%
 % @bullet{ @var{coord} (optional) Vector of spatial coordinates of zero
 % to three elements, giving the x, y and z coordinates of a
 % component of @var{invar} to plot.}
 % plot. All trajectories plotted if not specified.
+%
+% @bullet{ @var{rang} (optional) Vector of indices of trajectories to
+% plot.
 % @end itemize
 % @end deftypefn
 %
-function plot_traj (in, invar, range, coord)
+function plot_traj (in, invar, coord, rang)
     % check arguments
     if nargin < 2 || nargin > 4
         print_usage ();
     end
     if nargin < 3
-        range = [];
         coord = [];
+        rang = [];
     elseif nargin < 4
-        coord = [];
+        rang = [];
     elseif !isvector (coord) || length (coord) > 3
         error ('coord should be a vector with at most three elements');
     end
@@ -45,11 +45,11 @@ function plot_traj (in, invar, range, coord)
     % data
     t = nci{'time'}(:)'; % times
     P = nci('np')(:);
-    if length(range) == 0
-        range = [1:P];
+    if length(rang) == 0
+        rang = [1:P];
     end
     
-    X = read_var (nci, invar, range, coord);
+    X = read_var (nci, invar, rang, coord);
     
     % plot
     plot(t, X, 'linewidth', 1, 'color', watercolour(1));
