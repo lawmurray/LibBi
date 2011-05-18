@@ -41,7 +41,9 @@ function plot_pf (in, invar, coord)
     T = nci('nr')(:);
 
     X = read_var (nci, invar, [1:P], coord);
-    Ws = exp(nci{'logweight'}(:,:));
+    lWs = nci{'logweight'}(:,:);
+    maxlWs = max(lWs');
+    Ws = exp(lWs - repmat(maxlWs', 1, columns(lWs)));
     Q = zeros (rows (X), length(q));
     
     [X I] = sort (X, 2);
