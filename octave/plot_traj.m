@@ -35,10 +35,11 @@ function plot_traj (in, invar, coord, rang)
         rang = [];
     elseif nargin < 4
         rang = [];
-    elseif !isvector (coord) || length (coord) > 3
+    end
+    if !(isempty (coord) || isvector (coord)) || length (coord) > 3
         error ('coord should be a vector with at most three elements');
     end
-    
+  
     % input file
     nci = netcdf(in, 'r');
 
