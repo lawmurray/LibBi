@@ -54,8 +54,8 @@ my $vars = {
 
 # client program sources
 my $prog;
-foreach $prog ('simulate', 'predict', 'pf', 'kfb', 'ukf', 'urts', 'mcmc',
-        'likelihood', 'config') {
+foreach $prog ('simulate', 'predict', 'pf', 'pfs', 'kfb', 'ukf', 'urts',
+        'mcmc', 'likelihood', 'config') {
     $tt->process("$prog.sh.tt", $vars, "$outdir/$prog.sh")
 	|| die $tt->error(), "\n";
 }

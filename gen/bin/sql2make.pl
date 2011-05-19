@@ -298,7 +298,7 @@ End
 # Artifacts
 my $models = join(' ', @models);
 my $artifact;
-foreach $artifact ('simulate', 'predict', 'pf', 'kfb', 'ukf', 'urts', 'mcmc', 'likelihood') {
+foreach $artifact ('simulate', 'predict', 'pf', 'pfs', 'kfb', 'ukf', 'urts', 'mcmc', 'likelihood') {
   print "\$(BUILDDIR)/$artifact: \$(BUILDDIR)/$artifact.\$(EXT).o \$(BUILDDIR)/device.cu.o $models\n";
   print "\t\$(LINKER) -o \$\@ \$^ \$(LINKFLAGS)\n\n";
 }

@@ -1,0 +1,29 @@
+#!/bin/sh
+#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -j oe
+
+##
+## System config
+##
+if [[ "`hostname`" == gpu* ]]
+then
+    source init.sh
+    ROOT=$PBS_O_WORKDIR
+    NAME=$PBS_JOBNAME
+    ID=$PBS_ARRAYID
+else
+    ROOT=.
+    NAME=pfs
+    ID=0
+fi
+
+LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
+source $ROOT/config.sh
+export OMP_NUM_THREADS
+
+INPUT_FILE=$RESULTS_DIR/pf${SUFFIX}.nc.$ID
+OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
+
+$ROOT/build/pfs --seed=$SEED --input-file=$INPUT_FILE \
+    --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME \
+    --include-parameters=$INCLUDE_PARAMETERS
