@@ -182,7 +182,6 @@ int main(int argc, char* argv[]) {
   }
   FastGaussianKernel K(N, B);
   MedianPartitioner partitioner;
-  StratifiedResampler resam(rng);
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
     StratifiedResampler base(rng);
@@ -192,6 +191,7 @@ int main(int argc, char* argv[]) {
     smoother->smooth(theta, s, &in, &resam);
     delete smoother;
   } else {
+    StratifiedResampler resam(rng);
     BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(
         m, rng, K, partitioner, DELTA, inForce, out)));
     smoother->smooth(theta, s, &in, &resam);
