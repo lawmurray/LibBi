@@ -44,8 +44,10 @@ int main(int argc, char* argv[]) {
     DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
-    SD1_ARG,
-    SD2_ARG,
+    S1_ARG,
+    S2_ARG,
+    BETA_ARG,
+    ADAPT_ARG,
     INIT_NS_ARG,
     FORCE_NS_ARG,
     OBS_NS_ARG,
@@ -63,13 +65,13 @@ int main(int argc, char* argv[]) {
     INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      SD1 = 1.0, SD2 = 0.0;
+      S1 = 1.0, S2 = 0.0, BETA = 1.0e-3;
   int ID = 0, P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 100, A = 1000;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
       PROPOSAL_FILE, STARTING_FILE;
   std::string PROPOSAL_TYPE("prior"), STARTING_TYPE("prior"), RESAMPLER("stratified");
-  bool INCLUDE_INITIAL = true;
+  bool INCLUDE_INITIAL = true, ADAPT = true;
   int c, option_index;
 
   option long_options[] = {
@@ -77,8 +79,10 @@ int main(int argc, char* argv[]) {
       {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
-      {"sd1", required_argument, 0, SD1_ARG },
-      {"sd2", required_argument, 0, SD2_ARG },
+      {"s1", required_argument, 0, S1_ARG },
+      {"s2", required_argument, 0, S2_ARG },
+      {"beta", required_argument, 0, BETA_ARG },
+      {"adapt", required_argument, 0, ADAPT_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
       {"obs-ns", required_argument, 0, OBS_NS_ARG },
@@ -95,7 +99,7 @@ int main(int argc, char* argv[]) {
       {"resampler", required_argument, 0, RESAMPLER_ARG },
       {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG }
   };
-  const char* short_options = "T:h:P:L:C:A:";
+  const char* short_options = "T:h:P:L:C:a:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
@@ -113,11 +117,17 @@ int main(int argc, char* argv[]) {
       case RTOLER_ARG:
         RTOLER = atof(optarg);
         break;
-      case SD1_ARG:
-        SD1 = atof(optarg);
+      case S1_ARG:
+        S1 = atof(optarg);
         break;
-      case SD2_ARG:
-        SD2 = atof(optarg);
+      case S2_ARG:
+        S2 = atof(optarg);
+        break;
+      case BETA_ARG:
+        BETA = atof(optarg);
+        break;
+      case ADAPT_ARG:
+        ADAPT = atoi(optarg);
         break;
       case INIT_NS_ARG:
         INIT_NS = atoi(optarg);
@@ -179,7 +189,7 @@ int main(int argc, char* argv[]) {
       case 'C':
         C = atoi(optarg);
         break;
-      case 'A':
+      case 'a':
         A = atoi(optarg);
         break;
       }
@@ -208,11 +218,11 @@ int main(int argc, char* argv[]) {
   const int N = (INCLUDE_INITIAL) ? ND + NC + NP : NP;
   
   /* scaling factors */
-  if (SD1 <= 0.0) {
-    SD1 = std::pow(2.4,2)/N;
+  if (S1 <= 0.0) {
+    S1 = std::pow(2.4,2)/N;
   }
-  if (SD2 <= 0.0) {
-    SD2 = std::pow(2.4,2)/N;
+  if (S2 <= 0.0) {
+    S2 = std::pow(2.4,2)/N;
   }
 
   /* state and intermediate results */
@@ -248,22 +258,26 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(p0, mcmc->getPrior());
 
   /* proposal */
-  BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, SD1, INCLUDE_INITIAL));
+  BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, S1, INCLUDE_INITIAL));
 
   /* start */
   host_vector<real> x(p0.size()); // initial state of chain
   if (STARTING_TYPE.compare("prior") == 0) {
     mcmc->getPrior().sample(rng, x);
   } else {
-    BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL));
+    BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL));
     do {
       q0.sample(rng, x);
     } while (mcmc->getPrior().density(x) <= 0.0);
   }
   
   /* sample */
-  mcmc->sample(q, x, C, T, theta, s, filter, &resam, SD1, A);
-
+  if (ADAPT) {
+    mcmc->sample(q, x, C, T, theta, s, filter, &resam, BETA, A, S1);
+  } else {
+    mcmc->sample(q, x, C, T, theta, s, filter, &resam);    
+  }
+  
   /* wrap up */
   std::cout << mcmc->getNumAccepted() << " of " << mcmc->getNumSteps() <<
       " proposals accepted" << std::endl;
