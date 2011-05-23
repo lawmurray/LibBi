@@ -265,9 +265,8 @@ int main(int argc, char* argv[]) {
   if (STARTING_TYPE.compare("prior") == 0) {
     mcmc->getPrior().sample(rng, x);
   } else {
-    BOOST_AUTO(q0, init_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL));
     do {
-      q0.sample(rng, x);
+      sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
     } while (mcmc->getPrior().density(x) <= 0.0);
   }
   
