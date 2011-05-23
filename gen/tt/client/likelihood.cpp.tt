@@ -48,8 +48,8 @@ int main(int argc, char* argv[]) {
     DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
-    SD1_ARG,
     SD2_ARG,
+    ESS_REL_ARG,
     INIT_NS_ARG,
     FORCE_NS_ARG,
     OBS_NS_ARG,
@@ -60,17 +60,17 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
     RESAMPLER_ARG,
-    PROPOSAL_TYPE_ARG,
-    PROPOSAL_FILE_ARG,
+    STARTING_TYPE_ARG,
+    STARTING_FILE_ARG,
     INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      SD1 = 1.0, SD2 = 0.0;
+      SD2 = 0.0, ESS_REL = 1.0;
   int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 1000, M = 10;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
-      PROPOSAL_FILE;
-  std::string PROPOSAL_TYPE("prior"), RESAMPLER("stratified");
+      STARTING_FILE;
+  std::string STARTING_TYPE("prior"), RESAMPLER("stratified");
   bool INCLUDE_INITIAL = true;
   int c, option_index;
 
@@ -79,8 +79,8 @@ int main(int argc, char* argv[]) {
       {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
-      {"sd1", required_argument, 0, SD1_ARG },
       {"sd2", required_argument, 0, SD2_ARG },
+      {"ess-rel", required_argument, 0, ESS_REL_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
       {"obs-ns", required_argument, 0, OBS_NS_ARG },
@@ -89,11 +89,12 @@ int main(int argc, char* argv[]) {
       {"force-file", required_argument, 0, FORCE_FILE_ARG },
       {"obs-file", required_argument, 0, OBS_FILE_ARG },
       {"filter-file", required_argument, 0, FILTER_FILE_ARG },
-      {"proposal-file", optional_argument, 0, PROPOSAL_FILE_ARG },
+      {"starting-file", optional_argument, 0, STARTING_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
-      {"proposal-type", required_argument, 0, PROPOSAL_TYPE_ARG },
+      {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
-      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG }
+      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
+      {0, 0, 0, 0}
   };
   const char* short_options = "T:h:P:C:M:";
 
@@ -113,11 +114,11 @@ int main(int argc, char* argv[]) {
       case RTOLER_ARG:
         RTOLER = atof(optarg);
         break;
-      case SD1_ARG:
-        SD1 = atof(optarg);
-        break;
       case SD2_ARG:
         SD2 = atof(optarg);
+        break;
+      case ESS_REL_ARG:
+        ESS_REL = atof(optarg);
         break;
       case INIT_NS_ARG:
         INIT_NS = atoi(optarg);
@@ -146,11 +147,11 @@ int main(int argc, char* argv[]) {
       case FILTER_FILE_ARG:
         FILTER_FILE = std::string(optarg);
         break;
-      case PROPOSAL_FILE_ARG:
-        PROPOSAL_FILE = std::string(optarg);
+      case STARTING_FILE_ARG:
+        STARTING_FILE = std::string(optarg);
         break;
-      case PROPOSAL_TYPE_ARG:
-        PROPOSAL_TYPE = std::string(optarg);
+      case STARTING_TYPE_ARG:
+        STARTING_TYPE = std::string(optarg);
         break;
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
@@ -201,9 +202,6 @@ int main(int argc, char* argv[]) {
   const int N = (INCLUDE_INITIAL) ? ND + NC + NP : NP;
 
   /* scaling factors */
-  if (SD1 <= 0.0) {
-    SD1 = std::pow(2.4,2)/N;
-  }
   if (SD2 <= 0.0) {
     SD2 = std::pow(2.4,2)/N;
   }
@@ -240,20 +238,17 @@ int main(int argc, char* argv[]) {
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
   
-  /* proposal */
-  BOOST_AUTO(q, init_starting(m, PROPOSAL_TYPE, PROPOSAL_FILE, SD1, INCLUDE_INITIAL));
-
   /* sample */
   host_vector<real> x(p0.size()); // initial state of chain
-  q.sample(rng, x);
+  sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
   mcmc->init(x, T, theta, s, filter, &resam);
   for (c = 0; c < C; ++c) {
     if ((c % M) == 0) {
-      q.sample(rng, x);
+      sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
     }
     mcmc->proposal(x);
     mcmc->prior();
-    mcmc->likelihood(T, theta, s, filter, &resam);
+    mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
     mcmc->accept(filter);
     mcmc->output(c);
     mcmc->report(c);

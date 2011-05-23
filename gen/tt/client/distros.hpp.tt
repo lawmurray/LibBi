@@ -22,6 +22,14 @@ bi::AdditiveExpGaussianPdf<> init_proposal(B& m,
     const bool includeInitial);
 
 /**
+ * Initialise starting distribution.
+ */
+template<class B>
+bi::ExpGaussianPdf<> init_starting(B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial);
+
+/**
  * Sample from starting distribution.
  */
 template<class B, class V1>
@@ -63,6 +71,13 @@ bi::AdditiveExpGaussianPdf<> init_proposal(B& m,
   AdditiveExpGaussianPdf<> q(q0.cov(), q0.getLogs());
   
   return q;
+}
+
+template<class B>
+bi::ExpGaussianPdf<> init_starting(B& m,
+    const std::string& type, const std::string& file, const real sd,
+    const bool includeInitial) {
+  return init_distro(m, type, file, sd, includeInitial);  
 }
 
 template<class B, class V1>
@@ -122,7 +137,7 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
   } else if (type.compare("urts") == 0) {
     UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
     in.readSmoothState(0, mu, Sigma);
-  } else if (type.compare("pf") == 0 || type.compare("pfs") == 0) {
+  } else if (type.compare("pf") == 0) {
     ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);    
 
     host_matrix<real> X(in.size1(), NP);
@@ -132,7 +147,21 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
     log_columns(X, m.getLogs(P_NODE));
 
     in.readLogWeights(in.size2() - 1, w);    
-    element_exp(w.begin(), w.end(), w.begin());
+    element_exp_unnormalised(w.begin(), w.end(), w.begin());
+    
+    mean(X, w, subrange(mu, ND + NC + NR, NP));
+    cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
+  } else if (type.compare("pfs") == 0) {
+    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    
+    host_matrix<real> X(in.size1(), NP);
+    host_vector<real> w(in.size1());
+    
+    in.readState(P_NODE, in.size2() - 1, X);
+    log_columns(X, m.getLogs(P_NODE));
+    
+    in.readLogWeights(in.size2() - 1, w);    
+    element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
     mean(X, w, subrange(mu, ND + NC + NR, NP));
     cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
@@ -153,7 +182,7 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
     log_columns(columns(X, ND + NC + NR, NP), m.getLogs(P_NODE));
     
     in.readLogWeights(0, w);    
-    element_exp(w.begin(), w.end(), w.begin());
+    element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
     mean(X, w, mu);
     cov(X, w, mu, Sigma);    
@@ -202,7 +231,7 @@ void sample_distro(B& m, const std::string& type,
     m.template getPrior<P_NODE>().sample(rng, x);    
   }
   
-  if (type.compare("ukf") == 0 || type.compare("urts")) {
+  if (type.compare("ukf") == 0 || type.compare("urts") == 0) {
     /* distribution */
     ExpGaussianPdf<> q((includeInitial) ? ND + NC + NP : NP);
   

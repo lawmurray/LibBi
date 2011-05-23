@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
       {"proposal-type", required_argument, 0, PROPOSAL_TYPE_ARG },
       {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
-      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG }
+      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
+      {0, 0, 0, 0}
   };
   const char* short_options = "T:h:P:L:C:a:";
 

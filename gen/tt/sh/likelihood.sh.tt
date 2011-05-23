@@ -41,11 +41,11 @@ else
     FORCE_FILE=
 fi
 
-if `test "$PROPOSAL_TYPE" != "prior"`
+if `test "$STARTING_TYPE" != "prior"`
 then
-    PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
+    STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
 else
-    PROPOSAL_FILE=
+    STARTING_FILE=
 fi
 
 # copy forcings and observations to local file system
@@ -60,12 +60,12 @@ fi
 
 # run
 $ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C \
-    --sd1=$SD1 --sd2=$SD2 --proposal-type=$PROPOSAL_TYPE \
+    --sd2=$SD2 --ess-rel=$ESS_REL --starting-type=$STARTING_TYPE \
     --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE \
     --obs-file=$LOCAL_DIR/$OBS_FILENAME --filter-file=$FILTER_FILE \
     --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
-    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE \
+    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --starting-file=$STARTING_FILE \
     --include-initial=$INCLUDE_INITIAL
 
 # copy results from local to network file system

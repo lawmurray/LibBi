@@ -76,7 +76,8 @@ int main(int argc, char* argv[]) {
       {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG },
       {"b-rel", required_argument, 0, B_REL_ARG },
       {"b-abs", required_argument, 0, B_ABS_ARG },
-      {"shrink", required_argument, 0, SHRINK_ARG }
+      {"shrink", required_argument, 0, SHRINK_ARG },
+      {0, 0, 0, 0}
   };
   const char* short_options = "h:";
 

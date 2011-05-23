@@ -88,7 +88,8 @@ int main(int argc, char* argv[]) {
       {"b-rel", required_argument, 0, B_REL_ARG },
       {"b-abs", required_argument, 0, B_ABS_ARG },
       {"shrink", required_argument, 0, SHRINK_ARG },
-      {"ess-rel", required_argument, 0, ESS_REL_ARG }
+      {"ess-rel", required_argument, 0, ESS_REL_ARG },
+      {0, 0, 0, 0}
   };
   const char* short_options = "T:h:P:L:";
 
