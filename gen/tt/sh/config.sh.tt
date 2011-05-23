@@ -48,7 +48,7 @@ U=730.0  # time to which to predict
 
 RESAMPLER=stratified  # resampling method
 L=0                   # number of steps for Metropolis resampler
-MIN_ESS=1.0           # minimum ESS to trigger resampling
+ESS_REL=0.5           # minimum ESS (proportional to P) to trigger resampling
 B_ABS=0.0             # absolute kernel bandwidth (0 to use B_REL instead)
 B_REL=1.0             # relative kernel bandwidth
 SHRINK=1              # apply shrinkage to kernel densities?

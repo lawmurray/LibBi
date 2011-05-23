@@ -68,13 +68,13 @@ fi
 # run
 $ROOT/build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
     --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
-    --resampler=$RESAMPLER -L $L -C $C --beta=$BETA -a $A --delta=$DELTA -h $H \
-    --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED --init-file=$INIT_FILE \
-    --force-file=$FORCE_FILE --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \
-    --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
-    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --proposal-file=$PROPOSAL_FILE \
-    --starting-file=$STARTING_FILE --adapt=$ADAPT \
-    --include-initial=$INCLUDE_INITIAL
+    --resampler=$RESAMPLER -L $L -C $C --beta=$BETA -a $A --delta=$DELTA \
+    -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
+    --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
+    --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \
+    --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME \
+    --proposal-file=$PROPOSAL_FILE --starting-file=$STARTING_FILE \
+    --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL
 
 # copy results back from local directory
 cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.

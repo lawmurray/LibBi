@@ -58,9 +58,10 @@ int main(int argc, char* argv[]) {
     B_ABS_ARG,
     B_REL_ARG,
     SHRINK_ARG,
+    ESS_REL_ARG,
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      B_ABS = 0.0, B_REL = 1.0, B;
+      B_ABS = 0.0, B_REL = 1.0, B, ESS_REL = 1.0;
   int P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE,
       RESAMPLER = std::string("stratified");
@@ -86,7 +87,8 @@ int main(int argc, char* argv[]) {
       {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG },
       {"b-rel", required_argument, 0, B_REL_ARG },
       {"b-abs", required_argument, 0, B_ABS_ARG },
-      {"shrink", required_argument, 0, SHRINK_ARG }
+      {"shrink", required_argument, 0, SHRINK_ARG },
+      {"ess-rel", required_argument, 0, ESS_REL_ARG }
   };
   const char* short_options = "T:h:P:L:";
 
@@ -148,7 +150,10 @@ int main(int argc, char* argv[]) {
       case SHRINK_ARG:
         SHRINK = atof(optarg);
         break;
-        case 'T':
+      case ESS_REL_ARG:
+        ESS_REL = atof(optarg);
+        break;
+      case 'T':
         T = atof(optarg);
         break;
       case 'h':
@@ -233,13 +238,13 @@ int main(int argc, char* argv[]) {
         SHRINK);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m,
         rng, DELTA, inForce, &inObs, out)));
-    filter->filter(T, theta, s, &resam);
+    filter->filter(T, theta, s, &resam, ESS_REL);
     delete filter;
   } else {
     StratifiedResampler resam(rng);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_SHARED>::create(m,
         rng, DELTA, inForce, &inObs, out)));
-    filter->filter(T, theta, s, &resam);
+    filter->filter(T, theta, s, &resam, ESS_REL);
     delete filter;
   }
   
