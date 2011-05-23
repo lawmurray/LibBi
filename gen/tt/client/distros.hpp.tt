@@ -317,9 +317,9 @@ void sample_distro(B& m, const std::string& type,
     if (includeInitial) {
       in.readSingle(D_NODE, p, 0, subrange(x, 0, ND));
       in.readSingle(C_NODE, p, 0, subrange(x, ND, NC));
-      in.readSingle(P_NODE, p, 0, subrange(x, ND + NC, NP));
+      in.readSingle(P_NODE, p, in.size2() - 1, subrange(x, ND + NC, NP));
     } else {
-      in.readSingle(P_NODE, p, 0, x);
+      in.readSingle(P_NODE, p, in.size2() - 1, x);
     }
   } else {
     BI_ERROR(type.compare("prior") == 0, "Unrecognised proposal type");
