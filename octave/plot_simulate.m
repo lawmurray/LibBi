@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_simulate (@var{in}, @var{invars}, @var{coord})
+% @deftypefn {Function File} plot_simulate (@var{in}, @var{invar}, @var{coord})
 %
 % Plot output of the simulate program.
 %
