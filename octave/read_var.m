@@ -29,24 +29,29 @@ function X = read_var (nc, name, ps, coord)
         coord = [];
     elseif nargin == 3
         coord = [];
-    elseif length(coord) > 3
+    elseif length (coord) > 3
         error ('coord must be vector of length zero to three');
     end
     
     % check number of dimensions
-    if length(coord) + 2 != length(ncdim(nc{name}))
-        error (sprintf('wrong number of dimensions given for %s', name));
-    end
-    
+    numdims = ndims (nc{name});
+        
     % read
-    if length(coord) == 0
-        X = nc{name}(:,ps);
-    elseif length(coord) == 1
-        X = nc{name}(:,coord(1),ps);
-    elseif length(coord) == 2
-        X = nc{name}(:,coord(1),coord(2),ps);
-    elseif length(coord) == 3
-        X = nc{name}(:,coord(1),coord(2),coord(3),ps);
+    if numdims == 2 && length(coord) == 0
+        X = nc{name}(ps);
+    else
+        if length(coord) + 2 != length(ncdim(nc{name}))
+            error (sprintf('wrong number of dimensions given for %s', name));
+        end
+        if length(coord) == 0
+            X = nc{name}(:,ps);
+        elseif length(coord) == 1
+            X = nc{name}(:,coord(1),ps);
+        elseif length(coord) == 2
+            X = nc{name}(:,coord(1),coord(2),ps);
+        elseif length(coord) == 3
+            X = nc{name}(:,coord(1),coord(2),coord(3),ps);
+        end
     end
     X = squeeze(X);
 end
