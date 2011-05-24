@@ -50,7 +50,7 @@ function plot_traj (in, invar, coord, rang)
         rang = [1:P];
     end
     
-    X = read_var (nci, invar, rang, coord);
+    X = read_var (nci, invar, coord, rang);
     
     % plot
     plot(t, X, 'linewidth', 1, 'color', watercolour(1));

@@ -4,7 +4,7 @@
 % $Date: 2011-05-24 13:50:51 +0800 (Tue, 24 May 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} image_simulate (@var{in}, @var{xvar}, @var{xcoord}, @var{yvar}, @var{ycoords})
+% @deftypefn {Function File} image_simulate (@var{in}, @var{xvar}, @var{xcoord}, @var{yvar}, @var{ycoords}, @var{rang})
 %
 % Plot bifurcation image using output of simulate program.
 %
@@ -26,22 +26,27 @@
 % to three columns, giving the x, y and z coordinates of the components of
 % @var{yvar} to use. These will all be combined in producing the
 % plot.}
+%
+% @bullet{ @var{rang} (optional) Vector of indices of times to
+% include. Useful for excluding burn-in periods, for instance.
 % @end itemize
 % @end deftypefn
 %
-function image_bifurc (in, xvar, xcoord, yvar, ycoords)    
+function image_bifurc (in, xvar, xcoord, yvar, ycoords, rang)    
     % constants
-    RES_X = 300;
-    RES_Y = 200;
+    RES_X = 1000;
+    RES_Y = 1000;
         
     % check arguments
-    if nargin < 4 || nargin > 5
+    if nargin < 4 || nargin > 6
         print_usage ();
     end
     if nargin < 5
         ycoords = [];
+        rang = [];
+    elseif nargin < 6
+        rang = [];
     end
-    
     if length (xcoord) > 3
         error ('xcoord should be a vector with at most three elements');
     end
@@ -53,35 +58,36 @@ function image_bifurc (in, xvar, xcoord, yvar, ycoords)
     nci = netcdf(in, 'r');
 
     % data
-    P = nci('np')(:);
-    
-    x = read_var (nci, xvar, [1:P], xcoord)(:);
+    P = length (nci('np'));
+    T = length (nci('nr'));
+    if length (rang) == 0
+        rang = [1:T];
+    end
+    x = read_var (nci, xvar, xcoord, [1:P], 1)';
     Y = [];
     for i = 1:rows(ycoords)
-        %% @todo Subrange across time.
-        y = read_var (nci, yvar, [1:P], ycoords(i,:));
-        Y = [ Y, y' ];
+        y = read_var (nci, yvar, ycoords(i,:), [1:P], rang)';
+        Y = [ Y, y ];
     end
     ncclose(nci);
-
+    
     % sort
     Z = [x Y];
     Z = sortrows(Z, 1);
     x = Z(:,1);
     Y = Z(:,2:end);
     
-    % build histogram
+    % data extents
     xmin = x(1);
     xmax = x(end);
     ymin = min(Y(:));
     ymax = max(Y(:));
-    
     xs = linspace(xmin, xmax, RES_X);
     ys = linspace(ymin, ymax, RES_Y);
     
+    % histogram
     n1 = histc(Y, ys, 2);
     n2 = zeros(RES_X, RES_Y);
-    
     j = 1;
     for i = 1:length(xs) - 1
         while j <= length (x) && x(j) <= xs(i + 1)
@@ -91,5 +97,6 @@ function image_bifurc (in, xvar, xcoord, yvar, ycoords)
     end
 
     % plot
-    imagesc(xs, ys, n2');
+    n2 = n2' ./ repmat(max(n2'), rows(n2'), 1);
+    imagesc(xs, ys, n2);
 end

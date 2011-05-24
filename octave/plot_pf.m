@@ -40,7 +40,7 @@ function plot_pf (in, invar, coord)
     P = nci('np')(:);
     T = nci('nr')(:);
 
-    X = read_var (nci, invar, [1:P], coord);
+    X = read_var (nci, invar, coord);
     lWs = nci{'logweight'}(:,:);
     maxlWs = max(lWs');
     Ws = exp(lWs - repmat(maxlWs', 1, columns(lWs)));

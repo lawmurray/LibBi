@@ -37,9 +37,7 @@ function plot_simulate (in, invar, coord)
     % data
     t = nci{'time'}(:)'; % times
     q = [0.025 0.5 0.975]'; % quantiles (median and 95%)
-    P = nci('np')(:);
-
-    X = read_var (nci, invar, [1:P], coord);
+    X = read_var (nci, invar, coord);
     Q = quantile (X, q, 2);
     
     % plot

@@ -102,7 +102,7 @@ function gen_obs (in, invar, out, outvar, p, S, logn, coords)
     nco{outvar} = ncdouble('ns', rdim);
     for j = 1:M
         coord = coords(j,:);
-        x = read_var(nci, invar, p, coord)';
+        x = read_var(nci, invar, coord, p)';
         u = normrnd(0.0, 1.0, 1, length(x));
         U = repmat(u, length(S), 1);
         X = repmat(x, length(S), 1);

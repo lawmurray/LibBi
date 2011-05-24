@@ -40,7 +40,7 @@ function plot_predict (in, invar, coord)
     P = nci('np')(:);
     T = nci('nr')(:);
 
-    X = read_var (nci, invar, [1:P], coord);
+    X = read_var (nci, invar, coord);
     Ws = exp(nci{'logweight'}(:,:));
     Q = zeros (rows (X), length(q));
     
