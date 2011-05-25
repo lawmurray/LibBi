@@ -34,8 +34,8 @@
 %
 function image_bifurc (in, xvar, xcoord, yvar, ycoords, rang)    
     % constants
-    RES_X = 1000;
-    RES_Y = 1000;
+    RES_X = 1200;
+    RES_Y = 800;
         
     % check arguments
     if nargin < 4 || nargin > 6
@@ -63,23 +63,22 @@ function image_bifurc (in, xvar, xcoord, yvar, ycoords, rang)
     if length (rang) == 0
         rang = [1:T];
     end
+    K = rows(ycoords);
+    if K == 0
+        K = 1;
+    end
+
     x = read_var (nci, xvar, xcoord, [1:P], 1)';
-    Y = [];
+    Y = zeros(length(x), K*length(rang));
     for i = 1:rows(ycoords)
         y = read_var (nci, yvar, ycoords(i,:), [1:P], rang)';
-        Y = [ Y, y ];
+        Y(:,(i - 1)*length(rang)+1:i*length(rang)) = y;
     end
     ncclose(nci);
     
-    % sort
-    Z = [x Y];
-    Z = sortrows(Z, 1);
-    x = Z(:,1);
-    Y = Z(:,2:end);
-    
     % data extents
-    xmin = x(1);
-    xmax = x(end);
+    xmin = min(x);
+    xmax = max(x);
     ymin = min(Y(:));
     ymax = max(Y(:));
     xs = linspace(xmin, xmax, RES_X);
@@ -88,14 +87,10 @@ function image_bifurc (in, xvar, xcoord, yvar, ycoords, rang)
     % histogram
     n1 = histc(Y, ys, 2);
     n2 = zeros(RES_X, RES_Y);
-    j = 1;
-    for i = 1:length(xs) - 1
-        while j <= length (x) && x(j) <= xs(i + 1)
-            n2(i,:) += n1(j,:);
-            ++j;
-        end
-    end
-
+    
+    [n3,ii] = histc(x, xs);
+    n2 = accumdim(ii, n1, 1);
+    
     % plot
     n2 = n2' ./ repmat(max(n2'), rows(n2'), 1);
     imagesc(xs, ys, n2);

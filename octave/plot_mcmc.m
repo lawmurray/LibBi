@@ -43,15 +43,15 @@ function plot_mcmc (in, invar, coord)
     % plot
     ish = ishold;
     if !ish
-        cla % patch doesn't clear otherwise
+        cla; % patch doesn't clear otherwise
     end
     area_between(t, Q(:,1), Q(:,3), watercolour(2));
-    hold on
+    hold on;
     plot(t, Q(:,2), 'linewidth', 3, 'color', watercolour(2));
     if ish
-        hold on
+        hold on;
     else
-        hold off
+        hold off;
     end
     %title(nice_name(name, dims));
     %plot_defaults;
