@@ -99,4 +99,5 @@ function image_bifurc (in, xvar, xcoord, yvar, ycoords, rang)
     % plot
     n2 = n2' ./ repmat(max(n2'), rows(n2'), 1);
     imagesc(xs, ys, n2);
+    axis([xmin xmax ymin ymax]);
 end
