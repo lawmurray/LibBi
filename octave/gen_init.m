@@ -4,7 +4,7 @@
 % $Date: 2011-05-16 11:49:58 +0800 (Mon, 16 May 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} twindata (@var{in}, @var{invars}, @var{out}, @var{outvars}, @var{p})
+% @deftypefn {Function File} gen_init (@var{in}, @var{invar}, @var{out}, @var{outvar}, @var{p})
 %
 % Generate a initialisation file to match initial value of given trajectory
 % in output of simulate program.
