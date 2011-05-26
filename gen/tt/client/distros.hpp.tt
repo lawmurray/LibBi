@@ -84,7 +84,9 @@ template<class B, class V1>
 void sample_starting(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
     bi::Random& rng, V1 x) {
-  sample_distro(m, type, file, sd, includeInitial, rng, x);
+  if (type.compare("file") != 0) {
+    sample_distro(m, type, file, sd, includeInitial, rng, x);
+  }
 }
 
 template<class B>
