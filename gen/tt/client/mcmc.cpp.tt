@@ -48,6 +48,8 @@ int main(int argc, char* argv[]) {
     S2_ARG,
     BETA_ARG,
     ADAPT_ARG,
+    LAMBDA0_ARG,
+    GAMMA_ARG,
     ESS_REL_ARG,
     INIT_NS_ARG,
     FORCE_NS_ARG,
@@ -59,6 +61,7 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
     RESAMPLER_ARG,
+    SORT_ARG,
     PROPOSAL_TYPE_ARG,
     STARTING_TYPE_ARG,
     PROPOSAL_FILE_ARG,
@@ -66,13 +69,14 @@ int main(int argc, char* argv[]) {
     INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      S1 = 1.0, S2 = 0.0, BETA = 1.0e-3, ESS_REL = 1.0;
-  int ID = 0, P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
+      S1 = 1.0, S2 = 0.0, BETA = 1.0e-3, ESS_REL = 1.0, LAMBDA0 = 1000.0,
+      GAMMA = 1.0e-2;
+  int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 100, A = 1000;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
       PROPOSAL_FILE, STARTING_FILE;
   std::string PROPOSAL_TYPE("prior"), STARTING_TYPE("prior"), RESAMPLER("stratified");
-  bool INCLUDE_INITIAL = true, ADAPT = true;
+  bool INCLUDE_INITIAL = true, ADAPT = true, SORT = true;
   int c, option_index;
 
   option long_options[] = {
@@ -84,6 +88,8 @@ int main(int argc, char* argv[]) {
       {"s2", required_argument, 0, S2_ARG },
       {"beta", required_argument, 0, BETA_ARG },
       {"adapt", required_argument, 0, ADAPT_ARG },
+      {"LAMBDA0", required_argument, 0, LAMBDA0_ARG },
+      {"gamma", required_argument, 0, GAMMA_ARG },
       {"ess-rel", required_argument, 0, ESS_REL_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
@@ -99,10 +105,11 @@ int main(int argc, char* argv[]) {
       {"proposal-type", required_argument, 0, PROPOSAL_TYPE_ARG },
       {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
+      {"sort", required_argument, 0, SORT_ARG },
       {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
       {0, 0, 0, 0}
   };
-  const char* short_options = "T:h:P:L:C:a:";
+  const char* short_options = "T:h:P:C:a:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
@@ -131,6 +138,12 @@ int main(int argc, char* argv[]) {
         break;
       case ADAPT_ARG:
         ADAPT = atoi(optarg);
+        break;
+      case LAMBDA0_ARG:
+        LAMBDA0 = atof(optarg);
+        break;
+      case GAMMA_ARG:
+        GAMMA = atof(optarg);
         break;
       case ESS_REL_ARG:
         ESS_REL = atof(optarg);
@@ -177,6 +190,9 @@ int main(int argc, char* argv[]) {
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
         break;
+      case SORT_ARG:
+        SORT = atoi(optarg);
+        break;
       case INCLUDE_INITIAL_ARG:
         INCLUDE_INITIAL = atoi(optarg);
         break;
@@ -188,9 +204,6 @@ int main(int argc, char* argv[]) {
         break;
       case 'P':
         P = atoi(optarg);
-        break;
-      case 'L':
-        L = atoi(optarg);
         break;
       case 'C':
         C = atoi(optarg);
@@ -260,7 +273,7 @@ int main(int argc, char* argv[]) {
   ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
   /* filter */
-  StratifiedResampler resam(rng);
+  StratifiedResampler resam(rng, SORT);
   BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
       inForce, &inObs, &outFilter));
 
@@ -272,7 +285,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(p0, mcmc->getPrior());
 
   /* proposal */
-  BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, S1, INCLUDE_INITIAL));
+  BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, S2, INCLUDE_INITIAL));
 
   /* start */
   do {
@@ -281,9 +294,9 @@ int main(int argc, char* argv[]) {
   
   /* sample */
   if (ADAPT) {
-    mcmc->sample(q, x, C, T, theta, s, filter, &resam, ESS_REL, BETA, A, S1);
+    mcmc->sample(q, x, C, T, theta, s, filter, &resam, ESS_REL, LAMBDA0, GAMMA, BETA, A, S1);
   } else {
-    mcmc->sample(q, x, C, T, theta, s, filter, &resam, ESS_REL);    
+    mcmc->sample(q, x, C, T, theta, s, filter, &resam, ESS_REL, LAMBDA0, GAMMA);    
   }
   
   /* wrap up */

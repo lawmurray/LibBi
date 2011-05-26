@@ -47,8 +47,8 @@ U=730.0  # time to which to predict
 ##
 
 RESAMPLER=stratified  # resampling method
-L=0                   # number of steps for Metropolis resampler
 ESS_REL=0.5           # minimum ESS (proportional to P) to trigger resampling
+SORT=1                # sort weights before resampling
 B_ABS=0.0             # absolute kernel bandwidth (0 to use B_REL instead)
 B_REL=1.0             # relative kernel bandwidth
 SHRINK=1              # apply shrinkage to kernel densities?
@@ -60,6 +60,8 @@ SHRINK=1              # apply shrinkage to kernel densities?
 C=100000             # number of samples to draw
 A=1000               # centre of sigmoid for proposal adaptation
 BETA=1.0e-3          # decay of sigmoid for proposal adaptation
+LAMBDA0=1000          # starting temperature for annealing
+GAMMA=1.0e-2         # exponential decay of temperature for annealing
 S1=0.0               # proposal covariance scaling (0 for default)
 S2=1.0               # starting covariance scaling
 PROPOSAL_TYPE=prior  # proposal distribution type: file, prior, ukf, urts, pf, pfs or kfb

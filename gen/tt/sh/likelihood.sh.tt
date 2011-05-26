@@ -51,12 +51,7 @@ else
     OBS_FILE=
 fi
 
-if `test "$STARTING_TYPE" != "prior"`
-then
-    STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
-else
-    STARTING_FILE=
-fi
+STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
 
 # record
 if [[ "`hostname`" == gpu* ]]
@@ -65,8 +60,9 @@ then
 fi
 
 # run
-$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER -C $C \
-    --sd2=$SD2 --ess-rel=$ESS_REL --starting-type=$STARTING_TYPE \
+$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER \
+    --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
+    --starting-type=$STARTING_TYPE \
     --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE \
     --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \

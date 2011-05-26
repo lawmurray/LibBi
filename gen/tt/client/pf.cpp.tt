@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
     OBS_FILE_ARG,
     OUTPUT_FILE_ARG,
     RESAMPLER_ARG,
+    SORT_ARG,
     OUTPUT_ARG,
     TIME_ARG,
     INCLUDE_PARAMETERS_ARG,
@@ -62,11 +63,11 @@ int main(int argc, char* argv[]) {
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
       B_ABS = 0.0, B_REL = 1.0, B, ESS_REL = 1.0;
-  int P = 1024, L = 10, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
+  int P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE,
       RESAMPLER = std::string("stratified");
   bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false,
-      SHRINK = true;
+      SORT = true, SHRINK = true;
   int c, option_index;
 
   option long_options[] = {
@@ -82,6 +83,7 @@ int main(int argc, char* argv[]) {
       {"obs-file", required_argument, 0, OBS_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
+      {"sort", required_argument, 0, SORT_ARG },
       {"output", required_argument, 0, OUTPUT_ARG },
       {"time", required_argument, 0, TIME_ARG },
       {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG },
@@ -91,7 +93,7 @@ int main(int argc, char* argv[]) {
       {"ess-rel", required_argument, 0, ESS_REL_ARG },
       {0, 0, 0, 0}
   };
-  const char* short_options = "T:h:P:L:";
+  const char* short_options = "T:h:P:";
 
   do {
     c = getopt_long(argc, argv, short_options, long_options, &option_index);
@@ -133,6 +135,9 @@ int main(int argc, char* argv[]) {
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
         break;
+      case SORT_ARG:
+        SORT = atoi(optarg);
+        break;
       case OUTPUT_ARG:
         OUTPUT = atoi(optarg);
         break;
@@ -162,9 +167,6 @@ int main(int argc, char* argv[]) {
         break;
       case 'P':
         P = atoi(optarg);
-        break;
-      case 'L':
-        L = atoi(optarg);
         break;
       }
     }
@@ -234,7 +236,7 @@ int main(int argc, char* argv[]) {
     } else {
       B = B_REL*hopt(N, P);
     }
-    StratifiedResampler base(rng);
+    StratifiedResampler base(rng, SORT);
     KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B,
         SHRINK);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_OWN>::create(m,
@@ -242,7 +244,7 @@ int main(int argc, char* argv[]) {
     filter->filter(T, theta, s, &resam, ESS_REL);
     delete filter;
   } else {
-    StratifiedResampler resam(rng);
+    StratifiedResampler resam(rng, SORT);
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION,STATIC_SHARED>::create(m,
         rng, DELTA, inForce, &inObs, out)));
     filter->filter(T, theta, s, &resam, ESS_REL);

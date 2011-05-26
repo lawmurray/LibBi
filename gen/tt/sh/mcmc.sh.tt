@@ -29,6 +29,7 @@ FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
 if `test "$INIT_FILENAME" != ""`
 then
+    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
     INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
 else
     INIT_FILE=
@@ -36,28 +37,22 @@ fi
 
 if `test "$FORCE_FILENAME" != ""`
 then
+    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
     FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
 else
     FORCE_FILE=
 fi
 
-if `test "$PROPOSAL_TYPE" != "prior"`
+if `test "$OBS_FILENAME" != ""`
 then
-    PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
+    cp $DATA_DIR/$OBS_FILENAME $LOCAL_DIR
+    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
 else
-    PROPOSAL_FILE=
+    OBS_FILE=
 fi
 
-if `test "$STARTING_TYPE" != "prior"`
-then
-    STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
-else
-    STARTING_FILE=
-fi
-
-# copy forcings and observations to local file system
-#pbsdsh -u
-cp $INIT_FILE $FORCE_FILE $OBS_FILE $LOCAL_DIR/.
+PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
+STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
 
 # record
 if [[ "`hostname`" == gpu* ]]
@@ -68,7 +63,8 @@ fi
 # run
 $ROOT/build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
     --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
-    --resampler=$RESAMPLER -L $L -C $C --beta=$BETA -a $A --delta=$DELTA \
+    --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA -a $A \
+    --lambda=$LAMBDA --gamma=$GAMMA --delta=$DELTA \
     -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
     --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \

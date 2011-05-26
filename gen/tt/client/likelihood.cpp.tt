@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
     RESAMPLER_ARG,
+    SORT_ARG,
     STARTING_TYPE_ARG,
     STARTING_FILE_ARG,
     INCLUDE_INITIAL_ARG
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
       STARTING_FILE;
   std::string STARTING_TYPE("prior"), RESAMPLER("stratified");
-  bool INCLUDE_INITIAL = true;
+  bool INCLUDE_INITIAL = true, SORT = true;
   int c, option_index;
 
   option long_options[] = {
@@ -93,6 +94,7 @@ int main(int argc, char* argv[]) {
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
+      {"sort", required_argument, 0, SORT_ARG },
       {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
       {0, 0, 0, 0}
   };
@@ -155,6 +157,9 @@ int main(int argc, char* argv[]) {
         break;
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
+        break;
+      case SORT_ARG:
+        SORT = atoi(optarg);
         break;
       case INCLUDE_INITIAL_ARG:
         INCLUDE_INITIAL = atoi(optarg);
@@ -235,7 +240,7 @@ int main(int argc, char* argv[]) {
   ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
   /* filter */
-  StratifiedResampler resam(rng);
+  StratifiedResampler resam(rng, SORT);
   BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
       inForce, &inObs, &outFilter));
 
