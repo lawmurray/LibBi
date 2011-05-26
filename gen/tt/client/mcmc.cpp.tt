@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
       {"s2", required_argument, 0, S2_ARG },
       {"beta", required_argument, 0, BETA_ARG },
       {"adapt", required_argument, 0, ADAPT_ARG },
-      {"LAMBDA0", required_argument, 0, LAMBDA0_ARG },
+      {"lambda0", required_argument, 0, LAMBDA0_ARG },
       {"gamma", required_argument, 0, GAMMA_ARG },
       {"ess-rel", required_argument, 0, ESS_REL_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
