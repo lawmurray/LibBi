@@ -842,8 +842,8 @@ void bi::ParticleMCMC<B,IO1,CL>::proposal(const V1 x) {
   assert (x.size() == M);
 
   this->x2.theta = x;
-  x2.lq = 0.0;
-  x1.lq = 0.0;
+  x2.lq = std::log(0.0);
+  x1.lq = std::log(0.0);
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -901,9 +901,13 @@ bool bi::ParticleMCMC<B,IO1,CL>::metropolisHastings(F* filter, const real lambda
     real loglr = x2.ll - x1.ll;
     real logpr = x2.lp - x1.lp;
     real logqr = x1.lq - x2.lq;
-    real logratio = loglr/lambda + logpr + logqr;
+    if (!isfinite(x1.lq) && !isfinite(x2.lq)) {
+      logqr = 0.0;
+    }
+    real logratio = loglr + logpr + logqr;
+    real u = rng.uniform<real>();
 
-    result = log(rng.uniform<real>()) < logratio;
+    result = std::log(u) < logratio/lambda;
   }
 
   if (result) {

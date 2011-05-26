@@ -547,7 +547,7 @@ real bi::GaussianPdf<V1,M1>::density(const V2 x) {
   *z = x;
   axpy(-1.0, mu, *z);
   trmv(invU, *z, 'U');
-  exponent = -0.5*dot(*z, *z);
+  exponent = -0.5*dot(*z);
   p = invZ*exp(exponent);
   if (isnan(p)) {
     p = 0.0;
@@ -594,7 +594,7 @@ real bi::GaussianPdf<V1,M1>::logDensity(const V2 x) {
   *z = x;
   axpy(-1.0, mu, *z);
   trmv(invU, *z, 'U', 'T');
-  exponent = -0.5*dot(*z, *z);
+  exponent = -0.5*dot(*z);
   p = exponent - logZ;
 
   synchronize();
