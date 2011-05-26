@@ -248,6 +248,18 @@ void element_exp(InputIterator first, InputIterator last,
     OutputIterator result);
 
 /**
+ * Exponentiate all elements, unnormalised.
+ *
+ * @ingroup math_primitive
+ *
+ * @tparam InputIterator Model of input iterator.
+ * @tparam OutputIterator Model of output iterator.
+ */
+template<class InputIterator, class OutputIterator>
+void element_exp_unnormalised(InputIterator first, InputIterator last,
+    OutputIterator result);
+
+/**
  * Log all elements.
  *
  * @ingroup math_primitive
@@ -289,7 +301,7 @@ void sort_by_key(RandomAccessIterator1 keys_first,
     RandomAccessIterator1 keys_last, RandomAccessIterator2 values_first);
 
 /**
- * Sum-exp exclusive scan.
+ * Sum-exp exclusive scan, unnormalised.
  *
  * @ingroup math_primitive
  *
@@ -300,7 +312,8 @@ void sort_by_key(RandomAccessIterator1 keys_first,
  * @param last The end of the input sequence.
  * @param[out] result The beginning of the output sequence. On return, each
  * element \f$y_i\f$, \f$i > 0\f$, of the output sequence %equals
- * \f$\sum_{j=0}^{i-1} \exp\left(x_i\right)\f$, and \f$y_0 = 0\f$.
+ * \f$\sum_{j=0}^{i-1} \exp\left(x_i - \alpha\right)\f$, where
+ * \f$\alpha = \max_k x_k\f$, and \f$y_0 = 0\f$.
  *
  * NaN values do not contribute to the sum.
  */
@@ -309,7 +322,7 @@ void exclusive_scan_sum_exp(InputIterator first, InputIterator last,
     OutputIterator result);
 
 /**
- * Sum-exp inclusive scan.
+ * Sum-exp inclusive scan, unnormalised.
  *
  * @ingroup math_primitive
  *
@@ -320,7 +333,8 @@ void exclusive_scan_sum_exp(InputIterator first, InputIterator last,
  * @param last The end of the input sequence.
  * @param[out] result The beginning of the output sequence. On return, each
  * element \f$y_i\f$ of the output sequence %equals
- * \f$\sum_{j=0}^{i} \exp\left(x_i\right)\f$
+ * \f$\sum_{j=0}^{i} \exp\left(x_i - \alpha\right)\f$, where
+ * \f$\alpha = \max_k x_k\f$.
  *
  * NaN values do not contribute to the sum.
  */
@@ -465,8 +479,8 @@ inline typename InputIterator::value_type bi::sum_exp(InputIterator first,
   typedef typename InputIterator::value_type T;
 
   T mx = *bi::max(first, last);
-  T result = exp(mx)*thrust::transform_reduce(first, last,
-      nan_minus_and_exp_functor<T>(mx), init, thrust::plus<T>());
+  T result = exp(mx + log(thrust::transform_reduce(first, last,
+      nan_minus_and_exp_functor<T>(mx), init, thrust::plus<T>())));
 
   return result;
 }
@@ -490,8 +504,8 @@ inline typename InputIterator::value_type bi::sum_exp_square(
   typedef typename InputIterator::value_type T;
 
   T mx = *bi::max(first, last);
-  T result = exp(static_cast<T>(2.0)*mx)*thrust::transform_reduce(first,
-      last, nan_minus_exp_and_square_functor<T>(mx), init, thrust::plus<T>());
+  T result = exp(2.0*mx + log(thrust::transform_reduce(first,
+      last, nan_minus_exp_and_square_functor<T>(mx), init, thrust::plus<T>())));
 
   return result;
 }
@@ -521,9 +535,18 @@ inline void bi::element_exp(InputIterator first, InputIterator last, OutputItera
 }
 
 template<class InputIterator, class OutputIterator>
+inline void bi::element_exp_unnormalised(InputIterator first, InputIterator last, OutputIterator result) {
+  typedef typename InputIterator::value_type T;
+
+  T max = *thrust::max_element(first, last);
+  thrust::transform(first, last, result,
+      nan_minus_and_exp_functor<typename InputIterator::value_type>(max));
+}
+
+template<class InputIterator, class OutputIterator>
 inline void bi::element_log(InputIterator first, InputIterator last, OutputIterator result) {
   thrust::transform(first, last, result,
-      log_functor<typename InputIterator::value_type>());
+      nan_log_functor<typename InputIterator::value_type>());
 }
 
 template<class RandomAccessIterator>
@@ -544,8 +567,7 @@ inline void bi::exclusive_scan_sum_exp(InputIterator first, InputIterator last,
 
   T max = *thrust::max_element(first, last);
   thrust::transform_exclusive_scan(first, last, result,
-      nan_minus_exp_and_multiply_functor<T>(max, exp(max)),
-      static_cast<T>(0), thrust::plus<T>());
+      nan_minus_and_exp_functor<T>(max), static_cast<T>(0), thrust::plus<T>());
 }
 
 template<class InputIterator, class OutputIterator>
@@ -555,8 +577,7 @@ inline void bi::inclusive_scan_sum_exp(InputIterator first, InputIterator last,
 
   T max = *thrust::max_element(first, last);
   thrust::transform_inclusive_scan(first, last, result,
-      nan_minus_exp_and_multiply_functor<T>(max, exp(max)),
-      thrust::plus<T>());
+      nan_minus_and_exp_functor<T>(max), thrust::plus<T>());
 }
 
 template<class OutputIterator>

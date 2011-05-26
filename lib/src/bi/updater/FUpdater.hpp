@@ -12,6 +12,7 @@
 #include "../misc/pinned_allocator.hpp"
 #include "../misc/Markable.hpp"
 #include "../buffer/SparseCache.hpp"
+#include "../buffer/Cache1D.hpp"
 
 namespace bi {
 /**
@@ -26,11 +27,16 @@ struct FUpdaterState {
   /**
    * Index into cache.
    */
-  int p;
+  int p1;
+
+  /**
+   * Index into buffer.
+   */
+  int p2;
 };
 }
 
-bi::FUpdaterState::FUpdaterState() : p(0) {
+bi::FUpdaterState::FUpdaterState() : p1(0), p2(0) {
   //
 }
 
@@ -75,20 +81,29 @@ public:
   void reset();
 
   /**
+   * Are further updates available?
+   */
+  bool hasNext() const;
+
+  /**
    * Get time.
    *
    * @return The current time in the file.
    */
-  real getTime();
+  real getTime() const;
 
   /**
    * Set time.
    *
    * @param t The time.
+   * @param[out] s State.
    *
-   * Advances through the file until the given time is reached.
+   * Advances through the file until the given time is reached. Values are
+   * read into @p s as this progresses, ensuring that its state is valid for
+   * time @p t.
    */
-  void setTime(const real t);
+  template<Location L>
+  void setTime(const real t, State<L>& s);
 
   /**
    * @copydoc concept::Markable::mark()
@@ -112,6 +127,11 @@ private:
   SparseCache<CL> cache;
 
   /**
+   * Cache for times.
+   */
+  Cache1D<real> timeCache;
+
+  /**
    * State.
    */
   FUpdaterState state;
@@ -120,35 +140,32 @@ private:
 
 template<class B, class IO, bi::Location CL>
 bi::FUpdater<B,IO,CL>::FUpdater(IO& in) : in(in) {
-  in.reset();
+  reset();
 }
 
 template<class B, class IO, bi::Location CL>
 template<bi::Location L>
 inline void bi::FUpdater<B,IO,CL>::update(State<L>& s) {
-  /**
-   * @todo Consider swap or reference change type implementation.
-   */
-  /* swap back into cache if possible */
-//  if (state.p == 0 && cache.size() > 0) {
-//    if (!cache.isValid(cache.size() - 1)) {
-//      cache.swapWrite(cache.size() - 1, s.Kf);
-//    }
-//  } else if (state.p < cache.size() && !cache.isValid(state.p - 1)) {
-//    cache.swapWrite(state.p - 1, s.Kf);
-//  }
-
-  if (cache.isValid(state.p)) {
-    cache.read(state.p, s.get(F_NODE));
+  if (cache.isValid(state.p1)) {
+    cache.read(state.p1, s.get(F_NODE));
     //cache.swapRead(state.p, s.Kf);
   } else {
-    in.read(F_NODE, s.get(F_NODE));
-    cache.write(state.p, s.get(F_NODE));
-  }
+    while (state.p2 < state.p1) {
+      in.next();
+      ++state.p2;
+    }
+    assert (state.p1 == state.p2);
 
-  if (in.hasNext()) {
+    in.mask();
+    in.read(F_NODE, s.get(F_NODE));
     in.next();
-    ++state.p;
+    cache.write(state.p1, s.get(F_NODE));
+  }
+  ++state.p1;
+
+  /* next time */
+  if (!timeCache.isValid(state.p1) && in.isValid()) {
+    timeCache.put(state.p1, in.getTime());
   }
 }
 
@@ -156,24 +173,33 @@ template<class B, class IO, bi::Location CL>
 inline void bi::FUpdater<B,IO,CL>::reset() {
   Markable<FUpdaterState>::unmark();
   in.reset();
-  state.p = 0;
-}
+  state.p1 = 0;
+  state.p2 = 0;
 
-template<class B, class IO, bi::Location CL>
-inline real bi::FUpdater<B,IO,CL>::getTime() {
-  return in.getTime();
-}
-
-template<class B, class IO, bi::Location CL>
-void bi::FUpdater<B,IO,CL>::setTime(const real t) {
-  if (t < in.getTime()) {
-    /* return to start */
-    in.reset();
-    state.p = 0;
+  /* next time */
+  if (!timeCache.isValid(state.p1) && in.isValid()) {
+    timeCache.put(state.p1, in.getTime());
   }
-  while (in.hasNext() && in.getNextTime() <= t) {
-    in.next();
-    ++state.p;
+}
+
+template<class B, class IO, bi::Location CL>
+inline bool bi::FUpdater<B,IO,CL>::hasNext() const {
+  return timeCache.isValid(state.p1);
+}
+
+template<class B, class IO, bi::Location CL>
+inline real bi::FUpdater<B,IO,CL>::getTime() const {
+  return timeCache.get(state.p1);
+}
+
+template<class B, class IO, bi::Location CL>
+template<bi::Location L>
+void bi::FUpdater<B,IO,CL>::setTime(const real t, State<L>& s) {
+  if (t < in.getTime()) {
+    reset();
+  }
+  while (hasNext() && in.getTime() < t) {
+    update(s);
   }
 }
 

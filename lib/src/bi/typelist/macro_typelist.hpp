@@ -45,32 +45,22 @@ struct EmptyTypeList {
 /**
  * @def BEGIN_TYPELIST_TEMPLATE(name)
  *
- * Open templated type list. The macro should be immediately
- * preceded by a @c template statement.
+ * Open templated type list.
  *
  * @ingroup model_typelist
  *
  * @arg @c name Name to assign to the type list definition.
+ * @arg Remaining variadic arguments specify template types.
  */
-#define BEGIN_TYPELIST_TEMPLATE(name) struct name { \
+#define BEGIN_TYPELIST_TEMPLATE(name, ...) \
+  template<__VA_ARGS__> \
+  struct name { \
   typedef typename bi::empty_easy_typelist
 
 /**
- * @def SINGLE_TYPE(reps, single)
+ * @def SINGLE_TYPE(reps, single, ...)
  *
  * Add single type to currently open type list.
- *
- * @ingroup model_typelist
- *
- * @arg @c reps Number of times to repeat this type.
- * @arg @c single Single type.
- */
-#define SINGLE_TYPE(reps, single) ::push_back<single,reps>::type
-
-/**
- * @def SINGLE_TYPE_TEMPLATE(reps, single, ...)
- *
- * Add templated single type to currently open type list.
  *
  * @ingroup model_typelist
  *
@@ -79,7 +69,21 @@ struct EmptyTypeList {
  * @arg Remaining variadic arguments are to accommodate template types
  * containing commas.
  */
-#define SINGLE_TYPE_TEMPLATE(reps, single, ...) ::push_back<single,##__VA_ARGS__,reps>::type
+#define SINGLE_TYPE(reps, single, ...) ::push_back<single,##__VA_ARGS__,reps>::type
+
+/**
+ * @def SINGLE_TYPE_TEMPLATE(reps, single, ...)
+ *
+ * Add templated single type to currently open templated type list.
+ *
+ * @ingroup model_typelist
+ *
+ * @arg @c reps Number of times to repeat this type.
+ * @arg @c single Single type.
+ * @arg Remaining variadic arguments are to accommodate template types
+ * containing commas.
+ */
+#define SINGLE_TYPE_TEMPLATE(reps, single, ...) ::template push_back<single,##__VA_ARGS__,reps>::type
 
 /**
  * @def COMPOUND_TYPE(reps, compound)
@@ -90,13 +94,15 @@ struct EmptyTypeList {
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c type Compound type.
+ * @arg Remaining variadic arguments are to accommodate template types
+ * containing commas.
  */
-#define COMPOUND_TYPE(reps, compound) ::push_back_spec<compound,reps>::type
+#define COMPOUND_TYPE(reps, compound, ...) ::push_back_spec<compound,##__VA_ARGS__,reps>::type
 
 /**
  * @def COMPOUND_TYPE_TEMPLATE(reps, compound)
  *
- * Add compound type to currently open type list.
+ * Add compound type to currently open templated type list.
  *
  * @ingroup model_typelist
  *
@@ -105,7 +111,7 @@ struct EmptyTypeList {
  * @arg Remaining variadic arguments are to accommodate template types
  * containing commas.
  */
-#define COMPOUND_TYPE_TEMPLATE(reps, compound, ...) ::push_back_spec<compound,##__VA_ARGS__,reps>::type
+#define COMPOUND_TYPE_TEMPLATE(reps, compound, ...) ::template push_back_spec<compound,##__VA_ARGS__,reps>::type
 
 /**
  * @def END_TYPELIST()
@@ -115,6 +121,16 @@ struct EmptyTypeList {
  * @ingroup model_typelist
  */
 #define END_TYPELIST() type; \
+};
+
+/**
+ * @def END_TYPELIST_TEMPLATE()
+ *
+ * Close templated type list.
+ *
+ * @ingroup model_typelist
+ */
+#define END_TYPELIST_TEMPLATE() type; \
 };
 
 /**
@@ -139,6 +155,6 @@ struct EmptyTypeList {
  * @arg Remaining variadic arguments are to accommodate template types
  * containing commas.
  */
-#define GET_TYPELIST_TEMPLATE(name, ...) typename name,##__VA_ARGS__::type::type
+#define GET_TYPELIST_TEMPLATE(name, ...) typename name<__VA_ARGS__>::type::type
 
 #endif

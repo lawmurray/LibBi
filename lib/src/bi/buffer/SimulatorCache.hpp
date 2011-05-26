@@ -14,6 +14,8 @@ namespace bi {
 /**
  * Cache for SimulatorBuffer reads and writes.
  *
+ * @ingroup io_cache
+ *
  * @tparam L Location.
  */
 template<Location L = ON_HOST>
@@ -189,12 +191,18 @@ public:
   template<class M2>
   void writeTrajectory(const int t, const M2& s);
 
-private:
+  /**
+   * Clean cache. All pages are no longer dirty. Typically called after cache
+   * is written out to file.
+   */
+  void clean();
+
   /**
    * Clear cache.
    */
   void clear();
 
+private:
   /**
    * Current mode.
    */
@@ -391,6 +399,11 @@ void bi::SimulatorCache<L>::writeTrajectory(const int p, const M2& x) {
 
   /* post-condition */
   assert (isValidTrajectory(p));
+}
+
+template<bi::Location L>
+void bi::SimulatorCache<L>::clean() {
+  std::fill(dirties.begin(), dirties.end(), false);
 }
 
 template<bi::Location L>

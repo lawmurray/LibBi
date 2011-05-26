@@ -169,6 +169,18 @@ struct log_functor : public std::unary_function<T,T> {
 /**
  * @ingroup math_functor
  *
+ * \f$\ln x\f$; log unary functor, all nan inputs give -inf as outputs.
+ */
+template<typename T>
+struct nan_log_functor : public std::unary_function<T,T> {
+  CUDA_FUNC_BOTH T operator()(const T &x) const {
+    return CUDA_NANLOG(x);
+  }
+};
+
+/**
+ * @ingroup math_functor
+ *
  * \f$kx\f$; constant multiply unary function.
  */
 template<typename T>
@@ -371,6 +383,30 @@ struct nan_minus_exp_and_multiply_functor : public std::unary_function<T,T> {
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
     return z*CUDA_NANEXP(x - y);
+  }
+};
+
+/**
+ * @ingroup math_functor
+ *
+ * Is finite predicate.
+ */
+template<class T>
+struct is_finite_functor : public std::unary_function<T,T> {
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return isfinite(x);
+  }
+};
+
+/**
+ * @ingroup math_functor
+ *
+ * Is not finite predicate.
+ */
+template<class T>
+struct is_not_finite_functor : public std::unary_function<T,T> {
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return !isfinite(x);
   }
 };
 

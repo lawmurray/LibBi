@@ -9,11 +9,12 @@
 #define BI_MODEL_BAYESNET_HPP
 
 #include "BayesNode.hpp"
-#include "../typelist/TypeList.hpp"
+#include "../typelist/macro_typelist.hpp"
 #include "../misc/assert.hpp"
 #include "../misc/macro.hpp"
 
 #include <vector>
+#include <set>
 #include <map>
 #include <string>
 
@@ -214,7 +215,30 @@ public:
    * @return List of parent nodes, containing ids and dimension offsets.
    */
   const std::vector<BayesNetParent>& getParents(const NodeType parentType,
-      const NodeType childType, const int id);
+      const NodeType childType, const int id) const;
+
+  /**
+   * Is node a log node?
+   *
+   * @tparam type Node type.
+   * @tparam id Node id.
+   *
+   * @return True if node is a log-node, false otherwise.
+   *
+   * @see getLogs()
+   */
+  bool isLog(const NodeType type, const int id) const;
+
+  /**
+   * Get log nodes of given type.
+   *
+   * @tparam type Node type.
+   *
+   * @return Set of node ids giving log-nodes. These are those with a
+   * log-normal prior, and so are treated in log-space when computing
+   * sample covariances and the like.
+   */
+  const std::set<int>& getLogs(const NodeType type) const;
 
 protected:
   /**
@@ -300,6 +324,10 @@ private:
    */
   std::vector<std::vector<int> > numArcs;
 
+  /**
+   * Log-nodes, indexed by type.
+   */
+  std::vector<std::set<int> > logs;
 };
 
 }
@@ -308,6 +336,7 @@ private:
 #include "../typelist/size.hpp"
 #include "../typelist/runtime.hpp"
 #include "../traits/type_traits.hpp"
+#include "../traits/derived_traits.hpp"
 
 template<class B>
 void bi::BayesNet::init() {
@@ -323,6 +352,7 @@ void bi::BayesNet::init() {
   nodeStarts.resize(NUM_NODE_TYPES);
   arcs.resize(NUM_NODE_TYPES);
   numArcs.resize(NUM_NODE_TYPES);
+  logs.resize(NUM_NODE_TYPES);
 
   dimSizes[X_DIM] = B::NX;
   dimSizes[Y_DIM] = B::NY;
@@ -370,6 +400,9 @@ void bi::BayesNet::addNode(X& node) {
   nodesByName[type].insert(std::make_pair(node.getName(), &node));
   nodeSizes[type][id] = node_size<B,X>::value;
   nodeStarts[type][id] = node_start<B,X>::value;
+  if (is_log_variable<X>::value) {
+    logs[type].insert(id);
+  }
 }
 
 template<class X1, class X2>
@@ -483,11 +516,20 @@ inline bi::BayesNode* bi::BayesNet::getNode(const NodeType type,
 
 inline const std::vector<bi::BayesNetParent>& bi::BayesNet::getParents(
     const NodeType parentType, const NodeType childType,
-    const int id) {
+    const int id) const {
   /* pre-condition */
   assert(id < (int)nodesById[childType].size());
 
   return arcs[parentType][childType][id];
+}
+
+inline bool bi::BayesNet::isLog(const NodeType type, const int id) const {
+  return logs[type].find(id) != logs[type].end();
+}
+
+inline const std::set<int>& bi::BayesNet::getLogs(const NodeType type)
+    const {
+  return logs[type];
 }
 
 #endif

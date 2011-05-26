@@ -11,7 +11,10 @@
 #include "../math/host_matrix.hpp"
 #include "../misc/pinned_allocator.hpp"
 #include "../misc/Markable.hpp"
+#include "../buffer/SparseMask.hpp"
 #include "../buffer/SparseCache.hpp"
+#include "../buffer/Cache.hpp"
+#include "../buffer/Cache1D.hpp"
 
 namespace bi {
 /**
@@ -28,16 +31,16 @@ struct OYUpdaterState {
   /**
    * Index into cache.
    */
-  int p;
+  int p1;
 
   /**
-   * Has the last observation been returned?
+   * Index into buffer.
    */
-  bool end;
+  int p2;
 };
 }
 
-bi::OYUpdaterState::OYUpdaterState() : p(0), end(false) {
+bi::OYUpdaterState::OYUpdaterState() : p1(0), p2(0) {
   //
 }
 
@@ -59,6 +62,11 @@ template<class B, class IO, Location CL = ON_HOST>
 class OYUpdater : public Markable<OYUpdaterState> {
 public:
   /**
+   * Mask type.
+   */
+  typedef SparseMask<CL> mask_type;
+
+  /**
    * Constructor.
    *
    * @param in Input.
@@ -71,26 +79,14 @@ public:
    * @tparam L Location.
    *
    * @param[out] s State to update.
+   *
+   * Note that the update is @em sparse. The OY_NODE component of @p s is
+   * resized to contain only those variables active after the update. Use
+   * getMask() to obtain the list of active variable ids and their spatial
+   * coordinates.
    */
   template<Location L>
   void update(State<L>& s);
-
-  /**
-   * Update oy-net to next time.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   *
-   * @param[out] s State to update.
-   * @param[out] y Contiguous vector of observations.
-   *
-   * Updates @p s as usual, as well as resizing @p y and copying all updated
-   * observations into it to form a contiguous observation vector. The
-   * particular updated observations can be obtained with a previous call
-   * to getCurrentNodes().
-   */
-  template<Location L, class V1>
-  void update(State<L>& s, V1& y);
 
   /**
    * Reset to begin reading from first time record again.
@@ -98,47 +94,30 @@ public:
   void reset();
 
   /**
-   * Get current time.
+   * Current time.
    *
    * @return The current time.
    */
-  real getTime();
+  real getTime() const;
 
   /**
-   * Is there another record yet?
+   * Current mask.
    *
-   * @return True if there is another record, false otherwise.
+   * @return The current mask.
    */
-  bool hasNext();
+  const mask_type& getMask() const;
 
   /**
-   * Get next time.
+   * Are further updates available?
+   */
+  bool hasNext() const;
+
+  /**
+   * Next time.
    *
-   * @return The next time in the file.
+   * @return The next time.
    */
-  real getNextTime();
-
-  /**
-   * @copydoc concept::InputBuffer::countCurrentNodes()
-   */
-  int countCurrentNodes();
-
-  /**
-   * @copydoc concept::InputBuffer::countNextNodes()
-   */
-  int countNextNodes();
-
-  /**
-   * @copydoc concept::InputBuffer::getCurrentNodes()
-   */
-  template<class V1>
-  void getCurrentNodes(V1& ids);
-
-  /**
-   * @copydoc concept::InputBuffer::getNextNodes()
-   */
-  template<class V1>
-  void getNextNodes(V1& ids);
+  real getNextTime() const;
 
   /**
    * @copydoc concept::Markable::mark()
@@ -162,6 +141,16 @@ private:
   SparseCache<CL> cache;
 
   /**
+   * Cache for times.
+   */
+  Cache1D<real> timeCache;
+
+  /**
+   * Cache for masks.
+   */
+  Cache<mask_type> maskCache;
+
+  /**
    * State.
    */
   OYUpdaterState state;
@@ -170,118 +159,81 @@ private:
 
 template<class B, class IO, bi::Location CL>
 bi::OYUpdater<B,IO,CL>::OYUpdater(IO& in) : in(in) {
-  in.reset();
+  reset();
 }
 
 template<class B, class IO, bi::Location CL>
 template<bi::Location L>
 inline void bi::OYUpdater<B,IO,CL>::update(State<L>& s) {
-  /**
-   * @todo Consider swap or reference change type implementation.
-   */
-  /* swap back into cache if possible */
-//  if (state.p == 0 && cache.size() > 0) {
-//    if (!cache.isValid(cache.size() - 1)) {
-//      cache.swapWrite(cache.size() - 1, s.Koy);
-//    }
-//  } else if (state.p < cache.size() && !cache.isValid(state.p - 1)) {
-//    cache.swapWrite(state.p - 1, s.Koy);
-//  }
+  /* pre-condition */
+  assert(hasNext());
 
-  if (cache.isValid(state.p)) {
-    cache.read(state.p, s.get(OY_NODE));
-    //cache.swapRead(state.p, s.Koy);
+  /* current observations and mask */
+  if (cache.isValid(state.p1)) {
+    cache.read(state.p1, s.get(OY_NODE));
+    //cache.swapRead(state.p1, s.Koy);
+    assert (maskCache.isValid(state.p1));
   } else {
-    in.read(O_NODE, s.get(OY_NODE));
-    cache.write(state.p, s.get(OY_NODE));
-  }
+    while (state.p2 < state.p1) {
+      in.next();
+      ++state.p2;
+    }
+    assert (state.p1 == state.p2);
 
-  if (in.hasNext()) {
+    in.mask();
+    s.oresize(in.getMask(O_NODE).size(), false);
+    ///@todo Consider reading into host vector first, then copy
+    in.readContiguous(O_NODE, matrix_as_vector(s.get(OY_NODE)));
+    cache.write(state.p1, s.get(OY_NODE));
+    maskCache.put(state.p1, in.getMask(O_NODE));
     in.next();
-    ++state.p;
-  } else {
-    state.end = true;
+    ++state.p2;
   }
-}
+  ++state.p1;
 
-template<class B, class IO, bi::Location CL>
-template<bi::Location L, class V1>
-inline void bi::OYUpdater<B,IO,CL>::update(State<L>& s, V1& y) {
-  typedef typename V1::value_type T1;
-
-  update(s);
-
-  BOOST_AUTO(ids1, host_temp_vector<int>(0));
-  BOOST_AUTO(y1, host_temp_vector<T1>(0));
-  BOOST_AUTO(s1, host_map_vector(row(s.get(OY_NODE), 0)));
-  if (L == ON_DEVICE) {
-    synchronize();
+  /* next time */
+  if (!timeCache.isValid(state.p1) && in.isValid()) {
+    timeCache.put(state.p1, in.getTime());
   }
-
-  in.getCurrentNodes(O_NODE, *ids1);
-  y1->resize(ids1->size());
-  bi::gather(ids1->begin(), ids1->end(), s1->begin(), y1->begin());
-
-  y.resize(y1->size());
-  y = *y1;
-
-  synchronize();
-  delete ids1;
-  delete y1;
-  delete s1;
 }
 
 template<class B, class IO, bi::Location CL>
 inline void bi::OYUpdater<B,IO,CL>::reset() {
   Markable<OYUpdaterState>::unmark();
   in.reset();
-  state.p = 0;
-  state.end = false;
-}
+  state.p1 = 0;
+  state.p2 = 0;
 
-template<class B, class IO, bi::Location CL>
-inline real bi::OYUpdater<B,IO,CL>::getTime() {
-  return in.getTime();
-}
-
-template<class B, class IO, bi::Location CL>
-inline bool bi::OYUpdater<B,IO,CL>::hasNext() {
-  return in.hasNext();
-}
-
-template<class B, class IO, bi::Location CL>
-inline real bi::OYUpdater<B,IO,CL>::getNextTime() {
-  return in.getNextTime();
-}
-
-template<class B, class IO, bi::Location CL>
-inline int bi::OYUpdater<B,IO,CL>::countCurrentNodes() {
-  if (state.end) {
-    return 0;
-  } else {
-    return in.countCurrentNodes(O_NODE);
+  /* next time */
+  if (!timeCache.isValid(state.p1) && in.isValid()) {
+    timeCache.put(state.p1, in.getTime());
   }
 }
 
 template<class B, class IO, bi::Location CL>
-inline int bi::OYUpdater<B,IO,CL>::countNextNodes() {
-  return in.countNextNodes(O_NODE);
+inline real bi::OYUpdater<B,IO,CL>::getTime() const {
+  /* pre-condition */
+  assert (state.p1 > 0);
+
+  return timeCache.get(state.p1 - 1);
 }
 
 template<class B, class IO, bi::Location CL>
-template<class V1>
-inline void bi::OYUpdater<B,IO,CL>::getCurrentNodes(V1& ids) {
-  if (state.end) {
-    ids.resize(0);
-  } else {
-    in.getCurrentNodes(O_NODE, ids);
-  }
+inline const typename bi::OYUpdater<B,IO,CL>::mask_type& bi::OYUpdater<B,IO,CL>::getMask() const {
+  /* pre-condition */
+  assert (state.p1 > 0);
+
+  return maskCache.get(state.p1 - 1);
 }
 
 template<class B, class IO, bi::Location CL>
-template<class V1>
-inline void bi::OYUpdater<B,IO,CL>::getNextNodes(V1& ids) {
-  in.getNextNodes(O_NODE, ids);
+inline bool bi::OYUpdater<B,IO,CL>::hasNext() const {
+  return timeCache.isValid(state.p1);
+}
+
+template<class B, class IO, bi::Location CL>
+inline real bi::OYUpdater<B,IO,CL>::getNextTime() const {
+  return timeCache.get(state.p1);
 }
 
 template<class B, class IO, bi::Location CL>

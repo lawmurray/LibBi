@@ -62,19 +62,20 @@ inline void bi::ORUpdateVisitor<B,S,M1>::accept(Random& rng, M1& s) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
 
-  Coord cox;
-  int id = node_start<B,front>::value;
-  for (cox.z = 0; cox.z < node_z_size<B,front>::value; ++cox.z) {
-    for (cox.y = 0; cox.y < node_y_size<B,front>::value; ++cox.y) {
-      for (cox.x = 0; cox.x < node_x_size<B,front>::value; ++cox.x, ++id) {
-        if (is_gaussian_likelihood<front>::value ||
-            is_log_normal_likelihood<front>::value) {
-          rng.gaussians(column(s, id).buf());
-        } else {
-          BI_ASSERT(false, "Random variate has unsupported distribution");
-        }
+  static const int start = node_start<B,front>::value;
+  static const int size = node_size<B,front>::value;
+
+  if (is_gaussian_likelihood<front>::value ||
+      is_log_normal_likelihood<front>::value) {
+    if (s.lead() == s.size1()) {
+      rng.gaussians(columns(s, start, size).buf());
+    } else {
+      for (int i = start; i < start + size; ++i) {
+        rng.gaussians(column(s, i).buf());
       }
     }
+  } else {
+    BI_ASSERT(false, "Random variate has unsupported distribution");
   }
   ORUpdateVisitor<B,pop_front,M1>::accept(rng, s);
 }

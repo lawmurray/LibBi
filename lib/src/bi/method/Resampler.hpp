@@ -9,8 +9,10 @@
 #define BI_METHOD_RESAMPLER_HPP
 
 #include "../state/State.hpp"
+#include "../state/Static.hpp"
 #include "../random/Random.hpp"
 #include "../math/scalar.hpp"
+#include "../math/locatable.hpp"
 
 namespace bi {
 /**
@@ -154,10 +156,10 @@ public:
    * @copydoc Resampler::copy()
    */
   template<class V1, class M1>
-  static void copy(const V1& as, M1 s) {
+  static void copy(const V1& as, M1 X) {
     /* pre-condition */
     assert (!M1::on_device);
-    assert (as.size() <= s.size1());
+    assert (as.size() <= X.size1());
 
     BOOST_AUTO(hostAs, host_map_vector(as));
     if (V1::on_device) {
@@ -166,7 +168,7 @@ public:
     int p;
     for (p = 0; p < hostAs->size(); ++p) {
       if ((*hostAs)[p] != p) {
-        row(s, p) = row(s, (*hostAs)[p]);
+        row(X, p) = row(X, (*hostAs)[p]);
       }
     }
     delete hostAs;
@@ -244,7 +246,7 @@ public:
    * @tparam M1 Matrix type.
    *
    * @param as Ancestry.
-   * @param[in,out] s State.
+   * @param[in,out] X State.
    *
    * The copy is performed in-place. For each particle @c i that is to be
    * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
@@ -253,7 +255,26 @@ public:
    * constraint.
    */
   template<class V1, class M1>
-  static void copy(const V1& as, M1 s);
+  static void copy(const V1& as, M1 X);
+
+  /**
+   * Replicate and eliminate particles based on ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam L Location.
+   *
+   * @param as Ancestry.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
+   *
+   * The copy is performed in-place. For each particle @c i that is to be
+   * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
+   * @c i. This ensures that all particles are either read or (over)written,
+   * but not both. Use permute() to ensure that an ancestry satisfies this
+   * constraint.
+   */
+  template<class V1, Location L>
+  static void copy(const V1& as, Static<L>& theta, State<L>& s);
 
   /**
    * Compute squared error of ancestry.
@@ -413,6 +434,42 @@ void bi::Resampler::copy(const V1& as, M1 s) {
       ResamplerDeviceImpl,
       ResamplerHostImpl>::type impl;
   impl::copy(as, s);
+}
+
+template<class V1, bi::Location L>
+void bi::Resampler::copy(const V1& as, Static<L>& theta, State<L>& s) {
+  bool own = theta.size() > 1;
+
+  s.resize(std::max(s.size(), as.size()), true);
+  if (own) {
+    theta.resize(std::max(theta.size(), as.size()), true);
+  }
+
+  /* create views of all nodes together, to allow copy in one kernel
+   * launch when operating on device */
+  BOOST_AUTO(X, columns(s.X, 0, s.get(D_NODE).size2() + s.get(C_NODE).size2() + s.get(R_NODE).size2()));
+  BOOST_AUTO(K, columns(theta.K, 0, theta.get(S_NODE).size2() + theta.get(P_NODE).size2()));
+
+  if (V1::on_device == State<L>::on_device) {
+    copy(as, X);
+    if (own) {
+      copy(as, K);
+    }
+  } else {
+    BOOST_AUTO(as1, map_vector(s, as));
+    synchronize();
+    copy(*as1, X);
+    if (own) {
+      copy(*as1, K);
+    }
+    synchronize();
+    delete as1;
+  }
+
+  s.resize(as.size(), true);
+  if (own) {
+    theta.resize(as.size(), true);
+  }
 }
 
 template<class V1, class V2>

@@ -20,15 +20,16 @@ void bi::ResamplerDeviceImpl::permute(V1& as) {
 
   const int P = as.size();
 
-  static V1 is;
-  is.resize(P);
-  thrust::fill(is.begin(), is.end(), -1);
+  BOOST_AUTO(is, gpu_temp_vector<int>(P));
+  thrust::fill(is->begin(), is->end(), -1);
 
   dim3 Dg, Db;
   Db.x = std::min(128, P);
   Dg.x = (P + Db.x - 1) / Db.x;
 
-  kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
+  kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is->buf(), P);
+  synchronize();
+  delete is;
 }
 
 template<class V1, class M1>
@@ -50,7 +51,9 @@ void bi::ResamplerDeviceImpl::copy(const V1& as, M1 s) {
 
   kernelResamplerCopy<<<Dg,Db>>>(devAs->buf(), s);
 
-  synchronize();
+  if (!V1::on_device) {
+    synchronize();
+  }
   delete devAs;
 }
 

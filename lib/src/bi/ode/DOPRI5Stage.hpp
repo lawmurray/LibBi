@@ -144,7 +144,7 @@ public:
 /**
  * @internal
  *
- * Stage calculations for NonStiffIntegrator, non-ODE nodes.
+ * Stage calculations for DOPRI5Integrator, non-ODE nodes.
  *
  * @tparam X Node type.
  * @tparam T1 Value type.

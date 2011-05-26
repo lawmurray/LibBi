@@ -225,6 +225,17 @@ inline void bi::ParticleMCMCState::serialize(Archive& ar, const unsigned version
 }
 #endif
 
+/**
+ * @internal
+ *
+ * Type list for prior factors in ParticleMCMC.
+ */
+BEGIN_TYPELIST_TEMPLATE(ParticleMCMCFactorTypeList, class B)
+SINGLE_TYPE_TEMPLATE(1, typename B::DPriorType)
+SINGLE_TYPE_TEMPLATE(1, typename B::CPriorType)
+SINGLE_TYPE_TEMPLATE(1, typename B::PPriorType)
+END_TYPELIST();
+
 namespace bi {
 /**
  * Particle Markov chain Monte Carlo sampler. Supports Particle Marginal
@@ -243,9 +254,6 @@ namespace bi {
  */
 template<class B, class IO1, Location CL = ON_HOST>
 class ParticleMCMC {
-private:
-  typedef typename B::prior_type factor_type;
-  typedef typename push_back<empty_typelist,factor_type,3>::type factor_typelist;
 public:
   /**
    * State type.
@@ -253,10 +261,14 @@ public:
   typedef ParticleMCMCState state_type;
 
   /**
+   * Factor type list for prior.
+   */
+  typedef GET_TYPELIST_TEMPLATE(ParticleMCMCFactorTypeList, B) factor_type;
+
+  /**
    * Prior type.
    */
-  typedef FactoredPdf<factor_typelist> prior_type;
-
+  typedef FactoredPdf<factor_type> prior_type;
 
   /**
    * Constructor.
@@ -308,7 +320,42 @@ public:
    */
   //@{
   /**
-   * Sample.
+   * Sample, with adaptation of proposal.
+   *
+   * @tparam Q1 Conditional pdf type.
+   * @tparam V1 Vector type.
+   * @tparam L Location.
+   * @tparam F #concept::Filter type.
+   * @tparam R #concept::Resampler type.
+   *
+   * @param q0 Initial proposal distribution.
+   * @param x Initial state.
+   * @param C Number of samples to draw.
+   * @param T Length of time to sample over.
+   * @param theta Static state.
+   * @param s State.
+   * @param filter Filter.
+   * @param resampler Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   * @param lambda0 Starting temperature for annealing.
+   * @param gamma Exponential decay of temperature for annealing.
+   * @param beta Decay of sigmoid for proposal adaptation.
+   * @param a Centre of sigmoid for proposal adaptation.
+   * @param s1 Scaling parameter for proposal adaptation. Zero gives default.
+   *
+   * Note that @p theta and @p s should be initialised with the starting
+   * state of the chain.
+   */
+  template<class Q1, class V1, Location L, class F, class R>
+  void sample(Q1& q0, const V1 x, const int C, const real T,
+      Static<L>& theta, State<L>& s, F* filter, R* resampler,
+      const real relEss, const real lambda0,
+      const real gamma, const real beta,
+      const int a, const real s1);
+
+  /**
+   * Sample, without adaptation of proposal.
    *
    * @tparam Q1 Conditional pdf type.
    * @tparam V1 Vector type.
@@ -324,18 +371,20 @@ public:
    * @param s State.
    * @param filter Filter.
    * @param resampler Resampler.
-   * @param sd Proposal adaptation scaling parameter. Zero gives default.
-   * @param A Number of steps after which to start adaptation. Negative gives
-   * no adaptation.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   * @param lambda0 Starting temperature for annealing.
+   * @param gamma Exponential decay of temperature for annealing.
    *
-   * Note that @c theta.get(P_NODE) should be initialised with the starting
+   * Note that @p theta and @p s should be initialised with the starting
    * state of the chain.
    */
   template<class Q1, class V1, Location L, class F, class R>
-  void sample(Q1& q, const V1 x, const int C, const real T, Static<L>& theta,
-      State<L>& s, F* filter, R* resampler = NULL, const real sd = 0.0,
-      const int A = -1);
-  //@}
+  void sample(Q1& q, const V1 x, const int C, const real T,
+      Static<L>& theta, State<L>& s, F* filter, R* resampler,
+      const real relEss = 1.0, const real lambda0 = 1000.0,
+      const real gamma = 1.0e-2);
+//@}
 
   /**
    * @name Low-level interface.
@@ -358,10 +407,12 @@ public:
    * @param s State.
    * @param filter Filter.
    * @param resampler Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
   template<class V1, Location L, class F, class R>
   void init(const V1 x, const real T, Static<L>& theta, State<L>& s,
-      F* filter, R* resampler);
+      F* filter, R* resampler, const real relEss = 1.0);
   /**
    * Propose new state of Markov chain.
    *
@@ -403,20 +454,28 @@ public:
    * @param s State.
    * @param filter Filter.
    * @param resampler Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    * @param type Type of filtering to perform.
    */
   template<Location L, class F, class R>
   void likelihood(const real T, Static<L>& theta, State<L>& s,
-      F* filter, R* resampler = NULL, const FilterType type = UNCONDITIONED);
+      F* filter, R* resampler = NULL, const real relEss = 1.0,
+      const FilterType type = UNCONDITIONED);
 
   /**
    * Apply Metropolis-Hastings criterion to accept or reject proposal.
    * Should be used for asymmetric proposals.
    *
+   * @tparam F Filter type.
+   *
+   * @param filter Filter.
+   * @param lambda Temperature.
+   *
    * @return True if proposal is accepted, false otherwise.
    */
   template<class F>
-  bool metropolisHastings(F* filter);
+  bool metropolisHastings(F* filter, const real lambda = 1.0);
 
   /**
    * Apply Metropolis criterion to accept or reject proposal. May be used
@@ -448,14 +507,32 @@ public:
    * @tparam Q1 Conditional pdf type.
    *
    * @param[in,out] q Proposal to adapt.
-   * @param sd Proposal adaptation scaling parameter. Zero gives default.
-   * @param A Number of steps after which to start adaptation. Negative gives
-   * no adaptation.
+   * @param q0 Initial proposal.
+   * @param beta Decay of sigmoid for mixing of @p q and @p q0.
+   * @param a Centre of sigmoid for mixing of @p q and @p q0.
+   * @param s1 Scaling parameter for proposal covariance. Zero gives default.
    *
-   * Does nothing if the number of steps taken is less than @p A.
+   * Adapts the covariance, \f$\Sigma_n\f$, of the proposal distribution @p q,
+   * using:
+   *
+   * \f[\Sigma_n \gets s_1\alpha\hat{\Sigma}_n + s_2(1 - \alpha)\Sigma_0,\f]
+   *
+   * where \f$\hat{\Sigma}_n\f$ is the covariance of samples drawn so far,
+   * \f$\Sigma_0\f$ is the covariance of the initial proposal,
+   * \f$\alpha = 1/\{1 + \exp[-\beta(n - a)]\}\f$ and \f$n\f$ is the number of
+   * steps taken so far.
+   *
+   * The default scaling parameter is:
+   *
+   * \f[s_1 = 2.4^2/N,\f]
+   *
+   * where \f$N\f$ is the dimensionality of the system. The additional
+   * scaling parameter \f$s_2\f$ is assumed to have already been multiplied
+   * in to the covariance of @p q0.
    */
   template<class Q1>
-  void adapt(Q1& q, const real sd = 0.0, const int A = 0.0);
+  void adapt(Q1& q, const Q1& q0, const real beta, const int a,
+      const real s1 = 0.0);
 
   /**
    * Output current state.
@@ -478,8 +555,9 @@ public:
    * Report progress on stderr.
    *
    * @param c Number of steps taken.
+   * @param lambda Temperature.
    */
-  void report(const int c);
+  void report(const int c, const real lambda = 1.0);
 
   /**
    * Terminate.
@@ -645,11 +723,11 @@ bi::ParticleMCMC<B,IO1,CL>::ParticleMCMC(B& m, Random& rng, IO1* out,
     sumSigma(M,M) {
   /* construct prior */
   if (initialConditioned) {
-    p0.set(0, m.getPrior(D_NODE));
-    p0.set(1, m.getPrior(C_NODE));
-    p0.set(2, m.getPrior(P_NODE));
+    p0.set(0, m.template getPrior<D_NODE>());
+    p0.set(1, m.template getPrior<C_NODE>());
+    p0.set(2, m.template getPrior<P_NODE>());
   } else {
-    p0.set(0, m.getPrior(P_NODE));
+    p0.set(2, m.template getPrior<P_NODE>());
     // other components of p0 not set, but as their size is then zero, this is ok
   }
 }
@@ -676,25 +754,55 @@ bi::ParticleMCMCState& bi::ParticleMCMC<B,IO1,CL>::getOtherState() {
 
 template<class B, class IO1, bi::Location CL>
 template<class Q1, class V1, bi::Location L, class F, class R>
-void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x, const int C,
-    const real T, Static<L>& theta, State<L>& s, F* filter, R* resampler,
-    const real sd, const int A) {
+void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q0, const V1 x,
+    const int C, const real T, Static<L>& theta, State<L>& s, F* filter,
+    R* resampler, const real relEss, const real lambda0,
+    const real gamma , const real beta, const int a, const real s1) {
   /* pre-conditions */
-  assert (q.size() == M);
+  assert (q0.size() == M);
   assert (x.size() == M);
 
+  Q1 q(q0);
+  real lambda = 1.0;
   int c;
 
   timer.tic();
   init(x, T, theta, s, filter, resampler);
   output0(filter);
   for (c = 0; c < C; ++c) {
-    report(c);
+    report(c, lambda);
     propose(q);
     prior();
-    likelihood(T, theta, s, filter, resampler);
-    metropolisHastings(filter);
-    adapt(q, sd, A);
+    likelihood(T, theta, s, filter, resampler, relEss);
+    lambda = 1.0 + lambda0*std::exp(-gamma*total);
+    metropolisHastings(filter, lambda);
+    adapt(q, q0, beta, a, s1);
+    output(c);
+  }
+  term(theta);
+}
+
+template<class B, class IO1, bi::Location CL>
+template<class Q1, class V1, bi::Location L, class F, class R>
+void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x,
+    const int C, const real T, Static<L>& theta, State<L>& s, F* filter,
+    R* resampler, const real relEss, const real lambda0, const real gamma) {
+  /* pre-conditions */
+  assert (q.size() == M);
+  assert (x.size() == M);
+
+  real lambda = 1.0;
+  int c;
+  timer.tic();
+  init(x, T, theta, s, filter, resampler);
+  output0(filter);
+  for (c = 0; c < C; ++c) {
+    report(c, lambda);
+    propose(q);
+    prior();
+    likelihood(T, theta, s, filter, resampler, relEss);
+    lambda = 1.0 + lambda0*std::exp(-gamma*total);
+    metropolisHastings(filter, lambda);
     output(c);
   }
   term(theta);
@@ -703,13 +811,14 @@ void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x, const int C,
 template<class B, class IO1, bi::Location CL>
 template<class V1, bi::Location L, class F, class R>
 void bi::ParticleMCMC<B,IO1,CL>::init(const V1 x, const real T,
-    Static<L>& theta, State<L>& s, F* filter, R* resampler) {
+    Static<L>& theta, State<L>& s, F* filter, R* resampler,
+    const real relEss) {
   /* pre-condition */
   assert (x.size() == M);
 
   proposal(x);
   prior();
-  likelihood(T, theta, s, filter, resampler);
+  likelihood(T, theta, s, filter, resampler, relEss);
   accept(filter);
 }
 
@@ -719,7 +828,9 @@ void bi::ParticleMCMC<B,IO1,CL>::propose(Q1& q) {
   /* pre-condition */
   assert (q.size() == M);
 
-  q.sample(rng, this->x1.theta, this->x2.theta);
+  do {
+    q.sample(rng, this->x1.theta, this->x2.theta);
+  } while (p0(this->x2.theta) <= 0.0);
   x2.lq = q.logDensity(this->x1.theta, this->x2.theta);
   x1.lq = q.logDensity(this->x2.theta, this->x1.theta);
 }
@@ -744,7 +855,7 @@ template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F, class R>
 void bi::ParticleMCMC<B,IO1,CL>::likelihood(const real T,
     Static<L>& theta, State<L>& s, F* filter, R* resampler,
-    const FilterType type) {
+    const real relEss, const FilterType type) {
   /* pre-conditions */
   BI_ASSERT(filter->getOutput() != NULL,
       "Output required for filter used with ParticleMCMC");
@@ -755,26 +866,18 @@ void bi::ParticleMCMC<B,IO1,CL>::likelihood(const real T,
     set_rows(s.get(C_NODE), subrange(x2.theta, ND, NC));
     row(theta.get(P_NODE), 0) = subrange(x2.theta, ND + NC, NP);
   } else {
-    m.getPrior(D_NODE).samples(rng, s.get(D_NODE));
-    m.getPrior(C_NODE).samples(rng, s.get(C_NODE));
+    m.template getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+    m.template getPrior<C_NODE>().samples(rng, s.get(C_NODE));
     row(theta.get(P_NODE), 0) = x2.theta;
   }
-
-//  BOOST_AUTO(x, host_map_vector(row(theta.get(P_NODE), 0)));
-//  synchronize();
-//  for (int i = 0; i < x->size(); ++i) {
-//    std::cerr << (*x)(i) << ' ';
-//  }
-//  std::cerr << std::endl;
-//  delete x;
 
   filter->reset();
   switch (type) {
     case UNCONDITIONED:
-      filter->filter(T, theta, s, resampler);
+      filter->filter(T, theta, s, resampler, relEss);
       break;
     case CONDITIONED:
-      filter->filter(T, theta, s, x1.xd, x1.xc, x1.xr, resampler);
+      filter->filter(T, theta, s, x1.xd, x1.xc, x1.xr, resampler, relEss);
       break;
   }
   x2.xs = row(theta.get(S_NODE), 0);
@@ -787,7 +890,7 @@ void bi::ParticleMCMC<B,IO1,CL>::likelihood(const real T,
 
 template<class B, class IO1, bi::Location CL>
 template<class F>
-bool bi::ParticleMCMC<B,IO1,CL>::metropolisHastings(F* filter) {
+bool bi::ParticleMCMC<B,IO1,CL>::metropolisHastings(F* filter, const real lambda) {
   bool result;
 
   if (!IS_FINITE(x2.ll)) {
@@ -798,7 +901,7 @@ bool bi::ParticleMCMC<B,IO1,CL>::metropolisHastings(F* filter) {
     real loglr = x2.ll - x1.ll;
     real logpr = x2.lp - x1.lp;
     real logqr = x1.lq - x2.lq;
-    real logratio = loglr + logpr + logqr;
+    real logratio = loglr/lambda + logpr + logqr;
 
     result = log(rng.uniform<real>()) < logratio;
   }
@@ -845,7 +948,7 @@ void bi::ParticleMCMC<B,IO1,CL>::accept(F* filter) {
   ++accepted;
   ++total;
   lastAccepted = true;
-  filter->sampleTrajectory(x2.xd, x2.xc, x2.xr);
+  filter->sampleTrajectory(x1.xd, x1.xc, x1.xr);
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -856,39 +959,32 @@ void bi::ParticleMCMC<B,IO1,CL>::reject() {
 
 template<class B, class IO1, bi::Location CL>
 template<class Q1>
-void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const real sd,
-    const int A) {
-  real s;
-
-  if (A >= 0) {
-    BOOST_AUTO(theta, host_temp_vector<real>(this->x1.theta.size()));
-    *theta = this->x1.theta;
-
-    if (total == 1) {
-      sumMu.clear();
-      sumSigma.clear();
-    }
-
-    synchronize();
-    logVec(*theta, q.getLogs());
-    axpy(1.0, *theta, sumMu);
-    syr(1.0, *theta, sumSigma);
-
-    if (total > A) {
-      if (sd <= 0.0) {
-        s = std::pow(2.4,2) / m.getNetSize(P_NODE); // default
-      } else {
-        s = sd;
-      }
-
-      axpy(1.0 / total, sumMu, mu, true);
-      Sigma = sumSigma;
-      syr(-1.0*total, mu, Sigma);
-      matrix_scal(s/(total - 1), Sigma);
-      q.setCov(Sigma);
-    }
-    delete theta;
+void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const Q1& q0,
+    const real beta, const int a, const real s1) {
+  if (total <= 1) {
+    sumMu.clear();
+    sumSigma.clear();
   }
+
+  /* scaling factors */
+  real s = (s1 <= 0.0) ? std::pow(2.4,2)/M : s1;
+  real alpha = 1.0/(1.0 + std::exp(-beta*(total - a)));
+
+  /* proposal covariance */
+  BOOST_AUTO(theta, host_temp_vector<real>(M));
+  *theta = this->x1.theta;
+  synchronize();
+  log_vector(*theta, q.getLogs());
+  axpy(1.0, *theta, sumMu);
+  syr(1.0, *theta, sumSigma);
+  axpy(1.0/total, sumMu, mu, true);
+  Sigma = sumSigma;
+  syr(-total, mu, Sigma);
+  matrix_scal(alpha*s/(total - 1), Sigma);
+  matrix_axpy(1.0 - alpha, q0.cov(), Sigma);
+  delete theta;
+
+  q.setCov(Sigma);
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -901,6 +997,7 @@ void bi::ParticleMCMC<B,IO1,CL>::output0(F* filter) {
     real t;
 
     for (n = 0; n < T; ++n) {
+      filter->flush();
       filter->getOutput()->readTime(n, t);
       out->writeTime(n, t);
     }
@@ -921,7 +1018,7 @@ void bi::ParticleMCMC<B,IO1,CL>::output(const int c) {
 }
 
 template<class B, class IO1, bi::Location CL>
-void bi::ParticleMCMC<B,IO1,CL>::report(const int c) {
+void bi::ParticleMCMC<B,IO1,CL>::report(const int c, const real lambda) {
   std::cerr << c << ":\t";
   std::cerr.width(10);
   std::cerr << this->getState().ll;
@@ -938,6 +1035,10 @@ void bi::ParticleMCMC<B,IO1,CL>::report(const int c) {
   if (this->wasLastAccepted()) {
     std::cerr << "accept";
   }
+  if (lambda > 1.0) {
+    std::cerr << "\tlambda=" << lambda;
+  }
+  std::cerr << "\taccept=" << (double)accepted/total;
   std::cerr << std::endl;
 }
 

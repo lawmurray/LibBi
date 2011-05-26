@@ -9,6 +9,7 @@
 #define BI_BUFFER_NETCDFBUFFER_HPP
 
 #include "../model/BayesNet.hpp"
+#include "../method/misc.hpp"
 
 #include "netcdfcpp.h"
 
@@ -102,10 +103,11 @@ protected:
    * Create variable in NetCDF file.
    *
    * @param node Node in model for which to create variable in NetCDF file.
+   * @param SH Handling of p-nodes and s-nodes for output.
    *
    * @return The variable.
    */
-  NcVar* createVar(const BayesNode* node);
+  NcVar* createVar(const BayesNode* node, const StaticHandling SH = STATIC_OWN);
 
   /**
    * Map dimension in existing NetCDF file.
@@ -122,10 +124,11 @@ protected:
    * Map variable in existing NetCDF file.
    *
    * @param node Node in model for which to map variable in NetCDF file.
+   * @param SH Handling of p-nodes and s-nodes for output.
    *
    * @return The variable.
    */
-  NcVar* mapVar(const BayesNode* node);
+  NcVar* mapVar(const BayesNode* node, const StaticHandling SH = STATIC_OWN);
 
   /**
    * NetCDF file.

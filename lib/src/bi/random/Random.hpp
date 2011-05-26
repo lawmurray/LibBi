@@ -88,7 +88,7 @@ public:
    *
    * @tparam V1 Vector type.
    *
-   * @param ps Probabilities. Need not be normalised to 1.
+   * @param ps Log-probabilities. Need not be normalised to 1.
    *
    * @return Random index between @c 0 and <tt>ps.size() - 1</tt>, selected
    * according to the non-normalised probabilities given in @c ps.
@@ -195,12 +195,15 @@ private:
 
 #include "../misc/omp.hpp"
 #include "../math/temp_vector.hpp"
+#include "../cuda/math/temp_vector.hpp"
 
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/uniform_real.hpp"
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/bernoulli_distribution.hpp"
 #include "boost/random/variate_generator.hpp"
+
+#include "thrust/binary_search.h"
 
 template<class T1>
 inline unsigned bi::Random::bernoulli(const T1 p) {
@@ -222,13 +225,13 @@ inline typename V1::difference_type bi::Random::multinomial(const V1& ps) {
 
   typedef boost::uniform_real<typename V1::value_type> dist_t;
 
-  BOOST_AUTO(Ps, host_temp_vector<typename V1::value_type>(ps.size()));
+  BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
   exclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
 
   dist_t dist(0, *(Ps->end() - 1));
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
-  int p = std::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
+  int p = thrust::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
   delete Ps;
 
   return p;

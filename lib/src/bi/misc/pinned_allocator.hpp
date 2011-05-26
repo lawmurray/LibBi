@@ -17,6 +17,12 @@ namespace bi {
  *
  * @ingroup misc_allocators
  */
+#ifdef USE_CPU
+template<class T>
+class pinned_allocator : public std::allocator<T> {
+  //
+};
+#else
 template <class T>
 class pinned_allocator {
 public:
@@ -33,15 +39,6 @@ public:
     typedef pinned_allocator<U> other;
   };
 
-  pinned_allocator() {
-    //
-  }
-
-  template<class U>
-  pinned_allocator(const pinned_allocator<U>& o) {
-    //
-  }
-
   pointer address(reference value) const {
     return &value;
   };
@@ -56,12 +53,7 @@ public:
 
   pointer allocate(size_type num, const_pointer *hint = 0) {
     pointer ptr;
-    #ifdef USE_CPU
-    ptr = (T*)malloc(num*sizeof(T));
-    assert(num == 0 || ptr != NULL);
-    #else
     CUDA_CHECKED_CALL(cudaMallocHost((void**)&ptr, num*sizeof(T)));
-    #endif
     return ptr;
   }
 
@@ -74,11 +66,7 @@ public:
   }
 
   void deallocate(pointer p, size_type num) {
-    #ifdef USE_CPU
-    free(p);
-    #else
     CUDA_CHECKED_CALL(cudaFreeHost(p));
-    #endif
   }
 
   template<class U>
@@ -90,9 +78,8 @@ public:
   bool operator!=(const pinned_allocator<U>& o) {
     return false;
   }
-
 };
-
+#endif
 }
 
 #endif

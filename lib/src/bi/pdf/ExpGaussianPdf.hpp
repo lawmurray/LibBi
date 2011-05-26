@@ -66,9 +66,9 @@ public:
    * Constructor.
    *
    * @param N Size of pdf.
-   * @param logs Indices of log-variables.
+   * @param ids Indices of log-variables.
    */
-  ExpGaussianPdf(const int N, const std::set<int>& logs);
+  ExpGaussianPdf(const int N, const std::set<int>& ids);
 
   /**
    * Construct univariate pdf.
@@ -98,10 +98,10 @@ public:
    *
    * @param mu \f$\mathbf{\mu}\f$; mean.
    * @param Sigma \f$\Sigma\f$; covariance.
-   * @param logs Indices of log-variables.
+   * @param ids Indices of log-variables.
    */
   template<class V2, class M2>
-  ExpGaussianPdf(const V2 mu, const M2 Sigma, const std::set<int>& logs);
+  ExpGaussianPdf(const V2 mu, const M2 Sigma, const std::set<int>& ids);
 
   /**
    * Constructor.
@@ -123,12 +123,12 @@ public:
    * @tparam M2 Matrix type.
    *
    * @param Sigma \f$\Sigma\f$; covariance.
-   * @param logs Indices of log-variables.
+   * @param ids Indices of log-variables.
    *
    * Use this constructor when zero_vector is used for the mean type.
    */
   template<class M2>
-  ExpGaussianPdf(const M2 Sigma, const std::set<int>& logs);
+  ExpGaussianPdf(const M2 Sigma, const std::set<int>& ids);
 
   /**
    * Construct zero-mean pdf.
@@ -167,9 +167,14 @@ public:
   void resize(const int N, const bool preserve = true);
 
   /**
+   * Is variable a log-variable?
+   */
+  bool isLog(const int id);
+
+  /**
    * Get log-variables.
    *
-   * @return Log-variables.
+   * @return Indices of log-variables.
    */
   const std::set<int>& getLogs() const;
 
@@ -178,14 +183,14 @@ public:
    *
    * @param logs Indices of log-variables.
    */
-  void setLogs(const std::set<int>& logs);
+  void setLogs(const std::set<int>& ids);
 
   /**
    * Set log-variable.
    *
-   * @param log Index of log-variable.
+   * @param id Index of log-variable.
    */
-  void addLog(const int log);
+  void addLog(const int id);
 
   /**
    * Add log-variables. Existing log-variables are merged.
@@ -193,7 +198,7 @@ public:
    * @param logs Indices of log-variables.
    * @param offset Offset to add to each index in @p logs.
    */
-  void addLogs(const std::set<int>& logs, const int offset = 0);
+  void addLogs(const std::set<int>& ids, const int offset = 0);
 
   /**
    * @copydoc concept::Pdf::sample()
@@ -292,7 +297,7 @@ bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const int N) :
 
 template<class V1, class M1>
 bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const int N,
-    const std::set<int>& logs) : GaussianPdf<V1,M1>(N), logs(logs) {
+    const std::set<int>& ids) : GaussianPdf<V1,M1>(N), logs(ids) {
   /* pre-condition */
   assert((int)logs.size() <= size());
   assert(*std::max_element(logs.begin(), logs.end()) < size());
@@ -318,12 +323,12 @@ bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const real sigma2,
 template<class V1, class M1>
 template<class V2, class M2>
 bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const V2 mu, const M2 Sigma,
-    const std::set<int>& logs) : GaussianPdf<V1,M1>(mu, Sigma),
-    logs(logs) {
+    const std::set<int>& ids) : GaussianPdf<V1,M1>(mu, Sigma),
+    logs(ids) {
   /* pre-condition */
-  assert((int)logs.size() <= size());
-  assert(*std::max_element(logs.begin(), logs.end()) < size());
-  assert(*std::min_element(logs.begin(), logs.end()) >= 0);
+  assert((int)ids.size() <= size());
+  assert(*std::max_element(ids.begin(), ids.end()) < size());
+  assert(*std::min_element(ids.begin(), ids.end()) >= 0);
 }
 
 template<class V1, class M1>
@@ -336,10 +341,10 @@ bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const V2 mu, const M2 Sigma) :
 template<class V1, class M1>
 template<class M2>
 bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const M2 Sigma,
-    const std::set<int>& logs) : GaussianPdf<V1,M1>(Sigma), logs(logs) {
-  assert((int)logs.size() <= size());
-  assert(*std::max_element(logs.begin(), logs.end()) < size());
-  assert(*std::min_element(logs.begin(), logs.end()) >= 0);
+    const std::set<int>& ids) : GaussianPdf<V1,M1>(Sigma), logs(ids) {
+  assert((int)ids.size() <= size());
+  assert(*std::max_element(ids.begin(), ids.end()) < size());
+  assert(*std::min_element(ids.begin(), ids.end()) >= 0);
 }
 
 template<class V1, class M1>
@@ -369,22 +374,27 @@ void bi::ExpGaussianPdf<V1,M1>::resize(const int N, const bool preserve) {
 }
 
 template<class V1, class M1>
+inline bool bi::ExpGaussianPdf<V1,M1>::isLog(const int id) {
+  return logs.find(id) != logs.end();
+}
+
+template<class V1, class M1>
 const std::set<int>& bi::ExpGaussianPdf<V1,M1>::getLogs() const {
   return logs;
 }
 
 template<class V1, class M1>
-void bi::ExpGaussianPdf<V1,M1>::setLogs(const std::set<int>& logs) {
-  this->logs = logs;
+void bi::ExpGaussianPdf<V1,M1>::setLogs(const std::set<int>& ids) {
+  this->logs = ids;
 }
 
 template<class V1, class M1>
-void bi::ExpGaussianPdf<V1,M1>::addLog(const int log) {
-  this->logs.insert(log);
+void bi::ExpGaussianPdf<V1,M1>::addLog(const int id) {
+  this->logs.insert(id);
 }
 
 template<class V1, class M1>
-void bi::ExpGaussianPdf<V1,M1>::addLogs(const std::set<int>& logs,
+void bi::ExpGaussianPdf<V1,M1>::addLogs(const std::set<int>& ids,
     const int offset) {
   std::set<int>::const_iterator iter;
   for (iter = logs.begin(); iter != logs.end(); ++iter) {
@@ -396,14 +406,14 @@ template<class V1, class M1>
 template<class V2>
 void bi::ExpGaussianPdf<V1,M1>::sample(Random& rng, V2 x) {
   GaussianPdf<V1,M1>::sample(rng, x);
-  expVec(x, logs);
+  exp_vector(x, logs);
 }
 
 template<class V1, class M1>
 template<class M2>
 void bi::ExpGaussianPdf<V1,M1>::samples(Random& rng, M2 X) {
   GaussianPdf<V1,M1>::samples(rng, X);
-  expCols(X, logs);
+  exp_columns(X, logs);
 }
 
 template<class V1, class M1>
@@ -414,10 +424,10 @@ real bi::ExpGaussianPdf<V1,M1>::density(const V2 x) {
 
   real detJ, p;
 
-  detJ = detVec(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
+  detJ = det_vector(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
   BOOST_AUTO(z, temp_vector<V2>(x.size()));
   *z = x;
-  logVec(*z, logs);
+  log_vector(*z, logs);
   p = GaussianPdf<V1,M1>::operator()(*z)/detJ;
 
   /* post-condition */
@@ -458,10 +468,10 @@ real bi::ExpGaussianPdf<V1,M1>::logDensity(const V2 x) {
 
   real detJ, p;
 
-  detJ = detVec(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
+  detJ = det_vector(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
   BOOST_AUTO(z, temp_vector<V2>(x.size()));
   *z = x;
-  logVec(*z, logs);
+  log_vector(*z, logs);
   p = GaussianPdf<V1,M1>::logDensity(*z) - log(detJ);
 
   synchronize();

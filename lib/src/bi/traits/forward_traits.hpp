@@ -32,9 +32,6 @@ struct is_generic_forward {
  *
  * @ingroup model_trait
  *
- * The node type should then declare a member function template of the
- * type given in bi::GenericForwardFunction.
- *
  * @arg @c X Node type.
  */
 #define IS_GENERIC_FORWARD(X, ...) \
@@ -65,9 +62,6 @@ struct is_ode_forward {
  *
  * @ingroup model_trait
  *
- * The node type should then declare a member function template of the
- * type given in bi::ODEForwardFunction.
- *
  * @arg @c X Node type.
  */
 #define IS_ODE_FORWARD(X, ...) \
@@ -76,6 +70,17 @@ struct is_ode_forward {
   struct is_ode_forward< X, ##__VA_ARGS__ > { \
     static const bool value = true; \
   }; }
+
+/**
+ * @def IS_SDE_FORWARD(X)
+ *
+ * Attach SDE forward function trait to node type.
+ *
+ * @ingroup model_trait
+ *
+ * @arg @c X Node type.
+ */
+#define IS_SDE_FORWARD(X, ...) IS_ODE_FORWARD(X, ##__VA_ARGS__)
 
 }
 

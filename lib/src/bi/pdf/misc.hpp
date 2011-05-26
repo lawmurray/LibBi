@@ -9,6 +9,9 @@
 #define BI_PDF_SAMPLE_HPP
 
 #include "../random/Random.hpp"
+#include "ExpGaussianPdf.hpp"
+#include "UniformPdf.hpp"
+#include "FactoredPdf.hpp"
 
 namespace bi {
 /**
@@ -28,7 +31,7 @@ namespace bi {
  * @param[out] x \f$\mathbf{x} \sim p(\mathbf{x})\f$.
  */
 template<class Q1, class Q2, class V1>
-void rejectionSample(Random& rng, Q1& p, Q2& q, const real M, V1 x);
+void rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x);
 
 /**
  * Standardise samples.
@@ -164,6 +167,49 @@ template<class M1, class V1, class V2>
 void mean(const M1 X, const V1 w, V2 mu);
 
 /**
+ * Compute mean of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param q Pdf.
+ * @param[out] mu Mean.
+ */
+template<class V1, class V2>
+void mean(const UniformPdf<V1>& q, V2 mu);
+
+/**
+ * Compute mean of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ * @tparam M1 Matrix type.
+ * @tparam V2 Vector type.
+ *
+ * @param q Pdf.
+ * @param[out] mu Mean.
+ */
+template<class V1, class M1, class V2>
+void mean(const ExpGaussianPdf<V1,M1>& q, V2 mu);
+
+/**
+ * Compute mean of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam S Type list.
+ * @tparam V1 Vector type.
+ *
+ * @param q Pdf.
+ * @param[out] mu Mean.
+ */
+template<class S, class V1>
+void mean(const FactoredPdf<S>& q, V1 mu);
+
+/**
  * Compute unweighted covariance of sample set.
  *
  * @ingroup math_pdf
@@ -201,6 +247,49 @@ void cov(const M1 X, const V1 mu, M2 Sigma);
  */
 template<class M1, class V1, class V2, class M2>
 void cov(const M1 X, const V1 w, const V2 mu, M2 Sigma);
+
+/**
+ * Compute covariance of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ * @tparam M1 Matrix type.
+ *
+ * @param q Pdf.
+ * @param[out] Sigma Covariance.
+ */
+template<class V1, class M1>
+void cov(const UniformPdf<V1>& q, M1 Sigma);
+
+/**
+ * Compute covariance of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param q Pdf.
+ * @param[out] Sigma Covariance.
+ */
+template<class V1, class M1, class M2>
+void cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma);
+
+/**
+ * Compute covariance of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam S Type list.
+ * @tparam M1 Matrix type.
+ *
+ * @param q Pdf.
+ * @param[out] Sigma Covariance.
+ */
+template<class S, class M1>
+void cov(const FactoredPdf<S>& q, M1 Sigma);
 
 /**
  * Compute unweighted variance of sample set.
@@ -292,32 +381,6 @@ void cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
     const V3 muY, M3 SigmaXY);
 
 /**
- * Calculate \f$h_{opt}\f$.
- *
- * @ingroup math_pdf
- *
- * @param N Number of dimensions.
- * @param P Number of samples.
- *
- * Note:
- *
- * \f[
- * h_{opt} = \left[\frac{4}{(N+2)P}\right]^{\frac{1}{N+4}}\,,
- * \f]
- *
- * this being the optimal bandwidth for a kernel density estimate
- * over \f$P\f$ samples from a standard \f$N\f$-dimensional Gaussian
- * distribution, and Gaussian kernel (@ref Silverman1986
- * "Silverman, 1986"). We find this useful as a rule of thumb for
- * setting kernel density estimate bandwidths.
- *
- * @internal
- *
- * Imported from dysii 1.4.0, originally in indii/ml/aux/kde.hpp
- */
-real hopt(const int N, const int P);
-
-/**
  * Exponentiate components of a vector.
  *
  * @ingroup math_pdf
@@ -329,7 +392,7 @@ real hopt(const int N, const int P);
  * @param is Indices of variables to exponentiate.
  */
 template<class V2, class V3>
-void expVec(V2 x, const V3& is);
+void exp_vector(V2 x, const V3& is);
 
 /**
  * Exponentiate columns of a matrix.
@@ -343,7 +406,7 @@ void expVec(V2 x, const V3& is);
  * @param is Indices of columns to exponentiate.
  */
 template<class M2, class V2>
-void expCols(M2 X, const V2& is);
+void exp_columns(M2 X, const V2& is);
 
 /**
  * Exponentiate rows of a matrix.
@@ -357,7 +420,7 @@ void expCols(M2 X, const V2& is);
  * @param is Indices of rows to exponentiate.
  */
 template<class M2, class V2>
-void expRows(M2 X, const V2& is);
+void exp_rows(M2 X, const V2& is);
 
 /**
  * Log components of a vector.
@@ -371,7 +434,7 @@ void expRows(M2 X, const V2& is);
  * @param is Indices of variables to log.
  */
 template<class V2, class V3>
-void logVec(V2 x, const V3& is);
+void log_vector(V2 x, const V3& is);
 
 /**
  * Log columns of a matrix.
@@ -385,7 +448,7 @@ void logVec(V2 x, const V3& is);
  * @param is Indices of columns to log.
  */
 template<class M2, class V2>
-void logCols(M2 X, const V2& is);
+void log_columns(M2 X, const V2& is);
 
 /**
  * Log rows of a matrix.
@@ -399,7 +462,7 @@ void logCols(M2 X, const V2& is);
  * @param is Indices of rows to log.
  */
 template<class M2, class V2>
-void logRows(M2 X, const V2& is);
+void log_rows(M2 X, const V2& is);
 
 /**
  * Calculate determinant of Jacobian for transformation of log variables.
@@ -413,14 +476,15 @@ void logRows(M2 X, const V2& is);
  * @param is Indices of log-variables.
  */
 template<class V2, class V3>
-real detVec(const V2 x, const V3& is);
+real det_vector(const V2 x, const V3& is);
 
 }
 
-#include "AlmostGaussianKernel.hpp"
+#include "FactoredPdfVisitor.hpp"
+#include "../kd/FastGaussianKernel.hpp"
 
 template<class Q1, class Q2, class V1>
-inline void bi::rejectionSample(Random& rng, Q1& p, Q2& q, const real M,
+inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M,
     V1 x) {
   do {
     q.sample(rng, x);
@@ -432,10 +496,10 @@ void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
   /* pre-condition */
   assert (p.size() == X.size2());
 
-  logCols(X, p.getLogs());
+  log_columns(X, p.getLogs());
   sub_rows(X, p.mean());
   trsm(1.0, p.std(), X, 'R', 'U');
-  expCols(X, p.getLogs());
+  exp_columns(X, p.getLogs());
 }
 
 template<class V1, class M1, class V2, class M2, class M3, class V3,
@@ -466,7 +530,7 @@ void bi::condition(const ExpGaussianPdf<V1,M1>& p1,
    * \boldsymbol{\mu}_2)\,,\f]
    */
   *z2 = x2;
-  logVec(*z2, p2.getLogs());
+  log_vector(*z2, p2.getLogs());
   axpy(-1.0, p2.mean(), *z2);
   p3.mean() = p1.mean();
   gemv(1.0, *K, *z2, 1.0, p3.mean());
@@ -617,7 +681,7 @@ void bi::distance(const M1 X, const real h, M2 D) {
 
   typedef typename M1::value_type T1;
 
-  AlmostGaussianKernel K(X.size2(), h);
+  FastGaussianKernel K(X.size2(), h);
   BOOST_AUTO(d, host_temp_vector<T1>(X.size2()));
   int i, j;
   for (j = 0; j < D.size2(); ++j) {
@@ -656,6 +720,29 @@ void bi::mean(const M1 X, const V1 w, V2 mu) {
   T Wt = sum(w.begin(), w.end(), static_cast<T>(0));
 
   gemv(1.0/Wt, X, w, 0.0, mu, 'T');
+}
+
+template<class V1, class V2>
+void bi::mean(const UniformPdf<V1>& q, V2 mu) {
+  /* pre-condition */
+  assert (q.size() == mu.size());
+
+  axpy(0.5, q.lower(), mu, true);
+  axpy(0.5, q.upper(), mu);
+}
+
+template<class V1, class M1, class V2>
+inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
+  /* pre-condition */
+  assert (mu.size() == q.size());
+
+  mu = q.mean();
+}
+
+template<class S, class V1>
+void bi::mean(const FactoredPdf<S>& q, V1 mu) {
+  mu.clear();
+  FactoredPdfVisitor<S>::acceptMean(mu, &q.factors[0]);
 }
 
 template<class M1, class V1, class M2>
@@ -702,6 +789,41 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   delete Y;
   delete Z;
   delete v;
+}
+
+template<class V1, class M1>
+void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
+  /* pre-condition */
+  assert (Sigma.size1() == q.size());
+  assert (Sigma.size2() == q.size());
+
+  BOOST_AUTO(diff, host_temp_vector<real>(q.size()));
+  *diff = q.upper();
+  axpy(-1.0, q.lower(), *diff);
+  element_square(diff->begin(), diff->end(), diff->begin());
+
+  Sigma.clear();
+  axpy(1.0/12.0, *diff, diagonal(Sigma));
+
+  if (V1::on_device) {
+    synchronize();
+  }
+  delete diff;
+}
+
+template<class V1, class M1, class M2>
+void bi::cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma) {
+  /* pre-condition */
+  assert (Sigma.size1() == q.size());
+  assert (Sigma.size2() == q.size());
+
+  Sigma = q.cov();
+}
+
+template<class S, class M1>
+void bi::cov(const FactoredPdf<S>& q, M1 Sigma) {
+  Sigma.clear();
+  FactoredPdfVisitor<S>::acceptCov(Sigma, &q.factors[0]);
 }
 
 template<class M1, class V1, class V2>
@@ -795,12 +917,8 @@ void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
   delete Z;
 }
 
-inline real bi::hopt(const int N, const int P) {
-  return std::pow(4.0/((N+2)*P), 1.0/(N+4.0));
-}
-
 template<class V2, class V3>
-inline void bi::expVec(V2 x, const V3& is) {
+inline void bi::exp_vector(V2 x, const V3& is) {
   typename V3::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(elem, subrange(x, *iter, 1));
@@ -809,7 +927,7 @@ inline void bi::expVec(V2 x, const V3& is) {
 }
 
 template<class M2, class V2>
-inline void bi::expCols(M2 X, const V2& is) {
+inline void bi::exp_columns(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(col, column(X, *iter));
@@ -818,7 +936,7 @@ inline void bi::expCols(M2 X, const V2& is) {
 }
 
 template<class M2, class V2>
-inline void bi::expRows(M2 X, const V2& is) {
+inline void bi::exp_rows(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(row1, row(X, *iter));
@@ -827,7 +945,7 @@ inline void bi::expRows(M2 X, const V2& is) {
 }
 
 template<class V2, class V3>
-inline void bi::logVec(V2 x, const V3& is) {
+inline void bi::log_vector(V2 x, const V3& is) {
   typename V3::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(elem, subrange(x, *iter, 1));
@@ -836,7 +954,7 @@ inline void bi::logVec(V2 x, const V3& is) {
 }
 
 template<class M2, class V2>
-inline void bi::logCols(M2 X, const V2& is) {
+inline void bi::log_columns(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(col, column(X, *iter));
@@ -845,7 +963,7 @@ inline void bi::logCols(M2 X, const V2& is) {
 }
 
 template<class M2, class V2>
-inline void bi::logRows(M2 X, const V2& is) {
+inline void bi::log_rows(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(row1, row(X, *iter));
@@ -854,7 +972,7 @@ inline void bi::logRows(M2 X, const V2& is) {
 }
 
 template<class V2, class V3>
-inline real bi::detVec(const V2 x, const V3& is) {
+inline real bi::det_vector(const V2 x, const V3& is) {
   typename V3::const_iterator iter;
   real det = 1.0;
   for (iter = is.begin(); iter != is.end(); ++iter) {

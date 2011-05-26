@@ -42,8 +42,10 @@ public:
 }
 
 #include "../host/bind.hpp"
-#ifdef USE_DOPRI5
+#if defined(USE_ODE_DOPRI5)
 #include "../ode/DOPRI5Integrator.hpp"
+#elif defined(USE_ODE_RK4)
+#include "../ode/RK4Integrator.hpp"
 #else
 #include "../ode/RK43Integrator.hpp"
 #endif
@@ -55,8 +57,10 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt,
 
   if (net_size<B,S>::value && t < tnxt) {
     bind(s);
-    #ifdef USE_DOPRI5
+    #if defined(USE_ODE_DOPRI5)
     DOPRI5Integrator<ON_HOST,B,(unsigned)SH>::stepTo(t, tnxt);
+    #elif defined(USE_ODE_RK4)
+    RK4Integrator<ON_HOST,B,(unsigned)SH>::stepTo(t, tnxt);
     #else
     RK43Integrator<ON_HOST,B,(unsigned)SH>::stepTo(t, tnxt);
     #endif

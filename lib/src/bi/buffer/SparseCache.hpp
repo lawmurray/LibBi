@@ -12,7 +12,9 @@
 
 namespace bi {
 /**
- * Cache for SparseInputBuffer reads.\
+ * Cache for SparseInputBuffer reads.
+ *
+ * @ingroup io_cache
  *
  * @tparam CL Location for cache.
  */

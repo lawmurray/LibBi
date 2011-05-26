@@ -232,7 +232,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      */
     gemv(1.0/Y, *T, y, 0.0, this->ws, 'T');
     thrust::inclusive_scan(this->ws.begin(), this->ws.end(), this->Ws.begin());
-    assert(relErr(this->weight(), 1.0) < 1.0e-5);
+    assert(rel_err(this->weight(), 1.0) < 1.0e-5);
     W = this->weight();
 
     /**

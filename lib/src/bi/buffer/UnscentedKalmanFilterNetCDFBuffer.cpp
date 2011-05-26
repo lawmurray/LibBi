@@ -12,7 +12,7 @@ using namespace bi;
 UnscentedKalmanFilterNetCDFBuffer::UnscentedKalmanFilterNetCDFBuffer(
     const BayesNet& m, const std::string& file, const FileMode mode,
     const StaticHandling flag) : NetCDFBuffer(file, mode), m(m),
-    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) +
+    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) +
     ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
   map();
 }
@@ -21,7 +21,7 @@ UnscentedKalmanFilterNetCDFBuffer::UnscentedKalmanFilterNetCDFBuffer(
     const BayesNet& m, const int T, const std::string& file,
     const FileMode mode, const StaticHandling flag) :
     NetCDFBuffer(file, mode), m(m),
-    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) +
+    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) +
     ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
   if (mode == NEW || mode == REPLACE) {
     create(T); // set up structure of new file
@@ -59,6 +59,9 @@ void UnscentedKalmanFilterNetCDFBuffer::create(const long T) {
   nrDim = createDim("nr", T);
   nxcolDim = createDim("nxcol", M);
   nxrowDim = createDim("nxrow", M);
+  createDim("nz", m.getDimSize(Z_DIM));
+  createDim("ny", m.getDimSize(Y_DIM));
+  createDim("nx", m.getDimSize(X_DIM));
 
   /* time variable */
   tVar = ncFile->add_var("time", netcdf_real, nrDim);
@@ -90,16 +93,20 @@ void UnscentedKalmanFilterNetCDFBuffer::create(const long T) {
 
   /* index variables */
   int id, size = 0;
-  for (id = 0; id < m.getNetSize(D_NODE); ++id) {
+  for (id = 0; id < m.getNumNodes(D_NODE); ++id) {
     ncFile->add_var(m.getNode(D_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
     size += m.getNodeSize(D_NODE, id);
   }
-  for (id = 0; id < m.getNetSize(C_NODE); ++id) {
+  for (id = 0; id < m.getNumNodes(C_NODE); ++id) {
     ncFile->add_var(m.getNode(C_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
     size += m.getNodeSize(C_NODE, id);
   }
-  if (M > m.getNetSize(D_NODE) + m.getNetSize(C_NODE)) {
-    for (id = 0; id < m.getNetSize(P_NODE); ++id) {
+  for (id = 0; id < m.getNumNodes(R_NODE); ++id) {
+    ncFile->add_var(m.getNode(R_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
+    size += m.getNodeSize(R_NODE, id);
+  }
+  if (M > size) {
+    for (id = 0; id < m.getNumNodes(P_NODE); ++id) {
       ncFile->add_var(m.getNode(P_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
       size += m.getNodeSize(P_NODE, id);
     }

@@ -97,7 +97,7 @@ struct SparseInputBuffer {
    * @param T Maximum time.
    *
    * @return Number of unique time points in file up to and including time
-   * @p T.
+   * @p T. @p T is itself considered one of these times.
    *
    * This is particularly useful for determining the number of records to
    * reserve in output buffers, for example.

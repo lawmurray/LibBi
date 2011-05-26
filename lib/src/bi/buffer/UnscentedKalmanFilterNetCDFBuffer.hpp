@@ -201,7 +201,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::readCorrectedState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = muX1Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << muX1Var->name());
@@ -230,7 +230,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeCorrectedState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = muX1Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << muX1Var->name());
@@ -258,7 +258,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::readUncorrectedState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = muX2Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << muX2Var->name());
@@ -287,7 +287,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeUncorrectedState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = muX2Var->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << muX2Var->name());
@@ -313,7 +313,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::readCrossState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   assert (Sigma.lead() == M);
   ret = SigmaXXVar->set_cur(offsets);
@@ -335,7 +335,7 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeCrossState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   /* write covariance matrix */
   assert (Sigma1->lead() == M);

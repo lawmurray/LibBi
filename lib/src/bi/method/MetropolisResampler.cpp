@@ -8,6 +8,6 @@
 #include "MetropolisResampler.hpp"
 
 bi::MetropolisResampler::MetropolisResampler(Random& rng,
-    const int L, const int A) : rng(rng), L(L), A(A) {
+    const int C, const int A) : rng(rng), C(C), A(A) {
   //
 }

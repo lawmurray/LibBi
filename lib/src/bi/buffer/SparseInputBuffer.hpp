@@ -8,47 +8,59 @@
 #ifndef BI_BUFFER_SPARSEINPUTBUFFER_HPP
 #define BI_BUFFER_SPARSEINPUTBUFFER_HPP
 
+#include "SparseMask.hpp"
 #include "../model/BayesNet.hpp"
 #include "../misc/Markable.hpp"
 #include "../math/scalar.hpp"
+#include "../math/temp_vector.hpp"
+#include "../math/temp_matrix.hpp"
 
 #include <map>
 
 namespace bi {
 /**
+ * @internal
+ *
  * State of SparseInputBuffer.
+ *
+ * @ingroup io
  */
 struct SparseInputBufferState {
+  /**
+   * Integral vector type for ids in dense and sparse masks.
+   */
+  typedef host_vector_temp_type<int>::type vector_type;
+
+  /**
+   * Mask type.
+   */
+  typedef SparseMask<> mask_type;
+
   /**
    * Constructor.
    */
   SparseInputBufferState();
 
   /**
-   * Current time.
+   * Current offset into each record dimension.
    */
-  real t;
+  vector_type starts;
 
   /**
-   * Ids of nodes that have changed at the current time, indexed by type.
+   * Current length over each record dimension.
    */
-  std::vector<std::vector<int> > current;
+  vector_type lens;
 
   /**
-   * Time variable indices keyed by their next time.
+   * Mask of active nodes at the current time, indexed by type.
    */
-  std::multimap<real,int> nextTimes;
+  std::vector<mask_type> masks;
 
   /**
-   * Current offset into time dimension for each time variable.
+   * Time variable ids keyed by their current time.
    */
-  std::vector<int> nrs;
+  std::multimap<real,int> times;
 };
-}
-
-inline bi::SparseInputBufferState::SparseInputBufferState() : t(0.0),
-    current(NUM_NODE_TYPES) {
-  //
 }
 
 namespace bi {
@@ -70,39 +82,36 @@ public:
   /**
    * @copydoc concept::InputBuffer::getTime()
    */
-  real getTime();
+  real getTime() const;
 
   /**
-   * @copydoc concept::InputBuffer::hasNext()
+   * @copydoc concept::InputBuffer::size()
+   *
+   * The total number of active variables at the current time.
    */
-  bool hasNext();
+  int size(const NodeType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::getNextTime()
+   * @copydoc concept::InputBuffer::size0()
+   *
+   * The total number of active static variables.
    */
-  real getNextTime();
+  int size0(const NodeType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::countCurrentNodes()
+   * @copydoc concept::InputBuffer::getDenseMask()
    */
-  int countCurrentNodes(const NodeType type);
+  const SparseInputBufferState::mask_type& getMask(const NodeType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::countNextNodes()
+   * @copydoc concept::InputBuffer::getMask0()
    */
-  int countNextNodes(const NodeType type);
+  const SparseInputBufferState::mask_type& getMask0(const NodeType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::getCurrentNodes()
+   * @copydoc concept::InputBuffer::valid()
    */
-  template<class V1>
-  void getCurrentNodes(const NodeType type, V1& ids);
-
-  /**
-   * @copydoc concept::InputBuffer::getNextNodes()
-   */
-  template<class V1>
-  void getNextNodes(const NodeType type, V1& ids);
+  bool isValid() const;
 
   /**
    * @copydoc concept::Markable::mark()
@@ -116,39 +125,53 @@ public:
 
 protected:
   /**
-   * Next time variable.
-   *
-   * @return Index of the time variable with the next time in the file.
-   */
-  int getNextTimeVar();
-
-  /**
-   * Erase next time.
-   */
-  void eraseNextTime();
-
-  /**
    * Model.
    */
   const BayesNet& m;
 
   /**
-   * Time dimension to variable associations, indexed by time dimension id
-   * and type.
+   * Record dimension to time variable associations, indexed by record
+   * dimension id. Value of -1 for record dimensions not associated with
+   * a time variable.
    */
-  std::vector<std::vector<std::vector<int> > > assoc;
+  std::vector<int> tAssoc;
 
   /**
-   * Reverse associations: variable to time dimension associations, indexed
-   * by type and other variable id. Value of -1 for variables not associated
-   * with a time dimension.
+   * Record dimension to coordinate variable associations, indexed by record
+   * dimension id. Value of -1 for record dimensions not associated with
+   * a coordinate variable.
    */
-  std::vector<std::vector<int> > reverseAssoc;
+  std::vector<int> cAssoc;
 
   /**
-   * Variables not associated with a time dimension, indexed by type.
+   * Record dimension to model variable associations, indexed by record
+   * dimension id and type.
    */
-  std::vector<std::vector<int> > unassoc;
+  std::vector<std::vector<std::list<int> > > vAssoc;
+
+  /**
+   * Model variables not associated with record dimension, indexed by type.
+   */
+  std::vector<std::list<int> > vUnassoc;
+
+  /**
+   * Time variable to record dimension associations, indexed by time variable
+   * id.
+   */
+  std::vector<int> tDims;
+
+  /**
+   * Model variable to record dimension associations, indexed by type and
+   * variable id. Value of -1 for model variables not associated with a
+   * record dimension.
+   */
+  std::vector<std::vector<int> > vDims;
+
+  /**
+   * Mask of active nodes that are not associated with a time variable,
+   * indexed by type.
+   */
+  std::vector<SparseInputBufferState::mask_type> masks0;
 
   /**
    * Current state of buffer.
@@ -157,75 +180,30 @@ protected:
 };
 }
 
-#include <algorithm>
-
-inline void bi::SparseInputBuffer::eraseNextTime() {
-  state.nextTimes.erase(state.nextTimes.begin());
+inline real bi::SparseInputBuffer::getTime() const {
+  return state.times.begin()->first;
 }
 
-inline bool bi::SparseInputBuffer::hasNext() {
-  return !state.nextTimes.empty();
+inline int bi::SparseInputBuffer::size(const NodeType type) const {
+  return state.masks[type].size();
 }
 
-inline real bi::SparseInputBuffer::getTime() {
-  return state.t;
+inline int bi::SparseInputBuffer::size0(const NodeType type) const {
+  return masks0[type].size();
 }
 
-inline real bi::SparseInputBuffer::getNextTime() {
-  return state.nextTimes.begin()->first;
+inline const bi::SparseInputBufferState::mask_type&
+    bi::SparseInputBuffer::getMask(const NodeType type) const {
+  return state.masks[type];
 }
 
-inline int bi::SparseInputBuffer::getNextTimeVar() {
-  return state.nextTimes.begin()->second;
+inline const bi::SparseInputBufferState::mask_type&
+    bi::SparseInputBuffer::getMask0(const NodeType type) const {
+  return masks0[type];
 }
 
-inline int bi::SparseInputBuffer::countCurrentNodes(const NodeType type) {
-  return state.current[type].size();
-}
-
-inline int bi::SparseInputBuffer::countNextNodes(const NodeType type) {
-  typedef std::multimap<real,int>::iterator tv_iterator;
-
-  std::pair<tv_iterator,tv_iterator> tvRange;
-  int count = 0;
-
-  tvRange = state.nextTimes.equal_range(state.nextTimes.begin()->first);
-  while (tvRange.first != tvRange.second) {
-    /* count nodes for this time variable */
-    std::vector<int>& vec = assoc[tvRange.first->second][type];
-    count += vec.size();
-    ++tvRange.first;
-  }
-
-  return count;
-}
-
-template<class V1>
-void bi::SparseInputBuffer::getCurrentNodes(const NodeType type,
-    V1& ids) {
-  ids.resize(state.current[type].size());
-  std::copy(state.current[type].begin(), state.current[type].end(), ids.begin());
-}
-
-template<class V1>
-void bi::SparseInputBuffer::getNextNodes(const NodeType type, V1& ids) {
-  typedef std::multimap<real,int>::iterator tv_iterator;
-
-  std::pair<tv_iterator,tv_iterator> tvRange;
-  ids.clear();
-
-  /* next time vars */
-  tvRange = state.nextTimes.equal_range(state.nextTimes.begin()->first);
-  while (tvRange.first != tvRange.second) {
-    /* nodes for this time variable */
-    std::vector<int>& vec = assoc[tvRange.first->second][type];
-    ids.resize(ids.size() + vec.size());
-    std::copy(vec.begin(), vec.end(), ids.end() - vec.size());
-    ++tvRange.first;
-  }
-
-  /* sort */
-  std::sort(ids.begin(), ids.end());
+inline bool bi::SparseInputBuffer::isValid() const {
+  return !state.times.empty();
 }
 
 #endif

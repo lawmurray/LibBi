@@ -12,6 +12,7 @@
 #include "primitive.hpp"
 #include "../misc/strided_range.hpp"
 #include "../misc/assert.hpp"
+#include "../typelist/equals.hpp"
 
 #ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
@@ -38,7 +39,7 @@ public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  static const bool on_device = true;
+  static const bool on_device = false;
 
   /**
    * Shallow copy.
@@ -95,12 +96,15 @@ public:
   /**
    * Check if two handles are the same.
    *
+   * @tparam V1 Vector type.
+   *
    * @param o Other handle.
    *
    * @return True if both handles point to the same memory, with the same
    * size and same increment, false otherwise.
    */
-  bool same(const host_vector_handle<T>& o) const;
+  template<class V1>
+  bool same(const V1& o) const;
 
 public:
   /**
@@ -181,9 +185,11 @@ inline const T& bi::host_vector_handle<T>::operator[](const size_type i)
 }
 
 template<class T>
-inline bool bi::host_vector_handle<T>::same(
-    const host_vector_handle<T>& o) const {
-  return (this->buf() == o.buf() && this->size() == o.size() && this->inc() == o.inc());
+template<class V1>
+inline bool bi::host_vector_handle<T>::same(const V1& o) const {
+  return (equals<value_type,typename V1::value_type>::value &&
+      on_device == V1::on_device && this->buf() == o.buf() &&
+      this->size() == o.size() && this->inc() == o.inc());
 }
 
 namespace bi {
@@ -232,6 +238,20 @@ public:
    */
   template<class V1>
   vector_reference_type& operator=(const V1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  vector_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  const vector_reference_type& ref() const;
 
   /**
    * Shallow copy.
@@ -302,8 +322,12 @@ inline bi::host_vector_reference<T>& bi::host_vector_reference<T>::operator=(
   /* pre-condition */
   assert(this->size() == o.size());
 
-  if (!same(o)) {
-    bi::copy(o.begin(), o.end(), this->begin());
+  if (!this->same(o)) {
+    if (this->inc() == 1 && o.inc() == 1) {
+      memcpy(this->buf(), o.buf(), this->size()*sizeof(T));
+    } else {
+      bi::copy(o.begin(), o.end(), this->begin());
+    }
   }
 
   return *this;
@@ -316,15 +340,33 @@ inline bi::host_vector_reference<T>& bi::host_vector_reference<T>::operator=(
   /* pre-condition */
   assert(this->size() == o.size());
 
-  if (V1::on_device && this->inc() == 1 && o.inc() == 1) {
-    /* asynchronous linear copy */
-    CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-        this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
-  } else {
-    bi::copy(o.begin(), o.end(), this->begin());
+  if (V1::on_device) {
+    if (this->inc() == 1 && o.inc() == 1) {
+      /* asynchronous linear copy */
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+          this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+    } else {
+      bi::copy(o.begin(), o.end(), this->begin());
+    }
+  } else if (!this->same(o)) {
+    if (this->inc() == 1 && o.inc() == 1) {
+      memcpy(this->buf(), o.buf(), this->size()*sizeof(T));
+    } else {
+      bi::copy(o.begin(), o.end(), this->begin());
+    }
   }
 
   return *this;
+}
+
+template<class T>
+inline typename bi::host_vector_reference<T>::vector_reference_type& bi::host_vector_reference<T>::ref() {
+  return static_cast<vector_reference_type&>(*this);
+}
+
+template<class T>
+inline const typename bi::host_vector_reference<T>::vector_reference_type& bi::host_vector_reference<T>::ref() const {
+  return static_cast<const vector_reference_type&>(*this);
 }
 
 template<class T>
@@ -361,7 +403,11 @@ inline typename bi::host_vector_reference<T>::const_iterator
 
 template<class T>
 inline void bi::host_vector_reference<T>::clear() {
-  bi::fill(this->begin(), this->end(), static_cast<T>(0));
+  if (this->inc() == 1) {
+    memset(this->buf(), 0, this->size()*sizeof(T));
+  } else {
+    bi::fill(this->begin(), this->end(), static_cast<T>(0));
+  }
 }
 
 #ifndef __CUDACC__
@@ -476,6 +522,20 @@ public:
   host_vector<T,A>& operator=(const V1& o);
 
   /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  vector_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  const vector_reference_type& ref() const;
+
+  /**
    * Resize vector.
    *
    * @param size New size.
@@ -573,8 +633,7 @@ bi::host_vector<T,A>::host_vector(const V1 o) :
 
 template<class T, class A>
 bi::host_vector<T,A>::~host_vector() {
-  if (own && this->ptr != NULL) {
-    alloc.destroy(this->ptr);
+  if (own) {
     alloc.deallocate(this->ptr, this->size1);
   }
 }
@@ -593,18 +652,28 @@ bi::host_vector<T,A>& bi::host_vector<T,A>::operator=(const V1& o) {
 }
 
 template<class T, class A>
+inline typename bi::host_vector<T,A>::vector_reference_type& bi::host_vector<T,A>::ref() {
+  return static_cast<vector_reference_type&>(*this);
+}
+
+template<class T, class A>
+inline const typename bi::host_vector<T,A>::vector_reference_type& bi::host_vector<T,A>::ref() const {
+  return static_cast<const vector_reference_type&>(*this);
+}
+
+template<class T, class A>
 void bi::host_vector<T,A>::resize(const size_type size, const bool preserve) {
-  if (size <= this->size()) {
-    /**
-     * @todo size1 passed to deallocate() of allocator, is reducing it here
-     * problematic? Not for any allocators we're using, but in general.
-     */
-    this->size1 = size;
-  } else {
-    BI_ERROR(own, "Cannot enlarge host_vector constructed as view of other vector");
+  if (size != this->size()) {
+    /* pre-condition */
+    BI_ERROR(own, "Cannot resize host_vector constructed as view of other vector");
 
     /* allocate new buffer */
-    T* ptr = alloc.allocate(size);
+    T* ptr;
+    if (size > 0) {
+      ptr = alloc.allocate(size);
+    } else {
+      ptr = NULL;
+    }
 
     /* copy across contents */
     if (preserve) {
@@ -613,7 +682,6 @@ void bi::host_vector<T,A>::resize(const size_type size, const bool preserve) {
 
     /* free old buffer */
     if (this->ptr != NULL) {
-      alloc.destroy(this->ptr);
       alloc.deallocate(this->ptr, this->size1);
     }
 

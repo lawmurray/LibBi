@@ -60,10 +60,7 @@ public:
   int size() const;
 
   /**
-   * Resize.
-   *
-   * @param P Number of trajectories to store.
-   * @param preserve True to preserve existing values, false otherwise.
+   * @copydoc State<L>::resize()
    */
   void resize(const int P = 1, const bool preserve = true);
 
@@ -85,7 +82,6 @@ public:
    */
   const matrix_reference_type& get(const NodeType type) const;
 
-private:
   /**
    * Contiguous storage for s- and p- nodes.
    */
@@ -113,9 +109,12 @@ private:
    */
   friend class boost::serialization::access;
   #endif
-
 };
 }
+
+#ifdef USE_SSE
+#include "../math/sse.hpp"
+#endif
 
 template<bi::Location L>
 template<class B>
@@ -149,7 +148,23 @@ inline int bi::Static<L>::size() const {
 
 template<bi::Location L>
 inline void bi::Static<L>::resize(const int P, bool preserve) {
-  K.resize(P, K.size2(), preserve);
+  int P1 = P;
+  if (L == ON_DEVICE) {
+    /* either < 32 or a multiple of 32 number of trajectories required */
+    if (P1 > 32) {
+      P1 = ((P1 + 31)/32)*32;
+    }
+  } else {
+    #if defined(USE_CPU) and defined(USE_SSE)
+    /* zero, one or a multiple of 4 (single precision) or 2 (double
+     * precision) required */
+    if (P1 > 1) {
+      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
+    }
+    #endif
+  }
+
+  K.resize(P1, K.size2(), preserve);
   Ks.copy(columns(K, 0, Ks.size2()));
   Kp.copy(columns(K, Ks.size2(), Kp.size2()));
 }

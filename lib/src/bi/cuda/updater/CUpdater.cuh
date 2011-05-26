@@ -11,8 +11,10 @@
 #include "../cuda.hpp"
 #include "../../math/misc.hpp"
 
-#ifdef USE_DOPRI5
+#if defined(USE_ODE_DOPRI5)
 #include "../ode/DOPRI5Kernel.cuh"
+#elif defined(USE_ODE_RK4)
+#include "../ode/RK4Kernel.cuh"
 #else
 #include "../ode/RK43Kernel.cuh"
 #endif
@@ -33,7 +35,7 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt, State<bi::ON_DEVI
   const int P = s.size();
   const int maxDgx = 16384;
   const int minDbx = P/maxDgx;
-  const int maxDbx = 512/net_size<B,S>::value;
+  const int maxDbx = 512/next_power_2(net_size<B,S>::value);
   const int idealDbx = 32;
   #ifdef USE_RIPEN
   const int idealThreads = 14*512;
@@ -54,7 +56,11 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt, State<bi::ON_DEVI
   Dg.y = 1;
   Dg.z = 1;
 
+  #if defined(USE_ODE_DOPRI5) || defined(USE_ODE_RK43)
   Ns = Db.x*Db.y*sizeof(real) + 4*Db.x*sizeof(real) + Db.x*sizeof(V1);
+  #else
+  Ns = Db.x*Db.y*sizeof(real);
+  #endif
 
   BI_ERROR(P % Db.x == 0, "Number of trajectories must be multiple of " <<
       Db.x << " for device ODE integrator");
@@ -62,8 +68,10 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt, State<bi::ON_DEVI
   /* launch */
   if (net_size<B,S>::value > 0 && t < tnxt) {
     bind(s);
-    #ifdef USE_DOPRI5
+    #if defined(USE_ODE_DOPRI5)
     kernelDOPRI5<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
+    #elif defined(USE_ODE_RK4)
+    kernelRK4<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
     #else
     kernelRK43<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
     #endif

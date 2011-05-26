@@ -85,6 +85,18 @@ public:
   void writeTime(const int t, const real& x);
 
   /**
+   * @copydoc concept::SimulatorBuffer::readTime()
+   */
+  template<class V1>
+  void readTimes(const int t, const int T, V1 x);
+
+  /**
+   * @copydoc concept::SimulatorBuffer::writeTime()
+   */
+  template<class V1>
+  void writeTimes(const int t, const int T, const V1 x);
+
+  /**
    * @copydoc concept::SimulatorBuffer::readState()
    */
   template<class M1>
@@ -199,6 +211,28 @@ inline int bi::SimulatorNetCDFBuffer::size2() const {
   return nrDim->size();
 }
 
+template<class V1>
+void bi::SimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
+  /* pre-condition */
+  assert (t >= 0 && t + T <= nrDim->size());
+
+  BI_UNUSED NcBool ret;
+  tVar->set_cur(t);
+  ret = tVar->get(x.buf(), T);
+  BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+}
+
+template<class V1>
+void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T, const V1 x) {
+  /* pre-condition */
+  assert (t >= 0 && t + T <= nrDim->size());
+
+  BI_UNUSED NcBool ret;
+  tVar->set_cur(t);
+  ret = tVar->put(x.buf(), T);
+  BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
+}
+
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
     const int t, M1 s) {
@@ -207,6 +241,9 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
 
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
+    BI_ERROR (vars[type][id] != NULL, "Variable " <<
+        m.getNode(type, id)->getName() << " does not exist in file");
+
     j = 0;
     size = 1;
 
@@ -233,9 +270,11 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
       size *= nxDim->size();
       ++j;
     }
-    start = m.getNodeStart(type, id);
-
+    assert (vars[type][id]->get_dim(j) == npDim);
+    offsets[j] = 0;
     counts[j] = s.size1();
+
+    start = m.getNodeStart(type, id);
     ret = vars[type][id]->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
 
@@ -260,6 +299,8 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
 
   int start, id, j, size;
   for (id = 0; id < m.getNumNodes(type); ++id) {
+    BI_ERROR (vars[type][id] != NULL, "Variable " <<
+        m.getNode(type, id)->getName() << " does not exist in file");
     j = 0;
     size = 1;
 
@@ -286,10 +327,11 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
       size *= nxDim->size();
       ++j;
     }
-    start = m.getNodeStart(type, id);
-
+    assert (vars[type][id]->get_dim(j) == npDim);
     offsets[j] = p;
     counts[j] = s.size1();
+
+    start = m.getNodeStart(type, id);
     ret = vars[type][id]->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
 
@@ -302,7 +344,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
       delete buf;
     } else {
       ret = vars[type][id]->put(subrange(s, 0, s.size1(), start, size).buf(), counts);
-    }
+		}
     BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
   }
 }
@@ -330,18 +372,22 @@ void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
     assert(x1->size1() == x1->lead());
 
     if (vars[type][id]->get_dim(j) == nrDim) {
+      offsets[j] = 0;
       counts[j] = nrDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
     }
@@ -366,7 +412,7 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
   assert (x.size2() == nrDim->size());
 
   int id, j, start, size;
-  long offsets[5] = { 0, 0, 0, 0, 0 };
+  long offsets[5];
   long counts[5];
   BI_UNUSED NcBool ret;
 
@@ -379,18 +425,22 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
     assert(x1->size1() == x1->lead());
 
     if (vars[type][id]->get_dim(j) == nrDim) {
+      offsets[j] = 0;
       counts[j] = nrDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
     }
@@ -431,16 +481,19 @@ void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
       counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
       counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
       counts[j] = nxDim->size();
       size *= nxDim->size();
       ++j;
@@ -492,14 +545,17 @@ void bi::SimulatorNetCDFBuffer::writeSingle(const NodeType type,
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nzDim) {
+      offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nyDim) {
+      offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
     if (vars[type][id]->get_dim(j) == nxDim) {
+      offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
     }

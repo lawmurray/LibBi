@@ -5,12 +5,13 @@
  * $Rev$
  * $Date$
  */
-#ifndef POOLED_ALLOCATOR_HPP
-#define POOLED_ALLOCATOR_HPP
+#ifndef BI_MISC_POOLED_ALLOCATOR_HPP
+#define BI_MISC_POOLED_ALLOCATOR_HPP
 
 #include "assert.hpp"
 
 #include <map>
+#include <list>
 
 namespace bi {
 /**
@@ -53,12 +54,18 @@ public:
 
   size_type max_size() const;
 
+  /**
+   * Allocate new item, drawing from pool if possible.
+   */
   pointer allocate(size_type num, const_pointer *hint = 0);
 
   void construct(pointer p, const value_type& t);
 
   void destroy(pointer p);
 
+  /**
+   * Return item to pool.
+   */
   void deallocate(pointer p, size_type num);
 
   bool operator==(const pooled_allocator<A>& o) const {
@@ -86,27 +93,18 @@ private:
   A alloc;
 
   /**
-   * Full pool, mapping pointers to sizes.
-   */
-  static std::map<pointer,size_type> pool;
-
-  /**
    * Available items in pool, mapping sizes to pointers.
    */
-  static std::multimap<size_type,pointer> available;
-
+  static std::map<size_type, std::list<pointer> > available;
 };
 
 }
 
 template<class A>
-std::map<typename A::pointer,typename A::size_type> bi::pooled_allocator<A>::pool;
+std::map<typename A::size_type, std::list<typename A::pointer> > bi::pooled_allocator<A>::available;
 
 template<class A>
-std::multimap<typename A::size_type,typename A::pointer> bi::pooled_allocator<A>::available;
-
-template<class A>
-bi::pooled_allocator<A>::~pooled_allocator() {
+inline bi::pooled_allocator<A>::~pooled_allocator() {
   /* clean up pool */
 //  typename std::map<pointer,size_type>::iterator iter;
 //  for (iter = pool.begin(); iter != pool.end(); ++iter) {
@@ -133,21 +131,19 @@ inline typename bi::pooled_allocator<A>::size_type
 };
 
 template<class A>
-typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::allocate(
+inline typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::allocate(
     size_type num, const_pointer *hint) {
   pointer p;
 
   /* check available items to reuse */
-  typename std::multimap<size_type,pointer>::iterator iter;
-  iter = available.lower_bound(num);
-  if (iter != available.end()) {
-    /* reuse item */
-    p = iter->second;
-    available.erase(iter);
+  BOOST_AUTO(iter, available.find(num));
+  if (iter != available.end() && !iter->second.empty()) {
+    /* existing item */
+    p = iter->second.back();
+    iter->second.pop_back();
   } else {
     /* new item */
     p = alloc.allocate(num, hint);
-    pool.insert(std::make_pair(p, num));
   }
   return p;
 }
@@ -163,11 +159,15 @@ inline void bi::pooled_allocator<A>::destroy(pointer p) {
 }
 
 template<class A>
-void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
-  /* return to pool rather than deallocating */
-  typename std::map<pointer,size_type>::iterator iter = pool.find(p);
-  assert (iter != pool.end());
-  available.insert(std::make_pair(iter->second, iter->first));
+inline void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
+  BOOST_AUTO(iter, available.find(num));
+  if (iter != available.end()) {
+    /* existing size */
+    iter->second.push_back(p);
+  } else {
+    /* new size */
+    available.insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+  }
 }
 
 #endif

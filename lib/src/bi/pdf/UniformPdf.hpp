@@ -84,6 +84,20 @@ public:
   int size() const;
 
   /**
+   * Get the lower bound.
+   *
+   * @return Lower bound.
+   */
+  const V1& lower() const;
+
+  /**
+   * Get the upper bound.
+   *
+   * @return Upper bound.
+   */
+  const V1& upper() const;
+
+  /**
    * Set the dimensionality of the distribution.
    *
    * @param N Number of dimensions.
@@ -114,7 +128,7 @@ public:
    * @copydoc concept::Pdf::densities()
    */
   template<class M2, class V2>
-  double densities(const M2 X, V2 p);
+  void densities(const M2 X, V2 p);
 
   /**
    * @copydoc concept::Pdf::logDensity()
@@ -126,7 +140,7 @@ public:
    * @copydoc concept::Pdf::logDensities()
    */
   template<class M2, class V2>
-  double logDensities(const M2 X, V2 p);
+  void logDensities(const M2 X, V2 p);
 
   /**
    * @copydoc concept::Pdf::operator()()
@@ -148,12 +162,12 @@ private:
   /**
    * Lower corner of the hyper-rectangle under the distribution.
    */
-  V1 lower;
+  V1 low;
 
   /**
    * Upper corner of the hyper-rectangle under the distribution.
    */
-  V1 upper;
+  V1 high;
 
   /**
    * Length along each dimension of hyper-rectangle.
@@ -188,15 +202,15 @@ private:
 }
 
 template<class V1>
-bi::UniformPdf<V1>::UniformPdf() : p(0.0), lower(0), upper(0), length(0) {
+bi::UniformPdf<V1>::UniformPdf() : p(0.0), low(0), high(0), length(0) {
   //
 }
 
 template<class V1>
 bi::UniformPdf<V1>::UniformPdf(const real lower, const real upper) : N(1),
-    lower(1), upper(1), length(1) {
-  *this->lower.begin() = lower;
-  *this->upper.begin() = upper;
+    low(1), high(1), length(1) {
+  *this->low.begin() = lower;
+  *this->high.begin() = upper;
 
   init();
 }
@@ -204,25 +218,25 @@ bi::UniformPdf<V1>::UniformPdf(const real lower, const real upper) : N(1),
 template<class V1>
 template<class V2>
 bi::UniformPdf<V1>::UniformPdf(const V2 lower, const V2 upper) :
-    N(lower.size()), lower(N), upper(N), length(N) {
+    N(lower.size()), low(N), high(N), length(N) {
   /* pre-condition */
   assert(lower.size() == upper.size());
 
   /* note cannot simply use copy constructors, as this will be shallow if
    * V1 == V2 */
-  this->lower = lower;
-  this->upper = upper;
+  this->low = lower;
+  this->high = upper;
 
   init();
 }
 
 template<class V1>
 bi::UniformPdf<V1>::UniformPdf(const UniformPdf<V1>& o) : N(o.N), p(o.p),
-    lower(N), upper(N), length(N) {
+    low(N), high(N), length(N) {
   /* note cannot simply use copy constructors, as this will be shallow if
    * V1 == V2 */
-  lower = o.lower;
-  upper = o.upper;
+  low = o.low;
+  high = o.high;
   length = o.length;
 }
 
@@ -233,8 +247,8 @@ bi::UniformPdf<V1>& bi::UniformPdf<V1>::operator=(const UniformPdf<V2>& o) {
   assert (o.N == N);
 
   p = o.p;
-  lower = o.lower;
-  upper = o.upper;
+  low = o.lower;
+  high = o.upper;
   length = o.length;
 
   return *this;
@@ -246,11 +260,21 @@ inline int bi::UniformPdf<V1>::size() const {
 }
 
 template<class V1>
+inline const V1& bi::UniformPdf<V1>::lower() const {
+  return low;
+}
+
+template<class V1>
+inline const V1& bi::UniformPdf<V1>::upper() const {
+  return high;
+}
+
+template<class V1>
 void bi::UniformPdf<V1>::resize(const int N, const bool preserve) {
   this->N = N;
 
-  lower.resize(N, preserve);
-  upper.resize(N, preserve);
+  low.resize(N, preserve);
+  high.resize(N, preserve);
   length.resize(N, preserve);
 
   init();
@@ -264,8 +288,8 @@ void bi::UniformPdf<V1>::sample(Random& rng, V2 x) {
 
   BOOST_AUTO(z, temp_vector<V2>(N));
   rng.uniforms(*z);
-  gdmv(1.0, length, z, 0.0, x);
-  axpy(1.0, lower, x);
+  gdmv(1.0, length, *z, 0.0, x);
+  axpy(1.0, low, x);
 
   if (V2::on_device) {
     synchronize();
@@ -282,7 +306,7 @@ void bi::UniformPdf<V1>::samples(Random& rng, M2 X) {
   BOOST_AUTO(Z, temp_matrix<M2>(X.size1(), X.size2()));
   rng.uniforms(matrix_as_vector(*Z));
   gdmm(1.0, length, *Z, 0.0, X, 'R');
-  add_rows(X, lower);
+  add_rows(X, low);
 
   if (M2::on_device) {
     synchronize();
@@ -298,24 +322,19 @@ double bi::UniformPdf<V1>::density(const V2 x) {
 
   typedef typename V2::value_type T2;
 
-  /* check whether within hyper-rectangle of uniform distribution */
-  double result;
-  BOOST_AUTO(z, temp_vector<V2>(N));
-  *z = x;
-  axpy(-1.0, lower, *z);
-  int numin = thrust::inner_product(z->begin(), z->end(), length.begin(), 0, thrust::plus<T2>(), thrust::less<T2>());
-  assert (numin >= 0 && numin <= N);
-  result = (numin == N) ? p : 0.0;
+  int nless, ngreater = 0;
 
-  synchronize();
-  delete z;
+  nless = thrust::inner_product(x.begin(), x.end(), low.begin(), 0, thrust::plus<int>(), thrust::less<T2>());
+  if (nless == 0) {
+    ngreater = thrust::inner_product(x.begin(), x.end(), high.begin(), 0, thrust::plus<int>(), thrust::greater<T2>());
+  }
 
-  return result;
+  return (nless == 0 && ngreater == 0) ? p : 0;
 }
 
 template<class V1>
 template<class M3, class V3>
-double bi::UniformPdf<V1>::densities(const M3 X, V3 p) {
+void bi::UniformPdf<V1>::densities(const M3 X, V3 p) {
   /* pre-condition */
   assert (X.size1() == p.size() && X.size2() == N);
 
@@ -336,7 +355,7 @@ double bi::UniformPdf<V1>::logDensity(const V3 x) {
 
 template<class V1>
 template<class M3, class V3>
-double bi::UniformPdf<V1>::logDensities(const M3 X, V3 p) {
+void bi::UniformPdf<V1>::logDensities(const M3 X, V3 p) {
   /* pre-condition */
   assert (X.size1() == p.size() && X.size2() == N);
 
@@ -351,14 +370,14 @@ double bi::UniformPdf<V1>::logDensities(const M3 X, V3 p) {
 
 template<class V1>
 template<class V3>
-real bi::UniformPdf<V1>::operator()(const V3 x) {
+double bi::UniformPdf<V1>::operator()(const V3 x) {
   return density(x);
 }
 
 template<class V1>
 void bi::UniformPdf<V1>::init() {
-  length = upper;
-  axpy(-1.0, lower, length);
+  length = high;
+  axpy(-1.0, low, length);
   p = 1.0/bi::prod(length.begin(), length.end(), 1.0);
 }
 
@@ -367,16 +386,16 @@ template<class V1>
 template<class Archive>
 void bi::UniformPdf<V1>::save(Archive& ar, const unsigned version) const {
   ar & p;
-  ar & lower;
-  ar & upper;
+  ar & low;
+  ar & high;
 }
 
 template<class V1>
 template<class Archive>
 void bi::UniformPdf<V1>::load(Archive& ar, const unsigned version) {
   ar & p;
-  ar & lower;
-  ar & upper;
+  ar & low;
+  ar & high;
 
   init();
 }

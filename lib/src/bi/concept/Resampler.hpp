@@ -22,14 +22,17 @@ struct Resampler {
    *
    * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
+   * @tparam L Location.
    *
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
    *
    * The weights @p lws are set to be uniform after the resampling.
    */
-  template<class V1, class V2>
-  void resample(V1& lws, V2& as);
+  template<class V1, class V2, Location L>
+  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
 
   /**
    * Resample state with proposal weights.
@@ -37,27 +40,33 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    * @tparam V3 Integral vector type.
+   * @tparam L Location.
    *
    * @param qlws Proposal log-weights.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
    *
    * The resample is performed using the weights @p qlws. The weights @p lws
    * are then set as importance weights, such that if \f$a^i = p\f$,
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
-  template<class V1, class V2, class V3>
-  void resample(const V1& qlws, V2& lws, V3& as);
+  template<class V1, class V2, class V3, Location L>
+  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
 
   /**
    * Resample state with conditioned outcome.
    *
    * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
+   * @tparam L Location.
    *
    * @param a Conditioned outcome for single ancestor.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
    *
    * Sets the first ancestor to @p a and draws the remainder as normal. Final
    * outcome may be subsequently permuted. This is useful for the conditional
@@ -66,8 +75,8 @@ struct Resampler {
    *
    * The weights @p lws are set to be uniform after the resampling.
    */
-  template<class V1, class V2>
-  void resample(const int a, V1& lws, V2& as);
+  template<class V1, class V2, Location L>
+  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
 
   /**
    * Resample state with proposal weights and conditioned outcome.
@@ -75,11 +84,14 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    * @tparam V3 Integral vector type.
+   * @tparam L Location.
    *
    * @param a Conditioned outcome for single ancestor.
    * @param qlws Proposal log-weights.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
    *
    * Sets the first ancestor to @p a and draws the remainder as normal. Final
    * outcome may be subsequently permuted. This is useful for the conditional
@@ -90,8 +102,7 @@ struct Resampler {
    * are then set as importance weights, such that if \f$a^i = p\f$,
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
-  template<class V1, class V2, class V3>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as);
-
+  template<class V1, class V2, class V3, Location L>
+  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
 };
 }

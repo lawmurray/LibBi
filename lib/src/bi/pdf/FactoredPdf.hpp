@@ -20,7 +20,7 @@ namespace bi {
  *
  * @ingroup math_pdf
  *
- * @tparam TS A type list.
+ * @tparam S Type list.
  *
  * Takes the form:
  *
@@ -131,7 +131,6 @@ public:
   template<class Q1>
   void set(const int i, const Q1& factor);
 
-protected:
   /**
    * Factors.
    */

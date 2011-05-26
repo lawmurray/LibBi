@@ -23,11 +23,11 @@ NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) {
     ncFile = new NcFile(file.c_str(), NcFile::Write);
     break;
   case NEW:
-    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Offset64Bits);
+    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Netcdf4);
     ncFile->set_fill(NcFile::NoFill);
     break;
   case REPLACE:
-    ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0, NcFile::Offset64Bits);
+    ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0, NcFile::Netcdf4);
     ncFile->set_fill(NcFile::NoFill);
     break;
   default:
@@ -50,12 +50,12 @@ NcDim* NetCDFBuffer::createDim(const char* name, const long size) {
   return dim;
 }
 
-NcVar* NetCDFBuffer::createVar(const BayesNode* node) {
+NcVar* NetCDFBuffer::createVar(const BayesNode* node, const StaticHandling SH) {
   NcVar* var;
   std::vector<const NcDim*> dims;
   NodeType type = node->getType();
 
-  if (type == D_NODE || type == C_NODE || type == R_NODE || type == F_NODE) {
+  if (SH == STATIC_OWN || (type == D_NODE || type == C_NODE || type == R_NODE || type == F_NODE)) {
     dims.push_back(mapDim("nr"));
   }
   if (node->hasZ()) dims.push_back(mapDim("nz"));
@@ -81,7 +81,7 @@ NcDim* NetCDFBuffer::mapDim(const char* name, const long size) {
   return dim;
 }
 
-NcVar* NetCDFBuffer::mapVar(const BayesNode* node) {
+NcVar* NetCDFBuffer::mapVar(const BayesNode* node, const StaticHandling SH) {
   NcVar* var = ncFile->get_var(node->getName().c_str());
   BI_ERROR(var != NULL && var->is_valid(), "File does not contain variable "
       << node->getName());
@@ -90,7 +90,7 @@ NcVar* NetCDFBuffer::mapVar(const BayesNode* node) {
   NodeType type = node->getType();
   NcDim* dim;
   int i = 0;
-  if (type == D_NODE || type == C_NODE || type == R_NODE || type == F_NODE) {
+  if (SH == STATIC_OWN || (type == D_NODE || type == C_NODE || type == R_NODE || type == F_NODE)) {
     dim = var->get_dim(i);
     BI_ERROR(dim == mapDim("nr"), "Dimension " << i << " of variable " <<
         node->getName() << " should be nr");

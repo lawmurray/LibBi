@@ -64,6 +64,8 @@
  *   @defgroup math_rng Random number generation
  *   @ingroup math
  *
+ * @defgroup kd kd trees
+ *
  * @defgroup state State
  *
  *   @defgroup state_host Host memory bindings
@@ -74,6 +76,12 @@
  *
  * @defgroup io I/O
  *
+ *   @defgroup io_cache Caches
+ *   @ingroup io
+ *
+ *   @defgroup io_mask Masks
+ *   @ingroup io
+ *
  * @defgroup concept Concepts
  *
  * @defgroup misc Miscellaneous
@@ -83,25 +91,6 @@
  *
  *   @defgroup misc_allocators Allocators
  *   @ingroup misc
- */
-
-/**
- * @page roadmap Roadmap
- *
- * @li The use of thrust::host_vector, thrust::device_vector and uBLAS
- * vectors and matrices should be steadily phased out in favour of
- * bi::host_vector, bi::host_matrix, bi::gpu_vector and bi::gpu_matrix.
- * Certainly this should apply to thrust types at this stage. Some uBLAS
- * functionality, like packed storage symmetric matrices, may still be
- * useful.
- */
-
-/**
- * @page debug Debug checklist
- *
- * @li Are thrust functions operating on device vectors being compiled from
- * @c *.cpp rather than @p *.cu files? This can cause all sorts of issues --
- * compile errors, or sefaults and stack overflows at runtime.
  */
 
 /**
@@ -140,6 +129,11 @@
  * methods. <i>Journal of the Royal Statistical Society Series B</i>,
  * <b>2010</b>, 72, 269-302.
  *
+ * @anchor Gray2001
+ * Gray, A. G. & Moore, A. W. `N-Body' Problems in Statistical
+ * Learning. <i>Advances in Neural Information Processing Systems</i>,
+ * <b>2001</b>, <i>13</i>.
+ *
  * @anchor Haario2001
  * Haario, H.; Saksman, E. & Tamminen, J. An adaptive Metropolis algorithm.
  * <i>Bernoulli</i>, <b>2001</b>, 7, 223-242.
@@ -173,6 +167,11 @@
  * resampler. <i>DMMD: Distributed machine learning and sparse representation
  * with massive data sets</i>, <b>2011</b>.
  *
+ * @anchor Murray2011b
+ * Murray, L.M. & Storkey, A. Particle smoothing in continuous time: A fast
+ * approach via density estimation. <i>IEEE Transactions on Signal
+ * Processing</i>, <b>2011</b>, 59, 1017-1026.
+ *
  * @anchor Pitt1999
  * Pitt, M. & Shephard, N. Filtering Via Simulation: Auxiliary Particle
  * Filters. <i>Journal of the American Statistical Association</i>,
@@ -182,7 +181,6 @@
  * Pitt, M. K. Smooth particle filters for likelihood evaluation and
  * maximisation. Technical Report 651, Department of Economics, The University
  * of Warwick, <b>2002</b>.
- *
  *
  * @anchor Sarkka2008
  * Särkkä, S. Unscented Rauch-Tung-Striebel Smoother. <i>IEEE Transactions on

@@ -83,76 +83,32 @@ struct is_gaussian_variate {
 /**
  * @internal
  *
- * Implementation of all_gaussian_variates.
- */
-template<class S>
-struct all_gaussian_variates_impl {
-  typedef typename front<S>::type head;
-  typedef typename pop_front<S>::type tail;
-
-  static const bool value = is_gaussian_variate<head>::value && all_gaussian_variates_impl<tail>::value;
-};
-
-/**
- * @internal
- *
- * Implementation of all_gaussian_variates, base case.
- */
-template<>
-struct all_gaussian_variates_impl<empty_typelist> {
-  static const bool value = true;
-};
-
-/**
- * @internal
- *
- * Do all types in a type list have is_gaussian_variate?
+ * Wiener process random increment \f$u \sim \mathcal{N}(0,\sqrt{\Delta t})\f$.
  *
  * @ingroup model_trait
  *
- * @tparam S Type list.
+ * @tparam X Node type.
  */
-template<class S>
-struct all_gaussian_variates {
-  static const bool value = all_gaussian_variates_impl<S>::value;
+template<class X>
+struct is_wiener_increment {
+  static const bool value = false;
 };
 
 /**
- * @internal
+ * @def IS_WIENER_INCREMENT(X)
  *
- * Implementation of all_uniform_variates.
- */
-template<class S>
-struct all_uniform_variates_impl {
-  typedef typename front<S>::type head;
-  typedef typename pop_front<S>::type tail;
-
-  static const bool value = is_uniform_variate<head>::value && all_uniform_variates_impl<tail>::value;
-};
-
-/**
- * @internal
- *
- * Implementation of all_uniform_variates, base case.
- */
-template<>
-struct all_uniform_variates_impl<empty_typelist> {
-  static const bool value = true;
-};
-
-/**
- * @internal
- *
- * Do all types in a type list have is_uniform_variate?
+ * Attach Wiener increment trait to node type.
  *
  * @ingroup model_trait
  *
- * @tparam S Type list.
+ * @arg @c X Node type.
  */
-template<class S>
-struct all_uniform_variates {
-  static const bool value = all_uniform_variates_impl<S>::value;
-};
+#define IS_WIENER_INCREMENT(X, ...) \
+  namespace bi { \
+  template<> \
+  struct is_wiener_increment< X, ##__VA_ARGS__ > { \
+    static const bool value = true; \
+  }; }
 
 }
 

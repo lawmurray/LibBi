@@ -42,7 +42,7 @@ void bi::kernelDUpdate(const real t, const real tnxt) {
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = threadIdx.y;
   V1 pax(p);
-  V2 xnxt;
+  V2 xnxt = 0.0;
 
   if (p < constP) {
     Visitor::accept(t, pax, tnxt, xnxt);

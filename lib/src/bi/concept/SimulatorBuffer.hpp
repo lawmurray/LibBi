@@ -41,6 +41,30 @@ struct SimulatorBuffer {
   void writeTime(const int t, const real& x);
 
   /**
+   * Read times.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Index of first record.
+   * @param T Number of records.
+   * @param[out] x Times.
+   */
+  template<class V1>
+  void readTimes(const int t, const int T, V1 x);
+
+  /**
+   * Write times.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Index of first record.
+   * @param T Number of records.
+   * @param x Times.
+   */
+  template<class V1>
+  void writeTimes(const int t, const int T, const V1 x);
+
+  /**
    * Read state.
    *
    * @tparam M1 Matrix type.

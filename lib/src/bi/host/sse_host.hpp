@@ -99,7 +99,7 @@ BI_FORCE_INLINE inline bi::sse_real bi::sse_host_fetch(const int p,
   sse_real result;
 
   if (is_s_node<X>::value) {
-    result = sse_state_get(hostSState, 0, i);
+    result = sse_state_get(hostSState, p, i);
   } else if (is_d_node<X>::value) {
     result = sse_state_get(hostDState, p, i);
   } else if (is_c_node<X>::value) {
@@ -111,7 +111,7 @@ BI_FORCE_INLINE inline bi::sse_real bi::sse_host_fetch(const int p,
   } else if (is_o_node<X>::value) {
     result = sse_state_get(hostOYState, 0, i);
   } else if (is_p_node<X>::value) {
-    result = sse_state_get(hostPState, 0, i);
+    result = sse_state_get(hostPState, p, i);
   }
   return result;
 }
@@ -122,7 +122,7 @@ BI_FORCE_INLINE inline void bi::sse_host_put(const int p,
   const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
 
   if (is_s_node<X>::value) {
-    sse_state_set(hostSState, 0, i, val);
+    sse_state_set(hostSState, p, i, val);
   } else if (is_d_node<X>::value) {
     sse_state_set(hostDState, p, i, val);
   } else if (is_c_node<X>::value) {
@@ -134,7 +134,7 @@ BI_FORCE_INLINE inline void bi::sse_host_put(const int p,
   } else if (is_o_node<X>::value) {
     sse_state_set(hostOYState, 0, i, val);
   } else if (is_p_node<X>::value) {
-    sse_state_set(hostPState, 0, i, val);
+    sse_state_set(hostPState, p, i, val);
   }
 }
 

@@ -9,8 +9,8 @@
 #define BI_MATH_TEMP_VECTOR_HPP
 
 #include "host_vector.hpp"
-#include "../misc/pooled_allocator.hpp"
 #include "../misc/pinned_allocator.hpp"
+#include "../misc/pooled_allocator.hpp"
 
 #include "boost/typeof/typeof.hpp"
 #include "boost/mpl/if.hpp"
@@ -28,7 +28,7 @@ struct host_vector_map_type {
   /**
    * Allocator type.
    */
-  typedef pooled_allocator<pinned_allocator<typename V1::value_type> > allocator_type;
+  typedef pinned_allocator<typename V1::value_type> allocator_type;
 
   /**
    * Equivalent host type.
@@ -89,7 +89,7 @@ struct host_vector_temp_type {
   /**
    * Allocator type.
    */
-  typedef pooled_allocator<pinned_allocator<T1> > allocator_type;
+  typedef pinned_allocator<T1> allocator_type;
 
   /**
    * Temp type.
@@ -115,9 +115,8 @@ typename host_vector_temp_type<T1>::type* host_temp_vector(const int size);
  * @tparam V1 Vector type.
  *
  * @return If argument is a %host vector, returns a reference to the same.
- * If argument is a device vector, constructs a suitable %host vector using
- * pooled memory, asynchronously copies contents to this, and returns a
- * reference to it.
+ * If argument is a device vector, constructs a suitable %host vector,
+ * asynchronously copies contents to this, and returns a reference to it.
  */
 template<class V1>
 typename host_vector_map_type<V1>::type* host_map_vector(const V1 x);

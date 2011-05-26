@@ -10,14 +10,15 @@
 using namespace bi;
 
 ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const BayesNet& m,
-    const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, file, mode) {
+    const std::string& file, const FileMode mode, StaticHandling flag) :
+    SimulatorNetCDFBuffer(m, file, mode, flag) {
   map();
 }
 
 ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const BayesNet& m,
     const int P, const int T, const std::string& file,
-    const FileMode mode) : SimulatorNetCDFBuffer(m, P, T, file, mode) {
+    const FileMode mode, StaticHandling flag) :
+    SimulatorNetCDFBuffer(m, P, T, file, mode, flag) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {
@@ -125,8 +126,10 @@ void ParticleFilterNetCDFBuffer::writeAncestor(const int t,
   BI_ASSERT(ret, "Inconvertible type writing " << aVar->name());
 }
 
-void ParticleFilterNetCDFBuffer::readResample(const int t,
-    int& r) {
+void ParticleFilterNetCDFBuffer::readResample(const int t, int& r) {
+  /* pre-condition */
+  assert (t >= 0 && t < nrDim->size());
+
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
   BI_ASSERT(ret, "Index exceeds size reading resample");
@@ -134,8 +137,10 @@ void ParticleFilterNetCDFBuffer::readResample(const int t,
   BI_ASSERT(ret, "Inconvertible type reading resample");
 }
 
-void ParticleFilterNetCDFBuffer::writeResample(const int t,
-    const int r) {
+void ParticleFilterNetCDFBuffer::writeResample(const int t, const int r) {
+  /* pre-condition */
+  assert (t >= 0 && t < nrDim->size());
+
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
   BI_ASSERT(ret, "Index exceeds size reading resample");

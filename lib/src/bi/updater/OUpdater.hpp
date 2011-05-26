@@ -10,6 +10,7 @@
 
 #include "../cuda/cuda.hpp"
 #include "../method/misc.hpp"
+#include "../buffer/SparseMask.hpp"
 
 namespace bi {
 /**
@@ -28,19 +29,19 @@ public:
   /**
    * Update o-net.
    *
-   * @tparam Integral vector type.
+   * @tparam L Location.
    *
-   * @param ids Ids of o-nodes to be updated.
+   * @param mask Mask.
    * @param s State to update.
    */
-  template<class V1>
-  void update(const V1& ids, State<ON_HOST>& s);
+  template<Location L>
+  void update(const SparseMask<L>& mask, State<ON_HOST>& s);
 
   /**
-   * @copydoc update(const V1&, State<ON_HOST>)
+   * @copydoc update(const SparseMask<L>& mask, State<ON_HOST>& s)
    */
-  template<class V1>
-  void update(const V1& ids, State<ON_DEVICE>& s);
+  template<Location L>
+  void update(const SparseMask<L>& mask, State<ON_DEVICE>& s);
 };
 }
 
@@ -50,31 +51,59 @@ public:
 #include "../host/const_host.hpp"
 
 template<class B, bi::StaticHandling SH>
-template<class V1>
-void bi::OUpdater<B,SH>::update(const V1& ids, State<ON_HOST>& s) {
+template<bi::Location L>
+void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_HOST>& s) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
-  typedef Pa<B,real,pa,host,host,pa,host,host,host> V2;
-  typedef real V3;
-  typedef OUpdateVisitor<ON_HOST,B,S,V1,V2,V3> Visitor;
+  typedef Pa<B,real,pa,host,host,pa,host,host,host> V3;
+  typedef OUpdateVisitor<B,S,V3,real,real> Visitor;
 
-  if (ids.size() > 0) {
-    const int P = s.size();
+  const int P = s.size();
+  const int W = mask.size();
+
+  if (W > 0) {
+    s.oresize(W, false);
     bind(s);
     #pragma omp parallel
     {
-      int i, p;
-      V2 pax(0);
-      V3 xnxt[ids.size()];
+      int j = 0, i, id, p;
+      Coord cox;
+      V3 pax(0);
+      real r, o;
 
-      #pragma omp for
-      for (p = 0; p < P; ++p) {
-        pax.p = p;
-        Visitor::accept(ids, pax, xnxt);
-        for (i = 0; i < ids.size(); ++i) {
-          s.get(O_NODE)(pax.p, i) = xnxt[i];
+      BOOST_AUTO(iter1, mask.getDenseMask().begin());
+      while (iter1 != mask.getDenseMask().end()) {
+        for (i = 0; i < iter1->size(); ++i, ++j) {
+          iter1->coord(i, id, cox);
+
+          #pragma omp for
+          for (p = 0; p < P; ++p) {
+            pax.p = p;
+            r = hostORState(pax.p, j);
+            Visitor::accept(id, cox, pax, r, o);
+            hostOState(pax.p, j) = o;
+          }
         }
+        ++iter1;
       }
+
+      BOOST_AUTO(iter2, mask.getSparseMask().begin());
+      while (iter2 != mask.getSparseMask().end()) {
+        for (i = 0; i < iter2->size(); ++i, ++j) {
+          iter2->coord(i, id, cox);
+
+          #pragma omp for
+          for (p = 0; p < P; ++p) {
+            pax.p = p;
+            r = hostORState(pax.p, j);
+            Visitor::accept(id, cox, pax, r, o);
+            hostOState(pax.p, j) = o;
+          }
+        }
+        ++iter2;
+      }
+
+      assert (j == mask.size());
     }
     unbind(s);
   }

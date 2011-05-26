@@ -48,7 +48,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage1(t, h, pax, x0, x1, x2, x3, x4, x5, x6, k1, err, k1in);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage1(t, h, pax, x0, x1, x2, x3, x4, x5, x6, k1, err, k1in);
   }
 
   static void stage2(const T1& t, const T1& h, const V1& pax, const T1* x0, T1* x2, T1* x3, T1* x4, T1* x5, T1* x6, T1* err) {
@@ -61,7 +61,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage2(t, h, pax, x0, x2, x3, x4, x5, x6, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage2(t, h, pax, x0, x2, x3, x4, x5, x6, err);
   }
 
   static void stage3(const T1& t, const T1& h, const V1& pax, const T1* x0, T1* x3, T1* x4, T1* x5, T1* x6, T1* err) {
@@ -74,7 +74,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage3(t, h, pax, x0, x3, x4, x5, x6, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage3(t, h, pax, x0, x3, x4, x5, x6, err);
   }
 
   static void stage4(const T1& t, const T1& h, const V1& pax, const T1* x0, T1* x4, T1* x5, T1* x6, T1* err) {
@@ -87,7 +87,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage4(t, h, pax, x0, x4, x5, x6, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage4(t, h, pax, x0, x4, x5, x6, err);
   }
 
   static void stage5(const T1& t, const T1& h, const V1& pax, const T1* x0, T1* x5, T1* x6, T1* err) {
@@ -100,7 +100,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage5(t, h, pax, x0, x5, x6, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage5(t, h, pax, x0, x5, x6, err);
   }
 
   static void stage6(const T1& t, const T1& h, const V1& pax, const T1* x0, T1* x6, T1* err) {
@@ -113,7 +113,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stage6(t, h, pax, x0, x6, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stage6(t, h, pax, x0, x6, err);
   }
 
   static void stageErr(const T1& t, const T1& h, const V1& pax, const T1* x0, const T1* x1, T1* k7, T1* err) {
@@ -126,7 +126,7 @@ public:
         }
       }
     }
-    DOPRI5Visitor<B,pop_front,T1,V1>::stageErr(t, h, pax, x0, x1, k7, err);
+    DOPRI5Visitor<ON_HOST,B,pop_front,T1,V1>::stageErr(t, h, pax, x0, x1, k7, err);
   }
 
 private:

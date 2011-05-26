@@ -12,7 +12,7 @@
 #include "../math/temp_vector.hpp"
 
 template<class V1, class V2>
-void bi::MetropolisResamplerDeviceImpl::ancestors(const V1& lws, V2& as, Random& rng, int L) {
+void bi::MetropolisResamplerDeviceImpl::ancestors(const V1& lws, V2& as, Random& rng, int C) {
   const int P = lws.size();
   dim3 Db, Dg;
   size_t Ns;
@@ -29,7 +29,7 @@ void bi::MetropolisResamplerDeviceImpl::ancestors(const V1& lws, V2& as, Random&
   //BOOST_AUTO(devSeeds, gpu_map_vector(*seeds));
   BOOST_AUTO(devAs, gpu_map_vector(as));
 
-  kernelMetropolisResamplerAncestors<<<Dg,Db,Ns>>>(lws, seed, P, L, *devAs);
+  kernelMetropolisResamplerAncestors<<<Dg,Db,Ns>>>(lws, seed, P, C, *devAs);
   CUDA_CHECK;
 
   synchronize();

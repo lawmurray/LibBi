@@ -14,6 +14,7 @@
 #include "../../misc/assert.hpp"
 #include "../cuda.hpp"
 #include "../../misc/compile.hpp"
+#include "../../typelist/equals.hpp"
 
 #include <typeinfo>
 
@@ -85,12 +86,15 @@ public:
   /**
    * Check if two handles are the same.
    *
+   * @tparam M1 Matrix type.
+   *
    * @param o Other handle.
    *
    * @return True if both handles point to the same memory, with the same
    * size and same lead, false otherwise.
    */
-  bool same(const gpu_matrix_handle<T>& o) const;
+  template<class M1>
+  bool same(const M1& o) const;
 
 public:
   /**
@@ -167,10 +171,12 @@ inline const T& bi::gpu_matrix_handle<T>::operator()(
 }
 
 template<class T>
-inline bool bi::gpu_matrix_handle<T>::same(
-    const gpu_matrix_handle<T>& o) const {
-  return (this->buf() == o.buf() && this->size1() == o.size1() &&
-      this->size2() == o.size2() && this->lead() == o.lead());
+template<class M1>
+inline bool bi::gpu_matrix_handle<T>::same(const M1& o) const {
+  return (equals<value_type,typename M1::value_type>::value &&
+      on_device == M1::on_device && this->buf() == o.buf() &&
+      this->size1() == o.size1() && this->size2() == o.size2() &&
+      this->lead() == o.lead());
 }
 
 namespace bi {
@@ -230,6 +236,20 @@ public:
    */
   template<class M1>
   CUDA_FUNC_HOST gpu_matrix_reference<T>& operator=(const M1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST matrix_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST const matrix_reference_type& ref() const;
 
   /**
    * Column-major iterator to beginning of matrix.
@@ -302,35 +322,6 @@ inline bi::gpu_matrix_reference<T>::gpu_matrix_reference(T* data,
 }
 
 template<class T>
-template<class M1>
-bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
-    const M1& o) {
-  /* pre-conditions */
-  assert (this->size1() == o.size1() && this->size2() == o.size2());
-
-  cudaMemcpyKind kind = (M1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
-
-  if (this->lead()*sizeof(T) <= CUDA_PITCH_LIMIT &&
-      o.lead()*sizeof(T) <= CUDA_PITCH_LIMIT) {
-    /* pitched 2d copy */
-    CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
-        o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
-        kind, 0));
-  } else if (this->lead() == o.lead()) {
-    /* plain linear copy */
-    CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-        this->lead()*this->size2()*sizeof(T), kind, 0));
-  } else {
-    /* copy column-by-column */
-    size_type i;
-    for (i = 0; i < this->size2(); ++i) {
-      column(*this, i) = column(o, i);
-    }
-  }
-  return *this;
-}
-
-template<class T>
 bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
     const gpu_matrix_reference<T>& o) {
   /* pre-conditions */
@@ -343,9 +334,11 @@ bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
       CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
           o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
           cudaMemcpyDeviceToDevice, 0));
-    } else if (this->lead() == o.lead()) {
+    } else if (this->lead() == this->size1() && o.lead() == o.size1()) {
       /* plain linear copy */
-      matrix_as_vector(*this) = matrix_as_vector(o);
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+          this->lead()*this->size2()*sizeof(T), cudaMemcpyDeviceToDevice,
+          0));
     } else {
       /* copy column-by-column */
       size_type i;
@@ -355,6 +348,46 @@ bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
     }
   }
   return *this;
+}
+
+template<class T>
+template<class M1>
+bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
+    const M1& o) {
+  /* pre-conditions */
+  assert (this->size1() == o.size1() && this->size2() == o.size2());
+
+  if (!this->same(o)) {
+    cudaMemcpyKind kind = (M1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
+    if (this->lead()*sizeof(T) <= CUDA_PITCH_LIMIT &&
+        o.lead()*sizeof(T) <= CUDA_PITCH_LIMIT) {
+      /* pitched 2d copy */
+      CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
+          o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
+          kind, 0));
+    } else if (this->lead() == this->size1() && o.lead() == o.size1()) {
+      /* plain linear copy */
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+          this->lead()*this->size2()*sizeof(T), kind, 0));
+    } else {
+      /* copy column-by-column */
+      size_type i;
+      for (i = 0; i < this->size2(); ++i) {
+        column(*this, i) = column(o, i);
+      }
+    }
+  }
+  return *this;
+}
+
+template<class T>
+inline typename bi::gpu_matrix_reference<T>::matrix_reference_type& bi::gpu_matrix_reference<T>::ref() {
+  return static_cast<matrix_reference_type&>(*this);
+}
+
+template<class T>
+inline const typename bi::gpu_matrix_reference<T>::matrix_reference_type& bi::gpu_matrix_reference<T>::ref() const {
+  return static_cast<const matrix_reference_type&>(*this);
 }
 
 template<class T>
@@ -424,14 +457,9 @@ inline typename bi::gpu_matrix_reference<T>::const_row_iterator
 template<class T>
 void bi::gpu_matrix_reference<T>::clear() {
   if (this->lead() == this->size1()) {
-    /* clear whole buffer */
     matrix_as_vector(*this).clear();
   } else {
-    /* clear column-by-column */
-    size_type i;
-    for (i = 0; i < this->size2(); ++i) {
-      column(*this, i).clear();
-    }
+    bi::fill(this->begin(), this->end(), static_cast<T>(0));
   }
 }
 
@@ -498,6 +526,20 @@ public:
    */
   template<class M1>
   CUDA_FUNC_HOST gpu_matrix<T,A>& operator=(const M1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST matrix_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST const matrix_reference_type& ref() const;
 
   /**
    * Resize matrix.
@@ -591,10 +633,8 @@ bi::gpu_matrix<T,A>::gpu_matrix(const M1 o) :
 template<class T, class A>
 bi::gpu_matrix<T,A>::~gpu_matrix() {
   if (own && this->ptr != NULL) {
-    alloc.destroy(this->ptr);
     alloc.deallocate(this->ptr, this->ld*this->cols);
   }
-
 }
 
 template<class T, class A>
@@ -611,16 +651,31 @@ inline bi::gpu_matrix<T,A>& bi::gpu_matrix<T,A>::operator=(const M1& o) {
 }
 
 template<class T, class A>
+inline typename bi::gpu_matrix<T,A>::matrix_reference_type& bi::gpu_matrix<T,A>::ref() {
+  return static_cast<matrix_reference_type&>(*this);
+}
+
+template<class T, class A>
+inline const typename bi::gpu_matrix<T,A>::matrix_reference_type& bi::gpu_matrix<T,A>::ref() const {
+  return static_cast<const matrix_reference_type&>(*this);
+}
+
+template<class T, class A>
 void bi::gpu_matrix<T,A>::resize(const size_type rows, const size_type cols,
     const bool preserve) {
-  if (rows <= this->size1() && cols <= this->size2()) {
+  if (rows <= this->size1() && cols == this->size2()) {
+    /* lead doesn't change, so keep current buffer */
     this->rows = rows;
-    this->cols = cols;
-  } else {
-    BI_ERROR(own, "Cannot enlarge gpu_matrix constructed as view of other matrix");
+  } else if (rows != this->size1() || cols != this->size2()) {
+    BI_ERROR(own, "Cannot resize gpu_matrix constructed as view of other matrix");
 
     /* allocate new buffer */
-    T* ptr = alloc.allocate(rows*cols);
+    T* ptr;
+    if (rows*cols > 0) {
+      ptr = alloc.allocate(rows*cols);
+    } else {
+      ptr = NULL;
+    }
 
     /* copy across contents */
     if (preserve) {
@@ -649,7 +704,6 @@ void bi::gpu_matrix<T,A>::resize(const size_type rows, const size_type cols,
 
     /* free old buffer */
     if (this->ptr != NULL) {
-      alloc.destroy(this->ptr);
       alloc.deallocate(this->ptr, this->ld*this->cols);
     }
 

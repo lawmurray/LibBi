@@ -10,8 +10,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * DOPRI5(4) integrator.
  *
  * @ingroup method_updater
@@ -87,16 +85,14 @@ void bi::DOPRI5Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real 
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,sse_const_host,sse_host>::type pa;
   typedef Pa<B,sse_real,pa,sse_host,sse_host,pa,sse_host,sse_host,sse_host> V1;
-  typedef DOPRI5Visitor<B,S,sse_real,V1> Visitor;
+  typedef DOPRI5Visitor<ON_HOST,B,S,sse_real,V1> Visitor;
   static const int N = net_size<B,S>::value;
   const int P = hostCState.size1();
 
   #pragma omp parallel
   {
     bool k1in;
-    int id;
-    int n;
-    int p;
+    int id, n, p;
 
     sse_real x0[N], x1[N], x2[N], x3[N], x4[N], x5[N], x6[N], err[N], k1[N], k7[N], t, h, e2, logfacold, logfac11, fac;
     V1 pax(0);
@@ -189,7 +185,7 @@ void bi::DOPRI5Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real 
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
   typedef Pa<B,real,pa,host,host,pa,host,host,host> V1;
-  typedef DOPRI5Visitor<B,S,real,V1> Visitor;
+  typedef DOPRI5Visitor<ON_HOST,B,S,real,V1> Visitor;
   static const int N = net_size<B,S>::value;
   const int P = hostCState.size1();
 

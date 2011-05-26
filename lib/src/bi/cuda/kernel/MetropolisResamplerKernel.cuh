@@ -27,7 +27,7 @@ namespace bi {
  * @param alphas Vector of acceptance samples, containing @p L*P random
  * numbers between zero and one.
  * @param P Number of samples.
- * @param L Number of Metropolis steps to take.
+ * @param C Number of Metropolis steps to take.
  * @param seed Base seed for random number generation.
  * @param as[out] Ancestry.
  *
@@ -37,13 +37,13 @@ namespace bi {
  *
  * @todo Use shared memory when log-weights will all fit.
  *
- * @todo Make L template parameter if possible for loop unrolling.
+ * @todo Make C template parameter if possible for loop unrolling.
  *
  * @todo Better if alphas and qs were pitched?
  */
 template<class V1, class V3>
 CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(const V1 lws,
-    const int seed, const int P, const int L, V3 as);
+    const int seed, const int P, const int C, V3 as);
 
 }
 
@@ -51,9 +51,9 @@ CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(const V1 lws,
 
 template<class V1, class V3>
 void bi::kernelMetropolisResamplerAncestors(const V1 lws,
-    const int seed, const int P, const int L, V3 as) {
+    const int seed, const int P, const int C, V3 as) {
   const int tid = blockIdx.x*blockDim.x + threadIdx.x; // global id
-  int l, p1, p2;
+  int c, p1, p2;
   real a, lw1, lw2;
 
   /* random number generator, uses 15 compared to 28 registers (CUDA 3.1,
@@ -67,7 +67,7 @@ void bi::kernelMetropolisResamplerAncestors(const V1 lws,
   if (tid < P) {
     p1 = tid;
     lw1 =  lws[p1];
-    for (l = 0; l < L; ++l) {
+    for (c = 0; c < C; ++c) {
       p2 = (int)(P*alpha(rng));
       lw2 = lws[p2];
       a = CUDA_EXP(lw2 - lw1);

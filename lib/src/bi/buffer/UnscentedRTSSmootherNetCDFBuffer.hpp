@@ -160,7 +160,7 @@ void bi::UnscentedRTSSmootherNetCDFBuffer::readSmoothState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = smoothMuVar->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << smoothMuVar->name());
@@ -189,7 +189,7 @@ void bi::UnscentedRTSSmootherNetCDFBuffer::writeSmoothState(const int k,
 
   long offsets[] = { k, 0, 0 };
   long counts[] = { 1, M, M };
-  NcBool ret;
+  BI_UNUSED NcBool ret;
 
   ret = smoothMuVar->set_cur(offsets);
   BI_ASSERT(ret, "Index exceeds size reading " << smoothMuVar->name());

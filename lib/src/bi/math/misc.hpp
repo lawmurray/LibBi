@@ -27,12 +27,12 @@ CUDA_FUNC_BOTH int factorial(const int n);
  *
  * @return Least power of 2 greater than or equal to argument.
  */
-CUDA_FUNC_BOTH int nextPower2(const int n);
+CUDA_FUNC_BOTH int next_power_2(const int n);
 
 /**
  * Relative error between two floating points.
  */
-CUDA_FUNC_BOTH double relErr(const double a, const double b);
+CUDA_FUNC_BOTH double rel_err(const double a, const double b);
 
 }
 
@@ -46,7 +46,7 @@ inline int bi::factorial(const int n) {
   return result;
 }
 
-inline int bi::nextPower2(const int n) {
+inline int bi::next_power_2(const int n) {
   int result = 1;
   while (result < n) {
     result <<= 1;
@@ -54,7 +54,7 @@ inline int bi::nextPower2(const int n) {
   return result;
 }
 
-inline double bi::relErr(const double a, const double b) {
+inline double bi::rel_err(const double a, const double b) {
   double diff = std::abs(a - b);
   double abs_a = std::abs(a);
   double abs_b = std::abs(b);

@@ -38,12 +38,12 @@ sse_real sse_state_get(const M1& s, const int p, const int id);
  * @param s State.
  * @param p Trajectory id.
  * @param id Node id.
- * @param val Value to set.
+ * @param[out] val Value to set.
  *
  * Sets the given variable to the given value.
  */
 template<class M1>
-void sse_state_set(M1& s, const int p, const int id, const sse_real val);
+void sse_state_set(M1& s, const int p, const int id, const sse_real& val);
 
 }
 
@@ -62,7 +62,7 @@ BI_FORCE_INLINE inline bi::sse_real bi::sse_state_get(const M1& s,
 
 template<class M1>
 BI_FORCE_INLINE inline void bi::sse_state_set(M1& s,
-    const int p, const int id, const sse_real val) {
+    const int p, const int id, const sse_real& val) {
   /* pre-condition */
   assert (p % BI_SSE_SIZE == 0);
 

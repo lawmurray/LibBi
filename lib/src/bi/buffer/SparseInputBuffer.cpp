@@ -9,8 +9,12 @@
 
 using namespace bi;
 
+SparseInputBufferState::SparseInputBufferState() : masks(NUM_NODE_TYPES) {
+  //
+}
+
 SparseInputBuffer::SparseInputBuffer(const BayesNet& m) : m(m),
-    unassoc(NUM_NODE_TYPES) {
+    vDims(NUM_NODE_TYPES), masks0(NUM_NODE_TYPES) {
   //
 }
 

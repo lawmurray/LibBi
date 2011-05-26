@@ -10,8 +10,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * RK4(3)5[2R+]C integrator.
  *
  * @ingroup method_updater
@@ -21,11 +19,9 @@ namespace bi {
  * @tparam SH StaticHandling type. Denoted unsigned for compatibility of CUDA
  * device code.
  *
- *
  * Implements the RK4(3)5[2R+]C method as described in @ref Kennedy2000
  * "Kennedy et. al. (2000)". Implementation described in @ref Murray2011
  * "Murray (2011)".
- *
  */
 template<Location L, class B, unsigned SH = STATIC_SHARED>
 class RK43Integrator {

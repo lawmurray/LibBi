@@ -12,6 +12,8 @@
 #include "../updater/RUpdater.hpp"
 #include "../updater/OYUpdater.hpp"
 #include "../updater/LUpdater.hpp"
+#include "../buffer/Cache1D.hpp"
+#include "../buffer/Cache2D.hpp"
 #include "../misc/Markable.hpp"
 
 namespace bi {
@@ -53,7 +55,8 @@ namespace bi {
  *
  * #concept::Filter, #concept::Markable
  */
-template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST>
+template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
+    StaticHandling SH = STATIC_SHARED>
 class ParticleFilter : public Markable<ParticleFilterState> {
 public:
   /**
@@ -61,15 +64,23 @@ public:
    *
    * @param m Model.
    * @param rng Random number generator.
+   * @param delta Time step for d- and r-nodes.
    * @param in Forcings.
    * @param obs Observations.
    * @param out Output.
    */
-  ParticleFilter(B& m, Random& rng, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL);
+  ParticleFilter(B& m, Random& rng, const real delta = 1.0, IO1* in = NULL,
+      IO2* obs = NULL, IO3* out = NULL);
 
   /**
-   * @copydoc #concept::Filter::getOutput()
+   * Destructor.
+   */
+  ~ParticleFilter();
+
+  /**
+   * Get output buffer.
+   *
+   * @return The output buffer. NULL if there is no output.
    */
   IO3* getOutput();
 
@@ -79,7 +90,7 @@ public:
   real getTime();
 
   /**
-   * @copydoc #concept::Filter::reset()
+   * Reset filter for reuse.
    */
   void reset();
 
@@ -90,26 +101,78 @@ public:
    */
   //@{
   /**
-   * @copydoc #concept::Filter::filter()
+   * %Filter forward.
+   *
+   * @tparam L Location.
+   * @tparam R #concept::Resampler type.
+   *
+   * @param T Time to which to filter.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
+   * @param tnxt Time to which to filter.
+   * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
   template<Location L, class R>
-  void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL);
+  void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL,
+      const real relEss = 1.0);
 
   /**
-   * @copydoc #concept::Filter::filter(real, const V1&, R*)
+   * Filter forward conditioned on trajectory.
+   *
+   * @tparam L Location.
+   * @tparam M1 Matrix type.
+   * @tparam R #concept::Resampler type.
+   *
+   * @param T Time to which to filter.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
+   * @param xd Trajectory of d-nodes.
+   * @param xc Trajectory of c-nodes.
+   * @param xr Trajectory of r-nodes.
+   * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   *
+   * @p xc and @p xd are matrices where rows index variables and
+   * columns index times. This method performs a <em>conditional</em> particle
+   * filter as described in @ref Andrieu2010
+   * "Andrieu, Doucet \& Holenstein (2010)".
    */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
-      M1& xr, R* resam = NULL);
+      M1& xr, R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * @copydoc #concept::Filter::summarise()
+   * Compute summary information from last filter run.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param[out] ll Marginal log-likelihood.
+   * @param[out] lls Log-likelihood at each observation.
+   * @param[out] ess Effective sample size at each observation.
+   *
+   * Any number of the parameters may be @c NULL.
    */
   template<class T1, class V1, class V2>
   void summarise(T1* ll, V1* lls, V2* ess);
 
   /**
-   * @copydoc #concept::Filter::sampleTrajectory()
+   * Read single particle trajectory.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param[out] xd Trajectory of d-nodes.
+   * @param[out] xc Trajectory of c-nodes.
+   * @param[out] xr Trajectory of r-nodes.
+   *
+   * Reads a single particle trajectory from the smooth distribution.
+   *
+   * On output, @p xd, @p xc and @p xr are arranged such that rows index
+   * variables, and columns index time points.
    */
   template<class M1>
   void sampleTrajectory(M1& xd, M1& xc, M1& xr);
@@ -139,7 +202,11 @@ public:
   /**
    * Advance model forward.
    *
+   * @tparam L Location.
+   *
    * @param tnxt Maximum time to which to advance.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
    *
    * Returns when either of the following is met:
    *
@@ -147,10 +214,16 @@ public:
    * @li a time where observations are available is reached.
    */
   template<Location L>
-  void predict(const real tnxt, State<L>& s);
+  void predict(const real tnxt, Static<L>& theta, State<L>& s);
 
   /**
    * Update particle weights using observations.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   *
+   * @param s State.
+   * @param lws Log-weights.
    */
   template<Location L, class V1>
   void correct(State<L>& s, V1& lws);
@@ -163,13 +236,15 @@ public:
    * @tparam V2 Vector type.
    * @tparam R #concept::Resampler type.
    *
+   * @param theta Static state.
    * @param s State.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry after resampling.
    * @param resam Resampler.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(State<L>& s, V1& lws, V2& as, R* resam = NULL);
+  void resample(Static<L>& theta, State<L>& s, V1& lws, V2& as,
+      R* resam = NULL);
 
   /**
    * Resample particles with conditioned outcome for first particle.
@@ -179,6 +254,7 @@ public:
    * @tparam V2 Vector type.
    * @tparam R #concept::Resampler type.
    *
+   * @param theta Static state.
    * @param s State.
    * @param a Conditioned ancestor of first particle.
    * @param[in,out] lws Log-weights.
@@ -186,7 +262,8 @@ public:
    * @param resam Resampler.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(State<L>& s, const int a, V1& lws, V2& as, R* resam = NULL);
+  void resample(Static<L>& theta, State<L>& s, const int a, V1& lws, V2& as,
+      R* resam = NULL);
 
   /**
    * Output.
@@ -203,10 +280,19 @@ public:
    * @param Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const int k, const State<L>& s, const int r, const V1& lws, const V2& as);
+  void output(const int k, const Static<L>& theta, const State<L>& s, const int r, const V1& lws, const V2& as);
+
+  /**
+   * Flush output caches to file.
+   */
+  void flush();
 
   /**
    * Clean up.
+   *
+   * @tparam L Location.
+   *
+   * @param theta Static state.
    */
   template<Location L>
   void term(Static<L>& theta);
@@ -223,20 +309,6 @@ public:
   void restore();
 
 protected:
-  /**
-   * Copy around particles after resample.
-   *
-   * @tparam L Location.
-   * @tparam V2 Vector type.
-   * @tparam R #concept::Resampler type.
-   *
-   * @param[in,out] s State.
-   * @param as Ancestry.
-   * @param resam Resampler.
-   */
-  template<Location L, class V2, class R>
-  void copy(State<L>& s, V2& as, R* resam);
-
   /**
    * Model.
    */
@@ -255,15 +327,15 @@ protected:
   /**
    * Simulator.
    */
-  Simulator<B,IO1,IO3,CL> sim;
+  Simulator<B,RUpdater<B>,IO1,IO3,CL,SH> sim;
 
   /**
    * Likelihood calculator.
    */
-  LUpdater<B> lUpdater;
+  LUpdater<B,SH> lUpdater;
 
   /**
-   * O-net updater.
+   * OY-net updater.
    */
   OYUpdater<B,IO2,CL> oyUpdater;
 
@@ -278,6 +350,26 @@ protected:
   ParticleFilterState state;
 
   /**
+   * Cache for resampling.
+   */
+  Cache1D<int> resamplingCache;
+
+  /**
+   * Cache for log-weights.
+   */
+  Cache2D<real> logWeightsCache;
+
+  /**
+   * Cache for ancestry.
+   */
+  Cache2D<int> ancestorsCache;
+
+  /**
+   * Estimate parameters as well as state?
+   */
+  static const bool haveParameters = SH == STATIC_OWN;
+
+  /**
    * Is out not null?
    */
   bool haveOut;
@@ -289,10 +381,11 @@ protected:
  * @ingroup method
  *
  * @tparam CL Cache location.
+ * @tparam SH Static handling.
  *
  * @see ParticleFilter
  */
-template<Location CL = ON_HOST>
+template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
 struct ParticleFilterFactory {
   /**
    * Create particle filter.
@@ -302,24 +395,25 @@ struct ParticleFilterFactory {
    * @see ParticleFilter::ParticleFilter()
    */
   template<class B, class IO1, class IO2, class IO3>
-  static ParticleFilter<B,IO1,IO2,IO3,CL>* create(B& m,
-      Random& rng, IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL) {
-    return new ParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, in, obs, out);
+  static ParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
+      Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
+      IO3* out = NULL) {
+    return new ParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in, obs, out);
   }
 };
-
 }
 
 #include "../math/primitive.hpp"
 #include "../math/functor.hpp"
+#include "../math/locatable.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-bi::ParticleFilter<B,IO1,IO2,IO3,CL>::ParticleFilter(B& m, Random& rng,
-    IO1* in, IO2* obs, IO3* out) :
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::ParticleFilter(B& m, Random& rng,
+    const real delta, IO1* in, IO2* obs, IO3* out) :
     m(m),
     rng(rng),
     rUpdater(rng),
-    sim(m, &rUpdater, in, out),
+    sim(m, delta, &rUpdater, in, out),
     oyUpdater(*obs),
     out(out),
     haveOut(out != NULL && out->size2() > 0) {
@@ -332,18 +426,23 @@ bi::ParticleFilter<B,IO1,IO2,IO3,CL>::ParticleFilter(B& m, Random& rng,
   assert (!(out == NULL || out->size2() == 0) || !haveOut);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-inline IO3* bi::ParticleFilter<B,IO1,IO2,IO3,CL>::getOutput() {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::~ParticleFilter() {
+  flush();
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+inline IO3* bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getOutput() {
   return out;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-inline real bi::ParticleFilter<B,IO1,IO2,IO3,CL>::getTime() {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+inline real bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getTime() {
   return state.t;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::reset() {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   Markable<ParticleFilterState>::unmark();
   state.t = 0.0;
   sim.reset();
@@ -352,104 +451,104 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::reset() {
 }
 
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
-    Static<L>& theta, State<L>& s, R* resam) {
-  /* pre-condition */
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+    Static<L>& theta, State<L>& s, R* resam, const real relEss) {
+  /* pre-conditions */
   assert (T > state.t);
+  assert (relEss >= 0.0 && relEss <= 1.0);
 
   int n = 0, r = 0;
 
-  BOOST_AUTO(lws, host_temp_vector<real>(s.size()));
-  BOOST_AUTO(as, host_temp_vector<int>(s.size()));
+  typename locatable_temp_vector<L,real>::type lws(s.size());
+  typename locatable_temp_vector<L,int>::type as(s.size());
 
-  init(theta, *lws, *as);
+  init(theta, lws, as);
   while (state.t < T) {
-    predict(T, s);
-    correct(s, *lws);
-    output(n, s, r, *lws, *as);
+    predict(T, theta, s);
+    correct(s, lws);
+    output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T; // no need to resample at last time
+    r = state.t < T && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
     if (r) {
-      resample(s, *lws, *as, resam);
+      resample(theta, s, lws, as, resam);
     }
   }
   synchronize();
   term(theta);
-
-  delete lws;
-  delete as;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class M1, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
-    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam) {
-  /* pre-condition */
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
+    const real relEss) {
+  /* pre-conditions */
   assert (T > state.t);
   assert (out != NULL);
+  assert (relEss >= 0.0 && relEss <= 1.0);
+
+  synchronize();
 
   int n = 0, r = 0, a = 0;
 
-  BOOST_AUTO(lws, host_temp_vector<real>(s.size()));
-  BOOST_AUTO(as, host_temp_vector<int>(s.size()));
-  synchronize();
+  typename locatable_temp_vector<L,real>::type lws(s.size());
+  typename locatable_temp_vector<L,int>::type as(s.size());
 
-  init(theta, *lws, *as);
+  init(theta, lws, as);
   while (state.t < T) {
-    predict(T, s);
+    predict(T, theta, s);
 
     /* overwrite first particle with conditioned particle */
     row(s.get(D_NODE), 0) = column(xd, n);
     row(s.get(C_NODE), 0) = column(xc, n);
     row(s.get(R_NODE), 0) = column(xr, n);
 
-    correct(s, *lws);
-    output(n, s, r, *lws, *as);
+    correct(s, lws);
+    output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T; // no need to resample at last time
+    r = state.t < T && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
     if (r) {
-      resample(s, a, *lws, *as, resam);
+      resample(theta, s, a, lws, as, resam);
     }
   }
   synchronize();
   term(theta);
-
-  delete lws;
-  delete as;
 }
 
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class T1, class V1, class V2>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::summarise(T1* ll, V1* lls, V2* ess) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess) {
   /* pre-condition */
   BI_ERROR(out != NULL, "Cannot summarise ParticleFilter without output");
+
+  synchronize();
 
   BOOST_AUTO(lws1, host_temp_vector<real>(out->size1()));
   BOOST_AUTO(ess1, host_temp_vector<real>(out->size2()));
   BOOST_AUTO(lls1, host_temp_vector<real>(out->size2()));
   BOOST_AUTO(lls2, host_temp_vector<real>(out->size2()));
-  real ll1;
+  double ll1;
 
   /* compute log-likelihoods and ESS at each time */
   int n;
-  real sum1, sum2;
+  real logsum1, sum1, sum2;
   for (n = 0; n < out->size2(); ++n) {
-    out->readLogWeights(n, *lws1);
-    //bi::sort(lws1->begin(), lws1->end());
+    *lws1 = logWeightsCache.get(n);
+    bi::sort(lws1->begin(), lws1->end());
+    logsum1 = log_sum_exp(lws1->begin(), lws1->end(), 0.0);
     sum1 = sum_exp(lws1->begin(), lws1->end(), 0.0);
     sum2 = sum_exp_square(lws1->begin(), lws1->end(), 0.0);
 
-    (*lls1)(n) = log(sum1) - log(lws1->size());
+    (*lls1)(n) = logsum1;
     (*ess1)(n) = (sum1*sum1) / sum2;
   }
 
   /* compute marginal log-likelihood */
   *lls2 = *lls1;
-  //bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
+  bi::sort(lls2->begin(), lls2->end());
+  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0) - out->size2()*std::log(out->size1());
 
   /* write to output params, where given */
   if (ll != NULL) {
@@ -468,57 +567,60 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::summarise(T1* ll, V1* lls, V2* ess) {
   delete lls2;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class M1>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::sampleTrajectory(M1& xd, M1& xc,
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::sampleTrajectory(M1& xd, M1& xc,
     M1& xr) {
   /* pre-condition */
   BI_ERROR(out != NULL, "Cannot draw trajectory from ParticleFilter without output");
 
-  BOOST_AUTO(lws1, host_temp_vector<real>(out->size1()));
-  int a, t;
-  sim.flush(D_NODE); ///@todo Do this using cache.
-  sim.flush(C_NODE);
-  sim.flush(R_NODE);
-
-  out->readLogWeights(out->size2() - 1, *lws1);
   synchronize();
-  a = rng.multinomial(*lws1);
-  t = out->size2() - 1;
+
+  BOOST_AUTO(lws, logWeightsCache.get(out->size2() - 1));
+  BOOST_AUTO(ws, host_temp_vector<real>(lws.size()));
+  element_exp_unnormalised(lws.begin(), lws.end(), ws->begin());
+
+  int a = rng.multinomial(*ws);
+  int t = out->size2() - 1;
   while (t >= 0) {
     BOOST_AUTO(cold, column(xd, t));
     BOOST_AUTO(colc, column(xc, t));
     BOOST_AUTO(colr, column(xr, t));
 
-    out->readSingle(D_NODE, a, t, cold);
-    out->readSingle(C_NODE, a, t, colc);
-    out->readSingle(R_NODE, a, t, colr);
+    cold = row(sim.getCache(D_NODE).getState(t), a);
+    colc = row(sim.getCache(C_NODE).getState(t), a);
+    colr = row(sim.getCache(R_NODE).getState(t), a);
 
-    out->readAncestor(t, a, a);
+    a = ancestorsCache.get(a, t);
     --t;
   }
-  synchronize();
-  delete lws1;
+
+  delete ws;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::init(Static<L>& theta, V1& lws, V2& as) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta, V1& lws, V2& as) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
   sim.init(theta);
-
-  bi::fill(lws.begin(), lws.end(), 0.0);
+  lws.clear();
   bi::sequence(as.begin(), as.end(), 0);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt, State<L>& s) {
-  real to = (oyUpdater.getTime() >= state.t) ? oyUpdater.getTime() : tnxt;
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt, Static<L>& theta, State<L>& s) {
+  real to = tnxt;
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() && oyUpdater.getNextTime() < to) {
+    to = oyUpdater.getNextTime();
+  }
 
   /* simulate forward */
+  if (haveParameters) {
+    sim.init(theta); // p- and s-nodes need updating
+  }
   while (state.t < to) {
     sim.advance(to, s);
     state.t = sim.getTime();
@@ -528,105 +630,100 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt, State<L>& s)
   assert (sim.getTime() == state.t);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::correct(State<L>& s, V1& lws) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::correct(State<L>& s, V1& lws) {
   /* pre-condition */
   assert (s.size() == lws.size());
 
   /* update observations at current time */
-  if (oyUpdater.getTime() == state.t) {
-    BOOST_AUTO(ids, host_temp_vector<int>(0));
-    oyUpdater.getCurrentNodes(*ids);
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
     oyUpdater.update(s);
-    lUpdater.update(s, *ids, lws);
-    delete ids;
+    lUpdater.update(s, oyUpdater.getMask(), lws);
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::resample(State<L>& s, V1& lws,
-    V2& as, R* resam) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
+    State<L>& s, V1& lws, V2& as, R* resam) {
   /* pre-condition */
   assert (s.size() == lws.size());
-  assert (s.size() == as.size());
+  assert (theta.size() == 1 || theta.size() == lws.size());
 
   if (resam != NULL) {
-    resam->resample(lws, as);
-
-    s.resize(std::max(s.size(), as.size()), true);
-    copy(s, as, resam);
-    s.resize(as.size(), true);
+    resam->resample(lws, as, theta, s);
   }
 }
 
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::resample(State<L>& s, const int a,
-    V1& lws, V2& as, R* resam) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
+    State<L>& s, const int a, V1& lws, V2& as, R* resam) {
   /* pre-condition */
   assert (s.size() == lws.size());
-  assert (s.size() == as.size());
+  assert (theta.size() == 1 || theta.size() == lws.size());
 
   if (resam != NULL) {
-    resam->resample(a, lws, as);
-    copy(s, as, resam);
+    resam->resample(a, lws, as, theta, s);
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class V2, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::copy(State<L>& s, V2& as,
-    R* resam) {
-  /* create view of all d-nodes and c-nodes, to allow copy in one kernel
-   * launch when operating on device */
-  BOOST_AUTO(X, columns(s.X, 0, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE)));
-
-  if (V2::on_device == State<L>::on_device) {
-    resam->copy(as, X);
-    //resam->copy(as, s.get(D_NODE));
-    //resam->copy(as, s.get(C_NODE));
-    //resam->copy(as, s.get(R_NODE));
-  } else {
-    BOOST_AUTO(as1, map_vector(s, as));
-    resam->copy(*as1, X);
-    //resam->copy(*as1, s.get(D_NODE));
-    //resam->copy(*as1, s.get(C_NODE));
-    //resam->copy(*as1, s.get(R_NODE));
-    synchronize();
-    delete as1;
-  }
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::output(const int k,
-    const State<L>& s, const int r, const V1& lws, const V2& as) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(const int k,
+    const Static<L>& theta, const State<L>& s, const int r, const V1& lws,
+    const V2& as) {
   if (haveOut) {
-    sim.output(k, s);
-    out->writeResample(k, r);
-    out->writeLogWeights(k, lws);
-    out->writeAncestry(k, as);
+    sim.output(k, theta, s);
+    resamplingCache.put(k, r);
+    logWeightsCache.put(k, lws);
+    ancestorsCache.put(k, as);
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::flush() {
+  int p;
+  if (haveOut) {
+    synchronize();
+
+    sim.flush();
+
+    assert (resamplingCache.isValid());
+    out->writeResamples(0, resamplingCache.getPages());
+    resamplingCache.clean();
+
+    assert (logWeightsCache.isValid());
+    for (p = 0; p < logWeightsCache.size(); ++p) {
+      out->writeLogWeights(p, logWeightsCache.get(p));
+    }
+    logWeightsCache.clean();
+
+    assert (ancestorsCache.isValid());
+    for (p = 0; p < ancestorsCache.size(); ++p) {
+      out->writeAncestors(p, ancestorsCache.get(p));
+    }
+    ancestorsCache.clean();
+  }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::term(Static<L>& theta) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::term(Static<L>& theta) {
   sim.term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::mark() {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::mark() {
   Markable<ParticleFilterState>::mark(state);
   sim.mark();
   oyUpdater.mark();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL>::restore() {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::restore() {
   Markable<ParticleFilterState>::restore(state);
   sim.restore();
   oyUpdater.restore();

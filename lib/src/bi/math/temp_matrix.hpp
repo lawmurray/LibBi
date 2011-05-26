@@ -9,8 +9,8 @@
 #define BI_MATH_TEMP_MATRIX_HPP
 
 #include "host_matrix.hpp"
-#include "../misc/pooled_allocator.hpp"
 #include "../misc/pinned_allocator.hpp"
+#include "../misc/pooled_allocator.hpp"
 
 #include "boost/typeof/typeof.hpp"
 #include "boost/mpl/if.hpp"
@@ -28,8 +28,7 @@ struct host_matrix_map_type {
   /**
    * Allocator type.
    */
-  typedef pooled_allocator<pinned_allocator<typename M1::value_type> >
-      allocator_type;
+  typedef pinned_allocator<typename M1::value_type> allocator_type;
 
   /**
    * Equivalent host type.
@@ -91,7 +90,7 @@ struct host_matrix_temp_type {
   /**
    * Allocator type.
    */
-  typedef pooled_allocator<pinned_allocator<T1> > allocator_type;
+  typedef pinned_allocator<T1> allocator_type;
 
   /**
    * Temp type.
@@ -123,9 +122,8 @@ typename host_matrix_temp_type<T1>::type* host_temp_matrix(
  * @param X
  *
  * @return If @p X is a %host matrix, returns a reference to the same.
- * If @p X is a device matrix, constructs a suitable %host matrix using
- * pooled memory, asynchronously copies contents to this, and returns a
- * reference to it.
+ * If @p X is a device matrix, constructs a suitable %host matrix,
+ * asynchronously copies contents to this, and returns a reference to it.
  */
 template<class M1>
 typename host_matrix_map_type<M1>::type* host_map_matrix(const M1 X);

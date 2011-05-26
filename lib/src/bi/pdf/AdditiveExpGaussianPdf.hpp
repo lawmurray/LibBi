@@ -212,10 +212,10 @@ void bi::AdditiveExpGaussianPdf<V1,M1>::sample(Random& rng, const V2 x1,
     V3 x2) {
   BOOST_AUTO(z, temp_vector<V2>(x1.size()));
   *z = x1;
-  logVec(*z, this->getLogs());
+  log_vector(*z, this->getLogs());
   GaussianPdf<V1,M1>::sample(rng, x2);
   axpy(1.0, *z, x2);
-  expVec(x2, this->getLogs());
+  exp_vector(x2, this->getLogs());
 
   delete z;
 }
@@ -228,12 +228,12 @@ real bi::AdditiveExpGaussianPdf<V1,M1>::density(const V2 x1,
   BOOST_AUTO(z2, temp_vector<V3>(x2.size()));
 
   real detJ, p;
-  detJ = detVec(x2, this->getLogs()); // determinant of Jacobian for change of variable, x = exp(z)
+  detJ = det_vector(x2, this->getLogs()); // determinant of Jacobian for change of variable, x = exp(z)
 
   *z1 = x1;
-  logVec(*z1, this->getLogs());
+  log_vector(*z1, this->getLogs());
   *z2 = x2;
-  logVec(*z2, this->getLogs());
+  log_vector(*z2, this->getLogs());
   axpy(-1.0, *z1, *z2);
   p = GaussianPdf<V1,M1>::operator()(*z2)/detJ;
 

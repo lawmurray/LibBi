@@ -25,9 +25,10 @@ namespace bi {
 template<Location L>
 class State {
 public:
-  typedef typename locatable_matrix<L,real>::type matrix_type;
+  typedef real value_type;
+  typedef typename locatable_matrix<L,value_type>::type matrix_type;
   typedef typename matrix_type::matrix_reference_type matrix_reference_type;
-  typedef typename locatable_vector<L,real>::type vector_type;
+  typedef typename locatable_vector<L,value_type>::type vector_type;
   typedef typename vector_type::vector_reference_type vector_reference_type;
 
   static const bool on_device = (L == ON_DEVICE);
@@ -71,8 +72,32 @@ public:
    *
    * @param P Number of trajectories to store.
    * @param preserve True to preserve existing values, false otherwise.
+   *
+   * Resizes the state to store at least @p P number of trajectories.
+   * Storage for additional trajectories may be added in some contexts. In
+   * particular:
+   *
+   * @li for simulation on device, @p P must be either less than 32, or a
+   * multiple of 32, and
+   * @li for simulation with SSE enabled, @p P must be zero, one or a multiple
+   * of four (single precision) or two (double precision).
    */
   void resize(const int P, const bool preserve = true);
+
+  /**
+   * Resize observation buffers.
+   *
+   * @param W Number of observations.
+   * @param preserve True to preserve existing values, false otherwise.
+   *
+   * Resizes the state to store at least @p W observations.
+   */
+  void oresize(const int W, const bool preserve = true);
+
+  /**
+   * Clear.
+   */
+  void clear();
 
   /**
    * Get state.
@@ -111,9 +136,14 @@ public:
   const matrix_reference_type& get(const NodeExtType type) const;
 
   /**
-   * Contiguous storage for d-, c-, r-, o- and or-nodes.
+   * Contiguous storage for d-, c-, r-nodes.
    */
   matrix_type X;
+
+  /**
+   * Contiguous storage for o- and or-nodes.
+   */
+  matrix_type Y;
 
   /**
    * Contiguous storage for f-nodes.
@@ -166,45 +196,55 @@ private:
 };
 }
 
+#ifdef USE_SSE
+#include "../math/sse.hpp"
+#endif
+
 template<bi::Location L>
 template<class B>
 bi::State<L>::State(const B& m, const int P) :
-    X(P, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) + 2*m.getNetSize(O_NODE)),
+    X(P, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE)),
+    Y(P, 2*m.getNetSize(O_NODE)),
     Kf(1, m.getNetSize(F_NODE)),
     Koy(1, m.getNetSize(O_NODE)),
     Xd(columns(X, 0, m.getNetSize(D_NODE))),
     Xc(columns(X, m.getNetSize(D_NODE), m.getNetSize(C_NODE))),
     Xr(columns(X, m.getNetSize(D_NODE) + m.getNetSize(C_NODE), m.getNetSize(R_NODE))),
-    Xo(columns(X, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE), m.getNetSize(O_NODE))),
-    Xor(columns(X, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) + m.getNetSize(O_NODE), m.getNetSize(O_NODE))) {
-  //
+    Xo(columns(Y, 0, m.getNetSize(O_NODE))),
+    Xor(columns(Y, m.getNetSize(O_NODE), m.getNetSize(O_NODE))) {
+  clear();
 }
 
 template<bi::Location L>
 bi::State<L>::State(const int dSize, const int cSize, const int rSize,
     const int fSize, const int oSize, const int P) :
-    X(P, dSize + cSize + rSize + 2*oSize),
+    X(P, dSize + cSize + rSize),
+    Y(P, 2*oSize),
     Kf(1, fSize),
     Koy(1, oSize),
     Xd(columns(X, 0, dSize)),
     Xc(columns(X, dSize, cSize)),
     Xr(columns(X, dSize + cSize, rSize)),
-    Xo(columns(X, dSize + cSize + rSize, oSize)),
-    Xor(columns(X, dSize + cSize + rSize + oSize, oSize)) {
-  //
+    Xo(columns(Y, 0, oSize)),
+    Xor(columns(Y, oSize, oSize)) {
+  clear();
 }
 
 template<bi::Location L>
 bi::State<L>::State(const State<L>& o) :
-    X(o.X),
-    Kf(o.Kf),
-    Koy(o.Koy),
+    X(o.X.size1(), o.X.size2()),
+    Y(o.Y.size1(), o.Y.size2()),
+    Kf(o.Kf.size1(), o.Kf.size2()),
+    Koy(o.Koy.size1(), o.Koy.size2()),
     Xd(columns(X, 0, o.get(D_NODE).size2())),
     Xc(columns(X, o.get(D_NODE).size2(), o.get(C_NODE).size2())),
     Xr(columns(X, o.get(D_NODE).size2() + o.get(C_NODE).size2(), o.get(R_NODE).size2())),
-    Xo(columns(X, o.get(D_NODE).size2() + o.get(C_NODE).size2() + o.get(R_NODE).size2(), o.get(O_NODE).size2())),
-    Xor(columns(X, o.get(D_NODE).size2() + o.get(C_NODE).size2() + o.get(R_NODE).size2() + o.get(O_NODE).size2(), o.get(O_NODE).size2())) {
-  //
+    Xo(columns(Y, 0, o.get(O_NODE).size2())),
+    Xor(columns(Y, o.get(O_NODE).size2(), o.get(O_NODE).size2())) {
+  X = o.X;
+  Y = o.Y;
+  Kf = o.Kf;
+  Koy = o.Koy;
 }
 
 template<bi::Location L>
@@ -214,12 +254,45 @@ inline int bi::State<L>::size() const {
 
 template<bi::Location L>
 inline void bi::State<L>::resize(const int P, bool preserve) {
-  X.resize(P, X.size2(), preserve);
+  int P1 = P;
+  if (L == ON_DEVICE) {
+    /* either < 32 or a multiple of 32 number of trajectories required */
+    if (P1 > 32) {
+      P1 = ((P1 + 31)/32)*32;
+    }
+  } else {
+    #if defined(USE_CPU) and defined(USE_SSE)
+    /* zero, one or a multiple of 4 (single precision) or 2 (double
+     * precision) required */
+    if (P1 > 1) {
+      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
+    }
+    #endif
+  }
+
+  X.resize(P1, X.size2(), preserve);
+  Y.resize(P1, Y.size2(), preserve);
   Xd.copy(columns(X, 0, Xd.size2()));
   Xc.copy(columns(X, Xd.size2(), Xc.size2()));
   Xr.copy(columns(X, Xd.size2() + Xc.size2(), Xr.size2()));
-  Xo.copy(columns(X, Xd.size2() + Xc.size2() + Xr.size2(), Xo.size2()));
-  Xor.copy(columns(X, Xd.size2() + Xc.size2() + Xr.size2() + Xo.size2(), Xo.size2()));
+  Xo.copy(columns(Y, 0, Xo.size2()));
+  Xor.copy(columns(Y, Xo.size2(), Xo.size2()));
+}
+
+template<bi::Location L>
+inline void bi::State<L>::oresize(const int W, bool preserve) {
+  Y.resize(Y.size1(), 2*W, preserve);
+  Xo.copy(columns(Y, 0, W));
+  Xor.copy(columns(Y, W, W));
+  Koy.resize(Koy.size1(), W, preserve);
+}
+
+template<bi::Location L>
+inline void bi::State<L>::clear() {
+  X.clear();
+  Y.clear();
+  Kf.clear();
+  Koy.clear();
 }
 
 template<bi::Location L>

@@ -193,6 +193,14 @@ template<class V1, class V2>
 typename V1::value_type dot(const V1 a, const V2 b);
 
 /**
+ * Vector dot product, with self.
+ *
+ * @ingroup math_op
+ */
+template<class V1>
+typename V1::value_type dot(const V1 a);
+
+/**
  * Index of element of vector with largest absolute value.
  *
  * @ingroup math_op
@@ -263,7 +271,7 @@ void matrix_axpy(const T1 a, const M1 X, M2 Y, const bool clear = false);
  * @ingroup math_op
  */
 template<class M1>
-void matrix_scal(typename M1::value_type alpha, M1 x);
+void matrix_scal(typename M1::value_type alpha, M1 X);
 
 /**
  * Matrix-matrix multiply.
@@ -399,7 +407,7 @@ inline void bi::transpose(const M1 A, M2 B) {
 
   int i;
   for (i = 0; i < A.size1(); ++i) {
-    column(B,i) = row(A,i);
+    column(B.ref(),i) = row(A.ref(),i);
   }
 }
 
@@ -518,6 +526,22 @@ inline typename V1::value_type bi::dot(const V1 a, const V2 b) {
 }
 
 template<class V1>
+inline typename V1::value_type bi::dot(const V1 a) {
+  typedef typename V1::value_type T1;
+
+  /* pre-conditions */
+  assert ((equals<T1,float>::value || equals<T1,double>::value));
+
+  T1 result;
+  if (V1::on_device) {
+    result = cublas_dot<T1>::func(a.size(), a.buf(), a.inc(), a.buf(), a.inc());
+  } else {
+    result = cblas_dot<T1>::func(a.size(), a.buf(), a.inc(), a.buf(), a.inc());
+  }
+  return result;
+}
+
+template<class V1>
 inline typename V1::size_type bi::iamax(const V1 x) {
   typedef typename V1::value_type T1;
 
@@ -529,7 +553,7 @@ inline typename V1::size_type bi::iamax(const V1 x) {
 }
 
 template<class T1, class V1, class V2>
-void bi::axpy(const T1 a, const V1 x, V2 y, const bool clear) {
+inline void bi::axpy(const T1 a, const V1 x, V2 y, const bool clear) {
   typedef typename V1::value_type T2;
   typedef typename V2::value_type T3;
 
@@ -958,8 +982,12 @@ void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
       if (V1::on_device) {
         synchronize();
       }
+      if (beta == 0.0) {
+        Y.clear(); // must do this to ensure 0*nan == 0, not 0*nan == nan
+      } else {
+        matrix_scal(beta, Y);
+      }
       for (j = 0; j < X1->size2(); ++j) {
-        scal(beta, column(Y,j));
         axpy(alpha*(*A1)(j), column(*X1,j), column(Y,j));
       }
       synchronize();
@@ -980,8 +1008,12 @@ void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
       }
     } else {
       /* scal and axpy on each column */
+      if (beta == 0.0) {
+        Y.clear(); // must do this to ensure 0*nan == 0, not 0*nan == nan
+      } else {
+        matrix_scal(beta, Y);
+      }
       for (j = 0; j < X1->size2(); ++j) {
-        scal(beta, column(Y,j));
         axpy(alpha*(*A1)(j), column(*X1,j), column(Y,j));
       }
     }
@@ -1072,8 +1104,8 @@ void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
 
   /* pre-conditions */
   assert (uplo == 'U' || uplo == 'L');
-  assert((equals<T2,T3>::value));
-  assert((equals<T3,T4>::value));
+  assert ((equals<T2,T3>::value));
+  assert ((equals<T3,T4>::value));
 
   if (clear) {
     A.clear();
@@ -1147,36 +1179,18 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
   typename M2::size_type N = A.size1();
   typename M2::size_type ld = L.lead();
 
-  /**
-   * Workspace for GPU cholesky decomposition, to avoid reallocation. Must be
-   * pinned so not using temp_vector for now.
-   *
-   * @todo Replace with local function temps.
-   */
-  static T2* choleskyWorkspace = NULL;
-  static size_t choleskyWorkspaceSize = 0;
-
-  if (M1::on_device) {
-    size_t size = pow(magma_get_potrf_nb<T1>::func(N),2)*sizeof(T2);
-    if (choleskyWorkspace == NULL) {
-      CUDA_CHECKED_CALL(cudaMallocHost((void**)&choleskyWorkspace, size));
-    } else if (choleskyWorkspaceSize < size) {
-      CUDA_CHECKED_CALL(cudaFreeHost(choleskyWorkspace));
-      CUDA_CHECKED_CALL(cudaMallocHost((void**)&choleskyWorkspace, size));
-      choleskyWorkspaceSize = size;
-    }
-  }
-
-  /* factorise */
   L = A; /// @todo Single argument version to avoid unnecessary assignment
   if (M2::on_device) {
-    magma_potrf<T2>::func(&uplo, &N, L.buf(), &ld, choleskyWorkspace, &info);
+    magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
     synchronize();
   } else {
     info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
         L.buf(), ld);
   }
   if (info != 0) { // try adjusting main diagonal
+    BI_WARN(info == 0, "Cholesky failed with info " << info <<
+        ", adjusting diagonal");
+
     BOOST_AUTO(d, diagonal(L));
     BOOST_AUTO(eps, temp_vector<M2>(d.size()));
     bi::fill(eps->begin(), eps->end(), static_cast<T2>(1.0));
@@ -1192,8 +1206,7 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
       L = A;
       axpy(factor, *eps, d);
       if (M2::on_device) {
-        magma_potrf<T2>::func(&uplo, &N, L.buf(), &ld, choleskyWorkspace,
-            &info);
+        magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
         synchronize();
       } else {
         info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
@@ -1201,11 +1214,10 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
       }
       factor *= 2.0;
     }
-    BI_WARN(info != 0,
-        "Matrix diagonal adjusted to allow Cholesky factorisation");
     delete eps;
   }
-  BI_ASSERT(info == 0, "Cholesky failed with info " << info);
+  BI_ERROR(info == 0, "Cholesky failed with info " << info <<
+      ", could not fix by adjusting diagonal");
 }
 
 template<class M1, class M2>
@@ -1221,7 +1233,7 @@ void bi::potrs(const M1 L, M2 X, char uplo) {
   int info;
   if (M2::on_device) {
     BOOST_AUTO(L1, gpu_map_matrix(L));
-    magma_potrs<T2>::func(&uplo, L1->size1(), X.size2(), L1->buf(),
+    magma_potrs<T2>::func(uplo, L1->size1(), X.size2(), L1->buf(),
         L1->lead(), X.buf(), X.lead(), &info);
     synchronize();
     delete L1;

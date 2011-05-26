@@ -56,6 +56,7 @@
 #ifdef USE_DOUBLE
 #define CUDA_ABS(x) fabs(x)
 #define CUDA_LOG(x) log(x)
+#define CUDA_NANLOG(x) (isnan(x) ? log(0.0) : log(x))
 #define CUDA_EXP(x) exp(x)
 #define CUDA_NANEXP(x) (isnan(x) ? 0.0 : exp(x))
 #define CUDA_MAX(x,y) fmax(x,y)
@@ -69,6 +70,7 @@
 #else
 #define CUDA_ABS(x) fabsf(x)
 #define CUDA_LOG(x) logf(x)
+#define CUDA_NANLOG(x) (isnan(x) ? logf(0.0f) : logf(x))
 #define CUDA_EXP(x) expf(x)
 #define CUDA_NANEXP(x) (isnan(x) ? 0.0f : expf(x))
 #define CUDA_MAX(x,y) fmaxf(x,y)

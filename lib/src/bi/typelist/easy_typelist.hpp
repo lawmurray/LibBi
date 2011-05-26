@@ -77,7 +77,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class X, int N>
+  template<class X, int N = 1>
   struct push_back {
     typedef easy_typelist<typename bi::push_back<T,X,N>::type> type;
   };
@@ -90,7 +90,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class S, int N>
+  template<class S, int N = 1>
   struct push_back_spec {
     typedef easy_typelist<typename bi::push_back_list<T,typename S::type,
         N>::type> type;
@@ -104,7 +104,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class X, int N>
+  template<class X, int N = 1>
   struct push_front {
     typedef easy_typelist<typename bi::push_front<T,X,N>::type> type;
   };
@@ -117,7 +117,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class S, int N>
+  template<class S, int N = 1>
   struct push_front_spec {
     typedef easy_typelist<typename bi::push_front_list<T,typename S::type,
         N>::type> type;
@@ -162,7 +162,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class X, int N>
+  template<class X, int N = 1>
   struct push_back {
     typedef easy_typelist<typename bi::push_back<empty_typelist,X,
         N>::type> type;
@@ -178,7 +178,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class S, int N>
+  template<class S, int N = 1>
   struct push_back_spec {
     typedef easy_typelist<typename bi::push_back_list<empty_typelist,
         typename S::type,N>::type> type;
@@ -194,7 +194,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class X, int N>
+  template<class X, int N = 1>
   struct push_front {
     typedef easy_typelist<typename bi::push_front<empty_typelist,X,
         N>::type> type;
@@ -210,7 +210,7 @@ public:
    *
    * @return Updated type list.
    */
-  template<class S, int N>
+  template<class S, int N = 1>
   struct push_front_spec {
     typedef easy_typelist<typename bi::push_front_list<
         empty_typelist,typename S::type,N>::type> type;

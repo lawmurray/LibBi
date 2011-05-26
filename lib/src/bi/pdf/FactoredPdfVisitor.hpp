@@ -35,7 +35,7 @@ public:
    * @param src Destination factors.
    * @param dst Source factors.
    */
-  static void acceptCopy(void** dst, void** src);
+  static void acceptCopy(void** dst, void* const* src);
 
   /**
    * Size.
@@ -149,6 +149,30 @@ public:
   static void acceptSet(const int i, const Q1& factor, void** factors);
 
   /**
+   * Mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param[out] mu Mean.
+   * @param factors List of factor pdfs.
+   * @param offset Offset into @p mu for mean of this factor.
+   */
+  template<class V1>
+  static void acceptMean(V1& mu, void* const* factors, const int offset = 0);
+
+  /**
+   * Covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param[out] Sigma Covariance.
+   * @param factors List of factor pdfs.
+   * @param offset Offset into @p Sigma for covariance of this factor.
+   */
+  template<class M1>
+  static void acceptCov(M1& Sigma, void* const* factors, const int offset = 0);
+
+  /**
    * Serialize.
    *
    * @param factors List of factor pdfs.
@@ -173,7 +197,7 @@ public:
     //
   }
 
-  static void acceptCopy(void** dst, void** src) {
+  static void acceptCopy(void** dst, void* const* src) {
     //
   }
 
@@ -222,6 +246,16 @@ public:
     //
   }
 
+  template<class V1>
+  static void acceptMean(V1& mu, void* const* factors, const int offset = 0) {
+    //
+  }
+
+  template<class M1>
+  static void acceptCov(M1& Sigma, void* const* factors, const int offset = 0) {
+    //
+  }
+
   template<class Archive>
   static void acceptSerialize(Archive& ar, const unsigned version,
       void** factors) {
@@ -232,6 +266,7 @@ public:
 
 }
 
+#include "misc.hpp"
 #include "../math/temp_vector.hpp"
 #include "../cuda/math/temp_vector.hpp"
 #include "../typelist/front.hpp"
@@ -254,7 +289,7 @@ inline void bi::FactoredPdfVisitor<S,I>::acceptDestroy(void** factors) {
 
 template<class S, int I>
 inline void bi::FactoredPdfVisitor<S,I>::acceptCopy(void** dst,
-    void** src) {
+    void* const* src) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
 
@@ -302,9 +337,6 @@ template<class S, int I>
 template<class V>
 void bi::FactoredPdfVisitor<S,I>::acceptSample(Random& rng, V& x,
     void** factors, const int offset) {
-  /* pre-condition */
-  assert (factors[I] != NULL);
-
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
 
@@ -463,6 +495,42 @@ void bi::FactoredPdfVisitor<S,I>::acceptSet(const int i,
   } else {
     FactoredPdfVisitor<pop_front,I+1>::acceptSet(i, factor, factors);
   }
+}
+
+template<class S, int I>
+template<class V1>
+void bi::FactoredPdfVisitor<S,I>::acceptMean(V1& mu, void* const* factors,
+    const int offset) {
+  typedef typename front<S>::type front;
+  typedef typename pop_front<S>::type pop_front;
+
+  int size = 0;
+  front* factor = static_cast<front*>(factors[I]);
+  if (factor != NULL) {
+    size = factor->size();
+    mean(*factor, subrange(mu, offset, size));
+  }
+
+  /* recurse */
+  FactoredPdfVisitor<pop_front,I+1>::acceptMean(mu, factors, offset + size);
+}
+
+template<class S, int I>
+template<class M1>
+void bi::FactoredPdfVisitor<S,I>::acceptCov(M1& Sigma, void* const* factors,
+    const int offset) {
+  typedef typename front<S>::type front;
+  typedef typename pop_front<S>::type pop_front;
+
+  int size = 0;
+  front* factor = static_cast<front*>(factors[I]);
+  if (factor != NULL) {
+    size = factor->size();
+    cov(*factor, subrange(Sigma, offset, size, offset, size));
+  }
+
+  /* recurse */
+  FactoredPdfVisitor<pop_front,I+1>::acceptCov(Sigma, factors, offset + size);
 }
 
 template<class S, int I>

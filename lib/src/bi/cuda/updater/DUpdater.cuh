@@ -33,7 +33,7 @@ void bi::DUpdater<B,SH>::update(const real t, const real tnxt,
   dim3 Db, Dg;
   size_t Ns;
 
-  Db.x = std::min(std::max(512 / nextPower2(N), 1), std::min(512, P));
+  Db.x = std::min(std::max(512 / next_power_2(N), 1), std::min(512, P));
   Db.y = N;
   Dg.x = (P + Db.x - 1) / Db.x;
   Ns = 0;

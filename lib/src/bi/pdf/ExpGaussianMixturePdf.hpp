@@ -219,7 +219,7 @@ template<class V1, class M1>
 template<class V2>
 void bi::ExpGaussianMixturePdf<V1,M1>::sample(Random& rng, V2& x) {
   GaussianMixturePdf<V1,M1>::sample(rng, x);
-  expVec(x, logs);
+  exp_vector(x, logs);
 }
 
 template<class V1, class M1>
@@ -245,10 +245,10 @@ real bi::ExpGaussianMixturePdf<V1,M1>::density(const V2& x) {
 
   real detJ, p;
 
-  detJ = detVec(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
+  detJ = det_vector(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
   BOOST_AUTO(z, temp_vector<V2>(x.size()));
   *z = x;
-  logVec(*z, logs);
+  log_vector(*z, logs);
   p = GaussianMixturePdf<V1,M1>::operator()(*z)/detJ;
 
   /* post-condition */
@@ -293,7 +293,7 @@ bool bi::ExpGaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
   bool result;
   BOOST_AUTO(Z, temp_matrix<M2>(X));
   *Z = X;
-  logCols(*Z, logs);
+  log_columns(*Z, logs);
   result = GaussianMixturePdf<V1,M1>::refit(rng, K, *Z, eps);
 
   synchronize();
@@ -309,7 +309,7 @@ bool bi::ExpGaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
   bool result;
   BOOST_AUTO(Z, temp_matrix<M2>(X.size1(), X.size2()));
   *Z = X;
-  logCols(*Z, logs);
+  log_columns(*Z, logs);
   result = GaussianMixturePdf<V1,M1>::refit(rng, K, *Z, y, eps);
 
   synchronize();

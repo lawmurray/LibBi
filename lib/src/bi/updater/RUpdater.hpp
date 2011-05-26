@@ -34,10 +34,12 @@ public:
   /**
    * Update r-net.
    *
+   * @param t Current time.
+   * @param tnxt Time to which to step forward.
    * @param s State to update.
    */
   template<Location L>
-  void update(State<L>& s);
+  void update(const real t, const real tnxt, State<L>& s);
 
   /**
    * Don't make any changes on next update.
@@ -61,6 +63,7 @@ private:
 
 #include "RUpdateVisitor.hpp"
 #include "../traits/random_traits.hpp"
+#include "../traits/derived_traits.hpp"
 
 template<class B>
 bi::RUpdater<B>::RUpdater(Random& rng) : rng(rng), skip(false) {
@@ -69,9 +72,9 @@ bi::RUpdater<B>::RUpdater(Random& rng) : rng(rng), skip(false) {
 
 template<class B>
 template<bi::Location L>
-void bi::RUpdater<B>::update(State<L>& s) {
+void bi::RUpdater<B>::update(const real t, const real tnxt, State<L>& s) {
   typedef typename B::RTypeList S;
-  typedef BOOST_TYPEOF(s.get(R_NODE)) M1;
+  typedef typename State<L>::matrix_reference_type M1;
   typedef RUpdateVisitor<B,S,M1> Visitor;
 
   if (!skip) {
@@ -80,12 +83,18 @@ void bi::RUpdater<B>::update(State<L>& s) {
       if (all_gaussian_variates<S>::value) {
         rng.gaussians(matrix_as_vector(X));
       } else if (all_uniform_variates<S>::value) {
-        rng.uniforms(matrix_as_vector(X));
+        rng.uniforms(matrix_as_vector(X), -0.5, 0.5);
+      } else if (all_wiener_increments<S>::value) {
+        if (tnxt - t > 0.0) {
+          rng.gaussians(matrix_as_vector(X), 0.0, std::sqrt(tnxt - t));
+        } else {
+          X.clear();
+        }
       } else {
-        Visitor::accept(rng, s.get(R_NODE));
+        Visitor::accept(rng, t, tnxt, s.get(R_NODE));
       }
     } else {
-      Visitor::accept(rng, s.get(R_NODE));
+      Visitor::accept(rng, t, tnxt, s.get(R_NODE));
     }
   }
   skip = false;

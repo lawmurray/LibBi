@@ -18,19 +18,12 @@ namespace bi {
  */
 struct Coord {
   /**
-   * Default constructor.
-   *
-   * Members are not initialised.
-   */
-  Coord();
-
-  /**
    * Constructor.
    */
-  Coord(const int x, const int y, const int z);
+  CUDA_FUNC_BOTH Coord(const int x = 0, const int y = 0, const int z = 0);
 
   /**
-   * Factory method for translating node index to coordinate, where node
+   * Factory method for translating linear index to coordinate, where node
    * type is known.
    *
    * @tparam B Model type.
@@ -74,10 +67,6 @@ struct Coord {
 #include "../model/model.hpp"
 #include "../traits/boundary_traits.hpp"
 
-inline bi::Coord::Coord() : x(0), y(0), z(0) {
-  //
-}
-
 inline bi::Coord::Coord(const int x, const int y,
     const int z) : x(x), y(y), z(z) {
   //
@@ -86,12 +75,14 @@ inline bi::Coord::Coord(const int x, const int y,
 template<class B, class X>
 inline bi::Coord bi::Coord::make(const int i) {
   const int start = node_start<B,X>::value;
-  const int j = i - start; // offset from start of nodes of this type
+  int j = i - start; // offset from start of nodes of this type
   int x, y, z;
 
-  z = node_has_z<X>::value ? j / (B::NX*B::NY) : 0;
-  y = node_has_y<X>::value ? (j - z*(B::NX*B::NY)) / B::NX : 0;
-  x = node_has_x<X>::value ? (j - y*B::NY) : 0;
+  z = node_has_z<X>::value ? j/(B::NX*B::NY) : 0;
+  j -= z*B::NX*B::NY;
+  y = node_has_y<X>::value ? j/B::NX : 0;
+  j -= y*B::NX;
+  x = node_has_x<X>::value ? j : 0;
 
   return Coord(x, y, z);
 }

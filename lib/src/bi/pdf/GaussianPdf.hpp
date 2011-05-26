@@ -98,7 +98,19 @@ public:
   GaussianPdf(const GaussianPdf<V1,M1>& o);
 
   /**
+   * Generic copy constructor.
+   */
+  template<class V2, class M2>
+  GaussianPdf(const GaussianPdf<V2,M2>& o);
+
+  /**
    * Assignment operator. Both sides must have the same dimensionality.
+   */
+  GaussianPdf<V1,M1>& operator=(const GaussianPdf<V1,M1>& o);
+
+  /**
+   * Generic assignment operator. Both sides must have the same
+   * dimensionality.
    */
   template<class V2, class M2>
   GaussianPdf<V1,M1>& operator=(const GaussianPdf<V2,M2>& o);
@@ -327,7 +339,7 @@ bi::GaussianPdf<V1,M1>::GaussianPdf(const int N) :
 
 template<class V1, class M1>
 bi::GaussianPdf<V1,M1>::GaussianPdf(const real mu, const real sigma2) :
-    N(1), mu(1), Sigma(1,1), U(1,1), invU(1), invSigma(1,1) {
+    N(1), mu(1), Sigma(1,1), U(1,1), invU(1,1), invSigma(1,1) {
   this->mu(0) = mu;
   this->Sigma(0,0) = sigma2;
   init();
@@ -376,13 +388,33 @@ template<class V1, class M1>
 bi::GaussianPdf<V1,M1>::GaussianPdf(const GaussianPdf<V1,M1>& o) :
     N(o.N), mu(o.N), Sigma(o.N,o.N), U(o.N,o.N), invU(o.N,o.N),
     invSigma(o.N,o.N) {
+  operator=(o);
+}
+
+template<class V1, class M1>
+template<class V2, class M2>
+bi::GaussianPdf<V1,M1>::GaussianPdf(const GaussianPdf<V2,M2>& o) :
+    N(o.N), mu(o.N), Sigma(o.N,o.N), U(o.N,o.N), invU(o.N,o.N),
+    invSigma(o.N,o.N) {
+  operator=(o);
+}
+
+template<class V1, class M1>
+bi::GaussianPdf<V1,M1>& bi::GaussianPdf<V1,M1>::operator=(
+    const GaussianPdf<V1,M1>& o) {
+  /* pre-condition */
+  assert (o.N == N);
+
   mu = o.mu;
   Sigma = o.Sigma;
   U = o.U;
+  invU = o.invU;
   invSigma = o.invSigma;
   detSigma = o.detSigma;
   invZ = o.invZ;
   logZ = o.logZ;
+
+  return *this;
 }
 
 template<class V1, class M1>

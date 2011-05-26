@@ -13,6 +13,7 @@
 #include "../misc/cross_pitched_range.hpp"
 #include "../misc/assert.hpp"
 #include "../cuda/cuda.hpp"
+#include "../typelist/equals.hpp"
 
 #include <memory>
 #include <algorithm>
@@ -81,12 +82,15 @@ public:
   /**
    * Check if two handles are the same.
    *
+   * @tparam M1 Matrix type.
+   *
    * @param o Other handle.
    *
    * @return True if both handles point to the same memory, with the same
    * size and same lead, false otherwise.
    */
-  bool same(const host_matrix_handle<T>& o) const;
+  template<class M1>
+  bool same(const M1& o) const;
 
 public:
   /**
@@ -153,10 +157,8 @@ template<class T>
 inline T& bi::host_matrix_handle<T>::operator()(const size_type i,
     const size_type j) {
   /* pre-condition */
-  #ifndef __CUDACC__
   assert (i >= 0 && i < size1());
   assert (j >= 0 && j < size2());
-  #endif
 
   return ptr[j*ld + i];
 }
@@ -165,19 +167,19 @@ template<class T>
 inline const T& bi::host_matrix_handle<T>::operator()(const size_type i,
     const size_type j) const {
   /* pre-condition */
-  #ifndef __CUDACC__
   assert (i >= 0 && i < size1());
   assert (j >= 0 && j < size2());
-  #endif
 
   return ptr[j*ld + i];
 }
 
 template<class T>
-inline bool bi::host_matrix_handle<T>::same(
-    const host_matrix_handle<T>& o) const {
-  return (this->buf() == o.buf() && this->size1() == o.size1() &&
-      this->size2() == o.size2() && this->lead() == o.lead());
+template<class M1>
+inline bool bi::host_matrix_handle<T>::same(const M1& o) const {
+  return (equals<value_type,typename M1::value_type>::value &&
+      on_device == M1::on_device && this->buf() == o.buf() &&
+      this->size1() == o.size1() && this->size2() == o.size2() &&
+      this->lead() == o.lead());
 }
 
 namespace bi {
@@ -231,6 +233,20 @@ public:
    */
   template<class M1>
   host_matrix_reference<T>& operator=(const M1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  matrix_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  const matrix_reference_type& ref() const;
 
   /**
    * Column-major iterator to beginning of matrix.
@@ -317,11 +333,14 @@ inline bi::host_matrix_reference<T>& bi::host_matrix_reference<T>::operator=(
   /* pre-condition */
   assert (o.size1() == this->size1() && o.size2() == this->size2());
 
-  if (!same(o)) {
-    size_type i, j;
-    for (j = 0; j < this->size2(); ++j) {
-      for (i = 0; i < this->size1(); ++i) {
-        (*this)(i,j) = o(i,j);
+  if (!this->same(o)) {
+    if (this->lead() == this->size1() && o.lead() == o.size1()) {
+      memcpy(this->buf(), o.buf(), this->size1()*this->size2()*sizeof(T));
+    } else {
+      /* copy column-by-column */
+      size_type i;
+      for (i = 0; i < this->size2(); ++i) {
+        column(*this, i) = column(o, i);
       }
     }
   }
@@ -335,7 +354,7 @@ bi::host_matrix_reference<T>& bi::host_matrix_reference<T>::operator=(
   /* pre-conditions */
   assert (o.size1() == this->size1() && o.size2() == this->size2());
 
-  size_type i, j;
+  size_type i;
   if (M1::on_device) {
     /* device to host copy */
     if (o.lead()*sizeof(T) <= CUDA_PITCH_LIMIT) {
@@ -355,15 +374,29 @@ bi::host_matrix_reference<T>& bi::host_matrix_reference<T>::operator=(
             cudaMemcpyDeviceToHost, 0));
       }
     }
-  } else {
+  } else if (!this->same(o)) {
     /* host to host copy */
-    for (j = 0; j < this->size2(); ++j) {
-      for (i = 0; i < this->size1(); ++i) {
-        (*this)(i,j) = o(i,j);
+    if (this->lead() == this->size1() && o.lead() == o.size1()) {
+      memcpy(this->buf(), o.buf(), this->size1()*this->size2()*sizeof(T));
+    } else {
+      /* copy column-by-column */
+      size_type i;
+      for (i = 0; i < this->size2(); ++i) {
+        column(*this, i) = column(o, i);
       }
     }
   }
   return *this;
+}
+
+template<class T>
+inline typename bi::host_matrix_reference<T>::matrix_reference_type& bi::host_matrix_reference<T>::ref() {
+  return static_cast<matrix_reference_type&>(*this);
+}
+
+template<class T>
+inline const typename bi::host_matrix_reference<T>::matrix_reference_type& bi::host_matrix_reference<T>::ref() const {
+  return static_cast<const matrix_reference_type&>(*this);
 }
 
 template<class T>
@@ -433,14 +466,9 @@ inline typename bi::host_matrix_reference<T>::const_row_iterator
 template<class T>
 inline void bi::host_matrix_reference<T>::clear() {
   if (this->lead() == this->size1()) {
-    /* clear whole buffer */
     matrix_as_vector(*this).clear();
   } else {
-    /* clear column-by-column */
-    size_type i;
-    for (i = 0; i < this->size2(); ++i) {
-      column(*this, i).clear();
-    }
+    bi::fill(this->begin(), this->end(), static_cast<T>(0));
   }
 }
 
@@ -537,6 +565,20 @@ public:
   host_matrix<T,A>& operator=(const M1& o);
 
   /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  matrix_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  const matrix_reference_type& ref() const;
+
+  /**
    * Resize matrix.
    *
    * @param rows New number of rows.
@@ -626,8 +668,7 @@ bi::host_matrix<T,A>::host_matrix(const host_matrix<T,A>& o) :
 
 template<class T, class A>
 bi::host_matrix<T,A>::~host_matrix() {
-  if (own && this->ptr != NULL) {
-    alloc.destroy(this->ptr);
+  if (own) {
     alloc.deallocate(this->ptr, this->ld*this->cols);
   }
 }
@@ -646,16 +687,31 @@ inline bi::host_matrix<T,A>& bi::host_matrix<T,A>::operator=(const M1& o) {
 }
 
 template<class T, class A>
+inline typename bi::host_matrix<T,A>::matrix_reference_type& bi::host_matrix<T,A>::ref() {
+  return static_cast<matrix_reference_type&>(*this);
+}
+
+template<class T, class A>
+inline const typename bi::host_matrix<T,A>::matrix_reference_type& bi::host_matrix<T,A>::ref() const {
+  return static_cast<const matrix_reference_type&>(*this);
+}
+
+template<class T, class A>
 void bi::host_matrix<T,A>::resize(const size_type rows, const size_type cols,
     const bool preserve) {
-  if (rows <= this->size1() && cols <= this->size2()) {
+  if (rows <= this->size1() && cols == this->size2()) {
+    /* lead doesn't change, so keep current buffer */
     this->rows = rows;
-    this->cols = cols;
-  } else {
-    BI_ERROR(own, "Cannot enlarge host_matrix constructed as view of other matrix");
+  } else if (rows != this->size1() || cols != this->size2()) {
+    BI_ERROR(own, "Cannot resize host_matrix constructed as view of other matrix");
 
     /* allocate new buffer */
-    T* ptr = alloc.allocate(rows*cols);
+    T* ptr;
+    if (rows*cols > 0) {
+      ptr = alloc.allocate(rows*cols);
+    } else {
+      ptr = NULL;
+    }
 
     /* copy across contents */
     if (preserve) {
@@ -669,7 +725,6 @@ void bi::host_matrix<T,A>::resize(const size_type rows, const size_type cols,
 
     /* free old buffer */
     if (this->ptr != NULL) {
-      alloc.destroy(this->ptr);
       alloc.deallocate(this->ptr, this->ld*this->cols);
     }
 

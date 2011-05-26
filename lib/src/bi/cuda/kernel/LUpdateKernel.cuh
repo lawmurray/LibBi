@@ -16,48 +16,54 @@ namespace bi {
  *
  * Kernel for calculating likelihoods.
  *
+ * @tparam B Model type.
+ * @tparam B1 Mask block type.
+ * @tparam V1 Vector type.
+ * @tparam SH StaticHandling type.
+ *
  * @param ids Ids of o-nodes to consider.
+ * @param offset Offset into oy-net to start of this set of observations.
  * @param[in,out] lws Log-weights, will be updated.
  */
-template<class B>
-CUDA_FUNC_GLOBAL void kernelLUpdate(const int* ids, real* lws);
+template<class B, class B1, class V1, unsigned SH>
+CUDA_FUNC_GLOBAL void kernelLUpdate(const B1 mask, const int offset, V1 lws);
 
 }
 
-#include "../updater/LUpdateVisitor.cuh"
-#include "../../state/Pa.hpp"
-
-template<class B>
-void bi::kernelLUpdate(const int* ids, real* lws) {
+template<class B, class B1, class V1, unsigned SH>
+void bi::kernelLUpdate(const B1 mask, const int offset, V1 lws) {
   typedef typename B::OTypeList S;
-  typedef Pa<B,real,constant,global,global,constant,global,global,global> V1;
-  typedef real V2;
-  typedef real V3;
-  typedef LUpdateVisitor<ON_DEVICE,B,S,V1,V2,V3> Visitor;
+  typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
+  typedef Pa<B,real,pa,global,global,pa,global,global,global> V2;
+  typedef LUpdateVisitor<B,S,V2,real,real> Visitor;
 
   real* ls = shared_mem;
-  const int id = ids[threadIdx.y];
+  const int i = threadIdx.y;
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int q = threadIdx.x;
-  const bool headOfTraj = threadIdx.y == 0;
-  int i;
+  const bool headOfTraj = i == 0;
+  int j;
 
-  V1 pax(p);
-  V2 y = globalOYState(0, id);
-  V3 l;
+  int id;
+  Coord cox;
+  V2 pax(p);
+  real y, l;
+
+  mask.coord(i, id, cox);
+  y = globalOYState(0, offset + i);
 
   if (p < constP) {
     /* calculate log likelihood */
-    Visitor::accept(id, pax, y, l);
+    Visitor::accept(id, cox, pax, y, l);
   }
 
-  /* add up */
+  /* sum */
   if (headOfTraj && p < constP) {
     ls[q] = l;
   }
   __syncthreads();
-  for (i = 1; i < blockDim.y; ++i) {
-    if (id == ids[i] && p < constP) {
+  for (j = 1; j < blockDim.y; ++j) {
+    if (i == j && p < constP) {
       ls[q] += l;
     }
     __syncthreads();
@@ -65,7 +71,7 @@ void bi::kernelLUpdate(const int* ids, real* lws) {
 
   /* add to log-weights */
   if (headOfTraj && p < constP) {
-    lws[p] += ls[q];
+    lws(p) += ls[q];
   }
 }
 

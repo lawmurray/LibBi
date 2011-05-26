@@ -13,6 +13,7 @@
 #include "../../math/scalar.hpp"
 #include "../../misc/compile.hpp"
 #include "../../misc/strided_range.hpp"
+#include "../../typelist/equals.hpp"
 
 #include "thrust/device_ptr.h"
 
@@ -90,12 +91,15 @@ public:
   /**
    * Check if two handles are the same.
    *
+   * @tparam V1 Vector type.
+   *
    * @param o Other handle.
    *
    * @return True if both handles point to the same memory, with the same
    * size and same increment, false otherwise.
    */
-  CUDA_FUNC_BOTH bool same(const gpu_vector_handle<T>& o) const;
+  template<class V1>
+  CUDA_FUNC_BOTH bool same(const V1& o) const;
 
 public:
   /**
@@ -176,10 +180,11 @@ inline const T& bi::gpu_vector_handle<T>::operator[](
 }
 
 template<class T>
-inline bool bi::gpu_vector_handle<T>::same(
-    const gpu_vector_handle<T>& o) const {
-  return (this->buf() == o.buf() && this->size() == o.size() &&
-      this->inc() == o.inc());
+template<class V1>
+inline bool bi::gpu_vector_handle<T>::same(const V1& o) const {
+  return (equals<value_type,typename V1::value_type>::value &&
+      on_device == V1::on_device && this->buf() == o.buf() &&
+      this->size() == o.size() && this->inc() == o.inc());
 }
 
 namespace bi {
@@ -231,6 +236,20 @@ public:
    */
   template<class V1>
   CUDA_FUNC_HOST gpu_vector_reference<T>& operator=(const V1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST vector_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST const vector_reference_type& ref() const;
 
   /**
    * Iterator to beginning of vector.
@@ -301,16 +320,28 @@ inline bi::gpu_vector_reference<T>& bi::gpu_vector_reference<T>::operator=(
   /* pre-condition */
   assert(this->size() == o.size());
 
-  if (this->inc() == 1 && o.inc() == 1) {
-    /* asynchronous linear copy */
-    cudaMemcpyKind kind = (V1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
-    CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-        this->size()*sizeof(T), kind, 0));
-  } else {
-    bi::copy(o.begin(), o.end(), this->begin());
+  if (!this->same(o)) {
+    if (this->inc() == 1 && o.inc() == 1) {
+      /* asynchronous linear copy */
+      cudaMemcpyKind kind = (V1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+          this->size()*sizeof(T), kind, 0));
+    } else {
+      bi::copy(o.begin(), o.end(), this->begin());
+    }
   }
 
   return *this;
+}
+
+template<class T>
+inline typename bi::gpu_vector_reference<T>::vector_reference_type& bi::gpu_vector_reference<T>::ref() {
+  return static_cast<vector_reference_type&>(*this);
+}
+
+template<class T>
+inline const typename bi::gpu_vector_reference<T>::vector_reference_type& bi::gpu_vector_reference<T>::ref() const {
+  return static_cast<const vector_reference_type&>(*this);
 }
 
 template<class T>
@@ -345,7 +376,11 @@ inline typename bi::gpu_vector_reference<T>::const_iterator
 
 template<class T>
 inline void bi::gpu_vector_reference<T>::clear() {
-  bi::fill(this->begin(), this->end(), static_cast<T>(0));
+  if (this->inc() == 1) {
+    CUDA_CHECKED_CALL(cudaMemsetAsync(this->buf(), 0, this->size()*sizeof(T)));
+  } else {
+    bi::fill(this->begin(), this->end(), static_cast<T>(0));
+  }
 }
 
 #include "../../misc/device_allocator.hpp"
@@ -412,6 +447,20 @@ public:
    */
   template<class V1>
   CUDA_FUNC_HOST gpu_vector<T,A>& operator=(const V1& o);
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST vector_reference_type& ref();
+
+  /**
+   * Retrieve as reference.
+   *
+   * @return Reference to same object.
+   */
+  CUDA_FUNC_HOST const vector_reference_type& ref() const;
 
   /**
    * Resize vector.
@@ -489,7 +538,6 @@ bi::gpu_vector<T,A>::gpu_vector(const V1 o) :
 template<class T, class A>
 bi::gpu_vector<T,A>::~gpu_vector() {
   if (own && this->ptr != NULL) {
-    alloc.destroy(this->ptr);
     alloc.deallocate(this->ptr, this->size1);
   }
 }
@@ -508,14 +556,28 @@ inline bi::gpu_vector<T,A>& bi::gpu_vector<T,A>::operator=(const V1& o) {
 }
 
 template<class T, class A>
+inline typename bi::gpu_vector<T,A>::vector_reference_type& bi::gpu_vector<T,A>::ref() {
+  return static_cast<vector_reference_type&>(*this);
+}
+
+template<class T, class A>
+inline const typename bi::gpu_vector<T,A>::vector_reference_type& bi::gpu_vector<T,A>::ref() const {
+  return static_cast<const vector_reference_type&>(*this);
+}
+
+template<class T, class A>
 void bi::gpu_vector<T,A>::resize(const size_type size, const bool preserve) {
-  if (size <= this->size()) {
-    this->size1 = size;
-  } else {
-    BI_ERROR(own, "Cannot enlarge gpu_vector constructed as view of other vector");
+  if (size != this->size()) {
+    /* pre-condition */
+    BI_ERROR(own, "Cannot resize gpu_vector constructed as view of other vector");
 
     /* allocate new buffer */
-    T* ptr = alloc.allocate(size);
+    T* ptr;
+    if (size > 0) {
+      ptr = alloc.allocate(size);
+    } else {
+      ptr = NULL;
+    }
 
     /* copy across contents */
     if (preserve) {
@@ -524,7 +586,6 @@ void bi::gpu_vector<T,A>::resize(const size_type size, const bool preserve) {
 
     /* free old buffer */
     if (this->ptr != NULL) {
-      alloc.destroy(this->ptr);
       alloc.deallocate(this->ptr, this->size1);
     }
 

@@ -59,7 +59,7 @@ struct resample_offspring : public std::unary_function<T,int> {
  * @ingroup method
  *
  * Determistic, stratified resampler based on the scheme of
- * @ref Kitagawa1996 "Kitagawa (1996)", with or without pre-sorting.
+ * @ref Kitagawa1996 "Kitagawa (1996)", without pre-sorting.
  */
 class StratifiedResampler : public Resampler {
 public:
@@ -69,7 +69,7 @@ public:
    * @param rng Random number generator.
    * @param sort True to pre-sort weights, false otherwise.
    */
-  StratifiedResampler(Random& rng, const bool sort = false);
+  StratifiedResampler(Random& rng, const bool sort = true);
 
   /**
    * @name High-level interface
@@ -78,26 +78,26 @@ public:
   /**
    * @copydoc concept::Resampler::resample(V1&, V2&)
    */
-  template<class V1, class V2>
-  void resample(V1& lws, V2& as);
+  template<class V1, class V2, Location L>
+  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
    */
-  template<class V1, class V2, class V3>
-  void resample(const V1& qlws, V2& lws, V3& as);
+  template<class V1, class V2, class V3, Location L>
+  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(const typename V2::value_type, V1&, V2&)
    */
-  template<class V1, class V2>
-  void resample(const int a, V1& lws, V2& as);
+  template<class V1, class V2, Location L>
+  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(const typename V2::value_type, const V1&, V1&, V2&)
    */
-  template<class V1, class V2, class V3>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as);
+  template<class V1, class V2, class V3, Location L>
+  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
   //@}
 
   /**
@@ -147,45 +147,66 @@ private:
 #include "thrust/for_each.h"
 #include "thrust/adjacent_difference.h"
 
-template<class V1, class V2>
-void bi::StratifiedResampler::resample(V1& lws, V2& as) {
+template<class V1, class V2, bi::Location L>
+void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta, State<L>& s) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
-  BOOST_AUTO(os, temp_vector<V1>(lws.size()));
-  BOOST_AUTO(as1, map_vector(lws, as)); ///@todo Needn't map, just create temp.
+  /* typically faster on host, so copy to there */
+  BOOST_AUTO(lws1, host_map_vector(lws));
+  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
+  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
 
-  offspring(lws, *os, lws.size());
-  ancestors(*os, *as1);
+  if (V1::on_device) {
+    synchronize();
+  }
+  offspring(*lws1, *os1, lws1->size());
+  ancestors(*os1, *as1);
   permute(*as1);
   as = *as1;
   lws.clear();
-
-  synchronize();
-  delete os;
+  copy(as, theta, s);
+  if (as.on_device) {
+    synchronize();
+  }
+  delete lws1;
   delete as1;
+  delete os1;
 }
 
-template<class V1, class V2>
-void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as) {
+template<class V1, class V2, bi::Location L>
+void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
 
-  BOOST_AUTO(os, temp_vector<V2>(as.size()));
+  BOOST_AUTO(lws1, host_map_vector(lws));
+  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
+  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
 
-  offspring(lws, *os, lws.size() - 1);
-  ++(*os)[a];
-  ancestors(*os, as);
-  permute(as);
+  if (V1::on_device) {
+    synchronize();
+  }
+  offspring(*lws1, *os1, lws1->size() - 1);
+  ++(*os1)[a];
+  ancestors(*os1, *as1);
+  permute(*as1);
+  as = *as1;
+  copy(as, theta, s);
   lws.clear();
 
-  synchronize();
-  delete os;
+  if (V2::on_device) {
+    synchronize();
+  }
+  delete lws1;
+  delete as1;
+  delete os1;
 }
 
-template<class V1, class V2, class V3>
-void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as) {
+template<class V1, class V2, class V3, bi::Location L>
+void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+  ///@todo Do on host, typically faster.
+
   /* pre-condition */
   const int P = as.size();
   assert (qlws.size() == lws.size());
@@ -196,14 +217,17 @@ void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as) {
   ancestors(*os, as);
   permute(as);
   correct(as, qlws, lws);
+  copy(as, theta, s);
 
   synchronize();
   delete os;
 }
 
-template<class V1, class V2, class V3>
+template<class V1, class V2, class V3, bi::Location L>
 void bi::StratifiedResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as) {
+    V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+  ///@todo Do on host, typically faster.
+
   /* pre-condition */
   const int P = qlws.size();
   assert (qlws.size() == P);
@@ -218,6 +242,7 @@ void bi::StratifiedResampler::resample(const int a, const V1& qlws,
   ancestors(*os, as);
   permute(as);
   correct(as, qlws, lws);
+  copy(as, theta, s);
 
   synchronize();
   delete os;
@@ -250,8 +275,7 @@ void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
   W = *(Ws.end() - 1); // sum of weights
   if (W > 0) {
     a = rng.uniform(0.0, 1.0); // offset into strata
-    thrust::transform(Ws.begin(), Ws.end(), Os.begin(),
-        resample_offspring<T1>(a, W, n));
+    thrust::transform(Ws.begin(), Ws.end(), Os.begin(), resample_offspring<T1>(a, W, n));
     thrust::adjacent_difference(Os.begin(), Os.end(), os.begin());
     if (sort) {
       bi::sort_by_key(ps.begin(), ps.end(), os.begin());
