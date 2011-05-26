@@ -234,6 +234,7 @@ int main(int argc, char* argv[]) {
   /* state and intermediate results */
   Static<LOCATION> theta(m);
   State<LOCATION> s(m, P);
+  host_vector<real> x(N); // initial state of chain
 
   /* inputs and outputs */
   SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
@@ -245,6 +246,13 @@ int main(int argc, char* argv[]) {
     inInit->read0(P_NODE, theta.get(P_NODE));
     inInit->read0(D_NODE, s.get(D_NODE));
     inInit->read0(C_NODE, s.get(C_NODE));
+    if (INCLUDE_INITIAL) {
+      subrange(x, 0, ND) = row(s.get(D_NODE), 0);
+      subrange(x, ND, NC) = row(s.get(C_NODE), 0);
+      subrange(x, ND + NC, NP) = row(theta.get(P_NODE), 0);
+    } else {
+      x = row(theta.get(P_NODE), 0);
+    }
   }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
   const int Y = inObs.countUniqueTimes(T);
@@ -267,7 +275,6 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, S1, INCLUDE_INITIAL));
 
   /* start */
-  host_vector<real> x(p0.size()); // initial state of chain
   do {
     sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
   } while (mcmc->getPrior().density(x) <= 0.0);
