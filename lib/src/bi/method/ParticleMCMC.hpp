@@ -901,7 +901,7 @@ bool bi::ParticleMCMC<B,IO1,CL>::metropolisHastings(F* filter, const real lambda
     real loglr = x2.ll - x1.ll;
     real logpr = x2.lp - x1.lp;
     real logqr = x1.lq - x2.lq;
-    if (!isfinite(x1.lq) && !isfinite(x2.lq)) {
+    if (!std::isfinite(x1.lq) && !std::isfinite(x2.lq)) {
       logqr = 0.0;
     }
     real logratio = loglr + logpr + logqr;

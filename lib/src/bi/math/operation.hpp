@@ -1264,7 +1264,6 @@ void bi::trsm(const T1 alpha, const M1 A, M2 B, const char side,
   assert (!(trans == 'N' && side == 'L')  || A.size2() == B.size1());
   assert (!(trans == 'T' && side == 'R')  || B.size2() == A.size2());
   assert (!(trans == 'N' && side == 'R')  || B.size2() == A.size1());
-  assert ((equals<T1,T2>::value));
   assert ((equals<T2,T3>::value));
 
   if (M2::on_device) {
