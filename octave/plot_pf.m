@@ -41,16 +41,18 @@ function plot_pf (in, invar, coord)
     T = nci('nr')(:);
 
     X = read_var (nci, invar, coord);
-    lWs = nci{'logweight'}(:,:);
+    [X I] = sort (X, 2);
+    lWs = nci{'logweight'}(:,:);   
     maxlWs = max(lWs');
     Ws = exp(lWs - repmat(maxlWs', 1, columns(lWs)));
-    Q = zeros (rows (X), length(q));
-    
-    [X I] = sort (X, 2);
-    Ws = Ws(I);
+    for i = 1:rows(Ws)
+        Ws(i,:) = Ws(i,I(i,:));
+    end
     Wt = sum(Ws, 2);
-    Wc = cumsum(Ws, 2) ./ repmat(Wt, 1, P);
-   
+    Wc = cumsum(Ws, 2) ./ repmat(Wt, 1, columns(Ws));
+
+    Q = zeros (rows (X), length(q));
+
     for i = 1:T
         % build weighted empirical cdf
         for j = 1:length(q)
