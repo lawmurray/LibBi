@@ -166,7 +166,9 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
       BOOST_AUTO(queryNode, queryNodes1.front());
       BOOST_AUTO(targetNode, targetNodes1.front());
 
-      if (queryNode->getLeft()->isInternal() && targetNode->getRight()->isInternal()) {
+      done = queryNode != NULL && queryNode->isInternal() &&
+          targetNode != NULL && targetNode->isInternal();
+      if (!done) {
         targetNode->difference(*queryNode, *x);
         if (K(*x) > 1.0e-3) {
           queryNodes1.push_back(queryNode->getLeft());
@@ -183,13 +185,14 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
         }
         queryNodes1.pop_front();
         targetNodes1.pop_front();
-      } else {
-        done = true;
       }
     }
     delete x;
 
     /* now multithread */
+    BOOST_AUTO(P, host_temp_matrix<real>(p.size(), omp_get_max_threads()));
+    P->clear();
+
     #pragma omp parallel
     {
       int nthreads = omp_get_num_threads();
@@ -269,9 +272,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
               x = column(transQueryX, i);
               axpy(-1.0, column(transTargetX, j), x);
               q = CUDA_EXP(lw(j) + K.logDensity(x));
-
-              #pragma omp atomic
-              p(i) += q;
+              (*P)(i,tid) += q;
             } else if (queryNode->isLeaf() && targetNode->isPrune()) {
               i = queryNode->getIndex();
               const std::vector<int>& js = targetNode->getIndices();
@@ -281,8 +282,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
                 axpy(-1.0, column(transTargetX, js[j]), x);
                 q += CUDA_EXP(lw(js[j]) + K.logDensity(x));
               }
-              #pragma omp atomic
-              p(i) += q;
+              (*P)(i,tid) += q;
             } else if (queryNode->isPrune() && targetNode->isLeaf()) {
               const std::vector<int>& is = queryNode->getIndices();
               j = targetNode->getIndex();
@@ -290,9 +290,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
                 x = column(transQueryX, is[i]);
                 axpy(-1.0, column(transTargetX, j), x);
                 q = CUDA_EXP(lw(j) + K.logDensity(x));
-
-                #pragma omp atomic
-                p(is[i]) += q;
+                (*P)(is[i],tid) += q;
               }
             } else if (queryNode->isPrune() && targetNode->isPrune()) {
               const std::vector<int>& is = queryNode->getIndices();
@@ -304,8 +302,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
                   axpy(-1.0, column(transTargetX, js[j]), x);
                   q += CUDA_EXP(lw(js[j]) + K.logDensity(x));
                 }
-                #pragma omp atomic
-                p(is[i]) += q;
+                (*P)(is[i],tid) += q;
               }
             //}
           }
@@ -316,9 +313,12 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
       delete x1;
       omp_unset_lock(&lock);
     }
+    sum_columns(*P, p);
 
+    synchronize();
     delete transQueryX1;
     delete transTargetX1;
+    delete P;
 
     omp_destroy_lock(&lock);
   }
