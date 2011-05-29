@@ -272,9 +272,10 @@ inline bi::KDTreeNode<V1>::KDTreeNode() {
 template<class V1>
 template<class M2>
 inline bi::KDTreeNode<V1>::KDTreeNode(const M2 X, const int i,
-    const int depth) : lower(row(X,i)), upper(row(X,i)), left(NULL),
+    const int depth) : lower(X.size2()), upper(X.size2()), left(NULL),
     right(NULL), depth(depth), size(1), i(i), type(LEAF) {
-  //
+  lower = row(X,i);
+  upper = row(X,i);
 }
 
 template<class V1>
@@ -289,10 +290,10 @@ bi::KDTreeNode<V1>::KDTreeNode(const M2 X, const std::vector<int>& is,
 
   int i, j;
   lower = row(X, is[0]);
-  upper = lower;
+  upper = row(X, is[0]);
   for (i = 1; i < (int)is.size(); ++i) {
     BOOST_AUTO(x, row(X, is[i]));
-    for (j = 0; j < X.size2(); ++j) {
+    for (j = 0; j < x.size(); ++j) {
       if (x(j) < lower(j)) {
         lower(j) = x(j);
       } else if (x(j) > upper(j)) {
@@ -428,17 +429,13 @@ inline void bi::KDTreeNode<V1>::difference(const V2 x, V3& result) const {
     int i;
     real val, low, high;
 
-    const real* bufUpper = getUpper().buf();
-    const real* bufLower = getLower().buf();
-    const real* bufX = x.buf();
-
     for (i = 0; i < lower.size(); ++i) {
-      val = bufX[i];
-      low = bufLower[i];
+      val = x(i);
+      low = lower(i);
       if (val < low) {
         result(i) = low - val;
       } else {
-        high = bufUpper[i];
+        high = upper(i);
         if (val > high) {
           result(i) = val - high;
         } else {
@@ -464,19 +461,17 @@ inline void bi::KDTreeNode<V1>::difference(const KDTreeNode<V2>& node, V3& resul
     int i;
     real high, low;
 
-    const real* bufNodeUpper = node.getUpper().buf();
-    const real* bufNodeLower = node.getLower().buf();
-    const real* bufUpper = getUpper().buf();
-    const real* bufLower = getLower().buf();
+    BOOST_AUTO(nodeUpper, node.getUpper());
+    BOOST_AUTO(nodeLower, node.getLower());
 
     for (i = 0; i < lower.size(); ++i) {
-      high = bufNodeUpper[i];
-      low = bufLower[i];
+      high = nodeUpper(i);
+      low = lower(i);
       if (high < low) {
         result(i) = low - high;
       } else {
-        high = bufUpper[i];
-        low = bufNodeLower[i];
+        high = upper(i);
+        low = nodeLower(i);
         if (low > high) {
           result(i) = low - high;
         } else {

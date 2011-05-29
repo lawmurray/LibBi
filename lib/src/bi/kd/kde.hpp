@@ -166,11 +166,11 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
       BOOST_AUTO(queryNode, queryNodes1.front());
       BOOST_AUTO(targetNode, targetNodes1.front());
 
-      done = queryNode != NULL && queryNode->isInternal() &&
-          targetNode != NULL && targetNode->isInternal();
+      done = !(queryNode != NULL && queryNode->isInternal() &&
+          targetNode != NULL && targetNode->isInternal());
       if (!done) {
         targetNode->difference(*queryNode, *x);
-        if (K(*x) > 1.0e-3) {
+        if (K(*x) > 0.0) {
           queryNodes1.push_back(queryNode->getLeft());
           targetNodes1.push_back(targetNode->getLeft());
 
@@ -231,7 +231,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
         if (queryNode->isInternal() || targetNode->isInternal()) {
           /* should we recurse? */
           targetNode->difference(*queryNode, x);
-          if (K(x) > 1.0e-3) {
+          if (K(x) > 0.0) {
             if (queryNode->isInternal()) {
               if (targetNode->isInternal()) {
                 /* split both query and target nodes */

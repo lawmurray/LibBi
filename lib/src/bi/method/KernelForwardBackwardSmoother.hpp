@@ -390,7 +390,6 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smooth(
   int n = T - 1, r;
   init(theta, in, *X0, *lw0, *X1, *lw1);
   output(n, *X1, *lw1);
-
   while (n > 0) {
     tnxt = state.t;
     std::cerr << tnxt << ' ';
@@ -543,7 +542,9 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::correct(
   /* renormalise */
   thrust::replace_if(lw1.begin(), lw1.end(), is_not_finite_functor<real>(), std::log(0.0));
   real mx = *bi::max(lw1.begin(), lw1.end());
-  thrust::transform(lw1.begin(), lw1.end(), lw1.begin(), subtract_constant_functor<real>(mx));
+  if (std::isfinite(mx)) {
+    thrust::transform(lw1.begin(), lw1.end(), lw1.begin(), subtract_constant_functor<real>(mx));
+  }
 
   synchronize();
   delete lp3;

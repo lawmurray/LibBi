@@ -112,7 +112,8 @@ inline typename V1::value_type bi::FastGaussianKernel::logDensity(const V1 x) co
 
 template<class V1>
 inline typename V1::value_type bi::FastGaussianKernel::density(const V1 x) const {
-  return ZI*CUDA_EXP(E*dot(x));
+  typename V1::value_type d = dot(x);
+  return ZI*CUDA_EXP(E*d);
 }
 
 template<class V1>

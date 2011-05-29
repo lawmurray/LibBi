@@ -320,6 +320,7 @@ template<class M2, class V2>
 void bi::KernelDensityPdf<V1,M1,S1,K1>::densities(const M2 X, V2 p) {
   BOOST_AUTO(Z, host_temp_matrix<real>(X.size1(), X.size2()));
   *Z = X;
+
   standardise(*this, *Z);
   KDTree<V1> queryTree(*Z, S1()); ///@todo Doesn't handle log-variables.
   dualTreeDensity(queryTree, *this->tree, *Z, this->X, lw, K, p);

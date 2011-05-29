@@ -46,12 +46,13 @@ void rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x);
  * standardise.
  * @param[in,out] X Samples. Rows index samples, columns variables.
  *
- * Standardises the samples @p X using the mean and covariance of the provide
+ * Standardises the samples @p X using the mean and covariance of the provided
  * distribution @p p. If this is the sample mean and covariance of the
  * samples, the output sample set will have mean zero and identity covariance.
  */
 template<class V1, class M1, class M2>
 void standardise(const ExpGaussianPdf<V1,M1>& p, M2 X);
+
 
 /**
  * Condition (log-)Gaussian distribution.
@@ -69,11 +70,11 @@ void standardise(const ExpGaussianPdf<V1,M1>& p, M2 X);
  * @param x2 \f$\mathbf{x}_2\f$.
  * @param[out] p3 \f$p(X_1|\mathbf{x}_2)\f$.
  */
-template<class V1, class M1, class V2, class M2, class M3, class V3,
-    class V4, class M4>
-void condition(const ExpGaussianPdf<V1,M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C, const V3 x2,
-    ExpGaussianPdf<V4,M4>& p3);
+template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
+    class M4>
+void condition(const ExpGaussianPdf<V1, M1>& p1,
+    const ExpGaussianPdf<V2, M2>& p2, const M3 C, const V3 x2, ExpGaussianPdf<
+        V4, M4>& p3);
 
 /**
  * Marginalise (log-)Gaussian distribution.
@@ -95,11 +96,11 @@ void condition(const ExpGaussianPdf<V1,M1>& p1,
  * @param[out] p3 \f$\int_{-\infty}^{\infty} p(X_2|\mathbf{x}_1)
  * p(\mathbf{x}_1) \,d\mathbf{x}_1\f$.
  */
-template<class V1, class M1, class V2, class M2, class M3, class V4,
-    class M4, class V5, class M5>
-void marginalise(const ExpGaussianPdf<V1,M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C,
-    const ExpGaussianPdf<V4,M4>& q2, ExpGaussianPdf<V5,M5>& p3);
+template<class V1, class M1, class V2, class M2, class M3, class V4, class M4,
+    class V5, class M5>
+void marginalise(const ExpGaussianPdf<V1, M1>& p1,
+    const ExpGaussianPdf<V2, M2>& p2, const M3 C,
+    const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5, M5>& p3);
 
 /**
  * Histogram weighted sample set.
@@ -193,7 +194,7 @@ void mean(const UniformPdf<V1>& q, V2 mu);
  * @param[out] mu Mean.
  */
 template<class V1, class M1, class V2>
-void mean(const ExpGaussianPdf<V1,M1>& q, V2 mu);
+void mean(const ExpGaussianPdf<V1, M1>& q, V2 mu);
 
 /**
  * Compute mean of pdf.
@@ -275,7 +276,7 @@ void cov(const UniformPdf<V1>& q, M1 Sigma);
  * @param[out] Sigma Covariance.
  */
 template<class V1, class M1, class M2>
-void cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma);
+void cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma);
 
 /**
  * Compute covariance of pdf.
@@ -351,8 +352,7 @@ void var(const M1 X, const V1 w, const V2 mu, V3 sigma);
  * @note Normalises by \f$N - 1\f$ for \f$N\f$ samples.
  */
 template<class M1, class M2, class V1, class V2, class M3>
-void cross(const M1 X, const M2 Y, const V1 muX, const V2 muY,
-    M3 SigmaXY);
+void cross(const M1 X, const M2 Y, const V1 muX, const V2 muY, M3 SigmaXY);
 
 /**
  * Compute weighted cross-covariance of two sample sets.
@@ -377,8 +377,8 @@ void cross(const M1 X, const M2 Y, const V1 muX, const V2 muY,
  * @todo Document @p Wt.
  */
 template<class M1, class M2, class V1, class V2, class V3, class M3>
-void cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
-    const V3 muY, M3 SigmaXY);
+void cross(const M1 X, const M2 Y, const V1 w, const V2 muX, const V3 muY,
+    M3 SigmaXY);
 
 /**
  * Exponentiate components of a vector.
@@ -484,34 +484,39 @@ real det_vector(const V2 x, const V3& is);
 #include "../kd/FastGaussianKernel.hpp"
 
 template<class Q1, class Q2, class V1>
-inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M,
-    V1 x) {
+inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x) {
   do {
     q.sample(rng, x);
-  } while (rng.uniform<real>() > p(x)/(M*q(x)));
+  } while (rng.uniform<real> () > p(x) / (M * q(x)));
 }
 
 template<class V1, class M1, class M2>
 void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
   /* pre-condition */
-  assert (p.size() == X.size2());
+  assert(p.size() == X.size2());
+
+  BOOST_AUTO(mu, temp_vector<M2>(X.size2()));
 
   log_columns(X, p.getLogs());
-  sub_rows(X, p.mean());
+  mean(X, *mu);
+  sub_rows(X, *mu);
   trsm(1.0, p.std(), X, 'R', 'U');
+  add_rows(X, *mu);
+  sub_rows(X, p.mean());
   exp_columns(X, p.getLogs());
+
+  synchronize();
+  delete mu;
 }
 
-template<class V1, class M1, class V2, class M2, class M3, class V3,
-    class V4, class M4>
-void bi::condition(const ExpGaussianPdf<V1,M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C, const V3 x2,
-    ExpGaussianPdf<V4,M4>& p3) {
+template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
+    class M4>
+void bi::condition(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
+    M2>& p2, const M3 C, const V3 x2, ExpGaussianPdf<V4, M4>& p3) {
   /* pre-condition */
-  assert (x2.size() == p2.size());
-  assert (p3.size() == p1.size());
-  assert (C.size1() == p1.size() && C.size2() == p2.size());
-
+  assert(x2.size() == p2.size());
+  assert(p3.size() == p1.size());
+  assert(C.size1() == p1.size() && C.size2() == p2.size());
   BOOST_AUTO(z2, temp_vector<V1>(p2.size()));
   BOOST_AUTO(K, temp_matrix<M1>(p1.size(), p2.size()));
 
@@ -558,16 +563,15 @@ void bi::condition(const ExpGaussianPdf<V1,M1>& p1,
   delete K;
 }
 
-template<class V1, class M1, class V2, class M2, class M3, class V4,
-    class M4, class V5, class M5>
-void bi::marginalise(const ExpGaussianPdf<V1,M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C,
-    const ExpGaussianPdf<V4,M4>& q2, ExpGaussianPdf<V5,M5>& p3) {
+template<class V1, class M1, class V2, class M2, class M3, class V4, class M4,
+    class V5, class M5>
+void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
+    M2>& p2, const M3 C, const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5,
+    M5>& p3) {
   /* pre-conditions */
-  assert (q2.size() == p2.size());
-  assert (p3.size() == p1.size());
-  assert (C.size1() == p1.size() && C.size2() == p2.size());
-
+  assert(q2.size() == p2.size());
+  assert(p3.size() == p1.size());
+  assert(C.size1() == p1.size() && C.size2() == p2.size());
   BOOST_AUTO(z2, temp_vector<V1>(p2.size()));
   BOOST_AUTO(K, temp_matrix<M1>(p1.size(), p2.size()));
   BOOST_AUTO(A1, temp_matrix<M1>(p2.size(), p2.size()));
@@ -626,10 +630,10 @@ void bi::marginalise(const ExpGaussianPdf<V1,M1>& p1,
 template<class V1, class V2, class V3, class V4>
 void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
   /* pre-condition */
-  assert (x.size() == w.size());
-  assert (c.size() == h.size());
-  assert (!V3::on_device);
-  assert (!V4::on_device);
+  assert(x.size() == w.size());
+  assert(c.size() == h.size());
+  assert(!V3::on_device);
+  assert(!V4::on_device);
 
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -638,7 +642,6 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
   const int B = c.size();
   T1 mx, mn;
   int i, j;
-
   BOOST_AUTO(xSorted, host_temp_vector<T1>(P));
   BOOST_AUTO(wSorted, host_temp_vector<T2>(P));
   *xSorted = x;
@@ -650,7 +653,7 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
 
   /* compute bin right edges */
   for (j = 0; j < B; ++j) {
-    c[j] = mn + (j + 1)*(mx - mn)/B;
+    c[j] = mn + (j + 1) * (mx - mn) / B;
   }
 
   /* compute bin heights */
@@ -664,9 +667,9 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
 
   /* compute bin centres */
   for (j = B - 1; j > 0; --j) {
-    c[j] = 0.5*(c[j - 1] + c[j]);
+    c[j] = 0.5 * (c[j - 1] + c[j]);
   }
-  c[0] = 0.5*(mn + c[0]);
+  c[0] = 0.5 * (mn + c[0]);
 
   delete xSorted;
   delete wSorted;
@@ -675,9 +678,9 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
 template<class M1, class M2>
 void bi::distance(const M1 X, const real h, M2 D) {
   /* pre-conditions */
-  assert (D.size1() == D.size2());
-  assert (D.size1() == X.size1());
-  assert (!M2::on_device);
+  assert(D.size1() == D.size2());
+  assert(D.size1() == X.size1());
+  assert(!M2::on_device);
 
   typedef typename M1::value_type T1;
 
@@ -686,9 +689,9 @@ void bi::distance(const M1 X, const real h, M2 D) {
   int i, j;
   for (j = 0; j < D.size2(); ++j) {
     for (i = 0; i <= j; ++i) {
-      *d = row(X,i);
-      axpy(-1.0, row(X,j), *d);
-      D(i,j) = K(dot(*d,*d));
+      *d = row(X, i);
+      axpy(-1.0, row(X, j), *d);
+      D(i, j) = K(dot(*d, *d));
     }
   }
   delete d;
@@ -697,13 +700,12 @@ void bi::distance(const M1 X, const real h, M2 D) {
 template<class M1, class V1>
 void bi::mean(const M1 X, V1 mu) {
   /* pre-condition */
-  assert (X.size2() == mu.size());
+  assert(X.size2() == mu.size());
 
   const int N = X.size1();
-
   BOOST_AUTO(w, temp_vector<V1>(N));
   bi::fill(w->begin(), w->end(), 1.0);
-  gemv(1.0/N, X, *w, 0.0, mu, 'T');
+  gemv(1.0 / N, X, *w, 0.0, mu, 'T');
 
   synchronize();
   delete w;
@@ -712,29 +714,29 @@ void bi::mean(const M1 X, V1 mu) {
 template<class M1, class V1, class V2>
 void bi::mean(const M1 X, const V1 w, V2 mu) {
   /* pre-conditions */
-  assert (X.size2() == mu.size());
-  assert (X.size1() == w.size());
+  assert(X.size2() == mu.size());
+  assert(X.size1() == w.size());
 
   typedef typename V1::value_type T;
 
-  T Wt = sum(w.begin(), w.end(), static_cast<T>(0));
+  T Wt = sum(w.begin(), w.end(), static_cast<T> (0));
 
-  gemv(1.0/Wt, X, w, 0.0, mu, 'T');
+  gemv(1.0 / Wt, X, w, 0.0, mu, 'T');
 }
 
 template<class V1, class V2>
 void bi::mean(const UniformPdf<V1>& q, V2 mu) {
   /* pre-condition */
-  assert (q.size() == mu.size());
+  assert(q.size() == mu.size());
 
   axpy(0.5, q.lower(), mu, true);
   axpy(0.5, q.upper(), mu);
 }
 
 template<class V1, class M1, class V2>
-inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
+inline void bi::mean(const ExpGaussianPdf<V1, M1>& q, V2 mu) {
   /* pre-condition */
-  assert (mu.size() == q.size());
+  assert(mu.size() == q.size());
 
   mu = q.mean();
 }
@@ -748,15 +750,14 @@ void bi::mean(const FactoredPdf<S>& q, V1 mu) {
 template<class M1, class V1, class M2>
 void bi::cov(const M1 X, const V1 mu, M2 Sigma) {
   /* pre-conditions */
-  assert (X.size2() == mu.size());
-  assert (Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
+  assert(X.size2() == mu.size());
+  assert(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
 
   const int N = X.size1();
-
   BOOST_AUTO(Y, temp_matrix<M2>(X.size1(), X.size2()));
   *Y = X;
   sub_rows(*Y, mu);
-  syrk(1.0/(N - 1.0), *Y, 0.0, Sigma, 'U', 'T');
+  syrk(1.0 / (N - 1.0), *Y, 0.0, Sigma, 'U', 'T');
 
   synchronize();
   delete Y;
@@ -765,24 +766,23 @@ void bi::cov(const M1 X, const V1 mu, M2 Sigma) {
 template<class M1, class V1, class V2, class M2>
 void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   /* pre-conditions */
-  assert (X.size2() == mu.size());
-  assert (X.size1() == w.size());
-  assert (Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
+  assert(X.size2() == mu.size());
+  assert(X.size1() == w.size());
+  assert(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
 
   typedef typename V1::value_type T;
-
   BOOST_AUTO(Y, temp_matrix<M2>(X.size1(), X.size2()));
   BOOST_AUTO(Z, temp_matrix<M2>(X.size1(), X.size2()));
   BOOST_AUTO(v, temp_vector<V2>(w.size()));
 
-  T Wt = sum(w.begin(), w.end(), static_cast<T>(0));
+  T Wt = sum(w.begin(), w.end(), static_cast<T> (0));
   //T W2t = sum_square(w.begin(), w.end(), static_cast<T>(0));
 
   *Y = X;
   sub_rows(*Y, mu);
   element_sqrt(w.begin(), w.end(), v->begin());
   gdmm(1.0, *v, *Y, 0.0, *Z);
-  syrk(1.0/Wt, *Z, 0.0, Sigma, 'U', 'T');
+  syrk(1.0 / Wt, *Z, 0.0, Sigma, 'U', 'T');
   // alternative weight: 1.0/(Wt - W2t/Wt)
 
   synchronize();
@@ -794,16 +794,15 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
 template<class V1, class M1>
 void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
   /* pre-condition */
-  assert (Sigma.size1() == q.size());
-  assert (Sigma.size2() == q.size());
-
+  assert(Sigma.size1() == q.size());
+  assert(Sigma.size2() == q.size());
   BOOST_AUTO(diff, host_temp_vector<real>(q.size()));
   *diff = q.upper();
   axpy(-1.0, q.lower(), *diff);
   element_square(diff->begin(), diff->end(), diff->begin());
 
   Sigma.clear();
-  axpy(1.0/12.0, *diff, diagonal(Sigma));
+  axpy(1.0 / 12.0, *diff, diagonal(Sigma));
 
   if (V1::on_device) {
     synchronize();
@@ -812,10 +811,10 @@ void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
 }
 
 template<class V1, class M1, class M2>
-void bi::cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma) {
+void bi::cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma) {
   /* pre-condition */
-  assert (Sigma.size1() == q.size());
-  assert (Sigma.size2() == q.size());
+  assert(Sigma.size1() == q.size());
+  assert(Sigma.size2() == q.size());
 
   Sigma = q.cov();
 }
@@ -829,16 +828,15 @@ void bi::cov(const FactoredPdf<S>& q, M1 Sigma) {
 template<class M1, class V1, class V2>
 void bi::var(const M1 X, const V1 mu, V2 sigma) {
   /* pre-conditions */
-  assert (X.size2() == mu.size());
-  assert (sigma.size() == mu.size());
+  assert(X.size2() == mu.size());
+  assert(sigma.size() == mu.size());
 
   const int N = X.size1();
-
   BOOST_AUTO(Z, temp_matrix<M1>(X.size2(), X.size1()));
   *Z = X;
   sub_rows(*Z, mu);
   dot_columns(*Z, sigma);
-  scal(1.0/(N - 1.0), sigma);
+  scal(1.0 / (N - 1.0), sigma);
 
   synchronize();
   delete Z;
@@ -847,17 +845,16 @@ void bi::var(const M1 X, const V1 mu, V2 sigma) {
 template<class M1, class V1, class V2, class V3>
 void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
   /* pre-conditions */
-  assert (X.size2() == mu.size());
-  assert (X.size1() == w.size());
-  assert (sigma.size() == mu.size());
+  assert(X.size2() == mu.size());
+  assert(X.size1() == w.size());
+  assert(sigma.size() == mu.size());
 
   typedef typename V1::value_type T1;
-
   BOOST_AUTO(Z, temp_matrix<M1>(X.size1(), X.size2()));
   BOOST_AUTO(Y, temp_matrix<M1>(X.size1(), X.size2()));
   BOOST_AUTO(v, temp_vector<V2>(w.size()));
 
-  T1 Wt = sum(w.begin(), w.end(), static_cast<T1>(0));
+  T1 Wt = sum(w.begin(), w.end(), static_cast<T1> (0));
   //T1 W2t = sum_square(w.begin(), w.end(), static_cast<T1>(0));
 
   *Z = X;
@@ -865,7 +862,7 @@ void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
   element_sqrt(w.begin(), w.end(), v->begin());
   gdmm(1.0, *v, *Z, 0.0, *Y);
   dot_columns(*Y, sigma);
-  scal(1.0/Wt, sigma);
+  scal(1.0 / Wt, sigma);
   // alternative weight: 1.0/(Wt - W2t/Wt)
 
   synchronize();
@@ -875,43 +872,41 @@ void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
 }
 
 template<class M1, class M2, class V1, class V2, class M3>
-void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY,
-    M3 SigmaXY) {
+void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY, M3 SigmaXY) {
   /* pre-conditions */
-  assert (X.size2() == muX.size());
-  assert (Y.size2() == muY.size());
-  assert (X.size1() == Y.size1());
-  assert (SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
+  assert(X.size2() == muX.size());
+  assert(Y.size2() == muY.size());
+  assert(X.size1() == Y.size1());
+  assert(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
 
   const int N = X.size1();
 
-  gemm(1.0/(N - 1.0), X, Y, 0.0, SigmaXY, 'T', 'N');
-  ger(-N/(N - 1.0), muX, muY, SigmaXY);
+  gemm(1.0 / (N - 1.0), X, Y, 0.0, SigmaXY, 'T', 'N');
+  ger(-N / (N - 1.0), muX, muY, SigmaXY);
 }
 
 template<class M1, class M2, class V1, class V2, class V3, class M3>
-void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
-    const V3 muY, M3 SigmaXY) {
+void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX, const V3 muY,
+    M3 SigmaXY) {
   /* pre-conditions */
-  assert (X.size2() == muX.size());
-  assert (Y.size2() == muY.size());
-  assert (X.size1() == Y.size1());
-  assert (X.size1() == w.size());
-  assert (Y.size1() == w.size());
-  assert (SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
+  assert(X.size2() == muX.size());
+  assert(Y.size2() == muY.size());
+  assert(X.size1() == Y.size1());
+  assert(X.size1() == w.size());
+  assert(Y.size1() == w.size());
+  assert(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
 
   typedef typename V1::value_type T;
-
   BOOST_AUTO(Z, temp_matrix<M3>(X.size1(), X.size2()));
 
-  T Wt = sum(w.begin(), w.end(), static_cast<T>(0));
+  T Wt = sum(w.begin(), w.end(), static_cast<T> (0));
   T Wt2 = std::pow(Wt, 2);
-  T W2t = sum_square(w.begin(), w.end(), static_cast<T>(0));
+  T W2t = sum_square(w.begin(), w.end(), static_cast<T> (0));
 
   gdmm(1.0, w, X, 0.0, *Z);
-  gemm(1.0/Wt, *Z, Y, 0.0, SigmaXY, 'T', 'N');
+  gemm(1.0 / Wt, *Z, Y, 0.0, SigmaXY, 'T', 'N');
   ger(-1.0, muX, muY, SigmaXY);
-  matrix_scal(1.0/(1.0 - W2t/Wt2), SigmaXY);
+  matrix_scal(1.0 / (1.0 - W2t / Wt2), SigmaXY);
 
   synchronize();
   delete Z;
