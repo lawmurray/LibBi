@@ -43,25 +43,21 @@ double hopt(const int N, const int P);
  * @ingroup kd
  *
  * @tparam V1 Vector type.
- * @tparam V2 Vector type.
  * @tparam M1 Matrix type.
+ * @tparam V2 Vector type.
  * @tparam M2 Matrix type.
- * @tparam V3 Vector type.
  * @tparam K1 Kernel type.
- * @tparam V4 Vector type.
+ * @tparam V3 Vector type.
  *
  * @param queryTree Query tree.
  * @param targetTree Target tree.
- * @param queryX Query samples.
- * @param targetX Target samples.
- * @param lw Log-weights.
  * @param K Kernel.
  * @param[out] p Vector of the density estimates for each of the points in
  * @p queryTree.
  */
-template<class V1, class V2, class M1, class M2, class V3, class K1, class V4>
-void dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
-    const M1 queryX, const M2 targetX, const V3 lw, const K1& K, V4 p);
+template<class V1, class M1, class V2, class M2, class K1, class V3>
+void dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
+    const K1& K, V3 p);
 
 /**
  * Self-tree kernel density evaluation.
@@ -81,9 +77,9 @@ void dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
  * @param[out] p Vector of the density estimates for each of the points in
  * @p tree.
  */
-template<class M1, class V1, class K1, class V2>
-void selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
-    const K1& K, V2 p);
+//template<class M1, class V1, class K1, class V2>
+//void selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
+//    const K1& K, V2 p);
 
 /**
  * Cross-tree kernel density evaluation with multiple mixture model
@@ -111,10 +107,10 @@ void selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
  * first as target, is added to this.
  * @param clear Clear result matrices before addition.
  */
-template<class M1, class V1, class K1, class M2>
-void crossTreeDensities(KDTree<V1>& tree1, KDTree<V1>& tree2, const M1 X1,
-    const M1 X2, const V1 lw1, const V1 lw2, const K1& K, M2 P1, M2 P2,
-    const bool clear = true);
+//template<class M1, class V1, class K1, class M2>
+//void crossTreeDensities(KDTree<V1>& tree1, KDTree<V1>& tree2, const M1 X1,
+//    const M1 X2, const V1 lw1, const V1 lw2, const K1& K, M2 P1, M2 P2,
+//    const bool clear = true);
 
 }
 
@@ -127,29 +123,16 @@ inline double bi::hopt(const int N, const int P) {
   return std::pow(4.0/((N + 2)*P), 1.0/(N + 4));
 }
 
-template<class V1, class V2, class M1, class M2, class V3, class K1, class V4>
-void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
-    const M1 queryX, const M2 targetX, const V3 lw, const K1& K, V4 p) {
-  /* pre-condition */
-  assert (lw.size() == targetX.size1());
-  assert (queryX.size2() == targetX.size2());
-  assert (p.size() == queryX.size1());
-
-  typedef KDTreeNode<V1> query_node_type;
-  typedef KDTreeNode<V2> target_node_type;
+template<class V1, class M1, class V2, class M2, class K1, class V3>
+void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
+    const K1& K, V3 p) {
+  typedef typename KDTree<V1,M1>::node_type query_node_type;
+  typedef typename KDTree<V2,M2>::node_type target_node_type;
   
   BOOST_AUTO(queryRoot, queryTree.getRoot());
   BOOST_AUTO(targetRoot, targetTree.getRoot());
   p.clear();
   if (queryRoot != NULL && targetRoot != NULL) {
-    /* buffers */
-    BOOST_AUTO(transQueryX1, temp_matrix<M1>(queryX.size2(), queryX.size1()));
-    BOOST_AUTO(transTargetX1, temp_matrix<M2>(targetX.size2(), targetX.size1()));
-    BOOST_AUTO(transQueryX, transQueryX1->ref());
-    BOOST_AUTO(transTargetX, transTargetX1->ref());
-    transpose(queryX, transQueryX);
-    transpose(targetX, transTargetX);
-
     omp_lock_t lock;
     omp_init_lock(&lock);
 
@@ -160,14 +143,14 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
     queryNodes1.push_back(queryRoot);
     targetNodes1.push_back(targetRoot);
 
-    BOOST_AUTO(x, temp_vector<M1>(queryX.size2()));
+    BOOST_AUTO(x, temp_vector<M1>(queryTree.getSize()));
     bool done = false;
-    while (!done && (int)queryNodes1.size() < 16*omp_get_max_threads()) {
+    while (!done && (int)queryNodes1.size() < 64*omp_get_max_threads()) {
       BOOST_AUTO(queryNode, queryNodes1.front());
       BOOST_AUTO(targetNode, targetNodes1.front());
 
-      done = !(queryNode != NULL && queryNode->isInternal() &&
-          targetNode != NULL && targetNode->isInternal());
+      done = queryNode == NULL || !queryNode->isInternal() ||
+          targetNode == NULL || !targetNode->isInternal();
       if (!done) {
         targetNode->difference(*queryNode, *x);
         if (K(*x) > 0.0) {
@@ -185,6 +168,7 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
         }
         queryNodes1.pop_front();
         targetNodes1.pop_front();
+        done = queryNodes1.empty();
       }
     }
     delete x;
@@ -198,10 +182,10 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
       int nthreads = omp_get_num_threads();
       int tid = omp_get_thread_num();
       typename V2::value_type q;
-      int i, j, evals = 0;
+      int i, j;
 
       omp_set_lock(&lock);
-      BOOST_AUTO(x1, temp_vector<M1>(queryX.size2()));
+      BOOST_AUTO(x1, temp_vector<M1>(queryTree.getSize()));
       omp_unset_lock(&lock);
       BOOST_AUTO(x, x1->ref());
 
@@ -264,47 +248,40 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
             }
           }
         } else {
-          ++evals;
-          //if (evals % nthreads == tid) {
-            if (queryNode->isLeaf() && targetNode->isLeaf()) {
-              i = queryNode->getIndex();
-              j = targetNode->getIndex();
-              x = column(transQueryX, i);
-              axpy(-1.0, column(transTargetX, j), x);
-              q = CUDA_EXP(lw(j) + K.logDensity(x));
-              (*P)(i,tid) += q;
-            } else if (queryNode->isLeaf() && targetNode->isPrune()) {
-              i = queryNode->getIndex();
-              const std::vector<int>& js = targetNode->getIndices();
+          if (queryNode->isLeaf() && targetNode->isLeaf()) {
+            i = queryNode->getIndex();
+            x = queryNode->getValue();
+            axpy(-1.0, targetNode->getValue(), x);
+            q = CUDA_EXP(targetNode->getLogWeight() + K.logDensity(x));
+            (*P)(i,tid) += q;
+          } else if (queryNode->isLeaf() && targetNode->isPrune()) {
+            i = queryNode->getIndex();
+            q = 0.0;
+            for (j = 0; j < targetNode->getCount(); ++j) {
+              x = queryNode->getValue();
+              axpy(-1.0, column(targetNode->getValues(), j), x);
+              q += CUDA_EXP(targetNode->getLogWeights()(j) + K.logDensity(x));
+            }
+            (*P)(i,tid) += q;
+          } else if (queryNode->isPrune() && targetNode->isLeaf()) {
+            const std::vector<int>& is = queryNode->getIndices();
+            for (i = 0; i < (int)is.size(); ++i) {
+              x = column(queryNode->getValues(), i);
+              axpy(-1.0, targetNode->getValue(), x);
+              q = CUDA_EXP(targetNode->getLogWeight() + K.logDensity(x));
+              (*P)(is[i],tid) += q;
+            }
+          } else if (queryNode->isPrune() && targetNode->isPrune()) {
+            const std::vector<int>& is = queryNode->getIndices();
+            for (i = 0; i < queryNode->getCount(); ++i) {
               q = 0.0;
-              for (j = 0; j < (int)js.size(); ++j) {
-                x = column(transQueryX, i);
-                axpy(-1.0, column(transTargetX, js[j]), x);
-                q += CUDA_EXP(lw(js[j]) + K.logDensity(x));
+              for (j = 0; j < targetNode->getCount(); ++j) {
+                x = column(queryNode->getValues(), i);
+                axpy(-1.0, column(targetNode->getValues(), j), x);
+                q += CUDA_EXP(targetNode->getLogWeights()(j) + K.logDensity(x));
               }
-              (*P)(i,tid) += q;
-            } else if (queryNode->isPrune() && targetNode->isLeaf()) {
-              const std::vector<int>& is = queryNode->getIndices();
-              j = targetNode->getIndex();
-              for (i = 0; i < (int)is.size(); ++i) {
-                x = column(transQueryX, is[i]);
-                axpy(-1.0, column(transTargetX, j), x);
-                q = CUDA_EXP(lw(j) + K.logDensity(x));
-                (*P)(is[i],tid) += q;
-              }
-            } else if (queryNode->isPrune() && targetNode->isPrune()) {
-              const std::vector<int>& is = queryNode->getIndices();
-              const std::vector<int>& js = targetNode->getIndices();
-              for (i = 0; i < (int)is.size(); ++i) {
-                q = 0.0;
-                for (j = 0; j < (int)js.size(); ++j) {
-                  x = column(transQueryX, is[i]);
-                  axpy(-1.0, column(transTargetX, js[j]), x);
-                  q += CUDA_EXP(lw(js[j]) + K.logDensity(x));
-                }
-                (*P)(is[i],tid) += q;
-              }
-            //}
+              (*P)(is[i],tid) += q;
+            }
           }
         }
       }
@@ -316,262 +293,260 @@ void bi::dualTreeDensity(KDTree<V1>& queryTree, KDTree<V2>& targetTree,
     sum_columns(*P, p);
 
     synchronize();
-    delete transQueryX1;
-    delete transTargetX1;
     delete P;
 
     omp_destroy_lock(&lock);
   }
 }
 
-template<class M1, class V1, class K1, class V2>
-void bi::selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
-    const K1& K, V2 p) {
-  /* pre-condition */
-  assert (lw.size() == X.size1());
-  
-  typedef typename KDTree<V1>::node_type node_type;
+//template<class M1, class V1, class K1, class V2>
+//void bi::selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
+//    const K1& K, V2 p) {
+//  /* pre-condition */
+//  assert (lw.size() == X.size1());
+//
+//  typedef typename KDTree<V1>::node_type node_type;
+//
+//  BOOST_AUTO(root, tree.getRoot());
+//  p.clear();
+//  if (root != NULL) {
+//    std::stack<node_type> queryNodes;
+//    std::stack<node_type> targetNodes;
+//    std::stack<bool> doCrosses; // for query equals target tree optimisations
+//
+//    locatable_temp_vector<ON_HOST,real>::type x(X.size2());
+//    int i, j;
+//    bool doCross;
+//    double d;
+//
+//    queryNodes.push(root);
+//    targetNodes.push(root);
+//    doCrosses.push(false);
+//
+//    while (!queryNodes.empty()) {
+//      BOOST_AUTO(queryNode, queryNodes.top());
+//      BOOST_AUTO(targetNode, targetNodes.top());
+//      queryNodes.pop();
+//      targetNodes.pop();
+//      doCross = doCrosses.top();
+//      doCrosses.pop();
+//
+//      if (queryNode->isLeaf() && targetNode->isLeaf()) {
+//        i = queryNode->getIndex();
+//        j = targetNode->getIndex();
+//        x = row(X, i);
+//        axpy(-1.0, row(X, j), x);
+//        d = K.logDensity(x);
+//        p(i) += CUDA_EXP(lw(j) + d);
+//        if (doCross) {
+//          p(j) += CUDA_EXP(lw(i) + d);
+//        }
+//      } else if (queryNode->isLeaf() && targetNode->isPrune()) {
+//        i = queryNode->getIndex();
+//        const std::vector<int>& js = targetNode->getIndices();
+//        for (j = 0; j < js.size(); j++) {
+//          x = row(X, i);
+//          axpy(-1.0, row(X, js[j]), x);
+//          d = K.logDensity(x);
+//          p(i) += CUDA_EXP(lw(js[j]) + d);
+//          if (doCross) {
+//            p(js[j]) += CUDA_EXP(lw(i) + d);
+//          }
+//        }
+//      } else if (queryNode->isPrune() && targetNode->isLeaf()) {
+//        const std::vector<int>& is = queryNode->getIndices();
+//        j = targetNode->getIndex();
+//        for (i = 0; i < is.size(); i++) {
+//          x = row(X, is[i]);
+//          axpy(-1.0, row(X, j), x);
+//          d = K.logDensity(x);
+//          p(is[i]) += CUDA_EXP(lw(j) + d);
+//          if (doCross) {
+//            p(j) += CUDA_EXP(lw(is[i]) + d);
+//          }
+//        }
+//      } else if (queryNode->isPrune() && targetNode->isPrune()) {
+//        const std::vector<int>& is = queryNode->getIndices();
+//        const std::vector<int>& js = targetNode->getIndices();
+//        for (i = 0; i < is.size(); i++) {
+//          for (j = 0; j < js.size(); j++) {
+//            x = row(X, is[i]);
+//            axpy(-1.0, row(X, js[j]), x);
+//            d = K.logDensity(x);
+//            p(is[i]) += CUDA_EXP(lw(js[j]) + d);
+//            if (doCross) {
+//              p(js[j]) += CUDA_EXP(lw(is[i]) + d);
+//            }
+//          }
+//        }
+//      } else {
+//        /* should we recurse? */
+//        targetNode->difference(queryNode, x);
+//        if (K(x) > 0.0) {
+//          if (queryNode->isInternal()) {
+//            if (targetNode->isInternal()) {
+//              /* split both query and target nodes */
+//              queryNodes.push(queryNode->getLeft());
+//              targetNodes.push(targetNode->getLeft());
+//              doCrosses.push(doCross);
+//
+//              queryNodes.push(queryNode->getLeft());
+//              targetNodes.push(targetNode->getRight());
+//              if (queryNode == targetNode) {
+//                /* symmetric, so just double left-right evaluation */
+//                doCrosses.push(true);
+//              } else {
+//                /* asymmetric, so evaluate right-left separately */
+//                doCrosses.push(doCross);
+//
+//                queryNodes.push(queryNode->getRight());
+//                targetNodes.push(targetNode->getLeft());
+//                doCrosses.push(doCross);
+//              }
+//
+//              queryNodes.push(queryNode->getRight());
+//              targetNodes.push(targetNode->getRight());
+//              doCrosses.push(doCross);
+//            } else {
+//              /* split query node only */
+//              queryNodes.push(queryNode->getLeft());
+//              targetNodes.push(targetNode);
+//              doCrosses.push(doCross);
+//
+//              queryNodes.push(queryNode->getRight());
+//              targetNodes.push(targetNode);
+//              doCrosses.push(doCross);
+//            }
+//          } else {
+//            /* split target node only */
+//            queryNodes.push(queryNode);
+//            targetNodes.push(targetNode->getLeft());
+//            doCrosses.push(doCross);
+//
+//            queryNodes.push(queryNode);
+//            targetNodes.push(targetNode->getRight());
+//            doCrosses.push(doCross);
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
 
-  BOOST_AUTO(root, tree.getRoot());
-  p.clear();
-  if (root != NULL) {
-    std::stack<node_type> queryNodes;
-    std::stack<node_type> targetNodes;
-    std::stack<bool> doCrosses; // for query equals target tree optimisations
-
-    locatable_temp_vector<ON_HOST,real>::type x(X.size2());
-    int i, j;
-    bool doCross;
-    double d;
-
-    queryNodes.push(root);
-    targetNodes.push(root);
-    doCrosses.push(false);
-    
-    while (!queryNodes.empty()) {
-      BOOST_AUTO(queryNode, queryNodes.top());
-      BOOST_AUTO(targetNode, targetNodes.top());
-      queryNodes.pop();
-      targetNodes.pop();
-      doCross = doCrosses.top();
-      doCrosses.pop();
-
-      if (queryNode->isLeaf() && targetNode->isLeaf()) {
-        i = queryNode->getIndex();
-        j = targetNode->getIndex();
-        x = row(X, i);
-        axpy(-1.0, row(X, j), x);
-        d = K.logDensity(x);
-        p(i) += CUDA_EXP(lw(j) + d);
-        if (doCross) {
-          p(j) += CUDA_EXP(lw(i) + d);
-        }
-      } else if (queryNode->isLeaf() && targetNode->isPrune()) {
-        i = queryNode->getIndex();
-        const std::vector<int>& js = targetNode->getIndices();
-        for (j = 0; j < js.size(); j++) {
-          x = row(X, i);
-          axpy(-1.0, row(X, js[j]), x);
-          d = K.logDensity(x);
-          p(i) += CUDA_EXP(lw(js[j]) + d);
-          if (doCross) {
-            p(js[j]) += CUDA_EXP(lw(i) + d);
-          }
-        }
-      } else if (queryNode->isPrune() && targetNode->isLeaf()) {
-        const std::vector<int>& is = queryNode->getIndices();
-        j = targetNode->getIndex();
-        for (i = 0; i < is.size(); i++) {
-          x = row(X, is[i]);
-          axpy(-1.0, row(X, j), x);
-          d = K.logDensity(x);
-          p(is[i]) += CUDA_EXP(lw(j) + d);
-          if (doCross) {
-            p(j) += CUDA_EXP(lw(is[i]) + d);
-          }
-        }
-      } else if (queryNode->isPrune() && targetNode->isPrune()) {
-        const std::vector<int>& is = queryNode->getIndices();
-        const std::vector<int>& js = targetNode->getIndices();
-        for (i = 0; i < is.size(); i++) {
-          for (j = 0; j < js.size(); j++) {
-            x = row(X, is[i]);
-            axpy(-1.0, row(X, js[j]), x);
-            d = K.logDensity(x);
-            p(is[i]) += CUDA_EXP(lw(js[j]) + d);
-            if (doCross) {
-              p(js[j]) += CUDA_EXP(lw(is[i]) + d);
-            }
-          }
-        }
-      } else {
-        /* should we recurse? */
-        targetNode->difference(queryNode, x);
-        if (K(x) > 0.0) {
-          if (queryNode->isInternal()) {
-            if (targetNode->isInternal()) {
-              /* split both query and target nodes */
-              queryNodes.push(queryNode->getLeft());
-              targetNodes.push(targetNode->getLeft());
-              doCrosses.push(doCross);
-          
-              queryNodes.push(queryNode->getLeft());
-              targetNodes.push(targetNode->getRight());
-              if (queryNode == targetNode) {
-                /* symmetric, so just double left-right evaluation */
-                doCrosses.push(true);
-              } else {
-                /* asymmetric, so evaluate right-left separately */
-                doCrosses.push(doCross);
-
-                queryNodes.push(queryNode->getRight());
-                targetNodes.push(targetNode->getLeft());
-                doCrosses.push(doCross);
-              }
-              
-              queryNodes.push(queryNode->getRight());
-              targetNodes.push(targetNode->getRight());
-              doCrosses.push(doCross);
-            } else {
-              /* split query node only */
-              queryNodes.push(queryNode->getLeft());
-              targetNodes.push(targetNode);
-              doCrosses.push(doCross);
-          
-              queryNodes.push(queryNode->getRight());
-              targetNodes.push(targetNode);
-              doCrosses.push(doCross);
-            }
-          } else {
-            /* split target node only */
-            queryNodes.push(queryNode);
-            targetNodes.push(targetNode->getLeft());
-            doCrosses.push(doCross);
-        
-            queryNodes.push(queryNode);
-            targetNodes.push(targetNode->getRight());
-            doCrosses.push(doCross);
-          }
-        }
-      }
-    }
-  }
-}
-
-template<class M1, class V1, class K1, class V2>
-void bi::crossTreeDensities(KDTree<V1>& tree1, KDTree<V1>& tree2,
-    const M1 X1, const M1 X2, const V1 lw1, const V1 lw2, const K1& K, V2 p1,
-    V2 p2,  const bool clear) {
-  /* pre-condition */
-  assert (lw1.size() == X1.size1());
-  assert (lw2.size() == X2.size1());
-  assert (p1.size() == X1.size1());
-  assert (p2.size() == X2.size1());
-  assert (X1.size2() == X2.size2());
-  
-  typedef typename KDTree<V1>::node_type node_type;
-
-  BOOST_AUTO(root1, tree1.getRoot());
-  BOOST_AUTO(root2, tree2.getRoot());
-  if (clear) {
-    p1.clear();
-    p2.clear();
-  }
-  if (root1 != NULL && root2 != NULL) {
-    std::stack<node_type> nodes1;
-    std::stack<node_type> nodes2;
-
-    locatable_temp_vector<ON_HOST,real>::type x(X1.size2());
-    int i, j;
-    double d;
-
-    nodes1.push(root1);
-    nodes2.push(root2);
-    
-    while (!nodes1.empty()) {
-      BOOST_AUTO(node1, nodes1.top());
-      BOOST_AUTO(node2, nodes2.top());
-      nodes1.pop();
-      nodes2.pop();
-
-      if (node1->isLeaf() && node2->isLeaf()) {
-        i = node1->getIndex();
-        j = node2->getIndex();
-        x = row(X1, i);
-        axpy(-1.0, row(X2,j), x);
-        d = K.logDensity(x);
-        p1(i) += CUDA_EXP(lw2(j) + d);
-        p2(j) += CUDA_EXP(lw1(i) + d);
-      } else if (node1->isLeaf() && node2->isPrune()) {
-        i = node1->getIndex();
-        const std::vector<int>& js = node2->getIndices();
-        for (j = 0; j < js.size(); ++j) {
-          x = row(X1, i);
-          axpy(-1.0, row(X2, js[j]), x);
-          d = K.logDensity(x);
-          p1(i) += CUDA_EXP(lw2(js[j]) + d);
-          p2(js[j]) += CUDA_EXP(lw1(i) + d);
-        }
-      } else if (node1->isPrune() && node2->isLeaf()) {
-        const std::vector<int>& is = node1->getIndices();
-        j = node2->getIndex();
-        for (i = 0; i < is.size(); ++i) {
-          x = row(X1, is[i]);
-          axpy(-1.0, row(X2, j), x);
-          d = K.logDensity(x);
-          p1(is[i]) += CUDA_EXP(lw2(j) + d);
-          p2(j) += CUDA_EXP(lw1(is[i]) + d);
-        }
-      } else if (node1->isPrune() && node2->isPrune()) {
-        const std::vector<int>& is = node1->getIndices();
-        const std::vector<int>& js = node2->getIndices();
-        for (i = 0; i < is.size(); ++i) {
-          for (j = 0; j < js.size(); ++j) {
-            x = row(X1, is[i]);
-            axpy(-1.0, row(X2, js[j]), x);
-            d = K(x);
-            p1(is[i]) += CUDA_EXP(lw2(js[j]) + d);
-            p2(js[j]) += CUDA_EXP(lw1(is[i]) + d);
-          }
-        }
-      } else {
-        /* should we recurse? */
-        node2->difference(node1, x);
-        if (K(x) > 0.0) {
-          if (node1->isInternal()) {
-            if (node2->isInternal()) {
-              /* split both query and target nodes */
-              nodes1.push(node1->getLeft());
-              nodes2.push(node2->getLeft());
-          
-              nodes1.push(node1->getLeft());
-              nodes2.push(node2->getRight());
-
-              nodes1.push(node1->getRight());
-              nodes2.push(node2->getLeft());
-              
-              nodes1.push(node1->getRight());
-              nodes2.push(node2->getRight());
-            } else {
-              /* split query node only */
-              nodes1.push(node1->getLeft());
-              nodes2.push(node2);
-          
-              nodes1.push(node1->getRight());
-              nodes2.push(node2);
-            }
-          } else {
-            /* split target node only */
-            nodes1.push(node1);
-            nodes2.push(node2->getLeft());
-        
-            nodes1.push(node1);
-            nodes2.push(node2->getRight());
-          }
-        }
-      }
-    }
-  }
-}
+//template<class M1, class V1, class K1, class V2>
+//void bi::crossTreeDensities(KDTree<V1>& tree1, KDTree<V1>& tree2,
+//    const M1 X1, const M1 X2, const V1 lw1, const V1 lw2, const K1& K, V2 p1,
+//    V2 p2,  const bool clear) {
+//  /* pre-condition */
+//  assert (lw1.size() == X1.size1());
+//  assert (lw2.size() == X2.size1());
+//  assert (p1.size() == X1.size1());
+//  assert (p2.size() == X2.size1());
+//  assert (X1.size2() == X2.size2());
+//
+//  typedef typename KDTree<V1>::node_type node_type;
+//
+//  BOOST_AUTO(root1, tree1.getRoot());
+//  BOOST_AUTO(root2, tree2.getRoot());
+//  if (clear) {
+//    p1.clear();
+//    p2.clear();
+//  }
+//  if (root1 != NULL && root2 != NULL) {
+//    std::stack<node_type> nodes1;
+//    std::stack<node_type> nodes2;
+//
+//    locatable_temp_vector<ON_HOST,real>::type x(X1.size2());
+//    int i, j;
+//    double d;
+//
+//    nodes1.push(root1);
+//    nodes2.push(root2);
+//
+//    while (!nodes1.empty()) {
+//      BOOST_AUTO(node1, nodes1.top());
+//      BOOST_AUTO(node2, nodes2.top());
+//      nodes1.pop();
+//      nodes2.pop();
+//
+//      if (node1->isLeaf() && node2->isLeaf()) {
+//        i = node1->getIndex();
+//        j = node2->getIndex();
+//        x = row(X1, i);
+//        axpy(-1.0, row(X2,j), x);
+//        d = K.logDensity(x);
+//        p1(i) += CUDA_EXP(lw2(j) + d);
+//        p2(j) += CUDA_EXP(lw1(i) + d);
+//      } else if (node1->isLeaf() && node2->isPrune()) {
+//        i = node1->getIndex();
+//        const std::vector<int>& js = node2->getIndices();
+//        for (j = 0; j < js.size(); ++j) {
+//          x = row(X1, i);
+//          axpy(-1.0, row(X2, js[j]), x);
+//          d = K.logDensity(x);
+//          p1(i) += CUDA_EXP(lw2(js[j]) + d);
+//          p2(js[j]) += CUDA_EXP(lw1(i) + d);
+//        }
+//      } else if (node1->isPrune() && node2->isLeaf()) {
+//        const std::vector<int>& is = node1->getIndices();
+//        j = node2->getIndex();
+//        for (i = 0; i < is.size(); ++i) {
+//          x = row(X1, is[i]);
+//          axpy(-1.0, row(X2, j), x);
+//          d = K.logDensity(x);
+//          p1(is[i]) += CUDA_EXP(lw2(j) + d);
+//          p2(j) += CUDA_EXP(lw1(is[i]) + d);
+//        }
+//      } else if (node1->isPrune() && node2->isPrune()) {
+//        const std::vector<int>& is = node1->getIndices();
+//        const std::vector<int>& js = node2->getIndices();
+//        for (i = 0; i < is.size(); ++i) {
+//          for (j = 0; j < js.size(); ++j) {
+//            x = row(X1, is[i]);
+//            axpy(-1.0, row(X2, js[j]), x);
+//            d = K(x);
+//            p1(is[i]) += CUDA_EXP(lw2(js[j]) + d);
+//            p2(js[j]) += CUDA_EXP(lw1(is[i]) + d);
+//          }
+//        }
+//      } else {
+//        /* should we recurse? */
+//        node2->difference(node1, x);
+//        if (K(x) > 0.0) {
+//          if (node1->isInternal()) {
+//            if (node2->isInternal()) {
+//              /* split both query and target nodes */
+//              nodes1.push(node1->getLeft());
+//              nodes2.push(node2->getLeft());
+//
+//              nodes1.push(node1->getLeft());
+//              nodes2.push(node2->getRight());
+//
+//              nodes1.push(node1->getRight());
+//              nodes2.push(node2->getLeft());
+//
+//              nodes1.push(node1->getRight());
+//              nodes2.push(node2->getRight());
+//            } else {
+//              /* split query node only */
+//              nodes1.push(node1->getLeft());
+//              nodes2.push(node2);
+//
+//              nodes1.push(node1->getRight());
+//              nodes2.push(node2);
+//            }
+//          } else {
+//            /* split target node only */
+//            nodes1.push(node1);
+//            nodes2.push(node2->getLeft());
+//
+//            nodes1.push(node1);
+//            nodes2.push(node2->getRight());
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
 
 #endif

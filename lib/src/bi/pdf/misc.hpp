@@ -714,7 +714,7 @@ void bi::distance(const M1 X, const real h, M2 D) {
     for (i = 0; i <= j; ++i) {
       *d = row(X, i);
       axpy(-1.0, row(X, j), *d);
-      D(i, j) = K(dot(*d, *d));
+      D(i, j) = K(dot(*d));
     }
   }
   delete d;

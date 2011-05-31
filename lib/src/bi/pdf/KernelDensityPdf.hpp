@@ -298,8 +298,8 @@ real bi::KernelDensityPdf<V1,M1,S1,K1>::density(const V2 x) {
   BOOST_AUTO(z, temp_vector<V2>(x.size()));
   BOOST_AUTO(d, temp_vector<V2>(x.size()));
 
-  KDTreeNode<V1>* node = tree->getRoot();
-  std::stack<KDTreeNode<V1>*> nodes;
+  KDTreeNode<V1,M1>* node = tree->getRoot();
+  std::stack<KDTreeNode<V1,M1>*> nodes;
   double p = 0.0;
   int i;
 
@@ -350,8 +350,8 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::densities(const M2 X, V2 p) {
   *Z = X;
 
   standardise(*this, *Z);
-  KDTree<V1> queryTree(*Z, S1());
-  dualTreeDensity(queryTree, *this->tree, *Z, this->X, lw, K, p);
+  KDTree<V1,M1> queryTree(*Z, S1());
+  dualTreeDensity(queryTree, *this->tree, K, p);
   scal(this->invZ/W, p);
 
   synchronize();
@@ -402,7 +402,7 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::init() {
   matrix_scal(a, X);
 
   /* build kd tree */
-  tree = new KDTree<V1>(X, S1());
+  tree = new KDTree<V1,M1>(X, lw, S1());
 
   delete w;
 }

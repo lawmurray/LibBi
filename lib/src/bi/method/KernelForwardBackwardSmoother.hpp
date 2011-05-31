@@ -626,7 +626,9 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smoothUsingBackwa
     kernel_density_type f1(*fX1, *flw1, K);
 
     /* smooth samples at t(n) */
-    sp.samples(rng, *sX);
+    //sp.samples(rng, *sX);
+    //qlw->clear();
+    *qlw = *slw;
 
     /* propagate smooth samples back */
     s.get(D_NODE) = columns(*sX, 0, ND);
@@ -643,11 +645,11 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smoothUsingBackwa
     if (haveParameters) {
       columns(*qX1, ND + NC, NP) = theta.get(P_NODE);
     }
-    qlw->clear();
     kernel_density_type q(*qX1, *qlw, K);
 
     /* proposal samples at t(n - 1) */
     q.samples(rng, *qX1);
+    qlw->clear();
 
     /* propagate proposal samples forward */
     s.get(D_NODE) = columns(*qX1, 0, ND);
@@ -765,7 +767,7 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::correct(
 
   BOOST_AUTO(lws, temp_vector<V1>(slw.size()));
 
-  slw.clear();
+  //slw.clear();
 
   f1.logDensities(qX1, *lws);
   axpy(1.0, *lws, slw);

@@ -20,16 +20,26 @@ namespace bi {
  *
  * @ingroup kd
  *
- * @tparam V1 Vector type.
+ * @tparam M1 Matrix type.
  *
  * @section KDTreeNode_serialization Serialization
  *
  * This class supports serialization through the Boost.Serialization
  * library.
  */
-template<class V1>
+template<class V1, class M1>
 class KDTreeNode {
 public:
+  /**
+   * Vector reference type.
+   */
+  typedef typename M1::vector_reference_type vector_reference_type;
+
+  /**
+   * Matrix reference type.
+   */
+  typedef typename M1::matrix_reference_type matrix_reference_type;
+
   /**
    * Default constructor.
    *
@@ -41,22 +51,28 @@ public:
   /**
    * Construct leaf node.
    *
+   * @tparam V2 Vector type.
+   * @tparam M2 Matrix type.
+   *
    * @param X Samples.
    * @param i Index of component in the weighted sample set.
    * @param depth Depth of the node in the tree.
    */
-  template<class M2>
-  KDTreeNode(const M2 X, const int i, const int depth);
+  template<class V2, class M2>
+  KDTreeNode(const M2 X, const V2 lw, const int i, const int depth);
 
   /**
    * Construct prune node.
+   *
+   * @tparam V2 Vector type.
+   * @tparam M2 Matrix type.
    *
    * @param X Samples.
    * @param is Indices of components in the weighted sample set.
    * @param depth Depth of the node in the tree.
    */
-  template<class M2>
-  KDTreeNode(const M2 X, const std::vector<int>& is, const int depth);
+  template<class V2, class M2>
+  KDTreeNode(const M2 X, const V2 lw, const std::vector<int>& is, const int depth);
 
   /**
    * Construct internal node.
@@ -65,12 +81,12 @@ public:
    * @param right Right child node. Caller releases ownership.
    * @param depth Depth of the node in the tree.
    */
-  KDTreeNode(KDTreeNode<V1>* left, KDTreeNode<V1>* right, const int depth);
+  KDTreeNode(KDTreeNode<V1,M1>* left, KDTreeNode<V1,M1>* right, const int depth);
 
   /**
    * Copy constructor.
    */
-  KDTreeNode(const KDTreeNode<V1>& o);
+  KDTreeNode(const KDTreeNode<V1,M1>& o);
 
   /**
    * Destructor.
@@ -80,7 +96,7 @@ public:
   /**
    * Assignment operator.
    */
-  KDTreeNode<V1>& operator=(const KDTreeNode<V1>& o);
+  KDTreeNode<V1,M1>& operator=(const KDTreeNode<V1,M1>& o);
 
   /**
    * Is the node a leaf node?
@@ -111,23 +127,56 @@ public:
   int getDepth() const;
 
   /**
-   * Get the number of components encompassed by the node.
-   *
-   * @return The number of components encompassed by the node.
+   * Size of the node (number of variables).
    */
   int getSize() const;
 
   /**
-   * Get the component index of a leaf node.
+   * Get the number of components encompassed by the node.
    *
-   * @return The component index, if a leaf node.
+   * @return The number of components encompassed by the node.
+   */
+  int getCount() const;
+
+  /**
+   * Get value.
+   *
+   * @return Value of the node, if a leaf node.
+   */
+  const vector_reference_type getValue() const;
+
+  /**
+   * Get all values.
+   *
+   * @return Values of the node, if a prune node.
+   */
+  const matrix_reference_type getValues() const;
+
+  /**
+   * Get log-weight.
+   *
+   * @return Log-weight of the node, if a leaf node.
+   */
+  typename vector_reference_type::value_type getLogWeight() const;
+
+  /**
+   * Get all log-weights.
+   *
+   * @return Log-weights of the node, if a prune node.
+   */
+  const vector_reference_type getLogWeights() const;
+
+  /**
+   * Get index.
+   *
+   * @return Index of the node into original data set, if a leaf node.
    */
   int getIndex() const;
 
   /**
-   * Get the component indices of a pruned node.
+   * Get indices.
    *
-   * @return The component indices, if a pruned node.
+   * @return Indices of the node into original data set, if a prune node.
    */
   const std::vector<int>& getIndices() const;
 
@@ -136,24 +185,24 @@ public:
    *
    * @return The left child of an internal node.
    */
-  const KDTreeNode<V1>* getLeft() const;
+  const KDTreeNode<V1,M1>* getLeft() const;
 
   /**
    * Get the right child of the node.
    *
    * @return The right child of an internal node.
    */
-  const KDTreeNode<V1>* getRight() const;
+  const KDTreeNode<V1,M1>* getRight() const;
 
   /**
    * Get lower bound on the node.
    */
-  const V1& getLower() const;
+  const vector_reference_type getLower() const;
   
   /**
    * Get upper bound on the node.
    */
-  const V1& getUpper() const;
+  const vector_reference_type getUpper() const;
 
   /**
    * Find the coordinate difference of the node from a single point.
@@ -175,6 +224,7 @@ public:
    * Find the coordinate difference of the node from another node.
    *
    * @tparam V2 Vector type.
+   * @tparam M2 Matrix type.
    * @tparam V3 Vector type.
    *
    * @param node Query node.
@@ -184,8 +234,8 @@ public:
    * Note that the difference may contain negative values. Usually a norm
    * would subsequently be applied to obtain a scalar distance.
    */
-  template<class V2, class V3>
-  void difference(const KDTreeNode<V2>& node, V3& result) const;
+  template<class V2, class M2, class V3>
+  void difference(const KDTreeNode<V2,M2>& node, V3& result) const;
 
 private:
   /**
@@ -198,29 +248,29 @@ private:
   };
 
   /**
-   * The lower bound.
+   * Data (samples, bounds, depending on type).
    */
-  V1 lower;
+  M1 X;
 
   /**
-   * The upper bound.
+   * Log-weights.
    */
-  V1 upper;
+  V1 lw;
 
   /**
-   * Component indices for prune node.
+   * Indices.
    */
   std::vector<int> is;
 
   /**
    * The left child for an internal node.
    */
-  KDTreeNode<V1>* left;
+  KDTreeNode<V1,M1>* left;
 
   /**
    * The right child for an internal node.
    */
-  KDTreeNode<V1>* right;
+  KDTreeNode<V1,M1>* right;
 
   /**
    * Node depth.
@@ -230,12 +280,7 @@ private:
   /**
    * Number of components encompassed by the node.
    */
-  int size;
-
-  /**
-   * Component index for leaf node.
-   */
-  int i;
+  int count;
 
   /**
    * Node type.
@@ -264,35 +309,42 @@ private:
 };
 }
 
-template<class V1>
-inline bi::KDTreeNode<V1>::KDTreeNode() {
+template<class V1, class M1>
+inline bi::KDTreeNode<V1,M1>::KDTreeNode() {
   //
 }
 
-template<class V1>
-template<class M2>
-inline bi::KDTreeNode<V1>::KDTreeNode(const M2 X, const int i,
-    const int depth) : lower(X.size2()), upper(X.size2()), left(NULL),
-    right(NULL), depth(depth), size(1), i(i), type(LEAF) {
-  lower = row(X,i);
-  upper = row(X,i);
+template<class V1, class M1>
+template<class V2, class M2>
+inline bi::KDTreeNode<V1,M1>::KDTreeNode(const M2 X, const V2 lw, const int i,
+    const int depth) : X(X.size2(), 1), lw(1), is(1), left(NULL),
+    right(NULL), depth(depth), count(1), type(LEAF) {
+  column(this->X,0) = row(X,i);
+  this->lw(0) = lw(i);
+  this->is[0] = i;
 }
 
-template<class V1>
-template<class M2>
-bi::KDTreeNode<V1>::KDTreeNode(const M2 X, const std::vector<int>& is,
-    const int depth) : lower(X.size2()), upper(X.size2()), is(is),
-    left(NULL), right(NULL), depth(depth), size(is.size()), i(0),
-    type(PRUNE) {
+template<class V1, class M1>
+template<class V2, class M2>
+bi::KDTreeNode<V1,M1>::KDTreeNode(const M2 X, const V2 lw, const std::vector<int>& is,
+    const int depth) : X(X.size2(), (int)is.size() + 2), lw((int)is.size()), is(is),
+    left(NULL), right(NULL), depth(depth), count(is.size()), type(PRUNE) {
   /* pre-condition */
   assert (is.size() > 0);
-  assert (!M2::on_device);
 
   int i, j;
-  lower = row(X, is[0]);
-  upper = row(X, is[0]);
+  BOOST_AUTO(lower, column(this->X, this->X.size2() - 2));
+  BOOST_AUTO(upper, column(this->X, this->X.size2() - 1));
+  BOOST_AUTO(x, column(this->X, 0));
+
+  x = row(X, is[0]);
+  this->lw(0) = lw(is[0]);
+  lower = x;
+  upper = x;
   for (i = 1; i < (int)is.size(); ++i) {
-    BOOST_AUTO(x, row(X, is[i]));
+    BOOST_AUTO(x, column(this->X, i));
+    x = row(X, is[i]);
+    this->lw(i) = lw(is[i]);
     for (j = 0; j < x.size(); ++j) {
       if (x(j) < lower(j)) {
         lower(j) = x(j);
@@ -303,131 +355,188 @@ bi::KDTreeNode<V1>::KDTreeNode(const M2 X, const std::vector<int>& is,
   }
 }
 
-template<class V1>
-bi::KDTreeNode<V1>::KDTreeNode(KDTreeNode<V1>* left, KDTreeNode<V1>* right,
-    const int depth) : lower(left->getLower().size()), upper(right->getUpper().size()),
-    left(left), right(right), depth(depth), size(left->getSize() + right->getSize()),
-    i(0), type(INTERNAL) {
+template<class V1, class M1>
+bi::KDTreeNode<V1,M1>::KDTreeNode(KDTreeNode<V1,M1>* left, KDTreeNode<V1,M1>* right,
+    const int depth) : X(left->getSize(), 2), left(left), right(right),
+    depth(depth), count(left->getCount() + right->getCount()),
+    type(INTERNAL) {
   int i;
-  lower = left->getLower();
-  upper = left->getUpper();
-  for (i = 0; i < lower.size(); ++i) {
-    if (right->getLower()(i) < lower(i)) {
-      lower(i) = right->getLower()(i);
-    } else if (right->getUpper()(i) > upper(i)) {
-      upper(i) = right->getUpper()(i);
-    }
+  BOOST_AUTO(lower, column(this->X, 0));
+  BOOST_AUTO(upper, column(this->X, 1));
+  BOOST_AUTO(leftLower, left->getLower());
+  BOOST_AUTO(leftUpper, left->getUpper());
+  BOOST_AUTO(rightLower, right->getLower());
+  BOOST_AUTO(rightUpper, right->getUpper());
+
+  for (i = 0; i < getSize(); ++i) {
+    lower(i) = std::min(leftLower(i), rightLower(i));
+    upper(i) = std::max(leftUpper(i), rightUpper(i));
   }
 }
 
-template<class V1>
-bi::KDTreeNode<V1>::KDTreeNode(const KDTreeNode<V1>& o) :
-    lower(o.lower.size()), upper(o.upper.size()), is(o.is.size()) {
+template<class V1, class M1>
+bi::KDTreeNode<V1,M1>::KDTreeNode(const KDTreeNode<V1,M1>& o) :
+    X(o.X.size1(), o.X.size2()), lw(o.lw.size()), is(o.is.size()) {
   this->operator=(o);
 }
 
-template<class V1>
-bi::KDTreeNode<V1>::~KDTreeNode() {
+template<class V1, class M1>
+bi::KDTreeNode<V1,M1>::~KDTreeNode() {
   delete left;
   delete right;
 }
 
-template<class V1>
-bi::KDTreeNode<V1>& bi::KDTreeNode<V1>::operator=(const KDTreeNode<V1>& o) {
+template<class V1, class M1>
+bi::KDTreeNode<V1,M1>& bi::KDTreeNode<V1,M1>::operator=(const KDTreeNode<V1,M1>& o) {
   type = o.type;
   depth = o.depth;
-  size = o.size;
-  i = o.i;
+  count = o.count;
+  X = o.X;
+  lw = o.lw;
   is = o.is;
-  lower = o.lower;
-  upper = o.upper;
 
   KDTreeNode *left, *right;
   if (getLeft() == NULL) {
     left = NULL;
   } else {
-    left = new KDTreeNode<V1>(*o.getLeft());
+    left = new KDTreeNode<V1,M1>(*o.getLeft());
   }
   if (getRight() == NULL) {
     right = NULL;
   } else {
-    right = new KDTreeNode<V1>(*o.getRight());
+    right = new KDTreeNode<V1,M1>(*o.getRight());
   }
 
   return *this;
 }
 
-template<class V1>
-inline int bi::KDTreeNode<V1>::getIndex() const {
-  /* pre-condition */
-  assert (type == LEAF);
-
-  return i;
-}
-
-template<class V1>
-inline const std::vector<int>& bi::KDTreeNode<V1>::getIndices() const {
-  return is;
-}
-
-template<class V1>
-inline const bi::KDTreeNode<V1>* bi::KDTreeNode<V1>::getLeft() const {
+template<class V1, class M1>
+inline const bi::KDTreeNode<V1,M1>* bi::KDTreeNode<V1,M1>::getLeft() const {
   return left;
 }
 
-template<class V1>
-inline const bi::KDTreeNode<V1>* bi::KDTreeNode<V1>::getRight() const {
+template<class V1, class M1>
+inline const bi::KDTreeNode<V1,M1>* bi::KDTreeNode<V1,M1>::getRight() const {
   return right;
 }
 
-template<class V1>
-inline int bi::KDTreeNode<V1>::getDepth() const {
+template<class V1, class M1>
+inline int bi::KDTreeNode<V1,M1>::getDepth() const {
   return depth;
 }
 
-template<class V1>
-inline int bi::KDTreeNode<V1>::getSize() const {
-  return size;
+template<class V1, class M1>
+inline int bi::KDTreeNode<V1,M1>::getCount() const {
+  return count;
 }
 
-template<class V1>
-inline bool bi::KDTreeNode<V1>::isLeaf() const {
+template<class V1, class M1>
+inline int bi::KDTreeNode<V1,M1>::getSize() const {
+  return X.size1();
+}
+
+template<class V1, class M1>
+inline bool bi::KDTreeNode<V1,M1>::isLeaf() const {
   return type == LEAF;
 }
 
-template<class V1>
-inline bool bi::KDTreeNode<V1>::isPrune() const {
+template<class V1, class M1>
+inline bool bi::KDTreeNode<V1,M1>::isPrune() const {
   return type == PRUNE;
 }
 
-template<class V1>
-inline bool bi::KDTreeNode<V1>::isInternal() const {
+template<class V1, class M1>
+inline bool bi::KDTreeNode<V1,M1>::isInternal() const {
   return type == INTERNAL;
 }
 
-template<class V1>
-inline const V1& bi::KDTreeNode<V1>::getLower() const {
-  return lower;
+template<class V1, class M1>
+inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getLower() const {
+  switch (type) {
+  case LEAF:
+    return column(X, 0);
+  case PRUNE:
+    return column(X, X.size2() - 2);
+  case INTERNAL:
+    return column(X, 0);
+  }
 }
 
-template<class V1>
-inline const V1& bi::KDTreeNode<V1>::getUpper() const {
-  return upper;
+template<class V1, class M1>
+inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getUpper() const {
+  switch (type) {
+  case LEAF:
+    return column(X, 0);
+  case PRUNE:
+    return column(X, X.size2() - 1);
+  case INTERNAL:
+    return column(X, 1);
+  }
 }
 
-template<class V1>
-template<class V2, class V3>
-inline void bi::KDTreeNode<V1>::difference(const V2 x, V3& result) const {
+template<class V1, class M1>
+inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getValue() const {
   /* pre-condition */
-  assert (x.size() == lower.size());
+  assert (type == LEAF);
+
+  return column(X, 0);
+}
+
+template<class V1, class M1>
+inline const typename bi::KDTreeNode<V1,M1>::matrix_reference_type bi::KDTreeNode<V1,M1>::getValues() const {
+  /* pre-condition */
+  assert (type == PRUNE);
+
+  return columns(X, 0, X.size2() - 2);
+}
+
+template<class V1, class M1>
+inline typename bi::KDTreeNode<V1,M1>::vector_reference_type::value_type bi::KDTreeNode<V1,M1>::getLogWeight() const {
+  /* pre-condition */
+  assert (type == LEAF);
+
+  return lw(0);
+}
+
+template<class V1, class M1>
+inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getLogWeights() const {
+  /* pre-condition */
+  assert (type == PRUNE);
+
+  return lw;
+}
+
+template<class V1, class M1>
+inline int bi::KDTreeNode<V1,M1>::getIndex() const {
+  /* pre-condition */
+  assert (type == LEAF);
+
+  return is[0];
+}
+
+template<class V1, class M1>
+inline const std::vector<int>& bi::KDTreeNode<V1,M1>::getIndices() const {
+  /* pre-condition */
+  assert (type == PRUNE);
+
+  return is;
+}
+
+template<class V1, class M1>
+template<class V2, class V3>
+inline void bi::KDTreeNode<V1,M1>::difference(const V2 x, V3& result) const {
+  /* pre-condition */
+  assert (x.size() == X.size2());
   assert (x.inc() == 1);
 
   if (isLeaf()) {
     result = x;
-    axpy(-1.0, lower, result);
+    axpy(-1.0, getValue(), result);
   } else {
     int i;
     real val, low, high;
+    BOOST_AUTO(lower, getLower());
+    BOOST_AUTO(upper, getUpper());
 
     for (i = 0; i < lower.size(); ++i) {
       val = x(i);
@@ -446,23 +555,24 @@ inline void bi::KDTreeNode<V1>::difference(const V2 x, V3& result) const {
   }
 }
 
-template<class V1>
-template<class V2, class V3>
-inline void bi::KDTreeNode<V1>::difference(const KDTreeNode<V2>& node, V3& result)
-    const {
+template<class V1, class M1>
+template<class V2, class M2, class V3>
+inline void bi::KDTreeNode<V1,M1>::difference(const KDTreeNode<V2,M2>& node,
+    V3& result) const {
   /* pre-conditions */
-  assert (node.getLower().size() == lower.size());
-  assert (node.getLower().size() == result.size());
+  assert (node.getSize() == getSize());
   assert (result.inc() == 1);
 
   if (isLeaf()) {
-    node.difference(lower, result);
+    node.difference(getLower(), result);
   } else {
     int i;
     real high, low;
 
-    BOOST_AUTO(nodeUpper, node.getUpper());
+    BOOST_AUTO(lower, getLower());
+    BOOST_AUTO(upper, getUpper());
     BOOST_AUTO(nodeLower, node.getLower());
+    BOOST_AUTO(nodeUpper, node.getUpper());
 
     for (i = 0; i < lower.size(); ++i) {
       high = nodeUpper(i);
@@ -483,35 +593,32 @@ inline void bi::KDTreeNode<V1>::difference(const KDTreeNode<V2>& node, V3& resul
 }
 
 #ifndef __CUDACC__
-template<class V1>
+template<class V1, class M1>
 template<class Archive>
-void bi::KDTreeNode<V1>::save(Archive& ar,
+void bi::KDTreeNode<V1,M1>::save(Archive& ar,
     const int version) const {
   ar & type;
   ar & depth;
-  ar & size;
-  ar & i;
-  ar & is;
+  ar & count;
   if (isInternal()) {
     ar & left;
     ar & right;
   }
-  ar & lower;
-  ar & upper;
+  ar & X;
+  ar & lw;
+  ar & is;
 }
 
-template<class V1>
+template<class V1, class M1>
 template<class Archive>
-void bi::KDTreeNode<V1>::load(Archive& ar,
+void bi::KDTreeNode<V1,M1>::load(Archive& ar,
     const int version) {
   delete left;
   delete right;
 
   ar & type;
   ar & depth;
-  ar & size;
-  ar & i;
-  ar & is;
+  ar & count;
   if (isInternal()) {
     ar & left;
     ar & right;
@@ -519,8 +626,9 @@ void bi::KDTreeNode<V1>::load(Archive& ar,
     left = NULL;
     right = NULL;
   }
-  ar & lower;
-  ar & upper;
+  ar & X;
+  ar & lw;
+  ar & is;
 }
 #endif
 
