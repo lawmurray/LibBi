@@ -62,9 +62,11 @@ enum FilterType {
  * Compute next time for given delta.
  *
  * @param t Current time.
- * @param delta Delta.
+ * @param delta Time step.
  *
- * @return Next time that is a multiple of @p delta. Current time if
+ * @return If @p delta is positive, next time that is a multiple of @p delta.
+ * If @p delta is negative, previous time that is a multiple of
+ * <tt>abs(delta)</tt>.
  */
 real next_step(const real t, const real delta);
 
@@ -72,7 +74,7 @@ real next_step(const real t, const real delta);
  * Number of time steps in time.
  *
  * @param t Time.
- * @param delta Time step.
+ * @param delta Time step (positive).
  *
  * @return Number of multiples of @p delta on the interval <tt>[0,t]</tt>.
  */
@@ -85,7 +87,9 @@ int num_steps(const real t, const real delta);
  * @param tj End of interval.
  * @param delta Time step.
  *
- * @return Number of multiples of @p delta on the interval <tt>[ti,tj)</tt>.
+ * @return If @p delta is positive, number of multiples of @p delta on the
+ * interval <tt>[ti,tj)</tt>. If @p delta is negative, number of multiples of
+ * <tt>abs(delta)</tt> on the interval <tt>[tj,ti)</tt>;
  */
 int num_steps(const real ti, const real tj, const real delta);
 
@@ -112,7 +116,7 @@ inline int bi::num_steps(const real t, const real delta) {
 }
 
 inline int bi::num_steps(const real ti, const real tj, const real delta) {
-  return num_steps(tj, delta) - num_steps(ti, delta);
+  return std::abs(num_steps(tj, delta) - num_steps(ti, delta));
 }
 
 template<class T, class InputIterator>

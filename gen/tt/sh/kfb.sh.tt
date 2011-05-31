@@ -21,6 +21,13 @@ LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
 source $ROOT/config.sh
 export OMP_NUM_THREADS
 
+if `test "$INIT_FILENAME" != ""`
+then
+    INIT_FILE=$DATA_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
+
 if `test "$FORCE_FILENAME" != ""`
 then
     FORCE_FILE=$DATA_DIR/$FORCE_FILENAME
@@ -32,7 +39,8 @@ INPUT_FILE=$RESULTS_DIR/pf${SUFFIX}.nc.$ID
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
 $ROOT/build/kfb --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
-    --b-abs=$B_ABS --b-rel=$B_REL --seed=$SEED --input-file=$INPUT_FILE \
-    --force-file=$FORCE_FILE --force-ns=$FORCE_NS --output-file=$OUTPUT_FILE \
+    --b-abs=$B_ABS --b-rel=$B_REL --seed=$SEED --init-file=$INIT_FILE \
+    --input-file=$INPUT_FILE --force-file=$FORCE_FILE --init-ns=$INIT_NS \
+    --force-ns=$FORCE_NS --output-file=$OUTPUT_FILE \
     --output=$OUTPUT --time=$TIME --include-parameters=$INCLUDE_PARAMETERS \
     --shrink=$SHRINK

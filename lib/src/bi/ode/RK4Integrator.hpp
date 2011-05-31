@@ -70,6 +70,9 @@ public:
 
 template<class B, unsigned SH>
 void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnxt) {
+  /* pre-condition */
+  assert (std::abs(tnxt - tcur) > 0.0);
+
   #ifdef USE_SSE
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,sse_const_host,sse_host>::type pa;
@@ -81,7 +84,7 @@ void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnx
   #pragma omp parallel
   {
     int id, p;
-    real t, h;
+    real t, h, sgn = (tcur <= tnxt) ? 1.0 : -1.0;
     sse_real t1, h1;
     V1 pax(0);
     sse_real x0[N], x1[N], x2[N], x3[N], x4[N];
@@ -90,14 +93,14 @@ void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnx
     for (p = 0; p < P; p += BI_SSE_SIZE) {
       pax.p = p;
       t = tcur;
-      h = h_h0;
+      h = sgn*h_h0;
 
       /* integrate */
-      while (t < tnxt) {
+      while (sgn*t < sgn*tnxt) {
         /* initialise */
-        if (t + REAL(1.01)*h - tnxt > REAL(0.0)) {
+        if (sgn*(t + REAL(1.01)*h - tnxt) > REAL(0.0)) {
           h = tnxt - t;
-          if (h <= REAL(0.0)) {
+          if (sgn*h <= REAL(0.0)) {
             t = tnxt;
             break;
           }
@@ -143,6 +146,7 @@ void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnx
 
   #pragma omp parallel
   {
+    const real sgn = (tcur <= tnxt) ? 1.0 : -1.0;
     int id, p;
     real t, h;
     V1 pax(0);
@@ -152,14 +156,14 @@ void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnx
     for (p = 0; p < P; ++p) {
       pax.p = p;
       t = tcur;
-      h = h_h0;
+      h = sgn*h_h0;
 
       /* integrate */
-      while (t < tnxt) {
+      while (sgn*t < sgn*tnxt) {
         /* initialise */
-        if (t + REAL(1.01)*h - tnxt > REAL(0.0)) {
+        if (sgn*(t + REAL(1.01)*h - tnxt) > REAL(0.0)) {
           h = tnxt - t;
-          if (h <= REAL(0.0)) {
+          if (sgn*h <= REAL(0.0)) {
             t = tnxt;
             break;
           }

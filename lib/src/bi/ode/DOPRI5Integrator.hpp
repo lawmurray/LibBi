@@ -75,12 +75,9 @@ public:
 
 template<class B, unsigned SH>
 void bi::DOPRI5Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnxt) {
-  /**
-   * @todo Copy each trajectory, or group of trajectories for SSE, into
-   * local state object of single or sse_size number of trajectories, bound
-   * to global host variables. This way cache miss only at the start of
-   * each trajectory. Make global host variables thread local if necessary.
-   */
+  /* pre-condition */
+  assert (tcur < tnxt);
+
   #ifdef USE_SSE
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,sse_const_host,sse_host>::type pa;

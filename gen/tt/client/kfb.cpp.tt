@@ -10,8 +10,6 @@
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/ode.hpp"
 #include "bi/random/Random.hpp"
-#include "bi/method/StratifiedResampler.hpp"
-#include "bi/method/KernelResampler.hpp"
 #include "bi/method/KernelForwardBackwardSmoother.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleSmootherNetCDFBuffer.hpp"
@@ -43,8 +41,10 @@ int main(int argc, char* argv[]) {
     DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
+    INIT_NS_ARG,
     FORCE_NS_ARG,
     SEED_ARG,
+    INIT_FILE_ARG,
     INPUT_FILE_ARG,
     FORCE_FILE_ARG,
     OUTPUT_FILE_ARG,
@@ -57,8 +57,8 @@ int main(int argc, char* argv[]) {
   };
   real DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3, B_ABS = 0.0,
       B_REL = 1.0, B;
-  int FORCE_NS = 0, SEED = 0;
-  std::string INPUT_FILE, FORCE_FILE, OUTPUT_FILE;
+  int INIT_NS = 0, FORCE_NS = 0, SEED = 0;
+  std::string INIT_FILE, INPUT_FILE, FORCE_FILE, OUTPUT_FILE;
   bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false, SHRINK = true;
   int c, option_index;
 
@@ -66,8 +66,10 @@ int main(int argc, char* argv[]) {
       {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
+      {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
       {"seed", required_argument, 0, SEED_ARG },
+      {"init-file", required_argument, 0, INIT_FILE_ARG },
       {"input-file", required_argument, 0, INPUT_FILE_ARG },
       {"force-file", required_argument, 0, FORCE_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
@@ -94,11 +96,17 @@ int main(int argc, char* argv[]) {
       case RTOLER_ARG:
         RTOLER = atof(optarg);
         break;
+      case INIT_NS_ARG:
+        INIT_NS = atoi(optarg);
+        break;
       case FORCE_NS_ARG:
         FORCE_NS = atoi(optarg);
         break;
       case SEED_ARG:
         SEED = atoi(optarg);
+        break;
+      case INIT_FILE_ARG:
+        INIT_FILE = std::string(optarg);
         break;
       case INPUT_FILE_ARG:
         INPUT_FILE = std::string(optarg);
@@ -154,7 +162,7 @@ int main(int argc, char* argv[]) {
   /* inputs */
   ParticleFilterNetCDFBuffer in(m, INPUT_FILE, NetCDFBuffer::READ_ONLY,
       INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
-  SparseInputNetCDFBuffer *inForce = NULL;
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
   if (!FORCE_FILE.empty()) {
     inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
   }
@@ -175,6 +183,14 @@ int main(int argc, char* argv[]) {
     out = NULL;
   }
 
+  /* initialise */
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read0(P_NODE, theta.get(P_NODE));
+    inInit->read0(D_NODE, s.get(D_NODE));
+    inInit->read0(C_NODE, s.get(C_NODE));
+  }
+
   /* smooth */
   if (B_ABS > 0.0) {
     B = B_ABS;
@@ -185,17 +201,14 @@ int main(int argc, char* argv[]) {
   MedianPartitioner partitioner;
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
-    StratifiedResampler base(rng);
-    KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, B, SHRINK);
     BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_OWN>::create(
         m, rng, K, partitioner, DELTA, inForce, out)));
-    smoother->smooth(theta, s, &in, &resam);
+    smoother->smooth(theta, s, &in);
     delete smoother;
   } else {
-    StratifiedResampler resam(rng);
     BOOST_AUTO(smoother, (KernelForwardBackwardSmootherFactory<LOCATION,STATIC_SHARED>::create(
         m, rng, K, partitioner, DELTA, inForce, out)));
-    smoother->smooth(theta, s, &in, &resam);
+    smoother->smooth(theta, s, &in);
     delete smoother;
   }
 
@@ -205,6 +218,7 @@ int main(int argc, char* argv[]) {
   }
 
   delete inForce;
+  delete inInit;
   delete out;
 
   return 0;

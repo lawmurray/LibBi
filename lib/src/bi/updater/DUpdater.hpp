@@ -63,6 +63,7 @@ void bi::DUpdater<B,SH>::update(const real t, const real tnxt,
   const int P = s.size();
 
   if (N > 0) {
+    assert (t <= tnxt);
     bind(s);
     #pragma omp parallel
     {
@@ -92,6 +93,7 @@ void bi::DUpdater<B,SH>::update(const real t, const real tnxt,
   const int P = s.size();
 
   if (N > 0) {
+    assert (t <= tnxt);
     bind(s);
     #pragma omp parallel
     {

@@ -53,6 +53,20 @@ void rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x);
 template<class V1, class M1, class M2>
 void standardise(const ExpGaussianPdf<V1,M1>& p, M2 X);
 
+/**
+ * Normalise log-weights.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param[in,out] lws Log-weights.
+ *
+ * Renormalises log-weights for numerical range.
+ */
+template<class V1>
+void renormalise(V1 lws);
+
 
 /**
  * Condition (log-)Gaussian distribution.
@@ -507,6 +521,15 @@ void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
 
   synchronize();
   delete mu;
+}
+
+template<class V1>
+void bi::renormalise(V1 lws) {
+  thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(), std::log(0.0));
+  real mx = *bi::max(lws.begin(), lws.end());
+  if (std::isfinite(mx)) {
+    thrust::transform(lws.begin(), lws.end(), lws.begin(), subtract_constant_functor<real>(mx));
+  }
 }
 
 template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,

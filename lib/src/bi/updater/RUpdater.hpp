@@ -85,8 +85,8 @@ void bi::RUpdater<B>::update(const real t, const real tnxt, State<L>& s) {
       } else if (all_uniform_variates<S>::value) {
         rng.uniforms(matrix_as_vector(X), -0.5, 0.5);
       } else if (all_wiener_increments<S>::value) {
-        if (tnxt - t > 0.0) {
-          rng.gaussians(matrix_as_vector(X), 0.0, std::sqrt(tnxt - t));
+        if (std::abs(tnxt - t) > 0.0) {
+          rng.gaussians(matrix_as_vector(X), 0.0, std::sqrt(std::abs(tnxt - t)));
         } else {
           X.clear();
         }

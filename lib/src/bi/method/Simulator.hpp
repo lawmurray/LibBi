@@ -444,35 +444,36 @@ template<class B, class U1, class IO1, class IO2, bi::Location CL, bi::StaticHan
 template<bi::Location L>
 void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
   /* pre-condition */
-  assert (tnxt > state.t);
+  assert (std::abs(tnxt - state.t) > 0.0);
 
+  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
-  if (haveFUpdater && fUpdater->hasNext() && fUpdater->getTime() >= ti) {
+  if (haveFUpdater && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
     tf = fUpdater->getTime();
   } else {
-    tf = tnxt + 1.0;
+    tf = tnxt + sgn*1.0;
   }
   if (m.getNumNodes(D_NODE) > 0 || (m.getNumNodes(R_NODE) && haveRUpdater)) {
-    td = next_step(ti, delta);
+    td = next_step(ti, sgn*delta);
   } else {
-    td = tnxt + 1.0;
+    td = tnxt + sgn*1.0;
   }
 
   do { // over intermediate stopping points
-    tj = std::min(tf, std::min(td, tnxt));
+    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
 
-    if (ti >= tf) {
+    if (sgn*ti >= sgn*tf) {
       /* update f-net */
       fUpdater->update(s);
-      if (fUpdater->hasNext() && fUpdater->getTime() > tf) {
+      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
         tf = fUpdater->getTime();
       } else {
-        tf = tnxt + 1.0;
+        tf = tnxt + sgn*1.0;
       }
     }
 
-    if (ti >= td) {
-      td = next_step(td + 0.5*delta, delta);
+    if (sgn*ti >= sgn*td) {
+      td = next_step(td + 0.5*sgn*delta, sgn*delta);
 
       /* update r-net */
       if (haveRUpdater) {
@@ -487,7 +488,7 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
     cUpdater.update(ti, tj, s);
 
     ti = tj;
-  } while (ti < tnxt);
+  } while (sgn*ti < sgn*tnxt);
   state.t = tnxt;
 
   /* post-condition */

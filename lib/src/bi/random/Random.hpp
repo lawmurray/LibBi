@@ -94,7 +94,7 @@ public:
    * according to the non-normalised probabilities given in @c ps.
    */
   template<class V1>
-  typename V1::difference_type multinomial(const V1& ps);
+  typename V1::difference_type multinomial(const V1 ps);
 
   /**
    * Generate a random integer from a uniform distribution over a
@@ -167,6 +167,20 @@ public:
   void gaussians(V1 x, const typename V1::value_type mu = 0.0,
       const typename V1::value_type sigma = 1.0);
 
+  /**
+   * Generate random numbers from a multinomial distribution with given
+   * probabilities.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param ps Log-probabilities. Need not be normalised.
+   * @param[out] xs Random indices between @c 0 and <tt>ps.size() - 1</tt>,
+   * selected according to the non-normalised probabilities given in @c ps.
+   */
+  template<class V1, class V2>
+  void multinomials(const V1 ps, V2 xs);
+
 private:
   /**
    * Type of random number generator on host.
@@ -219,7 +233,7 @@ inline unsigned bi::Random::bernoulli(const T1 p) {
 }
 
 template<class V1>
-inline typename V1::difference_type bi::Random::multinomial(const V1& ps) {
+inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
   /* pre-condition */
   assert (ps.size() > 0);
 
@@ -337,6 +351,28 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
       }
     }
   }
+}
+
+template<class V1, class V2>
+inline void bi::Random::multinomials(const V1 ps, V2 xs) {
+  /* pre-condition */
+  assert (ps.size() > 0);
+
+  typedef boost::uniform_real<typename V1::value_type> dist_t;
+
+  BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
+  exclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
+
+  dist_t dist(0, *(Ps->end() - 1));
+  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
+
+  int i, p;
+  for (i = 0; i < xs.size(); ++i) {
+    p = thrust::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
+    xs(i) = p;
+  }
+
+  delete Ps;
 }
 
 #endif

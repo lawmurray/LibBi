@@ -74,6 +74,9 @@ public:
 
 template<class B, unsigned SH>
 void bi::RK43Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnxt) {
+  /* pre-condition */
+  assert (tcur < tnxt);
+
   #ifdef USE_SSE
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,sse_const_host,sse_host>::type pa;

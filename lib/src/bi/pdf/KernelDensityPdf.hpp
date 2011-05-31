@@ -39,6 +39,9 @@ namespace bi {
  * @section Concepts
  *
  * #concept::Pdf
+ *
+ * @todo Review for log-variable support
+ * @todo Review for arbitrary kernel support (assumes Gaussian in many cases)
  */
 template<class V1 = host_vector<real>, class M1 = host_matrix<real>,
     class S1 = MedianPartitioner, class K1 = FastGaussianKernel>
@@ -92,14 +95,14 @@ public:
   /**
    * @copydoc concept::Pdf::sample()
    */
-//  template<class V2>
-//  void sample(Random& rng, V2 x);
+  template<class V2>
+  void sample(Random& rng, V2 x);
 
   /**
    * @copydoc concept::Pdf::samples()
    */
-//  template<class M2>
-//  void samples(Random& rng, M2 X);
+  template<class M2>
+  void samples(Random& rng, M2 X);
 
   /**
    * @copydoc concept::Pdf::density()
@@ -248,17 +251,42 @@ bi::KernelDensityPdf<V1,M1,S1,K1>&
   return *this;
 }
 
-//template<class V1, class M1, class S1, class K1>
-//template<class V2>
-//inline void bi::KernelDensityPdf<V1,M1,S1,K1>::sample(Random& rng, V2 x) {
-//
-//}
+template<class V1, class M1, class S1, class K1>
+template<class V2>
+inline void bi::KernelDensityPdf<V1,M1,S1,K1>::sample(Random& rng, V2 x) {
+  /* pre-condition */
+  assert (x.size() == size());
 
-//template<class V1, class M1, class S1, class K1>
-//template<class M2>
-//void bi::KernelDensityPdf<V1,M1,S1,K1>::samples(Random& rng, M2 X) {
-//
-//}
+  int p = rng.multinomial(lw);
+  rng.gaussians(x);
+  scal(K.bandwidth(), x);
+  axpy(1.0, row(this->X, p), x);
+  trmv(1.0, std(), x, 'R', 'U');
+  axpy(1.0, mean(), x);
+  exp_vector(x, this->logs);
+}
+
+template<class V1, class M1, class S1, class K1>
+template<class M2>
+void bi::KernelDensityPdf<V1,M1,S1,K1>::samples(Random& rng, M2 X) {
+  /* pre-condition */
+  assert (X.size2() == size());
+
+  BOOST_AUTO(ps, host_temp_vector<real>(X.size1()));
+  int i;
+
+  rng.gaussians(matrix_as_vector(X));
+  matrix_scal(K.bandwidth(), X);
+  rng.multinomials(lw, *ps);
+  for (i = 0; i < X.size1(); ++i) {
+    axpy(1.0, row(this->X, (*ps)(i)), row(X, i));
+  }
+  trmm(1.0, std(), X, 'R', 'U');
+  add_rows(X, mean());
+  exp_columns(X, this->logs);
+
+  delete ps;
+}
 
 template<class V1, class M1, class S1, class K1>
 template<class V2>
@@ -322,7 +350,7 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::densities(const M2 X, V2 p) {
   *Z = X;
 
   standardise(*this, *Z);
-  KDTree<V1> queryTree(*Z, S1()); ///@todo Doesn't handle log-variables.
+  KDTree<V1> queryTree(*Z, S1());
   dualTreeDensity(queryTree, *this->tree, *Z, this->X, lw, K, p);
   scal(this->invZ/W, p);
 
@@ -362,8 +390,6 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::init() {
   W = bi::sum(w->begin(), w->end(), REAL(0.0));
 
   /* compute mean and covariance */
-  ///@todo Reuse W computation in mean() and cov() below?
-  ///@todo Log-variables.
   bi::mean(X, *w, ExpGaussianPdf<V1,M1>::mean());
   bi::cov(X, *w, ExpGaussianPdf<V1,M1>::mean(), ExpGaussianPdf<V1,M1>::cov());
   ExpGaussianPdf<V1,M1>::init();

@@ -13,7 +13,7 @@
 
 #include "Simulator.hpp"
 #include "../buffer/SimulatorNetCDFBuffer.hpp"
-#include "../updater/RUpdater.hpp"
+#include "../pdf/KernelDensityPdf.hpp"
 #include "../kd/FastGaussianKernel.hpp"
 #include "../kd/MedianPartitioner.hpp"
 
@@ -77,6 +77,36 @@ template<class B, class IO1, class IO2, class K1 = FastGaussianKernel,
 class KernelForwardBackwardSmoother {
 public:  
   /**
+   * Proposal types.
+   */
+  enum proposal_type {
+    /**
+     * Use filter density as proposal.
+     */
+    FILTER,
+
+    /**
+     * Use backward propagation as proposal.
+     */
+    BACKWARD
+  };
+
+  /**
+   * Vector type.
+   */
+  typedef host_vector<real> vector_type;
+
+  /**
+   * Matrix type.
+   */
+  typedef host_matrix<real> matrix_type;
+
+  /**
+   * Kernel density type.
+   */
+  typedef KernelDensityPdf<vector_type,matrix_type,S1,K1> kernel_density_type;
+
+  /**
    * Constructor.
    *
    * @param m Model.
@@ -112,17 +142,18 @@ public:
    */
   //@{
   /**
-   * Smooth output of ParticleFilter.
+   * Smooth output of particle filter.
    *
-   * @tparam IO2 #concept::ParticleFilterBuffer type.
+   * @tparam IO3 #concept::ParticleFilterBuffer type.
    *
    * @param theta Static state.
    * @param s State.
    * @param in Output of particle filter.
-   * @param resam Resampler.
+   * @param type Proposal type.
    */
-  template<bi::Location L, class IO3, class R>
-  void smooth(Static<L>& theta, State<L>& s, IO3* in, R* resam);
+  template<bi::Location L, class IO3>
+  void smooth(Static<L>& theta, State<L>& s, IO3* in,
+      const proposal_type type = BACKWARD);
 
   /**
    * @copydoc #concept::Filter::reset()
@@ -146,13 +177,13 @@ public:
    *
    * @param theta Static state.
    * @param in Output of particle filter.
-   * @param[out] X3 Uncorrected filter samples at end time.
-   * @param[out] lw3 Uncorrected filter log-weights at end time.
-   * @param[out] X4 Smoothed samples at end time.
-   * @param[out] lw4 Smoothed log-weights at end time.
+   * @param[out] fX2 Uncorrected filter samples at end time.
+   * @param[out] flw2 Uncorrected filter log-weights at end time.
+   * @param[out] sX Smoothed samples at end time.
+   * @param[out] slw Smoothed log-weights at end time.
    */
   template<Location L, class IO3, class M1, class V1>
-  void init(Static<L>& theta, IO3* in, M1 X2, V1 lw2, M1 X3, V1 lw3);
+  void init(Static<L>& theta, IO3* in, M1 fX2, V1 flw2, M1 sX, V1 slw);
 
   /**
    * Simulate importance samples forward.
@@ -165,6 +196,47 @@ public:
    */
   template<bi::Location L>
   void predict(const real T, Static<L>& theta, State<L>& s);
+
+  /**
+   * Compute smooth weights, where proposal samples drawn from filter
+   * density.
+   *
+   * @tparam Q1 Pdf type.
+   * @tparam Q2 Pdf type.
+   * @tparam M1 Matrix type.
+   * @tparam V1 Vector type.
+   *
+   * @param f2 Uncorrected (predicted) filter density at time \f$t(n)\f$.
+   * @param s Smooth density at time \f$t(n)\f$.
+   * @param qX2 Proposal samples propagated to time \f$t(n)\f$.
+   * @param[out] Smooth weights.
+   */
+  template<class Q1, class Q2, class M1, class V1>
+  void correct(Q1& f2, Q2& s, const M1 qX2, V1 slw);
+
+  /**
+   * Compute smooth weights, where proposal samples drawn from some arbitrary
+   * kernel density proposal.
+   *
+   * @tparam Q1 Pdf type.
+   * @tparam Q2 Pdf type.
+   * @tparam Q3 Pdf type.
+   * @tparam Q4 Pdf type.
+   * @tparam M1 Matrix type.
+   * @tparam V1 Vector type.
+   *
+   * @param f1 Filter density at time \f$t(n - 1)\f$.
+   * @param f2 Uncorrected (predicted) filter density at time \f$t(n)\f$.
+   * @param s Smooth density at time \f$t(n)\f$.
+   * @param q Proposal density at time \f$t(n - 1)\f$.
+   * @param qX1 Proposal samples at time \f$t(n - 1)\f$.
+   * @param qX2 Proposal samples propagated to time \f$t(n)\f$.
+   * @param[out] Smooth weights.
+   *
+   */
+  template<class Q1, class Q2, class Q3, class Q4, class M1, class V1>
+  void correct(Q1& f1, Q2& f2, Q3& s, Q4& q1, const M1 qX1, const M1 qX2,
+      V1 slw);
 
   /**
    * Correct to obtain smoothed weights.
@@ -223,6 +295,30 @@ public:
   //@}
 
 private:
+  /**
+   * Smooth output of particle filter using filter proposal.
+   *
+   * @tparam IO3 #concept::ParticleFilterBuffer type.
+   *
+   * @param theta Static state.
+   * @param s State.
+   * @param in Output of particle filter.
+   */
+  template<bi::Location L, class IO3>
+  void smoothUsingFilter(Static<L>& theta, State<L>& s, IO3* in);
+
+  /**
+   * Smooth output of particle filter using backward propagation proposal.
+   *
+   * @tparam IO3 #concept::ParticleFilterBuffer type.
+   *
+   * @param theta Static state.
+   * @param s State.
+   * @param in Output of particle filter.
+   */
+  template<bi::Location L, class IO3>
+  void smoothUsingBackward(Static<L>& theta, State<L>& s, IO3* in);
+
   /**
    * Model.
    */
@@ -318,8 +414,6 @@ struct KernelForwardBackwardSmootherFactory {
 };
 }
 
-#include "../pdf/KernelDensityPdf.hpp"
-
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
     bi::StaticHandling SH>
 bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::KernelForwardBackwardSmoother(
@@ -361,9 +455,24 @@ inline IO1* bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::getOutput(
 
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
     bi::StaticHandling SH>
-template<bi::Location L, class IO3, class R>
+template<bi::Location L, class IO3>
 void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smooth(
-    Static<L>& theta, State<L>& s, IO3* in, R* resam) {
+    Static<L>& theta, State<L>& s, IO3* in, const proposal_type proposalType) {
+  switch (proposalType) {
+  case FILTER:
+    smoothUsingFilter(theta, s, in);
+    break;
+  case BACKWARD:
+    smoothUsingBackward(theta, s, in);
+    break;
+  }
+}
+
+template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class IO3>
+void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smoothUsingFilter(
+    Static<L>& theta, State<L>& s, IO3* in) {
   /* pre-condition */
   assert (in != NULL);
   assert (in->size2() > 0);
@@ -374,115 +483,219 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smooth(
   const int P = in->size1();
   const int T = in->size2();
 
-  BOOST_AUTO(X0, temp_matrix<M1>(P,M));
-  BOOST_AUTO(X1, temp_matrix<M1>(P,M));
-  BOOST_AUTO(X2, temp_matrix<M1>(P,M));
-  BOOST_AUTO(X3, temp_matrix<M1>(P,M));
-  BOOST_AUTO(X4, temp_matrix<M1>(P,M));
-  BOOST_AUTO(lw0, temp_vector<V1>(P));
-  BOOST_AUTO(lw1, temp_vector<V1>(P));
-  BOOST_AUTO(lw2, temp_vector<V1>(P));
-  BOOST_AUTO(lw3, temp_vector<V1>(P));
-  BOOST_AUTO(lw4, temp_vector<V1>(P));
-  BOOST_AUTO(as, host_temp_vector<int>(P));
+  BOOST_AUTO(qX1, temp_matrix<M1>(P,M)); // proposal samples at t(n - 1)
+  BOOST_AUTO(qX2, temp_matrix<M1>(P,M)); // proposal samples at t(n)
+  BOOST_AUTO(fX1, temp_matrix<M1>(P,M)); // corrected filter samples at t(n - 1)
+  BOOST_AUTO(fX2, temp_matrix<M1>(P,M)); // uncorrected (predicted) fiter samples at t(n)
+  BOOST_AUTO(sX, temp_matrix<M1>(P,M));  // smooth samples at t(n)
+
+  BOOST_AUTO(flw1, temp_vector<V1>(P)); // corrected filter log-weights at t(n - 1)
+  BOOST_AUTO(flw2, temp_vector<V1>(P)); // uncorrected (predicted) filter log-weights at t(n)
+  BOOST_AUTO(slw, temp_vector<V1>(P));  // smooth log-weights at t(n)
+  BOOST_AUTO(qlw, temp_vector<V1>(P));  // proposal log-weights at t(n - 1)
 
   real tnxt;
   int n = T - 1, r;
-  init(theta, in, *X0, *lw0, *X1, *lw1);
-  output(n, *X1, *lw1);
+
+  init(theta, in, *fX1, *flw1, *qX1, *qlw);
+  output(n, *qX1, *qlw);
   while (n > 0) {
+    /* update time */
     tnxt = state.t;
     std::cerr << tnxt << ' ';
-
-    /* input */
     in->readTime(n - 1, state.t);
-    in->readState(D_NODE, n - 1, s.get(D_NODE));
-    in->readState(C_NODE, n - 1, s.get(C_NODE));
-    in->readState(R_NODE, n - 1, s.get(R_NODE));
-    if (haveParameters) {
-      in->readState(P_NODE, n - 1, theta.get(P_NODE));
-    }
-    in->readLogWeights(n, *lw0);
 
-    /* smooth samples and weights at t(n) */
-    X4->swap(*X1);
-    lw4->swap(*lw1);
+    /* smooth density at t(n) */
+    sX->swap(*qX1);
+    slw->swap(*qlw);
+    kernel_density_type sp(*sX, *slw, K);
 
-    /* uncorrected filter samples and weights at t(n) */
-    /**
-     * @todo Won't work with AuxiliaryParticleFilter, as after resampling,
-     * weights not necessarily uniform.
-     */
-    X3->swap(*X0);
+    /* uncorrected (predicted) filter density at t(n) */
+    fX2->swap(*fX1);
+    flw2->clear();
     in->readResample(n, r);
-    if (r) {
-      lw3->clear();
-    } else {
-      *lw3 = *lw0;
-    }
+    assert(r); ///@todo Don't require resample at all times
+    kernel_density_type f2(*fX2, *flw2, K);
 
-    /* pre-resampling filter samples at t(n - 1) */
-    columns(*X0, 0, ND) = s.get(D_NODE);
-    columns(*X0, ND, NC) = s.get(C_NODE);
+    /* filter density at t(n - 1) */
+    in->readState(D_NODE, n - 1, columns(*fX1, 0, ND));
+    in->readState(C_NODE, n - 1, columns(*fX1, ND, NC));
     if (haveParameters) {
-      columns(*X0, ND + NC, NP) = theta.get(P_NODE);
+      in->readState(P_NODE, n - 1, columns(*fX1, ND + NC, NP));
     }
+    in->readLogWeights(n - 1, *flw1);
+    kernel_density_type f1(*fX1, *flw1, K);
 
-    /* resample */
-    *lw1 = *lw0;
-    resample(theta, s, *lw1, *as, resam);
+    /* proposal samples at t(n - 1) */
+    *qX1 = *fX1;
+    f1.samples(rng, *qX1);
 
-    /* post-resampling filter samples at t(n - 1) */
-    columns(*X1, 0, ND) = s.get(D_NODE);
-    columns(*X1, ND, NC) = s.get(C_NODE);
+    /* propagate proposal samples forward */
+    s.get(D_NODE) = columns(*qX1, 0, ND);
+    s.get(C_NODE) = columns(*qX1, ND, NC);
     if (haveParameters) {
-      columns(*X1, ND + NC, NP) = theta.get(P_NODE);
+      theta.get(P_NODE) = columns(*qX1, ND + NC, NP);
     }
-
-    /* propagate */
     predict(tnxt, theta, s);
 
-    /* post-propagation filter samples at t(n) */
-    columns(*X2, 0, ND) = s.get(D_NODE);
-    columns(*X2, ND, NC) = s.get(C_NODE);
+    /* proposal samples at t(n) */
+    columns(*qX2, 0, ND) = s.get(D_NODE);
+    columns(*qX2, ND, NC) = s.get(C_NODE);
     if (haveParameters) {
-      columns(*X2, ND + NC, NP) = theta.get(P_NODE);
+      columns(*qX2, ND + NC, NP) = theta.get(P_NODE);
     }
 
     /* compute smoothed weights at t(n - 1) */
-    correct(*X3, *lw3, *X4, *lw4, *X2, *lw1);
+    correct(f2, sp, *qX2, *qlw);
 
     /* output */
-    output(n - 1, *X1, *lw1);
+    output(n - 1, *qX1, *qlw);
     --n;
   }
   synchronize();
   term(theta);
   std::cerr << std::endl;
 
-  delete X0;
-  delete X1;
-  delete X2;
-  delete X3;
-  delete X4;
-  delete lw0;
-  delete lw1;
-  delete lw2;
-  delete lw3;
-  delete lw4;
-  delete as;
+  delete qX1;
+  delete qX2;
+  delete fX1;
+  delete fX2;
+  delete sX;
+  delete flw1;
+  delete flw2;
+  delete slw;
+  delete qlw;
+}
+
+template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class IO3>
+void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::smoothUsingBackward(
+    Static<L>& theta, State<L>& s, IO3* in) {
+  /* pre-condition */
+  assert (in != NULL);
+  assert (in->size2() > 0);
+
+  typedef typename locatable_temp_matrix<L,real>::type M1;
+  typedef typename locatable_temp_vector<L,real>::type V1;
+
+  const int P = in->size1();
+  const int T = in->size2();
+
+  BOOST_AUTO(qX1, temp_matrix<M1>(P,M)); // proposal samples at t(n - 1)
+  BOOST_AUTO(qX2, temp_matrix<M1>(P,M)); // proposal samples at t(n)
+  BOOST_AUTO(fX1, temp_matrix<M1>(P,M)); // corrected filter samples at t(n - 1)
+  BOOST_AUTO(fX2, temp_matrix<M1>(P,M)); // uncorrected (predicted) fiter samples at t(n)
+  BOOST_AUTO(sX, temp_matrix<M1>(P,M));  // smooth samples at t(n)
+
+  BOOST_AUTO(flw1, temp_vector<V1>(P)); // corrected filter log-weights at t(n - 1)
+  BOOST_AUTO(flw2, temp_vector<V1>(P)); // uncorrected (predicted) filter log-weights at t(n)
+  BOOST_AUTO(slw, temp_vector<V1>(P));  // smooth log-weights at t(n)
+  BOOST_AUTO(qlw, temp_vector<V1>(P));  // proposal log-weights at t(n - 1)
+
+  real t, tnxt;
+  int n = T - 1, r;
+
+  init(theta, in, *fX1, *flw1, *qX1, *qlw);
+  output(n, *qX1, *qlw);
+  while (n > 0) {
+    /* update time */
+    tnxt = state.t;
+    std::cerr << tnxt << ' ';
+    in->readTime(n - 1, t);
+
+    /* smooth density at t(n) */
+    sX->swap(*qX1);
+    slw->swap(*qlw);
+    kernel_density_type sp(*sX, *slw, K);
+
+    /* uncorrected (predicted) filter density at t(n) */
+    fX2->swap(*fX1);
+    flw2->clear();
+    in->readResample(n, r);
+    assert(r); ///@todo Don't require resample at all times
+    kernel_density_type f2(*fX2, *flw2, K);
+
+    /* filter density at t(n - 1) */
+    in->readState(D_NODE, n - 1, columns(*fX1, 0, ND));
+    in->readState(C_NODE, n - 1, columns(*fX1, ND, NC));
+    if (haveParameters) {
+      in->readState(P_NODE, n - 1, columns(*fX1, ND + NC, NP));
+    }
+    in->readLogWeights(n - 1, *flw1);
+    kernel_density_type f1(*fX1, *flw1, K);
+
+    /* smooth samples at t(n) */
+    sp.samples(rng, *sX);
+
+    /* propagate smooth samples back */
+    s.get(D_NODE) = columns(*sX, 0, ND);
+    s.get(C_NODE) = columns(*sX, ND, NC);
+    if (haveParameters) {
+      theta.get(P_NODE) = columns(*sX, ND + NC, NP);
+    }
+    predict(t, theta, s);
+    state.t = t;
+
+    /* proposal density at t(n - 1) */
+    columns(*qX1, 0, ND) = s.get(D_NODE);
+    columns(*qX1, ND, NC) = s.get(C_NODE);
+    if (haveParameters) {
+      columns(*qX1, ND + NC, NP) = theta.get(P_NODE);
+    }
+    qlw->clear();
+    kernel_density_type q(*qX1, *qlw, K);
+
+    /* proposal samples at t(n - 1) */
+    q.samples(rng, *qX1);
+
+    /* propagate proposal samples forward */
+    s.get(D_NODE) = columns(*qX1, 0, ND);
+    s.get(C_NODE) = columns(*qX1, ND, NC);
+    if (haveParameters) {
+      theta.get(P_NODE) = columns(*qX1, ND + NC, NP);
+    }
+    predict(tnxt, theta, s);
+
+    /* proposal samples at t(n) */
+    columns(*qX2, 0, ND) = s.get(D_NODE);
+    columns(*qX2, ND, NC) = s.get(C_NODE);
+    if (haveParameters) {
+      columns(*qX2, ND + NC, NP) = theta.get(P_NODE);
+    }
+
+    /* compute smoothed weights at t(n - 1) */
+    correct(f1, f2, sp, q, *qX1, *qX2, *qlw);
+
+    /* output */
+    output(n - 1, *qX1, *qlw);
+    --n;
+  }
+  synchronize();
+  term(theta);
+  std::cerr << std::endl;
+
+  delete qX1;
+  delete qX2;
+  delete fX1;
+  delete fX2;
+  delete sX;
+  delete flw1;
+  delete flw2;
+  delete slw;
+  delete qlw;
 }
 
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L, class IO3, class M1, class V1>
 void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::init(
-    Static<L>& theta, IO3* in, M1 X3, V1 lw3, M1 X4, V1 lw4) {
+    Static<L>& theta, IO3* in, M1 fX2, V1 flw2, M1 sX, V1 slw) {
   /* pre-condition */
   assert (in != NULL);
-  assert (X3.size1() == X4.size1() && X3.size2() == X4.size2());
-  assert (lw3.size() == X3.size1());
-  assert (lw4.size() == X4.size1());
+  assert (fX2.size1() == sX.size1() && fX2.size2() == sX.size2());
+  assert (flw2.size() == fX2.size1());
+  assert (slw.size() == sX.size1());
 
   sim.init(theta);
 
@@ -490,13 +703,14 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::init(
   int n = in->size2() - 1;
   in->readTime(n, state.t);
   in->readResample(n, r);
-  in->readState(D_NODE, n, columns(X4, 0, ND));
-  in->readState(C_NODE, n, columns(X4, ND, NC));
+  in->readState(D_NODE, n, columns(sX, 0, ND));
+  in->readState(C_NODE, n, columns(sX, ND, NC));
   if (SH == STATIC_OWN) {
-    in->readState(P_NODE, n, columns(X4, ND + NC, NP));
+    in->readState(P_NODE, n, columns(sX, ND + NC, NP));
   }
-  X3 = X4;
-  in->readLogWeights(n, lw4);
+  fX2 = sX;
+  in->readLogWeights(n, slw);
+  flw2.clear();
 }
 
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
@@ -513,42 +727,60 @@ void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::predict(
 
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
     bi::StaticHandling SH>
-template<class M1, class V1>
+template<class Q1, class Q2, class M1, class V1>
 void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::correct(
-    const M1 X3, const V1 lw3, const M1 X4, const V1 lw4, const M1 X2, V1 lw1) {
+    Q1& f2, Q2& s, const M1 qX2, V1 slw) {
   /* pre-conditions */
-  assert (lw1.size() == X2.size1());
-  assert (lw3.size() == X3.size1());
-  assert (lw4.size() == X4.size1());
-  assert (X2.size1() == X3.size1() && X2.size2() == X3.size2());
-  assert (X2.size1() == X4.size1() && X2.size2() == X4.size2());
+  assert (qX2.size1() == slw.size());
+  assert (qX2.size2() == f2.size());
+  assert (qX2.size2() == s.size());
 
-  const int P = X2.size1();
-  BOOST_AUTO(lp3, temp_vector<V1>(P));
-  BOOST_AUTO(lp4, temp_vector<V1>(P));
-  
-  /* build kernel density estimates */
-  KernelDensityPdf<host_vector<real>,host_matrix<real>,S1,K1> uncorrected(X3, lw3, K, logs);
-  KernelDensityPdf<host_vector<real>,host_matrix<real>,S1,K1> smooth(X4, lw4, K, logs);
-  
-  /* perform kernel density evaluations */
-  uncorrected.logDensities(X2, *lp3);
-  smooth.logDensities(X2, *lp4);
+  BOOST_AUTO(lws, temp_vector<V1>(slw.size()));
 
-  /* compute smoothed weights */
-  axpy(1.0, *lp4, lw1);
-  axpy(-1.0, *lp3, lw1);
+  slw.clear();
 
-  /* renormalise */
-  thrust::replace_if(lw1.begin(), lw1.end(), is_not_finite_functor<real>(), std::log(0.0));
-  real mx = *bi::max(lw1.begin(), lw1.end());
-  if (std::isfinite(mx)) {
-    thrust::transform(lw1.begin(), lw1.end(), lw1.begin(), subtract_constant_functor<real>(mx));
-  }
+  f2.logDensities(qX2, *lws);
+  axpy(-1.0, *lws, slw);
 
-  synchronize();
-  delete lp3;
-  delete lp4;
+  s.logDensities(qX2, *lws);
+  axpy(1.0, *lws, slw);
+
+  renormalise(slw);
+  delete lws;
+}
+
+template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,
+    bi::StaticHandling SH>
+template<class Q1, class Q2, class Q3, class Q4, class M1, class V1>
+void bi::KernelForwardBackwardSmoother<B,IO1,IO2,K1,S1,CL,SH>::correct(
+    Q1& f1, Q2& f2, Q3& s, Q4& q, const M1 qX1, const M1 qX2, V1 slw) {
+  /* pre-conditions */
+  assert (qX1.size1() == slw.size());
+  assert (qX2.size1() == slw.size());
+  assert (qX1.size2() == qX2.size2());
+  assert (qX1.size2() == f1.size());
+  assert (qX2.size2() == f2.size());
+  assert (qX2.size2() == s.size());
+  assert (qX1.size2() == q.size());
+
+  BOOST_AUTO(lws, temp_vector<V1>(slw.size()));
+
+  slw.clear();
+
+  f1.logDensities(qX1, *lws);
+  axpy(1.0, *lws, slw);
+
+  f2.logDensities(qX2, *lws);
+  axpy(-1.0, *lws, slw);
+
+  s.logDensities(qX2, *lws);
+  axpy(1.0, *lws, slw);
+
+  q.logDensities(qX1, *lws);
+  axpy(-1.0, *lws, slw);
+
+  renormalise(slw);
+  delete lws;
 }
 
 template<class B, class IO1, class IO2, class K1, class S1, bi::Location CL,

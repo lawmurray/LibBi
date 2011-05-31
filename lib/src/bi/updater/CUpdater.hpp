@@ -55,7 +55,7 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt,
     State<ON_HOST>& s) {
   typedef typename B::CTypeList S;
 
-  if (net_size<B,S>::value && t < tnxt) {
+  if (net_size<B,S>::value && std::abs(t - tnxt) > 0.0) {
     bind(s);
     #if defined(USE_ODE_DOPRI5)
     DOPRI5Integrator<ON_HOST,B,(unsigned)SH>::stepTo(t, tnxt);
