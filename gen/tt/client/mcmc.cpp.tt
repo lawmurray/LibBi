@@ -288,9 +288,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(q, init_proposal(m, PROPOSAL_TYPE, PROPOSAL_FILE, S2, INCLUDE_INITIAL));
 
   /* start */
-  do {
-    sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
-  } while (mcmc->getPrior().density(x) <= 0.0);
+  sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
   
   /* sample */
   if (ADAPT) {

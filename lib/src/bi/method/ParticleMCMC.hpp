@@ -830,9 +830,7 @@ void bi::ParticleMCMC<B,IO1,CL>::propose(Q1& q) {
   /* pre-condition */
   assert (q.size() == M);
 
-  do {
-    q.sample(rng, this->x1.theta, this->x2.theta);
-  } while (p0(this->x2.theta) <= 0.0);
+  q.sample(rng, this->x1.theta, this->x2.theta);
   x2.lq = q.logDensity(this->x1.theta, this->x2.theta);
   x1.lq = q.logDensity(this->x2.theta, this->x1.theta);
 }

@@ -389,7 +389,7 @@ real bi::FactoredPdfVisitor<S,I>::acceptDensity(const V& x,
   real p;
   if (factor != NULL) {
     size = factor->size();
-    p =  factor->density(subrange(x, offset, size));
+    p = factor->density(subrange(x, offset, size));
   } else {
     p = 1.0;
   }
