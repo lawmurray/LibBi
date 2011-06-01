@@ -722,7 +722,7 @@ void bi::SparseInputNetCDFBuffer::readSparse(const NodeType type,
     BI_ASSERT(ret, "Inconvertible type reading " << var->name());
 
     /* copy into place using coordinates */
-    if ((npDim == NULL || var->get_dim(j) != npDim) && X.size1() > 1) {
+    if ((npDim == NULL || var->get_dim(j - 1) != npDim) && X.size1() > 1) {
       /* copy each single value to all trajectories */
       for (j = 0; j < buf->size(); ++j) {
         col = start + block.index(j);
@@ -730,9 +730,9 @@ void bi::SparseInputNetCDFBuffer::readSparse(const NodeType type,
       }
     } else {
       /* copy each single value to single trajectory */
-      for (j = 0; j < buf->size(); j += X.size1()) {
+      for (j = 0; j < block.size(); ++j) {
         col = start + block.index(j);
-        column(X, col) = subrange(*buf, j, X.size1());
+        column(X, col) = subrange(*buf, j*X.size1(), X.size1());
       }
     }
     if (M2::on_device) {
