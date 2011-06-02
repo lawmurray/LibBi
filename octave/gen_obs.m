@@ -18,9 +18,10 @@
 %
 % @bullet{ @var{outvar} Name of variable in output file to create.}
 %
-% @bullet{ @var{p} Index along the @t{np} dimension of the
-% input file, indicating the trajectory to disturb to create
+% @bullet{ @var{p} Trajectory index, indicating that to perturb to create
 % observations.}
+%
+% @bullet{ @var{ts} Time indices.}
 %
 % @bullet{ @var{S} List of standard deviations of disturbance
 % noise. Each value produces a corresponding record along the @t{ns}
@@ -35,9 +36,9 @@
 % @end itemize
 % @end deftypefn
 %
-function gen_obs (in, invar, out, outvar, p, S, logn, coords)
+function gen_obs (in, invar, out, outvar, p, ts, S, logn, coords)
     % check arguments
-    if (nargin < 6 || nargin > 8)
+    if (nargin < 7 || nargin > 9)
         print_usage ();
     end
     if (!ischar (invar))
@@ -52,12 +53,10 @@ function gen_obs (in, invar, out, outvar, p, S, logn, coords)
     if (!columns (S) == 1)
         error ('S must be scalar or column vector');
     end
-    if nargin < 7
-        logn = 0;
-        coords = [];
-        M = 1;
-    end
     if nargin < 8
+        logn = 0;
+    end
+    if nargin < 9
         coords = [];
         M = 1;
     elseif !ismatrix (coords) || columns (coords) > 3
@@ -69,16 +68,19 @@ function gen_obs (in, invar, out, outvar, p, S, logn, coords)
     % input file
     nci = netcdf(in, 'r');
     T = nci('nr')(:);
-   
+    if length(ts) == 0
+        ts = [1:T];
+    end
+    
     % output file
-    nco = netcdf(out, 'c');
+    nco = netcdf(out, 'nc');
 
     % dimensions
     rdim = sprintf('nr_%s', outvar);
     cdim = sprintf('nc_%s', outvar);
     
     nco('ns') = length (S);
-    nco(rdim) = M*T;
+    nco(rdim) = M*length(ts);
     if columns (coords) > 1
         nco(cdim) = columns (coords);
     end
@@ -86,23 +88,23 @@ function gen_obs (in, invar, out, outvar, p, S, logn, coords)
     % time variable
     tvar = sprintf('time_%s', outvar);
     nco{tvar} = ncdouble(rdim);
-    nco{tvar}(:) = repmat(nci{'time'}(:)', M, 1)(:);
+    nco{tvar}(:) = repmat(nci{'time'}(ts)', M, 1)(:);
     
     % coordinate variable
     cvar = sprintf('coord_%s', outvar);
     if columns (coords) > 1
         nco{cvar} = ncdouble(rdim, cdim);
-        nco{cvar}(:,:) = repmat(coords - 1, T, 1);
+        nco{cvar}(:,:) = repmat(coords - 1, length(ts), 1);
     elseif columns (coords) > 0
         nco{cvar} = ncdouble(rdim);
-        nco{cvar}(:) = repmat(coords(:) - 1, T, 1);
+        nco{cvar}(:) = repmat(coords(:) - 1, length(ts), 1);
     end
 
     % construct data
     nco{outvar} = ncdouble('ns', rdim);
     for j = 1:M
         coord = coords(j,:);
-        x = read_var(nci, invar, coord, p)';
+        x = read_var(nci, invar, coord, p, ts)';
         u = normrnd(0.0, 1.0, 1, length(x));
         U = repmat(u, length(S), 1);
         X = repmat(x, length(S), 1);

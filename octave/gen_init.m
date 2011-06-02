@@ -42,7 +42,7 @@ function gen_init (in, invar, out, outvar, p)
     nci = netcdf(in, 'r');
     
     % output file
-    nco = netcdf(out, 'w');
+    nco = netcdf(out, 'nc');
     
     % construct dimensions if necessary
     ndims = length(ncdim(nci{invar})) - 2;
