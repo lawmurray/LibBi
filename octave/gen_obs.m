@@ -73,7 +73,11 @@ function gen_obs (in, invar, out, outvar, p, ts, S, logn, coords)
     end
     
     % output file
-    nco = netcdf(out, 'nc');
+    if exist (out, "file")
+        nco = netcdf(out, 'w');
+    else
+        nco = netcdf(out, 'c');
+    end
 
     % dimensions
     rdim = sprintf('nr_%s', outvar);

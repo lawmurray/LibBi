@@ -42,8 +42,12 @@ function gen_init (in, invar, out, outvar, p)
     nci = netcdf(in, 'r');
     
     % output file
-    nco = netcdf(out, 'nc');
-    
+    if exist (out, "file")
+        nco = netcdf(out, 'w');
+    else
+        nco = netcdf(out, 'c');
+    end
+  
     % construct dimensions if necessary
     ndims = length(ncdim(nci{invar})) - 2;
     if ndims >= 1 && !ncdimexists(nco, 'nx')
