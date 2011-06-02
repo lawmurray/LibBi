@@ -10,11 +10,11 @@ then
     source init.sh
     ROOT=$PBS_O_WORKDIR
     NAME=$PBS_JOBNAME
-    ID=$PBS_ARRAYID
+    : ${ID=$PBS_ARRAYID}
 else
     ROOT=.
     NAME=kfb
-    ID=0
+    : ${ID=0}
 fi
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
