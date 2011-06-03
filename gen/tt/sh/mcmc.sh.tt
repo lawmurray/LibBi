@@ -9,6 +9,7 @@ if [[ "`hostname`" == gpu* ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
+    cd $ROOT
     LOCAL_DIR=$TMPDIR
     NAME=$PBS_JOBNAME
     : ${ID=$PBS_ARRAYID}
@@ -29,7 +30,7 @@ FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
 if `test "$INIT_FILENAME" != ""`
 then
-    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
+    cp $ROOT/$DATA_DIR/$INIT_FILENAME $LOCAL_DIR
     INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
 else
     INIT_FILE=
@@ -37,7 +38,7 @@ fi
 
 if `test "$FORCE_FILENAME" != ""`
 then
-    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
+    cp $ROOT/$DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
     FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
 else
     FORCE_FILE=
@@ -45,7 +46,7 @@ fi
 
 if `test "$OBS_FILENAME" != ""`
 then
-    cp $DATA_DIR/$OBS_FILENAME $LOCAL_DIR
+    cp $ROOT/$DATA_DIR/$OBS_FILENAME $LOCAL_DIR
     OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
 else
     OBS_FILE=
@@ -73,4 +74,4 @@ $ROOT/build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
     --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL
 
 # copy results back from local directory
-cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.
+cp $LOCAL_DIR/$OUTPUT_FILENAME $ROOT/$RESULTS_DIR/.

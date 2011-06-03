@@ -9,6 +9,7 @@ if [[ "`hostname`" == gpu* ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
+    cd $ROOT
     NAME=$PBS_JOBNAME
     : ${ID=$PBS_ARRAYID}
 else
