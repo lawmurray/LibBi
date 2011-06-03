@@ -12,7 +12,7 @@ using namespace bi;
 UnscentedRTSSmootherNetCDFBuffer::UnscentedRTSSmootherNetCDFBuffer(
     const BayesNet& m, const std::string& file, const FileMode mode,
     const StaticHandling flag) : NetCDFBuffer(file, mode), m(m),
-    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
+    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) + ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
   map();
 }
 
@@ -20,7 +20,7 @@ UnscentedRTSSmootherNetCDFBuffer::UnscentedRTSSmootherNetCDFBuffer(
     const BayesNet& m, const int T, const std::string& file,
     const FileMode mode, const StaticHandling flag) :
     NetCDFBuffer(file, mode), m(m),
-    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
+    M(m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE) + ((flag == STATIC_OWN) ? m.getNetSize(P_NODE) : 0)) {
   if (mode == NEW || mode == REPLACE) {
     create(T); // set up structure of new file
   } else {
@@ -81,7 +81,11 @@ void UnscentedRTSSmootherNetCDFBuffer::create(const long T) {
     ncFile->add_var(m.getNode(C_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
     size += m.getNodeSize(C_NODE, id);
   }
-  if (M > m.getNetSize(D_NODE) + m.getNetSize(C_NODE)) {
+  for (id = 0; id < m.getNetSize(R_NODE); ++id) {
+    ncFile->add_var(m.getNode(R_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
+    size += m.getNodeSize(R_NODE, id);
+  }
+  if (M > size) {
     for (id = 0; id < m.getNetSize(P_NODE); ++id) {
       ncFile->add_var(m.getNode(P_NODE, id)->getName().c_str(), ncInt)->put(&size, 1);
       size += m.getNodeSize(P_NODE, id);

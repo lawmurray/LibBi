@@ -174,11 +174,6 @@ private:
   Random& rng;
 
   /**
-   * Size of state, excluding random variates and observations.
-   */
-  int M;
-
-  /**
    * Output.
    */
   IO1* out;
@@ -204,6 +199,11 @@ private:
   static const int NR = net_size<B,typename B::RTypeList>::value;
   static const int NO = net_size<B,typename B::OTypeList>::value;
   static const int NP = net_size<B,typename B::PTypeList>::value;
+
+  /**
+   * Size of state.
+   */
+  static const int M =  ND + NC + NR + ((SH == STATIC_OWN) ? NP : 0);
 };
 
 /**
@@ -243,7 +243,6 @@ bi::UnscentedRTSSmoother<B,IO1,CL,SH>::UnscentedRTSSmoother(B& m,
     Random& rng, IO1* out) :
     m(m),
     rng(rng),
-    M(ND + NC + ((SH == STATIC_OWN) ? NP : 0)),
     out(out),
     haveParameters(SH == STATIC_OWN),
     haveOut(out != NULL) {
