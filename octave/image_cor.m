@@ -23,7 +23,6 @@
 % @end deftypefn
 %
 function image_cor (in, invars, coords, rang)    
-        
     % check arguments
     if nargin < 2 || nargin > 4
         print_usage ();
