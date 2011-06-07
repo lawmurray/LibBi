@@ -4,7 +4,7 @@
 % $Date: 2011-05-24 13:50:51 +0800 (Tue, 24 May 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} image_simulate (@var{in}, @var{xvar}, @var{xcoord}, @var{yvar}, @var{ycoords}, @var{rang})
+% @deftypefn {Function File} image_bifurc (@var{in}, @var{xvar}, @var{xcoord}, @var{yvar}, @var{ycoords}, @var{rang})
 %
 % Plot bifurcation image using output of simulate program.
 %

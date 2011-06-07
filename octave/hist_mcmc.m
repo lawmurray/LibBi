@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord})
+% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{burn}, @var{interval})
 %
 % Plot histogram of parameter samples output by mcmc program.
 %
@@ -17,50 +17,41 @@
 % @bullet{ @var{coord} (optional) Vector of spatial coordinates of zero
 % to three elements, giving the x, y and z coordinates of a
 % component of @var{invar} to plot.}
+%
+% @bullet{ @var{rang} (optional) Vector of indices of samples to
+% plot. All samples plotted if not specified.
 % @end itemize
 % @end deftypefn
 %
-function hist_mcmc (in, invar, coord)
+function hist_mcmc (in, invar, coord, rang)
     % constants
     THRESHOLD = 5e-3; % threshold for bin removal start and end
     BINS = 20;
 
     % check arguments
-    if (nargin < 2 || nargin > 3)
+    if (nargin < 2 || nargin > 5)
         print_usage ();
     end
-    if (nargin < 3)
+    if nargin < 3
         coord = [];
-    elseif !isvector (coord) || length (coord) > 3
+    end
+    if nargin < 4
+        rang = [];
+    end
+    if !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
 
     % input file
-    nci = netcdf(in, 'r');
+    nci = netcdf (in, 'r');
+    P = length (nci('np'));
+    if length (rang) == 0
+        rang = [1:P];
+    end
     
     % read samples
-    numdims = ndims(nci{invar}); % always >= 2
-    if (numdims == 2 && columns(nci{invar}) == 1)
-        % parameter, take all values
-        data = nci{invar}(:);
-    else
-        % state variable, take initial values
-        if numdims == 2
-            data = nci{invar}(1,:);
-        else
-            if numdims != 2 + length(coord)
-                error ('coord length incorrect for this variable');
-            end
-            if numdims == 3
-                data = nci{invar}(1,coord(1),:);
-            elseif numdims == 4
-                data = nci{invar}(1,coord(2),coord(1),:);
-            elseif numdims == 5
-                data = nci{invar}(1,coord(3),coord(2),coord(1),:);
-            end
-        end
-    end
-    ncclose(nci);
+    data = read_var (nci, invar, coord, rang, 1);
+    ncclose (nci);
     
     % bin
     [nn,xx] = hist(data, BINS);

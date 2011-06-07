@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_simulate (@var{in}, @var{invar}, @var{coord})
+% @deftypefn {Function File} plot_mcmc (@var{in}, @var{invar}, @var{coord})
 %
 % Plot output of the mcmc program.
 %
@@ -27,7 +27,7 @@ function plot_mcmc (in, invar, coord)
     end
     if nargin < 3
         coord = [];
-    elseif !isvector (coord) || length (coord) > 3
+    elseif !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
     

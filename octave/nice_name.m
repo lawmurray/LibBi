@@ -16,7 +16,7 @@
 % @end itemize
 % @end deftypefn
 %
-function nice = nice_name(name, coord)
+function nice = nice_name (name, coord)
     % check arguments
     if nargin < 1 || nargin > 2
         print_usage ();
@@ -26,15 +26,18 @@ function nice = nice_name(name, coord)
         error ('coord must be vector of length zero to three');
     end
     
-    nice = strcat('{', name);
+    nice = strcat('{', nice_greek (name));
     if length(coord) > 0
-        nice = strcat(nice, '_');
+        nice = strcat(nice, '_{');
     end
     for i = 1:length(coord)
         nice = strcat(nice, num2str(coord(i)));
         if i != length(coord)
             nice = strcat(nice, ',');
         end
+    end
+    if length(coord) > 0
+        nice = strcat(nice, '}');
     end
     nice = strcat(nice, '}');
 end

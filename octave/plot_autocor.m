@@ -4,9 +4,9 @@
 % $Date: 2011-04-15 12:35:42 +0800 (Fri, 15 Apr 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_trace (@var{in}, @var{invar}, @var{coord}, @var{rang})
+% @deftypefn {Function File} plot_autocor (@var{in}, @var{invar}, @var{coord}, @var{rang})
 %
-% Plot trace of samples output by mcmc program.
+% Plot autocorrelation of samples output by mcmc program.
 %
 % @itemize
 % @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
@@ -19,11 +19,11 @@
 % component of @var{invar} to plot.}
 %
 % @bullet{ @var{rang} (optional) Vector of indices of samples to
-% plot. All samples plotted if not specified.
+% plot. All trajectories plotted if not specified.
 % @end itemize
 % @end deftypefn
 %
-function plot_trace (in, invar, coord, rang)
+function plot_autocor (in, invar, coord, rang)
     % check arguments
     if nargin < 2 || nargin > 4
         print_usage ();
@@ -50,7 +50,7 @@ function plot_trace (in, invar, coord, rang)
     X = read_var (nci, invar, coord, rang);
     
     % plot
-    plot(X, 'linewidth', 1, 'color', watercolour(2));
+    plot(autocor(X), 'linewidth', 1, 'color', watercolour(2));
     %title(nice_name(name, dims));
     %plot_defaults;
     
