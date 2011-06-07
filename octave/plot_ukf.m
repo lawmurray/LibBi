@@ -30,7 +30,7 @@ function plot_ukf (in, invar, coord, islog)
     end
     if nargin < 3
         coord = [];
-    elseif !isvector (coord) || length (coord) > 3
+    elseif !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
     if nargin < 4

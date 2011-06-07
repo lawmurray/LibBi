@@ -4,7 +4,7 @@
 % $Date: 2011-04-15 12:35:42 +0800 (Fri, 15 Apr 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_simulate (@var{in}, @var{invars}, @var{coord}, @var{rang})
+% @deftypefn {Function File} plot_traj (@var{in}, @var{invar}, @var{coord}, @var{rang})
 %
 % Plot trajectories output by simulate, predict, pf, mcmc or likelihood
 % program.
@@ -36,7 +36,7 @@ function plot_traj (in, invar, coord, rang)
     elseif nargin < 4
         rang = [];
     end
-    if !(isempty (coord) || isvector (coord)) || length (coord) > 3
+    if !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
   
