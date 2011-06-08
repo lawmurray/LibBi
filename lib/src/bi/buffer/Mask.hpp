@@ -260,7 +260,7 @@ inline int bi::Mask<T>::id(const int i) const {
     }
   }
   assert (iter != end());
-  return iter->id(index);
+  return (*iter)->id(index);
 }
 
 #endif

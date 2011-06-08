@@ -527,7 +527,7 @@ template<class V1>
 void bi::renormalise(V1 lws) {
   thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(), std::log(0.0));
   real mx = *bi::max(lws.begin(), lws.end());
-  if (isfinite(mx)) {
+  if (std::isfinite(mx)) {
     thrust::transform(lws.begin(), lws.end(), lws.begin(), subtract_constant_functor<real>(mx));
   }
 }

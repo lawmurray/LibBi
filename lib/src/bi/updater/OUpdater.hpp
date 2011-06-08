@@ -73,8 +73,8 @@ void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_HOST>& s) {
 
       BOOST_AUTO(iter1, mask.getDenseMask().begin());
       while (iter1 != mask.getDenseMask().end()) {
-        for (i = 0; i < iter1->size(); ++i, ++j) {
-          iter1->coord(i, id, cox);
+        for (i = 0; i < (*iter1)->size(); ++i, ++j) {
+          (*iter1)->coord(i, id, cox);
 
           #pragma omp for
           for (p = 0; p < P; ++p) {
@@ -89,8 +89,8 @@ void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_HOST>& s) {
 
       BOOST_AUTO(iter2, mask.getSparseMask().begin());
       while (iter2 != mask.getSparseMask().end()) {
-        for (i = 0; i < iter2->size(); ++i, ++j) {
-          iter2->coord(i, id, cox);
+        for (i = 0; i < (*iter2)->size(); ++i, ++j) {
+          (*iter2)->coord(i, id, cox);
 
           #pragma omp for
           for (p = 0; p < P; ++p) {
