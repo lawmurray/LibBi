@@ -241,10 +241,14 @@ public:
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry after resampling.
    * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(Static<L>& theta, State<L>& s, V1& lws, V2& as,
-      R* resam = NULL);
+  bool resample(Static<L>& theta, State<L>& s, V1& lws, V2& as,
+      R* resam = NULL, const real relEss = 1.0);
 
   /**
    * Resample particles with conditioned outcome for first particle.
@@ -260,10 +264,14 @@ public:
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry after resampling.
    * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(Static<L>& theta, State<L>& s, const int a, V1& lws, V2& as,
-      R* resam = NULL);
+  bool resample(Static<L>& theta, State<L>& s, const int a, V1& lws, V2& as,
+      R* resam = NULL, const real relEss = 1.0);
 
   /**
    * Output.
@@ -470,10 +478,7 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     correct(s, lws);
     output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
-    if (r) {
-      resample(theta, s, lws, as, resam);
-    }
+    r = state.t < T && resample(theta, s, lws, as, resam, relEss);
   }
   synchronize();
   term(theta);
@@ -508,10 +513,7 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     correct(s, lws);
     output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
-    if (r) {
-      resample(theta, s, a, lws, as, resam);
-    }
+    r = state.t < T && resample(theta, s, a, lws, as, resam, relEss);
   }
   synchronize();
   term(theta);
@@ -525,30 +527,36 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess
 
   synchronize();
 
-  BOOST_AUTO(lws1, host_temp_vector<real>(out->size1()));
-  BOOST_AUTO(ess1, host_temp_vector<real>(out->size2()));
-  BOOST_AUTO(lls1, host_temp_vector<real>(out->size2()));
-  BOOST_AUTO(lls2, host_temp_vector<real>(out->size2()));
+  const int P = this->out->size1();
+  const int T = this->out->size2();
+
+  BOOST_AUTO(lws1, host_temp_vector<real>(P));
+  BOOST_AUTO(ess1, host_temp_vector<real>(T));
+  BOOST_AUTO(lls1, host_temp_vector<real>(T));
+  BOOST_AUTO(lls2, host_temp_vector<real>(T));
   double ll1;
 
   /* compute log-likelihoods and ESS at each time */
-  int n;
+  int n, r;
   real logsum1, sum1, sum2;
-  for (n = 0; n < out->size2(); ++n) {
+  for (n = 0; n < T; ++n) {
+    r = (n == 0 || this->resamplingCache.get(n));
     *lws1 = logWeightsCache.get(n);
+
     bi::sort(lws1->begin(), lws1->end());
+
     logsum1 = log_sum_exp(lws1->begin(), lws1->end(), 0.0);
-    sum1 = sum_exp(lws1->begin(), lws1->end(), 0.0);
+    sum1 = exp(logsum1);
     sum2 = sum_exp_square(lws1->begin(), lws1->end(), 0.0);
 
-    (*lls1)(n) = logsum1;
-    (*ess1)(n) = (sum1*sum1) / sum2;
+    (*lls1)(n) = r ? logsum1 - std::log(P) : 0.0;
+    (*ess1)(n) = (sum1*sum1)/sum2;
   }
 
   /* compute marginal log-likelihood */
   *lls2 = *lls1;
   bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0) - out->size2()*std::log(out->size1());
+  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
 
   /* write to output params, where given */
   if (ll != NULL) {
@@ -645,29 +653,33 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::correct(State<L>& s, V1& lws) {
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
-    State<L>& s, V1& lws, V2& as, R* resam) {
+bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
+    State<L>& s, V1& lws, V2& as, R* resam, const real relEss) {
   /* pre-condition */
   assert (s.size() == lws.size());
   assert (theta.size() == 1 || theta.size() == lws.size());
 
-  if (resam != NULL) {
+  bool r = resam != NULL && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
+  if (r) {
     resam->resample(lws, as, theta, s);
   }
+  return r;
 }
 
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
-    State<L>& s, const int a, V1& lws, V2& as, R* resam) {
+bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
+    State<L>& s, const int a, V1& lws, V2& as, R* resam, const real relEss) {
   /* pre-condition */
   assert (s.size() == lws.size());
   assert (theta.size() == 1 || theta.size() == lws.size());
 
-  if (resam != NULL) {
+  bool r = resam != NULL && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
+  if (r) {
     resam->resample(a, lws, as, theta, s);
   }
+  return r;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>

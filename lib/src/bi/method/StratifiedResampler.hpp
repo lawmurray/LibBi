@@ -205,47 +205,66 @@ void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as, Static<L>& 
 
 template<class V1, class V2, class V3, bi::Location L>
 void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s) {
-  ///@todo Do on host, typically faster.
-
   /* pre-condition */
-  const int P = as.size();
   assert (qlws.size() == lws.size());
 
-  BOOST_AUTO(os, temp_vector<V2>(lws.size()));
+  /* typically faster on host, so copy to there */
+  BOOST_AUTO(qlws1, host_map_vector(qlws));
+  BOOST_AUTO(lws1, host_map_vector(lws));
+  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
+  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
 
-  offspring(qlws, *os, P);
-  ancestors(*os, as);
-  permute(as);
-  correct(as, qlws, lws);
+  if (V1::on_device) {
+    synchronize();
+  }
+  offspring(*qlws1, *os1, lws1->size());
+  ancestors(*os1, *as1);
+  permute(*as1);
+  correct(*as1, *qlws1, *lws1);
+  as = *as1;
+  lws = *lws1;
   copy(as, theta, s);
 
-  synchronize();
-  delete os;
+  if (V2::on_device || V3::on_device) {
+    synchronize();
+  }
+  delete qlws1;
+  delete lws1;
+  delete as1;
+  delete os1;
 }
 
 template<class V1, class V2, class V3, bi::Location L>
 void bi::StratifiedResampler::resample(const int a, const V1& qlws,
     V2& lws, V3& as, Static<L>& theta, State<L>& s) {
-  ///@todo Do on host, typically faster.
-
   /* pre-condition */
-  const int P = qlws.size();
-  assert (qlws.size() == P);
-  assert (lws.size() == P);
-  assert (as.size() == P);
-  assert (a >= 0 && a < P);
+  assert (qlws.size() == lws.size());
 
-  BOOST_AUTO(os, temp_vector<V2>(P));
+  /* typically faster on host, so copy to there */
+  BOOST_AUTO(qlws1, host_map_vector(qlws));
+  BOOST_AUTO(lws1, host_map_vector(lws));
+  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
+  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
 
-  offspring(qlws, *os, P - 1);
-  ++(*os)[a];
-  ancestors(*os, as);
-  permute(as);
-  correct(as, qlws, lws);
+  if (V1::on_device) {
+    synchronize();
+  }
+  offspring(*qlws1, *os1, lws1->size() - 1);
+  ++(*os1)[a];
+  ancestors(*os1, *as1);
+  permute(*as1);
+  correct(*as1, *qlws1, *lws1);
+  as = *as1;
+  lws = *lws1;
   copy(as, theta, s);
 
-  synchronize();
-  delete os;
+  if (V2::on_device || V3::on_device) {
+    synchronize();
+  }
+  delete qlws1;
+  delete lws1;
+  delete as1;
+  delete os1;
 }
 
 template<class V1, class V2>

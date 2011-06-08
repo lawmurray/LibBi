@@ -17,11 +17,13 @@
 #include "bi/pdf/ExpGaussianMixturePdf.hpp"
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AuxiliaryParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/AuxiliaryParticleFilterNetCDFBuffer.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -60,6 +62,7 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
     RESAMPLER_ARG,
+    FILTER_ARG,
     SORT_ARG,
     STARTING_TYPE_ARG,
     STARTING_FILE_ARG,
@@ -71,7 +74,8 @@ int main(int argc, char* argv[]) {
       SEED = 0, C = 1000, M = 10;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
       STARTING_FILE;
-  std::string STARTING_TYPE("prior"), RESAMPLER("stratified");
+  std::string STARTING_TYPE("prior"), RESAMPLER("stratified"),
+      FILTER("bootstrap");
   bool INCLUDE_INITIAL = true, SORT = true;
   int c, option_index;
 
@@ -94,6 +98,7 @@ int main(int argc, char* argv[]) {
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
+      {"filter", required_argument, 0, FILTER_ARG },
       {"sort", required_argument, 0, SORT_ARG },
       {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
       {0, 0, 0, 0}
@@ -157,6 +162,9 @@ int main(int argc, char* argv[]) {
         break;
       case RESAMPLER_ARG:
         RESAMPLER = std::string(optarg);
+        break;
+      case FILTER_ARG:
+        FILTER = std::string(optarg);
         break;
       case SORT_ARG:
         SORT = atoi(optarg);
@@ -253,20 +261,54 @@ int main(int argc, char* argv[]) {
   
   /* sample */
   sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-  mcmc->init(x, T, theta, s, filter, &resam);
-  mcmc->output0(filter);
-  for (c = 0; c < C; ++c) {
-    if ((c % M) == 0) {
-      sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+  
+  if (FILTER.compare("auxiliary") == 0) {
+    /* with auxiliary particle filter */
+    AuxiliaryParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
+        NetCDFBuffer::REPLACE);
+    BOOST_AUTO(filter, AuxiliaryParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+        inForce, &inObs, &outFilter));
+
+    mcmc->init(x, T, theta, s, filter, &resam);
+    mcmc->output0(filter);
+    for (c = 0; c < C; ++c) {
+      if ((c % M) == 0) {
+        sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+      }
+      mcmc->proposal(x);
+      mcmc->prior();
+      mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
+      mcmc->accept(filter);
+      mcmc->output(c);
+      mcmc->report(c);
     }
-    mcmc->proposal(x);
-    mcmc->prior();
-    mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
-    mcmc->accept(filter);
-    mcmc->output(c);
-    mcmc->report(c);
+    mcmc->term(theta);
+    
+    delete filter;
+  } else {
+    /* with bootstrap particle filter */
+    ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
+        NetCDFBuffer::REPLACE);
+    BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+        inForce, &inObs, &outFilter));
+
+    mcmc->init(x, T, theta, s, filter, &resam);
+    mcmc->output0(filter);
+    for (c = 0; c < C; ++c) {
+      if ((c % M) == 0) {
+        sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+      }
+      mcmc->proposal(x);
+      mcmc->prior();
+      mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
+      mcmc->accept(filter);
+      mcmc->output(c);
+      mcmc->report(c);
+    }
+    mcmc->term(theta);
+    
+    delete filter;
   }
-  mcmc->term(theta);
 
   delete mcmc;
   delete filter;

@@ -36,12 +36,13 @@ public:
    *
    * @param m Model.
    * @param rng Random number generator.
+   * @param delta Time step for d- and r-nodes.
    * @param in Forcings.
    * @param obs Observations.
    * @param out Output.
    */
-  AuxiliaryParticleFilter(B& m, Random& rng, IO1* in = NULL,
-      IO2* obs = NULL, IO3* out = NULL);
+  AuxiliaryParticleFilter(B& m, Random& rng, const real delta = 1.0,
+      IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL);
 
   /**
    * @name High-level interface.
@@ -50,17 +51,18 @@ public:
    */
   //@{
   /**
-   * @copydoc #concept::Filter::filter()
+   * @copydoc ParticleFilter::filter()
    */
   template<Location L, class R>
-  void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL);
+  void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL,
+      const real relEss = 1.0);
 
   /**
-   * @copydoc #concept::Filter::filter(real, const V1&, R*)
+   * @copydoc ParticleFilter::filter()
    */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
-      M1& xr, R* resam = NULL);
+      M1& xr, R* resam = NULL, const real relEss = 1.0);
 
   /**
    * @copydoc #concept::Filter::summarise()
@@ -101,15 +103,21 @@ public:
    * @tparam V2 Vector type.
    * @tparam R #concept::Resampler type.
    *
+   * @param theta Static state.
    * @param s State.
    * @param[out] lw1s Stage 1 log-weights.
    * @param[in,out] lw2s On input, current log-weights of particles, on
    * output, stage 2 log-weights.
    * @param[out] as Ancestry after resampling.
    * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam = NULL);
+  bool resample(Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as,
+      R* resam = NULL, const real relEss = 1.0);
 
   /**
    * Resample particles.
@@ -119,6 +127,7 @@ public:
    * @tparam V2 Vector type.
    * @tparam R #concept::Resampler type.
    *
+   * @param theta Static state.
    * @param s State.
    * @param a Conditioned ancestor of first particle.
    * @param[out] lw1s Stage 1 log-weights.
@@ -126,10 +135,14 @@ public:
    * output, stage 2 log-weights.
    * @param[out] as Ancestry after resampling.
    * @param resam Resampler.
+   * @param relEss Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
    */
   template<Location L, class V1, class V2, class R>
-  void resample(State<L>& s, const int a, V1& lw1s, V1& lw2s, V2& as,
-      R* resam = NULL);
+  bool resample(Static<L>& theta, State<L>& s, const int a, V1& lw1s,
+      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
 
   /**
    * Output.
@@ -139,6 +152,7 @@ public:
    * @tparam V2 Vector type.
    *
    * @param k Time index.
+   * @param theta Static state.
    * @param s State.
    * @param r 1 if resampling was performed before moving to this time, 0
    * otherwise.
@@ -147,20 +161,31 @@ public:
    * @param Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const int k, const State<L>& s, const int r, const V1& lw1s,
-      const V1& lw2s, const V2& as);
+  void output(const int k, const Static<L>& theta, const State<L>& s,
+      const int r, const V1& lw1s, const V1& lw2s, const V2& as);
+
+  /**
+   * Flush output caches to file.
+   */
+  void flush();
   //@}
 
 private:
   /**
    * Perform lookahead.
    *
+   * @param theta Static state.
    * @param s State.
    * @param[in,out] lw1s On input, current log-weights of particles, on
    * output, stage 1 log-weights.
    */
   template<Location L, class V1>
-  void lookahead(State<L>& s, V1& lw1s);
+  void lookahead(Static<L>& theta, State<L>& s, V1& lw1s);
+
+  /**
+   * Cache for stage 1 log-weights.
+   */
+  Cache2D<real> stage1LogWeightsCache;
 };
 
 /**
@@ -183,9 +208,10 @@ struct AuxiliaryParticleFilterFactory {
    */
   template<class B, class IO1, class IO2, class IO3>
   static AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>* create(B& m,
-      Random& rng, IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL) {
-    return new AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, in, obs,
-        out);
+      Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
+      IO3* out = NULL) {
+    return new AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, delta, in,
+        obs, out);
   }
 };
 
@@ -196,17 +222,18 @@ struct AuxiliaryParticleFilterFactory {
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::AuxiliaryParticleFilter(
-    B& m, Random& rng, IO1* in, IO2* obs, IO3* out) :
-    ParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, in, obs, out) {
+    B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
+    ParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, delta, in, obs, out) {
   //
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class R>
 void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
-    Static<L>& theta, State<L>& s, R* resam) {
+    Static<L>& theta, State<L>& s, R* resam, const real relEss) {
   /* pre-condition */
   assert (T > this->state.t);
+  assert (relEss >= 0.0 && relEss <= 1.0);
 
   int n = 0, r = 0;
 
@@ -215,17 +242,13 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
   BOOST_AUTO(as, host_temp_vector<int>(s.size()));
 
   init(theta, *lw1s, *lw2s, *as);
-  resample(s, *lw1s, *lw2s, *as, resam);
+  r = resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
   while (this->state.t < T) {
-    predict(T, s);
+    predict(T, theta, s);
     correct(s, *lw2s);
-    output(n, s, r, *lw1s, *lw2s, *as);
+    output(n, theta, s, r, *lw1s, *lw2s, *as);
     ++n;
-    r = this->state.t < T; // no need to resample at last time
-    if (r) {
-      resample(s, *lw2s, *as, resam);
-      resample(s, *lw1s, *lw2s, *as, resam);
-    }
+    r = this->state.t < T && resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
   }
   synchronize();
   term(theta);
@@ -238,9 +261,11 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class M1, class R>
 void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
-    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam) {
+    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
+    const real relEss) {
   /* pre-condition */
   assert (T > this->state.t);
+  assert (relEss >= 0.0 && relEss <= 1.0);
   assert (this->out != NULL);
 
   int n = 0, r = 0, a = 0;
@@ -250,9 +275,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
   BOOST_AUTO(as, host_temp_vector<int>(s.size()));
 
   init(theta, *lw1s, *lw2s, *as);
-  resample(s, *lw1s, *lw2s, *as, resam);
+  r = resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
   while (this->state.t < T) {
-    predict(T, s);
+    predict(T, theta, s);
 
     /* overwrite first particle with conditioned particle */
     row(s.get(D_NODE), 0) = column(xd, n);
@@ -260,13 +285,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
     row(s.get(R_NODE), 0) = column(xr, n);
 
     correct(s, *lw2s);
-    output(n, s, r, *lw1s, *lw2s, *as);
+    output(n, theta, s, r, *lw1s, *lw2s, *as);
     ++n;
-    r = this->state.t < T; // no need to resample at last time
-    if (r) {
-      this->resample(s, a, *lw2s, *as, resam);
-      resample(s, a, *lw1s, *lw2s, *as, resam);
-    }
+    r = this->state.t < T && resample(theta, s, a, *lw1s, *lw2s, *as, resam, relEss);
   }
   synchronize();
   term(theta);
@@ -294,26 +315,29 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::summarise(T1* ll, V1* lls, V
   real ll1;
 
   /* compute log-likelihoods and ESS at each time */
+  bool r;
   int n;
-  real sum1, sum2, sum3;
+  real logsum1, logsum2, sum2, sum3;
   for (n = 0; n < T; ++n) {
-    this->out->readStage1LogWeights(n, *lw1s1);
-    this->out->readLogWeights(n, *lw2s1);
+    r = (n == 0 || this->resamplingCache.get(n));
+    *lw1s1 = stage1LogWeightsCache.get(n);
+    *lw2s1 = this->logWeightsCache.get(n);
 
-    //bi::sort(lw1s1->begin(), lw1s1->end());
-    //bi::sort(lw2s1->begin(), lw2s1->end());
+    bi::sort(lw1s1->begin(), lw1s1->end());
+    bi::sort(lw2s1->begin(), lw2s1->end());
 
-    sum1 = sum_exp(lw1s1->begin(), lw1s1->end(), 0.0);
-    sum2 = sum_exp(lw2s1->begin(), lw2s1->end(), 0.0);
+    logsum1 = log_sum_exp(lw1s1->begin(), lw1s1->end(), 0.0);
+    logsum2 = log_sum_exp(lw2s1->begin(), lw2s1->end(), 0.0);
+    sum2 = exp(logsum2);
     sum3 = sum_exp_square(lw2s1->begin(), lw2s1->end(), 0.0);
 
-    (*lls1)(n) = log(sum1) + log(sum2) - 2*log(P);
-    (*ess1)(n) = (sum2*sum2) / sum3;
+    (*lls1)(n) = r ? logsum1 + logsum2 - 2*std::log(P) : 0.0;
+    (*ess1)(n) = (sum2*sum2)/sum3;
   }
 
   /* compute marginal log-likelihood */
   *lls2 = *lls1;
-  //bi::sort(lls2->begin(), lls2->end());
+  bi::sort(lls2->begin(), lls2->end());
   ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
 
   /* write to output params, where given */
@@ -348,81 +372,113 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::init(Static<L>& theta,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2, class R>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(State<L>& s,
-    V1& lw1s, V1& lw2s, V2& as, R* resam) {
-  typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
+bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
+    State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam, const real relEss) {
+  bool r = false;
+  if (this->oyUpdater.hasNext()) {
+    const real to = this->oyUpdater.getNextTime();
+    if (resam != NULL && to >= this->state.t) {
+      lw1s = lw2s;
+      this->lookahead(theta, s, lw1s);
+      if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
+        resam->resample(lw1s, lw2s, as, theta, s);
+        r = true;
+      }
 
-  const real to = this->oyUpdater.getTime();
-  if (resam != NULL && to >= this->state.t) {
-    lw1s = lw2s;
-    this->lookahead(s, lw1s);
-    resam->resample(lw1s, lw2s, as);
-    this->copy(s, as, resam);
-
-    /* post-condition */
-    assert (this->sim.getTime() == this->getTime());
+      /* post-condition */
+      assert (this->sim.getTime() == this->getTime());
+    }
   }
+  return r;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2, class R>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(State<L>& s,
-    const int a, V1& lw1s, V1& lw2s, V2& as, R* resam) {
-  typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
+bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
+    State<L>& s, const int a, V1& lw1s, V1& lw2s, V2& as, R* resam,
+    const real relEss) {
+  /* pre-condition */
+  assert (lw1s.size() == lw2s.size());
+  assert (a >= 0 && a < lw1s.size());
 
-  const real to = this->oyUpdater.getTime();
-  if (resam != NULL && to >= this->state.t) {
-    lw1s = lw2s;
-    this->lookahead(s, lw1s);
-    resam->resample(a, lw1s, lw2s, as);
-    this->copy(s, as, resam);
+  bool r = false;
+  if (this->oyUpdater.hasNext()) {
+    const real to = this->oyUpdater.getNextTime();
+    if (resam != NULL && to >= this->state.t) {
+      lw1s = lw2s;
+      this->lookahead(theta, s, lw1s);
+      if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
+        resam->resample(a, lw1s, lw2s, as, theta, s);
+        r = true;
+      }
 
-    /* post-condition */
-    assert (this->sim.getTime() == this->getTime());
+      /* post-condition */
+      assert (this->sim.getTime() == this->getTime());
+    }
   }
+  return r;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2>
 void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::output(const int k,
-    const State<L>& s, const int r, const V1& lw1s, const V1& lw2s,
-    const V2& as) {
-  ParticleFilter<B,IO1,IO2,IO3,CL>::output(k, s, r, lw2s, as);
+    const Static<L>& theta, const State<L>& s, const int r, const V1& lw1s,
+    const V1& lw2s, const V2& as) {
+  ParticleFilter<B,IO1,IO2,IO3,CL>::output(k, theta, s, r, lw2s, as);
 
   if (this->haveOut) {
-    this->out->writeStage1LogWeights(k, lw1s);
+    stage1LogWeightsCache.put(k, lw1s);
+  }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::flush() {
+  ParticleFilter<B,IO1,IO2,IO3,CL>::flush();
+
+  int p;
+  if (this->haveOut) {
+    assert (stage1LogWeightsCache.isValid());
+    for (p = 0; p < stage1LogWeightsCache.size(); ++p) {
+      this->out->writeStage1LogWeights(p, stage1LogWeightsCache.get(p));
+    }
+    stage1LogWeightsCache.clean();
   }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::lookahead(State<L>& s,
-    V1& lw1s) {
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::lookahead(
+    Static<L>& theta, State<L>& s, V1& lw1s) {
   typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
   typedef typename locatable_temp_matrix<L,real>::type temp_matrix_type;
 
   const int P = s.size();
   const int ND = this->m.getNetSize(D_NODE);
   const int NC = this->m.getNetSize(C_NODE);
+  const int NR = this->m.getNetSize(R_NODE);
 
-  temp_matrix_type X(P, ND + NC);
-  const real to = this->oyUpdater.getTime();
+  if (this->oyUpdater.hasNext()) {
+    temp_matrix_type X(P, ND + NC + NR);
+    const real to = this->oyUpdater.getNextTime();
 
-  /* store current state */
-  columns(X, 0, ND) = s.get(D_NODE);
-  columns(X, ND, NC) = s.get(C_NODE);
-  this->mark();
+    /* store current state */
+    columns(X, 0, ND) = s.get(D_NODE);
+    columns(X, ND, NC) = s.get(C_NODE);
+    columns(X, ND + NC, NR) = s.get(R_NODE);
+    this->mark();
 
-  /* auxiliary simulation forward */
-  //s.get(R_NODE).clear(); // no-noise lookahead
-  //this->rUpdater.skipNext();
-  this->predict(to, s);
-  this->correct(s, lw1s);
+    /* auxiliary simulation forward */
+    s.get(R_NODE).clear(); // deterministic lookahead
+    this->rUpdater.skipNext();
+    this->predict(to, theta, s);
+    this->correct(s, lw1s);
 
-  /* restore previous state */
-  s.get(D_NODE) = columns(X, 0, ND);
-  s.get(C_NODE) = columns(X, ND, NC);
-  this->restore();
+    /* restore previous state */
+    s.get(D_NODE) = columns(X, 0, ND);
+    s.get(C_NODE) = columns(X, ND, NC);
+    s.get(R_NODE) = columns(X, ND + NC, NR);
+    this->restore();
+  }
 }
 
 

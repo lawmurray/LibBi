@@ -42,6 +42,11 @@ struct SparseInputBufferState {
   SparseInputBufferState();
 
   /**
+   * Copy constructor.
+   */
+  SparseInputBufferState(const SparseInputBufferState& o);
+
+  /**
    * Current offset into each record dimension.
    */
   vector_type starts;
@@ -109,7 +114,7 @@ public:
   const SparseInputBufferState::mask_type& getMask0(const NodeType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::valid()
+   * @copydoc concept::InputBuffer::isValid()
    */
   bool isValid() const;
 

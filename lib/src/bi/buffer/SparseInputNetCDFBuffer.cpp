@@ -28,6 +28,9 @@ SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
 }
 
 void SparseInputNetCDFBuffer::next() {
+  /* pre-condition */
+  assert (isValid());
+
   int tVar, rDim;
   real t = getTime(), tnxt;
 

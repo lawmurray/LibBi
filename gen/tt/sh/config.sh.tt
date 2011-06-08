@@ -46,6 +46,7 @@
 ## Particle filter settings
 ##
 
+: ${FILTER=bootstrap}      # filter method: bootstrap or auxiliary
 : ${RESAMPLER=stratified}  # resampling method
 : ${ESS_REL=1.0}           # minimum relative ESS to trigger resampling
 : ${SORT=1}                # sort weights before resampling

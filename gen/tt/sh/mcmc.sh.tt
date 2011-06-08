@@ -64,8 +64,8 @@ fi
 # run
 $ROOT/build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
     --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
-    --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA -a $A \
-    --lambda0=$LAMBDA0 --gamma=$GAMMA --delta=$DELTA \
+    --filter=$FILTER --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA \
+    -a $A --lambda0=$LAMBDA0 --gamma=$GAMMA --delta=$DELTA \
     -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
     --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \

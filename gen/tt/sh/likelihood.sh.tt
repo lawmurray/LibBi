@@ -61,7 +61,8 @@ then
 fi
 
 # run
-$ROOT/build/likelihood --id=$ID -P $P -T $T --resampler=$RESAMPLER \
+$ROOT/build/likelihood --id=$ID -P $P -T $T \
+    --filter=$FILTER --resampler=$RESAMPLER \
     --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
     --starting-type=$STARTING_TYPE \
     --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
