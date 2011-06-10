@@ -21,15 +21,17 @@ namespace bi {
  * @tparam IO2 #concept::SparseInputBuffer type.
  * @tparam IO3 #concept::AuxiliaryParticleFilterBuffer type.
  * @tparam CL Cache location.
+ * @tparam SH Static handling.
  *
  * @section Concepts
  *
  * #concept::Filter, #concept::Markable
  */
-template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST>
-class AuxiliaryParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL> {
+template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
+    StaticHandling SH = STATIC_SHARED>
+class AuxiliaryParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL,SH> {
 public:
-  using ParticleFilter<B,IO1,IO2,IO3,CL>::resample;
+  using ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample;
 
   /**
    * Constructor.
@@ -197,7 +199,7 @@ private:
  *
  * @see AuxiliaryParticleFilter
  */
-template<Location CL = ON_HOST>
+template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
 struct AuxiliaryParticleFilterFactory {
   /**
    * Create disturbance particle filter.
@@ -207,10 +209,10 @@ struct AuxiliaryParticleFilterFactory {
    * @see AuxiliaryParticleFilter::AuxiliaryParticleFilter()
    */
   template<class B, class IO1, class IO2, class IO3>
-  static AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>* create(B& m,
+  static AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
       IO3* out = NULL) {
-    return new AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, delta, in,
+    return new AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
         obs, out);
   }
 };
@@ -220,16 +222,16 @@ struct AuxiliaryParticleFilterFactory {
 #include "../math/primitive.hpp"
 #include "../math/functor.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::AuxiliaryParticleFilter(
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::AuxiliaryParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
-    ParticleFilter<B,IO1,IO2,IO3,CL>(m, rng, delta, in, obs, out) {
+    ParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in, obs, out) {
   //
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class R>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, R* resam, const real relEss) {
   /* pre-condition */
   assert (T > this->state.t);
@@ -258,9 +260,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
   delete as;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class M1, class R>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
     const real relEss) {
   /* pre-condition */
@@ -297,9 +299,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::filter(const real T,
   delete as;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class T1, class V1, class V2>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::summarise(T1* ll, V1* lls, V2* ess) {
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess) {
   /* pre-condition */
   BI_ERROR(this->out != NULL,
       "Cannot summarise AuxiliaryParticleFilter without output");
@@ -358,21 +360,21 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::summarise(T1* ll, V1* lls, V
   delete lls2;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::init(Static<L>& theta,
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta,
     V1& lw1s, V1& lw2s, V2& as) {
   /* pre-condition */
   assert (lw2s.size() == as.size());
 
-  ParticleFilter<B,IO1,IO2,IO3,CL>::init(theta, lw1s, as);
+  ParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(theta, lw1s, as);
 
   bi::fill(lw2s.begin(), lw2s.end(), 0.0);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
+bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
     State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam, const real relEss) {
   bool r = false;
   if (this->oyUpdater.hasNext()) {
@@ -392,9 +394,9 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
   return r;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
-bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
+bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
     State<L>& s, const int a, V1& lw1s, V1& lw2s, V2& as, R* resam,
     const real relEss) {
   /* pre-condition */
@@ -419,21 +421,21 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::resample(Static<L>& theta,
   return r;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::output(const int k,
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(const int k,
     const Static<L>& theta, const State<L>& s, const int r, const V1& lw1s,
     const V1& lw2s, const V2& as) {
-  ParticleFilter<B,IO1,IO2,IO3,CL>::output(k, theta, s, r, lw2s, as);
+  ParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(k, theta, s, r, lw2s, as);
 
   if (this->haveOut) {
     stage1LogWeightsCache.put(k, lw1s);
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::flush() {
-  ParticleFilter<B,IO1,IO2,IO3,CL>::flush();
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::flush() {
+  ParticleFilter<B,IO1,IO2,IO3,CL,SH>::flush();
 
   int p;
   if (this->haveOut) {
@@ -445,9 +447,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::flush() {
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1>
-void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL>::lookahead(
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     Static<L>& theta, State<L>& s, V1& lw1s) {
   typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
   typedef typename locatable_temp_matrix<L,real>::type temp_matrix_type;

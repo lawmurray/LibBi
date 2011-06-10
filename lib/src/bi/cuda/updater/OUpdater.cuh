@@ -35,10 +35,10 @@ void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_DEVICE>& s) 
       Db.y = 1; // over variables
       Dg.y = 1;
 
-      kernelOUpdate<B,dense_block_type,SH><<<Dg,Db>>>(*iter1, start, P);
+      kernelOUpdate<B,dense_block_type,SH><<<Dg,Db>>>(**iter1, start, P);
       CUDA_CHECK;
 
-      start += iter1->size();
+      start += (*iter1)->size();
       ++iter1;
     }
 
@@ -50,10 +50,10 @@ void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_DEVICE>& s) 
       Db.y = 1; // over variables
       Dg.y = 1;
 
-      kernelOUpdate<B,sparse_block_type,SH><<<Dg,Db>>>(*iter2, start, P);
+      kernelOUpdate<B,sparse_block_type,SH><<<Dg,Db>>>(**iter2, start, P);
       CUDA_CHECK;
 
-      start += iter2->size();
+      start += (*iter2)->size();
       ++iter2;
     }
 

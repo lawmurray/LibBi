@@ -87,9 +87,6 @@ template<class B, bi::StaticHandling SH>
 template<bi::Location L>
 void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
     State<L>& s) {
-  /* pre-condition */
-  assert (L == ON_HOST);
-
   typedef typename B::OTypeList S;
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedORUpdateVisitor<B,S,V1> Visitor;
@@ -113,7 +110,7 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
         BOOST_AUTO(ids, (*iter1)->getIds());
         size = (*iter1)->size()/ids.size();
         for (i = 0; i < ids.size(); ++i) {
-          Visitor::accept(ids[i], a, subrange(d1, start, size),
+          Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
               subrange(d2, start, size));
           start += size;
         }
@@ -126,7 +123,7 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
         BOOST_AUTO(ids, (*iter2)->getIds());
         size = (*iter2)->size()/ids.size();
         for (i = 0; i < ids.size(); ++i) {
-          Visitor::accept(ids[i], a, subrange(d1, start, size),
+          Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
               subrange(d2, start, size));
           start += size;
         }

@@ -154,6 +154,7 @@ public:
   using GaussianPdf<V1,M1>::cov;
   using GaussianPdf<V1,M1>::std;
   using GaussianPdf<V1,M1>::prec;
+  using GaussianPdf<V1,M1>::det;
   using GaussianPdf<V1,M1>::setMean;
   using GaussianPdf<V1,M1>::setCov;
   using GaussianPdf<V1,M1>::init;

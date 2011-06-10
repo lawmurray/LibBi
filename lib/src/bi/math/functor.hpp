@@ -11,6 +11,7 @@
 #define BI_MATH_FUNCTOR_HPP
 
 #include "scalar.hpp"
+#include "misc.hpp"
 #include "../cuda/cuda.hpp"
 
 namespace bi {
@@ -394,7 +395,7 @@ struct nan_minus_exp_and_multiply_functor : public std::unary_function<T,T> {
 template<class T>
 struct is_finite_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T& x) const {
-    return isfinite(x);
+    return is_finite(x);
   }
 };
 
@@ -406,7 +407,7 @@ struct is_finite_functor : public std::unary_function<T,T> {
 template<class T>
 struct is_not_finite_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T& x) const {
-    return !isfinite(x);
+    return !is_finite(x);
   }
 };
 

@@ -364,7 +364,7 @@ inline void bi::SparseBlock<bi::ON_HOST>::coord(const int i, int& id,
   int k = i/coords.size1();
   int j = i - k*coords.size1();
 
-  id = ids[k];
+  id = *(ids.begin() + k);
   coord.x = coords(j,0);
   coord.y = (coords.size2() > 1) ? coords(j,1) : 0;
   coord.z = (coords.size2() > 2) ? coords(j,2) : 0;
@@ -376,7 +376,7 @@ inline int bi::SparseBlock<bi::ON_HOST>::id(const int i) const {
 
   int k = i/coords.size1();
 
-  return ids[k];
+  return *(ids.begin() + k);
 }
 
 inline int bi::SparseBlock<bi::ON_HOST>::index(const int i) const {

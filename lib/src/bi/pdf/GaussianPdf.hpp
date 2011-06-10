@@ -180,6 +180,13 @@ public:
   const M1& prec() const;
 
   /**
+   * Get the determinant of the covariance.
+   *
+   * @return \f$|\Sigma|\f$; determinant of covariance matrix.
+   */
+  typename V1::value_type det() const;
+
+  /**
    * Set the mean.
    *
    * @param mu \f$\mathbf{\mu}\f$; mean.
@@ -492,6 +499,11 @@ inline const M1& bi::GaussianPdf<V1,M1>::std() const {
 template<class V1, class M1>
 inline const M1& bi::GaussianPdf<V1,M1>::prec() const {
   return invSigma;
+}
+
+template<class V1, class M1>
+inline typename V1::value_type bi::GaussianPdf<V1,M1>::det() const {
+  return detSigma;
 }
 
 template<class V1, class M1>

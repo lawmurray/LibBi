@@ -217,7 +217,8 @@ void bi::SimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
   assert (t >= 0 && t + T <= nrDim->size());
 
   BI_UNUSED NcBool ret;
-  tVar->set_cur(t);
+  ret = tVar->set_cur(t);
+  BI_ASSERT(ret, "Index exceeds size reading " << tVar->name());
   ret = tVar->get(x.buf(), T);
   BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
 }
@@ -228,7 +229,8 @@ void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T, const V1 x)
   assert (t >= 0 && t + T <= nrDim->size());
 
   BI_UNUSED NcBool ret;
-  tVar->set_cur(t);
+  ret = tVar->set_cur(t);
+  BI_ASSERT(ret, "Index exceeds size writing " << tVar->name());
   ret = tVar->put(x.buf(), T);
   BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
 }

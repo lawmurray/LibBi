@@ -34,6 +34,12 @@ CUDA_FUNC_BOTH int next_power_2(const int n);
  */
 CUDA_FUNC_BOTH double rel_err(const double a, const double b);
 
+/**
+ *
+ */
+template<class T>
+CUDA_FUNC_BOTH int is_finite(const T x);
+
 }
 
 inline int bi::factorial(const int n) {
@@ -55,15 +61,24 @@ inline int bi::next_power_2(const int n) {
 }
 
 inline double bi::rel_err(const double a, const double b) {
-  double diff = std::abs(a - b);
-  double abs_a = std::abs(a);
-  double abs_b = std::abs(b);
+  double diff = abs(a - b);
+  double abs_a = abs(a);
+  double abs_b = abs(b);
 
   if (a == b) { // absorbs a == b == 0.0 case
     return 0.0;
   } else {
     return (abs_a > abs_b) ? diff / abs_a : diff / abs_b;
   }
+}
+
+template<class T>
+inline int bi::is_finite(const T x) {
+  #ifdef USE_CPU
+  return isfinite(x);
+  #else
+  return isfinite(x);
+  #endif
 }
 
 #endif

@@ -200,7 +200,7 @@ public:
   void init(Static<L>& theta, V1& lws, V2& as);
 
   /**
-   * Advance model forward.
+   * Predict.
    *
    * @tparam L Location.
    *
@@ -229,7 +229,7 @@ public:
   void correct(State<L>& s, V1& lws);
 
   /**
-   * Resample particles.
+   * Resample.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
@@ -251,7 +251,7 @@ public:
       R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * Resample particles with conditioned outcome for first particle.
+   * Resample with conditioned outcome for first particle.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.

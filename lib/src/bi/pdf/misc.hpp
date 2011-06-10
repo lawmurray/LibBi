@@ -496,6 +496,7 @@ real det_vector(const V2 x, const V3& is);
 
 #include "FactoredPdfVisitor.hpp"
 #include "../kd/FastGaussianKernel.hpp"
+#include "../math/misc.hpp"
 
 template<class Q1, class Q2, class V1>
 inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x) {
@@ -527,7 +528,7 @@ template<class V1>
 void bi::renormalise(V1 lws) {
   thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(), std::log(0.0));
   real mx = *bi::max(lws.begin(), lws.end());
-  if (std::isfinite(mx)) {
+  if (is_finite(mx)) {
     thrust::transform(lws.begin(), lws.end(), lws.begin(), subtract_constant_functor<real>(mx));
   }
 }

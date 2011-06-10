@@ -333,7 +333,7 @@ inline void bi::DenseBlock<bi::ON_HOST>::coord(const int i, int& id,
   int k = i/(lenX*lenY*lenZ);
   int j = i - k*lenX*lenY*lenZ;
 
-  id = ids[k];
+  id = *(ids.begin() + k);
   coord.z = j/(lenX*lenY);
   j -= coord.z*lenX*lenY;
   coord.y = j/lenX;
@@ -347,7 +347,7 @@ inline int bi::DenseBlock<bi::ON_HOST>::id(const int i) const {
 
   int k = i/(lenX*lenY*lenZ);
 
-  return ids[k];
+  return *(ids.begin() + k);
 }
 
 inline int bi::DenseBlock<bi::ON_HOST>::index(const int i) const {
