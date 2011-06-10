@@ -53,6 +53,7 @@ else
 fi
 
 STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
+DISTURBANCE_FILE=$RESULTS_DIR/ukf.nc.0
 
 # record
 if [[ "`hostname`" == gpu* ]]
@@ -68,6 +69,7 @@ $ROOT/build/likelihood --id=$ID -P $P -T $T \
     --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE \
     --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \
+    --disturbance-file=$DISTURBANCE_FILE \
     --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
     --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --starting-file=$STARTING_FILE \
     --include-initial=$INCLUDE_INITIAL
