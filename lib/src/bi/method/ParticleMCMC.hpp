@@ -865,24 +865,19 @@ void bi::ParticleMCMC<B,IO1,CL>::likelihood(const real T,
       "Output required for filter used with ParticleMCMC");
   assert(out == NULL || filter->getOutput()->size2() == out->size2());
 
-  if (initialConditioned) {
-    set_rows(s.get(D_NODE), subrange(x2.theta, 0, ND));
-    set_rows(s.get(C_NODE), subrange(x2.theta, ND, NC));
-    row(theta.get(P_NODE), 0) = subrange(x2.theta, ND + NC, NP);
-  } else {
-    m.template getPrior<D_NODE>().samples(rng, s.get(D_NODE));
-    m.template getPrior<C_NODE>().samples(rng, s.get(C_NODE));
-    row(theta.get(P_NODE), 0) = x2.theta;
-  }
-
   filter->reset();
-  switch (type) {
-    case UNCONDITIONED:
+  if (type == UNCONDITIONED) {
+    if (initialConditioned) {
+      row(theta.get(P_NODE), 0) = subrange(x2.theta, ND + NC, NP);
+      filter->filter(T, x2.theta, theta, s, resampler, relEss);
+    } else {
+      m.template getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+      m.template getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+      row(theta.get(P_NODE), 0) = x2.theta;
       filter->filter(T, theta, s, resampler, relEss);
-      break;
-    case CONDITIONED:
-      filter->filter(T, theta, s, x1.xd, x1.xc, x1.xr, resampler, relEss);
-      break;
+    }
+  } else /*if (type == CONDITIONED)*/ {
+    filter->filter(T, theta, s, x1.xd, x1.xc, x1.xr, resampler, relEss);
   }
   x2.xs = row(theta.get(S_NODE), 0);
   filter->summarise(&x2.ll, &x2.lls, &x2.ess);

@@ -145,6 +145,9 @@ public:
    * Initialise.
    *
    * @tparam L Location.
+   *
+   * @param theta Static state.
+   * @param[out] corrected Prior over initial state.
    */
   template<Location L, class V1, class M1>
   void init(Static<L>& theta, ExpGaussianPdf<V1,M1>& corrected);
