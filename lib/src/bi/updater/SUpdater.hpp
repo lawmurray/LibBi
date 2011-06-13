@@ -50,7 +50,7 @@ template<class B, bi::StaticHandling SH>
 void bi::SUpdater<B,SH>::update(Static<ON_HOST>& theta) {
   typedef typename B::STypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
-  typedef Pa<B,real,pa,host,host,pa,host,host,host> V1;
+  typedef Pa<ON_HOST,B,real,pa,host,host,pa,host,host,host> V1;
   typedef real V2;
   typedef SUpdateVisitor<ON_HOST,B,S,V1> Visitor;
 

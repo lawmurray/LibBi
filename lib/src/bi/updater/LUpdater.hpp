@@ -52,7 +52,7 @@ void bi::LUpdater<B,SH>::update(State<ON_HOST>& s, const SparseMask<ON_HOST>& ma
     V2& lws) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
-  typedef Pa<B,real,pa,host,host,pa,host,host,host> V3;
+  typedef Pa<ON_HOST,B,real,pa,host,host,pa,host,host,host> V3;
   typedef LUpdateVisitor<B,S,V3,real,real> Visitor;
 
   const int P = lws.size();

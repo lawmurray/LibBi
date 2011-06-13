@@ -34,7 +34,7 @@ template<class B, class B1, class V1, unsigned SH>
 void bi::kernelLUpdate(const B1 mask, const int offset, V1 lws) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
-  typedef Pa<B,real,pa,global,global,pa,global,global,global> V2;
+  typedef Pa<ON_DEVICE,B,real,pa,global,global,pa,global,global,global> V2;
   typedef LUpdateVisitor<B,S,V2,real,real> Visitor;
 
   real* ls = shared_mem;

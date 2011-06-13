@@ -26,9 +26,9 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt, State<bi::ON_DEVI
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
   #if !defined(USE_DOUBLE) and defined(USE_TEXTURE)
-  typedef Pa<B,real,pa,global,texture,pa,texture,shared,global> V1;
+  typedef Pa<ON_DEVICE,B,real,pa,global,texture,pa,texture,shared,global> V1;
   #else
-  typedef Pa<B,real,pa,global,global,pa,global,shared,global> V1;
+  typedef Pa<ON_DEVICE,B,real,pa,global,global,pa,global,shared,global> V1;
   #endif
 
   /* execution config */

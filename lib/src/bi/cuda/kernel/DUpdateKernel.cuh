@@ -35,7 +35,7 @@ template<class B, unsigned SH>
 void bi::kernelDUpdate(const real t, const real tnxt) {
   typedef typename B::DTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
-  typedef Pa<B,real,pa,global,global,pa,global,global,global> V1;
+  typedef Pa<ON_DEVICE,B,real,pa,global,global,pa,global,global,global> V1;
   typedef real V2;
   typedef DUpdateVisitor<ON_DEVICE,B,S,V1,V2> Visitor;
 

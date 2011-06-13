@@ -81,7 +81,7 @@ void bi::DOPRI5Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real 
   #ifdef USE_SSE
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,sse_const_host,sse_host>::type pa;
-  typedef Pa<B,sse_real,pa,sse_host,sse_host,pa,sse_host,sse_host,sse_host> V1;
+  typedef Pa<ON_HOST,B,sse_real,pa,sse_host,sse_host,pa,sse_host,sse_host,sse_host> V1;
   typedef DOPRI5Visitor<ON_HOST,B,S,sse_real,V1> Visitor;
   static const int N = net_size<B,S>::value;
   const int P = hostCState.size1();
@@ -181,7 +181,7 @@ void bi::DOPRI5Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real 
   #else
   typedef typename B::CTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
-  typedef Pa<B,real,pa,host,host,pa,host,host,host> V1;
+  typedef Pa<ON_HOST,B,real,pa,host,host,pa,host,host,host> V1;
   typedef DOPRI5Visitor<ON_HOST,B,S,real,V1> Visitor;
   static const int N = net_size<B,S>::value;
   const int P = hostCState.size1();

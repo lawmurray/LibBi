@@ -55,7 +55,7 @@ template<bi::Location L>
 void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_HOST>& s) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
-  typedef Pa<B,real,pa,host,host,pa,host,host,host> V3;
+  typedef Pa<ON_HOST,B,real,pa,host,host,pa,host,host,host> V3;
   typedef OUpdateVisitor<B,S,V3,real,real> Visitor;
 
   const int P = s.size();

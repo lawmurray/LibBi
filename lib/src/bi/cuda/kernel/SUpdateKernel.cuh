@@ -33,7 +33,7 @@ template<class B, unsigned SH>
 void bi::kernelSUpdate() {
   typedef typename B::STypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
-  typedef Pa<B,real,pa,global,global,global,global,global,global> V1;
+  typedef Pa<ON_DEVICE,B,real,pa,global,global,global,global,global,global> V1;
   typedef SUpdateVisitor<ON_DEVICE,B,S,V1> Visitor;
 
   int p = blockIdx.x*blockDim.x + threadIdx.x;

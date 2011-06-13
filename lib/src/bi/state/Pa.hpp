@@ -26,13 +26,13 @@ namespace bi {
  * @tparam V6 Memory type of c-parents.
  * @tparam V7 Memory type of or-parents.
  */
-template<class B, class T1, class V1, class V2, class V3, class V4,
-    class V5, class V6, class V7>
+template<Location L, class B, class T1, class V1, class V2, class V3,
+    class V4, class V5, class V6, class V7>
 struct Pa {
   /**
    * Constructor.
    */
-  CUDA_FUNC_BOTH Pa(const int p);
+  Pa(const int p);
 
   /**
    * Get parent.
@@ -43,11 +43,39 @@ struct Pa {
    * @tparam Zo Z-offset.
    */
   template<class X, int Xo, int Yo, int Zo>
-  CUDA_FUNC_BOTH T1 fetch(const Coord& cox) const;
+  T1 fetch(const Coord& cox) const;
 
   /**
    * Associated trajectory.
    */
+  int p;
+};
+
+/**
+ * Specialisation of Pa for host.
+ */
+template<class B, class T1, class V1, class V2, class V3,
+    class V4, class V5, class V6, class V7>
+struct Pa<ON_HOST,B,T1,V1,V2,V3,V4,V5,V6,V7> {
+  CUDA_FUNC_HOST Pa(const int p);
+
+  template<class X, int Xo, int Yo, int Zo>
+  CUDA_FUNC_HOST T1 fetch(const Coord& cox) const;
+
+  int p;
+};
+
+/**
+ * Specialisation of Pa for device.
+ */
+template<class B, class T1, class V1, class V2, class V3,
+    class V4, class V5, class V6, class V7>
+struct Pa<ON_DEVICE,B,T1,V1,V2,V3,V4,V5,V6,V7> {
+  CUDA_FUNC_DEVICE Pa(const int p);
+
+  template<class X, int Xo, int Yo, int Zo>
+  CUDA_FUNC_DEVICE T1 fetch(const Coord& cox) const;
+
   int p;
 };
 
@@ -57,14 +85,61 @@ struct Pa {
 
 template<class B, class T1, class V1, class V2, class V3, class V4,
     class V5, class V6, class V7>
-inline bi::Pa<B,T1,V1,V2,V3,V4,V5,V6,V7>::Pa(const int p) : p(p) {
+inline bi::Pa<bi::ON_HOST,B,T1,V1,V2,V3,V4,V5,V6,V7>::Pa(const int p) :
+    p(p) {
   //
 }
 
 template<class B, class T1, class V1, class V2, class V3, class V4,
     class V5, class V6, class V7>
 template<class X, int Xo, int Yo, int Zo>
-inline T1 bi::Pa<B,T1,V1,V2,V3,V4,V5,V6,V7>::fetch(const Coord& cox) const {
+inline T1 bi::Pa<bi::ON_HOST,B,T1,V1,V2,V3,V4,V5,V6,V7>::fetch(
+    const Coord& cox) const {
+  using namespace boost::mpl;
+
+  /* select memory type */
+  typedef
+    typename
+    if_<is_p_node<X>,
+        V1,
+    typename
+    if_<is_f_node<X>,
+        V2,
+    typename
+    if_<is_r_node<X>,
+        V3,
+    typename
+    if_<is_s_node<X>,
+        V4,
+    typename
+    if_<is_d_node<X>,
+        V5,
+    typename
+    if_<is_c_node<X>,
+        V6,
+    typename
+    if_<is_o_node<X>,
+        V7,
+    /*else*/
+        int
+    /*end*/
+    >::type>::type>::type>::type>::type>::type>::type V;
+
+  return V::template fetch<B,X,Xo,Yo,Zo>(p, cox);
+}
+
+template<class B, class T1, class V1, class V2, class V3, class V4,
+    class V5, class V6, class V7>
+inline bi::Pa<bi::ON_DEVICE,B,T1,V1,V2,V3,V4,V5,V6,V7>::Pa(const int p) :
+    p(p) {
+  //
+}
+
+template<class B, class T1, class V1, class V2, class V3, class V4,
+    class V5, class V6, class V7>
+template<class X, int Xo, int Yo, int Zo>
+inline T1 bi::Pa<bi::ON_DEVICE,B,T1,V1,V2,V3,V4,V5,V6,V7>::fetch(
+    const Coord& cox) const {
   using namespace boost::mpl;
 
   /* select memory type */

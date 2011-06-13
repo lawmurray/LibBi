@@ -34,7 +34,7 @@ template<class B, class B1, unsigned SH>
 void bi::kernelOUpdate(const B1 mask, const int start, const int P) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,constant,global>::type pa;
-  typedef Pa<B,real,pa,global,global,pa,global,global,global> V2;
+  typedef Pa<ON_DEVICE,B,real,pa,global,global,pa,global,global,global> V2;
   typedef OUpdateVisitor<B,S,V2,real,real> Visitor;
 
   const int i = blockIdx.y*blockDim.y + threadIdx.y;
