@@ -62,7 +62,6 @@ int main(int argc, char* argv[]) {
     OBS_FILE_ARG,
     OUTPUT_FILE_ARG,
     FILTER_FILE_ARG,
-    DISTURBANCE_FILE_ARG,
     RESAMPLER_ARG,
     FILTER_ARG,
     SORT_ARG,
@@ -75,7 +74,7 @@ int main(int argc, char* argv[]) {
   int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 1000, M = 10;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
-      STARTING_FILE, DISTURBANCE_FILE;
+      STARTING_FILE;
   std::string STARTING_TYPE("prior"), RESAMPLER("stratified"),
       FILTER("bootstrap");
   bool INCLUDE_INITIAL = true, SORT = true;
@@ -97,7 +96,6 @@ int main(int argc, char* argv[]) {
       {"obs-file", required_argument, 0, OBS_FILE_ARG },
       {"filter-file", required_argument, 0, FILTER_FILE_ARG },
       {"starting-file", optional_argument, 0, STARTING_FILE_ARG },
-      {"disturbance-file", optional_argument, 0, DISTURBANCE_FILE_ARG },
       {"output-file", required_argument, 0, OUTPUT_FILE_ARG },
       {"starting-type", required_argument, 0, STARTING_TYPE_ARG },
       {"resampler", required_argument, 0, RESAMPLER_ARG },
@@ -156,9 +154,6 @@ int main(int argc, char* argv[]) {
         break;
       case FILTER_FILE_ARG:
         FILTER_FILE = std::string(optarg);
-        break;
-      case DISTURBANCE_FILE_ARG:
-        DISTURBANCE_FILE = std::string(optarg);
         break;
       case STARTING_FILE_ARG:
         STARTING_FILE = std::string(optarg);
@@ -295,10 +290,8 @@ int main(int argc, char* argv[]) {
       /* with disturbance particle filter */
       ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
           NetCDFBuffer::REPLACE);
-      UnscentedKalmanFilterNetCDFBuffer inProposal(m, DISTURBANCE_FILE,
-          NetCDFBuffer::READ_ONLY, STATIC_OWN);
       BOOST_AUTO(filter, DisturbanceParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-          inForce, &inObs, &inProposal, &outFilter));
+          inForce, &inObs, &outFilter));
 
       mcmc->init(x, T, theta, s, filter, &resam);
       mcmc->output0(filter);
