@@ -96,10 +96,31 @@ public:
    */
   //@{
   /**
-   * @copydoc #concept::Filter::filter()
+   * Filter forward.
+   *
+   * @tparam L Location.
+   *
+   * @param T Time to which to filter.
+   * @param[out] theta Static state.
+   * @param[out] s State.
    */
   template<Location L>
   void filter(const real T, Static<L>& theta, State<L>& s);
+
+  /**
+   * Filter forward with fixed starting state.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   *
+   * @param T Time to which to filter.
+   * @param x0 Starting state. Should contain d- and c-nodes, along with
+   * p-nodes if <tt>SH == STATIC_OWN</tt>.
+   * @param[out] theta Static state.
+   * @param[out] s State.
+   */
+  template<Location L, class V1>
+  void filter(const real T, const V1 x0, Static<L>& theta, State<L>& s);
 
   /**
    * @copydoc #concept::Filter::summarise()
@@ -151,6 +172,33 @@ public:
    */
   template<Location L, class V1, class M1>
   void predict(const real tnxt, const ExpGaussianPdf<V1,M1>& corrected,
+      Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
+      ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY);
+
+  /**
+   * Forward prediction with fixed starting point.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   *
+   * @param tnxt Time to which to predict.
+   * @param x0 Starting state. Should contain d- and c-nodes, along with
+   * p-nodes if <tt>SH == STATIC_OWN</tt>.
+   * @param[out] theta Static state.
+   * @param[out] s State.
+   * @param[out] observed Observation marginal at next time.
+   * @param[out] uncorrected Uncorrected state marginal at next time.
+   * @param[out] SigmaXX Uncorrected-corrected state cross-covariance.
+   * @param[out] SigmaXY Uncorrected-observed cross-covariance.
+   *
+   * Returns when either of the following is met:
+   *
+   * @li @p tnxt is reached,
+   * @li a time when observations are available is reached.
+   */
+  template<Location L, class V1, class M1, class V2>
+  void predict(const real tnxt, const V2 x0,
       Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
       ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY);
 
@@ -208,6 +256,64 @@ public:
 
 private:
   /**
+   * Initialise observations.
+   *
+   * @tparam L Location.
+   *
+   * @param tnxt Time to which to predict.
+   * @param s State.
+   *
+   * @return Time to which to predict.
+   *
+   * Sets #W.
+   */
+  template<Location L>
+  real initObs(const real tnxt, State<L>& s);
+
+  /**
+   * Initialise unscented transformation.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   *
+   * @param[out] theta Static state.
+   * @param[out] s State.
+   * @param[out] observed Observation marginal at next time.
+   * @param[out] SigmaXY Uncorrected-observed cross-covariance.
+   *
+   * Sets #P, #lambda, #a, #Wm0, #Wc0, #Wi and resizes @p observed,
+   * @p SigmaXY, @p s and @p theta as required.
+   */
+  template<Location L, class V1, class M1>
+  void initTransform(Static<L>& theta, State<L>& s,
+      ExpGaussianPdf<V1,M1>& observed, M1& SigmaXY);
+
+  /**
+   * Perform unscented transformation.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   *
+   * @param[out] theta Static state.
+   * @param[out] s State.
+   * @param[out] observed Observation marginal at next time.
+   * @param[out] uncorrected Uncorrected state marginal at next time.
+   * @param[out] SigmaXX Uncorrected-corrected state cross-covariance.
+   * @param[out] SigmaXY Uncorrected-observed cross-covariance.
+   * @param tj Time to which to predict.
+   * @param nsteps Number of random variate updates required.
+   * @param mu0 Mean of corrected state at starting point.
+   * @param X Sigma points of corrected state.
+   */
+  template<Location L, class V1, class M1, class V2, class M2>
+  void transform(Static<L>& theta, State<L>& s,
+      ExpGaussianPdf<V1,M1>& observed, ExpGaussianPdf<V1,M1>& uncorrected,
+      M1 SigmaXX, M1 SigmaXY, const real tj, const int nsteps, const V2 mu0,
+      M2 X);
+
+  /**
    * Model.
    */
   B& m;
@@ -238,7 +344,7 @@ private:
   real alpha, beta, kappa, lambda, a;
 
   /**
-   * Weights for unscented transformation given current #L.
+   * Weights for unscented transformation.
    */
   real Wm0, Wc0, Wi;
 
@@ -401,6 +507,36 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
+template<bi::Location L, class V1>
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+    const V1 x0, Static<L>& theta, State<L>& s) {
+  typedef typename locatable_vector<L,real>::type V2;
+  typedef typename locatable_matrix<L,real>::type M2;
+
+  ExpGaussianPdf<V2,M2> corrected(M);
+  ExpGaussianPdf<V2,M2> uncorrected(M);
+  ExpGaussianPdf<V2,M2> observed(0);
+  M2 SigmaXX(M, M), SigmaXY(M, 0);
+
+  int n = 0;
+
+  init(theta, corrected);
+  while (state.t < T) {
+    if (n == 0) {
+      predict(T, x0, theta, s, observed, uncorrected, SigmaXX, SigmaXY);
+    } else {
+      predict(T, corrected, theta, s, observed, uncorrected, SigmaXX, SigmaXY);
+    }
+    correct(uncorrected, SigmaXY, s, observed, corrected);
+    output(n, uncorrected, corrected, SigmaXX);
+    ++n;
+  }
+  synchronize();
+  term(theta);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class T1, class V2, class V3>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll,
     V2* lls, V3* ess) {
@@ -473,16 +609,77 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
     const ExpGaussianPdf<V1,M1>& corrected,
     Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
     ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY) {
-  typedef typename V1::value_type T1;
-
-  /* pre-conditions */
+  /* pre-condition */
   assert (corrected.size() == M);
-  assert (uncorrected.size() == M);
-  assert (SigmaXX.size1() == M && SigmaXX.size2() == M);
-  assert (SigmaXY.size1() == M);
 
-  /* time interval over which to perform unscented transformation */
-  real to, ti = state.t, tj;
+  /* initialise time interval and number of observations */
+  real ti = state.t;
+  real tj = initObs(tnxt, s);
+
+  /* number of random variate updates required during time interval */
+  int nsteps = num_steps(ti, tj, delta);
+
+  /* required state size, state arranged in order: d-nodes, c-nodes,
+   * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
+  N = M + W + NR*std::max(0, nsteps - 1);
+
+  /* initialise unscented transformation */
+  initTransform(theta, s, observed, SigmaXY);
+
+  /* initialise state */
+  BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
+  set_rows(columns(*X, 0, M), corrected.mean());
+  matrix_axpy(a, corrected.std(), subrange(*X, 1, M, 0, M));
+  matrix_axpy(-a, corrected.std(), subrange(*X, N + 1, M, 0, M));
+  ///@todo corrected.std() is upper triangular, needn't do full axpy.
+
+  /* perform unscented transformation */
+  transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps, corrected.mean(), *X);
+
+  delete X;
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class V1, class M1, class V2>
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
+    const V2 x0, Static<L>& theta, State<L>& s,
+    ExpGaussianPdf<V1,M1>& observed, ExpGaussianPdf<V1,M1>& uncorrected,
+    M1& SigmaXX, M1& SigmaXY) {
+  /* pre-conditions */
+  assert (x0.size() == M);
+
+  /* initialise time interval and number of observations */
+  real ti = state.t;
+  real tj = initObs(tnxt, s);
+
+  /* number of random variate updates required during time interval */
+  int nsteps = num_steps(ti, tj, delta);
+
+  /* required state size, state arranged in order: d-nodes, c-nodes,
+   * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
+  N = W + NR*std::max(0, nsteps - 1);
+
+  /* initialise unscented transformation */
+  initTransform(theta, s, observed, SigmaXY);
+
+  /* initialise state */
+  BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
+  set_rows(columns(*X, 0, M), x0);
+
+  /* perform unscented transformation */
+  transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps, x0, *X);
+
+  delete X;
+}
+
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L>
+real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::initObs(const real tnxt,
+    State<L>& s) {
+  real to, ti = state.t;
   if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= ti) {
     oyUpdater.update(s);
     to = oyUpdater.getTime();
@@ -491,15 +688,30 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
     to = tnxt;
     W = 0;
   }
-  tj = to;
+  return to;
+}
 
-  /* number of random variate updates required during time interval */
-  int nsteps = num_steps(ti, tj, delta);
-
-  /* required state size, state arranged in order: d-nodes, c-nodes,
-   * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
-  N = M + W + NR*std::max(0, nsteps - 1);
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class V1, class M1>
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::initTransform(
+    Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
+    M1& SigmaXY) {
+  /* number of sigma points */
   P = 2*N + 1;
+
+  /* parameters */
+  lambda = alpha*alpha*(N + kappa) - N;
+  a = sqrt(N + lambda);
+
+  /* weights */
+  Wm0 = lambda/(N + lambda);
+  Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
+  Wi = 0.5/(N + lambda);
+
+  /* resize distributions */
+  observed.resize(W, false);
+  SigmaXY.resize(M, W, false);
 
   /* resize state (note may end up larger than P, see State) */
   s.resize(P);
@@ -508,11 +720,25 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
   } else {
     theta.resize(1, true);
   }
-  observed.resize(W, false);
-  SigmaXY.resize(M, W, false);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class V1, class M1, class V2, class M2>
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
+    Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
+    ExpGaussianPdf<V1,M1>& uncorrected, M1 SigmaXX, M1 SigmaXY,
+    const real tj, const int nsteps, const V2 mu0, M2 X) {
+  typedef typename V1::value_type T1;
+  /* pre-conditions */
+  assert (mu0.size() == M);
+  assert (X.size2() == M + W);
+  assert (uncorrected.size() == M);
+  assert (SigmaXX.size1() == M && SigmaXX.size2() == M);
+  assert (SigmaXY.size1() == M);
 
   /* temporaries, column order for matrices is d-, c-, p-, o- then r-nodes */
-  BOOST_AUTO(X1, temp_matrix<M1>(s.size(), M + W));
+  BOOST_AUTO(X1, &X);
   BOOST_AUTO(X2, temp_matrix<M1>(s.size(), M + W));
   BOOST_AUTO(Z1, rows(*X1, 0, P));
   BOOST_AUTO(Z2, rows(*X2, 0, P));
@@ -522,25 +748,20 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
   BOOST_AUTO(Wc, temp_vector<V1>(P));
   Sigma->clear();
 
-  /* unscented transform weights and parameters */
-  lambda = alpha*alpha*(N + kappa) - N;
-  a = sqrt(N + lambda);
-
-  Wm0 = lambda/(N + lambda);
-  Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
-  Wi = 0.5/(N + lambda);
-
-  *Wm->begin() = Wm0;
-  *Wc->begin() = Wc0;
-  bi::fill(Wm->begin() + 1, Wm->end(), Wi);
-  bi::fill(Wc->begin() + 1, Wc->end(), Wi);
-
   /**
    * Let \f$N\f$ be the dimensionality of the state and \f$V\f$ the
    * dimensionality of system noise (number of r-nodes). The state at time
    * \f$t_{n-1}\f$ is given by a Gaussian with mean \f$\boldsymbol{\mu}_x\f$
    * and covariance \f$\Sigma_x\f$. All matrices are stored column-major.
    *
+   * Compute the weights:
+   */
+  *Wm->begin() = Wm0;
+  *Wc->begin() = Wc0;
+  bi::fill(Wm->begin() + 1, Wm->end(), Wi);
+  bi::fill(Wc->begin() + 1, Wc->end(), Wi);
+
+  /**
    * Compute the Cholesky decomposition of the covariance matrix,
    * \f$U \leftarrow \sqrt{\Sigma_x}\f$, where \f$U\f$ is an upper triangular
    * matrix.
@@ -557,13 +778,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
    * where \f$U^{(i,*)}\f$ is the \f$i\f$th row of \f$U\f$, indexed from
    * zero, and \f$a = \sqrt{L + \lambda}\f$.
    *
-   * @todo corrected.std() is upper triangular, needn't do full axpy.
-   */
-  set_rows(columns(*X1, 0, M), corrected.mean());
-  matrix_axpy(a, corrected.std(), subrange(*X1, 1, M, 0, M));
-  matrix_axpy(-a, corrected.std(), subrange(*X1, N + 1, M, 0, M));
-
-  /**
    * Propagate system:
    *
    * \f[\mathcal{X}_n^{(i)} \leftarrow f(\mathcal{X}_{n-1}^{(i)})\,.\f]
@@ -587,11 +801,10 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
     /* p-nodes changed, need to update s-nodes */
     sim.init(theta);
   }
-  while (ti < tj) {
+  while (state.t < tj) {
     sim.advance(tj, s);
-    ti = sim.getTime();
+    state.t = sim.getTime();
   }
-  state.t = ti;
 
   /**
    * and observations:
@@ -599,7 +812,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
    * \f[\mathcal{Y}_n^{(i)} \leftarrow g(\mathcal{X}_n^{(i)})\f]
    */
   oLogs.clear();
-  if (ti >= to) {
+  if (state.t >= tj) {
     BOOST_AUTO(mask, oyUpdater.getMask());
     assert(W == mask.size());
 
@@ -642,8 +855,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
    * and observation mean:
    *
    * \f[\boldsymbol{\mu}_y \leftarrow \sum_i W_m^{(i)} \mathcal{Y}_n^{(i)}\f]
-   *
-   * @todo Consider using sum_rows().
    */
   gemv(1.0, Z2, *Wm, 0.0, *mu, 'T');
 
@@ -664,7 +875,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
    * \boldsymbol{\mu}_y) (\mathcal{X}_n^{(i)} - \boldsymbol{\mu}_x)^T\f]
    */
   /* mean-adjust */
-  sub_rows(columns(Z1, 0, M), corrected.mean());
+  sub_rows(columns(Z1, 0, M), mu0);
   sub_rows(Z2, *mu);
 
   /* uncorrected covariance */
@@ -689,7 +900,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
 
   /* clean up */
   synchronize();
-  delete X1;
   delete X2;
   delete mu;
   delete Sigma;

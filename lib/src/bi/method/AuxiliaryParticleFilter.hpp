@@ -62,6 +62,13 @@ public:
   /**
    * @copydoc ParticleFilter::filter()
    */
+  template<Location L, class R, class V1>
+  void filter(const real T, const V1 x0, Static<L>& theta, State<L>& s,
+      R* resam = NULL, const real relEss = 1.0);
+
+  /**
+   * @copydoc ParticleFilter::filter()
+   */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
       M1& xr, R* resam = NULL, const real relEss = 1.0);
@@ -188,6 +195,11 @@ private:
    * Cache for stage 1 log-weights.
    */
   Cache2D<real> stage1LogWeightsCache;
+
+  /* net sizes, for convenience */
+  static const int ND = net_size<B,typename B::DTypeList>::value;
+  static const int NC = net_size<B,typename B::CTypeList>::value;
+  static const int NP = net_size<B,typename B::PTypeList>::value;
 };
 
 /**
@@ -258,6 +270,19 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   delete lw1s;
   delete lw2s;
   delete as;
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<bi::Location L, class R, class V1>
+void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+    const V1 x0, Static<L>& theta, State<L>& s, R* resam,
+    const real relEss) {
+  set_rows(s.get(D_NODE), subrange(x0, 0, ND));
+  set_rows(s.get(C_NODE), subrange(x0, ND, NC));
+  if (SH == STATIC_OWN) {
+    set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
+  }
+  filter(T, theta, s, resam, relEss);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
