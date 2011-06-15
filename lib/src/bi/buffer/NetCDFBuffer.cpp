@@ -17,7 +17,8 @@ NcType netcdf_real = ncDouble;
 NcType netcdf_real = ncFloat;
 #endif
 
-NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) {
+NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
+    file(file) {
   switch (mode) {
   case WRITE:
     ncFile = new NcFile(file.c_str(), NcFile::Write);
@@ -35,6 +36,10 @@ NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) {
   }
 
   BI_ERROR(ncFile->is_valid(), "Could not open " << file);
+}
+
+NetCDFBuffer::NetCDFBuffer(const NetCDFBuffer& o) : file(o.file) {
+  ncFile = new NcFile(file.c_str(), NcFile::ReadOnly);
 }
 
 NetCDFBuffer::~NetCDFBuffer() {

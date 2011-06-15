@@ -127,6 +127,13 @@ public:
       const int ns = 0);
 
   /**
+   * Copy constructor.
+   *
+   * @see NetCDFBuffer::NetCDFBuffer(const NetCDFBuffer&)
+   */
+  SparseInputNetCDFBuffer(const SparseInputNetCDFBuffer& o);
+
+  /**
    * Destructor.
    */
   virtual ~SparseInputNetCDFBuffer();

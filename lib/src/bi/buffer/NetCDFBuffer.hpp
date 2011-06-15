@@ -85,6 +85,14 @@ protected:
   NetCDFBuffer(const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
+   * Copy constructor.
+   *
+   * Reopens the file of the argument with a new file handle, in read only
+   * mode.
+   */
+  NetCDFBuffer(const NetCDFBuffer& o);
+
+  /**
    * Destructor.
    */
   virtual ~NetCDFBuffer();
@@ -134,6 +142,12 @@ protected:
    * NetCDF file.
    */
   NcFile* ncFile;
+
+  /**
+   * File name. Used for reopening file with new file handle under copy
+   * constructor.
+   */
+  std::string file;
 };
 }
 

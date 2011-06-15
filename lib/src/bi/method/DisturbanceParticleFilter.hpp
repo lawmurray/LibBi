@@ -282,7 +282,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHa
 bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::DisturbanceParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
     particle_filter_type(m, rng, delta, in, obs, out),
-    kalman_filter_type(m, delta, in, obs), mu(NR), U(NR,NR) {
+    kalman_filter_type(m, delta, new IO1(*in), new IO2(*obs)), mu(NR), U(NR,NR) {
   //
 }
 
@@ -410,10 +410,8 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     const real tnxt, ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta1,
     State<L>& s1, ExpGaussianPdf<V1,M1>& observed,
     ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY) {
-  particle_filter_type::mark();
   kalman_filter_type::predict(tnxt, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
   kalman_filter_type::correct(uncorrected, SigmaXY, s1, observed, corrected);
-  particle_filter_type::restore();
 
   mu = subrange(corrected.mean(), ND + NC, NR);
   potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);

@@ -22,6 +22,14 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const BayesNet& m,
   reset();
 }
 
+SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
+    const SparseInputNetCDFBuffer& o) : NetCDFBuffer(o), SparseInputBuffer(o.m),
+    vars(NUM_NODE_TYPES), ns(o.ns) {
+  map();
+  mask0();
+  reset();
+}
+
 SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
   synchronize();
   clean();

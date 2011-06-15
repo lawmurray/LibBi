@@ -199,6 +199,7 @@ private:
   /* net sizes, for convenience */
   static const int ND = net_size<B,typename B::DTypeList>::value;
   static const int NC = net_size<B,typename B::CTypeList>::value;
+  static const int NR = net_size<B,typename B::RTypeList>::value;
   static const int NP = net_size<B,typename B::PTypeList>::value;
 };
 
@@ -479,9 +480,6 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
   typedef typename locatable_temp_matrix<L,real>::type temp_matrix_type;
 
   const int P = s.size();
-  const int ND = this->m.getNetSize(D_NODE);
-  const int NC = this->m.getNetSize(C_NODE);
-  const int NR = this->m.getNetSize(R_NODE);
 
   if (this->oyUpdater.hasNext()) {
     temp_matrix_type X(P, ND + NC + NR);
