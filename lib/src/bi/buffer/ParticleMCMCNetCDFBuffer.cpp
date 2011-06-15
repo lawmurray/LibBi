@@ -59,7 +59,7 @@ void ParticleMCMCNetCDFBuffer::create() {
     if (type == P_NODE || type == S_NODE) {
       vars[type].resize(m.getNetSize(type));
       for (id = 0; id < m.getNetSize(type); ++id) {
-        vars[type][id] = createVar(m.getNode(type, id), STATIC_SHARED);
+        vars[type][id] = new NcVarBuffer<real>(createVar(m.getNode(type, id), STATIC_SHARED));
       }
     }
   }
@@ -119,7 +119,7 @@ void ParticleMCMCNetCDFBuffer::map() {
     if (type == P_NODE || type == S_NODE) {
       vars[type].resize(m.getNetSize(type));
       for (id = 0; id < m.getNetSize(type); ++id) {
-        vars[type][id] = mapVar(m.getNode(type, id), STATIC_SHARED);
+        vars[type][id] = new NcVarBuffer<real>(mapVar(m.getNode(type, id), STATIC_SHARED));
       }
     }
   }

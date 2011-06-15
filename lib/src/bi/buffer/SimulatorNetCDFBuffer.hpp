@@ -9,6 +9,7 @@
 #define BI_BUFFER_SIMULATORNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
+#include "NcVarBuffer.hpp"
 #include "../state/State.hpp"
 #include "../math/locatable.hpp"
 #include "../misc/Pipelineable.hpp"
@@ -191,7 +192,7 @@ protected:
   /**
    * Node variables, indexed by type.
    */
-  std::vector<std::vector<NcVar*> > vars;
+  std::vector<std::vector<NcVarBuffer<real>*> > vars;
 
   /**
    * Static handling flag.
@@ -249,45 +250,45 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
     j = 0;
     size = 1;
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       size *= nxDim->size();
       ++j;
     }
-    assert (vars[type][id]->get_dim(j) == npDim);
+    assert (vars[type][id]->get_var()->get_dim(j) == npDim);
     offsets[j] = 0;
     counts[j] = s.size1();
 
     start = m.getNodeStart(type, id);
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
 
     if (M1::on_device) {
       clean();
       BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), s.size2()));
-      ret = vars[type][id]->get(subrange(*buf, 0, buf->size1(), start, size).buf(), counts);
+      ret = vars[type][id]->get_var()->get(subrange(*buf, 0, buf->size1(), start, size).buf(), counts);
       s = *buf;
       add(buf);
     } else {
-      ret = vars[type][id]->get(subrange(s, 0, s.size1(), start, size).buf(), counts);
+      ret = vars[type][id]->get_var()->get(subrange(s, 0, s.size1(), start, size).buf(), counts);
     }
     BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
   }
@@ -306,35 +307,35 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
     j = 0;
     size = 1;
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       size *= nxDim->size();
       ++j;
     }
-    assert (vars[type][id]->get_dim(j) == npDim);
+    assert (vars[type][id]->get_var()->get_dim(j) == npDim);
     offsets[j] = p;
     counts[j] = s.size1();
 
     start = m.getNodeStart(type, id);
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
 
     if (M1::on_device || s.size1() != s.lead()) { // on device or not contiguous
@@ -342,10 +343,10 @@ void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
       BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), size));
       *buf = subrange(s, 0, s.size1(), start, size);
       synchronize();
-      ret = vars[type][id]->put(buf->buf(), counts);
+      ret = vars[type][id]->get_var()->put(buf->buf(), counts);
       delete buf;
     } else {
-      ret = vars[type][id]->put(subrange(s, 0, s.size1(), start, size).buf(), counts);
+      ret = vars[type][id]->get_var()->put(subrange(s, 0, s.size1(), start, size).buf(), counts);
 		}
     BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
   }
@@ -373,22 +374,22 @@ void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
     BOOST_AUTO(x1, host_temp_matrix<typename M1::value_type>(size, nrDim->size()));
     assert(x1->size1() == x1->lead());
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = 0;
       counts[j] = nrDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
@@ -396,9 +397,9 @@ void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
     offsets[j] = p;
     counts[j] = 1;
 
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
-    ret = vars[type][id]->get(x1->buf(), counts);
+    ret = vars[type][id]->get_var()->get(x1->buf(), counts);
     BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
     rows(x, start, size) = *x1;
     add(x1);
@@ -426,22 +427,22 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
     BOOST_AUTO(x1, host_temp_matrix<typename M1::value_type>(size, nrDim->size()));
     assert(x1->size1() == x1->lead());
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = 0;
       counts[j] = nrDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
@@ -450,10 +451,10 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
     counts[j] = 1;
 
     *x1 = rows(x, start, size);
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
     synchronize();
-    ret = vars[type][id]->put(x1->buf(), counts);
+    ret = vars[type][id]->get_var()->put(x1->buf(), counts);
     BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
     delete x1;
   }
@@ -477,24 +478,24 @@ void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
     size = 1;
     j = 0;
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       size *= nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       size *= nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       size *= nxDim->size();
@@ -503,17 +504,17 @@ void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
     offsets[j] = p;
     counts[j] = 1;
 
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
 
     if (V1::on_device || x.inc() > 1) {
       clean();
       BOOST_AUTO(buf, host_temp_matrix<real>(size, 1));
-      ret = vars[type][id]->get(buf->buf(), counts);
+      ret = vars[type][id]->get_var()->get(buf->buf(), counts);
       subrange(x, start, size) = column(*buf, 0);
       add(buf);
     } else {
-      ret = vars[type][id]->get(x.buf() + start, counts);
+      ret = vars[type][id]->get_var()->get(x.buf() + start, counts);
     }
     BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
   }
@@ -541,22 +542,22 @@ void bi::SimulatorNetCDFBuffer::writeSingle(const NodeType type,
     start = m.getNodeStart(type, id);
     j = 0;
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nrDim) {
       offsets[j] = t;
       counts[j] = 1;
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nzDim) {
       offsets[j] = 0;
       counts[j] = nzDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nyDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nyDim) {
       offsets[j] = 0;
       counts[j] = nyDim->size();
       ++j;
     }
-    if (vars[type][id]->get_dim(j) == nxDim) {
+    if (vars[type][id]->get_var()->get_dim(j) == nxDim) {
       offsets[j] = 0;
       counts[j] = nxDim->size();
       ++j;
@@ -564,9 +565,9 @@ void bi::SimulatorNetCDFBuffer::writeSingle(const NodeType type,
     offsets[j] = p;
     counts[j] = 1;
 
-    ret = vars[type][id]->set_cur(offsets);
+    ret = vars[type][id]->get_var()->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
-    ret = vars[type][id]->put(buf->buf() + start, counts);
+    ret = vars[type][id]->get_var()->put(buf->buf() + start, counts);
     BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
   }
 

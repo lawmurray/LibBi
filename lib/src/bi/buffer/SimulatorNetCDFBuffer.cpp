@@ -59,7 +59,7 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
     if (type == D_NODE || type == C_NODE || type == R_NODE ||
         (flag == STATIC_OWN && (type == P_NODE || type == S_NODE))) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
-        vars[type][id] = createVar(m.getNode(type, id));
+        vars[type][id] = new NcVarBuffer<real>(createVar(m.getNode(type, id)));
       }
     }
   }
@@ -98,7 +98,7 @@ void SimulatorNetCDFBuffer::map(const long P, const long T) {
       for (id = 0; id < m.getNumNodes(type); ++id) {
         node = m.getNode(type, id);
         if (hasVar(node->getName().c_str())) {
-          vars[type][id] = mapVar(m.getNode(type, id));
+          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getNode(type, id)));
         }
       }
     }
