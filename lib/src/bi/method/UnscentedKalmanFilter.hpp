@@ -666,42 +666,44 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
   /* next observation */
   real tj = initObs(tnxt, s);
 
-  /* number of random variate updates required during time interval */
-  int nsteps = num_steps(ti, tj, delta);
+  if (tj > ti) {
+    /* number of random variate updates required during time interval */
+    int nsteps = num_steps(ti, tj, delta);
 
-  /* required state size, state arranged in order: d-nodes, c-nodes,
-   * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
-  N = NR + W + NR*std::max(0, nsteps - 1);
+    /* required state size, state arranged in order: d-nodes, c-nodes,
+     * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
+    N = NR + W + NR*std::max(0, nsteps - 1);
 
-  /* initialise unscented transformation */
-  initTransform(theta, s, observed, SigmaXY);
+    /* initialise unscented transformation */
+    initTransform(theta, s, observed, SigmaXY);
 
-  /* initialise state */
-  BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
-  BOOST_AUTO(mu0, temp_vector<V2>(M));
+    /* initialise state */
+    BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
+    BOOST_AUTO(mu0, temp_vector<V2>(M));
 
-  subrange(*mu0, 0, ND + NC) = subrange(x0, 0, ND + NC);
-  subrange(*mu0, ND + NC, NR).clear();
-  if (haveParameters) {
-    subrange(*mu0, ND + NC + NR, NP) = subrange(x0, ND + NC, NP);
+    subrange(*mu0, 0, ND + NC) = subrange(x0, 0, ND + NC);
+    subrange(*mu0, ND + NC, NR).clear();
+    if (haveParameters) {
+      subrange(*mu0, ND + NC + NR, NP) = subrange(x0, ND + NC, NP);
+    }
+    log_vector(subrange(*mu0, 0, ND), m.getLogs(D_NODE));
+    log_vector(subrange(*mu0, ND, NC), m.getLogs(C_NODE));
+    log_vector(subrange(*mu0, ND + NC, NR), m.getLogs(R_NODE));
+    if (haveParameters) {
+      log_vector(subrange(*mu0, ND + NC + NR, NP), m.getLogs(P_NODE));
+    }
+    set_rows(columns(*X, 0, M), *mu0);
+
+    /* perform unscented transformation */
+    transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps,
+        *mu0, *X, true);
+
+    if (M1::on_device || V2::on_device) {
+      synchronize();
+    }
+    delete mu0;
+    delete X;
   }
-  log_vector(subrange(*mu0, 0, ND), m.getLogs(D_NODE));
-  log_vector(subrange(*mu0, ND, NC), m.getLogs(C_NODE));
-  log_vector(subrange(*mu0, ND + NC, NR), m.getLogs(R_NODE));
-  if (haveParameters) {
-    log_vector(subrange(*mu0, ND + NC + NR, NP), m.getLogs(P_NODE));
-  }
-  set_rows(columns(*X, 0, M), *mu0);
-
-  /* perform unscented transformation */
-  transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps,
-      *mu0, *X, true);
-
-  if (M1::on_device || V2::on_device) {
-    synchronize();
-  }
-  delete mu0;
-  delete X;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
