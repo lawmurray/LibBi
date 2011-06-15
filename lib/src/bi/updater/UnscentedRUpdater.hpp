@@ -46,8 +46,10 @@ public:
    * @param nsteps Number of updates to be performed.
    * @param N Number of variables in unscented transformation.
    * @param a Scaling factor for variates.
+   * @param fixed True if starting state fixed, false otherwise.
    */
-  void prepare(const int nsteps, const int N, const real a);
+  void prepare(const int nsteps, const int N, const real a,
+      const bool fixed = false);
 
 private:
   /**
@@ -64,6 +66,15 @@ private:
    * Scaling factor for variates for upcoming updates.
    */
   real a;
+
+  /**
+   * Is starting state fixed for this transformation?
+   */
+  bool fixed;
+
+  static const int ND = net_size<B,typename B::DTypeList>::value;
+  static const int NC = net_size<B,typename B::CTypeList>::value;
+  static const int NR = net_size<B,typename B::RTypeList>::value;
 };
 }
 
@@ -78,7 +89,7 @@ bi::UnscentedRUpdater<B,SH>::UnscentedRUpdater() : nsteps(0), N(0), a(0.0) {
 
 template<class B, bi::StaticHandling SH>
 void bi::UnscentedRUpdater<B,SH>::prepare(const int nsteps, const int N,
-    const real a) {
+    const real a, const bool fixed) {
   /* pre-condition */
   BI_ASSERT(this->nsteps == 0,
       "Simulation for previous unscented transformation incomplete");
@@ -86,6 +97,7 @@ void bi::UnscentedRUpdater<B,SH>::prepare(const int nsteps, const int N,
   this->nsteps = nsteps;
   this->N = N;
   this->a = a;
+  this->fixed = fixed;
 }
 
 template<class B, bi::StaticHandling SH>
@@ -100,15 +112,11 @@ void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedRUpdateVisitor<B,S,V1> Visitor;
 
-  static const int ND = net_size<B,typename B::DTypeList>::value;
-  static const int NC = net_size<B,typename B::CTypeList>::value;
-  static const int NR = net_size<B,typename B::RTypeList>::value;
-
   int start;
 
   if (nsteps == 1) {
     /* last step uses primary block */
-    start = 1 + ND + NC;
+    start = 1 + (fixed ? 0 : ND + NC);
   } else {
     /* other steps use extra blocks */
     start = 1 + N - nsteps*NR;

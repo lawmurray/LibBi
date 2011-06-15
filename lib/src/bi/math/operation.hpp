@@ -1172,8 +1172,8 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
   /* pre-conditions */
   assert (uplo == 'U' || uplo == 'L');
   assert (A.size1() == L.size1());
+  assert (A.size2() == L.size2());
   assert (L.size1() == L.size2());
-  assert((equals<M1,M2>::value));
 
   int info;
   typename M2::size_type N = A.size1();
@@ -1184,6 +1184,9 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
     magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
     synchronize();
   } else {
+    if (!M2::on_device && M1::on_device) {
+      synchronize();
+    }
     info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
         L.buf(), ld);
   }

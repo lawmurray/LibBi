@@ -46,8 +46,9 @@ public:
    *
    * @param N Number of variables in unscented transformation.
    * @param a Scaling factor for variates.
+   * @param fixed True if starting state fixed, false otherwise.
    */
-  void prepare(const int N, const real a);
+  void prepare(const int N, const real a, const bool fixed = false);
 
 private:
   /**
@@ -60,11 +61,15 @@ private:
    */
   real a;
 
+  /**
+   * Is starting state fixed for this transformation?
+   */
+  bool fixed;
+
   static const int ND = net_size<B,typename B::DTypeList>::value;
   static const int NC = net_size<B,typename B::CTypeList>::value;
   static const int NR = net_size<B,typename B::RTypeList>::value;
   static const int NP = net_size<B,typename B::PTypeList>::value;
-  static const int M = ND + NC + NR + ((SH == STATIC_OWN) ? NP : 0);
 };
 }
 
@@ -73,14 +78,17 @@ private:
 #include "../traits/derived_traits.hpp"
 
 template<class B, bi::StaticHandling SH>
-bi::UnscentedORUpdater<B,SH>::UnscentedORUpdater() : N(0), a(0.0) {
+bi::UnscentedORUpdater<B,SH>::UnscentedORUpdater() : N(0), a(0.0),
+    fixed(false) {
   //
 }
 
 template<class B, bi::StaticHandling SH>
-void bi::UnscentedORUpdater<B,SH>::prepare(const int N, const real a) {
+void bi::UnscentedORUpdater<B,SH>::prepare(const int N, const real a,
+    const bool fixed) {
   this->N = N;
   this->a = a;
+  this->fixed = fixed;
 }
 
 template<class B, bi::StaticHandling SH>
@@ -91,12 +99,18 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedORUpdateVisitor<B,S,V1> Visitor;
 
-  int i, size;
-  int W = mask.size(), start = 1 + M;
+  int i, size, W = mask.size(), start = 1 + NR;
+  if (!fixed) {
+    start += ND + NC;
+    if (SH == STATIC_OWN) {
+      start += NP;
+    }
+  }
 
   if (W > 0) {
     BOOST_AUTO(d1, diagonal(rows(s.get(OR_NODE), start, W)));
     BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), start + N, W)));
+    s.get(OR_NODE).clear();
 
     if (all_gaussian_likelihoods<S>::value || all_log_normal_likelihoods<S>::value) {
       bi::fill(d1.begin(), d1.end(), a);

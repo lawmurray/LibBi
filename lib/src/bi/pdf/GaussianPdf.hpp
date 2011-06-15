@@ -143,12 +143,10 @@ public:
   M1& cov();
 
   /**
-   * Get the standard deviation (upper-triangular Cholesky factor of
-   * covariance matrix).
+   * Get upper-triangular Cholesky factor of covariance matrix.
    *
-   * @return \f$\sqrt{\Sigma}\f$; standard deviation.
-   *
-   * Lower triangle of matrix is guaranteed zero.
+   * @return \f$\Sigma^{1/2}\f$; upper-triangular Cholesky factor of
+   * covariance matrix.
    */
   M1& std();
 
@@ -647,10 +645,6 @@ real bi::GaussianPdf<V1,M1>::operator()(const V2 x) {
 template<class V1, class M1>
 void bi::GaussianPdf<V1,M1>::init() {
   if (N > 0) {
-    U.clear();
-    invU.clear();
-    invSigma.clear();
-
     /* Cholesky decomposition of covariance matrix */
     potrf(Sigma, U, 'U');
     ident(invU);

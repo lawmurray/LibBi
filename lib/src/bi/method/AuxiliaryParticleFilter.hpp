@@ -279,9 +279,8 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     const real relEss) {
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
   set_rows(s.get(C_NODE), subrange(x0, ND, NC));
-  if (SH == STATIC_OWN) {
-    set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
-  }
+  set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
+
   filter(T, theta, s, resam, relEss);
 }
 
@@ -507,6 +506,5 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     this->restore();
   }
 }
-
 
 #endif
