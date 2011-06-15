@@ -15,6 +15,9 @@ void bi_omp_init() {
    * guarantees */
   omp_set_dynamic(0);
 
+  /* allow nested parallelism */
+  omp_set_nested(1);
+
   int max_threads = omp_get_max_threads(); // must be outside parallel block
   #pragma omp parallel
   {

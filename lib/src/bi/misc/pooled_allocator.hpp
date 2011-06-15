@@ -136,14 +136,17 @@ inline typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::alloca
   pointer p;
 
   /* check available items to reuse */
-  BOOST_AUTO(iter, available.find(num));
-  if (iter != available.end() && !iter->second.empty()) {
-    /* existing item */
-    p = iter->second.back();
-    iter->second.pop_back();
-  } else {
-    /* new item */
-    p = alloc.allocate(num, hint);
+  #pragma omp critical(critical_pooled_allocator)
+  {
+    BOOST_AUTO(iter, available.find(num));
+    if (iter != available.end() && !iter->second.empty()) {
+      /* existing item */
+      p = iter->second.back();
+      iter->second.pop_back();
+    } else {
+      /* new item */
+      p = alloc.allocate(num, hint);
+    }
   }
   return p;
 }
@@ -160,13 +163,16 @@ inline void bi::pooled_allocator<A>::destroy(pointer p) {
 
 template<class A>
 inline void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
-  BOOST_AUTO(iter, available.find(num));
-  if (iter != available.end()) {
-    /* existing size */
-    iter->second.push_back(p);
-  } else {
-    /* new size */
-    available.insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+  #pragma omp critical(critical_pooled_allocator)
+  {
+    BOOST_AUTO(iter, available.find(num));
+    if (iter != available.end()) {
+      /* existing size */
+      iter->second.push_back(p);
+    } else {
+      /* new size */
+      available.insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+    }
   }
 }
 
