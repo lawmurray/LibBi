@@ -63,6 +63,17 @@ public:
   State(const State<L>& o);
 
   /**
+   * Assignment operator.
+   */
+  State<L>& operator=(const State<L>& o);
+
+  /**
+   * Generic assignment operator.
+   */
+  template<Location L2>
+  State<L>& operator=(const State<L2>& o);
+
+  /**
    * Number of trajectories.
    */
   int size() const;
@@ -245,6 +256,27 @@ bi::State<L>::State(const State<L>& o) :
   Y = o.Y;
   Kf = o.Kf;
   Koy = o.Koy;
+}
+
+template<bi::Location L>
+bi::State<L>& bi::State<L>::operator=(const State<L>& o) {
+  X = o.X;
+  Y = o.Y;
+  Kf = o.Kf;
+  Koy = o.Koy;
+
+  return *this;
+}
+
+template<bi::Location L>
+template<bi::Location L2>
+bi::State<L>& bi::State<L>::operator=(const State<L2>& o) {
+  X = o.X;
+  Y = o.Y;
+  Kf = o.Kf;
+  Koy = o.Koy;
+
+  return *this;
 }
 
 template<bi::Location L>

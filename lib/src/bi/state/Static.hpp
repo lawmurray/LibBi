@@ -55,6 +55,17 @@ public:
   Static(const Static<L>& o);
 
   /**
+   * Assignment operator.
+   */
+  Static<L>& operator=(const Static<L>& o);
+
+  /**
+   * Generic assignment operator.
+   */
+  template<Location L2>
+  Static<L>& operator=(const Static<L2>& o);
+
+  /**
    * Number of trajectories.
    */
   int size() const;
@@ -139,6 +150,21 @@ bi::Static<L>::Static(const Static<L>& o) :
     Ks(columns(K, 0, o.get(S_NODE).size2())),
     Kp(columns(K, o.get(S_NODE).size2(), o.get(P_NODE).size2())) {
   //
+}
+
+template<bi::Location L>
+bi::Static<L>& bi::Static<L>::operator=(const Static<L>& o) {
+  K = o.K;
+
+  return *this;
+}
+
+template<bi::Location L>
+template<bi::Location L2>
+bi::Static<L>& bi::Static<L>::operator=(const Static<L2>& o) {
+  K = o.K;
+
+  return *this;
 }
 
 template<bi::Location L>

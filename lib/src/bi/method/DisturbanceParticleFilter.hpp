@@ -353,7 +353,6 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   V3 lws(s.size());
   V4 as(s.size());
   int n = 0, r = 0;
-  theta1 = theta;
 
   /* initialise pf from fixed starting state */
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
@@ -398,6 +397,9 @@ template<bi::Location L1, class V1, class V2, bi::Location L2, class V3,
 void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(
     Static<L1>& theta, V1& lws, V2& as, Static<L2>& theta1,
     ExpGaussianPdf<V3,M3>& corrected) {
+  theta1 = theta;
+  synchronize();
+
   particle_filter_type::init(theta, lws, as);
   kalman_filter_type::init(theta1, corrected);
 }
