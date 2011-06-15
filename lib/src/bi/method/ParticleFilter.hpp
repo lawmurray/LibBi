@@ -337,6 +337,16 @@ public:
 
 protected:
   /**
+   * Normalise weights after resampling.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  void normalise(V1 lws);
+
+  /**
    * Model.
    */
   B& m;
@@ -573,10 +583,9 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess
   double ll1;
 
   /* compute log-likelihoods and ESS at each time */
-  int n, r;
+  int n;
   real logsum1, sum1, sum2;
   for (n = 0; n < T; ++n) {
-    r = (n == 0 || this->resamplingCache.get(n));
     *lws1 = logWeightsCache.get(n);
 
     bi::sort(lws1->begin(), lws1->end());
@@ -585,7 +594,7 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess
     sum1 = exp(logsum1);
     sum2 = sum_exp_square(lws1->begin(), lws1->end(), 0.0);
 
-    (*lls1)(n) = r ? logsum1 - std::log(P) : 0.0;
+    (*lls1)(n) = logsum1 - std::log(P);
     (*ess1)(n) = (sum1*sum1)/sum2;
   }
 
@@ -699,6 +708,7 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   if (r) {
     resam->resample(lws, as, theta, s);
   }
+  normalise(lws);
   return r;
 }
 
@@ -715,6 +725,7 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   if (r) {
     resam->resample(a, lws, as, theta, s);
   }
+  normalise(lws);
   return r;
 }
 
@@ -729,6 +740,15 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(const int k,
     logWeightsCache.put(k, lws);
     ancestorsCache.put(k, as);
   }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class V1>
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::normalise(V1 lws) {
+  typedef typename V1::value_type T1;
+  T1 lW = log_sum_exp(lws.begin(), lws.end(), static_cast<T1>(0.0));
+  thrust::transform(lws.begin(), lws.end(), lws.begin(),
+      add_constant_functor<T1>(log(lws.size()) - lW));
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
