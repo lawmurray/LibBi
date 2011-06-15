@@ -49,12 +49,14 @@ int main(int argc, char* argv[]) {
     OUTPUT_FILE_ARG,
     OUTPUT_ARG,
     TIME_ARG,
-    INCLUDE_PARAMETERS_ARG
+    INCLUDE_PARAMETERS_ARG,
+    INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3;
   int INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0, SEED = 0;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, OUTPUT_FILE;
-  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false;
+  bool OUTPUT = false, TIME = false, INCLUDE_PARAMETERS = false,
+      INCLUDE_INITIAL = false;
   int c, option_index;
 
   option long_options[] = {
@@ -72,6 +74,7 @@ int main(int argc, char* argv[]) {
       {"output", required_argument, 0, OUTPUT_ARG },
       {"time", required_argument, 0, TIME_ARG },
       {"include-parameters", required_argument, 0, INCLUDE_PARAMETERS_ARG },
+      {"include-initial", required_argument, 0, INCLUDE_INITIAL_ARG },
       {0, 0, 0, 0}
   };
   const char* short_options = "T:h:";
@@ -122,6 +125,9 @@ int main(int argc, char* argv[]) {
       case INCLUDE_PARAMETERS_ARG:
         INCLUDE_PARAMETERS = atoi(optarg);
         break;
+      case INCLUDE_INITIAL_ARG:
+        INCLUDE_INITIAL = atoi(optarg);
+        break;
       case 'T':
         T = atof(optarg);
         break;
@@ -144,6 +150,9 @@ int main(int argc, char* argv[]) {
 
   /* model */
   model_type m;
+  const int NP = m.getNetSize(P_NODE);
+  const int ND = m.getNetSize(D_NODE);
+  const int NC = m.getNetSize(C_NODE);
 
   /* state and intermediate results */
   int P = 1;
@@ -158,6 +167,8 @@ int main(int argc, char* argv[]) {
   if (!INIT_FILE.empty()) {
     inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
     inInit->read0(P_NODE, theta.get(P_NODE));
+    inInit->read0(D_NODE, s.get(D_NODE));
+    inInit->read0(C_NODE, s.get(C_NODE));
   }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
 
@@ -171,17 +182,31 @@ int main(int argc, char* argv[]) {
     out = NULL;
   }
 
+  /* fixed starting state */
+  host_vector<> x0(ND + NC + NP);
+  subrange(x0, 0, ND) = row(s.get(D_NODE), 0);
+  subrange(x0, ND, NC) = row(s.get(C_NODE), 0);
+  subrange(x0, ND + NC, NP) = row(theta.get(P_NODE), 0);
+  
   /* filter */
   TicToc timer;
   if (INCLUDE_PARAMETERS) {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(
         m, DELTA, inForce, &inObs, out)));
-    filter->filter(T, theta, s);
+    if (INCLUDE_INITIAL) {
+      filter->filter(T, x0, theta, s);
+    } else {
+      filter->filter(T, theta, s);
+    }
     delete filter;
   } else {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_SHARED>::create(
         m, DELTA, inForce, &inObs, out)));
-    filter->filter(T, theta, s);
+    if (INCLUDE_INITIAL) {
+      filter->filter(T, x0, theta, s);
+    } else {
+      filter->filter(T, theta, s);
+    }
     delete filter;
   }
 

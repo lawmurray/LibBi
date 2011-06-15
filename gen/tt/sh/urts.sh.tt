@@ -25,4 +25,6 @@ export OMP_NUM_THREADS
 INPUT_FILE=$RESULTS_DIR/ukf${SUFFIX}.nc.$ID
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/urts --seed=$SEED --input-file=$INPUT_FILE --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME --include-parameters=$INCLUDE_PARAMETERS
+$ROOT/build/urts --seed=$SEED --input-file=$INPUT_FILE \
+    --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME \
+    --include-parameters=$INCLUDE_PARAMETERS
