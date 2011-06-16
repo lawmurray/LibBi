@@ -52,9 +52,16 @@ function plot_obs (in, invar, coord, ns)
     % coordinate variable
     cvar = sprintf('coord_%s', invar);
     if length(coord) > 1
-        coords = nci{cvar}(:,:);
+        numdims = length (ncdim (nc{name}));
+        if numdims == 1
+            coords = nci{cvar}(:);
+        elseif numdims == 2
+            coords = nci{cvar}(:,:);
+        else
+            error (sprintf('Variable %s has too many dimensions', cvar));
+        end
     else
-        coords = nci{cvar}(:);
+        coords = [];
     end
     coords = coords + 1; % offset for move from base 0 to base 1 indexing
     

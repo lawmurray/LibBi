@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} gen_obs (@var{in}, @var{invar}, @var{out}, @var{outvar}, @var{p}, @var{S}, @var{logn}, @var{coords})
+% @deftypefn {Function File} gen_obs (@var{in}, @var{invar}, @var{out}, @var{outvar}, @var{p}, @var{ts}, @var{S}, @var{logn}, @var{coords})
 %
 % Generate a data set for twin experiments from the output of the simulate
 % program.
@@ -107,8 +107,12 @@ function gen_obs (in, invar, out, outvar, p, ts, S, logn, coords)
     % construct data
     nco{outvar} = ncdouble('ns', rdim);
     for j = 1:M
-        coord = coords(j,:);
-        x = read_var(nci, invar, coord, p, ts)';
+        if length (coords) > 0
+            coord = coords(j,:);
+            x = read_var (nci, invar, coord, p, ts)';
+        else
+            x = read_var (nci, invar, [], p, ts)';
+        end
         u = normrnd(0.0, 1.0, 1, length(x));
         U = repmat(u, length(S), 1);
         X = repmat(x, length(S), 1);
