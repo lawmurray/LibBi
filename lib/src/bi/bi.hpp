@@ -182,6 +182,11 @@
  * maximisation. Technical Report 651, Department of Economics, The University
  * of Warwick, <b>2002</b>.
  *
+ * @anchor Pitt2011
+ * Pitt, M. K.; Silva, R. S.; Giordani, P. & Kohn, R. Auxiliary particle
+ * filtering within adaptive Metropolis-Hastings sampling, <b>2010</b>.
+ * http://arxiv.org/abs/1006.1914
+ *
  * @anchor Sarkka2008
  * Särkkä, S. Unscented Rauch-Tung-Striebel Smoother. <i>IEEE Transactions on
  * Automated Control</i>, <b>2008</b>, 53, 845-849.

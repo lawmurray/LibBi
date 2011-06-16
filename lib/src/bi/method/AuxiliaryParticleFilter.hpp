@@ -76,7 +76,8 @@ public:
   /**
    * @copydoc #concept::Filter::summarise()
    *
-   * Uses marginal likelihood estimator of @ref Pitt2002 "Pitt (2002)".
+   * Uses marginal likelihood estimator of @ref Pitt2002 "Pitt (2002)" and
+   * @ref Pitt2010 "Pitt et al. (2010)".
    */
   template<class T1, class V1, class V2>
   void summarise(T1* ll, V1* lls, V2* ess);
@@ -342,11 +343,9 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls
   real ll1;
 
   /* compute log-likelihoods and ESS at each time */
-  bool r;
   int n;
   real logsum1, logsum2, sum2, sum3;
   for (n = 0; n < T; ++n) {
-    r = (n == 0 || this->resamplingCache.get(n));
     *lw1s1 = stage1LogWeightsCache.get(n);
     *lw2s1 = this->logWeightsCache.get(n);
 
@@ -358,7 +357,7 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls
     sum2 = exp(logsum2);
     sum3 = sum_exp_square(lw2s1->begin(), lw2s1->end(), 0.0);
 
-    (*lls1)(n) = r ? logsum1 + logsum2 - 2*std::log(P) : 0.0;
+    (*lls1)(n) = logsum1 + logsum2 - 2*std::log(P);
     (*ess1)(n) = (sum2*sum2)/sum3;
   }
 
@@ -401,7 +400,11 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHa
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
     State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam, const real relEss) {
+  /* pre-condition */
+  assert (lw1s.size() == lw2s.size());
+
   bool r = false;
+  this->normalise(lw2s);
   if (this->oyUpdater.hasNext()) {
     const real to = this->oyUpdater.getNextTime();
     if (resam != NULL && to >= this->state.t) {
@@ -429,6 +432,7 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta
   assert (a >= 0 && a < lw1s.size());
 
   bool r = false;
+  this->normalise(lw2s);
   if (this->oyUpdater.hasNext()) {
     const real to = this->oyUpdater.getNextTime();
     if (resam != NULL && to >= this->state.t) {

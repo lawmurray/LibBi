@@ -166,8 +166,7 @@ typename InputIterator::value_type sum_exp(InputIterator first,
  * @param last The end of the input sequence.
  * @param init Initial value of the result.
  *
- * @return \f$\ln\sum_i \exp(x_i)\f$ over
- * the input sequence.
+ * @return \f$\ln\sum_i \exp(x_i)\f$ over the input sequence.
  *
  * This is performed by setting $y = \max(\mathbf{x})$ then calculating:
  *

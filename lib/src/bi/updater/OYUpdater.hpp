@@ -170,9 +170,10 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<L>& s) {
 
   /* current observations and mask */
   if (cache.isValid(state.p1)) {
+    assert (maskCache.isValid(state.p1));
+    s.oresize(maskCache.get(state.p1).size(), false);
     cache.read(state.p1, s.get(OY_NODE));
     //cache.swapRead(state.p1, s.Koy);
-    assert (maskCache.isValid(state.p1));
   } else {
     while (state.p2 < state.p1) {
       in.next();
