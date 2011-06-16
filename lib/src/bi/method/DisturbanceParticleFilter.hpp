@@ -327,7 +327,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   /* filter */
   init(theta, lws, as, theta1, corrected);
   #ifndef USE_CPU
-  #pragma omp parallel sections
+  #pragma omp parallel sections num_threads(2)
   #endif
   {
     #ifndef USE_CPU
@@ -392,7 +392,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   /* filter */
   init(theta, lws, as, theta1, corrected);
   #ifndef USE_CPU
-  #pragma omp parallel sections
+  #pragma omp parallel sections num_threads(2)
   #endif
   {
     #ifndef USE_CPU
@@ -467,6 +467,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);
     detU(k2) = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
     ++k2;
+    #pragma omp flush(k2)
   }
 }
 
@@ -492,6 +493,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);
     detU(k2) = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
     ++k2;
+    #pragma omp flush(k2)
   }
 }
 
@@ -500,7 +502,12 @@ template<class V1, class M1, bi::Location L, class V2>
 void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     const ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta, State<L>& s,
     V2& lws) {
-  while (k1 >= k2) {}
+  #ifndef USE_CPU
+  /* ensure lookahead is actually ahead... */
+  while (k1 >= k2) {
+    #pragma omp flush(k2)
+  }
+  #endif
   BOOST_AUTO(mu, column(this->mu, k1));
   BOOST_AUTO(U, columns(this->U, k1*NR, NR));
 
