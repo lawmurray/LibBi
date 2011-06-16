@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1254 $
- * $Date: 2011-02-02 17:36:34 +0800 (Wed, 02 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_DENSEBLOCK_HPP
 #define BI_BUFFER_DENSEBLOCK_HPP

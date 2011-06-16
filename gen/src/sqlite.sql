@@ -3,7 +3,7 @@
 --
 -- @author Lawrence Murray <lawrence.murray@csiro.au>
 -- $Rev$
--- $Date: 2010-02-04 17:46:01 +0800 (Thu, 04 Feb 2010) $
+-- $Date$
 --
 
 CREATE TABLE IF NOT EXISTS Trait (

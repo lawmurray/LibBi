@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1253 $
- * $Date: 2011-02-01 12:03:44 +0800 (Tue, 01 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #include "curand.hpp"
 

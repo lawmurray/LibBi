@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1254 $
- * $Date: 2011-02-02 17:36:34 +0800 (Wed, 02 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #error "Concept documentation only, should not be #included"
 

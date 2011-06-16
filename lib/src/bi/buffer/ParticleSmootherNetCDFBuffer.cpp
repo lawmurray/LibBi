@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1402 $
- * $Date: 2011-04-14 14:34:22 +0800 (Thu, 14 Apr 2011) $
+ * $Rev$
+ * $Date$
  */
 #include "ParticleSmootherNetCDFBuffer.hpp"
 

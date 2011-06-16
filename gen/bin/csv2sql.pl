@@ -4,8 +4,8 @@
 ## Reads a CSV model specification and populates an SQLite database.
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev: 574 $
-## $Date: 2010-02-05 13:50:48 +0800 (Fri, 05 Feb 2010) $
+## $Rev$
+## $Date$
 ##
 
 use strict;

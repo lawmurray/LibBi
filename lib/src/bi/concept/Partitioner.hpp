@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1359 $
- * $Date: 2011-03-31 16:58:20 +0800 (Thu, 31 Mar 2011) $
+ * $Rev$
+ * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/Partitioner.hpp
  */

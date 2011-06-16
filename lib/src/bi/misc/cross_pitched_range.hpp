@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1327 $
- * $Date: 2011-03-10 10:52:59 +0800 (Thu, 10 Mar 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_MISC_CROSS_PITCHED_RANGE_HPP
 #define BI_MISC_CROSS_PITCHED_RANGE_HPP

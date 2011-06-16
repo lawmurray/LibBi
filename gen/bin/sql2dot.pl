@@ -4,8 +4,8 @@
 ## Convert SQLite model specification to dot script.
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev: 587 $
-## $Date: 2010-02-05 13:50:48 +0800 (Fri, 05 Feb 2010) $
+## $Rev$
+## $Date$
 ##
 
 use strict;

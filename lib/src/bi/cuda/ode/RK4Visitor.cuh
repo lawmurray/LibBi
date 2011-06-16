@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1235 $
- * $Date: 2011-01-28 17:51:09 +0800 (Fri, 28 Jan 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_CUDA_ODE_RK4VISITOR_CUH
 #define BI_CUDA_ODE_RK4VISITOR_CUH

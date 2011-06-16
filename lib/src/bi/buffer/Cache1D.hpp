@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1312 $
- * $Date: 2011-02-25 18:01:03 +0800 (Fri, 25 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_CACHE1D_HPP
 #define BI_BUFFER_CACHE1D_HPP

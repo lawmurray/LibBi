@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1281 $
- * $Date: 2011-02-21 11:24:30 +0800 (Mon, 21 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_MISC_HPP
 #define BI_METHOD_MISC_HPP

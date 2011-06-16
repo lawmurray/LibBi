@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1314 $
- * $Date: 2011-02-28 13:01:55 +0800 (Mon, 28 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_EXACTExactStratifiedResampler_HPP
 #define BI_METHOD_EXACTExactStratifiedResampler_HPP

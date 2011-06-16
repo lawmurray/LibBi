@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1321 $
- * $Date: 2011-03-08 12:34:14 +0800 (Tue, 08 Mar 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_KERNELRESAMPLER_HPP
 #define BI_METHOD_KERNELRESAMPLER_HPP

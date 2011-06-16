@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1246 $
- * $Date: 2011-01-31 16:23:46 +0800 (Mon, 31 Jan 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_AUXILIARYPARTICLEFILTER_HPP
 #define BI_METHOD_AUXILIARYPARTICLEFILTER_HPP

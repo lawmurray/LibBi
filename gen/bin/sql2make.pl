@@ -2,8 +2,8 @@
 ## Generate a Makefile for compilation.
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev: 1309 $
-## $Date: 2011-02-25 16:22:39 +0800 (Fri, 25 Feb 2011) $
+## $Rev$
+## $Date$
 ##
 
 use FindBin qw($Bin);

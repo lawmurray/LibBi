@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1631 $
- * $Date: 2011-06-15 09:42:00 +0800 (Wed, 15 Jun 2011) $
+ * $Rev$
+ * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/GammaPdf.hpp
  */

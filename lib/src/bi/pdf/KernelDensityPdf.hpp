@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1379 $
- * $Date: 2011-04-06 13:46:50 +0800 (Wed, 06 Apr 2011) $
+ * $Rev$
+ * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/KernelDensityPdf.hpp
  */

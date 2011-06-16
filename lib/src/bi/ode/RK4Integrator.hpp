@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1292 $
- * $Date: 2011-02-22 13:45:22 +0800 (Tue, 22 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_ODE_RK4INTEGRATOR_HPP
 #define BI_ODE_RK4INTEGRATOR_HPP

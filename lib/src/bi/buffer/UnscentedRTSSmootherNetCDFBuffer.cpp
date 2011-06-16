@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1284 $
- * $Date: 2011-02-21 17:26:49 +0800 (Mon, 21 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #include "UnscentedRTSSmootherNetCDFBuffer.hpp"
 

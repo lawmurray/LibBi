@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1466 $
- * $Date: 2011-05-09 17:37:34 +0800 (Mon, 09 May 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_UPDATER_UNSCENTEDORUPDATER_HPP
 #define BI_UPDATER_UNSCENTEDORUPDATER_HPP

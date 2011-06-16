@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1318 $
- * $Date: 2011-03-01 16:27:47 +0800 (Tue, 01 Mar 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_SPARSEMASK_HPP
 #define BI_BUFFER_SPARSEMASK_HPP

@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1335 $
- * $Date: 2011-03-29 12:15:09 +0800 (Tue, 29 Mar 2011) $
+ * $Rev$
+ * $Date$
  */
 #include "model/[% ClassName %].hpp"
 
