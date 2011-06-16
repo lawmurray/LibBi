@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
   if (INCLUDE_PARAMETERS) {
     BOOST_AUTO(filter, (UnscentedKalmanFilterFactory<LOCATION,STATIC_OWN>::create(
         m, DELTA, inForce, &inObs, out)));
-    if (INCLUDE_INITIAL) {
+    if (INCLUDE_INITIAL && !INIT_FILE.empty()) {
       filter->filter(T, x0, theta, s);
     } else {
       filter->filter(T, theta, s);

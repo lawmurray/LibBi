@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
 
   /* sampler */
   BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
-      INITIAL_CONDITIONED));
+      INCLUDE_INITIAL ? INITIAL_CONDITIONED : INITIAL_SAMPLED));
   
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
