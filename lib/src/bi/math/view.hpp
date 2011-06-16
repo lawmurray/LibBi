@@ -147,7 +147,7 @@ typename M1::vector_reference_type diagonal(M1 A);
  * This is only valid if <code>A.size1() == A.lead()</code>.
  */
 template<class M1>
-typename M1::vector_reference_type matrix_as_vector(M1 A);
+typename M1::vector_reference_type vec(M1 A);
 
 /**
  * View of vector as single-column matrix.
@@ -250,7 +250,7 @@ typename M1::vector_reference_type bi::diagonal(M1 A) {
 }
 
 template<class M1>
-typename M1::vector_reference_type bi::matrix_as_vector(M1 A) {
+typename M1::vector_reference_type bi::vec(M1 A) {
   /* pre-conditions */
   assert (A.size1() == A.lead());
 

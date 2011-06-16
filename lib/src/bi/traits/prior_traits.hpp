@@ -111,6 +111,66 @@ struct has_uniform_prior {
     static const bool value = true; \
   }; }
 
+/**
+ * @internal
+ *
+ * Gamma prior.
+ *
+ * @ingroup model_trait
+ *
+ * @tparam X Node type.
+ */
+template<class X>
+struct has_gamma_prior {
+  static const bool value = false;
+};
+
+/**
+ * @def HAS_GAMMA_PRIOR(X)
+ *
+ * Attach gamma prior trait to node type.
+ *
+ * @ingroup model_trait
+ *
+ * @arg @c X Node type.
+ */
+#define HAS_GAMMA_PRIOR(X, ...) \
+  namespace bi { \
+  template<> \
+  struct has_gamma_prior< X, ##__VA_ARGS__ > { \
+    static const bool value = true; \
+  }; }
+
+/**
+ * @internal
+ *
+ * Inverse-gamma prior.
+ *
+ * @ingroup model_trait
+ *
+ * @tparam X Node type.
+ */
+template<class X>
+struct has_inverse_gamma_prior {
+  static const bool value = false;
+};
+
+/**
+ * @def HAS_INVERSE_GAMMA_PRIOR(X)
+ *
+ * Attach inverse gamma prior trait to node type.
+ *
+ * @ingroup model_trait
+ *
+ * @arg @c X Node type.
+ */
+#define HAS_INVERSE_GAMMA_PRIOR(X, ...) \
+  namespace bi { \
+  template<> \
+  struct has_inverse_gamma_prior< X, ##__VA_ARGS__ > { \
+    static const bool value = true; \
+  }; }
+
 }
 
 #endif

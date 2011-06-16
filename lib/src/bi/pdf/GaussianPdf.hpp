@@ -541,7 +541,7 @@ void bi::GaussianPdf<V1,M1>::samples(Random& rng, M2 X) {
   /* pre-conditions */
   assert (X.size2() == size());
 
-  rng.gaussians(matrix_as_vector(X));
+  rng.gaussians(vec(X));
   trmm(1.0, U, X, 'R', 'U');
   add_rows(X, mu);
 }

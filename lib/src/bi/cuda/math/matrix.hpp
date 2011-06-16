@@ -457,7 +457,7 @@ inline typename bi::gpu_matrix_reference<T>::const_row_iterator
 template<class T>
 void bi::gpu_matrix_reference<T>::clear() {
   if (this->lead() == this->size1()) {
-    matrix_as_vector(*this).clear();
+    vec(*this).clear();
   } else {
     bi::fill(this->begin(), this->end(), static_cast<T>(0));
   }

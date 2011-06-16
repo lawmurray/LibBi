@@ -275,7 +275,7 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::samples(Random& rng, M2 X) {
   BOOST_AUTO(ps, host_temp_vector<real>(X.size1()));
   int i;
 
-  rng.gaussians(matrix_as_vector(X));
+  rng.gaussians(vec(X));
   matrix_scal(K.bandwidth(), X);
   rng.multinomials(lw, *ps);
   for (i = 0; i < X.size1(); ++i) {

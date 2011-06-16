@@ -509,7 +509,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
   BOOST_AUTO(lw2, temp_vector<V2>(lws.size()));
   BOOST_AUTO(X, s.get(R_NODE));
 
-  particle_filter_type::rng.gaussians(matrix_as_vector(X));
+  particle_filter_type::rng.gaussians(vec(X));
   dot_rows(X, *lw1);
   trmm(1.0, U, X, 'R', 'U');
   add_rows(X, mu);

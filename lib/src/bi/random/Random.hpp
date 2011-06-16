@@ -83,20 +83,6 @@ public:
   unsigned bernoulli(const T1 p = 0.5);
 
   /**
-   * Generate a random number from a multinomial distribution with given
-   * probabilities.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param ps Log-probabilities. Need not be normalised to 1.
-   *
-   * @return Random index between @c 0 and <tt>ps.size() - 1</tt>, selected
-   * according to the non-normalised probabilities given in @c ps.
-   */
-  template<class V1>
-  typename V1::difference_type multinomial(const V1 ps);
-
-  /**
    * Generate a random integer from a uniform distribution over a
    * given interval.
    *
@@ -109,6 +95,20 @@ public:
    */
   template<class T1>
   T1 uniformInt(const T1 lower = 0, const T1 upper = 1);
+
+  /**
+   * Generate a random number from a multinomial distribution with given
+   * probabilities.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param ps Log-probabilities. Need not be normalised to 1.
+   *
+   * @return Random index between @c 0 and <tt>ps.size() - 1</tt>, selected
+   * according to the non-normalised probabilities given in @c ps.
+   */
+  template<class V1>
+  typename V1::difference_type multinomial(const V1 ps);
 
   /**
    * Generate a random number from a uniform distribution over a
@@ -140,6 +140,34 @@ public:
   T1 gaussian(const T1 mu = 0.0, const T1 sigma = 1.0);
 
   /**
+   * Generate a random number from a gamma distribution with a given shape
+   * and scale.
+   *
+   * @tparam T1 Scalar type.
+   *
+   * @param alpha Shape.
+   * @param beta Scale.
+   *
+   * @return The random number.
+   */
+  template<class T1>
+  T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
+
+  /**
+   * Generate random numbers from a multinomial distribution with given
+   * probabilities.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param ps Log-probabilities. Need not be normalised.
+   * @param[out] xs Random indices between @c 0 and <tt>ps.size() - 1</tt>,
+   * selected according to the non-normalised probabilities given in @c ps.
+   */
+  template<class V1, class V2>
+  void multinomials(const V1 ps, V2 xs);
+
+  /**
    * Fill vector with random numbers from a uniform distribution over a
    * given interval.
    *
@@ -168,18 +196,19 @@ public:
       const typename V1::value_type sigma = 1.0);
 
   /**
-   * Generate random numbers from a multinomial distribution with given
-   * probabilities.
+   * Fill vector with random numbers from a gamma distribution with a given
+   * shape and scale.
    *
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
+   * @tparam T1 Scalar type.
    *
-   * @param ps Log-probabilities. Need not be normalised.
-   * @param[out] xs Random indices between @c 0 and <tt>ps.size() - 1</tt>,
-   * selected according to the non-normalised probabilities given in @c ps.
+   * @param alpha Shape.
+   * @param beta Scale.
+   *
+   * @param[out] x Vector.
    */
-  template<class V1, class V2>
-  void multinomials(const V1 ps, V2 xs);
+  template<class V1>
+  void gammas(V1 x, const typename V1::value_type alpha = 1.0,
+      const typename V1::value_type beta = 1.0);
 
 private:
   /**
@@ -212,9 +241,10 @@ private:
 #include "../cuda/math/temp_vector.hpp"
 
 #include "boost/random/uniform_int.hpp"
+#include "boost/random/bernoulli_distribution.hpp"
 #include "boost/random/uniform_real.hpp"
 #include "boost/random/normal_distribution.hpp"
-#include "boost/random/bernoulli_distribution.hpp"
+#include "boost/random/gamma_distribution.hpp"
 #include "boost/random/variate_generator.hpp"
 
 #include "thrust/binary_search.h"
@@ -227,6 +257,19 @@ inline unsigned bi::Random::bernoulli(const T1 p) {
   typedef boost::bernoulli_distribution<unsigned> dist_t;
 
   dist_t dist(p);
+  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
+
+  return gen();
+}
+
+template<class T1>
+inline T1 bi::Random::uniformInt(const T1 lower, const T1 upper) {
+  /* pre-condition */
+  assert (upper >= lower);
+
+  typedef boost::uniform_int<T1> dist_t;
+
+  dist_t dist(lower, upper);
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
   return gen();
@@ -249,19 +292,6 @@ inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
   delete Ps;
 
   return p;
-}
-
-template<class T1>
-inline T1 bi::Random::uniformInt(const T1 lower, const T1 upper) {
-  /* pre-condition */
-  assert (upper >= lower);
-
-  typedef boost::uniform_int<T1> dist_t;
-
-  dist_t dist(lower, upper);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return gen();
 }
 
 template<class T1>
@@ -288,6 +318,19 @@ inline T1 bi::Random::gaussian(const T1 mu, const T1 sigma) {
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
   return gen();
+}
+
+template<class T1>
+inline T1 bi::Random::gamma(const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  assert (alpha > 0.0 && beta > 0.0);
+
+  typedef boost::gamma_distribution<T1> dist_t;
+
+  dist_t dist(alpha);
+  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
+
+  return beta*gen();
 }
 
 template<class V1>
@@ -353,8 +396,42 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
   }
 }
 
+template<class V1>
+void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
+    const typename V1::value_type beta) {
+  /* pre-condition */
+  assert (alpha > 0.0 && beta > 0.0);
+
+  typedef typename V1::value_type T1;
+  typedef boost::gamma_distribution<T1> dist_t;
+
+  int j;
+  dist_t dist(alpha);
+  boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
+
+  if (V1::on_device) {
+    /* CURAND doesn't support gamma variates at this stage, generate on host
+     * and upload */
+    BOOST_AUTO(y, host_temp_vector<T1>(x.size()));
+    BOOST_AUTO(z, *y);
+    #pragma omp parallel for schedule(static)
+    for (j = 0; j < x.size(); ++j) {
+      z(j) = gen();
+    }
+    x = z;
+    synchronize();
+    delete y;
+  } else {
+    #pragma omp parallel for schedule(static)
+    for (j = 0; j < x.size(); ++j) {
+      x(j) = gen();
+    }
+  }
+  scal(beta, x);
+}
+
 template<class V1, class V2>
-inline void bi::Random::multinomials(const V1 ps, V2 xs) {
+void bi::Random::multinomials(const V1 ps, V2 xs) {
   /* pre-condition */
   assert (ps.size() > 0);
 

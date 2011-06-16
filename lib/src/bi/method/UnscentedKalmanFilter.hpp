@@ -955,7 +955,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correct(
         "Previous prediction step does not match current correction step");
 
     /* condition state on observation */
-    BOOST_AUTO(y, matrix_as_vector(s.get(OY_NODE)));
+    BOOST_AUTO(y, vec(s.get(OY_NODE)));
     condition(uncorrected, observed, SigmaXY, y, corrected);
   }
 }

@@ -304,7 +304,7 @@ void bi::UniformPdf<V1>::samples(Random& rng, M2 X) {
   assert (X.size2() == N);
 
   BOOST_AUTO(Z, temp_matrix<M2>(X.size1(), X.size2()));
-  rng.uniforms(matrix_as_vector(*Z));
+  rng.uniforms(vec(*Z));
   gdmm(1.0, length, *Z, 0.0, X, 'R');
   add_rows(X, low);
 

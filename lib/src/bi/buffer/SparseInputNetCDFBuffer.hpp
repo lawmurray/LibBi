@@ -663,7 +663,7 @@ void bi::SparseInputNetCDFBuffer::readDense(const NodeType type,
       BOOST_AUTO(buf, host_temp_vector<real>(size));
       ret = var->get(buf->buf(), counts);
       BI_ASSERT(ret, "Inconvertible type reading " << var->name());
-      matrix_as_vector(columns(X, start, len)) = *buf;
+      vec(columns(X, start, len)) = *buf;
       add(buf);
     } else {
       ret = var->get(columns(X, start, len).buf(), counts);

@@ -67,6 +67,8 @@
 #define CUDA_MODF(x,y) modf(x,y)
 #define CUDA_CEIL(x) ceil(x)
 #define CUDA_FLOOR(x) floor(x)
+#define CUDA_TGAMMA(x) tgamma(x)
+#define CUDA_LGAMMA(x) lgamma(x)
 #else
 #define CUDA_ABS(x) fabsf(x)
 #define CUDA_LOG(x) logf(x)
@@ -81,6 +83,8 @@
 #define CUDA_MODF(x,y) modff(x,y)
 #define CUDA_CEIL(x) ceilf(x)
 #define CUDA_FLOOR(x) floorf(x)
+#define CUDA_TGAMMA(x) tgammaf(x)
+#define CUDA_LGAMMA(x) lgammaf(x)
 #endif
 
 /**

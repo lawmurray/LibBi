@@ -201,7 +201,7 @@ void bi::KernelResampler<B,R>::resample(V1& lws, V2& as, Static<L>& theta, State
 //      row(theta.get(P_NODE), p) = subrange(x, ND + NC + NR, NP);
 //    }
 //  } else {
-    rng.gaussians(matrix_as_vector(X));
+    rng.gaussians(vec(X));
     trmm(h, U, X, 'R', 'U');
     matrix_axpy(1.0, columns(X, 0, ND), s.get(D_NODE));
     matrix_axpy(1.0, columns(X, ND, NC), s.get(C_NODE));

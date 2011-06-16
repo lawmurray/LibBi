@@ -411,6 +411,45 @@ struct is_not_finite_functor : public std::unary_function<T,T> {
   }
 };
 
+/**
+ * @ingroup math_functor
+ *
+ * Gamma log-density functor.
+ */
+template<class T>
+struct gamma_log_density_functor : public std::unary_function<T,T> {
+  const T alpha, beta, logZ;
+
+  CUDA_FUNC_HOST gamma_log_density_functor(const real alpha,
+      const real beta, const real logZ) : alpha(alpha), beta(beta), logZ(logZ) {
+    //
+  }
+
+  CUDA_FUNC_BOTH T operator()(const T& x) const {
+    (alpha - 1.0)*CUDA_LOG(x) - x/beta - logZ;
+  }
+};
+
+/**
+ * @ingroup math_functor
+ *
+ * Inverse gamma log-density functor.
+ */
+template<class T>
+struct inverse_gamma_log_density_functor : public std::unary_function<T,T> {
+  const T alpha, beta, logZ;
+
+  CUDA_FUNC_HOST inverse_gamma_log_density_functor(const real alpha,
+      const real beta, const real logZ) :
+      alpha(alpha), beta(beta), logZ(logZ) {
+    //
+  }
+
+  CUDA_FUNC_BOTH T operator()(const T& x) const {
+    (-alpha - 1.0)*CUDA_LOG(x) - beta/x - logZ;
+  }
+};
+
 }
 
 #endif

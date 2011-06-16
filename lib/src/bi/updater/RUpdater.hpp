@@ -81,12 +81,12 @@ void bi::RUpdater<B>::update(const real t, const real tnxt, State<L>& s) {
     BOOST_AUTO(X, s.get(R_NODE));
     if (X.lead() == X.size1()) {
       if (all_gaussian_variates<S>::value) {
-        rng.gaussians(matrix_as_vector(X));
+        rng.gaussians(vec(X));
       } else if (all_uniform_variates<S>::value) {
-        rng.uniforms(matrix_as_vector(X), -0.5, 0.5);
+        rng.uniforms(vec(X), -0.5, 0.5);
       } else if (all_wiener_increments<S>::value) {
         if (std::abs(tnxt - t) > 0.0) {
-          rng.gaussians(matrix_as_vector(X), 0.0, std::sqrt(std::abs(tnxt - t)));
+          rng.gaussians(vec(X), 0.0, std::sqrt(std::abs(tnxt - t)));
         } else {
           X.clear();
         }

@@ -69,12 +69,12 @@ inline void bi::RUpdateVisitor<B,S,M1>::accept(Random& rng, const real t,
   static const int size = node_size<B,front>::value;
 
   if (is_uniform_variate<front>::value) {
-    rng.uniforms(matrix_as_vector(columns(s, start, size)), -0.5, 0.5);
+    rng.uniforms(vec(columns(s, start, size)), -0.5, 0.5);
   } else if (is_gaussian_variate<front>::value) {
-    rng.gaussians(matrix_as_vector(columns(s, start, size)));
+    rng.gaussians(vec(columns(s, start, size)));
   } else if (is_wiener_increment<front>::value) {
     if (std::abs(tnxt - t) > 0.0) {
-      rng.gaussians(matrix_as_vector(columns(s, start, size)), 0.0, std::sqrt(std::abs(tnxt - t)));
+      rng.gaussians(vec(columns(s, start, size)), 0.0, std::sqrt(std::abs(tnxt - t)));
     } else {
       columns(s, start, size).clear();
     }

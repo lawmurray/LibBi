@@ -184,7 +184,7 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<L>& s) {
     in.mask();
     s.oresize(in.getMask(O_NODE).size(), false);
     ///@todo Consider reading into host vector first, then copy
-    in.readContiguous(O_NODE, matrix_as_vector(s.get(OY_NODE)));
+    in.readContiguous(O_NODE, vec(s.get(OY_NODE)));
     cache.write(state.p1, s.get(OY_NODE));
     maskCache.put(state.p1, in.getMask(O_NODE));
     in.next();

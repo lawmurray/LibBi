@@ -769,7 +769,7 @@ void bi::matrix_axpy(const T1 a, const M1 X, M2 Y, const bool clear) {
 
   if (X.size1() == X.lead() && Y.size1() == Y.lead()) {
     /* do as one vector axpy */
-    axpy(a, matrix_as_vector(X), matrix_as_vector(Y), clear);
+    axpy(a, vec(X), vec(Y), clear);
   } else {
     /* do column-by-column */
     int j;
@@ -785,7 +785,7 @@ inline void bi::matrix_scal(typename M1::value_type alpha, M1 X) {
 
   if (X.size1() == X.lead()) {
     /* do as one vector scal */
-    scal(alpha, matrix_as_vector(X));
+    scal(alpha, vec(X));
   } else {
     /* do column-by-column */
     int j;
