@@ -327,7 +327,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   /* filter */
   init(theta, lws, as, theta1, corrected);
   #ifndef USE_CPU
-  #pragma omp parallel sections num_threads(2)
+  #pragma omp parallel sections
   #endif
   {
     #ifndef USE_CPU
@@ -392,7 +392,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   /* filter */
   init(theta, lws, as, theta1, corrected);
   #ifndef USE_CPU
-  #pragma omp parallel sections num_threads(2)
+  #pragma omp parallel sections
   #endif
   {
     #ifndef USE_CPU
