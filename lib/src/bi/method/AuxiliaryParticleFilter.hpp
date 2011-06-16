@@ -12,7 +12,7 @@
 
 namespace bi {
 /**
- * Auxiliary particle filter.
+ * Auxiliary particle filter with deterministic lookahead.
  *
  * @ingroup method
  *
@@ -413,6 +413,8 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(lw1s, lw2s, as, theta, s);
         r = true;
+      } else {
+        lw1s = lw2s;
       }
 
       /* post-condition */
@@ -441,6 +443,8 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(a, lw1s, lw2s, as, theta, s);
         r = true;
+      } else {
+        lw1s = lw2s;
       }
 
       /* post-condition */

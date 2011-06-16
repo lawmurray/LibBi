@@ -26,6 +26,12 @@ namespace bi {
  * @section Concepts
  *
  * #concept::Filter, #concept::Markable
+ *
+ * @todo Can use task parallelism when ParticleFilter run on device and
+ * UnscentedKalmanFilter on host, but not when both on host, due to
+ * competition for global variables. Probably not critical, as doing both
+ * in parallel on host presumably gives no performance benefits, as
+ * no idle resources to exploit in this case.
  */
 template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
     StaticHandling SH = STATIC_SHARED>
@@ -118,7 +124,7 @@ public:
 
   /**
    * Lookahead using unscented Kalman filter and use to construct proposal
-   * distribution for particle filter.
+   * distributions for particle filter.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
@@ -144,7 +150,7 @@ public:
 
   /**
    * Lookahead using unscented Kalman filter from fixed starting state
-   * and use to construct proposal distribution for particle filter.
+   * and use to construct proposal distributions for particle filter.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
@@ -172,12 +178,14 @@ public:
       M1& SigmaXX, M1& SigmaXY);
 
   /**
-   * Predict.
+   * Propose stochastic terms for next particle filter prediction.
    *
-   * @tparam L Location.
    * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   * @tparam L Location.
+   * @tparam V2 Vector type.
    *
-   * @param tnxt Maximum time to which to advance.
+   * @param corrected Corrected state marginal at upcoming time.
    * @param[in,out] theta Static state.
    * @param[in,out] s State.
    * @param[in,out] lws Log-weights.
@@ -187,8 +195,9 @@ public:
    * @li @p tnxt is reached,
    * @li a time where observations are available is reached.
    */
-  template<Location L, class V1>
-  void predict(const real tnxt, Static<L>& theta, State<L>& s, V1& lws);
+  template<class V1, class M1, Location L, class V2>
+  void propose(const ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta,
+      State<L>& s, V2& lws);
 
   /**
    * Clean up.
@@ -216,17 +225,17 @@ private:
   /**
    * Vector type for proposal.
    */
-  typedef typename locatable_vector<CL,real>::type vector_type;
+  typedef typename locatable_vector<ON_HOST,real>::type vector_type;
 
   /**
    * Matrix type for proposal.
    */
-  typedef typename locatable_matrix<CL,real>::type matrix_type;
+  typedef typename locatable_matrix<ON_HOST,real>::type matrix_type;
 
   /**
    * \f$\boldsymbol{\mu}_t\f$; proposal mean at current time.
    */
-  vector_type mu;
+  matrix_type mu;
 
   /**
    * \f$U_t\f$; proposal standard deviation at current time.
@@ -236,7 +245,9 @@ private:
   /**
    * \f$|U_t|\f$; determinant of proposal standard deviation at current time.
    */
-  real detU;
+  vector_type detU;
+
+  int k1, k2;
 
   /* net sizes, for convenience */
   static const int ND = net_size<B,typename B::DTypeList>::value;
@@ -282,7 +293,9 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHa
 bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::DisturbanceParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
     particle_filter_type(m, rng, delta, in, obs, out),
-    kalman_filter_type(m, delta, new IO1(*in), new IO2(*obs)), mu(NR), U(NR,NR) {
+    kalman_filter_type(m, delta, (in == NULL) ? NULL : new IO1(*in),
+        (obs == NULL) ? NULL : new IO2(*obs)),
+    mu(NR, out->size2()), U(NR, NR*out->size2()), detU(out->size2()) {
   //
 }
 
@@ -294,34 +307,52 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   assert (T > particle_filter_type::state.t);
   assert (relEss >= 0.0 && relEss <= 1.0);
 
-  typedef typename locatable_vector<ON_HOST,real>::type V1;
-  typedef typename locatable_matrix<ON_HOST,real>::type M1;
-  typedef typename locatable_vector<L,real>::type V2;
-  typedef typename locatable_vector<L,int>::type V3;
+  typedef typename locatable_vector<ON_HOST,real>::type V2;
+  typedef typename locatable_matrix<ON_HOST,real>::type M2;
+  typedef typename locatable_vector<L,real>::type V3;
+  typedef typename locatable_vector<L,int>::type V4;
 
   /* ukf temps */
   Static<ON_HOST> theta1(particle_filter_type::m, theta.size());
   State<ON_HOST> s1(particle_filter_type::m);
-  ExpGaussianPdf<V1,M1> corrected(M);
-  ExpGaussianPdf<V1,M1> uncorrected(M);
-  ExpGaussianPdf<V1,M1> observed(0);
-  M1 SigmaXX(M, M), SigmaXY(M, 0);
+  ExpGaussianPdf<V2,M2> corrected(M);
+  ExpGaussianPdf<V2,M2> uncorrected(M);
+  ExpGaussianPdf<V2,M2> observed(0);
+  M2 SigmaXX(M, M), SigmaXY(M, 0);
 
   /* pf temps */
-  V2 lws(s.size());
-  V3 as(s.size());
-  int n = 0, r = 0;
-  theta1 = theta;
+  V3 lws(s.size());
+  V4 as(s.size());
 
+  /* filter */
   init(theta, lws, as, theta1, corrected);
-  while (particle_filter_type::state.t < T) {
-    lookahead(T, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
-    predict(T, theta, s, lws);
-    correct(s, lws);
-    output(n, theta, s, r, lws, as);
-    ++n;
-    r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+  #ifndef USE_CPU
+  #pragma omp parallel sections
+  #endif
+  {
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
+      lookahead(T, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
+    }
+
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
+      int n = 0, r = 0;
+      while (particle_filter_type::getTime() < T) {
+        propose(corrected, theta, s, lws);
+        particle_filter_type::predict(T, theta, s);
+        particle_filter_type::correct(s, lws);
+        particle_filter_type::output(n, theta, s, r, lws, as);
+        ++n;
+        r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+      }
+    }
   }
+
   synchronize();
   term(theta, theta1);
 }
@@ -352,7 +383,6 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   /* pf temps */
   V3 lws(s.size());
   V4 as(s.size());
-  int n = 0, r = 0;
 
   /* initialise pf from fixed starting state */
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
@@ -361,18 +391,33 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
   /* filter */
   init(theta, lws, as, theta1, corrected);
-  while (particle_filter_type::getTime() < T) {
-    if (n == 0) {
+  #ifndef USE_CPU
+  #pragma omp parallel sections
+  #endif
+  {
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
       lookahead(T, x0, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
-    } else {
-      lookahead(T, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
     }
-    predict(T, theta, s, lws);
-    correct(s, lws);
-    output(n, theta, s, r, lws, as);
-    ++n;
-    r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
+      int n = 0, r = 0;
+      while (particle_filter_type::getTime() < T) {
+        propose(corrected, theta, s, lws);
+        particle_filter_type::predict(T, theta, s);
+        particle_filter_type::correct(s, lws);
+        particle_filter_type::output(n, theta, s, r, lws, as);
+        ++n;
+        r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+      }
+    }
   }
+
   synchronize();
   term(theta, theta1);
 }
@@ -389,6 +434,8 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHa
 void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   particle_filter_type::reset();
   kalman_filter_type::reset();
+  k1 = 0;
+  k2 = 0;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
@@ -407,49 +454,59 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class M1>
 void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
-    const real tnxt, ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta1,
+    const real T, ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta1,
     State<L>& s1, ExpGaussianPdf<V1,M1>& observed,
     ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY) {
-  kalman_filter_type::predict(tnxt, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
-  kalman_filter_type::correct(uncorrected, SigmaXY, s1, observed, corrected);
+  while (kalman_filter_type::getTime() < T) {
+    kalman_filter_type::predict(T, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
+    kalman_filter_type::correct(uncorrected, SigmaXY, s1, observed, corrected);
 
-  mu = subrange(corrected.mean(), ND + NC, NR);
-  potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);
-  detU = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
+    BOOST_AUTO(mu, column(this->mu, k2));
+    BOOST_AUTO(U, columns(this->U, k2*NR, NR));
+    mu = subrange(corrected.mean(), ND + NC, NR);
+    potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);
+    detU(k2) = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
+    ++k2;
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1, class M1, class V2>
 void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
-    const real tnxt, const V2 x0, ExpGaussianPdf<V1,M1>& corrected,
+    const real T, const V2 x0, ExpGaussianPdf<V1,M1>& corrected,
     Static<L>& theta1, State<L>& s1, ExpGaussianPdf<V1,M1>& observed,
     ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY) {
-  particle_filter_type::mark();
-  kalman_filter_type::predict(tnxt, x0, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
+  while (kalman_filter_type::getTime() < T) {
+    if (kalman_filter_type::getTime() == 0.0) {
+      kalman_filter_type::predict(T, x0, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
+    } else {
+      kalman_filter_type::predict(T, corrected, theta1, s1, observed, uncorrected, SigmaXX, SigmaXY);
+    }
+    if (kalman_filter_type::getTime() > 0.0) {
+      kalman_filter_type::correct(uncorrected, SigmaXY, s1, observed, corrected);
+    }
 
-  if (kalman_filter_type::getTime() > particle_filter_type::getTime()) {
-    kalman_filter_type::correct(uncorrected, SigmaXY, s1, observed, corrected);
+    BOOST_AUTO(mu, column(this->mu, k2));
+    BOOST_AUTO(U, columns(this->U, k2*NR, NR));
     mu = subrange(corrected.mean(), ND + NC, NR);
     potrf(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR), U);
-    detU = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
-  } else {
-    mu.clear();
-    ident(U);
-    detU = 1.0;
+    detU(k2) = bi::prod(diagonal(U).begin(), diagonal(U).end(), 1.0);
+    ++k2;
   }
-  particle_filter_type::restore();
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<bi::Location L, class V1>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(
-    const real tnxt, Static<L>& theta, State<L>& s, V1& lws) {
-  /* pre-condition */
-  assert (s.size() == lws.size());
+template<class V1, class M1, bi::Location L, class V2>
+void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
+    const ExpGaussianPdf<V1,M1>& corrected, Static<L>& theta, State<L>& s,
+    V2& lws) {
+  while (k1 >= k2) {}
+  BOOST_AUTO(mu, column(this->mu, k1));
+  BOOST_AUTO(U, columns(this->U, k1*NR, NR));
 
   /* propose */
-  BOOST_AUTO(lw1, temp_vector<V1>(lws.size()));
-  BOOST_AUTO(lw2, temp_vector<V1>(lws.size()));
+  BOOST_AUTO(lw1, temp_vector<V2>(lws.size()));
+  BOOST_AUTO(lw2, temp_vector<V2>(lws.size()));
   BOOST_AUTO(X, s.get(R_NODE));
 
   particle_filter_type::rng.gaussians(matrix_as_vector(X));
@@ -460,19 +517,15 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(
   particle_filter_type::rUpdater.skipNext();
 
   /* correct weights */
-  thrust::transform(lws.begin(), lws.end(), lws.begin(), add_constant_functor<real>(log(detU)));
+  thrust::transform(lws.begin(), lws.end(), lws.begin(), add_constant_functor<real>(log(detU(k1))));
   axpy(0.5, *lw1, lws);
   axpy(-0.5, *lw2, lws);
 
-  /* propagate */
-  particle_filter_type::predict(tnxt, theta, s);
+  ++k1;
 
   synchronize();
   delete lw1;
   delete lw2;
-
-  /* post-condition */
-  assert (particle_filter_type::getTime() == kalman_filter_type::getTime());
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
