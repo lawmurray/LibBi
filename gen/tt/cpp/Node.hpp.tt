@@ -102,6 +102,18 @@ public:
   static real upper0();
   [% END-%]
   
+  [%-FOREACH CheckTraits2.execute(Name, 'HAS_GAMMA_PRIOR', 'HAS_INVERSE_GAMMA_PRIOR') %]
+  /**
+   * Shape parameter of prior (inverse-)gamma distribution.
+   */
+  static real alpha0();
+
+  /**
+   * Scale parameter of prior (inverse-)gamma distribution.
+   */
+  static real beta0();
+  [% END-%]
+    
   [%-FOREACH CheckTraits3.execute(Name, 'IS_GAUSSIAN_LIKELIHOOD', 'IS_NORMAL_LIKELIHOOD', 'IS_LOG_NORMAL_LIKELIHOOD') %]
   /**
    * @see bi::GaussianLikelihoodMuFunction::mu
@@ -262,6 +274,22 @@ inline real [% ClassName %]::lower0() {
 inline real [% ClassName %]::upper0() {
   real result;
   [% INCLUDE Formulae Function = 'upper0' Result = 'result' %]
+
+  return result;
+}
+[%-END %]
+ 
+[% FOREACH CheckTraits2.execute(Name, 'HAS_GAMMA_PRIOR', 'HAS_INVERSE_GAMMA_PRIOR')-%]
+inline real [% ClassName %]::alpha0() {
+  real result;
+  [% INCLUDE Formulae Function = 'alpha0' Result = 'result' %]
+
+  return result;
+}
+
+inline real [% ClassName %]::beta0() {
+  real result;
+  [% INCLUDE Formulae Function = 'beta0' Result = 'result' %]
 
   return result;
 }

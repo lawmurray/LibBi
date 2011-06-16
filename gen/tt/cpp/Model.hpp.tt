@@ -6,7 +6,7 @@
 [%-GetNodes = DBI.prepare("SELECT Name, HasX, HasY, HasZ FROM Node WHERE Category <> 'Intermediate result' AND Category <> 'Constant' ORDER BY Position ASC")-%]
 [%-GetDistinctNodes = DBI.prepare("SELECT DISTINCT Name FROM Node WHERE Category <> 'Intermediate result' AND Category <> 'Constant' ORDER BY Position ASC")-%]
 [%-GetNodesWithTrait = DBI.prepare('SELECT * FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name')-%]
-[%-GetNodesWithPrior = DBI.prepare("SELECT DISTINCT Name, Position, Trait FROM Node, NodeTrait WHERE Trait IN ('HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR', 'HAS_LOG_NORMAL_PRIOR', 'HAS_UNIFORM_PRIOR') AND NodeTrait.Node = Node.Name INTERSECT SELECT Name, Position, Trait FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name ORDER BY Position")-%]
+[%-GetNodesWithPrior = DBI.prepare("SELECT DISTINCT Name, Position, Trait FROM Node, NodeTrait WHERE Trait LIKE 'HAS_%_PRIOR' AND NodeTrait.Node = Node.Name INTERSECT SELECT Name, Position, Trait FROM Node, NodeTrait WHERE Trait = ? AND NodeTrait.Node = Node.Name ORDER BY Position")-%]
 [%-GetParentsWithTrait = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset, Parent.Position FROM Parent, Node, NodeTrait WHERE NodeTrait.Trait = ? AND NodeTrait.Node = Parent.ParentNode AND Parent.ChildNode = Node.Name ORDER BY Node.Position, Parent.Position")-%]
 [%-GetEdges = DBI.prepare("SELECT DISTINCT Parent.ParentNode, Parent.ChildNode, Parent.XOffset, Parent.YOffset, Parent.ZOffset FROM Node, Parent WHERE Node.Category <> 'Intermediate result' AND Node.Category <> 'Constant' AND Parent.ParentNode = Node.Name ORDER BY Parent.Position")-%]
 [%-CheckTrait = DBI.prepare('SELECT 1 FROM NodeTrait WHERE Node = ? AND Trait = ?')-%]
@@ -33,6 +33,8 @@
 #include "bi/pdf/FactoredPdf.hpp"
 #include "bi/pdf/ExpGaussianPdf.hpp"
 #include "bi/pdf/UniformPdf.hpp"
+#include "bi/pdf/GammaPdf.hpp"
+#include "bi/pdf/InverseGammaPdf.hpp"
 
 #include <vector>
 
@@ -63,6 +65,12 @@ SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::UniformP
 [% END-%]
 [%-FOREACH CheckTraits3.execute(Node.Name, 'HAS_GAUSSIAN_PRIOR', 'HAS_NORMAL_PRIOR', 'HAS_LOG_NORMAL_PRIOR')-%]
 SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::ExpGaussianPdf<>)
+[% END-%]
+[%-FOREACH CheckTrait.execute(Node.Name, 'HAS_GAMMA_PRIOR')-%]
+SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::GammaPdf)
+[% END-%]
+[%-FOREACH CheckTrait.execute(Node.Name, 'HAS_INVERSE_GAMMA_PRIOR')-%]
+SINGLE_TYPE(bi::node_dimlens<[% Node.Name | ucfirst %]Node>::value, bi::InverseGammaPdf)
 [% END-%]
 [%-END-%]
 END_TYPELIST()
@@ -206,6 +214,18 @@ template<int XN, int YN, int ZN>
   [% END-%]
   [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_LOG_NORMAL_PRIOR') %]
   ExpGaussianPdf<> [% Type | lower %][% Position %](node[% Node.Name %].mu0(), std::pow(node[% Node.Name %].sigma0(), 2), true);
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% Position %]);
+  }
+  [% END-%]
+  [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_GAMMA_PRIOR') %]
+  GammaPdf [% Type | lower %][% Position %](node[% Node.Name %].alpha0(), node[% Node.Name %].beta0(), true);
+  for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
+    getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% Position %]);
+  }
+  [% END-%]
+  [%-FOREACH CheckTrait.execute(Node.Name, 'HAS_INVERSE_GAMMA_PRIOR') %]
+  InverseGammaPdf [% Type | lower %][% Position %](node[% Node.Name %].alpha0(), node[% Node.Name %].beta0(), true);
   for (i = 0; i < getNodeSize([% Type %]_NODE, [% Position %]); ++i) {
     getPrior<[% Type %]_NODE>().set(getNodeStart([% Type %]_NODE, [% Position %]) + i, [% Type | lower %][% Position %]);
   }
