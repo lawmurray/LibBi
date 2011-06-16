@@ -13,38 +13,6 @@
 #include "../cuda/cuda.hpp"
 #include "../math/scalar.hpp"
 
-//#define h0 REAL(1.0)
-//#define rtoler REAL(1.0e-3)
-//#define atoler REAL(1.0e-3)
-//#define uround REAL(1.0e-16)
-//#define safe REAL(0.9)
-//#define facl REAL(0.2)
-//#define facr REAL(10.0)
-//#define beta REAL(0.04)
-//#define nsteps 1000
-//#define safe1 (REAL(1.0) / safe)
-//#define logsafe CUDA_LOG(safe)
-//#define expo1 (REAL(0.2) - beta*REAL(0.75));
-//#define expo (REAL(0.5)*(REAL(0.2) - beta*REAL(0.75)))
-//#define facc1 (REAL(1.0) / facl)
-//#define facc2 (REAL(1.0) / facr)
-//
-//#define h_h0 REAL(1.0)
-//#define h_rtoler REAL(1.0e-3)
-//#define h_atoler REAL(1.0e-3)
-//#define h_uround REAL(1.0e-16)
-//#define h_safe REAL(0.9)
-//#define h_facl REAL(0.2)
-//#define h_facr REAL(10.0)
-//#define h_beta REAL(0.04)
-//#define h_nsteps 1000
-//#define h_safe1 (REAL(1.0) / safe)
-//#define h_logsafe CUDA_LOG(safe)
-//#define h_expo1 (REAL(0.2) - beta*REAL(0.75));
-//#define h_expo (REAL(0.5)*(REAL(0.2) - beta*REAL(0.75)))
-//#define h_facc1 (REAL(1.0) / facl)
-//#define h_facc2 (REAL(1.0) / facr)
-
 /**
  * @internal
  *
@@ -135,35 +103,35 @@ void h_ode_init();
  *
  * @ingroup method_updater
  */
-void h_ode_set_h0(real h0in);
+void h_ode_set_h0(const real h0in);
 
 /**
  * Set ODE relative error tolerance.
  *
  * @ingroup method_updater
  */
-void h_ode_set_rtoler(real rtolerin);
+void h_ode_set_rtoler(const real rtolerin);
 
 /**
  * Set ODE absolute error tolerance.
  *
  * @ingroup method_updater
  */
-void h_ode_set_atoler(real atolerin);
+void h_ode_set_atoler(const real atolerin);
 
 /**
  * Set ODE rounding unit. Smallest number satisfying 1.0 + uround > 1.0.
  *
  * @ingroup method_updater
  */
-void h_ode_set_uround(real uroundin);
+void h_ode_set_uround(const real uroundin);
 
 /**
  * Set ODE safety factor in step size prediction.
  *
  * @ingroup method_updater
  */
-void h_ode_set_safe(real safein);
+void h_ode_set_safe(const real safein);
 
 /**
  * Set the "beta" for stabilized step size control (see section IV.2 of
@@ -173,7 +141,7 @@ void h_ode_set_safe(real safein);
  *
  * @ingroup method_updater
  */
-void h_ode_set_beta(real betain);
+void h_ode_set_beta(const real betain);
 
 /**
  * facl, facr--parameters for step size selection; the new step size is chosen
@@ -182,21 +150,21 @@ void h_ode_set_beta(real betain);
  *
  * @ingroup method_updater
  */
-void h_ode_set_facl(real faclin);
+void h_ode_set_facl(const real faclin);
 
 /**
  * @copydoc ode_set_facl
  *
  * @ingroup method_updater
  */
-void h_ode_set_facr(real facrin);
+void h_ode_set_facr(const real facrin);
 
 /**
  * Set maximum number of steps before prematurely ending integration.
  *
  * @ingroup method_updater
  */
-void h_ode_set_nsteps(int nsteps);
+void h_ode_set_nsteps(const int nsteps);
 
 #ifdef __CUDACC__
 #include "../cuda/ode/IntegratorConstants.cuh"

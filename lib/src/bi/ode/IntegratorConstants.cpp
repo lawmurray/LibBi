@@ -26,26 +26,26 @@ real h_facc2;
 real h_logsafe;
 real h_safe1;
 
-void h_ode_set_h0(real h0in) {
+void h_ode_set_h0(const real h0in) {
   h_h0 = h0in;
 }
 
-void h_ode_set_rtoler(real rtolerin) {
+void h_ode_set_rtoler(const real rtolerin) {
   h_rtoler = rtolerin;
 }
 
-void h_ode_set_atoler(real atolerin) {
+void h_ode_set_atoler(const real atolerin) {
   h_atoler = atolerin;
 }
 
-void h_ode_set_uround(real uroundin) {
+void h_ode_set_uround(const real uroundin) {
   /* pre-condition */
   assert (uroundin > REAL(1.0e-19) && uroundin < REAL(1.0));
 
   h_uround = uroundin;
 }
 
-void h_ode_set_safe(real safein) {
+void h_ode_set_safe(const real safein) {
   /* pre-condition */
   assert (safein > REAL(0.001) && safein < REAL(1.0));
 
@@ -54,7 +54,7 @@ void h_ode_set_safe(real safein) {
   h_logsafe = CUDA_LOG(safein);
 }
 
-void h_ode_set_beta(real betain) {
+void h_ode_set_beta(const real betain) {
   /* pre-condition */
   assert (betain >= 0.0 && betain <= REAL(0.2));
 
@@ -63,17 +63,17 @@ void h_ode_set_beta(real betain) {
   h_expo = REAL(0.5)*(REAL(0.2) - betain*REAL(0.75));
 }
 
-void h_ode_set_facl(real faclin) {
+void h_ode_set_facl(const real faclin) {
   h_facl = faclin;
   h_facc1 = REAL(1.0) / faclin;
 }
 
-void h_ode_set_facr(real facrin) {
+void h_ode_set_facr(const real facrin) {
   h_facr = facrin;
   h_facc2 = REAL(1.0) / facrin;
 }
 
-void h_ode_set_nsteps(int nstepsin) {
+void h_ode_set_nsteps(const int nstepsin) {
   h_nsteps = nstepsin;
 }
 
