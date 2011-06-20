@@ -13,7 +13,7 @@
 %
 % @bullet{ @var{name} Name of the variable.}
 %
-% @bullet{ @var{coord} (optional) Spartial coordinates. Zero to three
+% @bullet{ @var{coord} (optional) Spatial coordinates. Zero to three
 % element vector containing spatial coordinates for the desired component
 % of this variable.}
 %

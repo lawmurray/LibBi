@@ -39,9 +39,22 @@ function plot_urts (in, invar, coord, islog)
 
     % input file
     nci = netcdf(in, 'r');
-    xlen = nci('nx');
-    ylen = nci('ny');
-    zlen = nci('nz');
+    if ncdimexists (nci, 'nx')
+        xlen = length (nci('nx'));
+    else
+        xlen = 1;
+    end
+    if ncdimexists (nci, 'ny')
+        ylen = length (nci('ny'));
+    else
+        ylen = 1;
+    end
+    if ncdimexists (nci, 'ny')
+        ylen = length (nci('ny'));
+    else
+        ylen = 1;
+    end
+    
     if length(coord) == 3
         offset = coord(1) + coord(2)*xlen + coord(3)*xlen*ylen;
     elseif length(coord) == 2

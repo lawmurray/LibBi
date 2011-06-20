@@ -29,10 +29,10 @@ function [mn mx] = minmax_likelihood (model)
     end
 
     % constrained minima
-    H = convhulln (model.X);
+    %H = convhulln (model.X);
     mn = model.X(randperm (rows (model.X))(1:N),:);
     for i = 1:N
-        mn(i,:) = fmins('mingp', mn(i,:), options, [], H, model.hyp, ...
+        mn(i,:) = fmins('mingp', mn(i,:), options, [], model.hyp, ...
             @infExact, model.meanfunc, model.covfunc, model.likfunc, ...
             model.X, model.sigma);
     end
@@ -43,7 +43,8 @@ function [mn mx] = minmax_likelihood (model)
     [val i] = min(vals);
     mn = mn(i,:);
 
-    % eliminate duplicates (using 5 sig figs for comparison)
+    save minmax.mat mn mx
+    
+    % eliminate duplicate maxima (using 5 sig figs for comparison)
     mx = unique(map(@trim, mx), 'rows');
-    mn = unique(map(@trim, mn), 'rows');
 end

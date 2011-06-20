@@ -24,8 +24,10 @@
 % @end deftypefn
 %
 function model = krig_likelihood (in, invars, coords, M)
+    nc = netcdf(in, 'r');
+    P = length(nc('np'));
+    
     % read in log-likelihoods
-    nc = netcdf('results/likelihood_disturbance.nc.0', 'r');
     ll = nc{'loglikelihood'}(:);
     ll = reshape(ll, M, length(ll)/M);
 
@@ -43,16 +45,31 @@ function model = krig_likelihood (in, invars, coords, M)
     logmu = logmu';
     sigma = sigma';
     
+    % bootstrap noise in sigma to get gp signal noise
+    sns = zeros(length(sigma), 1);
+    for i = 1:length(sigma)
+        u = randi(rows(l0), 1000*rows(l0), 1);
+        l = reshape(l0(u,i), rows(l0), 1000);
+        sigmas = std(l);
+        sns(i) = std(sigmas(:));
+    end
+    
     % support points
     X = [];
     for i = 1:length(invars)
-        X = [ X, nc{invars{i}}(1:M:end) ];
+        if length(coords) >= i
+            x = read_var(nc, invars{i}, coords{i}, [1:M:P], 1);
+        else
+            x = read_var(nc, invars{i}, [], [1:M:P], 1);
+        end    
+        X = [ X, x(:) ];
     end
 
     % krig likelihood noise
+    sn = max(sns);
     meanfunc = @meanZero;
     covfunc = @covSEiso; ell = 1/4; sf = 1; hyp.cov = log([ell; sf]);
-    likfunc = @likGauss; sn = 1.0; hyp.lik = log(sn);
+    likfunc = @likGauss; hyp.lik = log(sn);
     
     hyp = minimize(hyp, @gp, -200, @infExact, meanfunc, covfunc, likfunc, ...
                    X, sigma);
