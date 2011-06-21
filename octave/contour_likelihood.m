@@ -4,21 +4,21 @@
 % $Date: 2011-06-07 11:40:59 +0800 (Tue, 07 Jun 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} surf_likelihood (@var{model}, @var{mn}, @var{mx})
+% @deftypefn {Function File} contour_likelihood (@var{model}, @var{mn}, @var{mx})
 %
 % Surface plot for 2-dimensional likeilhood noise.
 %
 % @itemize
 % @bullet{ @var{model} Model, as output by krig_likelihood().}
 %
-% @bullet{ @var{mn} (optional) Global minima, as output by
+% @bullet{ @var{mn} (optional) Local minima, as output by
 % minmax_likelihood().}
 %
-% @bullet{ @var{mx} (optional) Local maxima, as output by
+% @bullet{ @var{mx} (optional) Global maxima, as output by
 % minmax_likelihood().}
 % @end deftypefn
 %
-function surf_likelihood (model, mn, mx)
+function contour_likelihood (model, mn, mx)
     RES = 50;
     
     if nargin < 1 || nargin > 3
@@ -52,12 +52,12 @@ function surf_likelihood (model, mn, mx)
     Z = [ XX(:) YY(:) ];
     
     [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.sigma, Z);
+        model.likfunc, model.X, model.logalpha, Z);
 
     ZZ = reshape(m, size(XX));
     
     % contours
-    contourf(XX, YY, ZZ);
+    contourf(XX, YY, exp(ZZ));
     
     % extreme
     if nargin > 1
@@ -71,8 +71,8 @@ function surf_likelihood (model, mn, mx)
     
     % transects
     if nargin > 2
-       for i = 1:rows(mx)
-           line([ mn(1,1) mx(i,1) ], [ mn(1,2) mx(i,2) ], 'color', 'w', ...
+       for i = 1:rows(mn)
+           line([ mx(1,1) mn(i,1) ], [ mx(1,2) mn(i,2) ], 'color', 'w', ...
                 'linewidth', 3);
        end
     end
