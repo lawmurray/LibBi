@@ -30,20 +30,27 @@ function mx = max_likelihood (model, attempts, maxiters)
     end
 
     % optimisation options
-    options = zeros (10,1);
-    options(10) = maxiters;
+    options = zeros (18,1);
+    options(2) = 1.0e-6;
+    options(14) = maxiters;
     
     % maxima
-    mx = model.X(randperm (rows (model.X))(1:attempts),:);
+    if attempts <= rows (model.X)
+        mx = model.X(randperm (rows (model.X))(1:attempts),:);
+    else
+        mx = model.X(randi (rows (model.X), attempts, 1),:);
+    end
     for i = 1:attempts
-        mx(i,:) = fmins('maxgp', mx(i,:), options, [], model.hyp, ...
-            @infExact, model.meanfunc, model.covfunc, model.likfunc, ...
-            model.X, model.logalpha);
+        mx(i,:) = scg(@maxgp, mx(i,:), options, @dmaxgp, model);
     end
 
+    % eliminate any that are really just mean of Gaussian process
+    vals = mingp(mx, model);
+    is = find(trim(vals) != trim(model.hyp.mean));
+    mx = mx(is,:);
+    
     % pick global maxima
-    vals = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, mx);
+    vals = mingp(mx, model);
     [val i] = max(vals);
     mx = mx(i,:);
 end

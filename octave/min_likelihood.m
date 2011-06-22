@@ -30,23 +30,35 @@ function mn = min_likelihood (model, attempts, maxiters)
     end
 
     % optimisation options
-    options = zeros (10,1);
-    options(10) = maxiters;
+    options = zeros (18,1);
+    options(2) = 1.0e-6;
+    options(14) = maxiters;
     
     % minima
-    mn = model.X(randperm (rows (model.X))(1:attempts),:);
+    if attempts <= rows (model.X)
+        mn = model.X(randperm (rows (model.X))(1:attempts),:);
+    else
+        mn = model.X(randi (rows (model.X), attempts, 1),:);
+    end
     for i = 1:attempts
-        mn(i,:) = fmins('mingp', mn(i,:), options, [], model.hyp, ...
-            @infExact, model.meanfunc, model.covfunc, model.likfunc, ...
-            model.X, model.logalpha);    
+        mn(i,:) = scg(@mingp, mn(i,:), options, @dmingp, model);
     end
 
     % eliminate duplicate minima (using 5 sig figs for comparison)
     mn = unique(map(@trim, mn), 'rows');
     
-    % eliminate any minima that are really just mean of Gaussian process
-    vals = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, mn);
-    is = find(vals != model.hyp.mean);
+    % eliminate any that arejust mean of Gaussian process
+    vals = mingp(mn, model);
+    is = find(trim(vals) != trim(model.hyp.mean));
     mn = mn(is,:);
+    
+    % sort
+    vals = mingp(mn, model);
+    [vals is] = sort(vals);
+    mn = mn(is,:);
+    
+    % pick global
+    %vals = mingp(mn, model);
+    %[val i] = min(vals);
+    %mn = mn(i,:);
 end

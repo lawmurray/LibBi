@@ -62,9 +62,13 @@ function model = model_likelihood (in, invars, coords, M)
             X = [ X, read_var(nc, invars{i}, [], [1:M:P], 1)(:) ];
         end
     end
-    X = zscore(X);
+    mu = mean(X);
+    sigma = std(X);
+    X = (X - repmat(mu, rows(X), 1))./repmat(sigma, rows(X), 1);
     
     % result structure
+    model.mu = mu;
+    model.sigma = sigma;
     model.X = X;
     model.logalpha = log(alpha);
 end

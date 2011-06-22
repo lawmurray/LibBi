@@ -30,10 +30,14 @@ function model = krig_likelihood (model, maxiters)
     
     hyp = minimize(hyp, @gp, -maxiters, @infExact, meanfunc, covfunc, ...
         likfunc, model.X, model.logalpha);
-
+    
     % result structure
     model.hyp = hyp;
     model.meanfunc = meanfunc;
     model.covfunc = covfunc;
     model.likfunc = likfunc;
+    
+    % precomputes for later
+    K = covfunc(model.hyp.cov, model.X);
+    model.k = cholinv(K)'*(model.logalpha - model.hyp.mean);
 end

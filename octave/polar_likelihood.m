@@ -18,22 +18,25 @@
 % minmax_likelihood().}
 % @end deftypefn
 %
-function polar_likelihood (model, mn, mx)
-    RES_RHO = 11;
+function polar_likelihood (model, mn, mx, ncontours)
     RES_THETA = 24;
     ANGLE = 2*pi/(rows(mn)*1.5);
     
-    if nargin != 3
+    if nargin < 3 || nargin > 4
         print_usage ();
     end
+    if nargin < 4
+        ncontours = 20;
+    end
+    ncontours += 1;
     
     % setup
     clf;
     polar(0,0);
     
     % plot distance circles
-    d = sqrt(sumsq(mn - repmat(mx(1,:), rows(mn), 1), 2)); % distances
-    [e, is] = sort(d);
+    %d = sqrt(sumsq(mn - repmat(mx(1,:), rows(mn), 1), 2)); % distances
+    %[e, is] = sort(d);
     
     %theta = linspace(0, 2*pi, 360);
     %for i = 1:length(d)
@@ -43,9 +46,9 @@ function polar_likelihood (model, mn, mx)
     %end
     
     % compute rays
-    Z1 = kron(mn, ones(RES_RHO,1));
-    Z2 = repmat(mx(1,:), RES_RHO*rows(mn), 1);
-    alpha = repmat([0:(1.0/(RES_RHO-1)):1.0]', rows(mn), columns(mn));
+    Z1 = kron(mn, ones(ncontours,1));
+    Z2 = repmat(mx(1,:), ncontours*rows(mn), 1);
+    alpha = repmat([0:(1.0/(ncontours-1)):1.0]', rows(mn), columns(mn));
     Z = alpha.*Z1 + (1.0 - alpha).*Z2;
     
     [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
@@ -53,28 +56,27 @@ function polar_likelihood (model, mn, mx)
     
     d = sqrt(sumsq(Z - Z2, 2)); % distances
 
-    m = reshape(m, RES_RHO, rows(mn));
-    d = reshape(d, RES_RHO, rows(mn));
-    caxis(exp([min(m(:)), max(m(:))]));
+    m = reshape(m, ncontours, rows(mn));
+    d = reshape(d, ncontours, rows(mn));
+    caxis([min(m(:)), max(m(:))]);
     
     % plot rays
     thetares = linspace(0, ANGLE, RES_THETA)';
-    for j = 1:length(is)
-        i = is(j);
-        theta = kron(i*2*pi/rows(mn) - ANGLE/2 + thetares, ones(RES_RHO,1));
+    for i = 1:columns(d)
+        theta = kron(i*2*pi/rows(mn) - ANGLE/2 + thetares, ones(ncontours,1));
         rho = repmat(d(:,i), length(thetares), 1);
         pol = [ theta, rho ];
         cart = pol2cart(pol);
         
         V = cart;
-        F = repmat([1:RES_RHO-1]', 1, length(thetares));
-        inc = repmat(RES_RHO*[0:columns(F) - 1], rows(F), 1);
+        F = repmat([1:ncontours-1]', 1, length(thetares));
+        inc = repmat(ncontours*[0:columns(F) - 1], rows(F), 1);
         F += inc;
         F = [ F, fliplr(F + 1)];
-        C = exp(m(2:end,i));
+        C = m(2:end,i);
         
         patch('Faces', F, 'Vertices', V, 'FaceVertexCData', C, 'LineWidth', ...
-              0);
+              0.5);
     end
         
     % tidy up
