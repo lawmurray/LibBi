@@ -76,7 +76,7 @@ function gen_obs (in, invar, out, outvar, p, ts, S, logn, coords)
     if exist (out, "file")
         nco = netcdf(out, 'w');
     else
-        nco = netcdf(out, 'c');
+        nco = netcdf(out, 'c', '64bit-offset');
     end
 
     % dimensions

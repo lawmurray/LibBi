@@ -45,7 +45,7 @@ function gen_init (in, invar, out, outvar, p)
     if exist (out, "file")
         nco = netcdf(out, 'w');
     else
-        nco = netcdf(out, 'c');
+        nco = netcdf(out, 'c', '64bit-offset');
     end
   
     % construct dimensions if necessary
