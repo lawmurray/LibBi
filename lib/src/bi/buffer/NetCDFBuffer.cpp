@@ -24,11 +24,11 @@ NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
     ncFile = new NcFile(file.c_str(), NcFile::Write);
     break;
   case NEW:
-    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Netcdf4);
+    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Offset64Bits);
     ncFile->set_fill(NcFile::NoFill);
     break;
   case REPLACE:
-    ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0, NcFile::Netcdf4);
+    ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0, NcFile::Offset64Bits);
     ncFile->set_fill(NcFile::NoFill);
     break;
   default:
