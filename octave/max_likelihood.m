@@ -44,13 +44,21 @@ function mx = max_likelihood (model, attempts, maxiters)
         mx(i,:) = scg(@maxgp, mx(i,:), options, @dmaxgp, model);
     end
 
+    % eliminate duplicates
+    mx = unique(map(@trim, mx), 'rows');
+
     % eliminate any that are really just mean of Gaussian process
     vals = mingp(mx, model);
     is = find(trim(vals) != trim(model.hyp.mean));
     mx = mx(is,:);
     
-    % pick global maxima
+    % sort
     vals = mingp(mx, model);
-    [val i] = max(vals);
-    mx = mx(i,:);
+    [vals is] = sort(vals);
+    mx = mx(flipud(is),:);
+
+    % pick global
+    %vals = mingp(mx, model);
+    %[val i] = max(vals);
+    %mx = mx(i,:);
 end

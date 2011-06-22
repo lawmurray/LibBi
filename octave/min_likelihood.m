@@ -44,10 +44,10 @@ function mn = min_likelihood (model, attempts, maxiters)
         mn(i,:) = scg(@mingp, mn(i,:), options, @dmingp, model);
     end
 
-    % eliminate duplicate minima (using 5 sig figs for comparison)
+    % eliminate duplicates
     mn = unique(map(@trim, mn), 'rows');
     
-    % eliminate any that arejust mean of Gaussian process
+    % eliminate any that are just mean of Gaussian process
     vals = mingp(mn, model);
     is = find(trim(vals) != trim(model.hyp.mean));
     mn = mn(is,:);

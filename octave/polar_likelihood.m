@@ -29,22 +29,7 @@ function polar_likelihood (model, mn, mx, ncontours)
         ncontours = 20;
     end
     ncontours += 1;
-    
-    % setup
-    clf;
-    polar(0,0);
-    
-    % plot distance circles
-    %d = sqrt(sumsq(mn - repmat(mx(1,:), rows(mn), 1), 2)); % distances
-    %[e, is] = sort(d);
-    
-    %theta = linspace(0, 2*pi, 360);
-    %for i = 1:length(d)
-    %    rho = repmat(d(i), length(theta), 1);
-    %    polar(theta, rho, ':k');
-    %    hold on
-    %end
-    
+           
     % compute rays
     Z1 = kron(mn, ones(ncontours,1));
     Z2 = repmat(mx(1,:), ncontours*rows(mn), 1);
@@ -59,7 +44,12 @@ function polar_likelihood (model, mn, mx, ncontours)
     m = reshape(m, ncontours, rows(mn));
     d = reshape(d, ncontours, rows(mn));
     caxis([min(m(:)), max(m(:))]);
+    %axis([-max(d(:)), max(d(:)), -max(d(:)), max(d(:))]);
     
+    % setup
+    clf;
+    polar(linspace(0, 2*pi, 360), repmat(max(d(:)), 1, 360), '-k');
+
     % plot rays
     thetares = linspace(0, ANGLE, RES_THETA)';
     for i = 1:columns(d)
@@ -76,12 +66,13 @@ function polar_likelihood (model, mn, mx, ncontours)
         C = m(2:end,i);
         
         patch('Faces', F, 'Vertices', V, 'FaceVertexCData', C, 'LineWidth', ...
-              0.5);
+              0, 'FaceAlpha', 0.7);
     end
         
     % tidy up
     hold off;
-    axis("tight");
-    ax = max(abs(axis()));
-    axis([-ax ax -ax ax], 'square', 'off');      
+    box off;
+    %axis("tight");
+    %ax = max(abs(axis()));
+    %axis([-ax ax -ax ax], 'square', 'off');      
 end

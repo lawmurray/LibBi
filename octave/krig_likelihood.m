@@ -25,7 +25,7 @@ function model = krig_likelihood (model, maxiters)
     end
     
     meanfunc = @meanConst; hyp.mean = mean(model.logalpha);
-    covfunc = @covSEiso; ell = 1; sf = 1; hyp.cov = log([ell; sf]);
+    covfunc = @covSEiso; ell = 10; sf = 1; hyp.cov = log([ell; sf]);
     likfunc = @likGauss; sn = 5.0; hyp.lik = log(sn);
     
     hyp = minimize(hyp, @gp, -maxiters, @infExact, meanfunc, covfunc, ...
