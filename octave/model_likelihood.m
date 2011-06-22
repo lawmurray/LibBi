@@ -53,7 +53,7 @@ function model = model_likelihood (in, invars, coords, M)
         alpha(i) = l'*(1.0 - diag(T) + 1/M);
     end
     
-    % support points
+    % standardised support points
     X = [];
     for i = 1:length(invars)
         if length(coords) >= i
@@ -62,6 +62,7 @@ function model = model_likelihood (in, invars, coords, M)
             X = [ X, read_var(nc, invars{i}, [], [1:M:P], 1)(:) ];
         end
     end
+    X = zscore(X);
     
     % result structure
     model.X = X;

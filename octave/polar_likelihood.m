@@ -33,7 +33,7 @@ function polar_likelihood (model, mn, mx)
     
     % plot distance circles
     d = sqrt(sumsq(mn - repmat(mx(1,:), rows(mn), 1), 2)); % distances
-    [d, is] = sort(d);
+    [e, is] = sort(d);
     
     %theta = linspace(0, 2*pi, 360);
     %for i = 1:length(d)
@@ -73,7 +73,8 @@ function polar_likelihood (model, mn, mx)
         F = [ F, fliplr(F + 1)];
         C = exp(m(2:end,i));
         
-        patch('Faces', F, 'Vertices', V, 'FaceVertexCData', C);
+        patch('Faces', F, 'Vertices', V, 'FaceVertexCData', C, 'LineWidth', ...
+              0);
     end
         
     % tidy up

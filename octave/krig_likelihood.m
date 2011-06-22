@@ -10,16 +10,26 @@
 %
 % @itemize
 % @bullet{ @var{model} Model.}
+%
+% @bullet{ @var{maxiters} Maximum number of iterations in each optimisation
+% run.
 % @end itemize
 % @end deftypefn
 %
-function model = krig_likelihood (model)
-    meanfunc = @meanConst; hyp.mean = mean(model.logalpha);
-    covfunc = @covSEiso; ell = 1/4; sf = 1; hyp.cov = log([ell; sf]);
-    likfunc = @likGauss; sn = 0.1; hyp.lik = log(sn);
+function model = krig_likelihood (model, maxiters)
+    if nargin < 1 || nargin > 2
+        print_usage ();
+    end
+    if nargin < 2
+        maxiters = 200;
+    end
     
-    hyp = minimize(hyp, @gp, -500, @infExact, meanfunc, covfunc, likfunc, ...
-                   model.X, model.logalpha);
+    meanfunc = @meanConst; hyp.mean = mean(model.logalpha);
+    covfunc = @covSEiso; ell = 1; sf = 1; hyp.cov = log([ell; sf]);
+    likfunc = @likGauss; sn = 5.0; hyp.lik = log(sn);
+    
+    hyp = minimize(hyp, @gp, -maxiters, @infExact, meanfunc, covfunc, ...
+        likfunc, model.X, model.logalpha);
 
     % result structure
     model.hyp = hyp;

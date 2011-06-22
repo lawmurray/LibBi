@@ -4,9 +4,9 @@
 % $Date: 2011-06-07 11:40:59 +0800 (Tue, 07 Jun 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} [@var{mn} @var{mx}] = minmax_likelihood (@var{model})
+% @deftypefn {Function File} @var{mn}= min_likelihood (@var{model})
 %
-% Find global maximum and local minima of acceptance rate surface.
+% Find local minima of acceptance rate surface.
 %
 % @itemize
 % @bullet{ @var{model} Model, as output by krig_likelihood().}
@@ -18,7 +18,7 @@
 % @end itemize
 % @end deftypefn
 %
-function [mn mx] = minmax_likelihood (model, attempts, iters)
+function mn = min_likelihood (model, attempts, maxiters)
     if nargin < 1 || nargin > 3
         print_usage ();
     end
@@ -26,12 +26,12 @@ function [mn mx] = minmax_likelihood (model, attempts, iters)
         attempts = ceil(sqrt(rows(model.X)));
     end
     if nargin < 3
-        iters = 500;
+        maxiters = 500;
     end
 
     % optimisation options
     options = zeros (10,1);
-    options(10) = iters;
+    options(10) = maxiters;
     
     % minima
     mn = model.X(randperm (rows (model.X))(1:attempts),:);
@@ -40,20 +40,6 @@ function [mn mx] = minmax_likelihood (model, attempts, iters)
             @infExact, model.meanfunc, model.covfunc, model.likfunc, ...
             model.X, model.logalpha);    
     end
-
-    % maxima
-    mx = model.X(randperm (rows (model.X))(1:attempts),:);
-    for i = 1:attempts
-        mx(i,:) = fmins('maxgp', mx(i,:), options, [], model.hyp, ...
-            @infExact, model.meanfunc, model.covfunc, model.likfunc, ...
-            model.X, model.logalpha);
-    end
-
-    % pick global maxima
-    vals = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, mx);
-    [val i] = max(vals);
-    mx = mx(i,:);
 
     % eliminate duplicate minima (using 5 sig figs for comparison)
     mn = unique(map(@trim, mn), 'rows');
