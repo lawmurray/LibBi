@@ -22,11 +22,12 @@
 #include <sys/time.h>
 #include <getopt.h>
 
-#ifdef USE_CPU
+/* force onto host for now, device implementation buggy */
+//#ifdef USE_CPU
 #define LOCATION ON_HOST
-#else
-#define LOCATION ON_DEVICE
-#endif
+//#else
+//#define LOCATION ON_DEVICE
+//#endif
 
 using namespace bi;
 
