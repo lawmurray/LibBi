@@ -719,6 +719,7 @@ real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::initObs(const real tnxt,
   } else {
     tj = tnxt;
     W = 0;
+    s.oresize(0, false);
   }
   return tj;
 }
@@ -843,7 +844,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
    * \f[\mathcal{Y}_n^{(i)} \leftarrow g(\mathcal{X}_n^{(i)})\f]
    */
   oLogs.clear();
-  if (state.t >= tj) {
+  if (state.t >= tj && W > 0) {
     BOOST_AUTO(mask, oyUpdater.getMask());
     assert(W == mask.size());
 
