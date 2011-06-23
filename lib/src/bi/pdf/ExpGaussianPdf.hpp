@@ -398,7 +398,7 @@ template<class V1, class M1>
 void bi::ExpGaussianPdf<V1,M1>::addLogs(const std::set<int>& ids,
     const int offset) {
   std::set<int>::const_iterator iter;
-  for (iter = logs.begin(); iter != logs.end(); ++iter) {
+  for (iter = ids.begin(); iter != ids.end(); ++iter) {
     this->logs.insert(offset + *iter);
   }
 }
