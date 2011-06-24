@@ -35,6 +35,13 @@ SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m, const int P,
 SimulatorNetCDFBuffer::~SimulatorNetCDFBuffer() {
   synchronize();
   clean();
+
+  unsigned i, j;
+  for (i = 0; i < vars.size(); ++i) {
+    for (j = 0; j < vars[i].size(); ++j) {
+      delete vars[i][j];
+    }
+  }
 }
 
 void SimulatorNetCDFBuffer::create(const long P, const long T) {
