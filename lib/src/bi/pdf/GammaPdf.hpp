@@ -183,9 +183,9 @@ inline void bi::GammaPdf::sample(Random& rng, V2 x) {
 template<class M2>
 void bi::GammaPdf::samples(Random& rng, M2 X) {
   /* pre-conditions */
-  assert (X.size2() == size());
+  assert (X.size2() == N);
 
-  sample(rng, vec(X));
+  rng.gammas(vec(X), alpha, beta);
 }
 
 template<class V2>

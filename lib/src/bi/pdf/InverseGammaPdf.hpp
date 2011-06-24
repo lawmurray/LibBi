@@ -185,9 +185,10 @@ inline void bi::InverseGammaPdf::sample(Random& rng, V2 x) {
 template<class M2>
 void bi::InverseGammaPdf::samples(Random& rng, M2 X) {
   /* pre-conditions */
-  assert (X.size2() == size());
+  assert (X.size2() == N);
 
-  sample(rng, vec(X));
+  rng.gammas(vec(X), alpha, 1.0/beta);
+  element_rcp(vec(X).begin(), vec(X).end(), vec(X).begin());
 }
 
 template<class V2>
