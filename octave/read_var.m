@@ -52,7 +52,7 @@ function X = read_var (nc, name, coord, ps, ts)
     if ncdimexists (nc, 'np')
         P = length (nc('np'));
     else
-        P = 1;
+        error ('read_var only for files with np dimension');
     end
     
     if length (ps) == 0

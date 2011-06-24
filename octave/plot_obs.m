@@ -44,44 +44,9 @@ function plot_obs (in, invar, coord, ns)
     % input file
     nci = netcdf(in, 'r');
 
-    % time variable
-    tvar = sprintf('time_%s', invar);
-    K = length(nci{tvar}(:));
-    ts = nci{tvar}(:);
-
-    % coordinate variable
-    cvar = sprintf('coord_%s', invar);
-    if length(coord) > 1
-        numdims = length (ncdim (nc{name}));
-        if numdims == 1
-            coords = nci{cvar}(:);
-        elseif numdims == 2
-            coords = nci{cvar}(:,:);
-        else
-            error (sprintf('Variable %s has too many dimensions', cvar));
-        end
-    else
-        coords = [];
-    end
-    coords = coords + 1; % offset for move from base 0 to base 1 indexing
-    
-    % observed variables
-    ys = nci{invar}(ns,:);
-    
-    % mask based on coordinates
-    if isempty(coords)
-        mask = ones(K,1);
-    else
-        mask = zeros(K,1);
-        for k = 1:K
-            if coords(k,:) == coord
-                mask(k) = 1;
-            end
-        end
-    end
-    t = ts(find(mask));
-    y = ys(find(mask));
-    
+    % read
+    [t y] = read_obs (nci, invar, coord, ns);
+        
     % plot
     plot(t, y, 'ok', 'markersize', 3.0);
     %plot_defaults;
