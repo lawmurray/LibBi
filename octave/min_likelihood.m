@@ -32,6 +32,7 @@ function mn = min_likelihood (model, attempts, maxiters)
     % optimisation options
     options = zeros (18,1);
     options(2) = 1.0e-6;
+    %options(9) = 1; % check gradient
     options(14) = maxiters;
     
     % minima
@@ -42,6 +43,7 @@ function mn = min_likelihood (model, attempts, maxiters)
     end
     for i = 1:attempts
         mn(i,:) = scg(@mingp, mn(i,:), options, @dmingp, model);
+        %mn(i,:) = fmins(@mingp, mn(i,:), [], [], model);
     end
 
     % eliminate duplicates

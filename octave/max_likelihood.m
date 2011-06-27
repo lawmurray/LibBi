@@ -32,6 +32,7 @@ function mx = max_likelihood (model, attempts, maxiters)
     % optimisation options
     options = zeros (18,1);
     options(2) = 1.0e-6;
+    %options(9) = 1; % check gradients
     options(14) = maxiters;
     
     % maxima
@@ -42,6 +43,7 @@ function mx = max_likelihood (model, attempts, maxiters)
     end
     for i = 1:attempts
         mx(i,:) = scg(@maxgp, mx(i,:), options, @dmaxgp, model);
+        %mx(i,:) = fmins(@maxgp, mx(i,:), [], [], model);
     end
 
     % eliminate duplicates

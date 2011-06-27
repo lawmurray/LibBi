@@ -38,6 +38,8 @@ function model = krig_likelihood (model, maxiters)
     model.likfunc = likfunc;
     
     % precomputes for later
+    sn = exp(2.0*model.hyp.lik);
     K = covfunc(model.hyp.cov, model.X);
-    model.k = cholinv(K)'*(model.logalpha - model.hyp.mean);
+    K = K + sn*eye(rows(K));
+    model.k = K\(model.logalpha - model.hyp.mean);
 end
