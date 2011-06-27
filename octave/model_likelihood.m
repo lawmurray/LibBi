@@ -24,11 +24,16 @@
 % @end deftypefn
 %
 function model = model_likelihood (in, invars, coords, M)
+    % check arguments
+    if nargin != 4
+        print_usage ();
+    end
+        
     % read in log-likelihoods
     nc = netcdf(in, 'r');
-    ll = nc{'loglikelihood'}(:);
-    ll = reshape(ll, M, length(ll)/M);
     P = length(nc('np'));
+    ll = nc{'loglikelihood'}(1:P);
+    ll = reshape(ll, M, length(ll)/M);
     
     % compute expected acceptance rates
     alpha = zeros(columns(ll), 1);

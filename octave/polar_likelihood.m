@@ -19,9 +19,7 @@
 % @end deftypefn
 %
 function polar_likelihood (model, mn, mx, ncontours)
-    RES_THETA = 24;
-    ANGLE = 2*pi/(rows(mn)*1.5);
-    
+    % check arguments    
     if nargin < 3 || nargin > 4
         print_usage ();
     end
@@ -29,7 +27,10 @@ function polar_likelihood (model, mn, mx, ncontours)
         ncontours = 20;
     end
     ncontours += 1;
-           
+    
+    RES_THETA = 24;
+    ANGLE = 2*pi/(rows(mn)*1.5);
+
     % compute rays
     Z1 = kron(mn, ones(ncontours,1));
     Z2 = repmat(mx(1,:), ncontours*rows(mn), 1);
