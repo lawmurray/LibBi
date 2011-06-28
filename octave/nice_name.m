@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1371 $
-% $Date: 2011-04-04 13:51:32 +0800 (Mon, 04 Apr 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} {@var{nice} = } nice_name (@var{name}, @var{coord})

@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1390 $
-% $Date: 2011-04-11 16:06:40 +0800 (Mon, 11 Apr 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} plot_pf (@var{in}, @var{invar}, @var{coord})

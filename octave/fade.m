@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1367 $
-% $Date: 2011-04-01 13:10:49 +0800 (Fri, 01 Apr 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} {@var{c} =} fade (@var{rgb}, @var{amount})

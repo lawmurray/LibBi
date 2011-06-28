@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1500 $
-% $Date: 2011-05-16 11:49:58 +0800 (Mon, 16 May 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} gen_init (@var{in}, @var{invar}, @var{out}, @var{outvar}, @var{p})

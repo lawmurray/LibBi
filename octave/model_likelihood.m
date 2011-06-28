@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1603 $
-% $Date: 2011-06-07 11:40:59 +0800 (Tue, 07 Jun 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} model_likelihood (@var{in}, @var{invars}, @var{coords}, @var{M})
@@ -58,7 +58,7 @@ function model = model_likelihood (in, invars, coords, M)
         alpha(i) = l'*(1.0 - diag(T) + 1/M);
     end
     
-    % standardised support points
+    % (standardised) support points
     X = [];
     for i = 1:length(invars)
         if length(coords) >= i
@@ -70,10 +70,18 @@ function model = model_likelihood (in, invars, coords, M)
     mu = mean(X);
     sigma = std(X);
     X = (X - repmat(mu, rows(X), 1))./repmat(sigma, rows(X), 1);
-    
+        
     % result structure
     model.mu = mu;
     model.sigma = sigma;
     model.X = X;
     model.logalpha = log(alpha);
+    
+    % remove any NaNs and infs
+    is = find(isfinite (model.logalpha));
+    js = find(sum (isfinite (model.X)));
+    is = unique([is(:); js(:)]);
+    
+    model.X = model.X(is,:);
+    model.logalpha = model.logalpha(is);
 end

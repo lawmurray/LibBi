@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1603 $
-% $Date: 2011-06-07 11:40:59 +0800 (Tue, 07 Jun 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} surf_likelihood (@var{model}, @var{mn}, @var{mx})

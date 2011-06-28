@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1410 $
-% $Date: 2011-04-15 12:35:42 +0800 (Fri, 15 Apr 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} plot_autocor (@var{in}, @var{invar}, @var{coord}, @var{rang})

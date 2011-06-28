@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1651 $
-% $Date: 2011-06-16 15:06:58 +0800 (Thu, 16 Jun 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} extract (@var{in}, @var{out}, @var{vars})

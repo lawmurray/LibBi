@@ -1,7 +1,7 @@
 % Copyright (C) 2011
 % Author: Lawrence Murray <lawrence.murray@csiro.au>
-% $Rev: 1603 $
-% $Date: 2011-06-07 11:40:59 +0800 (Tue, 07 Jun 2011) $
+% $Rev$
+% $Date$
 
 % -*- texinfo -*-
 % @deftypefn {Function File} krig_likelihood (@var{model})
@@ -25,8 +25,8 @@ function model = krig_likelihood (model, maxiters)
     end
     
     meanfunc = @meanConst; hyp.mean = mean(model.logalpha);
-    covfunc = @covSEiso; ell = 10; sf = 1; hyp.cov = log([ell; sf]);
-    likfunc = @likGauss; sn = 5.0; hyp.lik = log(sn);
+    covfunc = @covSEiso; ell = quantile(pdist(model.X), 0.05, 2); sf = 1; hyp.cov = log([ell; sf]);
+    likfunc = @likGauss; sn = std(model.logalpha); hyp.lik = log(sn);
     
     hyp = minimize(hyp, @gp, -maxiters, @infExact, meanfunc, covfunc, ...
         likfunc, model.X, model.logalpha);
