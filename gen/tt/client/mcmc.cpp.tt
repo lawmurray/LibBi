@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
   /* initialisation */
   int attempts = 0;
   do {
-    BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts")
+    BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts");
     sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
     ++attempts;
   } while (p0(x) <= 0.0);
