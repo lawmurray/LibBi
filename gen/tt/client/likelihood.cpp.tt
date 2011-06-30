@@ -225,7 +225,12 @@ int main(int argc, char* argv[]) {
   State<LOCATION> s(m, P);
   host_vector<real> x(N); // initial state of chain
 
-  /* inputs and outputs */
+  /* initialise from prior */
+  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+  m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));   
+  
+  /* inputs */
   SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
   if (!FORCE_FILE.empty()) {
     inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
@@ -245,6 +250,8 @@ int main(int argc, char* argv[]) {
   }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
   const int Y = inObs.countUniqueTimes(T);
+  
+  /* outputs */
   ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
 
@@ -260,9 +267,15 @@ int main(int argc, char* argv[]) {
   /* prior */
   BOOST_AUTO(p0, mcmc->getPrior());
   
-  /* sample */
-  sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+  /* initialise */
+  int attempts = 0;
+  do {
+    BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts");
+    sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+    ++attempts;
+  } while (!(p0(x) > 0.0));
   
+  /* sample */
   if (FILTER.compare("auxiliary") == 0) {
     /* with auxiliary particle filter */
     AuxiliaryParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
@@ -274,7 +287,12 @@ int main(int argc, char* argv[]) {
     mcmc->output0(filter);
     for (c = 0; c < C; ++c) {
       if ((c % M) == 0) {
-        sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+        attempts = 0;
+        do {
+          BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
+          sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+          ++attempts;
+        } while (!(p0(x) > 0.0));
       }
       mcmc->proposal(x);
       mcmc->prior();
@@ -297,7 +315,12 @@ int main(int argc, char* argv[]) {
       mcmc->output0(filter);
       for (c = 0; c < C; ++c) {
         if ((c % M) == 0) {
-          sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+          attempts = 0;
+          do {
+            BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
+            sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+            ++attempts;
+          } while (!(p0(x) > 0.0));
         }
         mcmc->proposal(x);
         mcmc->prior();
@@ -320,7 +343,12 @@ int main(int argc, char* argv[]) {
     mcmc->output0(filter);
     for (c = 0; c < C; ++c) {
       if ((c % M) == 0) {
-        sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+        attempts = 0;
+        do {
+          BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
+          sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+          ++attempts;
+        } while (!(p0(x) > 0.0));
       }
       mcmc->proposal(x);
       mcmc->prior();

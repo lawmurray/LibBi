@@ -258,6 +258,11 @@ int main(int argc, char* argv[]) {
   State<LOCATION> s(m, P);
   host_vector<real> x(N); // initial state of chain
 
+  /* initialise from prior */
+  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+  m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));      
+  
   /* inputs */
   SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
   if (!FORCE_FILE.empty()) {
@@ -278,6 +283,8 @@ int main(int argc, char* argv[]) {
   }
   SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
   const int Y = inObs.countUniqueTimes(T);
+  
+  /* output */
   ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
 
   /* sampler */
@@ -296,7 +303,7 @@ int main(int argc, char* argv[]) {
     BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts");
     sample_starting(m, STARTING_TYPE, STARTING_FILE, S2, INCLUDE_INITIAL, rng, x);
     ++attempts;
-  } while (p0(x) <= 0.0);
+  } while (!(p0(x) > 0.0));
 
   /* resampler */
   StratifiedResampler resam(rng, SORT);
