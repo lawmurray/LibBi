@@ -806,7 +806,7 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   sub_rows(*Y, mu);
   element_sqrt(w.begin(), w.end(), v->begin());
   gdmm(1.0, *v, *Y, 0.0, *Z);
-  syrk(1.0 / Wt, *Z, 0.0, Sigma, 'U', 'T');
+  syrk(1.0/Wt, *Z, 0.0, Sigma, 'U', 'T');
   // alternative weight: 1.0/(Wt - W2t/Wt)
 
   synchronize();

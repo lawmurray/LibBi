@@ -4,6 +4,8 @@
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$
  * $Date$
+ *
+ * @todo Check synchronize() only used where necessary.
  */
 #ifndef BI_CUDA_MATH_OPERATION_HPP
 #define BI_CUDA_MATH_OPERATION_HPP
@@ -510,6 +512,8 @@ inline typename V1::value_type bi::dot(const V1 a, const V2 b) {
     BOOST_AUTO(a1, gpu_map_vector(a));
     BOOST_AUTO(b1, gpu_map_vector(b));
     result = cublas_dot<T1>::func(a1->size(), a1->buf(), a1->inc(), b1->buf(), b1->inc());
+    synchronize();
+    CUBLAS_CHECK;
     delete a1;
     delete b1;
   } else {
@@ -838,8 +842,6 @@ void bi::gemm(const T1 alpha, const M1 A, const M2 X, const T2 beta,
     cblas_gemm<T5>::func(CblasColMajor, cblas_trans(transA), cblas_trans(transX),
         m, n, k, alpha, A1->buf(), A1->lead(), X1->buf(), X1->lead(), beta,
         Y.buf(), Y.lead());
-    synchronize();
-    CUBLAS_CHECK;
     delete A1;
     delete X1;
   }
@@ -1115,8 +1117,8 @@ void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
     BOOST_AUTO(y1, gpu_map_vector(y));
     cublas_syr2<T4>::func(uplo, A.size1(), alpha, x1->buf(), x1->inc(),
         y1->buf(), y1->inc(), A.buf(), A.lead());
-    CUBLAS_CHECK;
     synchronize();
+    CUBLAS_CHECK;
     delete x1;
     delete y1;
   } else {
@@ -1152,6 +1154,8 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
     BOOST_AUTO(A1, gpu_map_matrix(A));
     cublas_syrk<T4>::func(uplo, trans, C.size1(), k, alpha, A1->buf(),
         A1->lead(), beta, C.buf(), C.lead());
+    synchronize();
+    CUBLAS_CHECK;
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
@@ -1274,6 +1278,7 @@ void bi::trsm(const T1 alpha, const M1 A, M2 B, const char side,
     cublas_trsm<T2>::func(side, uplo, trans, diag, B.size1(), B.size2(),
         alpha, A1->buf(), A1->lead(), B.buf(), B.lead());
     synchronize();
+    CUBLAS_CHECK;
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));

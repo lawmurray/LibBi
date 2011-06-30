@@ -405,29 +405,42 @@ void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
   typedef typename V1::value_type T1;
   typedef boost::gamma_distribution<T1> dist_t;
 
-  int j;
-  dist_t dist(alpha);
-  boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
-
   if (V1::on_device) {
     /* CURAND doesn't support gamma variates at this stage, generate on host
      * and upload */
     BOOST_AUTO(y, host_temp_vector<T1>(x.size()));
     BOOST_AUTO(z, *y);
-    #pragma omp parallel for schedule(static)
-    for (j = 0; j < x.size(); ++j) {
-      z(j) = gen();
+    synchronize();
+
+    #pragma omp parallel
+    {
+      int j;
+      dist_t dist(alpha);
+      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
+
+      #pragma omp for schedule(static)
+      for (j = 0; j < z.size(); ++j) {
+        z(j) = gen();
+      }
     }
+
     x = z;
+    scal(beta, x);
     synchronize();
     delete y;
   } else {
-    #pragma omp parallel for schedule(static)
-    for (j = 0; j < x.size(); ++j) {
-      x(j) = gen();
+    #pragma omp parallel
+    {
+      int j;
+      dist_t dist(alpha);
+      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
+
+      #pragma omp for schedule(static)
+      for (j = 0; j < x.size(); ++j) {
+        x(j) = beta*gen();
+      }
     }
   }
-  scal(beta, x);
 }
 
 template<class V1, class V2>

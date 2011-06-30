@@ -759,7 +759,7 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const NodeType type,
   long offsets[6], counts[6];
   BI_UNUSED NcBool ret;
   NcVar* var;
-  int i, j, id, size, rDim;
+  int i, j, id, size, rDim, start = 0;
 
   for (i = 0; i < block.getIds().size(); ++i) {
     id = block.getIds()[i];
@@ -817,19 +817,21 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const NodeType type,
     }
 
     /* read */
-    assert (size == x.size());
+    assert (start + size <= x.size());
     ret = var->set_cur(offsets);
     BI_ASSERT(ret, "Index exceeds size reading " << var->name());
     if (V2::on_device) {
       clean();
       BOOST_AUTO(buf, host_temp_vector<real>(size));
       ret = var->get(buf->buf(), counts);
-      x = *buf;
+      subrange(x, start, size) = *buf;
       add(buf);
     } else {
-      ret = var->get(x.buf(), counts);
+      ret = var->get(subrange(x, start, size).buf(), counts);
       BI_ASSERT(ret, "Inconvertible type reading " << var->name());
     }
+
+    start += size;
   }
 }
 
