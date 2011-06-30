@@ -54,10 +54,9 @@ function hist_pf (in, invar, coord)
     [nn,xx] = hist(x, BINS);
     edges = [xmin, xx(1:end - 1) + diff(xx)/2, xmax + 1];
     [nn,ii] = histc(x, edges);
-    
-    ww = accumarray(ii', ws);
+    ww = accumarray(ii, ws', [ BINS 1 ]);
     
     % plot
     h = bar(xx, ww);
-    set(h, 'FaceColor', fade(watercolour(6),0.5), 'EdgeColor', watercolour(6));
+    set(h, 'FaceColor', fade(watercolour(2),0.5), 'EdgeColor', watercolour(2));
 end

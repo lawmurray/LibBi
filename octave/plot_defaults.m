@@ -15,6 +15,7 @@ function plot_defaults ()
         print_usage ();
     end
 
+    set(gca, 'interpreter', 'tex');
     grid on;
     axis tight;
 end

@@ -43,6 +43,9 @@ function extract (in, out, vars)
             dims = ncdim (nci{var});
             numdims = length (dims);
             switch numdims
+              case 0
+                nco{var} = ncdouble();
+                nco{var}(:) = nci{var}(:);
               case 1
                 nco{var} = ncdouble (ncname (dims{1}));
                 nco{var}(:) = nci{var}(:);
@@ -61,6 +64,9 @@ function extract (in, out, vars)
                 nco{var} = ncdouble (ncname (dims{1}), ncname (dims{2}), ...
                     ncname (dims{3}), ncname (dims{4}), ncname (dims{5}));
                 nco{var}(:) = nci{var}(:,:,:,:,:);
+              otherwise
+                error (sprintf('Variable %s has greater than 5 dimensions', ...
+                    var));
             end
         end
     end
