@@ -834,6 +834,7 @@ template<class V1>
 inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
   /* pre-condition */
   assert(mu.size() == q.size());
+  assert(q.shape() > 1.0);
 
   real alpha = q.shape();
   real beta = q.scale();
@@ -938,6 +939,7 @@ void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
   /* pre-condition */
   assert(Sigma.size1() == q.size());
   assert(Sigma.size2() == q.size());
+  assert(q.shape() > 2.0);
 
   real alpha = q.shape();
   real beta = q.scale();

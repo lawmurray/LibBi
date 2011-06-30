@@ -176,6 +176,9 @@ private:
 
 inline bi::InverseGammaPdf::InverseGammaPdf(const int N, const real alpha,
     const real beta) : N(N), alpha(alpha), beta(beta) {
+  /* pre-condition */
+  assert (alpha > 0.0 && beta > 0.0);
+
   init();
 }
 
