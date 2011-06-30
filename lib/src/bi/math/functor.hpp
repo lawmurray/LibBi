@@ -421,7 +421,8 @@ struct gamma_log_density_functor : public std::unary_function<T,T> {
   const T alpha, beta, logZ;
 
   CUDA_FUNC_HOST gamma_log_density_functor(const real alpha,
-      const real beta, const real logZ) : alpha(alpha), beta(beta), logZ(logZ) {
+      const real beta, const real logZ) : alpha(alpha), beta(beta),
+      logZ(logZ) {
     //
   }
 
@@ -440,8 +441,8 @@ struct inverse_gamma_log_density_functor : public std::unary_function<T,T> {
   const T alpha, beta, logZ;
 
   CUDA_FUNC_HOST inverse_gamma_log_density_functor(const real alpha,
-      const real beta, const real logZ) :
-      alpha(alpha), beta(beta), logZ(logZ) {
+      const real beta, const real logZ) : alpha(alpha), beta(beta),
+      logZ(logZ) {
     //
   }
 

@@ -192,20 +192,26 @@ NcBool bi::NcVarBuffer<T>::put(const T* buf, const long* counts) {
   assert (k <= K);
 
   NcBool ret = true;
-  if (useCache) {
-    int dim, size = 1;
-    for (dim = 0; dim < var->num_dims() - 1; ++dim) {
-      BI_ERROR(counts[dim] == var->get_dim(dim)->size(), "");
-      size *= var->get_dim(dim)->size();
-    }
-    assert (counts[dim] == 1);
 
+  int dim, size = 1;
+  for (dim = 0; dim < var->num_dims() - 1; ++dim) {
+    if (counts[dim] != var->get_dim(dim)->size()) {
+      useCache = false;
+      break;
+    } else {
+      size *= counts[dim];
+    }
+  }
+  useCache = useCache && counts[dim] == 1;
+
+  if (useCache) {
     host_vector_reference<const T> x(buf, size);
     row(this->buf, k) = x;
     if (k == K) {
       ++K;
     }
   } else {
+    flush();
     ret = var->put(buf, counts);
   }
 
@@ -216,13 +222,18 @@ template<class T>
 NcBool bi::NcVarBuffer<T>::get(T* buf, const long* counts) {
   NcBool ret = true;
 
-  if (useCache) {
-    int dim, size = 1;
-    for (dim = 0; dim < var->num_dims() - 1; ++dim) {
-      assert(counts[dim] == var->get_dim(dim)->size());
-      size *= var->get_dim(dim)->size();
+  int dim, size = 1;
+  for (dim = 0; dim < var->num_dims() - 1; ++dim) {
+    if (counts[dim] != var->get_dim(dim)->size()) {
+      useCache = false;
+      break;
+    } else {
+      size *= counts[dim];
     }
-    size *= var->get_dim(dim)->size();
+  }
+
+  if (useCache) {
+    size *= counts[dim];
 
     if (k < K && k + counts[dim] <= K) {
       /* have what we need in buffer, so use that */
@@ -241,6 +252,7 @@ NcBool bi::NcVarBuffer<T>::get(T* buf, const long* counts) {
       delete offsets;
     }
   } else {
+    flush();
     var->get(buf, counts);
   }
 
