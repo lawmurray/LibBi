@@ -38,8 +38,8 @@ public:
    * Construct distribution.
    *
    * @param N Number of dimensions.
-   * @param alpha Scale parameter.
-   * @param beta Shape parameter.
+   * @param alpha Shape parameter.
+   * @param beta Scale parameter.
    */
   GammaPdf(const int N = 0, const real alpha = 1.0, const real beta = 1.0);
 
@@ -97,6 +97,20 @@ public:
    */
   template<class V2>
   real operator()(const V2 x);
+
+  /**
+   * Get shape.
+   *
+   * @return Shape parameter value.
+   */
+  real shape() const;
+
+  /**
+   * Get scale.
+   *
+   * @return Scale parameter value.
+   */
+  real scale() const;
 
   /**
    * Perform precalculations. This is called whenever setMean() or setCov()
@@ -240,6 +254,14 @@ void bi::GammaPdf::logDensities(const M2 X, V2 p) {
 template<class V2>
 real bi::GammaPdf::operator()(const V2 x) {
   return density(x);
+}
+
+inline real bi::GammaPdf::shape() const {
+  return alpha;
+}
+
+inline real bi::GammaPdf::scale() const {
+  return beta;
 }
 
 void bi::GammaPdf::init() {

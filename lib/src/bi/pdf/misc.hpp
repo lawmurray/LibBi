@@ -11,6 +11,8 @@
 #include "../random/Random.hpp"
 #include "ExpGaussianPdf.hpp"
 #include "UniformPdf.hpp"
+#include "GammaPdf.hpp"
+#include "InverseGammaPdf.hpp"
 #include "FactoredPdf.hpp"
 
 namespace bi {
@@ -208,7 +210,33 @@ void mean(const UniformPdf<V1>& q, V2 mu);
  * @param[out] mu Mean.
  */
 template<class V1, class M1, class V2>
-void mean(const ExpGaussianPdf<V1, M1>& q, V2 mu);
+void mean(const ExpGaussianPdf<V1,M1>& q, V2 mu);
+
+/**
+ * Compute mean of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param q Pdf.
+ * @param[out] mu Mean.
+ */
+template<class V1>
+void mean(const GammaPdf& q, V1 mu);
+
+/**
+ * Compute mean of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param q Pdf.
+ * @param[out] mu Mean.
+ */
+template<class V1>
+void mean(const InverseGammaPdf& q, V1 mu);
 
 /**
  * Compute mean of pdf.
@@ -290,7 +318,33 @@ void cov(const UniformPdf<V1>& q, M1 Sigma);
  * @param[out] Sigma Covariance.
  */
 template<class V1, class M1, class M2>
-void cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma);
+void cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma);
+
+/**
+ * Compute covariance of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam M1 Matrix type.
+ *
+ * @param q Pdf.
+ * @param[out] Sigma Covariance.
+ */
+template<class M1>
+void cov(const GammaPdf& q, M1 Sigma);
+
+/**
+ * Compute covariance of pdf.
+ *
+ * @ingroup math_pdf
+ *
+ * @tparam M1 Matrix type.
+ *
+ * @param q Pdf.
+ * @param[out] Sigma Covariance.
+ */
+template<class M1>
+void cov(const InverseGammaPdf& q, M1 Sigma);
 
 /**
  * Compute covariance of pdf.
@@ -758,11 +812,33 @@ void bi::mean(const UniformPdf<V1>& q, V2 mu) {
 }
 
 template<class V1, class M1, class V2>
-inline void bi::mean(const ExpGaussianPdf<V1, M1>& q, V2 mu) {
+inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
   /* pre-condition */
   assert(mu.size() == q.size());
 
   mu = q.mean();
+}
+
+template<class V1>
+inline void bi::mean(const GammaPdf& q, V1 mu) {
+  /* pre-condition */
+  assert(mu.size() == q.size());
+
+  real alpha = q.shape();
+  real beta = q.scale();
+
+  bi::fill(mu.begin(), mu.end(), alpha*beta);
+}
+
+template<class V1>
+inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
+  /* pre-condition */
+  assert(mu.size() == q.size());
+
+  real alpha = q.shape();
+  real beta = q.scale();
+
+  bi::fill(mu.begin(), mu.end(), alpha*std::pow(beta, 2));
 }
 
 template<class S, class V1>
@@ -841,6 +917,34 @@ void bi::cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma) {
   assert(Sigma.size2() == q.size());
 
   Sigma = q.cov();
+}
+
+template<class M1>
+void bi::cov(const GammaPdf& q, M1 Sigma) {
+  /* pre-condition */
+  assert(Sigma.size1() == q.size());
+  assert(Sigma.size2() == q.size());
+
+  real alpha = q.shape();
+  real beta = q.scale();
+  real sigma = alpha*std::pow(beta, 2);
+
+  Sigma.clear();
+  bi::fill(diagonal(Sigma).begin(), diagonal(Sigma).end(), sigma);
+}
+
+template<class M1>
+void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
+  /* pre-condition */
+  assert(Sigma.size1() == q.size());
+  assert(Sigma.size2() == q.size());
+
+  real alpha = q.shape();
+  real beta = q.scale();
+  real sigma = std::pow(beta, 2)/(std::pow(alpha - 1.0, 2)*(alpha - 2.0));
+
+  Sigma.clear();
+  bi::fill(diagonal(Sigma).begin(), diagonal(Sigma).end(), sigma);
 }
 
 template<class S, class M1>
