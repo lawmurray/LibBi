@@ -103,6 +103,8 @@ private:
 };
 }
 
+#include "../misc/exception.hpp"
+
 template<class B, class R>
 bi::KernelResampler<B,R>::KernelResampler(B& m, Random& rng, R* base,
     const real h, const bool shrink) : m(m), rng(rng), base(base), h(h),
@@ -155,52 +157,31 @@ void bi::KernelResampler<B,R>::resample(V1& lws, V2& as, Static<L>& theta, State
   element_exp_unnormalised(ws.begin(), ws.end(), ws.begin());
   mean(X, ws, mu);
   cov(X, ws, mu, Sigma);
-  potrf(Sigma, U, 'U');
 
-  if (shrink) {
+  try {
+    /* Cholesky decomposition of covariance; this may throw exception, in
+     * which case defer to base resampler, in catch block below. */
+    potrf(Sigma, U, 'U');
+
     /* shrink kernel centres back toward mean to preserve covariance */
-    matrix_scal(a, X);
-    scal(1.0 - a, mu);
-    add_rows(X, mu);
-  }
+    if (shrink) {
+      matrix_scal(a, X);
+      scal(1.0 - a, mu);
+      add_rows(X, mu);
+    }
 
-  /* copy back from one matrix */
-  s.get(D_NODE) = columns(X, 0, ND);
-  s.get(C_NODE) = columns(X, ND, NC);
-  s.get(R_NODE) = columns(X, ND + NC, NR);
-  if (haveParameters) {
-    theta.get(P_NODE) = columns(X, ND + NC + NR, NP);
-  }
+    /* copy back from one matrix */
+    s.get(D_NODE) = columns(X, 0, ND);
+    s.get(C_NODE) = columns(X, ND, NC);
+    s.get(R_NODE) = columns(X, ND + NC, NR);
+    if (haveParameters) {
+      theta.get(P_NODE) = columns(X, ND + NC + NR, NP);
+    }
 
-  /* sample kernel centres */
-  base->resample(lws, as, theta, s);
+    /* sample kernel centres */
+    base->resample(lws, as, theta, s);
 
-  /* add kernel noise */
-//  if (haveParameters && !shrink) {
-//    /* do one by one, ensuring parameter samples do not fall outside prior */
-//    int p;
-//    for (p = 0; p < s.size(); ++p) {
-//      do {
-//        rng.gaussians(z);
-//        subrange(x, 0, ND) = row(s.get(D_NODE), p);
-//        subrange(x, ND, NC) = row(s.get(C_NODE), p);
-//        subrange(x, ND + NC, NR) = row(s.get(R_NODE), p);
-//        subrange(x, ND + NC + NR, NP) = row(theta.get(P_NODE), p);
-//
-//        trmv(U, z, 'U');
-//        axpy(h, z, x);
-//
-//        exp_vector(subrange(x, ND + NC + NR, NP), m.getLogs(P_NODE));
-//      } while (m.template getPrior<P_NODE>().density(subrange(x, ND + NC + NR, NP)) <= 0.0);
-//
-//      log_vector(subrange(x, ND + NC + NR, NP), m.getLogs(P_NODE));
-//
-//      row(s.get(D_NODE), p) = subrange(x, 0, ND);
-//      row(s.get(C_NODE), p) = subrange(x, ND, NC);
-//      row(s.get(R_NODE), p) = subrange(x, ND + NC, NR);
-//      row(theta.get(P_NODE), p) = subrange(x, ND + NC + NR, NP);
-//    }
-//  } else {
+    /* add kernel noise */
     rng.gaussians(vec(X));
     trmm(h, U, X, 'R', 'U');
     matrix_axpy(1.0, columns(X, 0, ND), s.get(D_NODE));
@@ -209,17 +190,24 @@ void bi::KernelResampler<B,R>::resample(V1& lws, V2& as, Static<L>& theta, State
     if (haveParameters) {
       matrix_axpy(1.0, columns(X, ND + NC + NR, NP), theta.get(P_NODE));
     }
-//  }
 
-  /* exp relevant variables */
-  exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
-  exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
-  exp_columns(s.get(R_NODE), m.getLogs(R_NODE));
-  if (haveParameters) {
-    exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
+    /* exp relevant variables */
+    exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
+    exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
+    exp_columns(s.get(R_NODE), m.getLogs(R_NODE));
+    if (haveParameters) {
+      exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
+    }
+  } catch (Exception e) {
+    if (e == CHOLESKY_FAILED) {
+      /* defer to base resampler */
+      BI_WARN(false, "Cholesky failed for KernelResampler, reverting " <<
+          "to base resampler")
+      base->resample(lws, as, theta, s);
+    } else {
+      throw e;
+    }
   }
-
-  synchronize();
 }
 
 template<class B, class R>

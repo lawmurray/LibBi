@@ -10,6 +10,8 @@
 #ifndef BI_CUDA_MATH_OPERATION_HPP
 #define BI_CUDA_MATH_OPERATION_HPP
 
+#include "../misc/exception.hpp"
+
 namespace bi {
 /**
  * @name Basic operations
@@ -358,7 +360,7 @@ void syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
  * @ingroup math_op
  */
 template<class M1, class M2>
-void potrf(const M1 A, M2 L, char uplo = 'L');
+void potrf(const M1 A, M2 L, char uplo = 'L') throw (Exception);
 
 /**
  * Symmetric positive definite linear system solve.
@@ -1169,7 +1171,7 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
 }
 
 template<class M1, class M2>
-void bi::potrf(const M1 A, M2 L, char uplo) {
+void bi::potrf(const M1 A, M2 L, char uplo) throw (Exception) {
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
 
@@ -1223,8 +1225,11 @@ void bi::potrf(const M1 A, M2 L, char uplo) {
     }
     delete eps;
   }
-  BI_ERROR(info == 0, "Cholesky failed with info " << info <<
-      ", could not fix by adjusting diagonal");
+  if (info != 0) {
+    BI_WARN(false, "Cholesky failed with info " << info <<
+        ", could not fix by adjusting diagonal");
+    throw CHOLESKY_FAILED;
+  }
 }
 
 template<class M1, class M2>
