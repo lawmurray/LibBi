@@ -63,7 +63,7 @@ public:
   /**
    * @see NetCDF C++ interface.
    */
-  NcBool set_cur(const long* offsets);
+  NcBool set_cur(long* offsets);
 
   /**
    * @see NetCDF C++ interface.
@@ -108,6 +108,11 @@ private:
   int K;
 
   /**
+   * Currently using cache?
+   */
+  bool useCache;
+
+  /**
    * Buffer size on innermost dimension.
    */
   static const int BUFFER_SIZE = 1024;
@@ -117,7 +122,7 @@ private:
 
 template<class T>
 bi::NcVarBuffer<T>::NcVarBuffer(NcVar* var) :
-    var(var), offset(0), k(0), K(0) {
+    var(var), offset(0), k(0), K(0), useCache(true) {
   int dim, size = 1;
   for (dim = 0; dim < var->num_dims() - 1; ++dim) {
     size *= var->get_dim(dim)->size();
@@ -141,32 +146,42 @@ inline NcDim* bi::NcVarBuffer<T>::get_dim(const int dim) {
 }
 
 template<class T>
-NcBool bi::NcVarBuffer<T>::set_cur(const long* offsets) {
+NcBool bi::NcVarBuffer<T>::set_cur(long* offsets) {
   NcBool ret = true;
   int dim;
+
+  useCache = true;
   for (dim = 0; dim < var->num_dims() - 1; ++dim) {
-    assert (offsets[dim] == 0);
+    if (offsets[dim] != 0) {
+      useCache = false;
+      break;
+    }
   }
 
-  if (offset < offsets[dim] && offsets[dim] <= offset + K) {
-    /* new position is inside bounds, or immediately after bounds, of current
-     * buffer */
-    k = offsets[dim] - offset;
+  if (useCache) {
+    if (offset < offsets[dim] && offsets[dim] <= offset + K) {
+      /* new position is inside bounds, or immediately after bounds, of current
+       * buffer */
+      k = offsets[dim] - offset;
+    } else {
+      /* new position is outside bounds of current buffer, so flush it and
+       * start a new one */
+      flush();
+      offset = offsets[dim];
+    }
+
+    if (k >= buf.size1()) {
+      /* buffer full, flush and restart */
+      flush();
+      offset = offsets[dim];
+    }
+
+    /* post-condition */
+    assert (k <= K);
   } else {
-    /* new position is outside bounds of current buffer, so flush it and
-     * start a new one */
     flush();
-    offset = offsets[dim];
+    ret = var->set_cur(offsets);
   }
-
-  if (k >= buf.size1()) {
-    /* buffer full, flush and restart */
-    flush();
-    offset = offsets[dim];
-  }
-
-  /* post-condition */
-  assert (k <= K);
 
   return ret;
 }
@@ -177,17 +192,21 @@ NcBool bi::NcVarBuffer<T>::put(const T* buf, const long* counts) {
   assert (k <= K);
 
   NcBool ret = true;
-  int dim, size = 1;
-  for (dim = 0; dim < var->num_dims() - 1; ++dim) {
-    BI_ERROR(counts[dim] == var->get_dim(dim)->size(), "");
-    size *= var->get_dim(dim)->size();
-  }
-  assert (counts[dim] == 1);
+  if (useCache) {
+    int dim, size = 1;
+    for (dim = 0; dim < var->num_dims() - 1; ++dim) {
+      BI_ERROR(counts[dim] == var->get_dim(dim)->size(), "");
+      size *= var->get_dim(dim)->size();
+    }
+    assert (counts[dim] == 1);
 
-  host_vector_reference<const T> x(buf, size);
-  row(this->buf, k) = x;
-  if (k == K) {
-    ++K;
+    host_vector_reference<const T> x(buf, size);
+    row(this->buf, k) = x;
+    if (k == K) {
+      ++K;
+    }
+  } else {
+    ret = var->put(buf, counts);
   }
 
   return ret;
@@ -196,28 +215,33 @@ NcBool bi::NcVarBuffer<T>::put(const T* buf, const long* counts) {
 template<class T>
 NcBool bi::NcVarBuffer<T>::get(T* buf, const long* counts) {
   NcBool ret = true;
-  int dim, size = 1;
-  for (dim = 0; dim < var->num_dims() - 1; ++dim) {
-    BI_ERROR(counts[dim] == var->get_dim(dim)->size(), "");
+
+  if (useCache) {
+    int dim, size = 1;
+    for (dim = 0; dim < var->num_dims() - 1; ++dim) {
+      assert(counts[dim] == var->get_dim(dim)->size());
+      size *= var->get_dim(dim)->size();
+    }
     size *= var->get_dim(dim)->size();
-  }
-  size *= var->get_dim(dim)->size();
 
-  if (k < K && k + counts[dim] <= K) {
-    /* have what we need in buffer, so use that */
-    host_matrix_reference<T> x(buf, counts[dim], size);
-    x = rows(this->buf, k, counts[dim]);
+    if (k < K && k + counts[dim] <= K) {
+      /* have what we need in buffer, so use that */
+      host_matrix_reference<T> x(buf, counts[dim], size);
+      x = rows(this->buf, k, counts[dim]);
+    } else {
+      /* don't have what we need in buffer, defer to underlying file */
+      assert (k == K);
+      BOOST_AUTO(offsets, host_temp_vector<long>(var->num_dims()));
+      offsets->clear();
+      (*offsets)(offsets->size() - 1) = offset;
+
+      ret = var->set_cur(offsets->buf());
+      ret = var->get(buf, counts);
+
+      delete offsets;
+    }
   } else {
-    /* don't have what we need in buffer, defer to underlying file */
-    assert (k == K);
-    BOOST_AUTO(offsets, host_temp_vector<long>(var->num_dims()));
-    offsets->clear();
-    (*offsets)(offsets->size() - 1) = offset;
-
-    ret = var->set_cur(offsets->buf());
-    ret = var->get(buf, counts);
-
-    delete offsets;
+    var->get(buf, counts);
   }
 
   return ret;
