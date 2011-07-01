@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     INCLUDE_INITIAL_ARG
   };
   real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      S1 = 1.0, S2 = 0.0, BETA = 1.0e-3, ESS_REL = 1.0, LAMBDA0 = 1000.0,
+      S1 = 0.0, S2 = 0.0, BETA = 1.0e-3, ESS_REL = 1.0, LAMBDA0 = 1000.0,
       GAMMA = 1.0e-2;
   int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
       SEED = 0, C = 100, A = 1000;
