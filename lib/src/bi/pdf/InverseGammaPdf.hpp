@@ -271,7 +271,7 @@ inline real bi::InverseGammaPdf::scale() const {
 }
 
 void bi::InverseGammaPdf::init() {
-  logZ = lgamma(alpha) + alpha*log(beta);
+  logZ = lgamma(alpha) - alpha*log(beta);
 }
 
 #ifndef __CUDACC__

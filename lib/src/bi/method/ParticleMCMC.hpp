@@ -852,7 +852,7 @@ void bi::ParticleMCMC<B,IO1,CL>::proposal(const V1 x) {
 
 template<class B, class IO1, bi::Location CL>
 void bi::ParticleMCMC<B,IO1,CL>::prior() {
-  x2.lp = p0.logDensity(this->x2.theta);
+  x2.lp = p0.logDensity(x2.theta);
 }
 
 template<class B, class IO1, bi::Location CL>

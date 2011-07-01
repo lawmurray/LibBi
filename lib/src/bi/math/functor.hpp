@@ -427,7 +427,7 @@ struct gamma_log_density_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    (alpha - 1.0)*CUDA_LOG(x) - x/beta - logZ;
+    return (alpha - 1.0)*CUDA_LOG(x) - x/beta - logZ;
   }
 };
 
@@ -447,7 +447,7 @@ struct inverse_gamma_log_density_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    (-alpha - 1.0)*CUDA_LOG(x) - beta/x - logZ;
+    return (-alpha - 1.0)*CUDA_LOG(x) - beta/x - logZ;
   }
 };
 
