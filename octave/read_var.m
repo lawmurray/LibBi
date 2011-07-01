@@ -43,7 +43,7 @@ function X = read_var (nc, name, coord, ps, ts)
     end
     
     % check number of dimensions
-    numdims = length (ncdim (nc{name}));
+    numdims = ncnumdims (nc, name);
     if ncdimexists (nc, 'nr')
         T = length (nc('nr'));    
     else
@@ -62,21 +62,36 @@ function X = read_var (nc, name, coord, ps, ts)
         ts = [1:T];
     end
     
-    % read
-    if numdims == 1
+    % read    
+    if numdims == 0
+        X = nc{name}(:);
+    elseif numdims == 1
         X = nc{name}(ps);
-    elseif numdims == 2
-        X = nc{name}(ts,ps);
     else
-        if length(coord) + 2 != length(ncdim(nc{name}))
-            error (sprintf('wrong number of dimensions given for %s', name));
-        end
         if length(coord) == 1
-            X = nc{name}(ts,coord(1),ps);
+            if numdims == 1
+                X = nc{name}(ps);
+            else
+                X = nc{name}(coord(1),ps);
+            end            
+        elseif length(coord) == 1
+            if numdims == 2
+                X = nc{name}(coord(1),ps);
+            else
+                X = nc{name}(ts,coord(1),ps);
+            end
         elseif length(coord) == 2
-            X = nc{name}(ts,coord(1),coord(2),ps);
+            if numdims == 3
+                X = nc{name}(coord(1),coord(2),ps);
+            else
+                X = nc{name}(ts,coord(1),coord(2),ps);
+            end
         elseif length(coord) == 3
-            X = nc{name}(ts,coord(1),coord(2),coord(3),ps);
+            if numdims == 4
+                X = nc{name}(ts,coord(1),coord(2),coord(3),ps);
+            else
+                X = nc{name}(coord(1),coord(2),coord(3),ps);
+            end
         end
     end
     X = squeeze(X);

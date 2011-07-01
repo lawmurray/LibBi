@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{burn}, @var{interval})
+% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{rang})
 %
 % Plot histogram of parameter samples output by mcmc program.
 %
@@ -29,7 +29,7 @@ function hist_mcmc (in, invar, coord, rang)
     BINS = 20;
 
     % check arguments
-    if (nargin < 2 || nargin > 5)
+    if (nargin < 2 || nargin > 4)
         print_usage ();
     end
     if nargin < 3
