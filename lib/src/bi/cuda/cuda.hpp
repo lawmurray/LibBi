@@ -157,10 +157,12 @@
  *
  * @note Does nothing if USE_CPU defined.
  */
-inline void synchronize() {
-  #ifndef USE_CPU
-  CUDA_CHECKED_CALL(cudaThreadSynchronize());
-  #endif
+namespace bi {
+  inline void synchronize() {
+    #ifndef USE_CPU
+    CUDA_CHECKED_CALL(cudaThreadSynchronize());
+    #endif
+  }
 }
 
 #endif
