@@ -68,11 +68,11 @@ function X = read_var (nc, name, coord, ps, ts)
     elseif numdims == 1
         X = nc{name}(ps);
     else
-        if length(coord) == 1
+        if length(coord) == 0
             if numdims == 1
                 X = nc{name}(ps);
             else
-                X = nc{name}(coord(1),ps);
+                X = nc{name}(ts,ps);
             end            
         elseif length(coord) == 1
             if numdims == 2

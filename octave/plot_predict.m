@@ -37,30 +37,8 @@ function plot_predict (in, invar, coord)
     % data
     t = nci{'time'}(:)'; % times
     q = [0.025 0.5 0.975]'; % quantiles (median and 95%)
-    P = nci('np')(:);
-    T = nci('nr')(:);
-
     X = read_var (nci, invar, coord);
-    Ws = exp(nci{'logweight'}(:,:));
-    Q = zeros (rows (X), length(q));
-    
-    [X I] = sort (X, 2);
-    Ws = Ws(I);
-    Wt = sum(Ws, 2);
-    Wc = cumsum(Ws, 2) ./ repmat(Wt, 1, P);
-   
-    for i = 1:T
-        % build weighted empirical cdf
-        for j = 1:length(q)
-            is = find(Wc(i,:) < q(j));
-            if length(is) > 0
-                k = is(end) + 1;
-            else
-                k = 1;
-            end
-            Q(i,j) = X(i,k);
-        end
-    end
+    Q = quantile (X, q, 2);
     
     % plot
     ish = ishold;
