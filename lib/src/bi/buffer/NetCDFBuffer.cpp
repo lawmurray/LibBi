@@ -97,9 +97,12 @@ NcVar* NetCDFBuffer::mapVar(const BayesNode* node, const StaticHandling SH) {
   int i = 0;
   if (SH == STATIC_OWN || (type == D_NODE || type == C_NODE || type == R_NODE || type == F_NODE)) {
     dim = var->get_dim(i);
-    BI_ERROR(dim == mapDim("nr"), "Dimension " << i << " of variable " <<
-        node->getName() << " should be nr");
-    ++i;
+    if (dim == mapDim("nr")) {
+      ++i;
+    } else {
+      BI_ERROR(type == P_NODE || type == S_NODE,
+          "Dimension " << i << " of variable " << node->getName() << " should be nr");
+    }
   }
   if (node->hasZ()) {
     dim = var->get_dim(i);

@@ -282,10 +282,11 @@ void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
     BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
 
     if (M1::on_device) {
+      /* read into contiguous buffer on host */
       clean();
-      BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), s.size2()));
-      ret = vars[type][id]->get_var()->get(subrange(*buf, 0, buf->size1(), start, size).buf(), counts);
-      s = *buf;
+      BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), size));
+      ret = vars[type][id]->get_var()->get(buf->buf(), counts);
+      subrange(s, 0, s.size1(), start, size) = *buf;
       add(buf);
     } else {
       ret = vars[type][id]->get_var()->get(subrange(s, 0, s.size1(), start, size).buf(), counts);
