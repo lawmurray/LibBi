@@ -180,9 +180,7 @@ int main(int argc, char* argv[]) {
   inSimulate.readState(D_NODE, inSimulate.size2() - 1, s.get(D_NODE));
   inSimulate.readState(C_NODE, inSimulate.size2() - 1, s.get(C_NODE));
   if (INCLUDE_PARAMETERS) {
-    for (int p = 0; p < inSimulate.size1(); ++p) {
-      inSimulate.readSingle(P_NODE, p, 0, row(theta.get(P_NODE), p));
-    }
+    inSimulate.readState(P_NODE, inSimulate.size2() - 1, theta.get(P_NODE));
   }
 
   /* simulate */
