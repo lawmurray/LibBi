@@ -55,6 +55,14 @@ namespace bi {
  * @tparam CL Cache location.
  * @tparam SH Static handling.
  *
+ * The state of UnscentedKalmanFilter includes all r-node updates, and thus
+ * its %size changes according to the number of r-node updates required
+ * across the time interval to the next observation. The leading components
+ * of each Gaussian time-marginal provide, in order, the d-, c-, r- and
+ * (optionally) p-nodes at the time of that marginal. Proceeding components
+ * are the additional r-nodes, in chronological order, followed by predicted
+ * observations.
+ *
  * @section Concepts
  *
  * #concept::Filter, #concept::Markable
@@ -277,20 +285,15 @@ private:
    * Initialise unscented transformation.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
    *
    * @param[out] theta Static state.
    * @param[out] s State.
-   * @param[out] observed Observation marginal at next time.
-   * @param[out] SigmaXY Uncorrected-observed cross-covariance.
    *
    * Sets #P, #lambda, #a, #Wm0, #Wc0, #Wi and resizes @p observed,
    * @p SigmaXY, @p s and @p theta as required.
    */
-  template<Location L, class V1, class M1>
-  void initTransform(Static<L>& theta, State<L>& s,
-      ExpGaussianPdf<V1,M1>& observed, M1& SigmaXY);
+  template<Location L>
+  void initTransform(Static<L>& theta, State<L>& s);
 
   /**
    * Perform unscented transformation.
@@ -328,9 +331,14 @@ private:
   real delta;
 
   /**
-   * Size of state, including random variates and observations.
+   * Size of unconditioned state.
    */
-  int N;
+  int N1;
+
+  /**
+   * Size of full (conditioned and unconditioned) state.
+   */
+  int N2;
 
   /**
    * Number of observations at next time point.
@@ -408,7 +416,7 @@ private:
   static const int NR = net_size<B,typename B::RTypeList>::value;
   static const int NO = net_size<B,typename B::OTypeList>::value;
   static const int NP = net_size<B,typename B::PTypeList>::value;
-  static const int M = ND + NC + NR + ((SH == STATIC_OWN) ? NP : 0);
+  static const int M = ND + NC + NR + (haveParameters ? NP : 0);
 };
 
 /**
@@ -451,7 +459,8 @@ bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::UnscentedKalmanFilter(B& m,
     const real delta, IO1* in, IO2* obs, IO3* out) :
     m(m),
     delta(delta),
-    N(0),
+    N1(0),
+    N2(0),
     W(0),
     P(0),
     alpha(1.0e-3),
@@ -590,6 +599,8 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta,
     ExpGaussianPdf<V1,M1>& corrected) {
   sim.init(theta);
 
+  corrected.resize(M);
+
   /* restore prior mean over initial state */
   mean(m.template getPrior<D_NODE>(), subrange(corrected.mean(), 0, ND));
   mean(m.template getPrior<C_NODE>(), subrange(corrected.mean(), ND, NC));
@@ -618,7 +629,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
     Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
     ExpGaussianPdf<V1,M1>& uncorrected, M1& SigmaXX, M1& SigmaXY) {
   /* pre-condition */
-  assert (corrected.size() == M);
+  assert (corrected.size() >= M);
 
   /* initialise time interval */
   real ti = state.t;
@@ -630,22 +641,33 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
   int nsteps = num_steps(ti, tj, delta);
 
   /* required state size, state arranged in order: d-nodes, c-nodes,
-   * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
-  N = M + W + NR*std::max(0, nsteps - 1);
+   * r-nodes, p-nodes, intermediate r-nodes and o-nodes */
+  N1 = M + NR*std::max(0, nsteps - 1) + W;
+  N2 = N1;
 
   /* initialise unscented transformation */
-  initTransform(theta, s, observed, SigmaXY);
+  initTransform(theta, s);
+
+  /* resize distributions */
+  uncorrected.resize(N2, false);
+  observed.resize(W, false);
+  SigmaXY.resize(N2, W, false);
 
   /* initialise state */
-  BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
-  set_rows(columns(*X, 0, M), corrected.mean());
-  matrix_axpy(a, corrected.std(), subrange(*X, 1, M, 0, M));
-  matrix_axpy(-a, corrected.std(), subrange(*X, N + 1, M, 0, M));
+  BOOST_AUTO(X, temp_matrix<M1>(s.size(), N2));
+  BOOST_AUTO(mu0, temp_vector<V1>(N2));
+
+  subrange(*mu0, 0, M) = corrected.mean();
+  subrange(*mu0, M, mu0->size() - M).clear();
+  set_rows(*X, *mu0);
+
+  matrix_axpy(a, corrected.std(), subrange(*X, 1, N2, 0, M));
+  matrix_axpy(-a, corrected.std(), subrange(*X, N2 + 1, N2, 0, M));
   ///@todo corrected.std() is upper triangular, needn't do full axpy.
 
   /* perform unscented transformation */
   transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps,
-      corrected.mean(), *X, false);
+      *mu0, *X, false);
 
   delete X;
 }
@@ -670,29 +692,33 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
     /* number of random variate updates required during time interval */
     int nsteps = num_steps(ti, tj, delta);
 
-    /* required state size, state arranged in order: d-nodes, c-nodes,
-     * r-nodes, p-nodes, o-nodes and finishing with extra r-nodes */
-    N = NR + W + NR*std::max(0, nsteps - 1);
+    /* required state size */
+    N1 = NR + NR*std::max(0, nsteps - 1) + W;
+    N2 = N1 - NR + M;
 
     /* initialise unscented transformation */
-    initTransform(theta, s, observed, SigmaXY);
+    initTransform(theta, s);
 
-    /* initialise state */
-    BOOST_AUTO(X, temp_matrix<M1>(s.size(), M + W));
-    BOOST_AUTO(mu0, temp_vector<V2>(M));
+    /* resize distributions */
+    uncorrected.resize(N2, false);
+    observed.resize(W, false);
+    SigmaXY.resize(N2, W, false);
 
+    /* initialise sigma points */
+    BOOST_AUTO(X, temp_matrix<M1>(s.size(), N2));
+    BOOST_AUTO(mu0, temp_vector<V2>(N2));
+
+    mu0->clear();
     subrange(*mu0, 0, ND + NC) = subrange(x0, 0, ND + NC);
-    subrange(*mu0, ND + NC, NR).clear();
     if (haveParameters) {
       subrange(*mu0, ND + NC + NR, NP) = subrange(x0, ND + NC, NP);
     }
     log_vector(subrange(*mu0, 0, ND), m.getLogs(D_NODE));
     log_vector(subrange(*mu0, ND, NC), m.getLogs(C_NODE));
-    log_vector(subrange(*mu0, ND + NC, NR), m.getLogs(R_NODE));
     if (haveParameters) {
       log_vector(subrange(*mu0, ND + NC + NR, NP), m.getLogs(P_NODE));
     }
-    set_rows(columns(*X, 0, M), *mu0);
+    set_rows(*X, *mu0);
 
     /* perform unscented transformation */
     transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nsteps,
@@ -726,25 +752,20 @@ real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::initObs(const real tnxt,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
-template<bi::Location L, class V1, class M1>
+template<bi::Location L>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::initTransform(
-    Static<L>& theta, State<L>& s, ExpGaussianPdf<V1,M1>& observed,
-    M1& SigmaXY) {
+    Static<L>& theta, State<L>& s) {
   /* number of sigma points */
-  P = 2*N + 1;
+  P = 2*N1 + 1;
 
   /* parameters */
-  lambda = alpha*alpha*(N + kappa) - N;
-  a = sqrt(N + lambda);
+  lambda = alpha*alpha*(N1 + kappa) - N1;
+  a = sqrt(N1 + lambda);
 
   /* weights */
-  Wm0 = lambda/(N + lambda);
+  Wm0 = lambda/(N1 + lambda);
   Wc0 = Wm0 + (1.0 - alpha*alpha + beta);
-  Wi = 0.5/(N + lambda);
-
-  /* resize distributions */
-  observed.resize(W, false);
-  SigmaXY.resize(M, W, false);
+  Wi = 0.5/(N1 + lambda);
 
   /* resize state (note may end up larger than P, see State) */
   s.resize(P);
@@ -763,19 +784,19 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
     ExpGaussianPdf<V1,M1>& uncorrected, M1 SigmaXX, M1 SigmaXY,
     const real tj, const int nsteps, const V2 mu0, M2 X, const bool fixed) {
   /* pre-conditions */
-  assert (mu0.size() == M);
-  assert (X.size2() == M + W);
-  assert (uncorrected.size() == M);
+  assert (mu0.size() == N2);
+  assert (X.size2() == N2);
+  assert (uncorrected.size() == N2);
   assert (SigmaXX.size1() == M && SigmaXX.size2() == M);
-  assert (SigmaXY.size1() == M);
+  assert (SigmaXY.size1() == N2);
 
   /* temporaries, column order for matrices is d-, c-, p-, o- then r-nodes */
   BOOST_AUTO(X1, &X);
-  BOOST_AUTO(X2, temp_matrix<M1>(s.size(), M + W));
+  BOOST_AUTO(X2, temp_matrix<M1>(s.size(), N2));
   BOOST_AUTO(Z1, rows(*X1, 0, P));
   BOOST_AUTO(Z2, rows(*X2, 0, P));
-  BOOST_AUTO(mu, temp_vector<V1>(M + W));
-  BOOST_AUTO(Sigma, temp_matrix<M1>(M + W, M + W));
+  BOOST_AUTO(mu, temp_vector<V1>(N2));
+  BOOST_AUTO(Sigma, temp_matrix<M1>(N2, N2));
   BOOST_AUTO(Wm, temp_vector<V1>(P));
   BOOST_AUTO(Wc, temp_vector<V1>(P));
   Sigma->clear();
@@ -815,12 +836,11 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
    * \f[\mathcal{X}_n^{(i)} \leftarrow f(\mathcal{X}_{n-1}^{(i)})\,.\f]
    */
   s.get(D_NODE) = columns(*X1, 0, ND);
-  exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
-
   s.get(C_NODE) = columns(*X1, ND, NC);
-  exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
-
   s.get(R_NODE) = columns(*X1, ND + NC, NR);
+
+  exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
+  exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
   exp_columns(s.get(R_NODE), m.getLogs(R_NODE));
 
   if (haveParameters) {
@@ -828,14 +848,20 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
     exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
   }
 
-  rUpdater.prepare(nsteps, N, a, fixed);
+  rUpdater.prepare(nsteps, N1, a, fixed);
   if (haveParameters) {
     /* p-nodes changed, need to update s-nodes */
     sim.init(theta);
   }
+  int n = 0;
   while (state.t < tj) {
-    sim.advance(tj, s);
+    sim.advance(next_step(state.t, delta), s);
     state.t = sim.getTime();
+    if (state.t < tj) {
+      /* copy intermediate r-nodes down now, others later */
+      columns(*X2, M + n*NR, NR) = s.get(R_NODE);
+    }
+    ++n;
   }
 
   /**
@@ -848,7 +874,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
     BOOST_AUTO(mask, oyUpdater.getMask());
     assert(W == mask.size());
 
-    orUpdater.prepare(N, a, fixed);
+    orUpdater.prepare(N1, a, fixed);
     orUpdater.update(mask, s);
     oUpdater.update(mask, s);
 
@@ -868,7 +894,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
   if (haveParameters) {
     columns(*X2, ND + NC + NR, NP) = theta.get(P_NODE);
   }
-  columns(*X2, M, W) = s.get(O_NODE);
+  columns(*X2, N2 - W, W) = s.get(O_NODE);
 
   /* convert everything into log space */
   log_columns(columns(*X2, 0, ND), m.getLogs(D_NODE));
@@ -877,7 +903,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
   if (haveParameters) {
     log_columns(columns(*X2, ND + NC + NR, NP), m.getLogs(P_NODE));
   }
-  log_columns(columns(*X2, M, W), oLogs);
+  log_columns(columns(*X2, N2 - W, W), oLogs);
 
   /**
    * Compute uncorrected mean:
@@ -907,28 +933,28 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
    * \boldsymbol{\mu}_y) (\mathcal{X}_n^{(i)} - \boldsymbol{\mu}_x)^T\f]
    */
   /* mean-adjust */
-  sub_rows(columns(Z1, 0, M), mu0);
+  sub_rows(Z1, mu0);
   sub_rows(Z2, *mu);
 
   /* uncorrected covariance */
-  syrk(Wi, rows(Z2, 1, 2*N), 0.0, *Sigma, 'U', 'T');
+  syrk(Wi, rows(Z2, 1, 2*N1), 0.0, *Sigma, 'U', 'T');
   syr(Wc0, row(Z2, 0), *Sigma, 'U');
 
   /* corrected-uncorrected cross-covariance */
-  gemm(Wi, subrange(Z1, 1, 2*N, 0, M), subrange(Z2, 1, 2*N, 0, M), 0.0, SigmaXX, 'T', 'N');
+  gemm(Wi, subrange(Z1, 1, 2*N1, 0, M), subrange(Z2, 1, 2*N1, 0, M), 0.0, SigmaXX, 'T', 'N');
   ger(Wc0, subrange(row(Z1, 0), 0, M), subrange(row(Z2, 0), 0, M), SigmaXX);
 
   /* write results */
-  uncorrected.mean() = subrange(*mu, 0, M);
-  uncorrected.cov() = subrange(*Sigma, 0, M, 0, M);
+  uncorrected.mean() = subrange(*mu, 0, N2 - W);
+  uncorrected.cov() = subrange(*Sigma, 0, N2 - W, 0, N2 - W);
   uncorrected.init();
 
-  observed.mean() = subrange(*mu, M, W);
-  observed.cov() = subrange(*Sigma, M, W, M, W);
+  observed.mean() = subrange(*mu, N2 - W, W);
+  observed.cov() = subrange(*Sigma, N2 - W, W, N2 - W, W);
   observed.setLogs(oLogs);
   observed.init();
 
-  SigmaXY = subrange(*Sigma, 0, M, M, W);
+  SigmaXY = subrange(*Sigma, 0, N2 - W, N2 - W, W);
 
   /* clean up */
   synchronize();
@@ -940,8 +966,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
 
   /* post-conditions */
   assert (sim.getTime() == state.t);
-  assert (observed.size() == W);
-  assert (SigmaXY.size1() == M && SigmaXY.size2() == W);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
