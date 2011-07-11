@@ -61,6 +61,8 @@ enum FilterType {
 /**
  * Compute next time for given delta.
  *
+ * @ingroup method
+ *
  * @param t Current time.
  * @param delta Time step.
  *
@@ -73,6 +75,8 @@ real next_step(const real t, const real delta);
 /**
  * Number of time steps in time.
  *
+ * @ingroup method
+ *
  * @param t Time.
  * @param delta Time step (positive).
  *
@@ -82,6 +86,8 @@ int num_steps(const real t, const real delta);
 
 /**
  * Number of time steps in interval
+ *
+ * @ingroup method
  *
  * @param ti Start of interval.
  * @param tj End of interval.
@@ -95,6 +101,8 @@ int num_steps(const real ti, const real tj, const real delta);
 
 /**
  * Insert elements into set, with offset.
+ *
+ * @ingroup method
  *
  * @param xs Set into which to insert.
  * @param first Iterator to first element in range of values to be inserted.
