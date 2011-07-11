@@ -122,6 +122,21 @@ template<class V1>
 typename gpu_vector_map_type<V1>::type* gpu_map_vector(const V1 x);
 
 /**
+ * Construct temporary vector, as copy of arbitrary vector, on device.
+ *
+ * @ingroup math
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param x Vector.
+ *
+ * @return A temporary device vector that is a copy of @p x. This is
+ * guaranteed to be contiguous in memory (i.e. <tt>inc() == 1</tt>).
+ */
+template<class V1>
+typename gpu_vector_temp_type<typename V1::value_type>::type* gpu_duplicate_vector(const V1 x);
+
+/**
  * @internal
  *
  * @group math
@@ -247,6 +262,18 @@ template<class V1>
 inline typename bi::gpu_vector_map_type<V1>::type* bi::gpu_map_vector(
     const V1 x) {
   return gpu_vector_map<V1,V1::on_device>::map(x);
+}
+
+template<class V1>
+inline typename bi::gpu_vector_temp_type<typename V1::value_type>::type* bi::gpu_duplicate_vector(
+    const V1 x) {
+  typedef typename V1::value_type T1;
+  typedef typename gpu_vector_temp_type<T1>::type V2;
+
+  V2 *result = new V2(x.size());
+  *result = x;
+
+  return result;
 }
 
 template<class V1>

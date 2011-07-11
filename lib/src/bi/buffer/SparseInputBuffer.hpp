@@ -119,6 +119,11 @@ public:
   bool isValid() const;
 
   /**
+   * Is time variable associated with at least one variable?
+   */
+  bool isAssoc(const int tVar) const;
+
+  /**
    * @copydoc concept::Markable::mark()
    */
   void mark();
@@ -209,6 +214,16 @@ inline const bi::SparseInputBufferState::mask_type&
 
 inline bool bi::SparseInputBuffer::isValid() const {
   return !state.times.empty();
+}
+
+inline bool bi::SparseInputBuffer::isAssoc(const int tVar) const {
+  int rDim = tDims[tVar];
+  unsigned i;
+  bool result = false;
+  for (i = 0; !result && i < vAssoc[rDim].size(); ++i) {
+    result = vAssoc[rDim][i].size() > 0;
+  }
+  return result;
 }
 
 #endif

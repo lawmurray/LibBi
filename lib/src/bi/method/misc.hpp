@@ -59,7 +59,7 @@ enum FilterType {
 };
 
 /**
- * Compute next time for given delta.
+ * Compute next time for given delta that is greater than the current time.
  *
  * @ingroup method
  *
@@ -70,10 +70,25 @@ enum FilterType {
  * If @p delta is negative, previous time that is a multiple of
  * <tt>abs(delta)</tt>.
  */
-real next_step(const real t, const real delta);
+real gt_step(const real t, const real delta);
 
 /**
- * Number of time steps in time.
+ * Compute next time for given delta that is greater than or equal to the
+ * current time.
+ *
+ * @ingroup method
+ *
+ * @param t Current time.
+ * @param delta Time step.
+ *
+ * @return If @p t a multiple of @p delta, then @p t. If @p delta is positive,
+ * next time that is a multiple of @p delta. If @p delta is negative,
+ * previous time that is a multiple of <tt>abs(delta)</tt>.
+ */
+real ge_step(const real t, const real delta);
+
+/**
+ * Number of time steps in closed interval.
  *
  * @ingroup method
  *
@@ -82,10 +97,37 @@ real next_step(const real t, const real delta);
  *
  * @return Number of multiples of @p delta on the interval <tt>[0,t]</tt>.
  */
-int num_steps(const real t, const real delta);
+int le_steps(const real t, const real delta);
 
 /**
- * Number of time steps in interval
+ * Number of time steps in open interval.
+ *
+ * @ingroup method
+ *
+ * @param t Time.
+ * @param delta Time step (positive).
+ *
+ * @return Number of multiples of @p delta on the interval <tt>[0,t)</tt>.
+ */
+int lt_steps(const real t, const real delta);
+
+/**
+ * Number of time steps in closed interval
+ *
+ * @ingroup method
+ *
+ * @param ti Start of interval.
+ * @param tj End of interval.
+ * @param delta Time step.
+ *
+ * @return If @p delta is positive, number of multiples of @p delta on the
+ * interval <tt>[ti,tj]</tt>. If @p delta is negative, number of multiples of
+ * <tt>abs(delta)</tt> on the interval <tt>[tj,ti]</tt>;
+ */
+int le_steps(const real ti, const real tj, const real delta);
+
+/**
+ * Number of time steps in open interval
  *
  * @ingroup method
  *
@@ -97,7 +139,7 @@ int num_steps(const real t, const real delta);
  * interval <tt>[ti,tj)</tt>. If @p delta is negative, number of multiples of
  * <tt>abs(delta)</tt> on the interval <tt>[tj,ti)</tt>;
  */
-int num_steps(const real ti, const real tj, const real delta);
+int lt_steps(const real ti, const real tj, const real delta);
 
 /**
  * Insert elements into set, with offset.
@@ -115,16 +157,40 @@ void offset_insert(std::set<T>& xs, InputIterator first, InputIterator last,
 
 }
 
-inline real bi::next_step(const real t, const real delta) {
+inline real bi::gt_step(const real t, const real delta) {
+  return delta*ceil((t + 1.0e-3*delta)/delta);
+}
+
+inline real bi::ge_step(const real t, const real delta) {
   return delta*ceil((t - 1.0e-3*delta)/delta);
 }
 
-inline int bi::num_steps(const real t, const real delta) {
+inline int bi::le_steps(const real t, const real delta) {
+  return static_cast<int>(ceil((t + 1.0e-3*delta)/delta));
+}
+
+inline int bi::lt_steps(const real t, const real delta) {
   return static_cast<int>(ceil((t - 1.0e-3*delta)/delta));
 }
 
-inline int bi::num_steps(const real ti, const real tj, const real delta) {
-  return std::abs(num_steps(tj, delta) - num_steps(ti, delta));
+inline int bi::le_steps(const real ti, const real tj, const real delta) {
+  int steps;
+  if (tj >= ti) {
+    steps = le_steps(tj, delta) - lt_steps(ti, delta);
+  } else {
+    steps = le_steps(ti, delta) - lt_steps(tj, delta);
+  }
+  return steps;
+}
+
+inline int bi::lt_steps(const real ti, const real tj, const real delta) {
+  int steps;
+  if (tj >= ti) {
+    steps = lt_steps(tj, delta) - lt_steps(ti, delta);
+  } else {
+    steps = lt_steps(ti, delta) - lt_steps(tj, delta);
+  }
+  return steps;
 }
 
 template<class T, class InputIterator>

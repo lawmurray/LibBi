@@ -192,7 +192,7 @@ void SparseInputNetCDFBuffer::reset() {
   state.times.clear();
   for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
     rDim = tDims[tVar];
-    if (hasTime(tVar, 0)) {
+    if (isAssoc(tVar) && hasTime(tVar, 0)) {
       readTime(tVar, 0, state.lens[rDim], t);
       state.times.insert(std::make_pair(t, tVar));
     } else {
@@ -209,19 +209,21 @@ int SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
   ts.push_back(T);
 
   for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
-    rDim = tDims[tVar];
-    var = tVars[tVar];
-    size = rDims[rDim]->size();
-    ts.resize(ts.size() + size);
+    if (isAssoc(tVar)) {
+      rDim = tDims[tVar];
+      var = tVars[tVar];
+      size = rDims[rDim]->size();
+      ts.resize(ts.size() + size);
 
-    if (var->get_dim(0) == nsDim) {
-      var->set_cur(ns, 0);
-      var->get(&ts[ts.size() - size], 1, size);
-    } else {
-      var->set_cur((long)0);
-      var->get(&ts[ts.size() - size], size);
+      if (var->get_dim(0) == nsDim) {
+        var->set_cur(ns, 0);
+        var->get(&ts[ts.size() - size], 1, size);
+      } else {
+        var->set_cur((long)0);
+        var->get(&ts[ts.size() - size], size);
+      }
+      std::inplace_merge(ts.begin(), ts.end() - size, ts.end());
     }
-    std::inplace_merge(ts.begin(), ts.end() - size, ts.end());
   }
 
   std::vector<real>::iterator unique, pred;

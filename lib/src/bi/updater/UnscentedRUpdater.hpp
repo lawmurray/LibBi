@@ -44,11 +44,12 @@ public:
    * Prepare for upcoming update.
    *
    * @param nsteps Number of updates to be performed.
-   * @param N Number of variables in unscented transformation.
+   * @param N1 Number of unconditioned variables in unscented transformation.
+   * @param W Number of observations.
    * @param a Scaling factor for variates.
    * @param fixed True if starting state fixed, false otherwise.
    */
-  void prepare(const int nsteps, const int N, const real a,
+  void prepare(const int nsteps, const int N1, const int W, const real a,
       const bool fixed = false);
 
 private:
@@ -58,9 +59,14 @@ private:
   int nsteps;
 
   /**
-   * Number of variables in unscented transformation.
+   * Number of unconditioned variables in unscented transformation.
    */
-  int N;
+  int N1;
+
+  /**
+   * Number of observations.
+   */
+  int W;
 
   /**
    * Scaling factor for variates for upcoming updates.
@@ -83,19 +89,21 @@ private:
 #include "../traits/derived_traits.hpp"
 
 template<class B, bi::StaticHandling SH>
-bi::UnscentedRUpdater<B,SH>::UnscentedRUpdater() : nsteps(0), N(0), a(0.0) {
+bi::UnscentedRUpdater<B,SH>::UnscentedRUpdater() : nsteps(0), N1(0), W(0),
+    a(0.0) {
   //
 }
 
 template<class B, bi::StaticHandling SH>
-void bi::UnscentedRUpdater<B,SH>::prepare(const int nsteps, const int N,
-    const real a, const bool fixed) {
+void bi::UnscentedRUpdater<B,SH>::prepare(const int nsteps, const int N1,
+    const int W, const real a, const bool fixed) {
   /* pre-condition */
   BI_ASSERT(this->nsteps == 0,
       "Simulation for previous unscented transformation incomplete");
 
   this->nsteps = nsteps;
-  this->N = N;
+  this->N1 = N1;
+  this->W = W;
   this->a = a;
   this->fixed = fixed;
 }
@@ -119,11 +127,11 @@ void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
     start = 1 + (fixed ? 0 : ND + NC);
   } else {
     /* other steps use extra blocks */
-    start = 1 + N - nsteps*NR;
+    start = 1 + N1 - W - (nsteps - 1)*NR;
   }
 
   BOOST_AUTO(d1, diagonal(rows(s.get(R_NODE), start, NR)));
-  BOOST_AUTO(d2, diagonal(rows(s.get(R_NODE), start + N, NR)));
+  BOOST_AUTO(d2, diagonal(rows(s.get(R_NODE), start + N1, NR)));
   s.get(R_NODE).clear();
 
   if (all_gaussian_variates<S>::value) {

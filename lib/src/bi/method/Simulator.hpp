@@ -454,7 +454,7 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
     tf = tnxt + sgn*1.0;
   }
   if (m.getNumNodes(D_NODE) > 0 || (m.getNumNodes(R_NODE) && haveRUpdater)) {
-    td = next_step(ti, sgn*delta);
+    td = ge_step(ti, sgn*delta);
   } else {
     td = tnxt + sgn*1.0;
   }
@@ -473,7 +473,7 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
     }
 
     if (sgn*ti >= sgn*td) {
-      td = next_step(td + 0.5*sgn*delta, sgn*delta);
+      td = gt_step(td, sgn*delta);
 
       /* update r-net */
       if (haveRUpdater) {

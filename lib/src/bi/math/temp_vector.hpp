@@ -121,18 +121,45 @@ typename host_vector_temp_type<T1>::type* host_temp_vector(const int size);
 template<class V1>
 typename host_vector_map_type<V1>::type* host_map_vector(const V1 x);
 
+/**
+ * Construct temporary vector, as copy of arbitrary vector, on host.
+ *
+ * @ingroup math
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param x Vector.
+ *
+ * @return A temporary host vector that is a copy of @p x. This is
+ * guaranteed to be contiguous in memory (i.e. <tt>inc() == 1</tt>).
+ */
+template<class V1>
+typename host_vector_temp_type<typename V1::value_type>::type* host_duplicate_vector(const V1 x);
+
 }
 
 template<class T1>
 inline typename bi::host_vector_temp_type<T1>::type* bi::host_temp_vector(
     const int size) {
-  return new typename bi::host_vector_temp_type<T1>::type(size);
+  return new typename host_vector_temp_type<T1>::type(size);
 }
 
 template<class V1>
 inline typename bi::host_vector_map_type<V1>::type* bi::host_map_vector(
     const V1 x) {
   return host_vector_map<V1,V1::on_device>::map(x);
+}
+
+template<class V1>
+inline typename bi::host_vector_temp_type<typename V1::value_type>::type* bi::host_duplicate_vector(
+    const V1 x) {
+  typedef typename V1::value_type T1;
+  typedef typename host_vector_temp_type<T1>::type V2;
+
+  V2 *result = new V2(x.size());
+  *result = x;
+
+  return result;
 }
 
 #endif

@@ -128,6 +128,19 @@ template<class M1>
 typename gpu_matrix_map_type<M1>::type* gpu_map_matrix(const M1 X);
 
 /**
+ * Construct temporary matrix, as copy of arbitrary matrix, on device.
+ *
+ * @ingroup math_gpu
+ *
+ * @tparam M1 Matrix type.
+ *
+ * @return A temporary device matrix that is a copy of @p X. This is
+ * guaranteed to be contiguous in memory (i.e. <tt>lead() == size1()</tt>).
+ */
+template<class M1>
+typename gpu_matrix_temp_type<typename M1::value_type>::type* gpu_duplicate_matrix(const M1 X);
+
+/**
  * @internal
  *
  * @group math
@@ -281,6 +294,18 @@ template<class M1>
 inline typename bi::gpu_matrix_map_type<M1>::type* bi::gpu_map_matrix(
     const M1 X) {
   return gpu_matrix_map<M1,M1::on_device>::map(X);
+}
+
+template<class M1>
+inline typename bi::gpu_matrix_temp_type<typename M1::value_type>::type* bi::gpu_duplicate_matrix(
+    const M1 X) {
+  typedef typename M1::value_type T1;
+  typedef typename gpu_matrix_temp_type<T1>::type M2;
+
+  M2 *result = new M2(X.size1(), X.size2());
+  *result = X;
+
+  return result;
 }
 
 template<class M1>

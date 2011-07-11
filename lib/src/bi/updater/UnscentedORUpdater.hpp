@@ -44,17 +44,24 @@ public:
   /**
    * Prepare for upcoming update.
    *
-   * @param N Number of variables in unscented transformation.
+   * @param N1 Number of unconditioned variables in unscented transformation.
+   * @param W Number of observations.
    * @param a Scaling factor for variates.
    * @param fixed True if starting state fixed, false otherwise.
    */
-  void prepare(const int N, const real a, const bool fixed = false);
+  void prepare(const int N1, const int W, const real a,
+      const bool fixed = false);
 
 private:
   /**
-   * Number of variables in unscented transformation.
+   * Number of unconditioned variables in unscented transformation.
    */
-  int N;
+  int N1;
+
+  /**
+   * Number of observations.
+   */
+  int W;
 
   /**
    * Scaling factor for variates for upcoming updates.
@@ -65,11 +72,6 @@ private:
    * Is starting state fixed for this transformation?
    */
   bool fixed;
-
-  static const int ND = net_size<B,typename B::DTypeList>::value;
-  static const int NC = net_size<B,typename B::CTypeList>::value;
-  static const int NR = net_size<B,typename B::RTypeList>::value;
-  static const int NP = net_size<B,typename B::PTypeList>::value;
 };
 }
 
@@ -78,15 +80,16 @@ private:
 #include "../traits/derived_traits.hpp"
 
 template<class B, bi::StaticHandling SH>
-bi::UnscentedORUpdater<B,SH>::UnscentedORUpdater() : N(0), a(0.0),
+bi::UnscentedORUpdater<B,SH>::UnscentedORUpdater() : N1(0), W(0), a(0.0),
     fixed(false) {
   //
 }
 
 template<class B, bi::StaticHandling SH>
-void bi::UnscentedORUpdater<B,SH>::prepare(const int N, const real a,
-    const bool fixed) {
-  this->N = N;
+void bi::UnscentedORUpdater<B,SH>::prepare(const int N1, const int W,
+    const real a, const bool fixed) {
+  this->N1 = N1;
+  this->W = W;
   this->a = a;
   this->fixed = fixed;
 }
@@ -95,21 +98,18 @@ template<class B, bi::StaticHandling SH>
 template<bi::Location L>
 void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
     State<L>& s) {
+  /* pre-condition */
+  assert (mask.size() == W);
+
   typedef typename B::OTypeList S;
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedORUpdateVisitor<B,S,V1> Visitor;
 
-  int i, size, W = mask.size(), start = 1 + NR;
-  if (!fixed) {
-    start += ND + NC;
-    if (SH == STATIC_OWN) {
-      start += NP;
-    }
-  }
+  int i, size, start = 1 + N1 - W;
 
   if (W > 0) {
     BOOST_AUTO(d1, diagonal(rows(s.get(OR_NODE), start, W)));
-    BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), start + N, W)));
+    BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), start + N1, W)));
     s.get(OR_NODE).clear();
 
     if (all_gaussian_likelihoods<S>::value || all_log_normal_likelihoods<S>::value) {

@@ -40,7 +40,6 @@ struct host_matrix_map_type {
    * type.
    */
   typedef typename boost::mpl::if_c<M1::on_device,host_type,M1>::type type;
-
 };
 
 /**
@@ -128,6 +127,19 @@ typename host_matrix_temp_type<T1>::type* host_temp_matrix(
 template<class M1>
 typename host_matrix_map_type<M1>::type* host_map_matrix(const M1 X);
 
+/**
+ * Construct temporary matrix, as copy of arbitrary matrix, on host.
+ *
+ * @ingroup math_gpu
+ *
+ * @tparam M1 Matrix type.
+ *
+ * @return A temporary host matrix that is a copy of @p X. This is
+ * guaranteed to be contiguous in memory (i.e. <tt>lead() == size1()</tt>).
+ */
+template<class M1>
+typename host_matrix_temp_type<typename M1::value_type>::type* host_duplicate_matrix(const M1 X);
+
 }
 
 template<class T1>
@@ -140,6 +152,18 @@ template<class M1>
 inline typename bi::host_matrix_map_type<M1>::type* bi::host_map_matrix(
     const M1 X) {
   return host_matrix_map<M1,M1::on_device>::map(X);
+}
+
+template<class M1>
+inline typename bi::host_matrix_temp_type<typename M1::value_type>::type* bi::host_duplicate_matrix(
+    const M1 X) {
+  typedef typename M1::value_type T1;
+  typedef typename host_matrix_temp_type<T1>::type M2;
+
+  M2 *result = new M2(X.size1(), X.size2());
+  *result = X;
+
+  return result;
 }
 
 #endif
