@@ -658,27 +658,22 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(
 
   /* initialise state */
   BOOST_AUTO(X, temp_matrix<M1>(s.size(), N2));
-  BOOST_AUTO(mu0, temp_vector<V1>(M));
-  BOOST_AUTO(U0, temp_matrix<M1>(M, M));
+  BOOST_AUTO(mu0, subrange(corrected.mean(), 0, M));
 
-  *mu0 = subrange(corrected.mean(), 0, M);
-  set_rows(columns(*X, 0, M), *mu0);
-  columns(*X, M, X->size2() - M).clear();
-  potrf(subrange(corrected.cov(), 0, M, 0, M), *U0, 'U');
-  matrix_axpy(a, *U0, subrange(*X, 1, M, 0, M));
-  matrix_axpy(-a, *U0, subrange(*X, N1 + 1, M, 0, M));
-  ///@todo U0 is upper triangular, needn't do full axpy.
+  set_rows(columns(*X, 0, M), mu0);
+  //columns(*X, M, X->size2() - M).clear();
+  matrix_axpy(a, subrange(corrected.std(), 0, M, 0, M), subrange(*X, 1, M, 0, M));
+  matrix_axpy(-a, subrange(corrected.std(), 0, M, 0, M), subrange(*X, N1 + 1, M, 0, M));
+  ///@todo corrected.std() is upper triangular, needn't do full axpy.
 
   /* perform unscented transformation */
   transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nupdates,
-      nextra, *mu0, *X, false);
+      nextra, mu0, *X, false);
 
   if (M1::on_device || V1::on_device) {
     synchronize();
   }
   delete X;
-  delete mu0;
-  delete U0;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -729,7 +724,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
       log_vector(subrange(*mu0, ND + NC + NR, NP), m.getLogs(P_NODE));
     }
     set_rows(columns(*X, 0, M), *mu0);
-    columns(*X, M, X->size2() - M).clear();
+    //columns(*X, M, X->size2() - M).clear();
 
     /* perform unscented transformation */
     transform(theta, s, observed, uncorrected, SigmaXX, SigmaXY, tj, nupdates,
@@ -811,7 +806,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
   BOOST_AUTO(Sigma, temp_matrix<M1>(N2, N2));
   BOOST_AUTO(Wm, temp_vector<V1>(P));
   BOOST_AUTO(Wc, temp_vector<V1>(P));
-  Sigma->clear();
 
   /**
    * Let \f$N\f$ be the dimensionality of the state and \f$V\f$ the
@@ -948,6 +942,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
   sub_rows(Z2, *mu);
 
   /* uncorrected covariance */
+  Sigma->clear();
   syrk(Wi, rows(Z2, 1, 2*N1), 0.0, *Sigma, 'U', 'T');
   syr(Wc0, row(Z2, 0), *Sigma, 'U');
 
