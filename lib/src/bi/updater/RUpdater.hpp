@@ -20,10 +20,16 @@ namespace bi {
  * @ingroup method_updater
  *
  * @tparam B Model type.
+ * @tparam CL Cache location.
  */
-template<class B>
+template<class B, Location CL = ON_HOST>
 class RUpdater {
 public:
+  /**
+   * Matrix type.
+   */
+  typedef typename locatable_temp_matrix<CL,real>::type matrix_type;
+
   /**
    * Constructor.
    *
@@ -42,11 +48,32 @@ public:
   void update(const real t, const real tnxt, State<L>& s);
 
   /**
-   * Don't make any changes on next update.
+   * Skip next update(s).
    *
-   * @todo Hack for now for methods that adjust random variates themselves.
+   * @param nupdates Number of updates to skip.
+   *
+   * This is useful for methods which adjust random variates externally.
    */
-  void skipNext();
+  void skipNext(const int nupdates = 1);
+
+  /**
+   * Use buffer for next update(s).
+   *
+   * @param nupdates Number of updates to set.
+   *
+   * Use buf() to retrieve and fill the buffer with an appropriate number of
+   * updates before this call. A check is made to ensure that the buffer is
+   * of the appropriate size.
+   */
+  void setNext(const int nupdates = 1);
+
+  /**
+   * Get buffer to manually set random variates.
+   *
+   * @return Buffer. Rows index trajectories, columns time (outer) and
+   * variable (inner).
+   */
+  matrix_type& buf();
 
 private:
   /**
@@ -55,9 +82,22 @@ private:
   Random& rng;
 
   /**
-   * Skip next update?
+   * Number of updates left to skip.
    */
-  bool skip;
+  int nskip;
+
+  /**
+   * Number of updates set.
+   */
+  int nset;
+
+  /**
+   * Buffer.
+   */
+  matrix_type X;
+
+  /* net sizes, for convenience */
+  static const int NR = net_size<B,typename B::RTypeList>::value;
 };
 }
 
@@ -65,44 +105,80 @@ private:
 #include "../traits/random_traits.hpp"
 #include "../traits/derived_traits.hpp"
 
-template<class B>
-bi::RUpdater<B>::RUpdater(Random& rng) : rng(rng), skip(false) {
+template<class B, bi::Location CL>
+bi::RUpdater<B,CL>::RUpdater(Random& rng) : rng(rng), nskip(0), nset(0) {
   //
 }
 
-template<class B>
+template<class B, bi::Location CL>
 template<bi::Location L>
-void bi::RUpdater<B>::update(const real t, const real tnxt, State<L>& s) {
+void bi::RUpdater<B,CL>::update(const real t, const real tnxt, State<L>& s) {
   typedef typename B::RTypeList S;
   typedef typename State<L>::matrix_reference_type M1;
   typedef RUpdateVisitor<B,S,M1> Visitor;
 
-  if (!skip) {
-    BOOST_AUTO(X, s.get(R_NODE));
-    if (X.lead() == X.size1()) {
-      if (all_gaussian_variates<S>::value) {
-        rng.gaussians(vec(X));
-      } else if (all_uniform_variates<S>::value) {
-        rng.uniforms(vec(X), -0.5, 0.5);
-      } else if (all_wiener_increments<S>::value) {
-        if (std::abs(tnxt - t) > 0.0) {
-          rng.gaussians(vec(X), 0.0, std::sqrt(std::abs(tnxt - t)));
+  if (nskip == 0) {
+    BOOST_AUTO(Y, s.get(R_NODE));
+    if (nset > 0) {
+      /* retrieve from buffer */
+      BI_ASSERT(Y.size1() == X.size1(),
+          "Incompatible sizes for r-node buffer update");
+      Y = columns(X, X.size2() - NR*nset, NR);
+      --nset;
+    } else {
+      /* generate from rng */
+      if (Y.lead() == Y.size1()) {
+        if (all_gaussian_variates<S>::value) {
+          rng.gaussians(vec(Y));
+        } else if (all_uniform_variates<S>::value) {
+          rng.uniforms(vec(Y), -0.5, 0.5);
+        } else if (all_wiener_increments<S>::value) {
+          if (std::abs(tnxt - t) > 0.0) {
+            rng.gaussians(vec(Y), 0.0, std::sqrt(std::abs(tnxt - t)));
+          } else {
+            Y.clear();
+          }
         } else {
-          X.clear();
+          Visitor::accept(rng, t, tnxt, Y);
         }
       } else {
-        Visitor::accept(rng, t, tnxt, s.get(R_NODE));
+        Visitor::accept(rng, t, tnxt, Y);
       }
-    } else {
-      Visitor::accept(rng, t, tnxt, s.get(R_NODE));
     }
+  } else {
+    /* skip */
+    --nskip;
   }
-  skip = false;
+
+  /* post-condition */
+  assert (nskip >= 0);
+  assert (nset >= 0);
 }
 
-template<class B>
-inline void bi::RUpdater<B>::skipNext() {
-  skip = true;
+template<class B, bi::Location CL>
+inline void bi::RUpdater<B,CL>::skipNext(const int nupdates) {
+  /* pre-condition */
+  BI_WARN(nskip == 0, "Previous skips have not been exhausted");
+  BI_WARN(nset == 0, "Previous buffer has not been exhausted");
+
+  nskip = nupdates;
+}
+
+template<class B, bi::Location CL>
+inline void bi::RUpdater<B,CL>::setNext(const int nupdates) {
+  typedef typename B::RTypeList S;
+
+  /* pre-condition */
+  assert(X.size2() == nupdates*NR);
+  BI_WARN(nskip == 0, "Previous skips have not been exhausted");
+  BI_WARN(nset == 0, "Previous buffer has not been exhausted");
+
+  nset = nupdates;
+}
+
+template<class B, bi::Location CL>
+inline typename bi::RUpdater<B,CL>::matrix_type& bi::RUpdater<B,CL>::buf() {
+  return X;
 }
 
 #endif

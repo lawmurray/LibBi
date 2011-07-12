@@ -265,7 +265,7 @@ public:
    */
   void restore();
 
-private:
+protected:
   /**
    * Initialise observations.
    *
@@ -662,8 +662,18 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(
 
   set_rows(columns(*X, 0, M), mu0);
   //columns(*X, M, X->size2() - M).clear();
-  matrix_axpy(a, subrange(corrected.std(), 0, M, 0, M), subrange(*X, 1, M, 0, M));
-  matrix_axpy(-a, subrange(corrected.std(), 0, M, 0, M), subrange(*X, N1 + 1, M, 0, M));
+
+  host_matrix<real> Sigma(M, M);
+  host_matrix<real> U(M, M);
+  Sigma = subrange(corrected.cov(), 0, M, 0, M);
+  rows(Sigma, ND + NC, NR).clear();
+  columns(Sigma, ND + NC, NR).clear();
+  ident(subrange(Sigma, ND + NC, NR, ND + NC, NR));
+  potrf(Sigma, U, 'U');
+  U = subrange(corrected.std(), 0, M, 0, M);
+
+  matrix_axpy(a, U, subrange(*X, 1, M, 0, M));
+  matrix_axpy(-a, U, subrange(*X, N1 + 1, M, 0, M));
   ///@todo corrected.std() is upper triangular, needn't do full axpy.
 
   /* perform unscented transformation */
