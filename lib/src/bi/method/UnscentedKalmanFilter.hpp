@@ -640,7 +640,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(
   real tj = initObs(tnxt, s);
 
   /* number of intermediate random variate updates required during time interval */
-  int nextra = lt_steps(tj, delta) - le_steps(ti, delta);
+  int nextra = std::max(0, lt_steps(tj, delta) - le_steps(ti, delta));
   int nupdates = lt_steps(tj, delta) - lt_steps(ti, delta);
 
   /* required state size, state arranged in order: d-nodes, c-nodes,
@@ -842,11 +842,10 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::transform(
    * \f[\mathcal{X}_n^{(i)} \leftarrow f(\mathcal{X}_{n-1}^{(i)})\,.\f]
    */
   s.get(D_NODE) = columns(*X1, 0, ND);
-  s.get(C_NODE) = columns(*X1, ND, NC);
-  s.get(R_NODE) = columns(*X1, ND + NC, NR);
-
   exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
+  s.get(C_NODE) = columns(*X1, ND, NC);
   exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
+  s.get(R_NODE) = columns(*X1, ND + NC, NR);
   if (haveParameters) {
     theta.get(P_NODE) = columns(*X1, ND + NC + NR, NP);
     exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
