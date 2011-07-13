@@ -1,9 +1,4 @@
 /**
- * @todo Read into contiguous vectors rather than sparsely reading into dense
- * matrix. Will save copying into contiguous vectors in UnscentedKalmanFilter,
- * and makes indexing easier.
- */
-/**
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
