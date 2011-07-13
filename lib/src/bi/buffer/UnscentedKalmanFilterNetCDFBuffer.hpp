@@ -219,11 +219,11 @@ template<class V1, class M1>
 void bi::UnscentedKalmanFilterNetCDFBuffer::writeCorrectedState(const int k,
     const V1& mu, const M1& Sigma) {
   /* pre-conditions */
-  assert (mu.size() >= M);
-  assert (Sigma.size1() >= M && Sigma.size2() == Sigma.size1());
+  assert (mu.size() == M);
+  assert (Sigma.size1() == M && Sigma.size2() == Sigma.size1());
 
-  BOOST_AUTO(mu1, host_duplicate_vector(subrange(mu, 0, M)));
-  BOOST_AUTO(Sigma1, host_duplicate_matrix(subrange(Sigma, 0, M, 0, M)));
+  BOOST_AUTO(mu1, host_map_vector(mu));
+  BOOST_AUTO(Sigma1, host_map_matrix(Sigma));
   if (V1::on_device || M1::on_device) {
     synchronize();
   }
@@ -276,11 +276,11 @@ template<class V1, class M1>
 void bi::UnscentedKalmanFilterNetCDFBuffer::writeUncorrectedState(const int k,
     const V1& mu, const M1& Sigma) {
   /* pre-condition */
-  assert (mu.size() >= M);
-  assert (Sigma.size1() >= M && Sigma.size2() == Sigma.size1());
+  assert (mu.size() == M);
+  assert (Sigma.size1() == M && Sigma.size2() == Sigma.size1());
 
-  BOOST_AUTO(mu1, host_duplicate_vector(subrange(mu, 0, M)));
-  BOOST_AUTO(Sigma1, host_duplicate_matrix(subrange(Sigma, 0, M, 0, M)));
+  BOOST_AUTO(mu1, host_map_vector(mu));
+  BOOST_AUTO(Sigma1, host_map_matrix(Sigma));
   if (V1::on_device || M1::on_device) {
     synchronize();
   }
