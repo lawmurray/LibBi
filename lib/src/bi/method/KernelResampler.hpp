@@ -161,7 +161,7 @@ void bi::KernelResampler<B,R>::resample(V1& lws, V2& as, Static<L>& theta, State
   try {
     /* Cholesky decomposition of covariance; this may throw exception, in
      * which case defer to base resampler, in catch block below. */
-    potrf(Sigma, U, 'U');
+    chol(Sigma, U, 'U');
 
     /* shrink kernel centres back toward mean to preserve covariance */
     if (shrink) {

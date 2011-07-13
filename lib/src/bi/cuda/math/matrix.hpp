@@ -215,8 +215,8 @@ public:
    * instantiation of gpu_matrix_reference in constant memory on device,
    * where only default constructors are supported.
    */
-  CUDA_FUNC_HOST gpu_matrix_reference(T* data, const size_type rows,
-      const size_type cols, const size_type lead = -1);
+  CUDA_FUNC_HOST gpu_matrix_reference(T* data = NULL, const size_type rows = 0,
+      const size_type cols = 0, const size_type lead = -1);
 
   /**
    * Shallow copy constructor.
@@ -318,7 +318,7 @@ inline bi::gpu_matrix_reference<T>::gpu_matrix_reference(T* data,
   this->ptr = data;
   this->rows = rows;
   this->cols = cols;
-  this->ld = (lead < 0) ? rows : lead;
+  this->ld = std::max(1, (lead < 0) ? rows : lead);
 }
 
 template<class T>
@@ -582,8 +582,7 @@ private:
 }
 
 template<class T, class A>
-bi::gpu_matrix<T,A>::gpu_matrix() : gpu_matrix_reference<T>(NULL, 0, 0, 0),
-    own(true) {
+bi::gpu_matrix<T,A>::gpu_matrix() : own(true) {
   //
 }
 

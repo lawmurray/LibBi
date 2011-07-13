@@ -14,6 +14,23 @@
 
 namespace bi {
 /**
+ * Strategies for handling singular matrices in chol().
+ *
+ * @ingroup math-op
+ */
+enum CholeskyStrategy {
+  /**
+   * Adjust diagonal with small increments.
+   */
+  ADJUST_DIAGONAL,
+
+  /**
+   * Do nothing, fail.
+   */
+  FAIL
+};
+
+/**
  * @name Basic operations
  */
 //@{
@@ -46,6 +63,15 @@ void ident(M1 A);
  */
 template<class M1, class M2>
 void transpose(const M1 A, M2 B);
+
+/**
+ * Symmetric matrix Cholesky decomposition.
+ *
+ * @ingroup math_op
+ */
+template<class M1, class M2>
+void chol(const M1 A, M2 L, char uplo = 'L',
+    const CholeskyStrategy = ADJUST_DIAGONAL) throw (Exception);
 
 /**
  * Set the columns of a matrix.
@@ -353,14 +379,6 @@ void syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
 template<class T1, class M1, class T2, class M2>
 void syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
     const char uplo = 'L', const char trans = 'N');
-
-/**
- * Symmetric matrix Cholesky decomposition.
- *
- * @ingroup math_op
- */
-template<class M1, class M2>
-void potrf(const M1 A, M2 L, char uplo = 'L') throw (Exception);
 
 /**
  * Symmetric positive definite linear system solve.
@@ -1171,7 +1189,8 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
 }
 
 template<class M1, class M2>
-void bi::potrf(const M1 A, M2 L, char uplo) throw (Exception) {
+void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
+    throw (Exception) {
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
 
@@ -1185,7 +1204,7 @@ void bi::potrf(const M1 A, M2 L, char uplo) throw (Exception) {
   typename M2::size_type N = A.size1();
   typename M2::size_type ld = L.lead();
 
-  L = A; /// @todo Single argument version to avoid unnecessary assignment
+  L = A;
   if (M2::on_device) {
     magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
     synchronize();
@@ -1196,10 +1215,7 @@ void bi::potrf(const M1 A, M2 L, char uplo) throw (Exception) {
     info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
         L.buf(), ld);
   }
-  if (info != 0) { // try adjusting main diagonal
-    BI_WARN(info == 0, "Cholesky failed with info " << info <<
-        ", adjusting diagonal");
-
+  if (info != 0 && (strat == ADJUST_DIAGONAL)) {
     BOOST_AUTO(d, diagonal(L));
     BOOST_AUTO(eps, temp_vector<M2>(d.size()));
     bi::fill(eps->begin(), eps->end(), static_cast<T2>(1.0));
@@ -1226,8 +1242,7 @@ void bi::potrf(const M1 A, M2 L, char uplo) throw (Exception) {
     delete eps;
   }
   if (info != 0) {
-    BI_WARN(false, "Cholesky failed with info " << info <<
-        ", could not fix by adjusting diagonal");
+    BI_WARN(false, "Cholesky failed with info " << info);
     throw CHOLESKY_FAILED;
   }
 }

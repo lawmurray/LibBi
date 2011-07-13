@@ -218,8 +218,8 @@ public:
    * @param cols Number of cols.
    * @param lead Size of lead dimensions. If negative, same as @p rows.
    */
-  host_matrix_reference(T* data, const size_type rows, const size_type cols,
-      const size_type lead = -1);
+  host_matrix_reference(T* data = NULL, const size_type rows = 0,
+      const size_type cols = 0, const size_type lead = -1);
 
   /**
    * Assignment.
@@ -324,7 +324,7 @@ inline bi::host_matrix_reference<T>::host_matrix_reference(T* data,
   this->ptr = data;
   this->rows = rows;
   this->cols = cols;
-  this->ld = (lead < 0) ? rows : lead;
+  this->ld = std::max(1, (lead < 0) ? rows : lead);
 }
 
 template<class T>
@@ -630,8 +630,7 @@ private:
 }
 
 template<class T, class A>
-bi::host_matrix<T,A>::host_matrix() : host_matrix_reference<T>(NULL, 0, 0, 0),
-    own(true) {
+bi::host_matrix<T,A>::host_matrix() : own(true) {
   //
 }
 

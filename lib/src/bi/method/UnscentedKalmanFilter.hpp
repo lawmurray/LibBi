@@ -256,12 +256,19 @@ public:
   /**
    * Resize required variables for noise terms.
    *
+   * @tparam V1 Vector type.
    * @tparam M1 Matrix type.
+   * @tparam V2 Vector type.
+   * @tparam M2 Matrix type.
+   * @tparam M3 Matrix type.
    *
+   * @param[out] runcorrected Prediction density over noise terms.
+   * @param[out] rcorrected Filter density over noise terms.
    * @param[out] SigmaRY Noise-observed cross-covariance.
    */
-  template<class M1>
-  void resizeNoise(M1& SigmaRY);
+  template<class V1, class M1, class V2, class M2, class M3>
+  void resizeNoise(ExpGaussianPdf<V1,M1>& runcorrected,
+      ExpGaussianPdf<V2,M2>& rcorrected, M3& SigmaRY);
 
   /**
    * Propagate sigma points forward to next time.
@@ -904,7 +911,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     BOOST_AUTO(Sigma, temp_matrix<M1>(ND + NC, ND + NC));
     BOOST_AUTO(U, temp_matrix<M1>(ND + NC, ND + NC));
     *Sigma = subrange(corrected.cov(), 0, ND + NC, 0, ND + NC);
-    potrf(*Sigma, *U, 'U');
+    chol(*Sigma, *U, 'U');
     matrix_axpy(a, *U, subrange(X1, 1, ND + NC, 0, ND + NC));
     matrix_axpy(-a, *U, subrange(X1, 1 + N1, ND + NC, 0, ND + NC));
 
@@ -954,9 +961,12 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::resize(State<L>& s,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
-template<class M1>
+template<class V1, class M1, class V2, class M2, class M3>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::resizeNoise(
-    M1& SigmaRY) {
+    ExpGaussianPdf<V1,M1>& runcorrected, ExpGaussianPdf<V2,M2>& rcorrected,
+    M3& SigmaRY) {
+  runcorrected.resize(NR*nupdates, false);
+  rcorrected.resize(NR*nupdates, false);
   SigmaRY.resize(NR*nupdates, W, false);
 }
 
@@ -1118,17 +1128,19 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(const V1 mu,
   assert (runcorrected.size() == NR*nupdates);
   assert (SigmaRY.size1() == NR*nupdates && SigmaRY.size2() == W);
 
-  subrange(runcorrected.mean(), 0, NR*nextra) = subrange(mu, M, NR*nextra);
-  subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC, NR);
+  if (nupdates > 0) {
+    subrange(runcorrected.mean(), 0, NR*nextra) = subrange(mu, M, NR*nextra);
+    subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC, NR);
 
-  subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, M, NR*nextra);
-  subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, ND + NC, NR);
-  transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(runcorrected.cov(), ND + NC, NR, M, NR*nextra));
+    subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, M, NR*nextra);
+    subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, ND + NC, NR);
+    transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(runcorrected.cov(), 0, NR*nextra, NR*nextra, NR));
 
-  runcorrected.init();
+    runcorrected.init();
 
-  rows(SigmaRY, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, N2 - W, W);
-  rows(SigmaRY, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, N2 - W, W);
+    rows(SigmaRY, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, N2 - W, W);
+    rows(SigmaRY, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, N2 - W, W);
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

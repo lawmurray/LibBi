@@ -646,7 +646,7 @@ template<class V1, class M1>
 void bi::GaussianPdf<V1,M1>::init() {
   if (N > 0) {
     /* Cholesky decomposition of covariance matrix */
-    potrf(Sigma, U, 'U');
+    chol(Sigma, U, 'U');
     ident(invU);
     trsm(1.0, U, invU, 'R', 'U');
 
