@@ -11,7 +11,7 @@ then
     ROOT=$PBS_O_WORKDIR
     LOCAL_DIR=$TMPDIR
     JOBS=2
-    : ${ID=$[2*$PBS_ARRAYID]}
+    : ${ID=$[2*$PBS_ARRAYID-0]}
 else
     ROOT=.
     LOCAL_DIR=/tmp
@@ -19,6 +19,7 @@ else
     : ${ID=0}
 fi
 NAME=likelihood
+SEED=$[$SEED + $ID]
 
 cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
@@ -66,12 +67,17 @@ do
 	    --filter=$FILTER --resampler=$RESAMPLER \
 	    --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
 	    --starting-type=$STARTING_TYPE \
-	    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
+	    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
+            --seed=$SEED \
 	    --init-file=$INIT_FILE --force-file=$FORCE_FILE \
 	    --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \
 	    --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
-	    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --starting-file=$STARTING_FILE \
-	    --include-initial=$INCLUDE_INITIAL
+	    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME \
+            --starting-file=$STARTING_FILE \
+	    --include-initial=$INCLUDE_INITIAL &
+	
+	ID=$[$ID + 1]
+	SEED=$[$SEED + 1]
 done
 	
 # copy results back from local directory

@@ -9,7 +9,7 @@ if [[ "$PBS_JOBID" != "" ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
-    : ${ID=$PBS_ARRAYID}
+    : ${ID=$[$PBS_ARRAYID-0]}
 else
     ROOT=.
     : ${ID=0}

@@ -11,7 +11,7 @@ then
     ROOT=$PBS_O_WORKDIR
     LOCAL_DIR=$TMPDIR
     JOBS=2
-    : ${ID=$[2*$PBS_ARRAYID]}
+    : ${ID=$[2*$PBS_ARRAYID-0]}
 else
     ROOT=.
     LOCAL_DIR=/tmp
@@ -19,6 +19,7 @@ else
     : ${ID=0}
 fi
 NAME=mcmc
+SEED=$[$SEED + $ID]
 
 cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
@@ -65,16 +66,20 @@ do
 	# run
 	build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
 	    --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
-	    --filter=$FILTER --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA \
+	    --filter=$FILTER --resampler=$RESAMPLER --sort=$SORT -C $C \
+            --beta=$BETA \
 	    -a $A --lambda0=$LAMBDA0 --gamma=$GAMMA --delta=$DELTA \
-	    -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
-	    --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
+	    -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER \
+            --seed=$SEED \
+	    --init-file=$INIT_FILE --force-file=$FORCE_FILE \
+            --obs-file=$OBS_FILE \
 	    --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \
 	    --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME \
 	    --proposal-file=$PROPOSAL_FILE --starting-file=$STARTING_FILE \
 	    --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL &
 	
 	ID=$[$ID + 1]
+	SEED=$[$SEED + 1]
 done
 
 # copy results back from local directory
