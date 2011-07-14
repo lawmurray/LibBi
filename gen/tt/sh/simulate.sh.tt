@@ -1,25 +1,24 @@
 #!/bin/sh
-#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -l walltime=00:05:00,nodes=1:ppn=8,vmem=32gb
 #PBS -j oe
 
 ##
 ## System config
 ##
-if [[ "`hostname`" == gpu* ]]
+if [[ "$PBS_JOBID" != "" ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
-    cd $ROOT
-    NAME=$PBS_JOBNAME
     : ${ID=$PBS_ARRAYID}
 else
     ROOT=.
-    NAME=simulate
     : ${ID=0}
 fi
+NAME=simulate
 
+cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source $ROOT/config.sh
+source config.sh
 export OMP_NUM_THREADS
 
 if `test "$INIT_FILENAME" != ""`
@@ -38,4 +37,8 @@ fi
 
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/simulate --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME --include-parameters $INCLUDE_PARAMETERS
+build/simulate --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
+    -P $P -K $K -T $T --seed=$SEED --init-file=$INIT_FILE \
+    --force-file=$FORCE_FILE --output-file=$OUTPUT_FILE --init-ns=$INIT_NS \
+    --force-ns=$FORCE_NS --output=$OUTPUT --time=$TIME \
+    --include-parameters $INCLUDE_PARAMETERS

@@ -1,25 +1,24 @@
 #!/bin/sh
-#PBS -l walltime=10:00,nodes=1:ppn=8
+#PBS -l walltime=24:00:00,nodes=1:ppn=8,vmem=32gb
 #PBS -j oe
 
 ##
 ## System config
 ##
-if [[ "`hostname`" == gpu* ]]
+if [[ "$PBS_JOBID" != "" ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
-    cd $ROOT
-    NAME=$PBS_JOBNAME
     : ${ID=$PBS_ARRAYID}
 else
     ROOT=.
-    NAME=kfb
     : ${ID=0}
 fi
+NAME=kfb
+cd $ROOT
 
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source $ROOT/config.sh
+source config.sh
 export OMP_NUM_THREADS
 
 if `test "$INIT_FILENAME" != ""`
@@ -39,7 +38,7 @@ fi
 INPUT_FILE=$RESULTS_DIR/pf${SUFFIX}.nc.$ID
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
-$ROOT/build/kfb --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
+build/kfb --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
     --b-abs=$B_ABS --b-rel=$B_REL --seed=$SEED --init-file=$INIT_FILE \
     --input-file=$INPUT_FILE --force-file=$FORCE_FILE --init-ns=$INIT_NS \
     --force-ns=$FORCE_NS --output-file=$OUTPUT_FILE \

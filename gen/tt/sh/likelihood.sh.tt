@@ -1,76 +1,80 @@
 #!/bin/bash
-#PBS -l walltime=24:00:00,nodes=1:ppn=4,vmem=16gb
+#PBS -l walltime=24:00:00,nodes=1:ppn=8,vmem=32gb
 #PBS -j oe
 
 ##
 ## System config
 ##
-if [[ "`hostname`" == gpu* ]]
+if [[ "$PBS_JOBID" != "" ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
-    cd $ROOT
     LOCAL_DIR=$TMPDIR
-    NAME=$PBS_JOBNAME
-    : ${ID=$PBS_ARRAYID}
+    JOBS=2
+    : ${ID=$[2*$PBS_ARRAYID]}
 else
     ROOT=.
     LOCAL_DIR=/tmp
-    NAME=likelihood
-	: ${ID=0}
+    JOBS=1
+    : ${ID=0}
 fi
+NAME=likelihood
 
+cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source $ROOT/config.sh
+source config.sh
 export OMP_NUM_THREADS
 
-OBS_FILE=$DATA_DIR/$OBS_FILENAME
-OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
-FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
-if `test "$INIT_FILENAME" != ""`
-then
-    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
-    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
-else
-    INIT_FILE=
-fi
-
-if `test "$FORCE_FILENAME" != ""`
-then
-    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
-    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
-else
-    FORCE_FILE=
-fi
-
-if `test "$OBS_FILENAME" != ""`
-then
-    cp $DATA_DIR/$OBS_FILENAME $LOCAL_DIR
-    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
-else
-    OBS_FILE=
-fi
-
-STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
-
-# record
-if [[ "`hostname`" == gpu* ]]
-then
-	cat $ROOT/config.sh
-fi
-
-# run
-$ROOT/build/likelihood --id=$ID -P $P -T $T \
-    --filter=$FILTER --resampler=$RESAMPLER \
-    --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
-    --starting-type=$STARTING_TYPE \
-    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
-    --init-file=$INIT_FILE --force-file=$FORCE_FILE \
-    --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \
-    --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
-    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --starting-file=$STARTING_FILE \
-    --include-initial=$INCLUDE_INITIAL
-
-# copy results from local to network file system
-cp $LOCAL_DIR/$OUTPUT_FILENAME $RESULTS_DIR/.
+##
+## Launch
+##
+for i in `seq 1 $JOBS`
+do
+	OBS_FILE=$DATA_DIR/$OBS_FILENAME
+	OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+	FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
+	
+	if `test "$INIT_FILENAME" != ""`
+	then
+	    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
+	    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
+	else
+	    INIT_FILE=
+	fi
+	
+	if `test "$FORCE_FILENAME" != ""`
+	then
+	    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
+	    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
+	else
+	    FORCE_FILE=
+	fi
+	
+	if `test "$OBS_FILENAME" != ""`
+	then
+	    cp $DATA_DIR/$OBS_FILENAME $LOCAL_DIR
+	    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
+	else
+	    OBS_FILE=
+	fi
+	
+	STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
+	
+	# run
+	build/likelihood --id=$ID -P $P -T $T \
+	    --filter=$FILTER --resampler=$RESAMPLER \
+	    --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
+	    --starting-type=$STARTING_TYPE \
+	    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
+	    --init-file=$INIT_FILE --force-file=$FORCE_FILE \
+	    --obs-file=$OBS_FILE --filter-file=$FILTER_FILE \
+	    --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
+	    --output-file=$LOCAL_DIR/$OUTPUT_FILENAME --starting-file=$STARTING_FILE \
+	    --include-initial=$INCLUDE_INITIAL
+done
+	
+# copy results back from local directory
+wait
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc
+cp $LOCAL_DIR/$OUTPUT_FILENAME.* $ROOT/$RESULTS_DIR/.

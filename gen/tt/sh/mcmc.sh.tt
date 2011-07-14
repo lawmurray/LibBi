@@ -1,77 +1,83 @@
 #!/bin/bash
-#PBS -l walltime=24:00:00,nodes=1:ppn=8,vmem=16gb
+#PBS -l walltime=24:00:00,nodes=1:ppn=8,vmem=32gb
 #PBS -j oe
 
 ##
 ## System config
 ##
-if [[ "`hostname`" == gpu* ]]
+if [[ "$PBS_JOBID" != "" ]]
 then
     source init.sh
     ROOT=$PBS_O_WORKDIR
-    cd $ROOT
     LOCAL_DIR=$TMPDIR
-    NAME=$PBS_JOBNAME
-    : ${ID=$PBS_ARRAYID}
+    JOBS=2
+    : ${ID=$[2*$PBS_ARRAYID]}
 else
     ROOT=.
     LOCAL_DIR=/tmp
-    NAME=mcmc
+    JOBS=1
     : ${ID=0}
 fi
+NAME=mcmc
 
+cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
-source $ROOT/config.sh
+source config.sh
 export OMP_NUM_THREADS
 
-OBS_FILE=$DATA_DIR/$OBS_FILENAME
-OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
-FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
 
-if `test "$INIT_FILENAME" != ""`
-then
-    cp $ROOT/$DATA_DIR/$INIT_FILENAME $LOCAL_DIR
-    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
-else
-    INIT_FILE=
-fi
-
-if `test "$FORCE_FILENAME" != ""`
-then
-    cp $ROOT/$DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
-    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
-else
-    FORCE_FILE=
-fi
-
-if `test "$OBS_FILENAME" != ""`
-then
-    cp $ROOT/$DATA_DIR/$OBS_FILENAME $LOCAL_DIR
-    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
-else
-    OBS_FILE=
-fi
-
-PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
-STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
-
-# record
-if [[ "`hostname`" == gpu* ]]
-then
-	cat $ROOT/config.sh
-fi
-
-# run
-$ROOT/build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
-    --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
-    --filter=$FILTER --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA \
-    -a $A --lambda0=$LAMBDA0 --gamma=$GAMMA --delta=$DELTA \
-    -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
-    --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
-    --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \
-    --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME \
-    --proposal-file=$PROPOSAL_FILE --starting-file=$STARTING_FILE \
-    --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL
+##
+## Launch
+##
+for i in `seq 1 $JOBS`
+do
+	OBS_FILE=$DATA_DIR/$OBS_FILENAME
+	OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
+	FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
+	
+	if `test "$INIT_FILENAME" != ""`
+	then
+	    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
+	    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
+	else
+	    INIT_FILE=
+	fi
+	
+	if `test "$FORCE_FILENAME" != ""`
+	then
+	    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
+	    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
+	else
+	    FORCE_FILE=
+	fi
+	
+	if `test "$OBS_FILENAME" != ""`
+	then
+	    cp $ROOT/$DATA_DIR/$OBS_FILENAME $LOCAL_DIR
+	    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
+	else
+	    OBS_FILE=
+	fi
+	
+	PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}${SUFFIX}.nc.0
+	STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
+	
+	# run
+	build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
+	    --proposal-type=$PROPOSAL_TYPE --starting-type=$STARTING_TYPE \
+	    --filter=$FILTER --resampler=$RESAMPLER --sort=$SORT -C $C --beta=$BETA \
+	    -a $A --lambda0=$LAMBDA0 --gamma=$GAMMA --delta=$DELTA \
+	    -h $H --ess-rel=$ESS_REL --atoler=$ATOLER --rtoler=$RTOLER --seed=$SEED \
+	    --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
+	    --filter-file=$FILTER_FILE --init-ns=$INIT_NS --force-ns=$FORCE_NS \
+	    --obs-ns=$OBS_NS --output-file=$LOCAL_DIR/$OUTPUT_FILENAME \
+	    --proposal-file=$PROPOSAL_FILE --starting-file=$STARTING_FILE \
+	    --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL &
+	
+	ID=$[$ID + 1]
+done
 
 # copy results back from local directory
-cp $LOCAL_DIR/$OUTPUT_FILENAME $ROOT/$RESULTS_DIR/.
+wait
+OUTPUT_FILENAME=${NAME}${SUFFIX}.nc
+cp $LOCAL_DIR/$OUTPUT_FILENAME.* $ROOT/$RESULTS_DIR/.
