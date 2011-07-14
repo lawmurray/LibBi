@@ -407,8 +407,8 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta
   this->normalise(lw2s);
   if (this->oyUpdater.hasNext()) {
     const real to = this->oyUpdater.getNextTime();
-    if (resam != NULL && to >= this->state.t) {
-      lw1s = lw2s;
+    lw1s = lw2s;
+    if (resam != NULL && to > this->state.t) {
       this->lookahead(theta, s, lw1s);
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(lw1s, lw2s, as, theta, s);
@@ -437,8 +437,8 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta
   this->normalise(lw2s);
   if (this->oyUpdater.hasNext()) {
     const real to = this->oyUpdater.getNextTime();
-    if (resam != NULL && to >= this->state.t) {
-      lw1s = lw2s;
+    lw1s = lw2s;
+    if (resam != NULL && to > this->state.t) {
       this->lookahead(theta, s, lw1s);
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(a, lw1s, lw2s, as, theta, s);
@@ -490,8 +490,10 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
   const int P = s.size();
 
   if (this->oyUpdater.hasNext()) {
-    temp_matrix_type X(P, ND + NC + NR);
     const real to = this->oyUpdater.getNextTime();
+    temp_matrix_type X(P, ND + NC + NR);
+    real delta = this->sim.getDelta();
+    int nupdates = lt_steps(to, delta) - lt_steps(this->state.t, delta);
 
     /* store current state */
     columns(X, 0, ND) = s.get(D_NODE);
@@ -501,7 +503,7 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
 
     /* auxiliary simulation forward */
     s.get(R_NODE).clear(); // deterministic lookahead
-    this->rUpdater.skipNext();
+    this->rUpdater.skipNext(nupdates);
     this->predict(to, theta, s);
     this->correct(s, lw1s);
 

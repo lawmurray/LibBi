@@ -104,7 +104,12 @@ public:
   /**
    * Get the current time.
    */
-  real getTime();
+  real getTime() const;
+
+  /**
+   * Get time step.
+   */
+  real getDelta() const;
 
   /**
    * Set the current time.
@@ -380,8 +385,13 @@ inline const typename bi::Simulator<B,U1,IO1,IO2,CL,SH>::cache_type& bi::Simulat
 }
 
 template<class B, class U1, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
-inline real bi::Simulator<B,U1,IO1,IO2,CL,SH>::getTime() {
+inline real bi::Simulator<B,U1,IO1,IO2,CL,SH>::getTime() const {
   return state.t;
+}
+
+template<class B, class U1, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>
+inline real bi::Simulator<B,U1,IO1,IO2,CL,SH>::getDelta() const {
+  return delta;
 }
 
 template<class B, class U1, class IO1, class IO2, bi::Location CL, bi::StaticHandling SH>

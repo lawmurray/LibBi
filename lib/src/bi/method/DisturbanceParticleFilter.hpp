@@ -451,9 +451,6 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     *this->mu[k2] = rcorrected.mean();
     *this->U[k2] = rcorrected.std();
     this->detU[k2] = sqrt(rcorrected.det());
-    //this->mu[k2]->clear();
-    //ident(*this->U[k2]);
-    //this->detU[k2] = 1.0;
 
     ++k2;
     #pragma omp flush(k2)

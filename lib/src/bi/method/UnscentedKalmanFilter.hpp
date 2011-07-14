@@ -500,11 +500,6 @@ protected:
   B& m;
 
   /**
-   * Time step.
-   */
-  real delta;
-
-  /**
    * Total r-node updates required across next interval.
    */
   int nupdates;
@@ -647,7 +642,6 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::UnscentedKalmanFilter(B& m,
     const real delta, IO1* in, IO2* obs, IO3* out) :
     m(m),
-    delta(delta),
     N1(0),
     N2(0),
     W(0),
@@ -862,6 +856,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::parameters(
     const real tj, const bool fixed) {
   /* number of random variate updates required during time interval */
+  real delta = sim.getDelta();
   nextra = std::max(0, lt_steps(tj, delta) - le_steps(state.t, delta));
   nupdates = lt_steps(tj, delta) - lt_steps(state.t, delta);
 
@@ -998,7 +993,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
   }
   int n = 0;
   while (state.t < tj) {
-    sim.advance(std::min(gt_step(state.t, delta), tj), s);
+    sim.advance(std::min(gt_step(state.t, sim.getDelta()), tj), s);
     state.t = sim.getTime();
 
     if (n < nextra) {

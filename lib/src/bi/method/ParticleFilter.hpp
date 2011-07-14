@@ -359,12 +359,12 @@ protected:
   /**
    * R-net updater.
    */
-  RUpdater<B> rUpdater;
+  RUpdater<B,CL> rUpdater;
 
   /**
    * Simulator.
    */
-  Simulator<B,RUpdater<B>,IO1,IO3,CL,SH> sim;
+  Simulator<B,RUpdater<B,CL>,IO1,IO3,CL,SH> sim;
 
   /**
    * Likelihood calculator.
