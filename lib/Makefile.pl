@@ -17,7 +17,7 @@ $ICC = 'icpc';
 $CUDACC = 'nvcc';
 
 # Common compile flags
-$CPPINCLUDES = '-Isrc -I/tools/cuda/4.0/cuda/include/ -I/usr/local/cuda/include -I/usr/local/include/thrust -I/tools/magma/1.0.0rc5/cuda4.0/include -I/usr/local/atlas/include';
+$CPPINCLUDES = '-Isrc -I/tools/cuda/4.0/cuda/include/ -I/usr/local/cuda/include -I/tools/magma/1.0.0rc5/cuda4.0/include -I/usr/local/atlas/include';
 $CXXFLAGS = "-Wall -fPIC `nc-config --cflags` $CPPINCLUDES";
 $CUDACCFLAGS = "-arch sm_13 -Xptxas=\"-v\" -Xcompiler=\"-Wall -fPIC -fopenmp\" $CPPINCLUDES";
 $LINKFLAGS = '';

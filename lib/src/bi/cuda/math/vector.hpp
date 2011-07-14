@@ -99,7 +99,7 @@ public:
    * size and same increment, false otherwise.
    */
   template<class V1>
-  CUDA_FUNC_BOTH bool same(const V1& o) const;
+  bool same(const V1& o) const;
 
 public:
   /**
