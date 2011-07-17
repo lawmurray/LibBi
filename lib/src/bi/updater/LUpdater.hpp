@@ -67,7 +67,8 @@ void bi::LUpdater<B,SH>::update(State<ON_HOST>& s, const SparseMask<ON_HOST>& ma
       real y, l = 0.0;
 
       BOOST_AUTO(iter1, mask.getDenseMask().begin());
-      while (iter1 != mask.getDenseMask().end()) {
+      BOOST_AUTO(end1, mask.getDenseMask().end());
+      while (iter1 != end1) {
         for (i = 0; i < (*iter1)->size(); ++i, ++j) {
           (*iter1)->coord(i, id, cox);
           y = hostOYState(0, j);
@@ -83,7 +84,8 @@ void bi::LUpdater<B,SH>::update(State<ON_HOST>& s, const SparseMask<ON_HOST>& ma
       }
 
       BOOST_AUTO(iter2, mask.getSparseMask().begin());
-      while (iter2 != mask.getSparseMask().end()) {
+      BOOST_AUTO(end2, mask.getSparseMask().end());
+      while (iter2 != end2) {
         for (i = 0; i < (*iter2)->size(); ++i, ++j) {
           (*iter2)->coord(i, id, cox);
           y = hostOYState(0, j);

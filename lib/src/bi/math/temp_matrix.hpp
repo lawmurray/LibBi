@@ -28,7 +28,7 @@ struct host_matrix_map_type {
   /**
    * Allocator type.
    */
-  typedef pinned_allocator<typename M1::value_type> allocator_type;
+  typedef pooled_allocator<pinned_allocator<typename M1::value_type> > allocator_type;
 
   /**
    * Equivalent host type.
@@ -89,7 +89,7 @@ struct host_matrix_temp_type {
   /**
    * Allocator type.
    */
-  typedef pinned_allocator<T1> allocator_type;
+  typedef pooled_allocator<pinned_allocator<T1> > allocator_type;
 
   /**
    * Temp type.

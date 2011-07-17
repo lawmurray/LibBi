@@ -122,7 +122,8 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
 
         /* dense mask blocks */
         BOOST_AUTO(iter1, mask.getDenseMask().begin());
-        while (iter1 != mask.getDenseMask().end()) {
+        BOOST_AUTO(end1, mask.getDenseMask().end());
+        while (iter1 != end1) {
           BOOST_AUTO(ids, (*iter1)->getIds());
           size = (*iter1)->size()/ids.size();
           for (i = 0; i < ids.size(); ++i) {
@@ -135,7 +136,8 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
 
         /* sparse mask blocks */
         BOOST_AUTO(iter2, mask.getSparseMask().begin());
-        while (iter2 != mask.getSparseMask().end()) {
+        BOOST_AUTO(end2, mask.getSparseMask().end());
+        while (iter2 != end2) {
           BOOST_AUTO(ids, (*iter2)->getIds());
           size = (*iter2)->size()/ids.size();
           for (i = 0; i < ids.size(); ++i) {

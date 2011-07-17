@@ -1044,8 +1044,9 @@ void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX, const V3 muY,
 
 template<class V2, class V3>
 inline void bi::exp_vector(V2 x, const V3& is) {
-  typename V3::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(elem, subrange(x, *iter, 1));
     element_exp(elem.begin(), elem.end(), elem.begin());
   }
@@ -1053,8 +1054,9 @@ inline void bi::exp_vector(V2 x, const V3& is) {
 
 template<class M2, class V2>
 inline void bi::exp_columns(M2 X, const V2& is) {
-  typename V2::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(col, column(X, *iter));
     element_exp(col.fast_begin(), col.fast_end(), col.fast_begin());
   }
@@ -1062,8 +1064,9 @@ inline void bi::exp_columns(M2 X, const V2& is) {
 
 template<class M2, class V2>
 inline void bi::exp_rows(M2 X, const V2& is) {
-  typename V2::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(row1, row(X, *iter));
     element_exp(row1.begin(), row1.end(), row1.begin());
   }
@@ -1071,8 +1074,9 @@ inline void bi::exp_rows(M2 X, const V2& is) {
 
 template<class V2, class V3>
 inline void bi::log_vector(V2 x, const V3& is) {
-  typename V3::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(elem, subrange(x, *iter, 1));
     element_log(elem.begin(), elem.end(), elem.begin());
   }
@@ -1080,8 +1084,9 @@ inline void bi::log_vector(V2 x, const V3& is) {
 
 template<class M2, class V2>
 inline void bi::log_columns(M2 X, const V2& is) {
-  typename V2::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(col, column(X, *iter));
     element_log(col.fast_begin(), col.fast_end(), col.fast_begin());
   }
@@ -1089,8 +1094,9 @@ inline void bi::log_columns(M2 X, const V2& is) {
 
 template<class M2, class V2>
 inline void bi::log_rows(M2 X, const V2& is) {
-  typename V2::const_iterator iter;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
+  for (; iter != end; ++iter) {
     BOOST_AUTO(row1, row(X, *iter));
     element_log(row1.begin(), row1.end(), row1.begin());
   }
@@ -1098,9 +1104,10 @@ inline void bi::log_rows(M2 X, const V2& is) {
 
 template<class V2, class V3>
 inline real bi::det_vector(const V2 x, const V3& is) {
-  typename V3::const_iterator iter;
+  BOOST_AUTO(iter, is.begin());
+  BOOST_AUTO(end, is.end());
   real det = 1.0;
-  for (iter = is.begin(); iter != is.end(); ++iter) {
+  for (; iter != end; ++iter) {
     det *= *(x.begin() + *iter);
   }
   return det;

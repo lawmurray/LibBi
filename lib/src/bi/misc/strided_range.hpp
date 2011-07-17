@@ -40,7 +40,9 @@ struct strided_range {
   }
 
   iterator end() const {
-    return begin() + (thrust::distance(first, last) + (stride - 1)) / stride;
+    difference_type len = (thrust::distance(first, last) + stride - 1)/stride;
+
+    return iterator(first, strided_sequence<difference_type>(len, stride).begin());
   }
 
 private:
