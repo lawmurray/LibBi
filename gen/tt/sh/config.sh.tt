@@ -46,7 +46,7 @@
 ## Particle filter settings
 ##
 
-: ${FILTER=bootstrap}      # filter method: bootstrap or auxiliary
+: ${FILTER=pf}             # filter method: pf, mupf, cupf, apf, amupf, acupf
 : ${RESAMPLER=stratified}  # resampling method
 : ${ESS_REL=1.0}           # minimum relative ESS to trigger resampling
 : ${SORT=1}                # sort weights before resampling

@@ -18,7 +18,8 @@
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
-#include "bi/method/DisturbanceParticleFilter.hpp"
+#include "bi/method/ConditionalUnscentedParticleFilter.hpp"
+#include "bi/method/MarginalUnscentedParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
@@ -276,7 +277,7 @@ int main(int argc, char* argv[]) {
   } while (!(p0(x) > 0.0));
   
   /* sample */
-  if (FILTER.compare("auxiliary") == 0) {
+  if (FILTER.compare("apf") == 0) {
     /* with auxiliary particle filter */
     AuxiliaryParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
         NetCDFBuffer::REPLACE);
@@ -304,11 +305,39 @@ int main(int argc, char* argv[]) {
     mcmc->term(theta);
     
     delete filter;
-  } else if (FILTER.compare("disturbance") == 0) {
-      /* with disturbance particle filter */
+  } else if (FILTER.compare("mupf") == 0) {
+      /* with marginal unscented particle filter */
       ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
           NetCDFBuffer::REPLACE);
-      BOOST_AUTO(filter, DisturbanceParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+      BOOST_AUTO(filter, MarginalUnscentedParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
+          inForce, &inObs, &outFilter));
+
+      mcmc->init(x, T, theta, s, filter, &resam);
+      mcmc->output0(filter);
+      for (c = 0; c < C; ++c) {
+        if ((c % M) == 0) {
+          attempts = 0;
+          do {
+            BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
+            sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
+            ++attempts;
+          } while (!(p0(x) > 0.0));
+        }
+        mcmc->proposal(x);
+        mcmc->prior();
+        mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
+        mcmc->accept(filter);
+        mcmc->output(c);
+        mcmc->report(c);
+      }
+      mcmc->term(theta);
+      
+      delete filter;
+  } else if (FILTER.compare("cupf") == 0) {
+      /* with conditional unscented particle filter */
+      ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
+          NetCDFBuffer::REPLACE);
+      BOOST_AUTO(filter, ConditionalUnscentedParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
           inForce, &inObs, &outFilter));
 
       mcmc->init(x, T, theta, s, filter, &resam);
