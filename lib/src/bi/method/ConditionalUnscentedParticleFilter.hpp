@@ -337,14 +337,22 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     {
       int offset, p;
 
-      /* observation means, covariances */
+      /* observation means */
+      #pragma omp for
+      for (p = 0; p < P1; ++p) {
+        BOOST_AUTO(Y, subrange(X2, p*P2, P2, N2 - W, W));
+        BOOST_AUTO(mu, column(muY, p));
+
+        gemv(1.0, Y, Wm, 0.0, mu, 'T');
+      }
+
+      /* observation covariances */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         BOOST_AUTO(Y, subrange(X2, p*P2, P2, N2 - W, W));
         BOOST_AUTO(mu, column(muY, p));
         BOOST_AUTO(Sigma, columns(SigmaY, p*W, W));
 
-        gemv(1.0, Y, Wm, 0.0, mu, 'T');
         sub_rows(Y, mu);
         syrk(Wi, rows(Y, 1, 2*N1), 0.0, Sigma, 'U', 'T');
         syr(Wc0, row(Y, 0), Sigma, 'U');
