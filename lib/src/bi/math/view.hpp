@@ -177,6 +177,26 @@ typename vector_as_matrix_type<V1>::type vector_as_column_matrix(V1 x);
 template<class V1>
 typename vector_as_matrix_type<V1>::type vector_as_row_matrix(V1 x);
 
+/**
+ * Reshape matrix.
+ *
+ * @ingroup math_view
+ *
+ * @tparam M1 Matrix type.
+ *
+ * @param X Matrix.
+ * @param rows New number of rows.
+ * @param cols New number of columns.
+ *
+ * @return View of matrix of the new shape.
+ *
+ * Note that <tt>X.lead()</tt> must equal <tt>X.size1()</tt> and
+ * <tt>rows*cols</tt> must equal <tt>X.size1()*X.size2()</tt>.
+ */
+template<class M1>
+typename M1::matrix_reference_type reshape(M1 X, const int rows,
+    const int cols);
+
 }
 
 #include "../misc/assert.hpp"
@@ -268,6 +288,16 @@ typename bi::vector_as_matrix_type<V1>::type bi::vector_as_column_matrix(V1 x) {
 template<class V1>
 typename bi::vector_as_matrix_type<V1>::type bi::vector_as_row_matrix(V1 x) {
   return typename bi::vector_as_matrix_type<V1>::type(x.buf(), 1, x.size(), x.inc());
+}
+
+template<class M1>
+typename M1::matrix_reference_type bi::reshape(M1 X, const int rows,
+    const int cols) {
+  /* pre-condition */
+  assert (X.lead() == X.size1());
+  assert (rows*cols == X.size1()*X.size2());
+
+  return typename M1::matrix_reference_type(X.buf(), rows, cols);
 }
 
 #endif

@@ -74,6 +74,26 @@ void chol(const M1 A, M2 L, char uplo = 'L',
     const CholeskyStrategy = ADJUST_DIAGONAL) throw (Exception);
 
 /**
+ * Rank-1 update of upper triangular Cholesky factor.
+ *
+ * @ingroup math_op
+ *
+ * @see dch1up, sch1up of qrupdate.
+ */
+template<class M1, class V1, class V2>
+void ch1up(M1 U, V1 a, V2 b);
+
+/**
+ * Rank-1 downdate of upper triangular Cholesky factor.
+ *
+ * @ingroup math_op
+ *
+ * @see dch1dn, sch1dn of qrupdate.
+ */
+template<class M1, class V1, class V2>
+void ch1dn(M1 U, V1 a, V2 b) throw (Exception);
+
+/**
  * Set the columns of a matrix.
  *
  * @ingroup math_op
@@ -393,6 +413,15 @@ void potrs(const M1 L, M2 X, char uplo = 'L');
  *
  * @ingroup math_op
  */
+template<class M1, class V1>
+void trsv(const M1 A, V1 x, const char uplo = 'L',
+    const char trans = 'N', const char diag = 'N');
+
+/**
+ * Triangular linear system solve.
+ *
+ * @ingroup math_op
+ */
 template<class T1, class M1, class M2>
 void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
     const char uplo = 'L', const char trans = 'N', const char diag = 'N');
@@ -403,6 +432,7 @@ void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
 #include "view.hpp"
 #include "cblas.hpp"
 #include "clapack.hpp"
+#include "qrupdate.hpp"
 #include "temp_vector.hpp"
 #include "temp_matrix.hpp"
 #include "primitive.hpp"
@@ -414,6 +444,8 @@ void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
 #include "../typelist/equals.hpp"
 #include "../misc/repeated_range.hpp"
 #include "../misc/stuttered_range.hpp"
+
+#include "thrust/iterator/discard_iterator.h"
 
 template<class M1>
 inline void bi::ident(M1 A) {
@@ -430,6 +462,110 @@ inline void bi::transpose(const M1 A, M2 B) {
   int i;
   for (i = 0; i < A.size1(); ++i) {
     column(B.ref(),i) = row(A.ref(),i);
+  }
+}
+
+template<class M1, class M2>
+void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
+    throw (Exception) {
+  typedef typename M1::value_type T1;
+  typedef typename M2::value_type T2;
+
+  /* pre-conditions */
+  assert (uplo == 'U' || uplo == 'L');
+  assert (A.size1() == L.size1());
+  assert (A.size2() == L.size2());
+  assert (L.size1() == L.size2());
+
+  int info;
+  typename M2::size_type N = A.size1();
+  typename M2::size_type ld = L.lead();
+
+  L = A;
+  if (M2::on_device) {
+    magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
+    synchronize();
+  } else {
+    if (!M2::on_device && M1::on_device) {
+      synchronize();
+    }
+    info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
+        L.buf(), ld);
+  }
+  if (info != 0 && (strat == ADJUST_DIAGONAL)) {
+    BOOST_AUTO(d, diagonal(L));
+    BOOST_AUTO(eps, temp_vector<M2>(d.size()));
+    bi::fill(eps->begin(), eps->end(), static_cast<T2>(1.0));
+
+    real smallest = *amin(d.begin(), d.end());
+    real largest = *amax(d.begin(), d.end());
+    real factor = pow(2.0, -std::numeric_limits<real>::digits);
+    if (smallest > 0.0) {
+      factor *= smallest;
+    }
+
+    while (info != 0 && factor < largest) {
+      L = A;
+      axpy(factor, *eps, d);
+      if (M2::on_device) {
+        magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
+        synchronize();
+      } else {
+        info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
+            L.buf(), ld);
+      }
+      factor *= 2.0;
+    }
+    delete eps;
+  }
+  if (info != 0) {
+    //BI_WARN(false, "Cholesky failed with info " << info);
+    throw CHOLESKY_FAILED;
+  }
+}
+
+template<class M1, class V1, class V2>
+void bi::ch1up(M1 U, V1 a, V2 b) {
+  typedef typename M1::value_type T1;
+  typedef typename V1::value_type T2;
+  typedef typename V2::value_type T3;
+
+  /* pre-condition */
+  assert (U.size1() == U.size2());
+  assert (U.size1() == a.size());
+  assert (U.size1() == b.size());
+  assert ((equals<T1,T2>::value));
+  assert ((equals<T2,T3>::value));
+  BI_ASSERT(!M1::on_device && !V1::on_device && !V2::on_device,
+      "Cholesky update supported only for host inputs");
+
+  int n = a.size();
+  int ld = U.lead();
+  qrupdate_ch1up<T1>::func(&n, U.buf(), &ld, a.buf(), b.buf());
+}
+
+template<class M1, class V1, class V2>
+void bi::ch1dn(M1 U, V1 a, V2 b) throw (Exception) {
+  typedef typename M1::value_type T1;
+  typedef typename V1::value_type T2;
+  typedef typename V2::value_type T3;
+
+  /* pre-condition */
+  assert (U.size1() == U.size2());
+  assert (U.size1() == a.size());
+  assert (U.size1() == b.size());
+  assert ((equals<T1,T2>::value));
+  assert ((equals<T2,T3>::value));
+  BI_ASSERT(!M1::on_device && !V1::on_device && !V2::on_device,
+      "Cholesky downdate supported only for host inputs");
+
+  int n = a.size();
+  int ld = U.lead();
+  int info;
+  qrupdate_ch1dn<T1>::func(&n, U.buf(), &ld, a.buf(), b.buf(), &info);
+  if (info != 0) {
+    //BI_WARN(false, "Cholesky downdate failed with info " << info);
+    throw CHOLESKY_FAILED;
   }
 }
 
@@ -717,15 +853,12 @@ void bi::dot_columns(const M1 X, V1 y) {
 
   typedef typename M1::value_type T1;
 
-  BOOST_AUTO(tmp, temp_vector<V1>(X.size2())); // must output keys, although not needed
+  BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size2(), X.size1()));
   BOOST_AUTO(transform, make_transform_iterator(X.begin(), square_functor<T1>()));
 
-  reduce_by_key(keys.begin(), keys.end(), transform, tmp->begin(), y.begin());
-
-  synchronize();
-  delete tmp;
+  reduce_by_key(keys.begin(), keys.end(), transform, discard, y.begin());
 }
 
 template<class M1, class V1>
@@ -737,15 +870,12 @@ void bi::dot_rows(const M1 X, V1 y) {
 
   typedef typename M1::value_type T1;
 
-  BOOST_AUTO(tmp, temp_vector<V1>(X.size1())); // must output keys, although not needed
+  BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size1(), X.size2()));
   BOOST_AUTO(transform, make_transform_iterator(X.row_begin(), square_functor<T1>()));
 
-  reduce_by_key(keys.begin(), keys.end(), transform, tmp->begin(), y.begin());
-
-  synchronize();
-  delete tmp;
+  reduce_by_key(keys.begin(), keys.end(), transform, discard, y.begin());
 }
 
 template<class M1, class V1>
@@ -757,14 +887,11 @@ void bi::sum_columns(const M1 X, V1 y) {
 
   typedef typename M1::value_type T1;
 
-  BOOST_AUTO(tmp, temp_vector<V1>(X.size1())); // must output keys, although not needed
+  BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size1(), X.size2()));
 
-  reduce_by_key(keys.begin(), keys.end(), X.row_begin(), tmp->begin(), y.begin());
-
-  synchronize();
-  delete tmp;
+  reduce_by_key(keys.begin(), keys.end(), X.row_begin(), discard, y.begin());
 }
 
 template<class M1, class V1>
@@ -776,14 +903,11 @@ void bi::sum_rows(const M1 X, V1 y) {
 
   typedef typename M1::value_type T1;
 
-  BOOST_AUTO(tmp, temp_vector<V1>(X.size2())); // must output keys, although not needed
+  BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size2(), X.size1()));
 
-  reduce_by_key(keys.begin(), keys.end(), X.begin(), tmp->begin(), y.begin());
-
-  synchronize();
-  delete tmp;
+  reduce_by_key(keys.begin(), keys.end(), X.begin(), discard, y.begin());
 }
 
 template<class T1, class M1, class M2>
@@ -1189,65 +1313,6 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
 }
 
 template<class M1, class M2>
-void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
-    throw (Exception) {
-  typedef typename M1::value_type T1;
-  typedef typename M2::value_type T2;
-
-  /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (A.size1() == L.size1());
-  assert (A.size2() == L.size2());
-  assert (L.size1() == L.size2());
-
-  int info;
-  typename M2::size_type N = A.size1();
-  typename M2::size_type ld = L.lead();
-
-  L = A;
-  if (M2::on_device) {
-    magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
-    synchronize();
-  } else {
-    if (!M2::on_device && M1::on_device) {
-      synchronize();
-    }
-    info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
-        L.buf(), ld);
-  }
-  if (info != 0 && (strat == ADJUST_DIAGONAL)) {
-    BOOST_AUTO(d, diagonal(L));
-    BOOST_AUTO(eps, temp_vector<M2>(d.size()));
-    bi::fill(eps->begin(), eps->end(), static_cast<T2>(1.0));
-
-    real smallest = *amin(d.begin(), d.end());
-    real largest = *amax(d.begin(), d.end());
-    real factor = pow(2.0, -std::numeric_limits<real>::digits);
-    if (smallest > 0.0) {
-      factor *= smallest;
-    }
-
-    while (info != 0 && factor < largest) {
-      L = A;
-      axpy(factor, *eps, d);
-      if (M2::on_device) {
-        magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
-        synchronize();
-      } else {
-        info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
-            L.buf(), ld);
-      }
-      factor *= 2.0;
-    }
-    delete eps;
-  }
-  if (info != 0) {
-    BI_WARN(false, "Cholesky failed with info " << info);
-    throw CHOLESKY_FAILED;
-  }
-}
-
-template<class M1, class M2>
 void bi::potrs(const M1 L, M2 X, char uplo) {
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -1274,6 +1339,38 @@ void bi::potrs(const M1 L, M2 X, char uplo) {
     delete L1;
   }
   BI_ASSERT(info == 0, "Solve failed with info " << info);
+}
+
+template<class M1, class V1>
+void bi::trsv(const M1 A, V1 x, const char uplo, const char trans,
+    const char diag) {
+  typedef typename M1::value_type T1;
+  typedef typename V1::value_type T2;
+
+  /* pre-conditions */
+  assert (uplo == 'U' || uplo == 'L');
+  assert (trans == 'N' || trans == 'T');
+  assert (diag == 'U' || diag == 'N');
+  assert (!(trans == 'T')  || A.size1() == x.size());
+  assert (!(trans == 'N')  || A.size2() == x.size());
+  assert ((equals<T1,T2>::value));
+
+  if (V1::on_device) {
+    BOOST_AUTO(A1, gpu_map_matrix(A));
+    cublas_trsv<T1>::func(uplo, trans, diag, x.size(), A1->buf(), A1->lead(),
+        x.buf(), x.inc());
+    synchronize();
+    CUBLAS_CHECK;
+    delete A1;
+  } else {
+    BOOST_AUTO(A1, host_map_matrix(A));
+    if (M1::on_device) {
+      synchronize();
+    }
+    cblas_trsv<T1>::func(CblasColMajor, cblas_uplo(uplo), cblas_trans(trans),
+        cblas_diag(diag), x.size(), A1->buf(), A1->lead(), x.buf(), x.inc());
+    delete A1;
+  }
 }
 
 template<class T1, class M1, class M2>

@@ -105,43 +105,46 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedORUpdateVisitor<B,S,V1> Visitor;
 
-  int i, size, start = 1 + N1 - W;
+  const int P = 2*N1 + 1;
+  int i, p, size, start = 1 + N1 - W;
 
   if (W > 0) {
-    BOOST_AUTO(d1, diagonal(rows(s.get(OR_NODE), start, W)));
-    BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), start + N1, W)));
     s.get(OR_NODE).clear();
+    for (p = 0; p < s.size(); p += P) {
+      BOOST_AUTO(d1, diagonal(rows(s.get(OR_NODE), p + start, W)));
+      BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), p + start + N1, W)));
 
-    if (all_gaussian_likelihoods<S>::value || all_log_normal_likelihoods<S>::value) {
-      bi::fill(d1.begin(), d1.end(), a);
-      bi::fill(d2.begin(), d2.end(), -a);
-    } else {
-      start = 0;
+      if (all_gaussian_likelihoods<S>::value || all_log_normal_likelihoods<S>::value) {
+        bi::fill(d1.begin(), d1.end(), a);
+        bi::fill(d2.begin(), d2.end(), -a);
+      } else {
+        start = 0;
 
-      /* dense mask blocks */
-      BOOST_AUTO(iter1, mask.getDenseMask().begin());
-      while (iter1 != mask.getDenseMask().end()) {
-        BOOST_AUTO(ids, (*iter1)->getIds());
-        size = (*iter1)->size()/ids.size();
-        for (i = 0; i < ids.size(); ++i) {
-          Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
-              subrange(d2, start, size));
-          start += size;
+        /* dense mask blocks */
+        BOOST_AUTO(iter1, mask.getDenseMask().begin());
+        while (iter1 != mask.getDenseMask().end()) {
+          BOOST_AUTO(ids, (*iter1)->getIds());
+          size = (*iter1)->size()/ids.size();
+          for (i = 0; i < ids.size(); ++i) {
+            Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
+                subrange(d2, start, size));
+            start += size;
+          }
+          ++iter1;
         }
-        ++iter1;
-      }
 
-      /* sparse mask blocks */
-      BOOST_AUTO(iter2, mask.getSparseMask().begin());
-      while (iter2 != mask.getSparseMask().end()) {
-        BOOST_AUTO(ids, (*iter2)->getIds());
-        size = (*iter2)->size()/ids.size();
-        for (i = 0; i < ids.size(); ++i) {
-          Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
-              subrange(d2, start, size));
-          start += size;
+        /* sparse mask blocks */
+        BOOST_AUTO(iter2, mask.getSparseMask().begin());
+        while (iter2 != mask.getSparseMask().end()) {
+          BOOST_AUTO(ids, (*iter2)->getIds());
+          size = (*iter2)->size()/ids.size();
+          for (i = 0; i < ids.size(); ++i) {
+            Visitor::accept(*(ids.begin() + i), a, subrange(d1, start, size),
+                subrange(d2, start, size));
+            start += size;
+          }
+          ++iter2;
         }
-        ++iter2;
       }
     }
   }

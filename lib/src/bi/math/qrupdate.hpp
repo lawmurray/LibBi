@@ -12,10 +12,10 @@
 #define BI_MATH_QRUPDATE_HPP
 
 extern "C" {
-  void sch1up_(int& n, float* R, int& ldr, float* u, float* w);
-  void dch1up_(int& n, double* R, int& ldr, double* u, double* w);
-  void sch1dn_(int& n, float* R, int& ldr, float* u, float* w, int& info);
-  void dch1dn_(int& n, double* R, int& ldr, double* u, double* w, int& info);
+  void sch1up_(int* n, float* R, int& ldr, float* u, float* w);
+  void dch1up_(int* n, double* R, int& ldr, double* u, double* w);
+  void sch1dn_(int* n, float* R, int* ldr, float* u, float* w, int* info);
+  void dch1dn_(int* n, double* R, int* ldr, double* u, double* w, int* info);
 }
 
 #include "boost/typeof/typeof.hpp"

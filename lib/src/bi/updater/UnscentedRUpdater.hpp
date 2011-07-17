@@ -112,15 +112,17 @@ template<class B, bi::StaticHandling SH>
 template<bi::Location L>
 void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
     State<L>& s) {
-  /* pre-condition */
+  /* pre-conditions */
   BI_ASSERT(this->nsteps > 0, "Updates for random variates of " <<
       "unscented transformation have been exhausted");
+  assert (s.size() % (2*N1 + 1) == 0);
 
   typedef typename B::RTypeList S;
   typedef typename State<L>::vector_reference_type V1;
   typedef UnscentedRUpdateVisitor<B,S,V1> Visitor;
 
-  int start;
+  const int P = 2*N1 + 1;
+  int start, p;
 
   if (nsteps == 1) {
     /* last step uses primary block */
@@ -130,26 +132,28 @@ void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
     start = 1 + N1 - W - (nsteps - 1)*NR;
   }
 
-  BOOST_AUTO(d1, diagonal(rows(s.get(R_NODE), start, NR)));
-  BOOST_AUTO(d2, diagonal(rows(s.get(R_NODE), start + N1, NR)));
   s.get(R_NODE).clear();
+  for (p = 0; p < s.size(); p += P) {
+    BOOST_AUTO(d1, diagonal(rows(s.get(R_NODE), p + start, NR)));
+    BOOST_AUTO(d2, diagonal(rows(s.get(R_NODE), p + start + N1, NR)));
 
-  if (all_gaussian_variates<S>::value) {
-    bi::fill(d1.begin(), d1.end(), a);
-    bi::fill(d2.begin(), d2.end(), -a);
-  } else if (all_uniform_variates<S>::value) {
-    bi::fill(d1.begin(), d1.end(), a*std::sqrt(1.0/12.0));
-    bi::fill(d2.begin(), d2.end(), -a*std::sqrt(1.0/12.0));
-  } else if (all_wiener_increments<S>::value) {
-    if (tnxt - t > 0.0) {
-      bi::fill(d1.begin(), d1.end(), a*std::sqrt(tnxt - t));
-      bi::fill(d2.begin(), d2.end(), -a*std::sqrt(tnxt - t));
+    if (all_gaussian_variates<S>::value) {
+      bi::fill(d1.begin(), d1.end(), a);
+      bi::fill(d2.begin(), d2.end(), -a);
+    } else if (all_uniform_variates<S>::value) {
+      bi::fill(d1.begin(), d1.end(), a*std::sqrt(1.0/12.0));
+      bi::fill(d2.begin(), d2.end(), -a*std::sqrt(1.0/12.0));
+    } else if (all_wiener_increments<S>::value) {
+      if (tnxt - t > 0.0) {
+        bi::fill(d1.begin(), d1.end(), a*std::sqrt(tnxt - t));
+        bi::fill(d2.begin(), d2.end(), -a*std::sqrt(tnxt - t));
+      } else {
+        d1.clear();
+        d2.clear();
+      }
     } else {
-      d1.clear();
-      d2.clear();
+      Visitor::accept(t, tnxt, a, d1, d2);
     }
-  } else {
-    Visitor::accept(t, tnxt, a, d1, d2);
   }
   --nsteps;
 }

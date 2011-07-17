@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_DISTURBANCEPARTICLEFILTER_HPP
-#define BI_METHOD_DISTURBANCEPARTICLEFILTER_HPP
+#ifndef BI_METHOD_MarginalUnscentedParticleFilter_HPP
+#define BI_METHOD_MarginalUnscentedParticleFilter_HPP
 
 #include "ParticleFilter.hpp"
 #include "UnscentedKalmanFilter.hpp"
@@ -30,7 +30,7 @@ namespace bi {
  */
 template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
     StaticHandling SH = STATIC_SHARED>
-class DisturbanceParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL,SH>,
+class MarginalUnscentedParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL,SH>,
     private UnscentedKalmanFilter<B,IO1,IO2,IO3,ON_HOST,SH> {
 public:
   /**
@@ -53,13 +53,13 @@ public:
    * @param obs Observations.
    * @param out Output.
    */
-  DisturbanceParticleFilter(B& m, Random& rng, const real delta = 1.0,
+  MarginalUnscentedParticleFilter(B& m, Random& rng, const real delta = 1.0,
       IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL);
 
   /**
    * Destructor.
    */
-  ~DisturbanceParticleFilter();
+  ~MarginalUnscentedParticleFilter();
 
   /**
    * @name High-level interface.
@@ -106,8 +106,6 @@ public:
    * distributions for particle filter.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
    *
    * @param T Time to which to predict.
    * @param[out] theta Static state for unscented Kalman filter.
@@ -126,8 +124,6 @@ public:
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
-   * @tparam V2 Vector type.
    *
    * @param T Time to which to predict.
    * @param x0 Starting state.
@@ -216,28 +212,28 @@ private:
 };
 
 /**
- * Factory for creating DisturbanceParticleFilter objects.
+ * Factory for creating MarginalUnscentedParticleFilter objects.
  *
  * @ingroup method
  *
  * @tparam CL Cache location.
  *
- * @see DisturbanceParticleFilter
+ * @see MarginalUnscentedParticleFilter
  */
 template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
-struct DisturbanceParticleFilterFactory {
+struct MarginalUnscentedParticleFilterFactory {
   /**
    * Create disturbance particle filter.
    *
-   * @return DisturbanceParticleFilter object. Caller has ownership.
+   * @return MarginalUnscentedParticleFilter object. Caller has ownership.
    *
-   * @see DisturbanceParticleFilter::DisturbanceParticleFilter()
+   * @see MarginalUnscentedParticleFilter::MarginalUnscentedParticleFilter()
    */
   template<class B, class IO1, class IO2, class IO3>
-  static DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
+  static MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
       IO3* out = NULL) {
-    return new DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
+    return new MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
         obs, out);
   }
 };
@@ -248,7 +244,7 @@ struct DisturbanceParticleFilterFactory {
 #include "../math/functor.hpp"
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::DisturbanceParticleFilter(
+bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::MarginalUnscentedParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
     particle_filter_type(m, rng, delta, in, obs, out),
     kalman_filter_type(m, delta, (in == NULL) ? NULL : new IO1(*in),
@@ -258,7 +254,7 @@ bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::DisturbanceParticleFilter(
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::~DisturbanceParticleFilter() {
+bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::~MarginalUnscentedParticleFilter() {
   BOOST_AUTO(iter1, mu.begin());
   for (; iter1 != mu.end(); ++iter1) {
     delete *iter1;
@@ -271,7 +267,7 @@ bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::~DisturbanceParticleFilter()
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class R>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, R* resam, const real relEss) {
   /* pre-conditions */
   assert (T > particle_filter_type::state.t);
@@ -328,7 +324,7 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class R, class V1>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
   /* pre-conditions */
@@ -392,25 +388,23 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class M1, class R>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
     const real relEss) {
   assert (false);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   particle_filter_type::reset();
   kalman_filter_type::reset();
   k1 = 0;
   k2 = 0;
 }
 
-#include "../math/io.hpp"
-
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     const real T, Static<L>& theta, State<L>& s) {
   typedef typename locatable_temp_vector<L,real>::type V1;
   typedef typename locatable_temp_matrix<L,real>::type M1;
@@ -461,14 +455,14 @@ void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L, class V1>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     const real T, const V1 x0, Static<L>& theta, State<L>& s) {
 
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class V1>
-void bi::DisturbanceParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
   #ifndef USE_CPU
   /* ensure lookahead is actually ahead... */
   while (k1 >= k2) {

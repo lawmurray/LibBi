@@ -457,7 +457,7 @@ inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNod
     return column(X, 0);
   case PRUNE:
     return column(X, X.size2() - 2);
-  case INTERNAL:
+  default /*case INTERNAL*/:
     return column(X, 0);
   }
 }
@@ -469,7 +469,7 @@ inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNod
     return column(X, 0);
   case PRUNE:
     return column(X, X.size2() - 1);
-  case INTERNAL:
+  default /*case INTERNAL*/:
     return column(X, 1);
   }
 }
