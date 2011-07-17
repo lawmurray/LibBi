@@ -309,23 +309,29 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     M1 X1(P1*P2, N2), X2(P1*P2, N2); // matrices of sigma points
     V1 lw1(P1), lw2(P1); // weight corrections
     M1 tmp1(W, P1), tmp2(V, P1); // workspaces
+    M1 Z(P1, ND + NC + NR);
 
     int p, w;
 
     /* construct and propagate sigma points */
+    columns(Z, 0, ND) = s1.get(D_NODE);
+    columns(Z, ND, NC) = s1.get(C_NODE);
+    columns(Z, ND + NC, NR) = s1.get(R_NODE);
+    log_columns(columns(Z, 0, ND), kalman_filter_type::m.getLogs(D_NODE));
+    log_columns(columns(Z, ND, NC), kalman_filter_type::m.getLogs(C_NODE));
     for (p = 0; p < P1; ++p) {
-      kalman_filter_type::sigmas(row(s1.X, p), rows(X1, p*P2, P2));
+      set_rows(subrange(X1, p*P2, P2, 0, ND + NC + NR), row(Z, p));
     }
     s2.resize(P1*P2, false);
     theta2.resize(1);
     theta2 = theta1;
-    kalman_filter_type::advance(tj, X1, X2, theta2, s2);
+    kalman_filter_type::advance(tj, X1.ref(), X2.ref(), theta2, s2);
 
     /* start sampling */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
     U.resize(P1, V);
     particle_filter_type::rng.gaussians(vec(U));
-    dot_rows(U, lw1);
+    dot_rows(U.ref(), lw1.ref());
 
     /* observation */
     BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
@@ -416,10 +422,10 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     particle_filter_type::rUpdater.setNext(nupdates);
 
     /* weight correction */
-    dot_rows(U, lw2);
-    axpy(0.5, lw1, lws);
-    axpy(-0.5, lw2, lws);
-    axpy(1.0, ldetU, lws);
+    dot_rows(U.ref(), lw2.ref());
+    axpy(0.5, lw1.ref(), lws.ref());
+    axpy(-0.5, lw2.ref(), lws.ref());
+    axpy(1.0, ldetU.ref(), lws.ref());
   }
 }
 

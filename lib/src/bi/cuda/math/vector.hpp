@@ -16,6 +16,7 @@
 #include "../../typelist/equals.hpp"
 
 #include "thrust/device_ptr.h"
+#include "thrust/iterator/detail/normal_iterator.h"
 
 namespace bi {
 /**
@@ -206,6 +207,8 @@ public:
   typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
   typedef typename strided_range<const_pointer>::iterator const_iterator;
+  typedef thrust::detail::normal_iterator<pointer> fast_iterator;
+  typedef thrust::detail::normal_iterator<const_pointer> const_fast_iterator;
   static const bool on_device = true;
 
   /**
@@ -270,6 +273,26 @@ public:
    * @copydoc end()
    */
   CUDA_FUNC_HOST const_iterator end() const;
+
+  /**
+   * Fast iterator to beginning of vector. For use when <tt>inc() == 1</tt>.
+   */
+  CUDA_FUNC_HOST fast_iterator fast_begin();
+
+  /**
+   * @copydoc fast_begin()
+   */
+  CUDA_FUNC_HOST const_fast_iterator fast_begin() const;
+
+  /**
+   * Fast iterator to end of vector. For use when <tt>inc() == 1</tt>.
+   */
+  CUDA_FUNC_HOST fast_iterator fast_end();
+
+  /**
+   * @copydoc fast_end()
+   */
+  CUDA_FUNC_HOST const_fast_iterator fast_end() const;
 
   /**
    * Set all entries to zero.
@@ -372,6 +395,42 @@ inline typename bi::gpu_vector_reference<T>::const_iterator
   strided_range<const_pointer> range(const_pointer(this->buf()), const_pointer(this->buf() + this->inc()*this->size()), this->inc());
 
   return range.end();
+}
+
+template<class T>
+inline typename bi::gpu_vector_reference<T>::fast_iterator
+    bi::gpu_vector_reference<T>::fast_begin() {
+  /* pre-condition */
+  assert (this->inc() == 1);
+
+  return pointer(this->buf());
+}
+
+template<class T>
+inline typename bi::gpu_vector_reference<T>::const_fast_iterator
+    bi::gpu_vector_reference<T>::fast_begin() const {
+  /* pre-condition */
+  assert (this->inc() == 1);
+
+  return const_pointer(this->buf());
+}
+
+template<class T>
+inline typename bi::gpu_vector_reference<T>::fast_iterator
+    bi::gpu_vector_reference<T>::fast_end() {
+  /* pre-condition */
+  assert (this->inc() == 1);
+
+  return this->fast_begin() + this->size();
+}
+
+template<class T>
+inline typename bi::gpu_vector_reference<T>::const_fast_iterator
+    bi::gpu_vector_reference<T>::fast_end() const {
+  /* pre-condition */
+  assert (this->inc() == 1);
+
+  return this->fast_begin() + this->size();
 }
 
 template<class T>

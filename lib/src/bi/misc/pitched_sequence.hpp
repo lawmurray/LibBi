@@ -43,7 +43,13 @@ struct pitched_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return (same) ? x : (x/m*M + (x % m));
+    if (same) {
+      return x;
+    } else {
+      T div = x/m;
+      T rem = x - div*m;
+      return div*M + rem;
+    }
   }
 };
 

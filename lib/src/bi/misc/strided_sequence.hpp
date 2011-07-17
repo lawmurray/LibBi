@@ -18,15 +18,47 @@
 
 namespace bi {
 /**
+ * @ingroup misc_iterator
+ *
+ * Converts a linear index into a strided index.
+ */
+template<class T>
+struct strided_functor : public std::unary_function<T,T> {
+  /**
+   * Stride.
+   */
+  T stride;
+
+  /**
+   * Does <tt>stride == 1</tt>?
+   */
+  //bool unit;
+
+  CUDA_FUNC_HOST strided_functor() : stride(1)/*, unit(true)*/ {
+    //
+  }
+
+  CUDA_FUNC_HOST strided_functor(const T stride) : stride(stride)/*,
+      unit(stride == 1)*/ {
+    /* pre-condition */
+    assert (stride >= 1);
+  }
+
+  CUDA_FUNC_BOTH T operator()(const T& x) const {
+    return /*(unit) ? x : */stride*x;
+  }
+};
+
+/**
  * Strided sequence.
  *
  * @ingroup misc_iterators
  */
 template<class T>
 struct strided_sequence {
-  typedef multiply_constant_functor<T> MultiplyFunc;
+  typedef strided_functor<T> StridedFunc;
   typedef thrust::counting_iterator<T> CountingIterator;
-  typedef thrust::transform_iterator<MultiplyFunc,CountingIterator> TransformIterator;
+  typedef thrust::transform_iterator<StridedFunc,CountingIterator> TransformIterator;
   typedef TransformIterator iterator;
 
   strided_sequence(const T first, const T stride) :
@@ -35,7 +67,7 @@ struct strided_sequence {
   }
 
   iterator begin() const {
-    return TransformIterator(CountingIterator(first), MultiplyFunc(stride));
+    return TransformIterator(CountingIterator(first), StridedFunc(stride));
   }
 
 private:

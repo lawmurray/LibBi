@@ -1056,7 +1056,7 @@ inline void bi::exp_columns(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(col, column(X, *iter));
-    element_exp(col.begin(), col.end(), col.begin());
+    element_exp(col.fast_begin(), col.fast_end(), col.fast_begin());
   }
 }
 
@@ -1083,7 +1083,7 @@ inline void bi::log_columns(M2 X, const V2& is) {
   typename V2::const_iterator iter;
   for (iter = is.begin(); iter != is.end(); ++iter) {
     BOOST_AUTO(col, column(X, *iter));
-    element_log(col.begin(), col.end(), col.begin());
+    element_log(col.fast_begin(), col.fast_end(), col.fast_begin());
   }
 }
 

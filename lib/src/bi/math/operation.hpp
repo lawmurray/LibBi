@@ -575,8 +575,13 @@ inline void bi::set_columns(M1 A, const V1 x) {
   assert (A.size1() == x.size());
 
   BOOST_AUTO(x1, map_vector(A, x));
-  BOOST_AUTO(repeated, make_repeated_range(x1->begin(), x1->end(), A.size2()));
-  bi::copy(repeated.begin(), repeated.end(), A.begin());
+  if (x1->inc() == 1) {
+    BOOST_AUTO(repeated, make_repeated_range(x1->fast_begin(), x1->fast_end(), A.size2()));
+    bi::copy(repeated.begin(), repeated.end(), A.begin());
+  } else {
+    BOOST_AUTO(repeated, make_repeated_range(x1->begin(), x1->end(), A.size2()));
+    bi::copy(repeated.begin(), repeated.end(), A.begin());
+  }
   synchronize();
   delete x1;
 }
@@ -587,8 +592,14 @@ inline void bi::set_rows(M1 A, const V1 x) {
   assert (A.size2() == x.size());
 
   BOOST_AUTO(x1, map_vector(A, x));
-  BOOST_AUTO(stuttered, make_stuttered_range(x1->begin(), x1->end(), A.size1()));
-  bi::copy(stuttered.begin(), stuttered.end(), A.begin());
+  if (M1::on_device) {
+    BOOST_AUTO(stuttered, make_stuttered_range(x1->begin(), x1->end(), A.size1()));
+    bi::copy(stuttered.begin(), stuttered.end(), A.begin());
+  } else {
+    for (int j = 0; j < A.size2(); ++j) {
+      std::fill(column(A,j).fast_begin(), column(A,j).fast_end(), (*x1)(j));
+    }
+  }
   synchronize();
   delete x1;
 }
@@ -636,8 +647,13 @@ inline void bi::sub_rows(M1 A, const V1 x) {
   assert (A.size2() == x.size());
 
   BOOST_AUTO(x1, map_vector(A, x));
-  BOOST_AUTO(stuttered, make_stuttered_range(x1->begin(), x1->end(), A.size1()));
-  thrust::transform(A.begin(), A.end(), stuttered.begin(), A.begin(), thrust::minus<typename M1::value_type>());
+  if (x1->inc() == 1) {
+    BOOST_AUTO(stuttered, make_stuttered_range(x1->fast_begin(), x1->fast_end(), A.size1()));
+    thrust::transform(A.begin(), A.end(), stuttered.begin(), A.begin(), thrust::minus<typename M1::value_type>());
+  } else {
+    BOOST_AUTO(stuttered, make_stuttered_range(x1->begin(), x1->end(), A.size1()));
+    thrust::transform(A.begin(), A.end(), stuttered.begin(), A.begin(), thrust::minus<typename M1::value_type>());
+  }
   synchronize();
   delete x1;
 }
@@ -875,7 +891,11 @@ void bi::dot_rows(const M1 X, V1 y) {
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size1(), X.size2()));
   BOOST_AUTO(transform, make_transform_iterator(X.row_begin(), square_functor<T1>()));
 
-  reduce_by_key(keys.begin(), keys.end(), transform, discard, y.begin());
+  if (y.inc() == 1) {
+    reduce_by_key(keys.begin(), keys.end(), transform, discard, y.fast_begin());
+  } else {
+    reduce_by_key(keys.begin(), keys.end(), transform, discard, y.begin());
+  }
 }
 
 template<class M1, class V1>
