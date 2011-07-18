@@ -325,7 +325,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     s2.resize(P1*P2, false);
     theta2.resize(1);
     theta2 = theta1;
-    kalman_filter_type::advanceNoise(tj, X1.ref(), X2.ref(), theta2, s2, true);
+    kalman_filter_type::advanceNoise(tj, X1.ref(), X2.ref(), theta2, s2);
 
     /* start sampling */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
@@ -374,6 +374,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
         BOOST_AUTO(Sigma, columns(SigmaUY, p*W, W));
 
+//        std::cerr << "-------------" << std::endl;
+//        std::cerr << vector_as_row_matrix(diagonal(U1)) << std::endl;
+//        std::cerr << vector_as_row_matrix(diagonal(U2)) << std::endl;
+//        std::cerr << rows(X2, p*P2, P2) << std::endl;
+
         gdmm(Wi, diagonal(U1), Y1, 0.0, Sigma);
         gdmm(Wi, diagonal(U2), Y2, 1.0, Sigma);
       }
@@ -412,11 +417,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         BOOST_AUTO(RU1, columns(RU, p*V, V));
-        BOOST_AUTO(mu1, column(muU, p));
+        BOOST_AUTO(muU1, column(muU, p));
         BOOST_AUTO(u1, row(U, p));
 
         trmv(RU1, u1, 'U');
-        axpy(1.0, mu1, u1);
+        axpy(1.0, muU1, u1);
       }
     }
     particle_filter_type::rUpdater.setNext(nupdates);
