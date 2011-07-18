@@ -110,6 +110,7 @@ int main(int argc, char* argv[]) {
   const int T = in.size2();
   Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
+  assert (P == s.size());
 
   /* output */
   ParticleSmootherNetCDFBuffer* out;

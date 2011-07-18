@@ -123,14 +123,12 @@ public:
 };
 }
 
-#ifdef USE_SSE
-#include "../math/sse.hpp"
-#endif
+#include "misc.hpp"
 
 template<bi::Location L>
 template<class B>
 bi::Static<L>::Static(const B& m, const int P) :
-    K(P, m.getNetSize(S_NODE) + m.getNetSize(P_NODE)),
+    K(roundup<L>(P), m.getNetSize(S_NODE) + m.getNetSize(P_NODE)),
     Ks(columns(K, 0, m.getNetSize(S_NODE))),
     Kp(columns(K, m.getNetSize(S_NODE), m.getNetSize(P_NODE))) {
   //
@@ -138,7 +136,7 @@ bi::Static<L>::Static(const B& m, const int P) :
 
 template<bi::Location L>
 bi::Static<L>::Static(const int sSize, const int pSize, const int P) :
-    K(P, sSize + pSize),
+    K(roundup<L>(P), sSize + pSize),
     Ks(columns(K, 0, sSize)),
     Kp(columns(K, sSize, pSize)) {
   //
@@ -174,22 +172,7 @@ inline int bi::Static<L>::size() const {
 
 template<bi::Location L>
 inline void bi::Static<L>::resize(const int P, bool preserve) {
-  int P1 = P;
-  if (L == ON_DEVICE) {
-    /* either < 32 or a multiple of 32 number of trajectories required */
-    if (P1 > 32) {
-      P1 = ((P1 + 31)/32)*32;
-    }
-  } else {
-    #if defined(USE_CPU) and defined(USE_SSE)
-    /* zero, one or a multiple of 4 (single precision) or 2 (double
-     * precision) required */
-    if (P1 > 1) {
-      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
-    }
-    #endif
-  }
-
+  const int P1 = roundup<L>(P);
   K.resize(P1, K.size2(), preserve);
   Ks.copy(columns(K, 0, Ks.size2()));
   Kp.copy(columns(K, Ks.size2(), Kp.size2()));

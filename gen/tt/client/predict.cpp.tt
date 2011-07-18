@@ -153,6 +153,7 @@ int main(int argc, char* argv[]) {
   /* state */
   Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
+  assert (P == s.size());
 
   /* inputs */
   SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;

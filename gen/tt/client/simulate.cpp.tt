@@ -146,6 +146,7 @@ int main(int argc, char* argv[]) {
   /* state */
   Static<LOCATION> theta(m, INCLUDE_PARAMETERS ? P : 1);
   State<LOCATION> s(m, P);
+  P = s.size(); // may change according to implementation
 
   /* initialise trajectories from prior (init file may overwrite) */
   m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));

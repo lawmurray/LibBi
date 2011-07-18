@@ -225,6 +225,7 @@ int main(int argc, char* argv[]) {
   Static<LOCATION> theta(m);
   State<LOCATION> s(m, P);
   host_vector<real> x(N); // initial state of chain
+  P = s.size(); // may change according to implementation
 
   /* initialise from prior */
   m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));

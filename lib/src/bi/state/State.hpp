@@ -85,13 +85,8 @@ public:
    * @param preserve True to preserve existing values, false otherwise.
    *
    * Resizes the state to store at least @p P number of trajectories.
-   * Storage for additional trajectories may be added in some contexts. In
-   * particular:
-   *
-   * @li for simulation on device, @p P must be either less than 32, or a
-   * multiple of 32, and
-   * @li for simulation with SSE enabled, @p P must be zero, one or a multiple
-   * of four (single precision) or two (double precision).
+   * Storage for additional trajectories may be added in some contexts,
+   * see #roundup.
    */
   void resize(const int P, const bool preserve = true);
 
@@ -207,15 +202,13 @@ private:
 };
 }
 
-#ifdef USE_SSE
-#include "../math/sse.hpp"
-#endif
+#include "misc.hpp"
 
 template<bi::Location L>
 template<class B>
 bi::State<L>::State(const B& m, const int P) :
-    X(P, m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE)),
-    Y(P, 2*m.getNetSize(O_NODE)),
+    X(roundup<L>(P), m.getNetSize(D_NODE) + m.getNetSize(C_NODE) + m.getNetSize(R_NODE)),
+    Y(roundup<L>(P), 2*m.getNetSize(O_NODE)),
     Kf(1, m.getNetSize(F_NODE)),
     Koy(1, m.getNetSize(O_NODE)),
     Xd(columns(X, 0, m.getNetSize(D_NODE))),
@@ -229,8 +222,8 @@ bi::State<L>::State(const B& m, const int P) :
 template<bi::Location L>
 bi::State<L>::State(const int dSize, const int cSize, const int rSize,
     const int fSize, const int oSize, const int P) :
-    X(P, dSize + cSize + rSize),
-    Y(P, 2*oSize),
+    X(roundup<L>(P), dSize + cSize + rSize),
+    Y(roundup<L>(P), 2*oSize),
     Kf(1, fSize),
     Koy(1, oSize),
     Xd(columns(X, 0, dSize)),
@@ -286,22 +279,7 @@ inline int bi::State<L>::size() const {
 
 template<bi::Location L>
 inline void bi::State<L>::resize(const int P, bool preserve) {
-  int P1 = P;
-  if (L == ON_DEVICE) {
-    /* either < 32 or a multiple of 32 number of trajectories required */
-    if (P1 > 32) {
-      P1 = ((P1 + 31)/32)*32;
-    }
-  } else {
-    #if defined(USE_CPU) and defined(USE_SSE)
-    /* zero, one or a multiple of 4 (single precision) or 2 (double
-     * precision) required */
-    if (P1 > 1) {
-      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
-    }
-    #endif
-  }
-
+  const int P1 = roundup<L>(P);
   X.resize(P1, X.size2(), preserve);
   Y.resize(P1, Y.size2(), preserve);
   Xd.copy(columns(X, 0, Xd.size2()));
