@@ -171,7 +171,7 @@ private:
   typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
 
   /**
-   * \f$\hat{\boldsymbol{\mu}}_1,\ldots,\hat{\boldsymbol{\mu}}\f$; noise term
+   * \f$\hat{\boldsymbol{\mu}}_1,\ldots,\hat{\boldsymbol{\mu}}_T\f$; noise term
    * proposal mean from UKF.
    */
   std::vector<vector_type*> mu;

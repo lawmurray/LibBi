@@ -97,44 +97,50 @@ public:
    */
   //@{
   /**
-   * Propose noise terms for upcoming prediction using unscented Kalman
+   * Construct proposals for upcoming prediction using unscented Kalman
    * filters.
    *
    * @tparam L1 Location.
    * @tparam L2 Location.
-   * @tparam V2 Vector type.
    *
    * @param T Time to which to predict.
    * @param[in,out] theta1 Static state of PF.
    * @param[in,out] s1 State of PF.
-   * @param[in,out] Log-weights.
    * @param[out] theta2 Static state for UKF.
    * @param[out] s2 State for UKF.
    */
-  template<Location L1, Location L2, class V2>
+  template<Location L1, Location L2>
   void propose(const real T, Static<L1>& theta1, State<L1>& s1,
-      Static<L2>& theta2, State<L2>& s2, V2 lws);
+      Static<L2>& theta2, State<L2>& s2);
 
   /**
-   * Propose noise terms for upcoming prediction using unscented Kalman
+   * Construct proposals for upcoming prediction using unscented Kalman
    * filters, from fixed starting state.
    *
    * @tparam V1 Vector type.
    * @tparam L1 Location.
    * @tparam L2 Location.
-   * @tparam V2 Vector type.
    *
    * @param T Time to which to predict.
    * @param x0 Starting state.
    * @param[in,out] theta1 Static state of PF.
    * @param[in,out] s1 State of PF.
-   * @param[in,out] Log-weights.
    * @param[out] theta2 Static state for UKF.
    * @param[out] s2 State for UKF.
    */
-  template<class V1, Location L1, Location L2, class V2>
+  template<class V1, Location L1, Location L2>
   void propose(const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
-      Static<L2>& theta2, State<L2>& s2, V2 lws);
+      Static<L2>& theta2, State<L2>& s2);
+
+  /**
+   * Sample noise terms for upcoming prediction.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param[in,out] lws Log-weights.
+   */
+  template<class V1>
+  void sample(V1 lws);
   //@}
 
   using particle_filter_type::getOutput;
@@ -149,6 +155,54 @@ public:
   using particle_filter_type::term;
 
 private:
+  /**
+   * Vector type for proposals.
+   */
+  typedef typename locatable_temp_vector<ON_HOST,real>::type vector_type;
+
+  /**
+   * Matrix type for proposals.
+   */
+  typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
+
+  /**
+   * Number of particles in particle filter.
+   */
+  int P1;
+
+  /**
+   * Number of sigma points in unscented Kalman filters (per particle).
+   */
+  int P2;
+
+  /**
+   * Number of observations.
+   */
+  int W;
+
+  /**
+   * Number of noise terms.
+   */
+  int V;
+
+  int nupdates;
+
+  /**
+   * \f$\hat{\boldsymbol{\mu}}^1,\ldots,\hat{\boldsymbol{\mu}^P}\f$;
+   * proposal means from UKFs.
+   */
+  matrix_type muU;
+
+  /**
+   * \f$\hat{U}^1,\ldots,\hat{U}^P\f$; proposal Cholesky factors from UKFs.
+   */
+  matrix_type RU;
+
+  /**
+   * \f$|\hat{U}^1|,\ldots,\hat{U}^P\f$; proposal log-determinants from UKF.
+   */
+  vector_type ldetRU;
+
   /**
    * Estimate parameters as well as state?
    */
@@ -228,7 +282,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const r
   init(theta, lws, as);
   int n = 0, r = 0;
   while (particle_filter_type::getTime() < T) {
-    propose(T, theta, s, theta1, s1, lws);
+    propose(T, theta, s, theta1, s1);
+    sample(lws);
     particle_filter_type::predict(T, theta, s);
     particle_filter_type::correct(s, lws);
     particle_filter_type::output(n, theta, s, r, lws, as);
@@ -270,13 +325,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   kalman_filter_type::reset();
 }
 
-#include "../math/io.hpp"
-
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<bi::Location L1, bi::Location L2, class V2>
+template<bi::Location L1, bi::Location L2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     const real T, Static<L1>& theta1, State<L1>& s1, Static<L2>& theta2,
-    State<L2>& s2, V2 lws) {
+    State<L2>& s2) {
   /* pre-condition */
   assert (!haveParameters);
 
@@ -286,30 +339,31 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
   real tj = kalman_filter_type::obs(T, s2);
   kalman_filter_type::parameters(tj);
 
-  const int nupdates = kalman_filter_type::nupdates;
+  nupdates = kalman_filter_type::nupdates;
+  P1 = s1.size(); // no. particles in pf
+  P2 = kalman_filter_type::P; // no. sigma points in ukf per particle
+  W = kalman_filter_type::W;
+  V = NR*nupdates;
+
   if (nupdates > 0) {
-    const int P1 = s1.size(); // no. particles in pf
-    const int P2 = kalman_filter_type::P; // no. sigma points in ukf per particle
     const int N1 = kalman_filter_type::N1;
     const int N2 = kalman_filter_type::N2;
-    const int W = kalman_filter_type::W;
-    const int V = NR*nupdates;
     const int nextra = kalman_filter_type::nextra;
     const real Wc0 = kalman_filter_type::Wc0;
     const real Wi = kalman_filter_type::Wi;
     BOOST_AUTO(&Wm, kalman_filter_type::Wm);
 
     M1 muY(W, P1); // means of observations
-    M1 muU(V, P1); // means of noise
     M1 SigmaY(W, P1*W); // observation covariances
     M1 SigmaUY(V, P1*W); // noise-observation cross-covariances
     M1 RY(W, P1*W); // observation covariance Cholesky factors
-    M1 RU(V, P1*V); // noise covariance Cholesky factors
-    V1 ldetU(P1); // log-determinants of noise covariance Cholesky factors
     M1 X1(P1*P2, N2), X2(P1*P2, N2); // matrices of sigma points
-    V1 lw1(P1), lw2(P1); // weight corrections
     M1 tmp1(W, P1), tmp2(V, P1); // workspaces
     M1 Z(P1, ND + NC + NR);
+
+    muU.resize(V, P1, false); // means of noise
+    RU.resize(V, P1*V, false); // noise covariance Cholesky factors
+    ldetRU.resize(P1, false); // log-determinants of noise covariance Cholesky factors
 
     int p, w;
 
@@ -326,12 +380,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     theta2.resize(1);
     theta2 = theta1;
     kalman_filter_type::advanceNoise(tj, X1.ref(), X2.ref(), theta2, s2);
-
-    /* start sampling */
-    BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
-    U.resize(P1, V);
-    particle_filter_type::rng.gaussians(vec(U));
-    dot_rows(U.ref(), lw1.ref());
 
     /* observation */
     BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
@@ -374,11 +422,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
         BOOST_AUTO(Sigma, columns(SigmaUY, p*W, W));
 
-//        std::cerr << "-------------" << std::endl;
-//        std::cerr << vector_as_row_matrix(diagonal(U1)) << std::endl;
-//        std::cerr << vector_as_row_matrix(diagonal(U2)) << std::endl;
-//        std::cerr << rows(X2, p*P2, P2) << std::endl;
-
         gdmm(Wi, diagonal(U1), Y1, 0.0, Sigma);
         gdmm(Wi, diagonal(U2), Y2, 1.0, Sigma);
       }
@@ -405,15 +448,42 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
           for (w = 0; w < W; ++w) {
             ch1dn(RU1, column(SigmaUY1, w), column(tmp2, p));
           }
-          ldetU(p) = log(bi::prod(diagonal(RU1).begin(), diagonal(RU1).end(), 1.0));
+          ldetRU(p) = log(bi::prod(diagonal(RU1).begin(), diagonal(RU1).end(), 1.0));
         } catch (Exception e) {
           ident(RU1);
           muU1.clear();
-          ldetU(p) = 0.0;
+          ldetRU(p) = 0.0;
         }
       }
 
-      /* complete sample */
+//      if (doLookahead) {
+//        /* compute stage-1 weights */
+//        dot_columns(tmp1, lw1);
+//        for (p = 0; p < P1; ++p) {
+//          ldetY(p) = log(bi::prod(diagonal(RY1).begin(), diagonal(RY1).end(), 1.0));
+//        }
+//        scal(-0.5, lw1);
+//        axpy(-1.0, ldetY, lw1);
+//      }
+    }
+  }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class V1>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::sample(
+    V1 lws) {
+  if (nupdates > 0) {
+    V1 lw1(P1), lw2(P1); // weight correction vectors
+    BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
+
+    U.resize(P1, V);
+    particle_filter_type::rng.gaussians(vec(U));
+    dot_rows(U, lw1);
+
+    #pragma omp parallel
+    {
+      int p;
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         BOOST_AUTO(RU1, columns(RU, p*V, V));
@@ -423,22 +493,22 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         trmv(RU1, u1, 'U');
         axpy(1.0, muU1, u1);
       }
-    }
-    particle_filter_type::rUpdater.setNext(nupdates);
+      particle_filter_type::rUpdater.setNext(V/NR);
 
-    /* weight correction */
-    dot_rows(U.ref(), lw2.ref());
-    axpy(0.5, lw1.ref(), lws.ref());
-    axpy(-0.5, lw2.ref(), lws.ref());
-    axpy(1.0, ldetU.ref(), lws.ref());
+      /* weight correct */
+      dot_rows(U, lw2);
+      axpy(0.5, lw1, lws);
+      axpy(-0.5, lw2, lws);
+      axpy(1.0, ldetRU, lws);
+    }
   }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<class V1, bi::Location L1, bi::Location L2, class V2>
+template<class V1, bi::Location L1, bi::Location L2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
-    Static<L2>& theta2, State<L2>& s, V2 lws) {
+    Static<L2>& theta2, State<L2>& s) {
 
 }
 
