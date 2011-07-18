@@ -296,6 +296,33 @@ public:
       State<L>& s, const bool fixed = false);
 
   /**
+   * Propagate sigma points forward to next time. This method saves some
+   * copying to be slightly faster than its cousin when only noise terms
+   * and observations will be of interest after the propagation.
+   *
+   * @tparam M1 Matrix type.
+   * @tparam M2 Matrix type.
+   * @tparam L Location.
+   *
+   * @param tj End time for transformation.
+   * @param X1 Starting sigma points.
+   * @param[out] Propagated sigma points.
+   * @param[in,out] theta Static state.
+   * @param[in,out] s State.
+   *
+   * Propagate sigma points:
+   *
+   * \f[\mathcal{X}_n^{(i)} \leftarrow f(\mathcal{X}_{n-1}^{(i)})\,,\f]
+   *
+   * and observations:
+   *
+   * \f[\mathcal{Y}_n^{(i)} \leftarrow g(\mathcal{X}_n^{(i)})\,.\f]
+   */
+  template<class M1, class M2, Location L>
+  void advanceNoise(const real tj, const M1 X1, M2 X2, Static<L>& theta,
+      State<L>& s, const bool fixed = false);
+
+  /**
    * Compute mean from propagated sigma points.
    *
    * @tparam M1 Matrix type.
@@ -973,7 +1000,9 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
   /* copy to state */
   s.get(D_NODE) = columns(X1, 0, ND);
   s.get(C_NODE) = columns(X1, ND, NC);
-  s.get(R_NODE) = columns(X1, ND + NC, NR);
+  if (nextra == nupdates) {
+    s.get(R_NODE) = columns(X1, ND + NC, NR);
+  }
   if (haveParameters) {
     theta.get(P_NODE) = columns(X1, ND + NC + NR, NP);
   }
@@ -1035,6 +1064,85 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
   /* log relevant variables */
   log_columns(columns(X2, 0, ND), m.getLogs(D_NODE));
   log_columns(columns(X2, ND, NC), m.getLogs(C_NODE));
+  if (haveParameters) {
+    log_columns(columns(X2, ND + NC + NR, NP), m.getLogs(P_NODE));
+  }
+  log_columns(columns(X2, N2 - W, W), oLogs);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<class M1, class M2, bi::Location L>
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
+    const real tj, const M1 X1, M2 X2, Static<L>& theta, State<L>& s,
+    const bool fixed) {
+  /* copy to state */
+  s.get(D_NODE) = columns(X1, 0, ND);
+  s.get(C_NODE) = columns(X1, ND, NC);
+  if (nextra == nupdates) {
+    s.get(R_NODE) = columns(X1, ND + NC, NR);
+  }
+  if (haveParameters) {
+    theta.get(P_NODE) = columns(X1, ND + NC + NR, NP);
+  }
+
+  /* exp relevant variables */
+  exp_columns(s.get(D_NODE), m.getLogs(D_NODE));
+  exp_columns(s.get(C_NODE), m.getLogs(C_NODE));
+  if (haveParameters) {
+    exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
+  }
+
+  /* propagate */
+  rUpdater.prepare(nupdates, N1, W, a, fixed);
+  if (haveParameters) {
+    /* p-nodes changed, ensure s-nodes up-to-date */
+    sim.init(theta);
+  }
+  int n = 0;
+  while (state.t < tj) {
+    sim.advance(std::min(gt_step(state.t, sim.getDelta()), tj), s);
+    state.t = sim.getTime();
+
+    if (n < nextra) {
+      /* copy extra r-nodes now, others later */
+      columns(X2, M + n*NR, NR) = s.get(R_NODE);
+    }
+    ++n;
+  }
+
+  /* observations */
+  oLogs.clear();
+  if (state.t >= tj && W > 0) {
+    BOOST_AUTO(mask, oyUpdater.getMask());
+    assert(W == mask.size());
+
+    orUpdater.prepare(N1, W, a, fixed);
+    orUpdater.update(mask, s);
+    oUpdater.update(mask, s);
+
+    /* indices of observations at this time that are log-variables */
+    int id, i;
+    for (i = 0; i < W; ++i) {
+      id = mask.id(i);
+      if (m.isLog(O_NODE, id)) {
+        oLogs.insert(i);
+      }
+    }
+  }
+
+  /* copy back to matrix */
+  //columns(X2, 0, ND) = s.get(D_NODE);
+  //columns(X2, ND, NC) = s.get(C_NODE);
+  columns(X2, ND + NC, NR) = s.get(R_NODE);
+  if (haveParameters) {
+    columns(X2, ND + NC + NR, NP) = theta.get(P_NODE);
+  }
+  columns(X2, N2 - W, W) = s.get(O_NODE);
+
+  /* log relevant variables */
+  //log_columns(columns(X2, 0, ND), m.getLogs(D_NODE));
+  //log_columns(columns(X2, ND, NC), m.getLogs(C_NODE));
   if (haveParameters) {
     log_columns(columns(X2, ND + NC + NR, NP), m.getLogs(P_NODE));
   }

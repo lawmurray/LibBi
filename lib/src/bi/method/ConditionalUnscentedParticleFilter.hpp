@@ -325,7 +325,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     s2.resize(P1*P2, false);
     theta2.resize(1);
     theta2 = theta1;
-    kalman_filter_type::advance(tj, X1.ref(), X2.ref(), theta2, s2);
+    kalman_filter_type::advanceNoise(tj, X1.ref(), X2.ref(), theta2, s2, true);
 
     /* start sampling */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
