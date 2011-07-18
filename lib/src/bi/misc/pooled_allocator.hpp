@@ -8,10 +8,12 @@
 #ifndef BI_MISC_POOLED_ALLOCATOR_HPP
 #define BI_MISC_POOLED_ALLOCATOR_HPP
 
+#include "omp.hpp"
 #include "assert.hpp"
 
 #include <map>
 #include <list>
+#include <vector>
 
 namespace bi {
 /**
@@ -32,6 +34,14 @@ public:
   typedef typename A::reference reference;
   typedef typename A::const_reference const_reference;
   typedef typename A::value_type value_type;
+
+  /**
+   * Pool type.
+   *
+   * @note The type used here, lists indexed by sizes, seems substantially
+   * faster than multimap.
+   */
+  typedef std::map<size_type, std::list<pointer> > pool_type;
 
   template <class U>
   struct rebind {
@@ -86,6 +96,11 @@ public:
     return true;
   }
 
+  /**
+   * Empty pool.
+   */
+  void empty();
+
 private:
   /**
    * Wrapped allocator.
@@ -95,21 +110,17 @@ private:
   /**
    * Available items in pool, mapping sizes to pointers.
    */
-  static std::map<size_type, std::list<pointer> > available;
+  static std::vector<pool_type> available;
 };
 
 }
 
 template<class A>
-std::map<typename A::size_type, std::list<typename A::pointer> > bi::pooled_allocator<A>::available;
+std::vector<typename bi::pooled_allocator<A>::pool_type> bi::pooled_allocator<A>::available;
 
 template<class A>
 inline bi::pooled_allocator<A>::~pooled_allocator() {
-  /* clean up pool */
-//  typename std::map<pointer,size_type>::iterator iter;
-//  for (iter = pool.begin(); iter != pool.end(); ++iter) {
-//    alloc.deallocate(iter->first, iter->second);
-//  }
+  //
 }
 
 template<class A>
@@ -135,18 +146,20 @@ inline typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::alloca
     size_type num, const_pointer *hint) {
   pointer p;
 
+  /* init if necessary */
+  if (bi_omp_tid >= (int)available.size()) {
+    available.resize(bi_omp_max_threads);
+  }
+
   /* check available items to reuse */
-  #pragma omp critical(critical_pooled_allocator)
-  {
-    BOOST_AUTO(iter, available.find(num));
-    if (iter != available.end() && !iter->second.empty()) {
-      /* existing item */
-      p = iter->second.back();
-      iter->second.pop_back();
-    } else {
-      /* new item */
-      p = alloc.allocate(num, hint);
-    }
+  BOOST_AUTO(iter, available[bi_omp_tid].lower_bound(num));
+  if (iter != available[bi_omp_tid].end() && !iter->second.empty()) {
+    /* existing item */
+    p = iter->second.back();
+    iter->second.pop_back();
+  } else {
+    /* new item */
+    p = alloc.allocate(num, hint);
   }
   return p;
 }
@@ -163,17 +176,26 @@ inline void bi::pooled_allocator<A>::destroy(pointer p) {
 
 template<class A>
 inline void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
-  #pragma omp critical(critical_pooled_allocator)
-  {
-    BOOST_AUTO(iter, available.find(num));
-    if (iter != available.end()) {
-      /* existing size */
-      iter->second.push_back(p);
-    } else {
-      /* new size */
-      available.insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+  BOOST_AUTO(iter, available[bi_omp_tid].find(num));
+  if (iter != available[bi_omp_tid].end()) {
+    /* existing size */
+    iter->second.push_back(p);
+  } else {
+    /* new size */
+    available[bi_omp_tid].insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+  }
+}
+
+template<class A>
+inline void bi::pooled_allocator<A>::empty() {
+  BOOST_AUTO(iter1, available[bi_omp_tid].begin());
+  for (; iter1 != available[bi_omp_tid].end(); ++iter1) {
+    BOOST_AUTO(iter2, iter1->second.begin());
+    for (; iter2 != iter1->second.end(); ++iter2) {
+      alloc.deallocate(*iter2, iter1->first);
     }
   }
+  available[bi_omp_tid].clear();
 }
 
 #endif
