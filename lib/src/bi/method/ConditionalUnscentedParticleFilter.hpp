@@ -97,8 +97,7 @@ public:
    */
   //@{
   /**
-   * Construct proposals for upcoming prediction using unscented Kalman
-   * filters.
+   * Perform precomputes for upcoming step.
    *
    * @tparam L1 Location.
    * @tparam L2 Location.
@@ -110,12 +109,11 @@ public:
    * @param[out] s2 State for UKF.
    */
   template<Location L1, Location L2>
-  void propose(const real T, Static<L1>& theta1, State<L1>& s1,
+  void prepare(const real T, Static<L1>& theta1, State<L1>& s1,
       Static<L2>& theta2, State<L2>& s2);
 
   /**
-   * Construct proposals for upcoming prediction using unscented Kalman
-   * filters, from fixed starting state.
+   * Perform precomputes for upcoming step, with fixed starting state.
    *
    * @tparam V1 Vector type.
    * @tparam L1 Location.
@@ -129,18 +127,18 @@ public:
    * @param[out] s2 State for UKF.
    */
   template<class V1, Location L1, Location L2>
-  void propose(const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
+  void prepare(const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
       Static<L2>& theta2, State<L2>& s2);
 
   /**
-   * Sample noise terms for upcoming prediction.
+   * Propose noise terms for upcoming prediction.
    *
    * @tparam V1 Vector type.
    *
    * @param[in,out] lws Log-weights.
    */
   template<class V1>
-  void sample(V1 lws);
+  void propose(V1 lws);
   //@}
 
   using particle_filter_type::getOutput;
@@ -165,6 +163,22 @@ private:
    */
   typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
 
+  using kalman_filter_type::N1;
+  using kalman_filter_type::N2;
+  using kalman_filter_type::nupdates;
+  using kalman_filter_type::nextra;
+  using kalman_filter_type::W;
+  using kalman_filter_type::V;
+  using kalman_filter_type::Wc0;
+  using kalman_filter_type::Wi;
+  using kalman_filter_type::Wm;
+  using kalman_filter_type::m;
+  using kalman_filter_type::oLogs;
+
+  using kalman_filter_type::advanceNoise;
+  using kalman_filter_type::obs;
+  using kalman_filter_type::parameters;
+
   /**
    * Number of particles in particle filter.
    */
@@ -176,32 +190,76 @@ private:
   int P2;
 
   /**
-   * Number of observations.
-   */
-  int W;
-
-  /**
-   * Number of noise terms.
-   */
-  int V;
-
-  int nupdates;
-
-  /**
-   * \f$\hat{\boldsymbol{\mu}}^1,\ldots,\hat{\boldsymbol{\mu}^P}\f$;
-   * proposal means from UKFs.
+   * \f$\hat{\boldsymbol{\mu}_U}^1,\ldots,\hat{\boldsymbol{\mu}_U^P}\f$;
+   * noise means from UKFs.
    */
   matrix_type muU;
 
   /**
-   * \f$\hat{U}^1,\ldots,\hat{U}^P\f$; proposal Cholesky factors from UKFs.
+   * \f$\hat{\boldsymbol{\mu}_Y}^1,\ldots,\hat{\boldsymbol{\mu}_Y^P}\f$;
+   * observation means from UKFs.
+   */
+  matrix_type muY;
+
+  /**
+   * \f$\hat{\Sigma}_U^1,\ldots,\hat{\Sigma}_U^P\f$; noise covariances from
+   * UKFs.
+   *
+   * @note Never explicitly needed, always \f$I\f$.
+   */
+  //matrix_type SigmaU;
+
+  /**
+   * \f$\hat{\Sigma}_Y^1,\ldots,\hat{\Sigma}_Y^P\f$; noise covariances from
+   * UKFs.
+   */
+  matrix_type SigmaY;
+
+  /**
+   * \f$\hat{\Sigma}_{UY}^1,\ldots,\hat{\Sigma}_{UY}^P\f$; noise-observation
+   * cross covariances from UKFs.
+   */
+  matrix_type SigmaUY;
+
+  /**
+   * \f$\hat{R}_U^1,\ldots,\hat{R}_U^P\f$; noise Cholesky factors from UKFs.
    */
   matrix_type RU;
 
   /**
-   * \f$|\hat{U}^1|,\ldots,\hat{U}^P\f$; proposal log-determinants from UKF.
+   * \f$\hat{R}_Y^1,\ldots,\hat{R}_Y^P\f$; observation Cholesky factors from
+   * UKFs.
+   */
+  matrix_type RY;
+
+  /**
+   * \f$|\hat{R}_U^1|,\ldots,|\hat{R}_U^P|\f$; log-determinants of noise
+   * Cholesky factors.
    */
   vector_type ldetRU;
+
+  /**
+   * \f$|\hat{R}_Y^1|,\ldots,|\hat{R}_Y^P|\f$; log-determinants of observation
+   * Cholesky factors.
+   */
+  vector_type ldetRY;
+
+  /**
+   * \f$\mathbf{y}_t - \hat{\boldsymbol{\mu}}_Y^1, \ldots, \mathbf{y}_t -
+   * \hat{\boldsymbol{\mu}}_Y^P\f$; innovation vectors.
+   */
+  matrix_type J;
+
+  /**
+   * Vector indicating whether proposal has been computed for each ancestor
+   * particle. Used to eliminate redundant operations.
+   */
+  std::vector<bool> haveP;
+
+  /**
+   * Matrices of sigma points.
+   */
+  matrix_type X1, X2;
 
   /**
    * Estimate parameters as well as state?
@@ -265,14 +323,12 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const r
   assert (T > particle_filter_type::state.t);
   assert (relEss >= 0.0 && relEss <= 1.0);
 
-  typedef typename locatable_vector<ON_HOST,real>::type V2;
-  typedef typename locatable_matrix<ON_HOST,real>::type M2;
   typedef typename locatable_vector<L,real>::type V3;
   typedef typename locatable_vector<L,int>::type V4;
 
   /* ukf temps */
-  Static<L> theta1(particle_filter_type::m, theta.size());
-  State<L> s1(particle_filter_type::m);
+  Static<L> theta1(kalman_filter_type::m, theta.size());
+  State<L> s1(kalman_filter_type::m);
 
   /* pf temps */
   V3 lws(s.size());
@@ -282,8 +338,9 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const r
   init(theta, lws, as);
   int n = 0, r = 0;
   while (particle_filter_type::getTime() < T) {
-    propose(T, theta, s, theta1, s1);
-    sample(lws);
+    prepare(T, theta, s, theta1, s1);
+    //lookahead();
+    propose(lws);
     particle_filter_type::predict(T, theta, s);
     particle_filter_type::correct(s, lws);
     particle_filter_type::output(n, theta, s, r, lws, as);
@@ -327,90 +384,147 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<bi::Location L1, bi::Location L2>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, Static<L1>& theta1, State<L1>& s1, Static<L2>& theta2,
     State<L2>& s2) {
   /* pre-condition */
   assert (!haveParameters);
 
-  typedef typename locatable_temp_vector<L2,real>::type V1;
-  typedef typename locatable_temp_matrix<L2,real>::type M1;
+  real tj = obs(T, s2);
+  parameters(tj);
 
-  real tj = kalman_filter_type::obs(T, s2);
-  kalman_filter_type::parameters(tj);
-
-  nupdates = kalman_filter_type::nupdates;
-  P1 = s1.size(); // no. particles in pf
-  P2 = kalman_filter_type::P; // no. sigma points in ukf per particle
-  W = kalman_filter_type::W;
-  V = NR*nupdates;
+  P1 = s1.size();
+  P2 = kalman_filter_type::P;
 
   if (nupdates > 0) {
-    const int N1 = kalman_filter_type::N1;
-    const int N2 = kalman_filter_type::N2;
-    const int nextra = kalman_filter_type::nextra;
-    const real Wc0 = kalman_filter_type::Wc0;
-    const real Wi = kalman_filter_type::Wi;
-    BOOST_AUTO(&Wm, kalman_filter_type::Wm);
-
-    M1 muY(W, P1); // means of observations
-    M1 SigmaY(W, P1*W); // observation covariances
-    M1 SigmaUY(V, P1*W); // noise-observation cross-covariances
-    M1 RY(W, P1*W); // observation covariance Cholesky factors
-    M1 X1(P1*P2, N2), X2(P1*P2, N2); // matrices of sigma points
-    M1 tmp1(W, P1), tmp2(V, P1); // workspaces
-    M1 Z(P1, ND + NC + NR);
-
-    muU.resize(V, P1, false); // means of noise
-    RU.resize(V, P1*V, false); // noise covariance Cholesky factors
-    ldetRU.resize(P1, false); // log-determinants of noise covariance Cholesky factors
-
-    int p, w;
+    muY.resize(W, P1, false);
+    SigmaY.resize(W, P1*W, false);
+    RY.resize(W, P1*W, false);
+    ldetRY.resize(P1, false);
+    X1.resize(P1*P2, N2);
+    X2.resize(P1*P2, N2);
+    J.resize(W, P1);
 
     /* construct and propagate sigma points */
-    columns(Z, 0, ND) = s1.get(D_NODE);
-    columns(Z, ND, NC) = s1.get(C_NODE);
-    columns(Z, ND + NC, NR) = s1.get(R_NODE);
-    log_columns(columns(Z, 0, ND), kalman_filter_type::m.getLogs(D_NODE));
-    log_columns(columns(Z, ND, NC), kalman_filter_type::m.getLogs(C_NODE));
-    for (p = 0; p < P1; ++p) {
-      set_rows(subrange(X1, p*P2, P2, 0, ND + NC + NR), row(Z, p));
+    BOOST_AUTO(Z, temp_matrix<matrix_type>(P1, ND + NC + NR));
+    columns(*Z, 0, ND) = s1.get(D_NODE);
+    columns(*Z, ND, NC) = s1.get(C_NODE);
+    columns(*Z, ND + NC, NR) = s1.get(R_NODE);
+    log_columns(columns(*Z, 0, ND), kalman_filter_type::m.getLogs(D_NODE));
+    log_columns(columns(*Z, ND, NC), kalman_filter_type::m.getLogs(C_NODE));
+
+    #pragma omp parallel for
+    for (int p = 0; p < P1; ++p) {
+      set_rows(subrange(X1, p*P2, P2, 0, ND + NC + NR), row(*Z, p));
     }
+
     s2.resize(P1*P2, false);
+    ///@todo Next two lines probably not necessary
     theta2.resize(1);
     theta2 = theta1;
-    kalman_filter_type::advanceNoise(tj, X1.ref(), X2.ref(), theta2, s2);
+    advanceNoise(tj, X1, X2, theta2, s2);
 
-    /* observation */
-    BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
-    log_vector(*y, kalman_filter_type::oLogs);
-    set_columns(tmp1, *y);
-    delete y;
-
+    /* construct observation densities */
     #pragma omp parallel
     {
-      int offset, p;
+      int p;
 
       /* observation means */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        BOOST_AUTO(Y, subrange(X2, p*P2, P2, N2 - W, W));
-        BOOST_AUTO(mu, column(muY, p));
+        BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
+        BOOST_AUTO(muY1, column(muY, p));
 
-        gemv(1.0, Y, Wm, 0.0, mu, 'T');
+        gemv(1.0, Y1, Wm, 0.0, muY1, 'T');
       }
+
+      ///@todo Combine?
 
       /* observation covariances */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        BOOST_AUTO(Y, subrange(X2, p*P2, P2, N2 - W, W));
-        BOOST_AUTO(mu, column(muY, p));
-        BOOST_AUTO(Sigma, columns(SigmaY, p*W, W));
+        BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
+        BOOST_AUTO(muY1, column(muY, p));
+        BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
 
-        sub_rows(Y, mu);
-        syrk(Wi, rows(Y, 1, 2*N1), 0.0, Sigma, 'U', 'T');
-        syr(Wc0, row(Y, 0), Sigma, 'U');
+        sub_rows(Y1, muY1);
+        syrk(Wi, rows(Y1, 1, 2*N1), 0.0, SigmaY1, 'U', 'T');
+        syr(Wc0, row(Y1, 0), SigmaY1, 'U');
       }
+
+      /* observation Cholesky factors */
+      #pragma omp for
+      for (p = 0; p < P1; ++p) {
+        BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
+        BOOST_AUTO(RY1, columns(RY, p*W, W));
+
+        chol(SigmaY1, RY1, 'U');
+      }
+    }
+
+    /* construct observation innovations */
+    BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
+    log_vector(*y, oLogs);
+    set_columns(J, *y);
+    matrix_axpy(-1.0, muY, J);
+
+    synchronize();
+    delete Z;
+    delete y;
+  }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class V1, bi::Location L1, bi::Location L2>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
+    const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
+    Static<L2>& theta2, State<L2>& s) {
+
+}
+
+//template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+//template<bi::Location L1, bi::Location L2>
+//void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
+//    const real T, Static<L1>& theta1, State<L1>& s1, Static<L2>& theta2,
+//    State<L2>& s2) {
+//  #pragma omp parallel for
+//  for (int p = 0; p < P1; ++p) {
+//    BOOST_AUTO(RY1, columns(RY, p*W, W));
+//    ldetRY(p) = log(bi::prod(diagonal(RY1).begin(), diagonal(RY1).end(), 1.0));
+//  }
+//  scal(-0.5, lw1);
+//  axpy(-1.0, ldetY, lw1);
+//
+//  synchronize();
+//  delete y;
+//  delete tmp;
+//}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class V1>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
+  if (nupdates > 0) {
+    BOOST_AUTO(tmp, host_temp_matrix<real>(V, P1));
+    V1 lw1(P1), lw2(P1); // weight correction vectors
+
+    SigmaUY.resize(V, P1*W, false);
+    muU.resize(V, P1, false);
+    RU.resize(V, P1*V, false);
+    ldetRU.resize(P1, false);
+    haveP.resize(P1);
+
+    std::fill(haveP.begin(), haveP.end(), false);
+
+    /* initial samples */
+    BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
+    U.resize(P1, V);
+    particle_filter_type::rng.gaussians(vec(U));
+    particle_filter_type::rUpdater.setNext(V/NR);
+    dot_rows(U, lw1);
+
+    #pragma omp parallel
+    {
+      int p, w, offset;
 
       /* noise-observation cross-covariances */
       #pragma omp for
@@ -420,13 +534,24 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
         BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, offset, V));
         BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
-        BOOST_AUTO(Sigma, columns(SigmaUY, p*W, W));
+        BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
 
-        gdmm(Wi, diagonal(U1), Y1, 0.0, Sigma);
-        gdmm(Wi, diagonal(U2), Y2, 1.0, Sigma);
+        gdmm(Wi, diagonal(U1), Y1, 0.0, SigmaUY1);
+        gdmm(Wi, diagonal(U2), Y2, 1.0, SigmaUY1);
       }
 
-      /* compute conditional means and covariance Cholesky factors */
+      /* compute conditional means */
+      #pragma omp for
+      for (p = 0; p < P1; ++p) {
+        BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
+        BOOST_AUTO(RY1, columns(RY, p*W, W));
+        BOOST_AUTO(muU1, column(muU, p));
+
+        potrs(RY1, columns(J, p, 1), 'U');
+        gemv(1.0, SigmaUY1, column(J, p), 0.0, muU1);
+      }
+
+      /* compute conditional Cholesky factors */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
@@ -436,17 +561,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         BOOST_AUTO(muU1, column(muU, p));
 
         try {
-          /* conditional mean */
-          axpy(-1.0, column(muY, p), column(tmp1, p));
-          chol(SigmaY1, RY1, 'U');
-          potrs(RY1, columns(tmp1, p, 1), 'U');
-          gemv(1.0, SigmaUY1, column(tmp1, p), 0.0, muU1);
-
           /* conditional covariance Cholesky factor */
           trsm(1.0, RY1, SigmaUY1, 'R', 'U');
           ident(RU1);
           for (w = 0; w < W; ++w) {
-            ch1dn(RU1, column(SigmaUY1, w), column(tmp2, p));
+            ch1dn(RU1, column(SigmaUY1, w), column(*tmp, p));
           }
           ldetRU(p) = log(bi::prod(diagonal(RU1).begin(), diagonal(RU1).end(), 1.0));
         } catch (Exception e) {
@@ -456,34 +575,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         }
       }
 
-//      if (doLookahead) {
-//        /* compute stage-1 weights */
-//        dot_columns(tmp1, lw1);
-//        for (p = 0; p < P1; ++p) {
-//          ldetY(p) = log(bi::prod(diagonal(RY1).begin(), diagonal(RY1).end(), 1.0));
-//        }
-//        scal(-0.5, lw1);
-//        axpy(-1.0, ldetY, lw1);
-//      }
-    }
-  }
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<class V1>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::sample(
-    V1 lws) {
-  if (nupdates > 0) {
-    V1 lw1(P1), lw2(P1); // weight correction vectors
-    BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
-
-    U.resize(P1, V);
-    particle_filter_type::rng.gaussians(vec(U));
-    dot_rows(U, lw1);
-
-    #pragma omp parallel
-    {
-      int p;
+      /* transform samples */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         BOOST_AUTO(RU1, columns(RU, p*V, V));
@@ -493,23 +585,17 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::sample(
         trmv(RU1, u1, 'U');
         axpy(1.0, muU1, u1);
       }
-      particle_filter_type::rUpdater.setNext(V/NR);
-
-      /* weight correct */
-      dot_rows(U, lw2);
-      axpy(0.5, lw1, lws);
-      axpy(-0.5, lw2, lws);
-      axpy(1.0, ldetRU, lws);
     }
+
+    /* weight correct */
+    dot_rows(U, lw2);
+    axpy(0.5, lw1, lws);
+    axpy(-0.5, lw2, lws);
+    axpy(1.0, ldetRU, lws);
+
+    synchronize();
+    delete tmp;
   }
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<class V1, bi::Location L1, bi::Location L2>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
-    const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
-    Static<L2>& theta2, State<L2>& s) {
-
 }
 
 #endif

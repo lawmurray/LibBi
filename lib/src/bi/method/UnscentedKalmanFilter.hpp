@@ -547,9 +547,14 @@ protected:
   int N2;
 
   /**
-   * Number of observations at next time point.
+   * Number of observations.
    */
   int W;
+
+  /**
+   * Number of noise terms.
+   */
+  int V;
 
   /**
    * Number of sigma points.
@@ -895,6 +900,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::parameters(
   } else {
     N1 = N2 = M + NR*nextra + W;
   }
+  V = NR*nupdates;
 
   /* number of sigma points */
   P = 2*N1 + 1;
@@ -987,9 +993,9 @@ template<class V1, class M1, class V2, class M2, class M3>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::resizeNoise(
     ExpGaussianPdf<V1,M1>& runcorrected, ExpGaussianPdf<V2,M2>& rcorrected,
     M3& SigmaRY) {
-  runcorrected.resize(NR*nupdates, false);
-  rcorrected.resize(NR*nupdates, false);
-  SigmaRY.resize(NR*nupdates, W, false);
+  runcorrected.resize(V, false);
+  rcorrected.resize(V, false);
+  SigmaRY.resize(V, W, false);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -1228,8 +1234,8 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(const V1 mu,
     const M1 Sigma, ExpGaussianPdf<V2,M2>& runcorrected, M3& SigmaRY) {
   /* pre-conditions */
   assert (Sigma.size1() == N2 && Sigma.size2() == N2);
-  assert (runcorrected.size() == NR*nupdates);
-  assert (SigmaRY.size1() == NR*nupdates && SigmaRY.size2() == W);
+  assert (runcorrected.size() == V);
+  assert (SigmaRY.size1() == V && SigmaRY.size2() == W);
 
   if (nupdates > 0) {
     subrange(runcorrected.mean(), 0, NR*nextra) = subrange(mu, M, NR*nextra);
@@ -1290,10 +1296,10 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correctNoise(
     const ExpGaussianPdf<V1,M1>& runcorrected, const M2& SigmaRY, State<L>& s,
     ExpGaussianPdf<V3,M3>& observed, ExpGaussianPdf<V4,M4>& rcorrected) {
   /* pre-conditions */
-  assert (runcorrected.size() == NR*nupdates);
-  assert (SigmaRY.size1() == NR*nupdates && SigmaRY.size2() == W);
+  assert (runcorrected.size() == V);
+  assert (SigmaRY.size1() == V && SigmaRY.size2() == W);
   assert (observed.size() == W);
-  assert (rcorrected.size() == NR*nupdates);
+  assert (rcorrected.size() == V);
 
   if (W > 0 && oyUpdater.getTime() == state.t) {
     BOOST_AUTO(mask, oyUpdater.getMask());
