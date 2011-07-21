@@ -54,7 +54,7 @@ void ParticleSmootherNetCDFBuffer::readLogWeight(const int t,
   assert (t < nrDim->size());
   assert (p < npDim->size());
 
-  NcBool ret;
+  BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, p);
   BI_ASSERT(ret, "Index exceeds size reading " << lwVar->name());
   ret = lwVar->get(&lw, 1, 1);
@@ -67,7 +67,7 @@ void ParticleSmootherNetCDFBuffer::writeLogWeight(const int t,
   assert (t < nrDim->size());
   assert (p < npDim->size());
 
-  NcBool ret;
+  BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, p);
   BI_ASSERT(ret, "Index exceeds size writing " << lwVar->name());
   ret = lwVar->put(&lw, 1, 1);

@@ -72,7 +72,7 @@ void SparseInputNetCDFBuffer::mask() {
   if (isValid()) {
     t = getTime();
     BOOST_AUTO(iter, state.times.begin());
-    while (iter->first == t) {
+    while (iter->first == t && iter != state.times.end()) {
       tVar = iter->second;
       rDim = tDims[tVar];
       if (isSparse(rDim)) {
@@ -235,7 +235,7 @@ int SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
 
 void SparseInputNetCDFBuffer::map() {
   NcVar* var;
-  NcDim* dim;
+  BI_UNUSED NcDim* dim;
   BayesNode* node;
   NodeType type;
   int i, id, rDim;
@@ -342,7 +342,7 @@ std::pair<NcVar*,int> SparseInputNetCDFBuffer::mapVar(const BayesNode* node) {
   const NodeType type = node->getType();
   NcVar* var;
   int i, j = 0, rDim = -1, cVar = -1, lenX, lenY, lenZ;
-  bool canHaveTime, canHaveP;
+  BI_UNUSED bool canHaveTime, canHaveP;
 
   canHaveTime =
       type == D_NODE ||

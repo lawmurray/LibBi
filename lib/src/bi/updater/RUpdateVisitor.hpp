@@ -73,8 +73,8 @@ inline void bi::RUpdateVisitor<B,S,M1>::accept(Random& rng, const real t,
   } else if (is_gaussian_variate<front>::value) {
     rng.gaussians(vec(columns(s, start, size)));
   } else if (is_wiener_increment<front>::value) {
-    if (std::abs(tnxt - t) > 0.0) {
-      rng.gaussians(vec(columns(s, start, size)), 0.0, std::sqrt(std::abs(tnxt - t)));
+    if (fabs(tnxt - t) > 0.0) {
+      rng.gaussians(vec(columns(s, start, size)), 0.0, std::sqrt(fabs(tnxt - t)));
     } else {
       columns(s, start, size).clear();
     }

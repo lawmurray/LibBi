@@ -84,12 +84,6 @@ public:
       M1& xr, R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * @copydoc summarise_pf()
-   */
-  template<class T1, class V1, class V2>
-  void summarise(T1* ll, V1* lls, V2* ess);
-
-  /**
    * @copydoc #concept::ParticleFilter::reset()
    */
   void reset();
@@ -391,14 +385,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
-template<class T1, class V1, class V2>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(
-    T1* ll, V1* lls, V2* ess) {
-  summarise_pf(this->logWeightsCache, ll, lls, ess);
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL,
-    bi::StaticHandling SH>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   particle_filter_type::reset();
   kalman_filter_type::reset();
@@ -580,7 +566,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
       #pragma omp for
       for (p = 0; p < P1; ++p) {
         if ((*as1)(p) == p) {
-          BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
           BOOST_AUTO(RU1, columns(RU, p*V, V));
           BOOST_AUTO(RY1, columns(RY, p*W, W));

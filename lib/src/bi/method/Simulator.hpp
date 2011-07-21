@@ -454,7 +454,7 @@ template<class B, class U1, class IO1, class IO2, bi::Location CL, bi::StaticHan
 template<bi::Location L>
 void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt, State<L>& s) {
   /* pre-condition */
-  assert (std::abs(tnxt - state.t) > 0.0);
+  assert (fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;

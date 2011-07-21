@@ -55,7 +55,7 @@ void AuxiliaryParticleFilterNetCDFBuffer::readStage1LogWeight(const int t,
   assert (t < nrDim->size());
   assert (p < npDim->size());
 
-  NcBool ret;
+  BI_UNUSED NcBool ret;
   ret = lw1Var->set_cur(t, p);
   BI_ASSERT(ret, "Index exceeds size reading " << lw1Var->name());
   ret = lw1Var->get(&lw, 1, 1);
@@ -68,7 +68,7 @@ void AuxiliaryParticleFilterNetCDFBuffer::writeStage1LogWeight(const int t,
   assert (t < nrDim->size());
   assert (p < npDim->size());
 
-  NcBool ret;
+  BI_UNUSED NcBool ret;
   ret = lw1Var->set_cur(t, p);
   BI_ASSERT(ret, "Index exceeds size writing " << lw1Var->name());
   ret = lw1Var->put(&lw, 1, 1);

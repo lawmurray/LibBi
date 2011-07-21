@@ -380,7 +380,6 @@ bi::host_matrix_reference<T>& bi::host_matrix_reference<T>::operator=(
       memcpy(this->buf(), o.buf(), this->size1()*this->size2()*sizeof(T));
     } else {
       /* copy column-by-column */
-      size_type i;
       for (i = 0; i < this->size2(); ++i) {
         column(*this, i) = column(o, i);
       }

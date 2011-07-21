@@ -56,7 +56,7 @@ enum FilterType {
   /**
    * Filter conditioned on current state trajectory.
    */
-  CONDITIONED,
+  CONDITIONED
 };
 
 /**

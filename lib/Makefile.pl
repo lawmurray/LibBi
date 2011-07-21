@@ -26,7 +26,7 @@ $LINKFLAGS = '';
 $GCC_CXXFLAGS = '-fopenmp -Wno-parentheses'; # thrust gives lots of parentheses warnings, hiding others
 
 # Intel C++ compiler options
-$ICC_CXXFLAGS = '-malign-double -openmp -wd424 -wd981 -wd383 -wd1572 -wd869 -wd304 -wd444 -wd1418 -wd1782';
+$ICC_CXXFLAGS = '-malign-double -openmp -wd424 -wd981 -wd383 -wd1572 -wd869 -wd304 -wd444 -wd1418 -wd1782 -wd271';
 
 # Release flags
 $RELEASE_CXXFLAGS = ' -O3 -funroll-loops -fomit-frame-pointer -g';

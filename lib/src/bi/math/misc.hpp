@@ -61,9 +61,9 @@ inline int bi::next_power_2(const int n) {
 }
 
 inline double bi::rel_err(const double a, const double b) {
-  double diff = abs(a - b);
-  double abs_a = abs(a);
-  double abs_b = abs(b);
+  double diff = CUDA_ABS(a - b);
+  double abs_a = CUDA_ABS(a);
+  double abs_b = CUDA_ABS(b);
 
   if (a == b) { // absorbs a == b == 0.0 case
     return 0.0;

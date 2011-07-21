@@ -71,7 +71,7 @@ public:
 template<class B, unsigned SH>
 void bi::RK4Integrator<bi::ON_HOST,B,SH>::stepTo(const real tcur, const real tnxt) {
   /* pre-condition */
-  assert (std::abs(tnxt - tcur) > 0.0);
+  assert (fabs(tnxt - tcur) > 0.0);
 
   #ifdef USE_SSE
   typedef typename B::CTypeList S;

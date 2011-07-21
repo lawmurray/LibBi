@@ -460,7 +460,9 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     this->detU[k2] = sqrt(rcorrected.det());
 
     ++k2;
+    #ifndef USE_CPU
     #pragma omp flush(k2)
+    #endif
   }
   synchronize();
   kalman_filter_type::term(theta);
