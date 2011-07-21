@@ -74,10 +74,7 @@ public:
       M1& xr, R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * @copydoc #concept::Filter::summarise()
-   *
-   * Uses marginal likelihood estimator of @ref Pitt2002 "Pitt (2002)" and
-   * @ref Pitt2010 "Pitt et al. (2010)".
+   * @copydoc summarise_apf()
    */
   template<class T1, class V1, class V2>
   void summarise(T1* ll, V1* lls, V2* ess);
@@ -180,7 +177,7 @@ public:
   void flush();
   //@}
 
-private:
+protected:
   /**
    * Perform lookahead.
    *
@@ -247,31 +244,25 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHa
 template<bi::Location L, class R>
 void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, R* resam, const real relEss) {
-  /* pre-condition */
-  assert (T > this->state.t);
+  /* pre-conditions */
+  assert (T > this->getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
 
+  const int P = s.size();
   int n = 0, r = 0;
+  typename locatable_temp_vector<L,real>::type lw1s(P), lw2s(P);
+  typename locatable_temp_vector<L,int>::type as(P);
 
-  BOOST_AUTO(lw1s, host_temp_vector<real>(s.size()));
-  BOOST_AUTO(lw2s, host_temp_vector<real>(s.size()));
-  BOOST_AUTO(as, host_temp_vector<int>(s.size()));
-
-  init(theta, *lw1s, *lw2s, *as);
-  r = resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
-  while (this->state.t < T) {
+  init(theta, lw1s, lw2s, as);
+  while (this->getTime() < T) {
+    r = this->getTime() < T && resample(theta, s, lw1s, lw2s, as, resam, relEss);
     predict(T, theta, s);
-    correct(s, *lw2s);
-    output(n, theta, s, r, *lw1s, *lw2s, *as);
+    correct(s, lw2s);
+    output(n, theta, s, r, lw1s, lw2s, as);
     ++n;
-    r = this->state.t < T && resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
   }
   synchronize();
   term(theta);
-
-  delete lw1s;
-  delete lw2s;
-  delete as;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
@@ -297,7 +288,6 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   assert (this->out != NULL);
 
   int n = 0, r = 0, a = 0;
-
   BOOST_AUTO(lw1s, host_temp_vector<real>(s.size()));
   BOOST_AUTO(lw2s, host_temp_vector<real>(s.size()));
   BOOST_AUTO(as, host_temp_vector<int>(s.size()));
@@ -328,60 +318,7 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class T1, class V1, class V2>
 void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess) {
-  /* pre-condition */
-  BI_ERROR(this->out != NULL,
-      "Cannot summarise AuxiliaryParticleFilter without output");
-
-  const int P = this->out->size1();
-  const int T = this->out->size2();
-
-  BOOST_AUTO(lw1s1, host_temp_vector<real>(P));
-  BOOST_AUTO(lw2s1, host_temp_vector<real>(P));
-  BOOST_AUTO(ess1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls2, host_temp_vector<real>(T));
-  real ll1;
-
-  /* compute log-likelihoods and ESS at each time */
-  int n;
-  real logsum1, logsum2, sum2, sum3;
-  for (n = 0; n < T; ++n) {
-    *lw1s1 = stage1LogWeightsCache.get(n);
-    *lw2s1 = this->logWeightsCache.get(n);
-
-    bi::sort(lw1s1->begin(), lw1s1->end());
-    bi::sort(lw2s1->begin(), lw2s1->end());
-
-    logsum1 = log_sum_exp(lw1s1->begin(), lw1s1->end(), 0.0);
-    logsum2 = log_sum_exp(lw2s1->begin(), lw2s1->end(), 0.0);
-    sum2 = exp(logsum2);
-    sum3 = sum_exp_square(lw2s1->begin(), lw2s1->end(), 0.0);
-
-    (*lls1)(n) = logsum1 + logsum2 - 2*std::log(P);
-    (*ess1)(n) = (sum2*sum2)/sum3;
-  }
-
-  /* compute marginal log-likelihood */
-  *lls2 = *lls1;
-  bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
-
-  /* write to output params, where given */
-  if (ll != NULL) {
-    *ll = ll1;
-  }
-  if (lls != NULL) {
-    *lls = *lls1;
-  }
-  if (ess != NULL) {
-    *ess = *ess1;
-  }
-
-  delete lw1s1;
-  delete lw2s1;
-  delete ess1;
-  delete lls1;
-  delete lls2;
+  summarise_apf(stage1LogWeightsCache, this->logWeightsCache, ll, lls, ess);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>

@@ -31,7 +31,7 @@ namespace bi {
 template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
     StaticHandling SH = STATIC_SHARED>
 class ConditionalUnscentedParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL,SH>,
-    private UnscentedKalmanFilter<B,IO1,IO2,IO3,ON_HOST,SH> {
+    protected UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH> {
 public:
   /**
    * Particle filter type.
@@ -41,7 +41,7 @@ public:
   /**
    * Kalman filter type.
    */
-  typedef UnscentedKalmanFilter<B,IO1,IO2,IO3,ON_HOST,SH> kalman_filter_type;
+  typedef UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH> kalman_filter_type;
 
   /**
    * Constructor.
@@ -82,6 +82,12 @@ public:
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
       M1& xr, R* resam = NULL, const real relEss = 1.0);
+
+  /**
+   * @copydoc summarise_pf()
+   */
+  template<class T1, class V1, class V2>
+  void summarise(T1* ll, V1* lls, V2* ess);
 
   /**
    * @copydoc #concept::ParticleFilter::reset()
@@ -133,12 +139,14 @@ public:
   /**
    * Propose noise terms for upcoming prediction.
    *
-   * @tparam V1 Vector type.
+   * @tparam V1 Integer vector type.
+   * @tparam V2 Vector type.
    *
+   * @param as Ancestors.
    * @param[in,out] lws Log-weights.
    */
-  template<class V1>
-  void propose(V1 lws);
+  template<class V1, class V2>
+  void propose(const V1 as, V2 lws);
   //@}
 
   using particle_filter_type::getOutput;
@@ -152,7 +160,7 @@ public:
   using particle_filter_type::init;
   using particle_filter_type::term;
 
-private:
+protected:
   /**
    * Vector type for proposals.
    */
@@ -174,7 +182,6 @@ private:
   using kalman_filter_type::Wm;
   using kalman_filter_type::m;
   using kalman_filter_type::oLogs;
-
   using kalman_filter_type::advanceNoise;
   using kalman_filter_type::obs;
   using kalman_filter_type::parameters;
@@ -248,13 +255,7 @@ private:
    * \f$\mathbf{y}_t - \hat{\boldsymbol{\mu}}_Y^1, \ldots, \mathbf{y}_t -
    * \hat{\boldsymbol{\mu}}_Y^P\f$; innovation vectors.
    */
-  matrix_type J;
-
-  /**
-   * Vector indicating whether proposal has been computed for each ancestor
-   * particle. Used to eliminate redundant operations.
-   */
-  std::vector<bool> haveP;
+  matrix_type J1, J2;
 
   /**
    * Matrices of sigma points.
@@ -286,7 +287,7 @@ private:
 template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
 struct ConditionalUnscentedParticleFilterFactory {
   /**
-   * Create disturbance particle filter.
+   * Create conditional unscented particle filter.
    *
    * @return ConditionalUnscentedParticleFilter object. Caller has ownership.
    *
@@ -306,7 +307,8 @@ struct ConditionalUnscentedParticleFilterFactory {
 #include "../math/primitive.hpp"
 #include "../math/functor.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::ConditionalUnscentedParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
     particle_filter_type(m, rng, delta, in, obs, out),
@@ -315,12 +317,14 @@ bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::ConditionalUnscente
   //
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    Static<L>& theta, State<L>& s, R* resam, const real relEss) {
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, Static<L>& theta, State<L>& s, R* resam,
+    const real relEss) {
   /* pre-conditions */
-  assert (T > particle_filter_type::state.t);
+  assert (T >= particle_filter_type::getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
 
   typedef typename locatable_vector<L,real>::type V3;
@@ -339,50 +343,54 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const r
   int n = 0, r = 0;
   while (particle_filter_type::getTime() < T) {
     prepare(T, theta, s, theta1, s1);
-    //lookahead();
-    propose(lws);
+    propose(as, lws);
     particle_filter_type::predict(T, theta, s);
     particle_filter_type::correct(s, lws);
     particle_filter_type::output(n, theta, s, r, lws, as);
     ++n;
-    r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+    r = particle_filter_type::getTime() < T && resample(theta, s, lws, as,
+        resam, relEss);
   }
 
   synchronize();
   term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R, class V1>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    const V1 x0, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
-  /* pre-conditions */
-  assert (T > particle_filter_type::state.t);
-  assert (relEss >= 0.0 && relEss <= 1.0);
-  assert (x0.size() == ND + NC + NP);
-
-
-
-
-
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<bi::Location L, class M1, class R>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
   assert (false);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L, class M1, class R>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr,
+    R* resam, const real relEss) {
+  assert (false);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<class T1, class V1, class V2>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(
+    T1* ll, V1* lls, V2* ess) {
+  summarise_pf(this->logWeightsCache, ll, lls, ess);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   particle_filter_type::reset();
   kalman_filter_type::reset();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L1, bi::Location L2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, Static<L1>& theta1, State<L1>& s1, Static<L2>& theta2,
@@ -403,7 +411,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     ldetRY.resize(P1, false);
     X1.resize(P1*P2, N2);
     X2.resize(P1*P2, N2);
-    J.resize(W, P1);
+    J1.resize(W, P1);
+    J2.resize(W, P1);
 
     /* construct and propagate sigma points */
     BOOST_AUTO(Z, temp_matrix<matrix_type>(P1, ND + NC + NR));
@@ -419,10 +428,15 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     }
 
     s2.resize(P1*P2, false);
-    ///@todo Next two lines probably not necessary
+    ///@todo Next two lines may not be necessary
     theta2.resize(1);
     theta2 = theta1;
     advanceNoise(tj, X1, X2, theta2, s2);
+
+    /* start on innovations */
+    BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
+    log_vector(*y, oLogs);
+    set_columns(J1, *y);
 
     /* construct observation densities */
     #pragma omp parallel
@@ -437,8 +451,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
         gemv(1.0, Y1, Wm, 0.0, muY1, 'T');
       }
-
-      ///@todo Combine?
 
       /* observation covariances */
       #pragma omp for
@@ -460,13 +472,18 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
         chol(SigmaY1, RY1, 'U');
       }
-    }
 
-    /* construct observation innovations */
-    BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
-    log_vector(*y, oLogs);
-    set_columns(J, *y);
-    matrix_axpy(-1.0, muY, J);
+      /* complete and scale innovations */
+      #pragma omp for
+      for (p = 0; p < P1; ++p) {
+        BOOST_AUTO(RY1, columns(RY, p*W, W));
+        BOOST_AUTO(muY1, column(muY, p));
+
+        axpy(-1.0, muY1, column(J1, p));
+        column(J2, p) = column(J1, p);
+        potrs(RY1, columns(J2, p, 1), 'U');
+      }
+    }
 
     synchronize();
     delete Z;
@@ -474,7 +491,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class V1, bi::Location L1, bi::Location L2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
@@ -482,44 +500,26 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
 }
 
-//template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-//template<bi::Location L1, bi::Location L2>
-//void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
-//    const real T, Static<L1>& theta1, State<L1>& s1, Static<L2>& theta2,
-//    State<L2>& s2) {
-//  #pragma omp parallel for
-//  for (int p = 0; p < P1; ++p) {
-//    BOOST_AUTO(RY1, columns(RY, p*W, W));
-//    ldetRY(p) = log(bi::prod(diagonal(RY1).begin(), diagonal(RY1).end(), 1.0));
-//  }
-//  scal(-0.5, lw1);
-//  axpy(-1.0, ldetY, lw1);
-//
-//  synchronize();
-//  delete y;
-//  delete tmp;
-//}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-template<class V1>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<class V1, class V2>
+void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
+    const V1 as, V2 lws) {
   if (nupdates > 0) {
     BOOST_AUTO(tmp, host_temp_matrix<real>(V, P1));
-    V1 lw1(P1), lw2(P1); // weight correction vectors
+    BOOST_AUTO(as1, host_map_vector(as));
+    V2 lw1(P1), lw2(P1); // weight correction vectors
 
     SigmaUY.resize(V, P1*W, false);
     muU.resize(V, P1, false);
     RU.resize(V, P1*V, false);
     ldetRU.resize(P1, false);
-    haveP.resize(P1);
-
-    std::fill(haveP.begin(), haveP.end(), false);
 
     /* initial samples */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
     U.resize(P1, V);
     particle_filter_type::rng.gaussians(vec(U));
-    particle_filter_type::rUpdater.setNext(V/NR);
+    particle_filter_type::rUpdater.setNext(nupdates);
     dot_rows(U, lw1);
 
     #pragma omp parallel
@@ -529,58 +529,66 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws
       /* noise-observation cross-covariances */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        offset = ND + NC + NR + NR*(nextra - nupdates);
-        BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
-        BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
-        BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, offset, V));
-        BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
-        BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
+//        if ((*as1)(p) == p) {
+          offset = ND + NC + NR + NR*(nextra - nupdates);
+          BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
+          BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
+          BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, offset, V));
+          BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
+          BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
 
-        gdmm(Wi, diagonal(U1), Y1, 0.0, SigmaUY1);
-        gdmm(Wi, diagonal(U2), Y2, 1.0, SigmaUY1);
+          gdmm(Wi, diagonal(U1), Y1, 0.0, SigmaUY1);
+          gdmm(Wi, diagonal(U2), Y2, 1.0, SigmaUY1);
+//        }
       }
 
       /* compute conditional means */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
-        BOOST_AUTO(RY1, columns(RY, p*W, W));
-        BOOST_AUTO(muU1, column(muU, p));
+//        if ((*as1)(p) == p) {
+          BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
+          BOOST_AUTO(muU1, column(muU, p));
 
-        potrs(RY1, columns(J, p, 1), 'U');
-        gemv(1.0, SigmaUY1, column(J, p), 0.0, muU1);
+          gemv(1.0, SigmaUY1, column(J2, p), 0.0, muU1);
+//        }
       }
 
       /* compute conditional Cholesky factors */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
-        BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
-        BOOST_AUTO(RU1, columns(RU, p*V, V));
-        BOOST_AUTO(RY1, columns(RY, p*W, W));
-        BOOST_AUTO(muU1, column(muU, p));
+//        if ((*as1)(p) == p) {
+          BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
+          BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
+          BOOST_AUTO(RU1, columns(RU, p*V, V));
+          BOOST_AUTO(RY1, columns(RY, p*W, W));
+          BOOST_AUTO(muU1, column(muU, p));
 
-        try {
-          /* conditional covariance Cholesky factor */
-          trsm(1.0, RY1, SigmaUY1, 'R', 'U');
-          ident(RU1);
-          for (w = 0; w < W; ++w) {
-            ch1dn(RU1, column(SigmaUY1, w), column(*tmp, p));
+          try {
+            /* conditional covariance Cholesky factor */
+            trsm(1.0, RY1, SigmaUY1, 'R', 'U');
+            ident(RU1);
+            for (w = 0; w < W; ++w) {
+              ch1dn(RU1, column(SigmaUY1, w), column(*tmp, p));
+            }
+            ldetRU(p) = log(bi::prod(diagonal(RU1).begin(),
+                diagonal(RU1).end(), 1.0));
+          } catch (Exception e) {
+            ident(RU1);
+            muU1.clear();
+            ldetRU(p) = 0.0;
           }
-          ldetRU(p) = log(bi::prod(diagonal(RU1).begin(), diagonal(RU1).end(), 1.0));
-        } catch (Exception e) {
-          ident(RU1);
-          muU1.clear();
-          ldetRU(p) = 0.0;
-        }
+//        }
       }
 
       /* transform samples */
+      int q;
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-        BOOST_AUTO(RU1, columns(RU, p*V, V));
-        BOOST_AUTO(muU1, column(muU, p));
-        BOOST_AUTO(u1, row(U, p));
+//	     	q = (*as1)(p);
+        q = p;
+  	    BOOST_AUTO(RU1, columns(RU, q*V, V));
+        BOOST_AUTO(muU1, column(muU, q));
+        BOOST_AUTO(u1, row(U, q));
 
         trmv(RU1, u1, 'U');
         axpy(1.0, muU1, u1);
@@ -595,6 +603,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws
 
     synchronize();
     delete tmp;
+    delete as1;
   }
 }
 

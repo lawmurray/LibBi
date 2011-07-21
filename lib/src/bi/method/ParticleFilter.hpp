@@ -78,23 +78,6 @@ public:
   ~ParticleFilter();
 
   /**
-   * Get output buffer.
-   *
-   * @return The output buffer. NULL if there is no output.
-   */
-  IO3* getOutput();
-
-  /**
-   * Get the current time.
-   */
-  real getTime();
-
-  /**
-   * Reset filter for reuse.
-   */
-  void reset();
-
-  /**
    * @name High-level interface.
    *
    * An easier interface for common usage.
@@ -164,17 +147,7 @@ public:
       M1& xr, R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * Compute summary information from last filter run.
-   *
-   * @tparam T1 Scalar type.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[out] ll Marginal log-likelihood.
-   * @param[out] lls Log-likelihood at each observation.
-   * @param[out] ess Effective sample size at each observation.
-   *
-   * Any number of the parameters may be @c NULL.
+   * @copydoc summarise_pf
    */
   template<class T1, class V1, class V2>
   void summarise(T1* ll, V1* lls, V2* ess);
@@ -195,6 +168,23 @@ public:
    */
   template<class M1>
   void sampleTrajectory(M1& xd, M1& xc, M1& xr);
+
+  /**
+   * Reset filter for reuse.
+   */
+  void reset();
+
+  /**
+   * Get output buffer.
+   *
+   * @return The output buffer. NULL if there is no output.
+   */
+  IO3* getOutput();
+
+  /**
+   * Get the current time.
+   */
+  real getTime();
   //@}
 
   /**
@@ -568,56 +558,7 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
 template<class T1, class V1, class V2>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess) {
-  /* pre-condition */
-  BI_ERROR(out != NULL, "Cannot summarise ParticleFilter without output");
-
-  synchronize();
-
-  const int P = this->out->size1();
-  const int T = this->out->size2();
-
-  BOOST_AUTO(lws1, host_temp_vector<real>(P));
-  BOOST_AUTO(ess1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls2, host_temp_vector<real>(T));
-  double ll1;
-
-  /* compute log-likelihoods and ESS at each time */
-  int n;
-  real logsum1, sum1, sum2;
-  for (n = 0; n < T; ++n) {
-    *lws1 = logWeightsCache.get(n);
-
-    bi::sort(lws1->begin(), lws1->end());
-
-    logsum1 = log_sum_exp(lws1->begin(), lws1->end(), 0.0);
-    sum1 = exp(logsum1);
-    sum2 = sum_exp_square(lws1->begin(), lws1->end(), 0.0);
-
-    (*lls1)(n) = logsum1 - std::log(P);
-    (*ess1)(n) = (sum1*sum1)/sum2;
-  }
-
-  /* compute marginal log-likelihood */
-  *lls2 = *lls1;
-  bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
-
-  /* write to output params, where given */
-  if (ll != NULL) {
-    *ll = ll1;
-  }
-  if (lls != NULL) {
-    *lls = *lls1;
-  }
-  if (ess != NULL) {
-    *ess = *ess1;
-  }
-
-  delete lws1;
-  delete ess1;
-  delete lls1;
-  delete lls2;
+  summarise_pf(logWeightsCache, ll, lls, ess);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>

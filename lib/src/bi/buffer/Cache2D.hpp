@@ -8,6 +8,8 @@
 #ifndef BI_BUFFER_CACHE2D_HPP
 #define BI_BUFFER_CACHE2D_HPP
 
+#include "../math/host_matrix.hpp"
+
 namespace bi {
 /**
  * 2d cache of scalar values.
