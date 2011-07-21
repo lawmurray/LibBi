@@ -34,7 +34,7 @@ $GCC_CXXFLAGS = '-fopenmp -Wno-parentheses';
 $GCC_LINKFLAGS = '-lgomp';
 
 # Intel C++ compiler options
-$ICC_CXXFLAGS = '-openmp -malign-double -wd424 -wd981 -wd383 -wd1572 -wd869 -wd304 -wd444 -wd1418 -wd1782';
+$ICC_CXXFLAGS = '-openmp -malign-double -wd424 -wd981 -wd383 -wd1572 -wd869 -wd304 -wd444 -wd1418 -wd1782 -wd271';
 $ICC_LINKFLAGS = '-openmp';
 
 # Math library option flags

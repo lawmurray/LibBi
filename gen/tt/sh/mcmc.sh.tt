@@ -11,7 +11,7 @@ then
     ROOT=$PBS_O_WORKDIR
     LOCAL_DIR=$TMPDIR
     JOBS=2
-    : ${ID=$[2*$PBS_ARRAYID-0]}
+    : ${ID=$[$JOBS*$PBS_ARRAYID-0]}
 else
     ROOT=.
     LOCAL_DIR=/tmp
@@ -19,7 +19,7 @@ else
     : ${ID=0}
 fi
 NAME=mcmc
-SEED=$[$SEED + $ID]
+SEED=$[$SEED + $ID*$OMP_NUM_THREADS]
 
 cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
@@ -79,7 +79,7 @@ do
 	    --adapt=$ADAPT --include-initial=$INCLUDE_INITIAL &
 	
 	ID=$[$ID + 1]
-	SEED=$[$SEED + 1]
+	SEED=$[$SEED + $OMP_NUM_THREADS]
 done
 
 # copy results back from local directory
