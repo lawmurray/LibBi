@@ -21,6 +21,7 @@
 #include "bi/method/MarginalUnscentedParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
 #include "bi/method/AuxiliaryConditionalUnscentedParticleFilter.hpp"
+#include "bi/method/AuxiliaryMarginalUnscentedParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
@@ -122,7 +123,7 @@ int main(int argc, char* argv[]) {
   } else if (args.FILTER.compare("mupf") == 0) {
     run<MarginalUnscentedParticleFilterFactory<LOCATION> >(args);
   } else if (args.FILTER.compare("amupf") == 0) {
-    //run<AuxiliaryMarginalUnscentedParticleFilterFactory<LOCATION> >(args);
+    run<AuxiliaryMarginalUnscentedParticleFilterFactory<LOCATION> >(args);
   } else if (args.FILTER.compare("cupf") == 0) {
     run<ConditionalUnscentedParticleFilterFactory<LOCATION> >(args);
   } else if (args.FILTER.compare("acupf") == 0) {
