@@ -498,11 +498,11 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
   init(theta, lws, as);
   while (state.t < T) {
+    r = n > 0 && resample(theta, s, lws, as, resam, relEss);
     predict(T, theta, s);
     correct(s, lws);
     output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T && resample(theta, s, lws, as, resam, relEss);
   }
   synchronize();
   term(theta);
@@ -530,8 +530,6 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   assert (out != NULL);
   assert (relEss >= 0.0 && relEss <= 1.0);
 
-  synchronize();
-
   int n = 0, r = 0, a = 0;
 
   typename locatable_temp_vector<L,real>::type lws(s.size());
@@ -539,6 +537,7 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
   init(theta, lws, as);
   while (state.t < T) {
+    r = n > 0 && resample(theta, s, a, lws, as, resam, relEss);
     predict(T, theta, s);
 
     /* overwrite first particle with conditioned particle */
@@ -549,7 +548,6 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     correct(s, lws);
     output(n, theta, s, r, lws, as);
     ++n;
-    r = state.t < T && resample(theta, s, a, lws, as, resam, relEss);
   }
   synchronize();
   term(theta);

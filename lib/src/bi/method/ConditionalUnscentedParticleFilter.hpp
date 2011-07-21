@@ -359,13 +359,12 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   int n = 0, r = 0;
   while (particle_filter_type::getTime() < T) {
     prepare(T, theta, s, theta1, s1);
+    r = particle_filter_type::getTime() < T && resample(theta, s, lws, as, resam, relEss);
     propose(as, lws);
     particle_filter_type::predict(T, theta, s);
     particle_filter_type::correct(s, lws);
     particle_filter_type::output(n, theta, s, r, lws, as);
     ++n;
-    r = particle_filter_type::getTime() < T && resample(theta, s, lws, as,
-        resam, relEss);
   }
 
   synchronize();
@@ -526,6 +525,9 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class V1, class V2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     const V1 as, V2 lws) {
+  /* pre-condition */
+  assert (as.size() == lws.size());
+
   if (nupdates > 0) {
     BOOST_AUTO(tmp, host_temp_matrix<real>(V, P1));
     BOOST_AUTO(as1, host_map_vector(as));
@@ -545,12 +547,12 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     #pragma omp parallel
     {
-      int p, w, offset;
+      int p, q, w, offset;
 
       /* noise-observation cross-covariances */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-//        if ((*as1)(p) == p) {
+        if ((*as1)(p) == p) {
           offset = ND + NC + NR + NR*(nextra - nupdates);
           BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
           BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
@@ -560,24 +562,24 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
           gdmm(Wi, diagonal(U1), Y1, 0.0, SigmaUY1);
           gdmm(Wi, diagonal(U2), Y2, 1.0, SigmaUY1);
-//        }
+        }
       }
 
       /* compute conditional means */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-//        if ((*as1)(p) == p) {
+        if ((*as1)(p) == p) {
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
           BOOST_AUTO(muU1, column(muU, p));
 
           gemv(1.0, SigmaUY1, column(J2, p), 0.0, muU1);
-//        }
+        }
       }
 
       /* compute conditional Cholesky factors */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-//        if ((*as1)(p) == p) {
+        if ((*as1)(p) == p) {
           BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
           BOOST_AUTO(RU1, columns(RU, p*V, V));
@@ -598,18 +600,16 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
             muU1.clear();
             ldetRU(p) = 0.0;
           }
-//        }
+        }
       }
 
       /* transform samples */
-      int q;
       #pragma omp for
       for (p = 0; p < P1; ++p) {
-//	     	q = (*as1)(p);
-        q = p;
+	     	q = (*as1)(p);
   	    BOOST_AUTO(RU1, columns(RU, q*V, V));
         BOOST_AUTO(muU1, column(muU, q));
-        BOOST_AUTO(u1, row(U, q));
+        BOOST_AUTO(u1, row(U, p));
 
         trmv(RU1, u1, 'U');
         axpy(1.0, muU1, u1);

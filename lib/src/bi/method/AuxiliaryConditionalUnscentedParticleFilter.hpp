@@ -213,8 +213,7 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filte
   init(theta, lw1s, lw2s, as);
   while (this->getTime() < T) {
     prepare(T, theta, s, theta1, s1);
-    r = this->getTime() < T && resample(theta, s, lw1s, lw2s, as, resam,
-        relEss);
+    r = resample(theta, s, lw1s, lw2s, as, resam, relEss);
     propose(as, lw2s);
     predict(T, theta, s);
     correct(s, lw2s);

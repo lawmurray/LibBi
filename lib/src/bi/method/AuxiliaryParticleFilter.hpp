@@ -255,7 +255,7 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
 
   init(theta, lw1s, lw2s, as);
   while (this->getTime() < T) {
-    r = this->getTime() < T && resample(theta, s, lw1s, lw2s, as, resam, relEss);
+    r = resample(theta, s, lw1s, lw2s, as, resam, relEss);
     predict(T, theta, s);
     correct(s, lw2s);
     output(n, theta, s, r, lw1s, lw2s, as);
@@ -293,8 +293,8 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   BOOST_AUTO(as, host_temp_vector<int>(s.size()));
 
   init(theta, *lw1s, *lw2s, *as);
-  r = resample(theta, s, *lw1s, *lw2s, *as, resam, relEss);
   while (this->state.t < T) {
+    r = resample(theta, s, a, *lw1s, *lw2s, *as, resam, relEss);
     predict(T, theta, s);
 
     /* overwrite first particle with conditioned particle */
@@ -305,7 +305,6 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     correct(s, *lw2s);
     output(n, theta, s, r, *lw1s, *lw2s, *as);
     ++n;
-    r = this->state.t < T && resample(theta, s, a, *lw1s, *lw2s, *as, resam, relEss);
   }
   synchronize();
   term(theta);
