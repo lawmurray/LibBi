@@ -31,7 +31,7 @@ namespace bi {
 template<class B, class IO1, class IO2, class IO3, Location CL = ON_HOST,
     StaticHandling SH = STATIC_SHARED>
 class MarginalUnscentedParticleFilter : public ParticleFilter<B,IO1,IO2,IO3,CL,SH>,
-    private UnscentedKalmanFilter<B,IO1,IO2,IO3,ON_HOST,SH> {
+    protected UnscentedKalmanFilter<B,IO1,IO2,IO3,ON_HOST,SH> {
 public:
   /**
    * Particle filter type.
@@ -116,7 +116,7 @@ public:
    * will be lost!
    */
   template<Location L>
-  void lookahead(const real T, Static<L>& theta, State<L>& s);
+  void prepare(const real T, Static<L>& theta, State<L>& s);
 
   /**
    * Lookahead using unscented Kalman filter from fixed starting state
@@ -135,7 +135,7 @@ public:
    * will be lost!
    */
   template<Location L, class V1>
-  void lookahead(const real T, const V1 x0, Static<L>& theta, State<L>& s);
+  void prepare(const real T, const V1 x0, Static<L>& theta, State<L>& s);
 
   /**
    * Propose stochastic terms for next particle filter prediction.
@@ -152,6 +152,7 @@ public:
   using particle_filter_type::getTime;
   using particle_filter_type::summarise;
   using particle_filter_type::sampleTrajectory;
+  using particle_filter_type::predict;
   using particle_filter_type::correct;
   using particle_filter_type::resample;
   using particle_filter_type::output;
@@ -159,7 +160,7 @@ public:
   using particle_filter_type::init;
   using particle_filter_type::term;
 
-private:
+protected:
   /**
    * Vector type for proposals.
    */
@@ -171,8 +172,8 @@ private:
   typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
 
   /**
-   * \f$\hat{\boldsymbol{\mu}}_1,\ldots,\hat{\boldsymbol{\mu}}_T\f$; noise term
-   * proposal mean from UKF.
+   * \f$\hat{\boldsymbol{\mu}}_1,\ldots,\hat{\boldsymbol{\mu}}_T\f$; noise
+   * term proposal mean from UKF.
    */
   std::vector<vector_type*> mu;
 
@@ -223,7 +224,7 @@ private:
 template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
 struct MarginalUnscentedParticleFilterFactory {
   /**
-   * Create disturbance particle filter.
+   * Create marginal unscented particle filter.
    *
    * @return MarginalUnscentedParticleFilter object. Caller has ownership.
    *
@@ -233,8 +234,8 @@ struct MarginalUnscentedParticleFilterFactory {
   static MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
       IO3* out = NULL) {
-    return new MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
-        obs, out);
+    return new MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng,
+        delta, in, obs, out);
   }
 };
 
@@ -243,7 +244,8 @@ struct MarginalUnscentedParticleFilterFactory {
 #include "../math/primitive.hpp"
 #include "../math/functor.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::MarginalUnscentedParticleFilter(
     B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
     particle_filter_type(m, rng, delta, in, obs, out),
@@ -253,7 +255,8 @@ bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::MarginalUnscentedParti
   //
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::~MarginalUnscentedParticleFilter() {
   BOOST_AUTO(iter1, mu.begin());
   for (; iter1 != mu.end(); ++iter1) {
@@ -265,10 +268,12 @@ bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::~MarginalUnscentedPart
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    Static<L>& theta, State<L>& s, R* resam, const real relEss) {
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, Static<L>& theta, State<L>& s, R* resam,
+    const real relEss) {
   /* pre-conditions */
   assert (T > particle_filter_type::state.t);
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -299,7 +304,7 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
       if (!haveParameters) {
         theta1 = theta;
       }
-      lookahead(T, theta1, s1);
+      prepare(T, theta1, s1);
     }
 
     #ifndef USE_CPU
@@ -309,11 +314,12 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
       int n = 0, r = 0;
       while (particle_filter_type::getTime() < T) {
         propose(lws);
-        particle_filter_type::predict(T, theta, s);
-        particle_filter_type::correct(s, lws);
-        particle_filter_type::output(n, theta, s, r, lws, as);
+        predict(T, theta, s);
+        correct(s, lws);
+        output(n, theta, s, r, lws, as);
         ++n;
-        r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+        r = particle_filter_type::state.t < T && resample(theta, s, lws, as,
+            resam, relEss);
       }
     }
   }
@@ -322,10 +328,11 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
   term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R, class V1>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    const V1 x0, Static<L>& theta, State<L>& s, R* resam,
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
   /* pre-conditions */
   assert (T > particle_filter_type::state.t);
@@ -363,7 +370,7 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
       if (!haveParameters) {
         theta1 = theta;
       }
-      lookahead(T, x0, theta1, s1);
+      prepare(T, x0, theta1, s1);
     }
 
     #ifndef USE_CPU
@@ -371,13 +378,13 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
     #endif
     {
       int n = 0, r = 0;
-      while (particle_filter_type::getTime() < T) {
+      while (getTime() < T) {
         propose(lws);
-        particle_filter_type::predict(T, theta, s);
-        particle_filter_type::correct(s, lws);
-        particle_filter_type::output(n, theta, s, r, lws, as);
+        predict(T, theta, s);
+        correct(s, lws);
+        output(n, theta, s, r, lws, as);
         ++n;
-        r = particle_filter_type::state.t < T && resample(theta, s, lws, as, resam, relEss);
+        r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
       }
     }
   }
@@ -386,15 +393,17 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real
   term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class M1, class R>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
-    Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
-    const real relEss) {
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
+    const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr,
+    R* resam, const real relEss) {
   assert (false);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   particle_filter_type::reset();
   kalman_filter_type::reset();
@@ -402,9 +411,10 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   k2 = 0;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, Static<L>& theta, State<L>& s) {
   typedef typename locatable_temp_vector<L,real>::type V1;
   typedef typename locatable_temp_matrix<L,real>::type M1;
@@ -424,7 +434,8 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     tj = obs(T, s);
 
     kalman_filter_type::parameters(tj);
-    kalman_filter_type::resize(s, theta, observed, SigmaXY, X1, X2, mu, Sigma);
+    kalman_filter_type::resize(s, theta, observed, SigmaXY, X1, X2, mu,
+        Sigma);
     kalman_filter_type::resizeNoise(runcorrected, rcorrected, SigmaRY);
     kalman_filter_type::sigmas(corrected, X1);
     kalman_filter_type::advance(tj, X1, X2, theta, s);
@@ -433,8 +444,10 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     kalman_filter_type::predict(mu, Sigma, uncorrected, SigmaXY);
     kalman_filter_type::observe(mu, Sigma, observed);
     kalman_filter_type::predictNoise(mu, Sigma, runcorrected, SigmaRY);
-    kalman_filter_type::correct(uncorrected, SigmaXY, s, observed, corrected);
-    kalman_filter_type::correctNoise(runcorrected, SigmaRY, s, observed, rcorrected);
+    kalman_filter_type::correct(uncorrected, SigmaXY, s, observed,
+        corrected);
+    kalman_filter_type::correctNoise(runcorrected, SigmaRY, s, observed,
+        rcorrected);
 
     if (this->mu[k2] == NULL) {
       this->mu[k2] = new vector_type(rcorrected.size());
@@ -453,18 +466,21 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
   kalman_filter_type::term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, const V1 x0, Static<L>& theta, State<L>& s) {
 
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class V1>
-void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
+    V1 lws) {
   #ifndef USE_CPU
-  /* ensure lookahead is actually ahead... */
+  /* ensure prepare() is actually ahead... */
   while (k1 >= k2) {
     #pragma omp flush(k2)
   }
@@ -489,7 +505,8 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(V1 lws) {
     dot_rows(X, *lw2);
 
     /* correct weights */
-    thrust::transform(lws.begin(), lws.end(), lws.begin(), add_constant_functor<real>(log(detU)));
+    thrust::transform(lws.begin(), lws.end(), lws.begin(),
+        add_constant_functor<real>(log(detU)));
     axpy(0.5, *lw1, lws);
     axpy(-0.5, *lw2, lws);
   }

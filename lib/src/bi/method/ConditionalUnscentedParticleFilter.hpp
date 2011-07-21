@@ -153,6 +153,7 @@ public:
   using particle_filter_type::getTime;
   using particle_filter_type::summarise;
   using particle_filter_type::sampleTrajectory;
+  using particle_filter_type::predict;
   using particle_filter_type::correct;
   using particle_filter_type::resample;
   using particle_filter_type::output;

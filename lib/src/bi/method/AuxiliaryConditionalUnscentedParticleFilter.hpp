@@ -216,7 +216,7 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filte
     r = this->getTime() < T && resample(theta, s, lw1s, lw2s, as, resam,
         relEss);
     propose(as, lw2s);
-    particle_filter_type::predict(T, theta, s);
+    predict(T, theta, s);
     correct(s, lw2s);
     output(n, theta, s, r, lw1s, lw2s, as);
     ++n;
