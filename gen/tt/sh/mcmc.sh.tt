@@ -19,11 +19,11 @@ else
     : ${ID=0}
 fi
 NAME=mcmc
-SEED=$[$SEED + $ID*$OMP_NUM_THREADS]
 
 cd $ROOT
 LD_LIBRARY_PATH=[% LibPath %]:$LD_LIBRARY_PATH
 source config.sh
+SEED=$[$SEED + $ID*$OMP_NUM_THREADS]
 export OMP_NUM_THREADS
 
 
