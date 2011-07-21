@@ -631,8 +631,12 @@ bi::gpu_matrix<T,A>::gpu_matrix(const M1 o) :
 
 template<class T, class A>
 bi::gpu_matrix<T,A>::~gpu_matrix() {
-  if (own && this->ptr != NULL) {
-    alloc.deallocate(this->ptr, this->ld*this->cols);
+  if (own) {
+    if (this->rows > 0) {
+      alloc.deallocate(this->ptr, this->ld*this->cols);
+    } else {
+      alloc.deallocate(this->ptr, 0);
+    }
   }
 }
 

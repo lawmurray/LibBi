@@ -668,7 +668,11 @@ bi::host_matrix<T,A>::host_matrix(const host_matrix<T,A>& o) :
 template<class T, class A>
 bi::host_matrix<T,A>::~host_matrix() {
   if (own) {
-    alloc.deallocate(this->ptr, this->ld*this->cols);
+    if (this->rows > 0) {
+      alloc.deallocate(this->ptr, this->ld*this->cols);
+    } else {
+      alloc.deallocate(this->ptr, 0);
+    }
   }
 }
 

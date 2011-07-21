@@ -153,14 +153,20 @@ inline typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::alloca
 
   /* check available items to reuse */
   BOOST_AUTO(iter, available[bi_omp_tid].lower_bound(num));
-  if (iter != available[bi_omp_tid].end() && !iter->second.empty()) {
+  if (iter != available[bi_omp_tid].end()) {
     /* existing item */
+    assert (!iter->second.empty());
     p = iter->second.back();
     iter->second.pop_back();
+    if (iter->second.empty()) {
+      available[bi_omp_tid].erase(iter);
+    }
   } else {
     /* new item */
     p = alloc.allocate(num, hint);
   }
+
+  assert (p != NULL);
   return p;
 }
 
@@ -176,13 +182,21 @@ inline void bi::pooled_allocator<A>::destroy(pointer p) {
 
 template<class A>
 inline void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
-  BOOST_AUTO(iter, available[bi_omp_tid].find(num));
-  if (iter != available[bi_omp_tid].end()) {
-    /* existing size */
-    iter->second.push_back(p);
+  /* pre-condition */
+  assert (p != NULL || num == 0);
+
+  if (p != NULL) {
+    /* return to pool for reuse */
+    BOOST_AUTO(iter, available[bi_omp_tid].find(num));
+    if (iter != available[bi_omp_tid].end()) {
+      /* existing size */
+      iter->second.push_back(p);
+    } else {
+      /* new size */
+      available[bi_omp_tid].insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+    }
   } else {
-    /* new size */
-    available[bi_omp_tid].insert(std::make_pair(num, std::list<pointer>())).first->second.push_back(p);
+    alloc.deallocate(p, num);
   }
 }
 
