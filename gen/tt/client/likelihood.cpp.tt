@@ -17,13 +17,13 @@
 #include "bi/pdf/ExpGaussianMixturePdf.hpp"
 #include "bi/method/ParticleMCMC.hpp"
 #include "bi/method/ParticleFilter.hpp"
-#include "bi/method/AuxiliaryParticleFilter.hpp"
 #include "bi/method/ConditionalUnscentedParticleFilter.hpp"
 #include "bi/method/MarginalUnscentedParticleFilter.hpp"
+#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/AuxiliaryConditionalUnscentedParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
-#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/AuxiliaryParticleFilterNetCDFBuffer.hpp"
 
@@ -42,10 +42,215 @@
 
 using namespace bi;
 
-int main(int argc, char* argv[]) {
-  /* model type */
-  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+/**
+ * Command line arguments structure.
+ */
+struct Args {  
+  real T, DELTA, H, RTOLER, ATOLER, SD2, ESS_REL;
+  int ID, P, INIT_NS, FORCE_NS, OBS_NS, SEED, C, M;
+  std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
+      STARTING_FILE, STARTING_TYPE, RESAMPLER, FILTER;
+  bool INCLUDE_INITIAL, SORT;
   
+  /**
+   * Constructor
+   */
+  Args() {
+    T = 0.0;
+    DELTA = 1.0;
+    H = 1.0;
+    RTOLER = 1.0e-3;
+    ATOLER = 1.0e-3;
+    SD2 = 0.0;
+    ESS_REL = 1.0;
+    ID = 0;
+    P = 1024;
+    INIT_NS = 0;
+    FORCE_NS = 0;
+    OBS_NS = 0;
+    SEED = 0;
+    C = 1000;
+    M = 10;
+    STARTING_TYPE = std::string("prior");
+    RESAMPLER = std::string("stratified");
+    FILTER = std::string("bootstrap");
+    INCLUDE_INITIAL = true;
+    SORT = true;    
+  }
+};
+
+/**
+ * Main.
+ * 
+ * @param argc Number of arguments.
+ * @param argv Arguments
+ */
+int main(int argc, char* argv[]);
+
+/**
+ * Perform sampling routine.
+ * 
+ * @tparam Factory Factory type for creating filter.
+ * 
+ * @param args Command line arguments.
+ */
+template<class Factory>
+void run(Args& args);
+
+/**
+ * Read command line arguments.
+ * 
+ * @param argc Number of arguments.
+ * @param argv Arguments
+ * 
+ * @return Struct of command line arguments.
+ */
+Args read_args(int argc, char* argv[]);
+
+/**
+ * Main.
+ */
+int main(int argc, char* argv[]) {
+  /* command line arguments */
+  Args args(read_args(argc, argv));
+  
+  /* run */
+  if (args.FILTER.compare("pf") == 0) {
+    run<ParticleFilterFactory<LOCATION> >(args);
+  } else if (args.FILTER.compare("apf") == 0) {
+    run<AuxiliaryParticleFilterFactory<LOCATION> >(args);
+  } else if (args.FILTER.compare("mupf") == 0) {
+    run<MarginalUnscentedParticleFilterFactory<LOCATION> >(args);
+  } else if (args.FILTER.compare("amupf") == 0) {
+    //run<AuxiliaryMarginalUnscentedParticleFilterFactory<LOCATION> >(args);
+  } else if (args.FILTER.compare("cupf") == 0) {
+    run<ConditionalUnscentedParticleFilterFactory<LOCATION> >(args);
+  } else if (args.FILTER.compare("acupf") == 0) {
+    run<AuxiliaryConditionalUnscentedParticleFilterFactory<LOCATION> >(args);
+  } else {
+    std::cerr << "Filter type " << args.FILTER << " unrecognised" << std::endl;
+    exit(1);
+  }
+  
+  return 0;
+}
+
+template<class Factory>
+void run(Args& args) {
+  /* init */
+  #ifdef __CUDACC__
+  int dev = chooseDevice(ID);
+  std::cerr << "Using device " << dev << std::endl;
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init();
+  bi_ode_init(args.H, args.ATOLER, args.RTOLER);
+  h_ode_set_nsteps(100u);
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* model */
+  typedef [% ClassName %]<X_LEN,Y_LEN,Z_LEN> model_type;
+  model_type m;
+  const int ND = m.getNetSize(D_NODE);
+  const int NC = m.getNetSize(C_NODE);
+  const int NP = m.getNetSize(P_NODE);
+  const int N = (args.INCLUDE_INITIAL) ? ND + NC + NP : NP;
+
+  /* random number generator */
+  Random rng(args.SEED);
+
+  /* scaling factors */
+  if (args.SD2 <= 0.0) {
+    args.SD2 = std::pow(2.4,2)/N;
+  }
+
+  /* state and intermediate results */
+  Static<LOCATION> theta(m);
+  State<LOCATION> s(m, args.P);
+  args.P = s.size();
+  host_vector<real> x(N); // initial state of chain
+
+  /* initialise from prior */
+  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
+  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
+  m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));   
+  
+  /* inputs */
+  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
+  if (!args.FORCE_FILE.empty()) {
+    inForce = new SparseInputNetCDFBuffer(m, args.FORCE_FILE, args.FORCE_NS);
+  }
+  if (!args.INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, args.INIT_FILE, args.INIT_NS);
+    inInit->read0(P_NODE, theta.get(P_NODE));
+    inInit->read0(D_NODE, s.get(D_NODE));
+    inInit->read0(C_NODE, s.get(C_NODE));
+    if (args.INCLUDE_INITIAL) {
+      subrange(x, 0, ND) = row(s.get(D_NODE), 0);
+      subrange(x, ND, NC) = row(s.get(C_NODE), 0);
+      subrange(x, ND + NC, NP) = row(theta.get(P_NODE), 0);
+    } else {
+      x = row(theta.get(P_NODE), 0);
+    }
+  }
+  SparseInputNetCDFBuffer inObs(m, args.OBS_FILE, args.OBS_NS);
+  const int Y = inObs.countUniqueTimes(args.T);
+  
+  /* outputs */
+  ParticleMCMCNetCDFBuffer out(m, args.C, Y, args.OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  AuxiliaryParticleFilterNetCDFBuffer outFilter(m, args.P, Y, args.FILTER_FILE, NetCDFBuffer::REPLACE);
+
+  /* filter */
+  StratifiedResampler resam(rng, args.SORT);
+  BOOST_AUTO(filter, Factory::create(m, rng, args.DELTA, inForce, &inObs,
+      &outFilter));
+
+  /* sampler */
+  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
+      args.INCLUDE_INITIAL ? INITIAL_CONDITIONED : INITIAL_SAMPLED));
+  
+  /* prior */
+  BOOST_AUTO(p0, mcmc->getPrior());
+  
+  /* initialise */
+  int attempts = 0;
+  do {
+    BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts");
+    sample_starting(m, args.STARTING_TYPE, args.STARTING_FILE, args.SD2, args.INCLUDE_INITIAL, rng, x);
+    ++attempts;
+  } while (!(p0(x) > 0.0));
+  
+  /* sample */
+  int c;
+  mcmc->init(x, args.T, theta, s, filter, &resam);
+  mcmc->output0(filter);
+  for (c = 0; c < args.C; ++c) {
+    if ((c % args.M) == 0) {
+      attempts = 0;
+      do {
+        BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
+        sample_starting(m, args.STARTING_TYPE, args.STARTING_FILE, args.SD2, args.INCLUDE_INITIAL, rng, x);
+        ++attempts;
+      } while (!(p0(x) > 0.0));
+    }
+    mcmc->proposal(x);
+    mcmc->prior();
+    mcmc->likelihood(args.T, theta, s, filter, &resam, args.ESS_REL);
+    mcmc->accept(filter);
+    mcmc->output(c);
+    mcmc->report(c);
+  }
+  mcmc->term(theta);
+    
+  delete mcmc;
+  delete filter;
+  delete inForce;
+  delete inInit;
+}
+
+Args read_args(int argc, char* argv[]) {
+  Args args;
+
   /* command line arguments */
   enum {
     ID_ARG,
@@ -70,17 +275,8 @@ int main(int argc, char* argv[]) {
     STARTING_FILE_ARG,
     INCLUDE_INITIAL_ARG
   };
-  real T = 0.0, DELTA = 1.0, H = 1.0, RTOLER = 1.0e-3, ATOLER = 1.0e-3,
-      SD2 = 0.0, ESS_REL = 1.0;
-  int ID = 0, P = 1024, INIT_NS = 0, FORCE_NS = 0, OBS_NS = 0,
-      SEED = 0, C = 1000, M = 10;
-  std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
-      STARTING_FILE;
-  std::string STARTING_TYPE("prior"), RESAMPLER("stratified"),
-      FILTER("bootstrap");
-  bool INCLUDE_INITIAL = true, SORT = true;
+  
   int c, option_index;
-
   option long_options[] = {
       {"id", required_argument, 0, ID_ARG },
       {"delta", required_argument, 0, DELTA_ARG },
@@ -112,290 +308,86 @@ int main(int argc, char* argv[]) {
     if (optarg) {
       switch (c) {
       case ID_ARG:
-        ID = atoi(optarg);
+        args.ID = atoi(optarg);
         break;
       case DELTA_ARG:
-        DELTA = atof(optarg);
+        args.DELTA = atof(optarg);
         break;
       case ATOLER_ARG:
-        ATOLER = atof(optarg);
+        args.ATOLER = atof(optarg);
         break;
       case RTOLER_ARG:
-        RTOLER = atof(optarg);
+        args.RTOLER = atof(optarg);
         break;
       case SD2_ARG:
-        SD2 = atof(optarg);
+        args.SD2 = atof(optarg);
         break;
       case ESS_REL_ARG:
-        ESS_REL = atof(optarg);
+        args.ESS_REL = atof(optarg);
         break;
       case INIT_NS_ARG:
-        INIT_NS = atoi(optarg);
+        args.INIT_NS = atoi(optarg);
         break;
       case FORCE_NS_ARG:
-        FORCE_NS = atoi(optarg);
+        args.FORCE_NS = atoi(optarg);
         break;
       case OBS_NS_ARG:
-        OBS_NS = atoi(optarg);
+        args.OBS_NS = atoi(optarg);
         break;
       case SEED_ARG:
-        SEED = atoi(optarg);
+        args.SEED = atoi(optarg);
         break;
       case INIT_FILE_ARG:
-        INIT_FILE = std::string(optarg);
+        args.INIT_FILE = std::string(optarg);
         break;
       case FORCE_FILE_ARG:
-        FORCE_FILE = std::string(optarg);
+        args.FORCE_FILE = std::string(optarg);
         break;
       case OBS_FILE_ARG:
-        OBS_FILE = std::string(optarg);
+        args.OBS_FILE = std::string(optarg);
         break;
       case OUTPUT_FILE_ARG:
-        OUTPUT_FILE = std::string(optarg);
+        args.OUTPUT_FILE = std::string(optarg);
         break;
       case FILTER_FILE_ARG:
-        FILTER_FILE = std::string(optarg);
+        args.FILTER_FILE = std::string(optarg);
         break;
       case STARTING_FILE_ARG:
-        STARTING_FILE = std::string(optarg);
+        args.STARTING_FILE = std::string(optarg);
         break;
       case STARTING_TYPE_ARG:
-        STARTING_TYPE = std::string(optarg);
+        args.STARTING_TYPE = std::string(optarg);
         break;
       case RESAMPLER_ARG:
-        RESAMPLER = std::string(optarg);
+        args.RESAMPLER = std::string(optarg);
         break;
       case FILTER_ARG:
-        FILTER = std::string(optarg);
+        args.FILTER = std::string(optarg);
         break;
       case SORT_ARG:
-        SORT = atoi(optarg);
+        args.SORT = atoi(optarg);
         break;
       case INCLUDE_INITIAL_ARG:
-        INCLUDE_INITIAL = atoi(optarg);
+        args.INCLUDE_INITIAL = atoi(optarg);
         break;
       case 'T':
-        T = atof(optarg);
+        args.T = atof(optarg);
         break;
       case 'h':
-        H = atof(optarg);
+        args.H = atof(optarg);
         break;
       case 'P':
-        P = atoi(optarg);
+        args.P = atoi(optarg);
         break;
       case 'C':
-        C = atoi(optarg);
+        args.C = atoi(optarg);
         break;
       case 'M':
-        M = atoi(optarg);
+        args.M = atoi(optarg);
         break;
       }
     }
   } while (c != -1);
-
-  /* bi init */
-  #ifdef __CUDACC__
-  int dev = chooseDevice(ID);
-  std::cerr << "Using device " << dev << std::endl;
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
-  #endif
-  bi_omp_init();
-  bi_ode_init(H, ATOLER, RTOLER);
-  h_ode_set_nsteps(100u);
-
-  /* NetCDF error reporting */
-  NcError ncErr(NcError::silent_nonfatal);
-
-  /* random number generator */
-  Random rng(SEED);
-
-  /* model */
-  model_type m;
-  const int ND = m.getNetSize(D_NODE);
-  const int NC = m.getNetSize(C_NODE);
-  const int NP = m.getNetSize(P_NODE);
-  const int N = (INCLUDE_INITIAL) ? ND + NC + NP : NP;
-
-  /* scaling factors */
-  if (SD2 <= 0.0) {
-    SD2 = std::pow(2.4,2)/N;
-  }
-
-  /* state and intermediate results */
-  Static<LOCATION> theta(m);
-  State<LOCATION> s(m, P);
-  host_vector<real> x(N); // initial state of chain
-  P = s.size(); // may change according to implementation
-
-  /* initialise from prior */
-  m.getPrior<D_NODE>().samples(rng, s.get(D_NODE));
-  m.getPrior<C_NODE>().samples(rng, s.get(C_NODE));
-  m.getPrior<P_NODE>().samples(rng, theta.get(P_NODE));   
   
-  /* inputs */
-  SparseInputNetCDFBuffer *inForce = NULL, *inInit = NULL;
-  if (!FORCE_FILE.empty()) {
-    inForce = new SparseInputNetCDFBuffer(m, FORCE_FILE, FORCE_NS);
-  }
-  if (!INIT_FILE.empty()) {
-    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
-    inInit->read0(P_NODE, theta.get(P_NODE));
-    inInit->read0(D_NODE, s.get(D_NODE));
-    inInit->read0(C_NODE, s.get(C_NODE));
-    if (INCLUDE_INITIAL) {
-      subrange(x, 0, ND) = row(s.get(D_NODE), 0);
-      subrange(x, ND, NC) = row(s.get(C_NODE), 0);
-      subrange(x, ND + NC, NP) = row(theta.get(P_NODE), 0);
-    } else {
-      x = row(theta.get(P_NODE), 0);
-    }
-  }
-  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
-  const int Y = inObs.countUniqueTimes(T);
-  
-  /* outputs */
-  ParticleMCMCNetCDFBuffer out(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
-
-  /* filter */
-  StratifiedResampler resam(rng, SORT);
-  BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-      inForce, &inObs, &outFilter));
-
-  /* sampler */
-  BOOST_AUTO(mcmc, ParticleMCMCFactory<LOCATION>::create(m, rng, &out,
-      INCLUDE_INITIAL ? INITIAL_CONDITIONED : INITIAL_SAMPLED));
-  
-  /* prior */
-  BOOST_AUTO(p0, mcmc->getPrior());
-  
-  /* initialise */
-  int attempts = 0;
-  do {
-    BI_ERROR(attempts < 1000, "Could not initialise within bounds of prior within 1000 attempts");
-    sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-    ++attempts;
-  } while (!(p0(x) > 0.0));
-  
-  /* sample */
-  if (FILTER.compare("apf") == 0) {
-    /* with auxiliary particle filter */
-    AuxiliaryParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
-        NetCDFBuffer::REPLACE);
-    BOOST_AUTO(filter, AuxiliaryParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-        inForce, &inObs, &outFilter));
-
-    mcmc->init(x, T, theta, s, filter, &resam);
-    mcmc->output0(filter);
-    for (c = 0; c < C; ++c) {
-      if ((c % M) == 0) {
-        attempts = 0;
-        do {
-          BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
-          sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-          ++attempts;
-        } while (!(p0(x) > 0.0));
-      }
-      mcmc->proposal(x);
-      mcmc->prior();
-      mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
-      mcmc->accept(filter);
-      mcmc->output(c);
-      mcmc->report(c);
-    }
-    mcmc->term(theta);
-    
-    delete filter;
-  } else if (FILTER.compare("mupf") == 0) {
-      /* with marginal unscented particle filter */
-      ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
-          NetCDFBuffer::REPLACE);
-      BOOST_AUTO(filter, MarginalUnscentedParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-          inForce, &inObs, &outFilter));
-
-      mcmc->init(x, T, theta, s, filter, &resam);
-      mcmc->output0(filter);
-      for (c = 0; c < C; ++c) {
-        if ((c % M) == 0) {
-          attempts = 0;
-          do {
-            BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
-            sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-            ++attempts;
-          } while (!(p0(x) > 0.0));
-        }
-        mcmc->proposal(x);
-        mcmc->prior();
-        mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
-        mcmc->accept(filter);
-        mcmc->output(c);
-        mcmc->report(c);
-      }
-      mcmc->term(theta);
-      
-      delete filter;
-  } else if (FILTER.compare("cupf") == 0) {
-      /* with conditional unscented particle filter */
-      ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
-          NetCDFBuffer::REPLACE);
-      BOOST_AUTO(filter, ConditionalUnscentedParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-          inForce, &inObs, &outFilter));
-
-      mcmc->init(x, T, theta, s, filter, &resam);
-      mcmc->output0(filter);
-      for (c = 0; c < C; ++c) {
-        if ((c % M) == 0) {
-          attempts = 0;
-          do {
-            BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
-            sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-            ++attempts;
-          } while (!(p0(x) > 0.0));
-        }
-        mcmc->proposal(x);
-        mcmc->prior();
-        mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
-        mcmc->accept(filter);
-        mcmc->output(c);
-        mcmc->report(c);
-      }
-      mcmc->term(theta);
-      
-      delete filter;
-  } else {
-    /* with bootstrap particle filter */
-    ParticleFilterNetCDFBuffer outFilter(m, P, Y, FILTER_FILE,
-        NetCDFBuffer::REPLACE);
-    BOOST_AUTO(filter, ParticleFilterFactory<LOCATION>::create(m, rng, DELTA,
-        inForce, &inObs, &outFilter));
-
-    mcmc->init(x, T, theta, s, filter, &resam);
-    mcmc->output0(filter);
-    for (c = 0; c < C; ++c) {
-      if ((c % M) == 0) {
-        attempts = 0;
-        do {
-          BI_ERROR(attempts < 1000, "Could not propose within bounds of prior within 1000 attempts");
-          sample_starting(m, STARTING_TYPE, STARTING_FILE, SD2, INCLUDE_INITIAL, rng, x);
-          ++attempts;
-        } while (!(p0(x) > 0.0));
-      }
-      mcmc->proposal(x);
-      mcmc->prior();
-      mcmc->likelihood(T, theta, s, filter, &resam, ESS_REL);
-      mcmc->accept(filter);
-      mcmc->output(c);
-      mcmc->report(c);
-    }
-    mcmc->term(theta);
-    
-    delete filter;
-  }
-
-  delete mcmc;
-  delete filter;
-  delete inForce;
-  delete inInit;
-
-  return 0;
+  return args;
 }
