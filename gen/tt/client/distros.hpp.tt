@@ -32,10 +32,10 @@ bi::ExpGaussianPdf<> init_starting(B& m,
 /**
  * Sample from starting distribution.
  */
-template<class B, class V1>
+template<class B, class M1>
 void sample_starting(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
-    bi::Random& rng, V1 x);
+    bi::Random& rng, M1 X);
 
 /**
  * Initialise distribution.
@@ -47,10 +47,10 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
 /**
  * Sample from distribution.
  */
-template<class B, class V1>
+template<class B, class M1>
 void sample_distro(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
-    bi::Random& rng, V1 x);
+    bi::Random& rng, M1 X);
 
 #include "bi/buffer/UnscentedKalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
@@ -80,12 +80,12 @@ bi::ExpGaussianPdf<> init_starting(B& m,
   return init_distro(m, type, file, sd, includeInitial);  
 }
 
-template<class B, class V1>
+template<class B, class M1>
 void sample_starting(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
-    bi::Random& rng, V1 x) {
+    bi::Random& rng, M1 X) {
   if (type.compare("file") != 0) {
-    sample_distro(m, type, file, sd, includeInitial, rng, x);
+    sample_distro(m, type, file, sd, includeInitial, rng, X);
   }
 }
 
@@ -124,23 +124,28 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
   
   cov(m.template getPrior<D_NODE>(), subrange(Sigma, 0, ND, 0, ND));
   cov(m.template getPrior<C_NODE>(), subrange(Sigma, ND, NC, ND, NC));
-  cov(m.template getPrior<P_NODE>(), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
+  cov(m.template getPrior<P_NODE>(), subrange(Sigma, ND + NC + NR, NP,
+      ND + NC + NR, NP));
   
   /* overwrite covariance according to proposal type */
   if (type.compare("ukf") == 0) {
     host_vector<real> mu1(mu.size());
     host_matrix<real> Sigma1(Sigma.size1(), Sigma.size2());
     
-    UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
     in.readCorrectedState(in.size2() - 1, mu1, Sigma1);
     
     subrange(mu, ND + NC + NR, NP) = subrange(mu1, ND + NC + NR, NP);
-    subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1, ND + NC + NR, NP, ND + NC + NR, NP);
+    subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1,
+        ND + NC + NR, NP, ND + NC + NR, NP);
   } else if (type.compare("urts") == 0) {
-    UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
     in.readSmoothState(0, mu, Sigma);
   } else if (type.compare("pf") == 0) {
-    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);    
+    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
 
     host_matrix<real> X(in.size1(), NP);
     host_vector<real> w(in.size1());
@@ -152,9 +157,11 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
     element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
     mean(X, w, subrange(mu, ND + NC + NR, NP));
-    cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
+    cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR,
+        NP, ND + NC + NR, NP));
   } else if (type.compare("pfs") == 0) {
-    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
     
     host_matrix<real> X(in.size1(), NP);
     host_vector<real> w(in.size1());
@@ -166,9 +173,11 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
     element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
     mean(X, w, subrange(mu, ND + NC + NR, NP));
-    cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
+    cov(X, w, subrange(mu, ND + NC + NR, NP), subrange(Sigma, ND + NC + NR,
+        NP, ND + NC + NR, NP));
   } else if (type.compare("kfb") == 0) {
-    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
     
     host_matrix<real> X(in.size1(), ND + NC + NR + NP);
     host_vector<real> w(in.size1());
@@ -197,9 +206,12 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
     subrange(q.mean(), 0, ND + NC) = subrange(mu, 0, ND + NC);
     subrange(q.mean(), ND + NC, NP) = subrange(mu, ND + NC + NR, NP);
     
-    subrange(q.cov(), 0, ND + NC, 0, ND + NC) = subrange(Sigma, 0, ND + NC, 0, ND + NC);
-    subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP);
-    subrange(q.cov(), 0, ND + NC, ND + NC, NP) = subrange(Sigma, 0, ND + NC, ND + NC + NR, NP);
+    subrange(q.cov(), 0, ND + NC, 0, ND + NC) = subrange(Sigma, 0, ND + NC,
+        0, ND + NC);
+    subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(Sigma,
+        ND + NC + NR, NP, ND + NC + NR, NP);
+    subrange(q.cov(), 0, ND + NC, ND + NC, NP) = subrange(Sigma, 0, ND + NC,
+        ND + NC + NR, NP);
   } else {
     q.mean() = subrange(mu, ND + NC + NR, NP);
     q.cov() = subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP);
@@ -213,10 +225,10 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
   return q;
 }
 
-template<class B, class V1>
+template<class B, class M1>
 void sample_distro(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
-    bi::Random& rng, V1 x) { 
+    bi::Random& rng, M1 X) { 
   using namespace bi;
   
   const int ND = m.getNetSize(D_NODE);
@@ -226,11 +238,11 @@ void sample_distro(B& m, const std::string& type,
   
   /* initialise with sample from prior */
   if (includeInitial) {
-    m.template getPrior<D_NODE>().sample(rng, subrange(x, 0, ND));
-    m.template getPrior<C_NODE>().sample(rng, subrange(x, ND, NC));
-    m.template getPrior<P_NODE>().sample(rng, subrange(x, ND + NC, NP));
+    m.template getPrior<D_NODE>().samples(rng, columns(X, 0, ND));
+    m.template getPrior<C_NODE>().samples(rng, columns(X, ND, NC));
+    m.template getPrior<P_NODE>().samples(rng, columns(X, ND + NC, NP));
   } else {
-    m.template getPrior<P_NODE>().sample(rng, x);    
+    m.template getPrior<P_NODE>().samples(rng, X);    
   }
   
   if (type.compare("ukf") == 0 || type.compare("urts") == 0) {
@@ -259,21 +271,25 @@ void sample_distro(B& m, const std::string& type,
     
     cov(m.template getPrior<D_NODE>(), subrange(Sigma, 0, ND, 0, ND));
     cov(m.template getPrior<C_NODE>(), subrange(Sigma, ND, NC, ND, NC));
-    cov(m.template getPrior<P_NODE>(), subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP));
+    cov(m.template getPrior<P_NODE>(), subrange(Sigma, ND + NC + NR, NP,
+        ND + NC + NR, NP));
     
     /* overwrite covariance according to proposal type */
     if (type.compare("ukf") == 0) {
       host_vector<real> mu1(mu.size());
       host_matrix<real> Sigma1(Sigma.size1(), Sigma.size2());
       
-      UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+      UnscentedKalmanFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+          STATIC_OWN);
       in.readCorrectedState(in.size2() - 1, mu1, Sigma1);
       
       subrange(mu, ND + NC + NR, NP) = subrange(mu1, ND + NC + NR, NP);
-      subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1, ND + NC + NR, NP, ND + NC + NR, NP);
+      subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1,
+          ND + NC + NR, NP, ND + NC + NR, NP);
     } else {
       assert (type.compare("urts") == 0);
-      UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+      UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+          STATIC_OWN);
       in.readSmoothState(0, mu, Sigma);
     }
     
@@ -282,9 +298,12 @@ void sample_distro(B& m, const std::string& type,
       subrange(q.mean(), 0, ND + NC) = subrange(mu, 0, ND + NC);
       subrange(q.mean(), ND + NC, NP) = subrange(mu, ND + NC + NR, NP);
       
-      subrange(q.cov(), 0, ND + NC, 0, ND + NC) = subrange(Sigma, 0, ND + NC, 0, ND + NC);
-      subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP);
-      subrange(q.cov(), 0, ND + NC, ND + NC, NP) = subrange(Sigma, 0, ND + NC, ND + NC + NR, NP);
+      subrange(q.cov(), 0, ND + NC, 0, ND + NC) = subrange(Sigma, 0, ND + NC,
+          0, ND + NC);
+      subrange(q.cov(), ND + NC, NP, ND + NC, NP) = subrange(Sigma,
+          ND + NC + NR, NP, ND + NC + NR, NP);
+      subrange(q.cov(), 0, ND + NC, ND + NC, NP) = subrange(Sigma, 0,
+          ND + NC, ND + NC + NR, NP);
     } else {
       q.mean() = subrange(mu, ND + NC + NR, NP);
       q.cov() = subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP);
@@ -294,34 +313,42 @@ void sample_distro(B& m, const std::string& type,
     matrix_scal(sd, q.cov());
     
     q.init();
-    q.sample(rng, x);
+    q.samples(rng, X);
   } else if (type.compare("pf") == 0) {
-    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);    
+    ParticleFilterNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);    
 
     host_vector<real> w(in.size1());
     in.readLogWeights(in.size2() - 1, w);    
     element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
-    int p = rng.multinomial(w);
-    if (includeInitial) {
-      in.readSingle(P_NODE, p, in.size2() - 1, subrange(x, ND + NC, NP));
-    } else {
-      in.readSingle(P_NODE, p, in.size2() - 1, x);
+    for (int i = 0; i < X.size1(); ++i) {
+      int p = rng.multinomial(w);
+      if (includeInitial) {
+        in.readSingle(P_NODE, p, in.size2() - 1, subrange(row(X, i),
+            ND + NC, NP));
+      } else {
+        in.readSingle(P_NODE, p, in.size2() - 1, row(X, i));
+      }
     }
   } else if (type.compare("kfb") == 0  || type.compare("pfs") == 0) {
-    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY, STATIC_OWN);
+    ParticleSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
+        STATIC_OWN);
     
     host_vector<real> w(in.size1());
     in.readLogWeights(0, w);    
     element_exp_unnormalised(w.begin(), w.end(), w.begin());
     
-    int p = rng.multinomial(w);
-    if (includeInitial) {
-      in.readSingle(D_NODE, p, 0, subrange(x, 0, ND));
-      in.readSingle(C_NODE, p, 0, subrange(x, ND, NC));
-      in.readSingle(P_NODE, p, in.size2() - 1, subrange(x, ND + NC, NP));
-    } else {
-      in.readSingle(P_NODE, p, in.size2() - 1, x);
+    for (int i = 0; i < X.size1(); ++i) {
+      int p = rng.multinomial(w);
+      if (includeInitial) {
+        in.readSingle(D_NODE, p, 0, subrange(row(X, i), 0, ND));
+        in.readSingle(C_NODE, p, 0, subrange(row(X, i), ND, NC));
+        in.readSingle(P_NODE, p, in.size2() - 1, subrange(row(X, i), ND + NC,
+            NP));
+      } else {
+        in.readSingle(P_NODE, p, in.size2() - 1, row(X, i));
+      }
     }
   } else {
     BI_ERROR(type.compare("prior") == 0, "Unrecognised proposal type");
