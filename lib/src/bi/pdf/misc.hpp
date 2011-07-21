@@ -89,8 +89,8 @@ void renormalise(V1 lws);
 template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
     class M4>
 void condition(const ExpGaussianPdf<V1, M1>& p1,
-    const ExpGaussianPdf<V2, M2>& p2, const M3 C, const V3 x2, ExpGaussianPdf<
-        V4, M4>& p3);
+    const ExpGaussianPdf<V2,M2>& p2, const M3 C, const V3 x2,
+    ExpGaussianPdf<V4, M4>& p3);
 
 /**
  * Marginalise (log-)Gaussian distribution.
@@ -553,7 +553,8 @@ real det_vector(const V2 x, const V3& is);
 #include "../math/misc.hpp"
 
 template<class Q1, class Q2, class V1>
-inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x) {
+inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M,
+    V1 x) {
   do {
     q.sample(rng, x);
   } while (rng.uniform<real> () > p(x) / (M * q(x)));
@@ -580,10 +581,12 @@ void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
 
 template<class V1>
 void bi::renormalise(V1 lws) {
-  thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(), std::log(0.0));
+  thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(),
+      std::log(0.0));
   real mx = *bi::max(lws.begin(), lws.end());
   if (is_finite(mx)) {
-    thrust::transform(lws.begin(), lws.end(), lws.begin(), subtract_constant_functor<real>(mx));
+    thrust::transform(lws.begin(), lws.end(), lws.begin(),
+        subtract_constant_functor<real>(mx));
   }
 }
 
@@ -623,8 +626,8 @@ void bi::condition(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
    *
    * \f{eqnarray*}
    * \Sigma' &=& \Sigma_1 - \mathcal{K}C_{\mathbf{x}_1,\mathbf{x}_2}^T \\
-   * &=& \Sigma_1 - C_{\mathbf{x}_1,\mathbf{x}_2}\Sigma_2^{-1}C_{\mathbf{x}_1,\mathbf{x}_2}^T\,.
-   * \f}
+   * &=& \Sigma_1 - C_{\mathbf{x}_1,\mathbf{x}_2}\Sigma_2^{-1}
+   * C_{\mathbf{x}_1,\mathbf{x}_2}^T\,.\f}
    */
   *K = C;
   trsm(1.0, p2.std(), *K, 'R', 'U');
@@ -643,9 +646,9 @@ void bi::condition(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
 
 template<class V1, class M1, class V2, class M2, class M3, class V4, class M4,
     class V5, class M5>
-void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
-    M2>& p2, const M3 C, const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5,
-    M5>& p3) {
+void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1,
+    const ExpGaussianPdf<V2,M2>& p2, const M3 C,
+    const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5,M5>& p3) {
   /* pre-conditions */
   assert(q2.size() == p2.size());
   assert(p3.size() == p1.size());
@@ -1002,7 +1005,8 @@ void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
 }
 
 template<class M1, class M2, class V1, class V2, class M3>
-void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY, M3 SigmaXY) {
+void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY,
+    M3 SigmaXY) {
   /* pre-conditions */
   assert(X.size2() == muX.size());
   assert(Y.size2() == muY.size());
@@ -1016,8 +1020,8 @@ void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY, M3 SigmaXY) {
 }
 
 template<class M1, class M2, class V1, class V2, class V3, class M3>
-void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX, const V3 muY,
-    M3 SigmaXY) {
+void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
+    const V3 muY, M3 SigmaXY) {
   /* pre-conditions */
   assert(X.size2() == muX.size());
   assert(Y.size2() == muY.size());

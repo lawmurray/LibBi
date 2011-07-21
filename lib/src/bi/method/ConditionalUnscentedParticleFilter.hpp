@@ -264,6 +264,21 @@ protected:
   matrix_type X1, X2;
 
   /**
+   * Observations.
+   */
+  vector_type y;
+
+  /**
+   * Log-observations.
+   */
+  vector_type ly;
+
+  /**
+   * Log-determinant for change of variables in observations.
+   */
+  real ldetY;
+
+  /**
    * Estimate parameters as well as state?
    */
   static const bool haveParameters = SH == STATIC_OWN;
@@ -414,6 +429,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     X2.resize(P1*P2, N2);
     J1.resize(W, P1);
     J2.resize(W, P1);
+    y.resize(W);
+    ly.resize(W);
 
     /* construct and propagate sigma points */
     BOOST_AUTO(Z, temp_matrix<matrix_type>(P1, ND + NC + NR));
@@ -434,10 +451,14 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     theta2 = theta1;
     advanceNoise(tj, X1, X2, theta2, s2);
 
+    /* observations */
+    y = row(s2.get(OY_NODE), 0);
+    ly = y;
+    log_vector(ly, oLogs);
+    ldetY = std::log(det_vector(ly, oLogs));
+
     /* start on innovations */
-    BOOST_AUTO(y, duplicate_vector(row(s2.get(OY_NODE), 0)));
-    log_vector(*y, oLogs);
-    set_columns(J1, *y);
+    set_columns(J1, ly);
 
     /* construct observation densities */
     #pragma omp parallel
@@ -488,7 +509,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
     synchronize();
     delete Z;
-    delete y;
   }
 }
 
@@ -498,7 +518,7 @@ template<class V1, bi::Location L1, bi::Location L2>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
     Static<L2>& theta2, State<L2>& s) {
-
+  assert (false);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
