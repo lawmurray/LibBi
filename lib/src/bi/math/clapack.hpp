@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Macros for MAGMA usage.
+ * Macros for CLAPACK usage.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$

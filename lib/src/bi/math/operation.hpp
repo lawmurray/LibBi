@@ -431,7 +431,7 @@ void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
 
 #include "view.hpp"
 #include "cblas.hpp"
-#include "clapack.hpp"
+#include "lapack.hpp"
 #include "qrupdate.hpp"
 #include "temp_vector.hpp"
 #include "temp_matrix.hpp"
@@ -478,8 +478,8 @@ void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
   assert (L.size1() == L.size2());
 
   int info;
-  typename M2::size_type N = A.size1();
-  typename M2::size_type ld = L.lead();
+  int N = A.size1();
+  int ld = L.lead();
 
   L = A;
   if (M2::on_device) {
@@ -489,8 +489,9 @@ void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
     if (!M2::on_device && M1::on_device) {
       synchronize();
     }
-    info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
-        L.buf(), ld);
+    //info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
+    //    L.buf(), ld);
+    lapack_potrf<T2>::func(&uplo, &N, L.buf(), &ld, &info);
   }
   if (info != 0 && (strat == ADJUST_DIAGONAL)) {
     BOOST_AUTO(d, diagonal(L));
@@ -511,8 +512,9 @@ void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
         magma_potrf<T2>::func(uplo, N, L.buf(), ld, &info);
         synchronize();
       } else {
-        info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
-            L.buf(), ld);
+        //info = clapack_potrf<T2>::func(CblasColMajor, cblas_uplo(uplo), N,
+        //    L.buf(), ld);
+        lapack_potrf<T2>::func(&uplo, &N, L.buf(), &ld, &info);
       }
       factor *= 2.0;
     }
@@ -1343,10 +1345,14 @@ void bi::potrs(const M1 L, M2 X, char uplo) {
   assert ((equals<T1,T2>::value));
 
   int info;
+  int N = L.size1();
+  int M = X.size2();
+  int ldL = L.lead();
+  int ldX = X.lead();
+
   if (M2::on_device) {
     BOOST_AUTO(L1, gpu_map_matrix(L));
-    magma_potrs<T2>::func(uplo, L1->size1(), X.size2(), L1->buf(),
-        L1->lead(), X.buf(), X.lead(), &info);
+    magma_potrs<T2>::func(uplo, N, M, L1->buf(), ldL, X.buf(), ldX, &info);
     synchronize();
     delete L1;
   } else {
@@ -1354,8 +1360,10 @@ void bi::potrs(const M1 L, M2 X, char uplo) {
     if (M1::on_device) {
       synchronize();
     }
-    info = clapack_potrs<T2>::func(CblasColMajor, cblas_uplo(uplo),
-        L1->size1(), X.size2(), L1->buf(), L1->lead(), X.buf(), X.lead());
+    //info = clapack_potrs<T2>::func(CblasColMajor, cblas_uplo(uplo),
+    //    L1->size1(), X.size2(), L1->buf(), L1->lead(), X.buf(), X.lead());
+    lapack_potrs<T2>::func(&uplo, &N, &M, L1->buf(), &ldL, X.buf(), &ldX,
+        &info);
     delete L1;
   }
   BI_ASSERT(info == 0, "Solve failed with info " << info);
