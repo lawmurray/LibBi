@@ -115,7 +115,6 @@ void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
   /* pre-conditions */
   BI_ASSERT(this->nsteps > 0, "Updates for random variates of " <<
       "unscented transformation have been exhausted");
-  assert (s.size() % (2*N1 + 1) == 0);
 
   typedef typename B::RTypeList S;
   typedef typename State<L>::vector_reference_type V1;
@@ -133,7 +132,7 @@ void bi::UnscentedRUpdater<B,SH>::update(const real t, const real tnxt,
   }
 
   s.get(R_NODE).clear();
-  for (p = 0; p < s.size(); p += P) {
+  for (p = 0; p + P <= s.size(); p += P) {
     BOOST_AUTO(d1, diagonal(rows(s.get(R_NODE), p + start, NR)));
     BOOST_AUTO(d2, diagonal(rows(s.get(R_NODE), p + start + N1, NR)));
 

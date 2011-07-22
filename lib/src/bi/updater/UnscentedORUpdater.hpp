@@ -107,10 +107,9 @@ void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
 
   const int P = 2*N1 + 1;
   int i, p, size, start = 1 + N1 - W;
-
   if (W > 0) {
     s.get(OR_NODE).clear();
-    for (p = 0; p < s.size(); p += P) {
+    for (p = 0; p + P <= s.size(); p += P) {
       BOOST_AUTO(d1, diagonal(rows(s.get(OR_NODE), p + start, W)));
       BOOST_AUTO(d2, diagonal(rows(s.get(OR_NODE), p + start + N1, W)));
 
