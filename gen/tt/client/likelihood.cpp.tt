@@ -147,7 +147,6 @@ void run(Args& args) {
   #endif
   bi_omp_init();
   bi_ode_init(args.H, args.ATOLER, args.RTOLER);
-  h_ode_set_nsteps(100u);
   NcError ncErr(NcError::silent_nonfatal);
 
   /* model */
