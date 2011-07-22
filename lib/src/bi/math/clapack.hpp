@@ -37,7 +37,7 @@ namespace bi { \
   }; \
 }
 
-CLAPACK_FUNC(potrf, dpotrf, spotrf)
-CLAPACK_FUNC(potrs, dpotrs, spotrs)
+//CLAPACK_FUNC(potrf, dpotrf, spotrf)
+//CLAPACK_FUNC(potrs, dpotrs, spotrs)
 
 #endif
