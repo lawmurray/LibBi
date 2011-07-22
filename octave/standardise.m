@@ -22,11 +22,15 @@ function Z = standardise (X, mu, sigma)
     if nargin != 3
         print_usage ();
     end
-    if !isrow (mu)
+    if !isvector (mu)
         error ('mu should be row vector');
+    else
+        mu = mu(:)'; % ensure row vector
     end
-    if !isrow (sigma)
+    if !isvector (sigma)
         error ('sigma should be row vector');
+    else
+        sigma = sigma(:)';
     end
     if columns (X) > 0 
         if columns (X) != columns (mu)
