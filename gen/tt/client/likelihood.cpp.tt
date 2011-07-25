@@ -47,7 +47,7 @@ using namespace bi;
  * Command line arguments structure.
  */
 struct Args {  
-  real T, DELTA, H, RTOLER, ATOLER, SD2, ESS_REL;
+  real T, DELTA, H, RTOLER, ATOLER, S2, ESS_REL;
   int ID, P, INIT_NS, FORCE_NS, OBS_NS, SEED, C, M;
   std::string INIT_FILE, FORCE_FILE, OBS_FILE, FILTER_FILE, OUTPUT_FILE,
       STARTING_FILE, STARTING_TYPE, RESAMPLER, FILTER;
@@ -62,7 +62,7 @@ struct Args {
     H = 1.0;
     RTOLER = 1.0e-3;
     ATOLER = 1.0e-3;
-    SD2 = 0.0;
+    S2 = 0.0;
     ESS_REL = 1.0;
     ID = 0;
     P = 1024;
@@ -74,7 +74,7 @@ struct Args {
     M = 10;
     STARTING_TYPE = std::string("prior");
     RESAMPLER = std::string("stratified");
-    FILTER = std::string("bootstrap");
+    FILTER = std::string("pf");
     INCLUDE_INITIAL = true;
     SORT = true;    
   }
@@ -108,9 +108,6 @@ void run(Args& args);
  */
 Args read_args(int argc, char* argv[]);
 
-/**
- * Main.
- */
 int main(int argc, char* argv[]) {
   /* command line arguments */
   Args args(read_args(argc, argv));
@@ -161,8 +158,8 @@ void run(Args& args) {
   Random rng(args.SEED);
 
   /* scaling factors */
-  if (args.SD2 <= 0.0) {
-    args.SD2 = std::pow(2.4,2)/N;
+  if (args.S2 <= 0.0) {
+    args.S2 = std::pow(2.4,2)/N;
   }
 
   /* state and intermediate results */
@@ -173,7 +170,7 @@ void run(Args& args) {
   /* sample all points, ensures consistent set of points regardless of
    * different random number requirements between methods */
   host_matrix<real> X((args.C + args.M - 1)/args.M, N);
-  sample_starting(m, args.STARTING_TYPE, args.STARTING_FILE, args.SD2,
+  sample_starting(m, args.STARTING_TYPE, args.STARTING_FILE, args.S2,
       args.INCLUDE_INITIAL, rng, X);
 
   /* inputs */
@@ -244,7 +241,7 @@ Args read_args(int argc, char* argv[]) {
     DELTA_ARG,
     ATOLER_ARG,
     RTOLER_ARG,
-    SD2_ARG,
+    S2_ARG,
     ESS_REL_ARG,
     INIT_NS_ARG,
     FORCE_NS_ARG,
@@ -269,7 +266,7 @@ Args read_args(int argc, char* argv[]) {
       {"delta", required_argument, 0, DELTA_ARG },
       {"atoler", required_argument, 0, ATOLER_ARG },
       {"rtoler", required_argument, 0, RTOLER_ARG },
-      {"sd2", required_argument, 0, SD2_ARG },
+      {"s2", required_argument, 0, S2_ARG },
       {"ess-rel", required_argument, 0, ESS_REL_ARG },
       {"init-ns", required_argument, 0, INIT_NS_ARG },
       {"force-ns", required_argument, 0, FORCE_NS_ARG },
@@ -306,8 +303,8 @@ Args read_args(int argc, char* argv[]) {
       case RTOLER_ARG:
         args.RTOLER = atof(optarg);
         break;
-      case SD2_ARG:
-        args.SD2 = atof(optarg);
+      case S2_ARG:
+        args.S2 = atof(optarg);
         break;
       case ESS_REL_ARG:
         args.ESS_REL = atof(optarg);

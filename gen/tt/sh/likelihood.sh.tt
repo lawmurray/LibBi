@@ -60,12 +60,12 @@ do
 	    OBS_FILE=
 	fi
 	
-	STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}${SUFFIX}.nc.0
+	STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}.nc.0
 	
 	# run
 	build/likelihood --id=$ID -P $P -T $T \
 	    --filter=$FILTER --resampler=$RESAMPLER \
-	    --sort=$SORT -C $C -M $M --sd2=$SD2 --ess-rel=$ESS_REL \
+	    --sort=$SORT -C $C -M $M --s2=$S2 --ess-rel=$ESS_REL \
 	    --starting-type=$STARTING_TYPE \
 	    --delta=$DELTA -h $H --atoler=$ATOLER --rtoler=$RTOLER \
             --seed=$SEED \
