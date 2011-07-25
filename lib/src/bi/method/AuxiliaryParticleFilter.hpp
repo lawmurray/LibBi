@@ -438,8 +438,10 @@ void bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     this->mark();
 
     /* auxiliary simulation forward */
-    s.get(R_NODE).clear(); // deterministic lookahead
-    this->rUpdater.skipNext(nupdates);
+    BOOST_AUTO(&U, this->rUpdater.buf());
+    U.resize(s.size(), NR*nupdates);
+    U.clear();
+    this->rUpdater.setNext(nupdates);
     this->predict(to, theta, s);
     this->correct(s, lw1s);
 
