@@ -16,7 +16,7 @@
 % @end itemize
 % @end deftypefn
 %
-function model = krig_likelihood (model, maxiters)
+function model = krig_model (model, maxiters)
     if nargin < 1 || nargin > 2
         print_usage ();
     end
@@ -24,12 +24,12 @@ function model = krig_likelihood (model, maxiters)
         maxiters = 200;
     end
     
-    meanfunc = @meanConst; hyp.mean = mean(model.logalpha);
+    meanfunc = @meanConst; hyp.mean = mean(model.y);
     covfunc = @covSEiso; ell = quantile(pdist(model.X), 0.05, 2); sf = 1; hyp.cov = log([ell; sf]);
-    likfunc = @likGauss; sn = std(model.logalpha); hyp.lik = log(sn);
+    likfunc = @likGauss; sn = std(model.y); hyp.lik = log(sn);
     
     hyp = minimize(hyp, @gp, -maxiters, @infExact, meanfunc, covfunc, ...
-        likfunc, model.X, model.logalpha);
+        likfunc, model.X, model.y);
     
     % result structure
     model.hyp = hyp;
@@ -41,5 +41,5 @@ function model = krig_likelihood (model, maxiters)
     sn = exp(2.0*model.hyp.lik);
     K = covfunc(model.hyp.cov, model.X);
     K = K + sn*eye(rows(K));
-    model.k = K\(model.logalpha - model.hyp.mean);
+    model.k = K\(model.y - model.hyp.mean);
 end

@@ -4,9 +4,9 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} model_likelihood (@var{in}, @var{invars}, @var{coords}, @var{M})
+% @deftypefn {Function File} model_acceptance (@var{in}, @var{invars}, @var{coords}, @var{M})
 %
-% Krig likelihood noise.
+% Construct model for spatial exploration of acceptance rates.
 %
 % @itemize
 % @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
@@ -23,7 +23,7 @@
 % @end itemize
 % @end deftypefn
 %
-function model = model_likelihood (in, invars, coords, M)
+function model = model_acceptance (in, invars, coords, M)
     % check arguments
     if nargin != 4
         print_usage ();
@@ -75,13 +75,13 @@ function model = model_likelihood (in, invars, coords, M)
     model.mu = mu;
     model.sigma = sigma;
     model.X = X;
-    model.logalpha = log(alpha);
+    model.y = log(alpha);
     
     % remove any NaNs and infs
-    is = find(isfinite (model.logalpha));
+    is = find(isfinite (model.y));
     js = find(sum (isfinite (model.X)));
     is = unique([is(:); js(:)]);
     
     model.X = model.X(is,:);
-    model.logalpha = model.logalpha(is);
+    model.y = model.y(is);
 end

@@ -4,18 +4,16 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} contour_likelihood (@var{model}, @var{mn}, @var{mx}, @var{ax}, @var{lvl})
+% @deftypefn {Function File} contour_model (@var{model}, @var{mn}, @var{mx}, @var{ax}, @var{lvl})
 %
 % Surface plot for 2-dimensional likeilhood noise.
 %
 % @itemize
 % @bullet{ @var{model} Model, as output by krig_likelihood().}
 %
-% @bullet{ @var{mn} (optional) Local minima, as output by
-% minmax_likelihood().}
+% @bullet{ @var{mn} (optional) Local minima, as output by min_model().}
 %
-% @bullet{ @var{mx} (optional) Global maxima, as output by
-% minmax_likelihood().}
+% @bullet{ @var{mx} (optional) Global maxima, as output by max_model().}
 %
 % @bullet{ @var{ax} (optional) Axis range. If not specified, determined
 % from model.
@@ -23,7 +21,7 @@
 % @bullet{ @var{lvl} (optional) Contour levels.
 % @end deftypefn
 %
-function contour_likelihood (model, mn, mx, ax, lvl)
+function contour_model (model, mn, mx, ax, lvl)
     RES = 50;
     
     if nargin < 1 || nargin > 5
@@ -74,7 +72,7 @@ function contour_likelihood (model, mn, mx, ax, lvl)
     
     % krig surface
     [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, Z);
+        model.likfunc, model.X, model.y, Z);
     
     % determine visualisation extents
     x = linspace(ax(1), ax(2), RES);

@@ -4,12 +4,12 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} @var{mx} = max_likelihood (@var{model})
+% @deftypefn {Function File} @var{mn}= min_model (@var{model})
 %
-% Find global maximum of acceptance rate surface.
+% Find local minima of model.
 %
 % @itemize
-% @bullet{ @var{model} Model, as output by krig_likelihood().}
+% @bullet{ @var{model} Model, as output by model_*().}
 %
 % @bullet{ @var{attempts} Number of optimisation runs to attempt.
 %
@@ -18,7 +18,7 @@
 % @end itemize
 % @end deftypefn
 %
-function mx = max_likelihood (model, attempts, maxiters)
+function mn = min_model (model, attempts, maxiters)
     if nargin < 1 || nargin > 3
         print_usage ();
     end
@@ -32,35 +32,35 @@ function mx = max_likelihood (model, attempts, maxiters)
     % optimisation options
     options = zeros (18,1);
     options(2) = 1.0e-6;
-    %options(9) = 1; % check gradients
+    %options(9) = 1; % check gradient
     options(14) = maxiters;
     
-    % maxima
+    % minima
     if attempts <= rows (model.X)
-        mx = model.X(randperm (rows (model.X))(1:attempts),:);
+        mn = model.X(randperm (rows (model.X))(1:attempts),:);
     else
-        mx = model.X(randi (rows (model.X), attempts, 1),:);
+        mn = model.X(randi (rows (model.X), attempts, 1),:);
     end
     for i = 1:attempts
-        mx(i,:) = scg(@maxgp, mx(i,:), options, @dmaxgp, model);
-        %mx(i,:) = fmins(@maxgp, mx(i,:), [], [], model);
+        mn(i,:) = scg(@mingp, mn(i,:), options, @dmingp, model);
+        %mn(i,:) = fmins(@mingp, mn(i,:), [], [], model);
     end
 
     % eliminate duplicates
-    mx = unique(map(@trim, mx), 'rows');
-
-    % eliminate any that are really just mean of Gaussian process
-    vals = mingp(mx, model);
+    mn = unique(map(@trim, mn), 'rows');
+    
+    % eliminate any that are just mean of Gaussian process
+    vals = mingp(mn, model);
     is = find(trim(vals) != trim(model.hyp.mean));
-    mx = mx(is,:);
+    mn = mn(is,:);
     
     % sort
-    vals = mingp(mx, model);
+    vals = mingp(mn, model);
     [vals is] = sort(vals);
-    mx = mx(flipud(is),:);
-
+    mn = mn(is,:);
+    
     % pick global
-    %vals = mingp(mx, model);
-    %[val i] = max(vals);
-    %mx = mx(i,:);
+    %vals = mingp(mn, model);
+    %[val i] = min(vals);
+    %mn = mn(i,:);
 end

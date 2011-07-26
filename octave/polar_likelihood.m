@@ -38,7 +38,7 @@ function polar_likelihood (model, mn, mx, ncontours)
     Z = alpha.*Z1 + (1.0 - alpha).*Z2;
     
     [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, Z);
+        model.likfunc, model.X, model.y, Z);
     
     d = sqrt(sumsq(Z - Z2, 2)); % distances
 

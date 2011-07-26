@@ -4,18 +4,18 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} surf_likelihood (@var{model}, @var{mn}, @var{mx})
+% @deftypefn {Function File} surf_model (@var{model}, @var{mn}, @var{mx})
 %
-% Surface plot for 2-dimensional likeilhood noise.
+% Surface plot for 2-dimensional model.
 %
 % @itemize
-% @bullet{ @var{model} Model, as output by krig_likelihood().}
+% @bullet{ @var{model} Model, as output by model_*().}
 %
 % @bullet{ @var{ax} (optional) Axis range. If not specified, determined
 % from model.
 % @end deftypefn
 %
-function surf_likelihood (model, ax)
+function surf_model (model, ax)
     RES = 50;
     
     % check arguments
@@ -50,7 +50,7 @@ function surf_likelihood (model, ax)
     
     % krig surface
     [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.logalpha, Z);
+        model.likfunc, model.X, model.y, Z);
 
     % determine visualisation extents
     x = linspace(ax(1), ax(2), RES);
