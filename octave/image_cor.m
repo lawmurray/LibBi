@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} image_corr (@var{in}, @var{invars},  @var{rang})
+% @deftypefn {Function File} image_corr (@var{in}, @var{invars}, @var{coords}, @var{rang})
 %
 % Plot correlation matrix of samples output by mcmc program.
 %
