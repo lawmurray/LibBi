@@ -936,12 +936,25 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     ///@todo corrected.std() is upper triangular, needn't do full axpy.
   } else {
     /* new r-nodes */
-    BOOST_AUTO(Sigma, temp_matrix<M1>(ND + NC, ND + NC));
-    BOOST_AUTO(U, temp_matrix<M1>(ND + NC, ND + NC));
-    *Sigma = subrange(corrected.cov(), 0, ND + NC, 0, ND + NC);
+    BOOST_AUTO(Sigma, temp_matrix<M1>(M - NR, M - NR));
+    BOOST_AUTO(U, temp_matrix<M1>(M - NR, M - NR));
+    subrange(*Sigma, 0, ND + NC, 0, ND + NC) = subrange(corrected.cov(), 0,
+        ND + NC, 0, ND + NC);
+    if (haveParameters) {
+      subrange(*Sigma, ND + NC, NP, ND + NC, NP) = subrange(corrected.cov(),
+          ND + NC + NR, NP, ND + NC + NR, NP);
+    }
     chol(*Sigma, *U, 'U');
-    matrix_axpy(a, *U, subrange(X1, 1, ND + NC, 0, ND + NC));
-    matrix_axpy(-a, *U, subrange(X1, 1 + N1, ND + NC, 0, ND + NC));
+    matrix_axpy(a, subrange(*U, 0, ND + NC, 0, ND + NC), subrange(X1,
+        1, ND + NC, 0, ND + NC));
+    matrix_axpy(-a, subrange(*U, 0, ND + NC, 0, ND + NC), subrange(X1,
+        1 + N1, ND + NC, 0, ND + NC));
+    if (haveParameters) {
+      matrix_axpy(a, subrange(*U, ND + NC, NP, ND + NC, NP), subrange(X1,
+          1 + ND + NC + NR, NP, ND + NC + NR, NP));
+      matrix_axpy(-a, subrange(*U, ND + NC, NP, ND + NC, NP), subrange(X1,
+          1 + ND + NC + NR + N1, NP, ND + NC + NR, NP));
+    }
 
     if (M1::on_device) {
       synchronize();
@@ -1138,20 +1151,10 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
   }
 
   /* copy back to matrix */
-  //columns(X2, 0, ND) = s.get(D_NODE);
-  //columns(X2, ND, NC) = s.get(C_NODE);
   columns(X2, ND + NC, NR) = s.get(R_NODE);
-  if (haveParameters) {
-    columns(X2, ND + NC + NR, NP) = theta.get(P_NODE);
-  }
   columns(X2, N2 - W, W) = s.get(O_NODE);
 
   /* log relevant variables */
-  //log_columns(columns(X2, 0, ND), m.getLogs(D_NODE));
-  //log_columns(columns(X2, ND, NC), m.getLogs(C_NODE));
-  if (haveParameters) {
-    log_columns(columns(X2, ND + NC + NR, NP), m.getLogs(P_NODE));
-  }
   log_columns(columns(X2, N2 - W, W), oLogs);
 }
 
@@ -1230,8 +1233,9 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predict(const V1 mu,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<class V1, class M1, class V2, class M2, class M3>
-void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(const V1 mu,
-    const M1 Sigma, ExpGaussianPdf<V2,M2>& runcorrected, M3& SigmaRY) {
+void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(
+    const V1 mu, const M1 Sigma, ExpGaussianPdf<V2,M2>& runcorrected,
+    M3& SigmaRY) {
   /* pre-conditions */
   assert (Sigma.size1() == N2 && Sigma.size2() == N2);
   assert (runcorrected.size() == V);
@@ -1241,9 +1245,12 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(const V1 mu,
     subrange(runcorrected.mean(), 0, NR*nextra) = subrange(mu, M, NR*nextra);
     subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC, NR);
 
-    subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, M, NR*nextra);
-    subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, ND + NC, NR);
-    transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(runcorrected.cov(), 0, NR*nextra, NR*nextra, NR));
+    subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(
+        Sigma, M, NR*nextra, M, NR*nextra);
+    subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(
+        Sigma, ND + NC, NR, ND + NC, NR);
+    transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(
+        runcorrected.cov(), 0, NR*nextra, NR*nextra, NR));
 
     runcorrected.init();
 
@@ -1293,8 +1300,9 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1, class M1, class M2, class V3, class M3,
     class V4, class M4>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correctNoise(
-    const ExpGaussianPdf<V1,M1>& runcorrected, const M2& SigmaRY, State<L>& s,
-    ExpGaussianPdf<V3,M3>& observed, ExpGaussianPdf<V4,M4>& rcorrected) {
+    const ExpGaussianPdf<V1,M1>& runcorrected, const M2& SigmaRY,
+    State<L>& s, ExpGaussianPdf<V3,M3>& observed,
+    ExpGaussianPdf<V4,M4>& rcorrected) {
   /* pre-conditions */
   assert (runcorrected.size() == V);
   assert (SigmaRY.size1() == V && SigmaRY.size2() == W);
@@ -1307,7 +1315,8 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correctNoise(
         "Previous prediction step does not match current correction step");
 
     /* condition state on observation */
-    condition(runcorrected, observed, SigmaRY, vec(s.get(OY_NODE)), rcorrected);
+    condition(runcorrected, observed, SigmaRY, vec(s.get(OY_NODE)),
+        rcorrected);
   } else {
     rcorrected = runcorrected;
   }
