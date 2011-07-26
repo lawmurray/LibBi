@@ -118,17 +118,17 @@ int main(int argc, char* argv[]) {
   Args args(read_args(argc, argv));
   
   /* run */
-  if (args.FILTER.compare("pf") == 0) {
+  if (args.FILTER.find("pf") == 0) {
     run<ParticleFilterFactory<LOCATION> >(args);
-  } else if (args.FILTER.compare("apf") == 0) {
+  } else if (args.FILTER.find("apf") == 0) {
     run<AuxiliaryParticleFilterFactory<LOCATION> >(args);
-  } else if (args.FILTER.compare("mupf") == 0) {
+  } else if (args.FILTER.find("mupf") == 0) {
     run<MarginalUnscentedParticleFilterFactory<LOCATION> >(args);
-  } else if (args.FILTER.compare("amupf") == 0) {
+  } else if (args.FILTER.find("amupf") == 0) {
     run<AuxiliaryMarginalUnscentedParticleFilterFactory<LOCATION> >(args);
-  } else if (args.FILTER.compare("cupf") == 0) {
+  } else if (args.FILTER.find("cupf") == 0) {
     run<ConditionalUnscentedParticleFilterFactory<LOCATION> >(args);
-  } else if (args.FILTER.compare("acupf") == 0) {
+  } else if (args.FILTER.find("acupf") == 0) {
     run<AuxiliaryConditionalUnscentedParticleFilterFactory<LOCATION> >(args);
   } else {
     std::cerr << "Filter type " << args.FILTER << " unrecognised" <<
