@@ -104,9 +104,10 @@ function Rp = converge (ins, invars, coords, rang)
         
         for p = 1:P
             x = mu1(:,p);
-            if seq(p) - halfseq(p) > 0
-                Sigma1(:,:,p) /= seq(p) - halfseq(p);
-                Sigma1(:,:,p) -= x*x';
+            n = seq(p) - halfseq(p);
+            if seq(p) - halfseq(p) > 1
+                Sigma1(:,:,p) /= n - 1;
+                Sigma1(:,:,p) -= n/(n - 1)*x*x';
             else
                 Sigma(:,:,p) = 0;
             end
@@ -120,11 +121,11 @@ function Rp = converge (ins, invars, coords, rang)
     W = squeeze(mean(Sigma, 4));
     Rp = zeros(P,1);
     for p = 1:P
-        [Wpi, s] = chol(squeeze(W(:,:,p)));
+        [Wp, s] = chol(squeeze(W(:,:,p)));
         if s == 0 % has Cholesky factorisation
-            Wpi = chol2inv(Wpi);
+            invWp = chol2inv(Wp);
             Bonp = cov(squeeze(mu(:,p,:))');
-            lambda1 = max(eig(Wpi*Bonp));
+            lambda1 = max(eig(invWp*Bonp));
             Rp(p) = (P - 1)/P + (C + 1)/C*lambda1;
         end
     end
