@@ -70,9 +70,14 @@ function contour_model (model, mn, mx, ax, lvl)
     [XX YY] = meshgrid(x, y);
     Z = [ XX(:) YY(:) ];
     
-    % krig surface
-    [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
+    if isfield(model, 'type') && model.type == 'posterior'
+        % kde surface
+        m = kernel_density(Z, model.X, model.h);
+    else
+        % krig surface
+        [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
         model.likfunc, model.X, model.y, Z);
+    end
     
     % determine visualisation extents
     x = linspace(ax(1), ax(2), RES);

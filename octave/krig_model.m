@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} krig_likelihood (@var{model})
+% @deftypefn {Function File} {@var{model} = } krig_model (@var{model}, @var{maxiters})
 %
 % Krig likelihood noise.
 %

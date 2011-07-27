@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} model_acceptance (@var{in}, @var{invars}, @var{coords}, @var{M})
+% @deftypefn {Function File} {@var{model} = } model_acceptance (@var{in}, @var{invars}, @var{coords}, @var{M})
 %
 % Construct model for spatial exploration of acceptance rates.
 %
@@ -72,6 +72,7 @@ function model = model_acceptance (in, invars, coords, M)
     X = (X - repmat(mu, rows(X), 1))./repmat(sigma, rows(X), 1);
         
     % result structure
+    model.type = 'acceptance';
     model.mu = mu;
     model.sigma = sigma;
     model.X = X;
@@ -79,8 +80,8 @@ function model = model_acceptance (in, invars, coords, M)
     
     % remove any NaNs and infs
     is = find(isfinite (model.y));
-    js = find(sum (isfinite (model.X)));
-    is = unique([is(:); js(:)]);
+    js = find(sum (isfinite (model.X), 2));
+    is = intersect(is(:), js(:));
     
     model.X = model.X(is,:);
     model.y = model.y(is);
