@@ -55,6 +55,7 @@ function surf_model (model, ax)
         % krig surface
         [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
             model.likfunc, model.X, model.y, Z);
+        m = exp(m);
     end
 
     % determine visualisation extents
@@ -64,5 +65,5 @@ function surf_model (model, ax)
     ZZ = reshape(m, size(XX));
     
     % surface
-    surf(XX, YY, exp(ZZ));
+    surf(XX, YY, ZZ);
 end

@@ -77,6 +77,7 @@ function contour_model (model, mn, mx, ax, lvl)
         % krig surface
         [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
         model.likfunc, model.X, model.y, Z);
+        m = exp(m);
     end
     
     % determine visualisation extents
@@ -87,9 +88,9 @@ function contour_model (model, mn, mx, ax, lvl)
 
     % contour plot
     if isempty(lvl)
-        contourf(XX, YY, exp(ZZ));
+        contourf(XX, YY, ZZ);
     else
-        contourf(XX, YY, exp(ZZ), lvl);
+        contourf(XX, YY, ZZ, lvl);
     end
     
     % extrema
