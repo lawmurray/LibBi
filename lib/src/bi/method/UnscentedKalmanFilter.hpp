@@ -333,11 +333,13 @@ public:
    *
    * Compute uncorrected mean:
    *
-   * \f[\boldsymbol{\mu}_x \leftarrow \sum_i W_m^{(i)} \mathcal{X}_n^{(i)}\,,\f]
+   * \f[\boldsymbol{\mu}_x \leftarrow \sum_i W_m^{(i)}
+   * \mathcal{X}_n^{(i)}\,,\f]
    *
    * and observation mean:
    *
-   * \f[\boldsymbol{\mu}_y \leftarrow \sum_i W_m^{(i)} \mathcal{Y}_n^{(i)}\,.\f]
+   * \f[\boldsymbol{\mu}_y \leftarrow \sum_i W_m^{(i)}
+   * \mathcal{Y}_n^{(i)}\,.\f]
    */
   template<class M1, class V1>
   void mean(const M1 X2, V1 mu2);
@@ -805,7 +807,8 @@ template<class T1, class V2, class V3>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll,
     V2* lls, V3* ess) {
   /* pre-condition */
-  BI_ERROR(out != NULL, "Cannot summarise UnscentedKalmanFilter without output");
+  BI_ERROR(out != NULL,
+      "Cannot summarise UnscentedKalmanFilter without output");
 
   /* no ESS in this case */
   if (ess != NULL) {
@@ -848,19 +851,24 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta,
 
   /* restore prior mean over initial state */
   bi::mean(m.template getPrior<D_NODE>(), subrange(corrected.mean(), 0, ND));
-  bi::mean(m.template getPrior<C_NODE>(), subrange(corrected.mean(), ND, NC));
+  bi::mean(m.template getPrior<C_NODE>(), subrange(corrected.mean(), ND,
+      NC));
   subrange(corrected.mean(), ND + NC, NR).clear();
   if (haveParameters) {
-    bi::mean(m.template getPrior<P_NODE>(), subrange(corrected.mean(), ND + NC + NR, NP));
+    bi::mean(m.template getPrior<P_NODE>(), subrange(corrected.mean(),
+        ND + NC + NR, NP));
   }
 
   /* restore prior covariance over initial state */
   corrected.cov().clear();
-  bi::cov(m.template getPrior<D_NODE>(), subrange(corrected.cov(), 0, ND, 0, ND));
-  bi::cov(m.template getPrior<C_NODE>(), subrange(corrected.cov(), ND, NC, ND, NC));
+  bi::cov(m.template getPrior<D_NODE>(), subrange(corrected.cov(), 0, ND, 0,
+      ND));
+  bi::cov(m.template getPrior<C_NODE>(), subrange(corrected.cov(), ND, NC,
+      ND, NC));
   ident(subrange(corrected.cov(), ND + NC, NR, ND + NC, NR));
   if (haveParameters) {
-    bi::cov(m.template getPrior<P_NODE>(), subrange(corrected.cov(), ND + NC + NR, NP, ND + NC + NR, NP));
+    bi::cov(m.template getPrior<P_NODE>(), subrange(corrected.cov(), ND +
+        NC + NR, NP, ND + NC + NR, NP));
   }
 
   corrected.init();
@@ -872,7 +880,8 @@ template<bi::Location L>
 real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::obs(const real T,
     State<L>& s) {
   real tj;
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() && oyUpdater.getNextTime() <= T) {
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() <= T) {
     oyUpdater.update(s);
     tj = oyUpdater.getTime();
     W = oyUpdater.getMask().size();
@@ -993,7 +1002,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::resize(State<L>& s,
     theta.resize(P);
   }
   observed.resize(W, false);
-  SigmaXY.resize(N2 - W, W, false);
+  SigmaXY.resize(M, W, false);
   X1.resize(s.size(), M, false);
   X2.resize(s.size(), N2, false);
   mu.resize(N2, false);
@@ -1243,19 +1252,26 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(
 
   if (nupdates > 0) {
     subrange(runcorrected.mean(), 0, NR*nextra) = subrange(mu, M, NR*nextra);
-    subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC, NR);
+    if (nextra < nupdates) {
+      subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC,
+          NR);
+    }
 
     subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(
         Sigma, M, NR*nextra, M, NR*nextra);
-    subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(
-        Sigma, ND + NC, NR, ND + NC, NR);
-    transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(
-        runcorrected.cov(), 0, NR*nextra, NR*nextra, NR));
+    if (nextra < nupdates) {
+      subrange(runcorrected.cov(), NR*nextra, NR, NR*nextra, NR) = subrange(
+          Sigma, ND + NC, NR, ND + NC, NR);
+      transpose(subrange(Sigma, ND + NC, NR, M, NR*nextra), subrange(
+          runcorrected.cov(), 0, NR*nextra, NR*nextra, NR));
+    }
 
     runcorrected.init();
 
     rows(SigmaRY, 0, NR*nextra) = subrange(Sigma, M, NR*nextra, N2 - W, W);
-    rows(SigmaRY, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, N2 - W, W);
+    if (nextra < nupdates) {
+      rows(SigmaRY, NR*nextra, NR) = subrange(Sigma, ND + NC, NR, N2 - W, W);
+    }
   }
 }
 
@@ -1289,7 +1305,8 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::correct(
         "Previous prediction step does not match current correction step");
 
     /* condition state on observation */
-    condition(uncorrected, observed, SigmaXY, vec(s.get(OY_NODE)), corrected);
+    condition(uncorrected, observed, SigmaXY, vec(s.get(OY_NODE)),
+        corrected);
   } else {
     corrected = uncorrected;
   }

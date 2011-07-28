@@ -325,7 +325,8 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::looka
 
       this->ldetRY(p) = log(bi::prod(diagonal(RY1).begin(),
           diagonal(RY1).end(), 1.0));
-      lw1s(p) += -0.5*dot(column(this->J1, p), column(this->J2, p)) - this->ldetRY(p) - this->W*BI_HALF_LOG_TWO_PI - this->ldetY;
+      lw1s(p) += -0.5*dot(column(this->J1, p), column(this->J2, p)) -
+          this->ldetRY(p) - this->W*BI_HALF_LOG_TWO_PI - this->ldetY;
     }
   }
 }

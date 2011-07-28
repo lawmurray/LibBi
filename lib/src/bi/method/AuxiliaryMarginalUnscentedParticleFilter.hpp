@@ -114,53 +114,18 @@ public:
   void init(Static<L>& theta, V1& lw1s, V1& lw2s, V2& as);
 
   /**
-   * Resample particles.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   * @tparam R #concept::Resampler type.
-   *
-   * @param theta Static state.
-   * @param s State.
-   * @param[out] lw1s Stage 1 log-weights.
-   * @param[in,out] lw2s On input, current log-weights of particles, on
-   * output, stage 2 log-weights.
-   * @param[out] as Ancestry after resampling.
-   * @param resam Resampler.
-   * @param relEss Minimum ESS, as proportion of total number of particles,
-   * to trigger resampling.
-   *
-   * @return True if resampling was performed, false otherwise.
+   * @copydoc AuxiliaryParticleFilter::resample()
    */
   template<Location L, class V1, class V2, class R>
-  bool resample(Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as,
-      R* resam = NULL, const real relEss = 1.0);
+  bool resample(const real T, Static<L>& theta, State<L>& s, V1& lw1s,
+      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
 
   /**
-   * Resample particles.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   * @tparam R #concept::Resampler type.
-   *
-   * @param theta Static state.
-   * @param s State.
-   * @param a Conditioned ancestor of first particle.
-   * @param[out] lw1s Stage 1 log-weights.
-   * @param[in,out] lw2s On input, current log-weights of particles, on
-   * output, stage 2 log-weights.
-   * @param[out] as Ancestry after resampling.
-   * @param resam Resampler.
-   * @param relEss Minimum ESS, as proportion of total number of particles,
-   * to trigger resampling.
-   *
-   * @return True if resampling was performed, false otherwise.
+   * @copydoc AuxiliaryParticleFilter::resample()
    */
   template<Location L, class V1, class V2, class R>
-  bool resample(Static<L>& theta, State<L>& s, const int a, V1& lw1s,
-      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
+  bool resample(const real T, Static<L>& theta, State<L>& s, const int a,
+      V1& lw1s, V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
 
   /**
    * Output.
@@ -190,15 +155,10 @@ public:
 
 protected:
   /**
-   * Perform lookahead.
-   *
-   * @param theta Static state.
-   * @param s State.
-   * @param[in,out] lw1s On input, current log-weights of particles, on
-   * output, stage 1 log-weights.
+   * @copydoc AuxiliaryParticleFilter::lookahead()
    */
   template<Location L, class V1>
-  void lookahead(Static<L>& theta, State<L>& s, V1& lw1s);
+  void lookahead(const real T, Static<L>& theta, State<L>& s, V1& lw1s);
 
   /**
    * Cache for stage 1 log-weights.
@@ -280,7 +240,8 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* filter */
   init(theta, lw1s, lw2s, as);
   #ifndef USE_CPU
-  #pragma omp parallel sections
+  #pragma omp parallel num_threads(2)
+  #pragma omp sections
   #endif
   {
     #ifndef USE_CPU
@@ -299,7 +260,7 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     {
       int n = 0, r = 0;
       while (particle_filter_type::getTime() < T) {
-        r = resample(theta, s, lw1s, lw2s, as, resam, relEss);
+        r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
         propose(lw2s);
         particle_filter_type::predict(T, theta, s);
         correct(s, lw2s);
@@ -355,8 +316,8 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
-    Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam,
-    const real relEss) {
+    const real T, Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as,
+    R* resam, const real relEss) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
 
@@ -366,7 +327,7 @@ bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample
     const real to = particle_filter_type::oyUpdater.getNextTime();
     lw1s = lw2s;
     if (resam != NULL && to > this->getTime()) {
-      this->lookahead(theta, s, lw1s);
+      this->lookahead(T, theta, s, lw1s);
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(lw1s, lw2s, as, theta, s);
         r = true;
@@ -382,8 +343,8 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
-    Static<L>& theta, State<L>& s, const int a, V1& lw1s, V1& lw2s, V2& as,
-    R* resam, const real relEss) {
+    const real T, Static<L>& theta, State<L>& s, const int a, V1& lw1s,
+    V1& lw2s, V2& as, R* resam, const real relEss) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
   assert (a >= 0 && a < lw1s.size());
@@ -394,7 +355,7 @@ bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample
     const real to = this->oyUpdater.getNextTime();
     lw1s = lw2s;
     if (resam != NULL && to > this->state.t) {
-      this->lookahead(theta, s, lw1s);
+      this->lookahead(T, theta, s, lw1s);
       if (relEss >= 1.0 || ess(lw1s) <= s.size()*relEss) {
         resam->resample(a, lw1s, lw2s, as, theta, s);
         r = true;
@@ -443,38 +404,39 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L, class V1>
 void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
-    Static<L>& theta, State<L>& s, V1& lw1s) {
+    const real T, Static<L>& theta, State<L>& s, V1& lw1s) {
   typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
   typedef typename locatable_temp_matrix<L,real>::type temp_matrix_type;
-
-  const int P = s.size();
 
   this->wait();
   if (particle_filter_type::oyUpdater.hasNext()) {
     const real to = particle_filter_type::oyUpdater.getNextTime();
-    temp_matrix_type X(P, ND + NC + NR);
-    real delta = particle_filter_type::sim.getDelta();
-    int nupdates = lt_steps(to, delta) - lt_steps(this->getTime(), delta);
+    if (to <= T) {
+      temp_matrix_type X(s.size(), ND + NC + NR);
+      real delta = particle_filter_type::sim.getDelta();
+      int nupdates = lt_steps(to, delta) - lt_steps(this->getTime(), delta);
 
-    /* store current state */
-    columns(X, 0, ND) = s.get(D_NODE);
-    columns(X, ND, NC) = s.get(C_NODE);
-    columns(X, ND + NC, NR) = s.get(R_NODE);
-    particle_filter_type::mark();
+      /* store current state */
+      columns(X, 0, ND) = s.get(D_NODE);
+      columns(X, ND, NC) = s.get(C_NODE);
+      columns(X, ND + NC, NR) = s.get(R_NODE);
+      particle_filter_type::mark();
 
-    /* auxiliary simulation forward */
-    BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
-    U.resize(s.size(), this->mu[this->k1]->size());
-    set_rows(U, *this->mu[this->k1]);
-    particle_filter_type::rUpdater.setNext(nupdates);
-    this->predict(to, theta, s);
-    this->correct(s, lw1s);
+      /* auxiliary simulation forward */
+      BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
+      U.resize(s.size(), this->mu[this->k1]->size());
+      set_rows(U, *this->mu[this->k1]);
+      particle_filter_type::rUpdater.setNext(nupdates);
+      this->predict(to, theta, s);
+      this->correct(s, lw1s);
 
-    /* restore previous state */
-    s.get(D_NODE) = columns(X, 0, ND);
-    s.get(C_NODE) = columns(X, ND, NC);
-    s.get(R_NODE) = columns(X, ND + NC, NR);
-    particle_filter_type::restore();
+      /* restore previous state */
+      s.get(D_NODE) = columns(X, 0, ND);
+      s.get(C_NODE) = columns(X, ND, NC);
+      s.get(R_NODE) = columns(X, ND + NC, NR);
+
+      particle_filter_type::restore();
+    }
   }
 }
 
