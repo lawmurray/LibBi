@@ -10,13 +10,37 @@
 
 namespace bi {
   /**
-   * Exceptions.
+   * Cholesky decomposition failed (matrix not positive definite).
    */
-  enum Exception {
+  struct CholeskyException {
     /**
-     * Cholesky decomposition failed (matrix not positive definite).
+     * Constructor.
      */
-    CHOLESKY_FAILED = 101
+    CholeskyException(const int info) : info(info) {
+      //
+    }
+
+    /**
+     * Info return by potrf().
+     */
+    int info;
+  };
+
+  /**
+   * Cholesky downdate failed (matrix not positive definite).
+   */
+  struct CholeskyDowndateException {
+    /**
+     * Constructor.
+     */
+    CholeskyDowndateException(const int info) : info(info) {
+      //
+    }
+
+    /**
+     * Info return by ch1dn().
+     */
+    int info;
   };
 }
 

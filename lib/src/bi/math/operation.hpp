@@ -71,7 +71,7 @@ void transpose(const M1 A, M2 B);
  */
 template<class M1, class M2>
 void chol(const M1 A, M2 L, char uplo = 'L',
-    const CholeskyStrategy = ADJUST_DIAGONAL) throw (Exception);
+    const CholeskyStrategy = ADJUST_DIAGONAL) throw (CholeskyException);
 
 /**
  * Rank-1 update of upper triangular Cholesky factor.
@@ -91,7 +91,7 @@ void ch1up(M1 U, V1 a, V2 b);
  * @see dch1dn, sch1dn of qrupdate.
  */
 template<class M1, class V1, class V2>
-void ch1dn(M1 U, V1 a, V2 b) throw (Exception);
+void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
 
 /**
  * Set the columns of a matrix.
@@ -467,7 +467,7 @@ inline void bi::transpose(const M1 A, M2 B) {
 
 template<class M1, class M2>
 void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
-    throw (Exception) {
+    throw (CholeskyException) {
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
 
@@ -522,7 +522,7 @@ void bi::chol(const M1 A, M2 L, char uplo, const CholeskyStrategy strat)
   }
   if (info != 0) {
     //BI_WARN(false, "Cholesky failed with info " << info);
-    throw CHOLESKY_FAILED;
+    throw CholeskyException(info);
   }
 }
 
@@ -547,7 +547,7 @@ void bi::ch1up(M1 U, V1 a, V2 b) {
 }
 
 template<class M1, class V1, class V2>
-void bi::ch1dn(M1 U, V1 a, V2 b) throw (Exception) {
+void bi::ch1dn(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
   typedef typename V2::value_type T3;
@@ -567,7 +567,7 @@ void bi::ch1dn(M1 U, V1 a, V2 b) throw (Exception) {
   qrupdate_ch1dn<T1>::func(&n, U.buf(), &ld, a.buf(), b.buf(), &info);
   if (info != 0) {
     //BI_WARN(false, "Cholesky downdate failed with info " << info);
-    throw CHOLESKY_FAILED;
+    throw CholeskyDowndateException(info);
   }
 }
 

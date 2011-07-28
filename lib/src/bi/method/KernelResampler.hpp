@@ -198,15 +198,11 @@ void bi::KernelResampler<B,R>::resample(V1& lws, V2& as, Static<L>& theta, State
     if (haveParameters) {
       exp_columns(theta.get(P_NODE), m.getLogs(P_NODE));
     }
-  } catch (Exception e) {
-    if (e == CHOLESKY_FAILED) {
-      /* defer to base resampler */
-      BI_WARN(false, "Cholesky failed for KernelResampler, reverting " <<
-          "to base resampler")
-      base->resample(lws, as, theta, s);
-    } else {
-      throw e;
-    }
+  } catch (CholeskyException e) {
+    /* defer to base resampler */
+    BI_WARN(false, "Cholesky failed for KernelResampler, reverting " <<
+        "to base resampler")
+    base->resample(lws, as, theta, s);
   }
 }
 

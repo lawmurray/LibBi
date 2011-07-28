@@ -447,15 +447,9 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahea
   typedef typename locatable_temp_vector<L,real>::type temp_vector_type;
   typedef typename locatable_temp_matrix<L,real>::type temp_matrix_type;
 
-  #ifndef USE_CPU
-  /* ensure prepare() is actually ahead... */
-  while (k1 >= k2) {
-    #pragma omp flush(k2)
-  }
-  #endif
-
   const int P = s.size();
 
+  this->wait();
   if (particle_filter_type::oyUpdater.hasNext()) {
     const real to = particle_filter_type::oyUpdater.getNextTime();
     temp_matrix_type X(P, ND + NC + NR);

@@ -172,6 +172,11 @@ protected:
   typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
 
   /**
+   * Wait to ensure UKF is ahead of PF.
+   */
+  void wait();
+
+  /**
    * \f$\hat{\boldsymbol{\mu}}_1,\ldots,\hat{\boldsymbol{\mu}}_T\f$; noise
    * term proposal mean from UKF.
    */
@@ -425,46 +430,65 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
   ExpGaussianPdf<V1,M1> runcorrected(0);
   ExpGaussianPdf<V1,M1> observed(0);
   M1 SigmaXX(M, M), SigmaXY(M, 0), SigmaRY(M, 0);
-  M1 X1, X2, Sigma;
-  V1 mu;
-
+  M1 X1, X2, Sigma1;
+  V1 mu1;
   real tj;
-  kalman_filter_type::init(theta, corrected);
-  while (kalman_filter_type::getTime() < T) {
-    tj = obs(T, s);
 
-    kalman_filter_type::parameters(tj);
-    kalman_filter_type::resize(s, theta, observed, SigmaXY, X1, X2, mu,
-        Sigma);
-    kalman_filter_type::resizeNoise(runcorrected, rcorrected, SigmaRY);
-    kalman_filter_type::sigmas(corrected, X1);
-    kalman_filter_type::advance(tj, X1, X2, theta, s);
-    kalman_filter_type::mean(X2, mu);
-    kalman_filter_type::cov(X2, mu, Sigma);
-    kalman_filter_type::predict(mu, Sigma, uncorrected, SigmaXY);
-    kalman_filter_type::observe(mu, Sigma, observed);
-    kalman_filter_type::predictNoise(mu, Sigma, runcorrected, SigmaRY);
-    kalman_filter_type::correct(uncorrected, SigmaXY, s, observed,
-        corrected);
-    kalman_filter_type::correctNoise(runcorrected, SigmaRY, s, observed,
-        rcorrected);
+  try {
+    kalman_filter_type::init(theta, corrected);
+    while (kalman_filter_type::getTime() < T) {
+      tj = obs(T, s);
 
-    if (this->mu[k2] == NULL) {
-      this->mu[k2] = new vector_type(rcorrected.size());
+      kalman_filter_type::parameters(tj);
+      kalman_filter_type::resize(s, theta, observed, SigmaXY, X1, X2, mu1,
+          Sigma1);
+      kalman_filter_type::resizeNoise(runcorrected, rcorrected, SigmaRY);
+      kalman_filter_type::sigmas(corrected, X1);
+      kalman_filter_type::advance(tj, X1, X2, theta, s);
+      kalman_filter_type::mean(X2, mu1);
+      kalman_filter_type::cov(X2, mu1, Sigma1);
+      kalman_filter_type::predict(mu1, Sigma1, uncorrected, SigmaXY);
+      kalman_filter_type::observe(mu1, Sigma1, observed);
+      kalman_filter_type::predictNoise(mu1, Sigma1, runcorrected, SigmaRY);
+      kalman_filter_type::correct(uncorrected, SigmaXY, s, observed,
+          corrected);
+      kalman_filter_type::correctNoise(runcorrected, SigmaRY, s, observed,
+          rcorrected);
+
+      if (mu[k2] == NULL) {
+        mu[k2] = new vector_type(rcorrected.size());
+      }
+      if (U[k2] == NULL) {
+        U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
+      }
+      *mu[k2] = rcorrected.mean();
+      *U[k2] = rcorrected.std();
+      detU[k2] = sqrt(rcorrected.det());
+
+      ++k2;
+      #ifndef USE_CPU
+      #pragma omp flush(k2)
+      #endif
     }
-    if (this->U[k2] == NULL) {
-      this->U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
-    }
-    *this->mu[k2] = rcorrected.mean();
-    *this->U[k2] = rcorrected.std();
-    this->detU[k2] = sqrt(rcorrected.det());
+  } catch (CholeskyException) {
+    while (k2 < mu.size()) {
+      /* revert to bootstrap filter */
+      if (mu[k2] == NULL) {
+        mu[k2] = new vector_type(rcorrected.size());
+      }
+      if (U[k2] == NULL) {
+        U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
+      }
+      mu[k2]->clear();
+      ident(*U[k2]);
+      detU[k2] = 1.0;
 
-    ++k2;
-    #ifndef USE_CPU
-    #pragma omp flush(k2)
-    #endif
+      ++k2;
+      #ifndef USE_CPU
+      #pragma omp flush(k2)
+      #endif
+    }
   }
-  synchronize();
   kalman_filter_type::term(theta);
 }
 
@@ -481,13 +505,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class V1>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     V1 lws) {
-  #ifndef USE_CPU
-  /* ensure prepare() is actually ahead... */
-  while (k1 >= k2) {
-    #pragma omp flush(k2)
-  }
-  #endif
-
+  wait();
   const int P = lws.size();
   BOOST_AUTO(&mu, *this->mu[k1]);
   BOOST_AUTO(&U, *this->U[k1]);
@@ -520,6 +538,16 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
   }
   delete lw1;
   delete lw2;
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::wait() {
+  #ifndef USE_CPU
+  while (k1 >= k2) {
+    #pragma omp flush(k2)
+  }
+  #endif
 }
 
 #endif

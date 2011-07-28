@@ -316,6 +316,7 @@ struct ConditionalUnscentedParticleFilterFactory {
 
 #include "../math/primitive.hpp"
 #include "../math/functor.hpp"
+#include "../misc/exception.hpp"
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
@@ -572,7 +573,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
           BOOST_AUTO(muU1, column(muU, p));
 
           try {
-            /* conditional covariance Cholesky factor */
             trsm(1.0, RY1, SigmaUY1, 'R', 'U');
             ident(RU1);
             for (w = 0; w < W; ++w) {
@@ -580,7 +580,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
             }
             ldetRU(p) = log(bi::prod(diagonal(RU1).begin(),
                 diagonal(RU1).end(), 1.0));
-          } catch (Exception e) {
+          } catch (CholeskyDowndateException) {
             ident(RU1);
             muU1.clear();
             ldetRU(p) = 0.0;
