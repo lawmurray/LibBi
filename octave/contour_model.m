@@ -47,8 +47,9 @@ function contour_model (model, mn, mx, ax, lvl)
     
     % determine kriging extents
     if isempty (ax)
-        allx = model.X(:,1);
-        ally = model.X(:,2);
+        X1 = unstandardise(model.X, model.mu, model.Sigma);
+        allx = X1(:,1);
+        ally = X1(:,2);
         if nargin > 1
             allx = [ allx; mn(:,1) ];
             ally = [ ally; mn(:,2) ];
@@ -57,36 +58,27 @@ function contour_model (model, mn, mx, ax, lvl)
             allx = [ allx; mx(:,1) ];
             ally = [ ally; mx(:,2) ];
         end
-        ax1 = [ min(allx), max(allx), min(ally), max(ally) ];
-        ax(1:2) = unstandardise(ax1(1:2)', model.mu(1), model.sigma(1));
-        ax(3:4) = unstandardise(ax1(3:4)', model.mu(2), model.sigma(2));
-    else
-        ax1(1:2) = standardise(ax(1:2)', model.mu(1), model.sigma(1));
-        ax1(3:4) = standardise(ax(3:4)', model.mu(2), model.sigma(2));
+        ax = [ min(allx), max(allx), min(ally), max(ally) ];
     end
     
-    x = linspace(ax1(1), ax1(2), RES);
-    y = linspace(ax1(3), ax1(4), RES);   
-    [XX YY] = meshgrid(x, y);
-    Z = [ XX(:) YY(:) ];
-    
-    if isfield(model, 'type') && strcmp(model.type, 'posterior')
-        % kde surface
-        m = kernel_density(Z, model.X, model.h);
-    else
-        % krig surface
-        [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
-        model.likfunc, model.X, model.y, Z);
-        m = exp(m);
-    end
-    
-    % determine visualisation extents
     x = linspace(ax(1), ax(2), RES);
     y = linspace(ax(3), ax(4), RES);   
     [XX YY] = meshgrid(x, y);
-    ZZ = reshape(m, size(XX));
-
+    Z = [ XX(:) YY(:) ];
+    Z1 = standardise(Z, model.mu, model.Sigma);
+    
+    if isfield(model, 'type') && strcmp(model.type, 'posterior')
+        % kde surface
+        m = kernel_density(Z1, model.X, model.h);
+    else
+        % krig surface
+        [m s2] = gp(model.hyp, @infExact, model.meanfunc, model.covfunc, ...
+        model.likfunc, model.X, model.y, Z1);
+        m = exp(m);
+    end
+    
     % contour plot
+    ZZ = reshape(m, size(XX));
     if isempty(lvl)
         contourf(XX, YY, ZZ);
     else

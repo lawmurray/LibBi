@@ -49,13 +49,13 @@ function model = model_loglikelihood (in, invars, coords, M)
         end
     end
     mu = mean(X);
-    sigma = std(X);
-    X = (X - repmat(mu, rows(X), 1))./repmat(sigma, rows(X), 1);
+    Sigma = cov(X);
+    X = standardise(X, mu, Sigma);
         
     % result structure
     model.type = 'loglikelihood';
     model.mu = mu;
-    model.sigma = sigma;
+    model.Sigma = Sigma;
     model.X = X;
     model.y = y;
     

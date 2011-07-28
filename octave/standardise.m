@@ -4,7 +4,7 @@
 % $Date: 2011-06-28 11:46:45 +0800 (Tue, 28 Jun 2011) $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} standardise (@var{X}, @var{mu}, @var{sigma})
+% @deftypefn {Function File} standardise (@var{X}, @var{mu}, @var{Sigma})
 %
 % Standardise rows of @var{X} using given mean and standard deviation
 % vectors.
@@ -14,10 +14,10 @@
 %
 % @bullet{ @var{mu} Mean vector.}
 %
-% @bullet{ @var{sigma} Standard deviation vector.}
+% @bullet{ @var{Sigma} Covariance matrix.}
 % @end deftypefn
 %
-function Z = standardise (X, mu, sigma)
+function Z = standardise (X, mu, Sigma)
     % check arguments
     if nargin != 3
         print_usage ();
@@ -27,22 +27,20 @@ function Z = standardise (X, mu, sigma)
     else
         mu = mu(:)'; % ensure row vector
     end
-    if !isvector (sigma)
-        error ('sigma should be row vector');
-    else
-        sigma = sigma(:)';
+    if !ismatrix (Sigma)
+        error ('Sigma should be a matrix');
     end
     if columns (X) > 0 
         if columns (X) != columns (mu)
             error ('mu should have same number of columns as Z');
         end
-        if columns (X) != columns (sigma)
-            error ('sigma should have same number of columns as Z');
+        if columns (X) != columns (Sigma)
+            error ('Sigma should have same number of columns as Z');
         end
         
         Mu = repmat(mu, rows(X), 1);
-        Sigma = repmat(sigma, rows(X), 1);
-        Z = (X - Mu)./Sigma;
+        invU = chol(cholinv(Sigma));
+        Z = (X - Mu)*invU;
     else
         Z = [];
     end

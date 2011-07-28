@@ -49,13 +49,13 @@ function model = model_posterior (in, invars, coords, rang)
         end
     end
     mu = mean(X);
-    sigma = std(X);
-    X = (X - repmat(mu, rows(X), 1))./repmat(sigma, rows(X), 1);
+    Sigma = cov(X);
+    X = standardise(X, mu, Sigma);
         
     % result structure
     model.type = 'posterior';
     model.mu = mu;
-    model.sigma = sigma;
+    model.Sigma = Sigma;
     model.X = X;
         
     % remove any NaNs and infs
