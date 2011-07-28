@@ -141,7 +141,7 @@ template<class Factory>
 void run(Args& args) {
   /* init */
   #ifdef __CUDACC__
-  int dev = chooseDevice(ID);
+  int dev = chooseDevice(args.ID);
   std::cerr << "Using device " << dev << std::endl;
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
