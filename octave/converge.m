@@ -47,6 +47,7 @@ function Rp = converge (ins, invars, coords, rang)
     if length (rang) == 0
         rang = [1:P];
     end
+    R = length(rang);
     ncclose(nci);
 
     X = cell(C, 1);
@@ -70,7 +71,7 @@ function Rp = converge (ins, invars, coords, rang)
                 if !check_coord (coord)
                     error ('Invalid coordinate');
                 else
-                    x = read_var(nci, invar, coord, rang, 1);
+                    x = read_var(nci, invar, coord, [], 1);
                     X{k}(i,:) = x;
                 end
             end
@@ -79,11 +80,11 @@ function Rp = converge (ins, invars, coords, rang)
     end
         
     % means and covariances, indexed by chain then iteration
-    mu = zeros(N, P, C);
-    Sigma = zeros(N, N, P, C);
+    mu = zeros(N, R, C);
+    Sigma = zeros(N, N, R, C);
 
     for k = 1:C
-        seq = [ 1:P ];
+        seq = rang;
         halfseq = ceil(seq / 2);
         
         % cumulatives
@@ -102,7 +103,7 @@ function Rp = converge (ins, invars, coords, rang)
             repmat(seq - halfseq, N, 1);
         Sigma1 = (cum_Sigma(:,:,seq) - cum_Sigma(:,:,halfseq));
         
-        for p = 1:P
+        for p = 1:R
             x = mu1(:,p);
             n = seq(p) - halfseq(p);
             if seq(p) - halfseq(p) > 1
@@ -119,14 +120,15 @@ function Rp = converge (ins, invars, coords, rang)
 
     % scalar comparison
     W = squeeze(mean(Sigma, 4));
-    Rp = zeros(P,1);
-    for p = 1:P
+    Rp = zeros(R,1);
+    for p = 1:R
+        n = seq(p) - halfseq(p);
         [Wp, s] = chol(squeeze(W(:,:,p)));
         if s == 0 % has Cholesky factorisation
             invWp = chol2inv(Wp);
             Bonp = cov(squeeze(mu(:,p,:))');
             lambda1 = max(eig(invWp*Bonp));
-            Rp(p) = (P - 1)/P + (C + 1)/C*lambda1;
+            Rp(p) = (n - 1)/n + (C + 1)/C*lambda1;
         end
     end
 end
