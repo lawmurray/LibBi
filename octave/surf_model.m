@@ -48,7 +48,7 @@ function surf_model (model, ax)
     [XX YY] = meshgrid(x, y);
     Z = [ XX(:) YY(:) ];
     
-    if isfield(model, 'type') && model.type == 'posterior'
+    if isfield(model, 'type') && strcmp(model.type, 'posterior')
         % kde surface
         m = kernel_density(Z, model.X, model.h);
     else
