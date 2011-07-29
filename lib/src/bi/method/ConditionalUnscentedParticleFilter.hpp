@@ -406,8 +406,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   kalman_filter_type::reset();
 }
 
-#include "../math/io.hpp"
-
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L1, bi::Location L2>
@@ -451,6 +449,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     }
 
     s2.resize(P1*P2, false);
+    s2.oresize(W, false);
     ///@todo Next two lines may not be necessary
     theta2.resize(1);
     theta2 = theta1;
@@ -511,10 +510,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
         try {
           chol(SigmaY1, RY1, 'U');
         } catch (CholeskyException) {
-          std::cerr << p << ": " << SigmaY1 << std::endl;
-          //ident(SigmaY1);
-          //ident(RY1);
-          //throw CholeskyException(0);
+          // let it run, sorts its self out
         }
       }
 

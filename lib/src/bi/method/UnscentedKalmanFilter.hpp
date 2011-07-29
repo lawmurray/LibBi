@@ -997,7 +997,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::resize(State<L>& s,
     Static<L>& theta, ExpGaussianPdf<V1,M1>& observed, M2& SigmaXY, M3& X1,
     M4& X2, V2& mu, M5& Sigma) {
   s.oresize(W, false);
-  s.resize(P);
+  s.resize(P, false);
   if (haveParameters) {
     theta.resize(P);
   }
