@@ -159,12 +159,22 @@ protected:
   /**
    * Vector type for proposals.
    */
-  typedef typename locatable_temp_vector<ON_HOST,real>::type vector_type;
+  typedef typename locatable_temp_vector<CL,real>::type vector_type;
 
   /**
    * Matrix type for proposals.
    */
-  typedef typename locatable_temp_matrix<ON_HOST,real>::type matrix_type;
+  typedef typename locatable_temp_matrix<CL,real>::type matrix_type;
+
+  /**
+   * Host vector type for proposals.
+   */
+  typedef typename locatable_temp_vector<ON_HOST,real>::type host_vector_type;
+
+  /**
+   * Host matrix type for proposals.
+   */
+  typedef typename locatable_temp_matrix<ON_HOST,real>::type host_matrix_type;
 
   using kalman_filter_type::N1;
   using kalman_filter_type::N2;
@@ -195,13 +205,13 @@ protected:
    * \f$\hat{\boldsymbol{\mu}_U}^1,\ldots,\hat{\boldsymbol{\mu}_U^P}\f$;
    * noise means from UKFs.
    */
-  matrix_type muU;
+  host_matrix_type muU;
 
   /**
    * \f$\hat{\boldsymbol{\mu}_Y}^1,\ldots,\hat{\boldsymbol{\mu}_Y^P}\f$;
    * observation means from UKFs.
    */
-  matrix_type muY;
+  host_matrix_type muY;
 
   /**
    * \f$\hat{\Sigma}_U^1,\ldots,\hat{\Sigma}_U^P\f$; noise covariances from
@@ -209,63 +219,68 @@ protected:
    *
    * @note Never explicitly needed, always \f$I\f$.
    */
-  //matrix_type SigmaU;
+  //host_matrix_type SigmaU;
 
   /**
    * \f$\hat{\Sigma}_Y^1,\ldots,\hat{\Sigma}_Y^P\f$; noise covariances from
    * UKFs.
    */
-  matrix_type SigmaY;
+  host_matrix_type SigmaY;
 
   /**
    * \f$\hat{\Sigma}_{UY}^1,\ldots,\hat{\Sigma}_{UY}^P\f$; noise-observation
    * cross covariances from UKFs.
    */
-  matrix_type SigmaUY;
+  host_matrix_type SigmaUY;
 
   /**
    * \f$\hat{R}_U^1,\ldots,\hat{R}_U^P\f$; noise Cholesky factors from UKFs.
    */
-  matrix_type RU;
+  host_matrix_type RU;
 
   /**
    * \f$\hat{R}_Y^1,\ldots,\hat{R}_Y^P\f$; observation Cholesky factors from
    * UKFs.
    */
-  matrix_type RY;
+  host_matrix_type RY;
 
   /**
    * \f$|\hat{R}_U^1|,\ldots,|\hat{R}_U^P|\f$; log-determinants of noise
    * Cholesky factors.
    */
-  vector_type ldetRU;
+  host_vector_type ldetRU;
 
   /**
    * \f$|\hat{R}_Y^1|,\ldots,|\hat{R}_Y^P|\f$; log-determinants of observation
    * Cholesky factors.
    */
-  vector_type ldetRY;
+  host_vector_type ldetRY;
 
   /**
    * \f$\mathbf{y}_t - \hat{\boldsymbol{\mu}}_Y^1, \ldots, \mathbf{y}_t -
    * \hat{\boldsymbol{\mu}}_Y^P\f$; innovation vectors.
    */
-  matrix_type J1, J2;
+  host_matrix_type J1, J2;
 
   /**
-   * Matrices of sigma points.
+   * Matrix of input sigma points.
    */
-  matrix_type X1, X2;
+  matrix_type X1;
+
+  /**
+   * Matrix of output sigma points.
+   */
+  host_matrix_type X2;
 
   /**
    * Observations.
    */
-  vector_type y;
+  host_vector_type y;
 
   /**
    * Log-observations.
    */
-  vector_type ly;
+  host_vector_type ly;
 
   /**
    * Log-determinant for change of variables in observations.
@@ -426,7 +441,9 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     log_columns(columns(*Z, 0, ND), kalman_filter_type::m.getLogs(D_NODE));
     log_columns(columns(*Z, ND, NC), kalman_filter_type::m.getLogs(C_NODE));
 
+    #ifdef USE_CPU
     #pragma omp parallel for
+    #endif
     for (int p = 0; p < P1; ++p) {
       set_rows(subrange(X1, p*P2, P2, 0, ND + NC + NR), row(*Z, p));
     }
@@ -439,6 +456,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
     /* observations */
     y = row(s2.get(OY_NODE), 0);
+    synchronize();
     ly = y;
     log_vector(ly, oLogs);
     ldetY = std::log(det_vector(ly, oLogs));
@@ -460,6 +478,15 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
         gemv(1.0, Y1, Wm, 0.0, muY1, 'T');
       }
 
+      /* mean-correct */
+      #pragma omp for
+      for (p = 0; p < P1; ++p) {
+        BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
+        BOOST_AUTO(muY1, column(muY, p));
+
+        sub_rows(Y1, muY1);
+      }
+
       /* observation covariances */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
@@ -467,7 +494,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
         BOOST_AUTO(muY1, column(muY, p));
         BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
 
-        sub_rows(Y1, muY1);
         syrk(Wi, rows(Y1, 1, 2*N1), 0.0, SigmaY1, 'U', 'T');
         syr(Wc0, row(Y1, 0), SigmaY1, 'U');
       }
@@ -528,13 +554,12 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     /* initial samples */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
     U.resize(P1, V);
-    particle_filter_type::rng.gaussians(vec(U));
+    particle_filter_type::rng.gaussians(vec(U)); // can be ascynchronous
     particle_filter_type::rUpdater.setNext(nupdates);
-    dot_rows(U, lw1);
 
     #pragma omp parallel
     {
-      int p, q, w, offset;
+      int p, w, offset;
 
       /* noise-observation cross-covariances */
       #pragma omp for
@@ -587,18 +612,39 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
           }
         }
       }
+    }
+
+    BOOST_AUTO(RU1, map_matrix(X2, RU));
+    BOOST_AUTO(muU1, map_matrix(X2, muU));
+
+    /* start weight computation (do this now to allow rng.gaussians() to
+     * work asynchronously to the above) */
+    dot_rows(U, lw1);
+
+    #pragma omp parallel
+    {
+      ///@todo Compare against copying U to host and back up again
+
+      int p, q;
+
+      /* permits multiple simultaneous kernel launches where supported */
+      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
+          bi_omp_cuda_stream));
 
       /* transform samples */
       #pragma omp for
       for (p = 0; p < P1; ++p) {
 	     	q = (*as1)(p);
-  	    BOOST_AUTO(RU1, columns(RU, q*V, V));
-        BOOST_AUTO(muU1, column(muU, q));
-        BOOST_AUTO(u1, row(U, p));
+  	    BOOST_AUTO(RU2, columns(*RU1, q*V, V));
+        BOOST_AUTO(muU2, column(*muU1, q));
+        BOOST_AUTO(u2, row(U, p));
 
-        trmv(RU1, u1, 'U');
-        axpy(1.0, muU1, u1);
+        trmv(RU2, u2, 'U');
+        axpy(1.0, muU2, u2);
       }
+
+      synchronize(bi_omp_cuda_stream);
+      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle, 0));
     }
 
     /* weight correct */
@@ -610,6 +656,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     synchronize();
     delete tmp;
     delete as1;
+    delete RU1;
+    delete muU1;
   }
 }
 

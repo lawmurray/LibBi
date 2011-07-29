@@ -10,6 +10,8 @@
 #ifndef BI_CUDA_MATH_MAGMA_HPP
 #define BI_CUDA_MATH_MAGMA_HPP
 
+#include "cublas.hpp"
+
 /*
  * Need to quarantine the inclusion of cublas.h (CUBLAS v1 API) in magma.h,
  * as its declarations clash with those in the inclusion of cublas_v2.h

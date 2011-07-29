@@ -377,7 +377,7 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
   if (V1::on_device) {
     #ifndef USE_CPU
     CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng, x.buf(),
-        x.size(), static_cast<T1>(0.0), static_cast<T1>(1.0)));
+        x.size(), mu, sigma));
     #else
     BI_ASSERT(false, "GPU random number generation not enabled");
     #endif
