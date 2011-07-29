@@ -18,7 +18,7 @@ extern "C" {
 
 namespace bi {
 /*
- * Mappings from character arguments to ATLAS enums.
+ * Mappings from character arguments to CBLAS enums.
  */
 inline CBLAS_UPLO cblas_uplo(const char uplo) {
   /* pre-condition */

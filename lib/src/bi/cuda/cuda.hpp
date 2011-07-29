@@ -158,9 +158,23 @@
  * @note Does nothing if USE_CPU defined.
  */
 namespace bi {
+  /**
+   * Synchronize with device.
+   */
   inline void synchronize() {
     #ifndef USE_CPU
     CUDA_CHECKED_CALL(cudaThreadSynchronize());
+    #endif
+  }
+
+  /**
+   * Synchronize with device.
+   *
+   * @param stream Stream with which to synchronize.
+   */
+  inline void synchronize(cudaStream_t stream) {
+    #ifndef USE_CPU
+    CUDA_CHECKED_CALL(cudaStreamSynchronize(stream));
     #endif
   }
 }

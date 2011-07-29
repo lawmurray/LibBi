@@ -444,6 +444,7 @@ void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
 #include "../typelist/equals.hpp"
 #include "../misc/repeated_range.hpp"
 #include "../misc/stuttered_range.hpp"
+#include "../misc/omp.hpp"
 
 #include "thrust/iterator/discard_iterator.h"
 
@@ -665,7 +666,8 @@ inline void bi::scal(typename V1::value_type alpha, V1 x) {
   typedef typename V1::value_type T1;
 
   if (V1::on_device) {
-    cublas_scal<T1>::func(x.size(), alpha, x.buf(), x.inc());
+    cublas_scal<T1>::func(bi_omp_cublas_handle, x.size(), &alpha, x.buf(),
+        x.inc());
   } else {
     cblas_scal<T1>::func(x.size(), alpha, x.buf(), x.inc());
   }
@@ -685,9 +687,9 @@ inline typename V1::value_type bi::dot(const V1 a, const V2 b) {
   if (V1::on_device) {
     BOOST_AUTO(a1, gpu_map_vector(a));
     BOOST_AUTO(b1, gpu_map_vector(b));
-    result = cublas_dot<T1>::func(a1->size(), a1->buf(), a1->inc(), b1->buf(), b1->inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_dot<T1>::func(bi_omp_cublas_handle,
+        a1->size(), a1->buf(), a1->inc(), b1->buf(), b1->inc(), &result));
+    synchronize(bi_omp_cublas_handle);
     delete a1;
     delete b1;
   } else {
@@ -712,7 +714,9 @@ inline typename V1::value_type bi::dot(const V1 a) {
 
   T1 result;
   if (V1::on_device) {
-    result = cublas_dot<T1>::func(a.size(), a.buf(), a.inc(), a.buf(), a.inc());
+    cublas_dot<T1>::func(bi_omp_cublas_handle, a.size(), a.buf(),
+        a.inc(), a.buf(), a.inc(), &result);
+    synchronize(bi_omp_cublas_handle);
   } else {
     result = cblas_dot<T1>::func(a.size(), a.buf(), a.inc(), a.buf(), a.inc());
   }
@@ -723,11 +727,16 @@ template<class V1>
 inline typename V1::size_type bi::iamax(const V1 x) {
   typedef typename V1::value_type T1;
 
+  T1 result;
   if (V1::on_device) {
-    return cublas_iamax<T1>::func(x.size(), x.buf(), x.inc()) - 1;
+    cublas_iamax<T1>::func(bi_omp_cublas_handle, x.size(), x.buf(),
+        x.inc(), &result);
+    synchronize(bi_omp_cublas_handle); // must synchronize for result in CUBLAS v2
+    --result; // to base zero
   } else {
-    return cblas_iamax<T1>::func(x.size(), x.buf(), x.inc()) - 1;
+    result = cblas_iamax<T1>::func(x.size(), x.buf(), x.inc()) - 1;
   }
+  return result;
 }
 
 template<class T1, class V1, class V2>
@@ -744,9 +753,9 @@ inline void bi::axpy(const T1 a, const V1 x, V2 y, const bool clear) {
   }
   if (V2::on_device) {
     BOOST_AUTO(x1, gpu_map_vector(x));
-    cublas_axpy<T3>::func(y.size(), a, x1->buf(), x1->inc(), y.buf(), y.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_axpy<T3>::func(bi_omp_cublas_handle, y.size(),
+        &a, x1->buf(), x1->inc(), y.buf(), y.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete x1;
   } else {
     BOOST_AUTO(x1, host_map_vector(x));
@@ -776,10 +785,10 @@ void bi::gemv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
   if (V2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
     BOOST_AUTO(x1, gpu_map_vector(x));
-    cublas_gemv<T5>::func(transA, A1->size1(), A1->size2(), alpha, A1->buf(),
-        A1->lead(), x1->buf(), x1->inc(), beta, y.buf(), y.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_gemv<T5>::func(bi_omp_cublas_handle,
+        cublas_trans(transA), A1->size1(), A1->size2(), &alpha, A1->buf(),
+        A1->lead(), x1->buf(), x1->inc(), &beta, y.buf(), y.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
     delete x1;
   } else {
@@ -812,10 +821,10 @@ void bi::symv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
   if (V2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
     BOOST_AUTO(x1, gpu_map_vector(x));
-    cublas_symv<T5>::func(uplo, A1->size1(), alpha, A1->buf(),
-        A1->lead(), x1->buf(), x1->inc(), beta, y.buf(), y.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_symv<T5>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), A1->size1(), &alpha, A1->buf(), A1->lead(),
+        x1->buf(), x1->inc(), &beta, y.buf(), y.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
     delete x1;
   } else {
@@ -846,10 +855,10 @@ void bi::trmv(const M1 A, V1 x, const char uplo, const char transA) {
 
   if (V1::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    cublas_trmv<T2>::func(uplo, transA, 'N', x.size(), A1->buf(), A1->lead(),
-        x.buf(), x.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_trmv<T2>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), cublas_trans(transA), cublas_diag('N'), x.size(),
+        A1->buf(), A1->lead(), x.buf(), x.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
@@ -993,10 +1002,11 @@ void bi::gemm(const T1 alpha, const M1 A, const M2 X, const T2 beta,
   if (M3::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
     BOOST_AUTO(X1, gpu_map_matrix(X));
-    cublas_gemm<T5>::func(transA, transX, m, n, k, alpha, A1->buf(), A1->lead(),
-        X1->buf(), X1->lead(), beta, Y.buf(), Y.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_gemm<T5>::func(bi_omp_cublas_handle,
+        cublas_trans(transA), cublas_trans(transX), m, n, k, &alpha,
+        A1->buf(), A1->lead(), X1->buf(), X1->lead(), &beta, Y.buf(),
+        Y.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
     delete X1;
   } else {
@@ -1033,10 +1043,11 @@ void bi::symm(const T1 alpha, const M1 A, const M2 X, const T2 beta, M3 Y,
   if (M3::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
     BOOST_AUTO(X1, gpu_map_matrix(X));
-    cublas_symm<T5>::func(side, uplo, Y.size1(), Y.size2(), alpha, A1->buf(),
-        A1->lead(), X1->buf(), X1->lead(), beta, Y.buf(), Y.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_symm<T5>::func(bi_omp_cublas_handle,
+        cublas_side(side), cublas_uplo(uplo), Y.size1(), Y.size2(), &alpha,
+        A1->buf(), A1->lead(), X1->buf(), X1->lead(), &beta, Y.buf(),
+        Y.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
     delete X1;
   } else {
@@ -1071,10 +1082,12 @@ void bi::trmm(const T1 alpha, const M1 A, M2 B, const char side,
 
   if (M2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    cublas_trmm<T3>::func(side, uplo, transA, 'N', B.size1(), B.size2(),
-        alpha, A1->buf(), A1->lead(), B.buf(), B.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_trmm<T3>::func(bi_omp_cublas_handle,
+        cublas_side(side), cublas_uplo(uplo), cublas_trans(transA),
+        cublas_diag('N'), B.size1(), B.size2(), &alpha, A1->buf(),
+        A1->lead(), B.buf(), B.lead(), B.buf(), B.lead()));
+    ///@todo Include different output matrix as option for CUBLAS
+    synchronize(bi_omp_cublas_handle);
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
@@ -1099,10 +1112,10 @@ void bi::gdmv(const T1 alpha, const V1 A, const V2 x, const T2 beta, V3 y) {
   if (V3::on_device) {
     BOOST_AUTO(A1, gpu_map_vector(A));
     BOOST_AUTO(x1, gpu_map_vector(x));
-    cublas_gbmv<T3>::func('N', A1->size(), A1->size(), 0, 0, alpha, A1->buf(),
-        A1->inc(), x1->buf(), x1->inc(), beta, y.buf(), y.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_gbmv<T3>::func(bi_omp_cublas_handle,
+        cublas_trans('N'), A1->size(), A1->size(), 0, 0, &alpha, A1->buf(),
+        A1->inc(), x1->buf(), x1->inc(), &beta, y.buf(), y.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
     delete x1;
   } else {
@@ -1142,7 +1155,6 @@ void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
         gdmv(alpha, *A1, column(*X1,j), beta, column(Y,j));
       }
       synchronize();
-      CUBLAS_CHECK;
       delete A1;
     } else {
       /* scal and axpy on each column */
@@ -1159,7 +1171,6 @@ void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
         axpy(alpha*(*A1)(j), column(*X1,j), column(Y,j));
       }
       synchronize();
-      CUBLAS_CHECK;
       delete A1;
     }
     delete X1;
@@ -1210,10 +1221,10 @@ void bi::ger(const T1 alpha, const V1 x, const V2 y, M1 A,
   if (M1::on_device) {
     BOOST_AUTO(x1, gpu_map_vector(x));
     BOOST_AUTO(y1, gpu_map_vector(y));
-    cublas_ger<T4>::func(A.size1(), A.size2(), alpha, x1->buf(), x1->inc(),
-        y1->buf(), y1->inc(), A.buf(), A.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_ger<T4>::func(bi_omp_cublas_handle, A.size1(),
+        A.size2(), &alpha, x1->buf(), x1->inc(), y1->buf(), y1->inc(),
+        A.buf(), A.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete x1;
     delete y1;
   } else {
@@ -1247,10 +1258,10 @@ void bi::syr(const T1 alpha, const V1 x, M1 A, const char uplo,
 
   if (M1::on_device) {
     BOOST_AUTO(x1, gpu_map_vector(x));
-    cublas_syr<T3>::func(uplo, A.size1(), alpha, x1->buf(), x1->inc(),
-        A.buf(), A.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_syr<T3>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), A.size1(), &alpha, x1->buf(), x1->inc(), A.buf(),
+        A.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete x1;
   } else {
     BOOST_AUTO(x1, host_map_vector(x));
@@ -1281,10 +1292,10 @@ void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
   if (M1::on_device) {
     BOOST_AUTO(x1, gpu_map_vector(x));
     BOOST_AUTO(y1, gpu_map_vector(y));
-    cublas_syr2<T4>::func(uplo, A.size1(), alpha, x1->buf(), x1->inc(),
-        y1->buf(), y1->inc(), A.buf(), A.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_syr2<T4>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), A.size1(), &alpha, x1->buf(), x1->inc(),
+        y1->buf(), y1->inc(), A.buf(), A.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete x1;
     delete y1;
   } else {
@@ -1318,10 +1329,10 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
 
   if (M2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    cublas_syrk<T4>::func(uplo, trans, C.size1(), k, alpha, A1->buf(),
-        A1->lead(), beta, C.buf(), C.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_syrk<T4>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), cublas_trans(trans), C.size1(), k, &alpha,
+        A1->buf(), A1->lead(), &beta, C.buf(), C.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
@@ -1385,10 +1396,10 @@ void bi::trsv(const M1 A, V1 x, const char uplo, const char trans,
 
   if (V1::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    cublas_trsv<T1>::func(uplo, trans, diag, x.size(), A1->buf(), A1->lead(),
-        x.buf(), x.inc());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_trsv<T1>::func(bi_omp_cublas_handle,
+        cublas_uplo(uplo), cublas_trans(trans), cublas_diag(diag), x.size(),
+        A1->buf(), A1->lead(), x.buf(), x.inc()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
@@ -1420,10 +1431,11 @@ void bi::trsm(const T1 alpha, const M1 A, M2 B, const char side,
 
   if (M2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    cublas_trsm<T2>::func(side, uplo, trans, diag, B.size1(), B.size2(),
-        alpha, A1->buf(), A1->lead(), B.buf(), B.lead());
-    synchronize();
-    CUBLAS_CHECK;
+    CUBLAS_CHECKED_CALL(cublas_trsm<T2>::func(bi_omp_cublas_handle,
+        cublas_side(side), cublas_uplo(uplo), cublas_trans(trans),
+        cublas_diag(diag), B.size1(), B.size2(), &alpha, A1->buf(),
+        A1->lead(), B.buf(), B.lead()));
+    synchronize(bi_omp_cublas_handle);
     delete A1;
   } else {
     BOOST_AUTO(A1, host_map_matrix(A));
