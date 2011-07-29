@@ -67,6 +67,11 @@ public:
   typedef SparseMask<CL> mask_type;
 
   /**
+   * Mask type on host.
+   */
+  typedef SparseMask<ON_HOST> host_mask_type;
+
+  /**
    * Constructor.
    *
    * @param in Input.
@@ -106,6 +111,15 @@ public:
    * @return The current mask.
    */
   const mask_type& getMask() const;
+
+  /**
+   * Current mask, on host.
+   *
+   * @return The current mask.
+   *
+   * The returned mask is always on host, regardless of @p CL.
+   */
+  const host_mask_type& getHostMask() const;
 
   /**
    * Are further updates available?
@@ -151,6 +165,11 @@ private:
   Cache<mask_type> maskCache;
 
   /**
+   * Cache for masks on host.
+   */
+  Cache<host_mask_type> maskHostCache;
+
+  /**
    * State.
    */
   OYUpdaterState state;
@@ -187,6 +206,7 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<L>& s) {
     in.readContiguous(O_NODE, vec(s.get(OY_NODE)));
     cache.write(state.p1, s.get(OY_NODE));
     maskCache.put(state.p1, in.getMask(O_NODE));
+    maskHostCache.put(state.p1, in.getMask(O_NODE));
     in.next();
     ++state.p2;
   }
@@ -220,11 +240,21 @@ inline real bi::OYUpdater<B,IO,CL>::getTime() const {
 }
 
 template<class B, class IO, bi::Location CL>
-inline const typename bi::OYUpdater<B,IO,CL>::mask_type& bi::OYUpdater<B,IO,CL>::getMask() const {
+inline const typename bi::OYUpdater<B,IO,CL>::mask_type&
+    bi::OYUpdater<B,IO,CL>::getMask() const {
   /* pre-condition */
   assert (state.p1 > 0);
 
   return maskCache.get(state.p1 - 1);
+}
+
+template<class B, class IO, bi::Location CL>
+inline const typename bi::OYUpdater<B,IO,CL>::host_mask_type&
+    bi::OYUpdater<B,IO,CL>::getHostMask() const {
+  /* pre-condition */
+  assert (state.p1 > 0);
+
+  return maskHostCache.get(state.p1 - 1);
 }
 
 template<class B, class IO, bi::Location CL>

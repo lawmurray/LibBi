@@ -34,14 +34,12 @@ public:
    * @param mask Mask.
    * @param s State to update.
    */
-  template<Location L>
-  void update(const SparseMask<L>& mask, State<ON_HOST>& s);
+  void update(const SparseMask<ON_HOST>& mask, State<ON_HOST>& s);
 
   /**
-   * @copydoc update(const SparseMask<L>& mask, State<ON_HOST>& s)
+   * @copydoc update(const SparseMask<ON_HOST>& mask, State<ON_HOST>& s)
    */
-  template<Location L>
-  void update(const SparseMask<L>& mask, State<ON_DEVICE>& s);
+  void update(const SparseMask<ON_DEVICE>& mask, State<ON_DEVICE>& s);
 };
 }
 
@@ -51,8 +49,7 @@ public:
 #include "../host/const_host.hpp"
 
 template<class B, bi::StaticHandling SH>
-template<bi::Location L>
-void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_HOST>& s) {
+void bi::OUpdater<B,SH>::update(const SparseMask<ON_HOST>& mask, State<ON_HOST>& s) {
   typedef typename B::OTypeList S;
   typedef typename boost::mpl::if_c<SH == STATIC_SHARED,const_host,host>::type pa;
   typedef Pa<ON_HOST,B,real,pa,host,host,pa,host,host,host> V3;

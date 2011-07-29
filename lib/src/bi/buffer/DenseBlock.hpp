@@ -196,7 +196,8 @@ inline bi::DenseBlockBase<L>& bi::DenseBlockBase<L>::operator=(
 }
 
 template<bi::Location L>
-inline const typename bi::DenseBlockBase<L>::vector_type& bi::DenseBlockBase<L>::getIds() const {
+inline const typename bi::DenseBlockBase<L>::vector_type& bi::DenseBlockBase<L>::getIds()
+    const {
   return ids;
 }
 

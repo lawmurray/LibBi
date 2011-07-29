@@ -406,6 +406,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   kalman_filter_type::reset();
 }
 
+#include "../math/io.hpp"
+
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L1, bi::Location L2>
@@ -452,7 +454,9 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     ///@todo Next two lines may not be necessary
     theta2.resize(1);
     theta2 = theta1;
+    synchronize();
     advanceNoise(tj, X1, X2, theta2, s2);
+    synchronize();
 
     /* observations */
     y = row(s2.get(OY_NODE), 0);
@@ -504,7 +508,14 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
         BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
         BOOST_AUTO(RY1, columns(RY, p*W, W));
 
-        chol(SigmaY1, RY1, 'U');
+        try {
+          chol(SigmaY1, RY1, 'U');
+        } catch (CholeskyException) {
+          std::cerr << p << ": " << SigmaY1 << std::endl;
+          //ident(SigmaY1);
+          //ident(RY1);
+          //throw CholeskyException(0);
+        }
       }
 
       /* complete and scale innovations */
@@ -628,8 +639,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
       int p, q;
 
       /* permits multiple simultaneous kernel launches where supported */
-      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
-          bi_omp_cuda_stream));
+//      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
+//          bi_omp_cuda_stream));
 
       /* transform samples */
       #pragma omp for
@@ -643,8 +654,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         axpy(1.0, muU2, u2);
       }
 
-      synchronize(bi_omp_cuda_stream);
-      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle, 0));
+//      synchronize(bi_omp_cuda_stream);
+//      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle, 0));
     }
 
     /* weight correct */

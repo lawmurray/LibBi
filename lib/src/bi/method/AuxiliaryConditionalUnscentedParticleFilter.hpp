@@ -318,6 +318,8 @@ template<class V1>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahead(
     V1& lw1s) {
   if (this->nupdates > 0) {
+    BOOST_AUTO(tmp, host_temp_vector<real>(lw1s.size()));
+
     /* next obs likelihoods from UKF lookahead */
     #pragma omp parallel for
     for (int p = 0; p < this->P1; ++p) {
@@ -325,9 +327,13 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::looka
 
       this->ldetRY(p) = log(bi::prod(diagonal(RY1).begin(),
           diagonal(RY1).end(), 1.0));
-      lw1s(p) += -0.5*dot(column(this->J1, p), column(this->J2, p)) -
+      (*tmp)(p) = -0.5*dot(column(this->J1, p), column(this->J2, p)) -
           this->ldetRY(p) - this->W*BI_HALF_LOG_TWO_PI - this->ldetY;
     }
+
+    axpy(1.0, *tmp, lw1s);
+    synchronize();
+    delete tmp;
   }
 }
 

@@ -1080,6 +1080,14 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
     }
   }
 
+  /* log relevant variables */
+  log_columns(s.get(D_NODE), m.getLogs(D_NODE));
+  log_columns(s.get(C_NODE), m.getLogs(C_NODE));
+  if (haveParameters) {
+    log_columns(theta.get(P_NODE), m.getLogs(P_NODE));
+  }
+  log_columns(s.get(O_NODE), oLogs);
+
   /* copy back to matrix */
   columns(X2, 0, ND) = s.get(D_NODE);
   columns(X2, ND, NC) = s.get(C_NODE);
@@ -1088,14 +1096,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
     columns(X2, ND + NC + NR, NP) = theta.get(P_NODE);
   }
   columns(X2, N2 - W, W) = s.get(O_NODE);
-
-  /* log relevant variables */
-  log_columns(columns(X2, 0, ND), m.getLogs(D_NODE));
-  log_columns(columns(X2, ND, NC), m.getLogs(C_NODE));
-  if (haveParameters) {
-    log_columns(columns(X2, ND + NC + NR, NP), m.getLogs(P_NODE));
-  }
-  log_columns(columns(X2, N2 - W, W), oLogs);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -1143,28 +1143,29 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
   oLogs.clear();
   if (state.t >= tj && W > 0) {
     BOOST_AUTO(mask, oyUpdater.getMask());
+    BOOST_AUTO(hostMask, oyUpdater.getHostMask());
     assert(W == mask.size());
 
     orUpdater.prepare(N1, W, a, fixed);
-    orUpdater.update(mask, s);
+    orUpdater.update(hostMask, s);
     oUpdater.update(mask, s);
 
     /* indices of observations at this time that are log-variables */
     int id, i;
     for (i = 0; i < W; ++i) {
-      id = mask.id(i);
+      id = hostMask.id(i);
       if (m.isLog(O_NODE, id)) {
         oLogs.insert(i);
       }
     }
   }
 
+  /* log relevant variables */
+  log_columns(s.get(O_NODE), oLogs);
+
   /* copy back to matrix */
   columns(X2, ND + NC, NR) = s.get(R_NODE);
   columns(X2, N2 - W, W) = s.get(O_NODE);
-
-  /* log relevant variables */
-  log_columns(columns(X2, N2 - W, W), oLogs);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

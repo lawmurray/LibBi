@@ -39,7 +39,7 @@ public:
    * @param s State to update.
    */
   template<Location L>
-  void update(const SparseMask<L>& mask, State<L>& s);
+  void update(const SparseMask<ON_HOST>& mask, State<L>& s);
 
   /**
    * Prepare for upcoming update.
@@ -96,7 +96,7 @@ void bi::UnscentedORUpdater<B,SH>::prepare(const int N1, const int W,
 
 template<class B, bi::StaticHandling SH>
 template<bi::Location L>
-void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<L>& mask,
+void bi::UnscentedORUpdater<B,SH>::update(const SparseMask<ON_HOST>& mask,
     State<L>& s) {
   /* pre-condition */
   assert (mask.size() == W);

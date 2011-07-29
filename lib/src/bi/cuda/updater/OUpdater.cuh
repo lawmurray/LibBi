@@ -13,8 +13,7 @@
 #include <algorithm>
 
 template<class B, bi::StaticHandling SH>
-template<bi::Location L>
-void bi::OUpdater<B,SH>::update(const SparseMask<L>& mask, State<ON_DEVICE>& s) {
+void bi::OUpdater<B,SH>::update(const SparseMask<ON_DEVICE>& mask, State<ON_DEVICE>& s) {
   typedef typename SparseMask<ON_DEVICE>::dense_block_type dense_block_type;
   typedef typename SparseMask<ON_DEVICE>::sparse_block_type sparse_block_type;
 
