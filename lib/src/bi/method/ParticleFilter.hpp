@@ -138,8 +138,8 @@ public:
    * to trigger resampling.
    *
    * @p xc and @p xd are matrices where rows index variables and
-   * columns index times. This method performs a <em>conditional</em> particle
-   * filter as described in @ref Andrieu2010
+   * columns index times. This method performs a <em>conditional</em>
+   * particle filter as described in @ref Andrieu2010
    * "Andrieu, Doucet \& Holenstein (2010)".
    */
   template<Location L, class M1, class R>
@@ -175,16 +175,27 @@ public:
   void reset();
 
   /**
+   * @copydoc Simulator::getDelta()
+   */
+  real getDelta() const;
+
+  /**
+   * @copydoc Simulator::getTime()
+   */
+  real getTime() const;
+
+  /**
+   * @copydoc Simulator::setDelta()
+   */
+  template<Location L>
+  void setTime(const real t, State<L>& s);
+
+  /**
    * Get output buffer.
    *
    * @return The output buffer. NULL if there is no output.
    */
   IO3* getOutput();
-
-  /**
-   * Get the current time.
-   */
-  real getTime();
   //@}
 
   /**
@@ -297,7 +308,8 @@ public:
    * @param Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const int k, const Static<L>& theta, const State<L>& s, const int r, const V1& lws, const V2& as);
+  void output(const int k, const Static<L>& theta, const State<L>& s,
+      const int r, const V1& lws, const V2& as);
 
   /**
    * Flush output caches to file.
@@ -430,7 +442,8 @@ struct ParticleFilterFactory {
   static ParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
       IO3* out = NULL) {
-    return new ParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in, obs, out);
+    return new ParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in, obs,
+        out);
   }
 };
 }
@@ -439,7 +452,8 @@ struct ParticleFilterFactory {
 #include "../math/functor.hpp"
 #include "../math/locatable.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::ParticleFilter(B& m, Random& rng,
     const real delta, IO1* in, IO2* obs, IO3* out) :
     m(m),
@@ -458,22 +472,41 @@ bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::ParticleFilter(B& m, Random& rng,
   assert (!(out == NULL || out->size2() == 0) || !haveOut);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::~ParticleFilter() {
   flush();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+inline real bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getDelta() const {
+  return sim.getDelta();
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+inline real bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getTime() const {
+  return state.t;
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L>
+inline void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::setTime(const real t,
+    State<L>& s) {
+  state.t = t;
+  sim.setTime(t, s);
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 inline IO3* bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getOutput() {
   return out;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
-inline real bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::getTime() {
-  return state.t;
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
   Markable<ParticleFilterState>::unmark();
   state.t = 0.0;
@@ -483,7 +516,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::reset() {
 }
 
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, R* resam, const real relEss) {
@@ -508,7 +542,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class R, class V1>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     const V1 x0, Static<L>& theta, State<L>& s, R* resam,
@@ -520,7 +555,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   filter(T, theta, s, resam, relEss);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class M1, class R>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr, R* resam,
@@ -553,18 +589,22 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class T1, class V1, class V2>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls, V2* ess) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::summarise(T1* ll, V1* lls,
+    V2* ess) {
   summarise_pf(logWeightsCache, ll, lls, ess);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class M1>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::sampleTrajectory(M1& xd, M1& xc,
-    M1& xr) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::sampleTrajectory(M1& xd,
+    M1& xc, M1& xr) {
   /* pre-condition */
-  BI_ERROR(out != NULL, "Cannot draw trajectory from ParticleFilter without output");
+  BI_ERROR(out != NULL,
+      "Cannot draw trajectory from ParticleFilter without output");
 
   synchronize();
 
@@ -590,9 +630,11 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::sampleTrajectory(M1& xd, M1& xc,
   delete ws;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta, V1& lws, V2& as) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta, V1& lws,
+    V2& as) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
@@ -601,11 +643,14 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::init(Static<L>& theta, V1& lws, V2
   bi::sequence(as.begin(), as.end(), 0);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L>
-void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt, Static<L>& theta, State<L>& s) {
+void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt,
+    Static<L>& theta, State<L>& s) {
   real to = tnxt;
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() && oyUpdater.getNextTime() < to) {
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() < to) {
     to = oyUpdater.getNextTime();
   }
 
@@ -622,7 +667,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::predict(const real tnxt, Static<L>
   assert (sim.getTime() == state.t);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::correct(State<L>& s, V1& lws) {
   /* pre-condition */
@@ -635,7 +681,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::correct(State<L>& s, V1& lws) {
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
 bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
     State<L>& s, V1& lws, V2& as, R* resam, const real relEss) {
@@ -651,7 +698,8 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   return r;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2, class R>
 bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
     State<L>& s, const int a, V1& lws, V2& as, R* resam, const real relEss) {
@@ -667,7 +715,8 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   return r;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(const int k,
     const Static<L>& theta, const State<L>& s, const int r, const V1& lws,
@@ -680,7 +729,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::output(const int k,
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<class V1>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::normalise(V1 lws) {
   typedef typename V1::value_type T1;
@@ -689,7 +739,8 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::normalise(V1 lws) {
       add_constant_functor<T1>(log(lws.size()) - lW));
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::flush() {
   int p;
   if (haveOut) {
@@ -715,20 +766,23 @@ void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::flush() {
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 template<bi::Location L>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::term(Static<L>& theta) {
   sim.term(theta);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::mark() {
   Markable<ParticleFilterState>::mark(state);
   sim.mark();
   oyUpdater.mark();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL, bi::StaticHandling SH>
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
 void bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::restore() {
   Markable<ParticleFilterState>::restore(state);
   sim.restore();

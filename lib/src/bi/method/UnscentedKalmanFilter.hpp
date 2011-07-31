@@ -88,16 +88,6 @@ public:
   ~UnscentedKalmanFilter();
 
   /**
-   * Get the current time.
-   */
-  real getTime();
-
-  /**
-   * @copydoc #concept::Filter::getOutput()
-   */
-  IO3* getOutput();
-
-  /**
    * @name High-level interface.
    *
    * An easier interface for common usage.
@@ -140,6 +130,27 @@ public:
    * @copydoc #concept::Filter::reset()
    */
   void reset();
+
+  /**
+   * @copydoc Simulator::getDelta()
+   */
+  real getDelta() const;
+
+  /**
+   * @copydoc Simulator::getTime()
+   */
+  real getTime() const;
+
+  /**
+   * @copydoc Simulator::setDelta()
+   */
+  template<Location L>
+  void setTime(const real t, State<L>& s);
+
+  /**
+   * @copydoc #concept::Filter::getOutput()
+   */
+  IO3* getOutput();
   //@}
 
   /**
@@ -698,8 +709,25 @@ bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::~UnscentedKalmanFilter() {
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
-inline real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::getTime() {
+inline real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::getDelta()
+    const {
+  return sim.getDelta();
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+inline real bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::getTime()
+    const {
   return state.t;
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL,
+    bi::StaticHandling SH>
+template<bi::Location L>
+inline void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::setTime(
+    const real t, State<L>& s) {
+  state.t = t;
+  sim.setTime(t, s);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

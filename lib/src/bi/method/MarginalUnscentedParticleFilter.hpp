@@ -149,7 +149,9 @@ public:
   //@}
 
   using particle_filter_type::getOutput;
+  using particle_filter_type::getDelta;
   using particle_filter_type::getTime;
+  using particle_filter_type::setTime;
   using particle_filter_type::summarise;
   using particle_filter_type::sampleTrajectory;
   using particle_filter_type::predict;
@@ -323,8 +325,7 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
         correct(s, lws);
         output(n, theta, s, r, lws, as);
         ++n;
-        r = particle_filter_type::state.t < T && resample(theta, s, lws, as,
-            resam, relEss);
+        r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
       }
     }
   }
@@ -471,7 +472,7 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
       #endif
     }
   } catch (CholeskyException) {
-    while (k2 < mu.size()) {
+    while (k2 < (int)mu.size()) {
       /* revert to bootstrap filter */
       if (mu[k2] == NULL) {
         mu[k2] = new vector_type(rcorrected.size());

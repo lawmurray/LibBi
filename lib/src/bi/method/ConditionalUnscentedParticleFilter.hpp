@@ -144,7 +144,9 @@ public:
   //@}
 
   using particle_filter_type::getOutput;
+  using particle_filter_type::getDelta;
   using particle_filter_type::getTime;
+  using particle_filter_type::setTime;
   using particle_filter_type::summarise;
   using particle_filter_type::sampleTrajectory;
   using particle_filter_type::predict;
@@ -364,16 +366,32 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   V3 lws(s.size());
   V4 as(s.size());
 
+  BOOST_AUTO(&oyUpdater, particle_filter_type::oyUpdater);
+  int n = 0, r = 0;
+  real t1, t2;
+
   /* filter */
   init(theta, lws, as);
-  int n = 0, r = 0;
-  while (particle_filter_type::getTime() < T) {
+  while (getTime() < T) {
+    if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() <= T) {
+      t2 = oyUpdater.getNextTime();
+      t1 = std::max(getTime(), ge_step(t2 - 3.0*getDelta(), getDelta()));
+    } else {
+      t2 = T;
+      t1 = getTime();
+    }
+
+    if (t1 > getTime()) {
+      predict(t1, theta, s);
+      kalman_filter_type::setTime(t1, s1);
+    }
     prepare(T, theta, s, theta1, s1);
-    r = particle_filter_type::getTime() < T && resample(theta, s, lws, as, resam, relEss);
+    r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
     propose(as, lws);
-    particle_filter_type::predict(T, theta, s);
-    particle_filter_type::correct(s, lws);
-    particle_filter_type::output(n, theta, s, r, lws, as);
+    predict(T, theta, s);
+    correct(s, lws);
+    output(n, theta, s, r, lws, as);
     ++n;
   }
 
