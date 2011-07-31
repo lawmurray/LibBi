@@ -29,8 +29,6 @@ function X = unstandardise (Z, mu, Sigma)
     end
     if !ismatrix (Sigma)
         error ('Sigma should be a matrix');
-    else
-        Sigma = Sigma(:)';
     end
     if columns (Z) > 0 
         if columns (Z) != columns (mu)
