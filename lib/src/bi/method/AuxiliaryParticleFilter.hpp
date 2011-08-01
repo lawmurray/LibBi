@@ -363,6 +363,7 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(const real T,
         r = true;
       } else {
         lw1s = lw2s;
+        bi::sequence(as.begin(), as.end(), 0);
       }
 
       /* post-condition */
@@ -394,6 +395,7 @@ bool bi::AuxiliaryParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(const real T,
         r = true;
       } else {
         lw1s = lw2s;
+        bi::sequence(as.begin(), as.end(), 0);
       }
 
       /* post-condition */

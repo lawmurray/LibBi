@@ -320,12 +320,12 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     {
       int n = 0, r = 0;
       while (particle_filter_type::getTime() < T) {
+        r = n > 0 && resample(theta, s, lws, as, resam, relEss);
         propose(lws);
         predict(T, theta, s);
         correct(s, lws);
         output(n, theta, s, r, lws, as);
         ++n;
-        r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
       }
     }
   }
@@ -385,12 +385,12 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     {
       int n = 0, r = 0;
       while (getTime() < T) {
+        r = n > 0 && resample(theta, s, lws, as, resam, relEss);
         propose(lws);
         predict(T, theta, s);
         correct(s, lws);
         output(n, theta, s, r, lws, as);
         ++n;
-        r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
       }
     }
   }

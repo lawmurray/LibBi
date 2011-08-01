@@ -333,6 +333,7 @@ bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample
         r = true;
       } else {
         lw1s = lw2s;
+        bi::sequence(as.begin(), as.end(), 0);
       }
     }
   }
@@ -361,6 +362,7 @@ bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample
         r = true;
       } else {
         lw1s = lw2s;
+        bi::sequence(as.begin(), as.end(), 0);
       }
 
       /* post-condition */

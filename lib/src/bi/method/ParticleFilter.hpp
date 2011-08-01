@@ -693,6 +693,8 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   bool r = resam != NULL && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
   if (r) {
     resam->resample(lws, as, theta, s);
+  } else {
+    bi::sequence(as.begin(), as.end(), 0);
   }
   normalise(lws);
   return r;
@@ -710,6 +712,8 @@ bool bi::ParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(Static<L>& theta,
   bool r = resam != NULL && (relEss >= 1.0 || ess(lws) <= s.size()*relEss);
   if (r) {
     resam->resample(a, lws, as, theta, s);
+  } else {
+    bi::sequence(as.begin(), as.end(), 0);
   }
   normalise(lws);
   return r;

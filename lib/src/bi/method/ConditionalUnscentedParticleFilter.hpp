@@ -52,9 +52,11 @@ public:
    * @param in Forcings.
    * @param obs Observations.
    * @param out Output.
+   * @param maxLook Maximum lookahead (number of @c deltas).
    */
-  ConditionalUnscentedParticleFilter(B& m, Random& rng, const real delta = 1.0,
-      IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL);
+  ConditionalUnscentedParticleFilter(B& m, Random& rng,
+      const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
+      IO3* out = NULL, const int maxLook = 2);
 
   /**
    * @name High-level interface.
@@ -290,6 +292,11 @@ protected:
   real ldetY;
 
   /**
+   * Maximum lookahead (number of deltas).
+   */
+  int maxLook;
+
+  /**
    * Estimate parameters as well as state?
    */
   static const bool haveParameters = SH == STATIC_OWN;
@@ -323,9 +330,9 @@ struct ConditionalUnscentedParticleFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL) {
+      IO3* out = NULL, const int maxLook = 2) {
     return new ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
-        obs, out);
+        obs, out, maxLook);
   }
 };
 
@@ -338,10 +345,10 @@ struct ConditionalUnscentedParticleFilterFactory {
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::ConditionalUnscentedParticleFilter(
-    B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
+    B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out, const int maxLook) :
     particle_filter_type(m, rng, delta, in, obs, out),
     kalman_filter_type(m, delta, (in == NULL) ? NULL : new IO1(*in),
-        (obs == NULL) ? NULL : new IO2(*obs)) {
+        (obs == NULL) ? NULL : new IO2(*obs)), maxLook(maxLook) {
   //
 }
 
@@ -357,14 +364,19 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
 
   typedef typename locatable_vector<L,real>::type V3;
   typedef typename locatable_vector<L,int>::type V4;
+  typedef typename locatable_vector<ON_HOST,int>::type V5;
+
+  const int P = s.size();
 
   /* ukf temps */
   Static<L> theta1(kalman_filter_type::m, theta.size());
   State<L> s1(kalman_filter_type::m);
 
   /* pf temps */
-  V3 lws(s.size());
-  V4 as(s.size());
+  V3 lws(P);
+  V4 as(P);
+  V5 as1(P);
+  bi::sequence(as1.begin(), as1.end(), 0);
 
   BOOST_AUTO(&oyUpdater, particle_filter_type::oyUpdater);
   int n = 0, r = 0;
@@ -376,19 +388,27 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
       oyUpdater.getNextTime() <= T) {
       t2 = oyUpdater.getNextTime();
-      t1 = ge_step(t2 - getDelta(), getDelta());
+      t1 = std::max(getTime(), ge_step(t2 - maxLook*getDelta(), getDelta()));
     } else {
       t2 = T;
       t1 = getTime();
     }
 
     if (t1 > getTime()) {
+      /* bootstrap filter to intermediate time */
+      r = n > 0 && resample(theta, s, lws, as, resam, relEss);
       predict(t1, theta, s);
       kalman_filter_type::setTime(t1, s1);
+
+      /* cupf proposal to next observation */
+      prepare(T, theta, s, theta1, s1);
+      propose(as1, lws); // preserve as for output, use as1 instead
+    } else {
+      /* cupf proposal over entire time interval */
+      prepare(T, theta, s, theta1, s1);
+      r = n > 0 && resample(theta, s, lws, as, resam, relEss);
+      propose(as, lws);
     }
-    prepare(T, theta, s, theta1, s1);
-    r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
-//    propose(as, lws);
     predict(T, theta, s);
     correct(s, lws);
     output(n, theta, s, r, lws, as);
@@ -405,12 +425,10 @@ template<bi::Location L, class R, class V1>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
-  /* initialise pf from fixed starting state */
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
   set_rows(s.get(C_NODE), subrange(x0, ND, NC));
   set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
 
-  /* filter */
   filter(T, theta, s, resam, relEss);
 }
 

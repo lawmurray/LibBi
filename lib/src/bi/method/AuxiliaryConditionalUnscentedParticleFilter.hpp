@@ -54,7 +54,7 @@ public:
    */
   AuxiliaryConditionalUnscentedParticleFilter(B& m, Random& rng,
       const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL);
+      IO3* out = NULL, const int maxLook = 2);
 
   /**
    * @name High-level interface.
@@ -88,6 +88,10 @@ public:
    */
   template<class T1, class V1, class V2>
   void summarise(T1* ll, V1* lls, V2* ess);
+
+  using particle_filter_type::getDelta;
+  using particle_filter_type::getTime;
+  using particle_filter_type::setTime;
 //@}
 
   /**
@@ -116,6 +120,8 @@ public:
   template<Location L, class V1, class V2, class R>
   bool resample(Static<L>& theta, State<L>& s, const int a, V1& lw1s,
       V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
+
+  using particle_filter_type::resample;
 
   /**
    * @copydoc AuxiliaryParticleFilter::output
@@ -146,6 +152,12 @@ protected:
    * Cache for stage 1 log-weights.
    */
   Cache2D<real> stage1LogWeightsCache;
+
+  /* net sizes, for convenience */
+  static const int ND = net_size<B,typename B::DTypeList>::value;
+  static const int NC = net_size<B,typename B::CTypeList>::value;
+  static const int NR = net_size<B,typename B::RTypeList>::value;
+  static const int NP = net_size<B,typename B::PTypeList>::value;
 };
 
 /**
@@ -169,9 +181,9 @@ struct AuxiliaryConditionalUnscentedParticleFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(
       B& m, Random& rng, const real delta = 1.0, IO1* in = NULL,
-      IO2* obs = NULL, IO3* out = NULL) {
+      IO2* obs = NULL, IO3* out = NULL, const int maxLook = 2) {
     return new AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(
-        m, rng, delta, in, obs, out);
+        m, rng, delta, in, obs, out, maxLook);
   }
 };
 
@@ -183,9 +195,10 @@ struct AuxiliaryConditionalUnscentedParticleFilterFactory {
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::AuxiliaryConditionalUnscentedParticleFilter(
-    B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out) :
+    B& m, Random& rng, const real delta, IO1* in, IO2* obs, IO3* out,
+    const int maxLook) :
     ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta,
-        in, obs, out) {
+        in, obs, out, maxLook) {
   //
 }
 
@@ -193,33 +206,66 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 template<bi::Location L, class R>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
-    const real T,Static<L>& theta, State<L>& s, R* resam,
+    const real T, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
   /* pre-conditions */
-  assert (T > this->getTime());
+  assert (T >= particle_filter_type::getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
 
-  typedef typename locatable_vector<L,real>::type V3;
-  typedef typename locatable_vector<L,int>::type V4;
+  typedef typename locatable_temp_vector<L,real>::type V3;
+  typedef typename locatable_temp_vector<L,int>::type V4;
 
+  const int P = s.size();
+
+  /* ukf temps */
   Static<L> theta1(kalman_filter_type::m, theta.size());
   State<L> s1(kalman_filter_type::m);
 
-  const int P = s.size();
-  int n = 0, r = 0;
-  typename locatable_temp_vector<L,real>::type lw1s(P), lw2s(P);
-  typename locatable_temp_vector<L,int>::type as(P);
+  /* pf temps */
+  V3 lw1s(P), lw2s(P);
+  V4 as(P), as1(P), as2(P);
 
+  BOOST_AUTO(&oyUpdater, particle_filter_type::oyUpdater);
+  int n = 0, r = 0;
+  real t1, t2;
+
+  /* filter */
   init(theta, lw1s, lw2s, as);
-  while (this->getTime() < T) {
-    prepare(T, theta, s, theta1, s1);
-    r = resample(theta, s, lw1s, lw2s, as, resam, relEss);
-    propose(as, lw2s);
+  while (getTime() < T) {
+    if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() <= T) {
+      t2 = oyUpdater.getNextTime();
+      t1 = std::max(getTime(), ge_step(t2 - this->maxLook*getDelta(), getDelta()));
+    } else {
+      t2 = T;
+      t1 = getTime();
+    }
+
+    if (t1 > getTime()) {
+      /* bootstrap filter to intermediate time */
+      r = n > 0 && resample(theta, s, lw2s, as1, resam, relEss);
+      predict(t1, theta, s);
+      kalman_filter_type::setTime(t1, s1);
+
+      /* acupf proposal to next observation */
+      prepare(T, theta, s, theta1, s1);
+      r = n > 0 && resample(theta, s, lw1s, lw2s, as2, resam, relEss);
+      propose(as2, lw2s); // preserve as for output, use as1 instead
+
+      /* collapse ancestry for output */
+      bi::gather(as2.begin(), as2.end(), as1.begin(), as.begin());
+    } else {
+      /* acupf proposal over entire time interval */
+      prepare(T, theta, s, theta1, s1);
+      r = n > 0 && resample(theta, s, lw1s, lw2s, as, resam, relEss);
+      propose(as, lw2s);
+    }
     predict(T, theta, s);
     correct(s, lw2s);
     output(n, theta, s, r, lw1s, lw2s, as);
     ++n;
   }
+
   synchronize();
   term(theta);
 }
@@ -230,7 +276,11 @@ template<bi::Location L, class R, class V1>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
-  assert (false);
+  set_rows(s.get(D_NODE), subrange(x0, 0, ND));
+  set_rows(s.get(C_NODE), subrange(x0, ND, NC));
+  set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
+
+  filter(T, theta, s, resam, relEss);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -282,6 +332,7 @@ bool bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resam
       r = true;
     } else {
       lw1s = lw2s;
+      bi::sequence(as.begin(), as.end(), 0);
     }
   }
   return r;
@@ -307,6 +358,7 @@ bool bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resam
       r = true;
     } else {
       lw1s = lw2s;
+      bi::sequence(as.begin(), as.end(), 0);
     }
   }
   return r;
