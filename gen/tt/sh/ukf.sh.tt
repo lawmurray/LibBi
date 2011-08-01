@@ -39,7 +39,7 @@ OBS_FILE=$DATA_DIR/$OBS_FILENAME
 OUTPUT_FILE=$RESULTS_DIR/${NAME}${SUFFIX}.nc.$ID
 
 build/ukf --delta=$DELTA -T $T -h $H --atoler=$ATOLER --rtoler=$RTOLER \
-    --seed=$SEED \
+    --seed=$SEED --ut-alpha=$UT_ALPHA --ut-beta=$UT_BETA --ut-kappa=$UT_KAPPA \
     --init-file=$INIT_FILE --force-file=$FORCE_FILE --obs-file=$OBS_FILE \
     --init-ns=$INIT_NS --force-ns=$FORCE_NS --obs-ns=$OBS_NS \
     --output-file=$OUTPUT_FILE --output=$OUTPUT --time=$TIME \

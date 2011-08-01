@@ -55,6 +55,14 @@
 : ${SHRINK=1}              # apply shrinkage to kernel densities?
 
 ##
+## Unscented Kalman filter settings
+##
+
+: ${UT_ALPHA=1.0e-3}  # alpha param for scaled unscented transformation
+: ${UT_BETA=2.0}      # beta param for scaled unscented transformation
+: ${UT_KAPPA=0.0}     # kappa param for scaled unscented transformation
+
+##
 ## PMCMC settings
 ##
 

@@ -219,8 +219,12 @@ void run(Args& args) {
   for (c = 0; c < args.C; ++c) {
     mcmc->proposal(row(X, c/args.M));
     mcmc->prior();
-    mcmc->likelihood(args.T, theta, s, filter, &resam, args.ESS_REL);
-    mcmc->accept(filter);
+    try {
+      mcmc->likelihood(args.T, theta, s, filter, &resam, args.ESS_REL);
+      mcmc->accept(filter);
+    } catch (ParticleFilterDegeneratedException) {
+      mcmc->reject();
+    }
     mcmc->output(c);
     mcmc->report(c);
   }
