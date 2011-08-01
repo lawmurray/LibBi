@@ -54,7 +54,7 @@ public:
    */
   AuxiliaryConditionalUnscentedParticleFilter(B& m, Random& rng,
       const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL, const int maxLook = 2);
+      IO3* out = NULL, const int maxLook = 3);
 
   /**
    * @name High-level interface.
@@ -181,7 +181,7 @@ struct AuxiliaryConditionalUnscentedParticleFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(
       B& m, Random& rng, const real delta = 1.0, IO1* in = NULL,
-      IO2* obs = NULL, IO3* out = NULL, const int maxLook = 2) {
+      IO2* obs = NULL, IO3* out = NULL, const int maxLook = 3) {
     return new AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(
         m, rng, delta, in, obs, out, maxLook);
   }
@@ -243,21 +243,25 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filte
 
     if (t1 > getTime()) {
       /* bootstrap filter to intermediate time */
-      r = n > 0 && resample(theta, s, lw2s, as1, resam, relEss);
+      if (n > 0) {
+        r = resample(theta, s, lw2s, as1, resam, relEss);
+      } else {
+        as1 = as;
+      }
       predict(t1, theta, s);
       kalman_filter_type::setTime(t1, s1);
 
       /* acupf proposal to next observation */
       prepare(T, theta, s, theta1, s1);
-      r = n > 0 && resample(theta, s, lw1s, lw2s, as2, resam, relEss);
-      propose(as2, lw2s); // preserve as for output, use as1 instead
+      r = resample(theta, s, lw1s, lw2s, as2, resam, relEss);
+      propose(as2, lw2s);
 
       /* collapse ancestry for output */
       bi::gather(as2.begin(), as2.end(), as1.begin(), as.begin());
     } else {
       /* acupf proposal over entire time interval */
       prepare(T, theta, s, theta1, s1);
-      r = n > 0 && resample(theta, s, lw1s, lw2s, as, resam, relEss);
+      r = resample(theta, s, lw1s, lw2s, as, resam, relEss);
       propose(as, lw2s);
     }
     predict(T, theta, s);

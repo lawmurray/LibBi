@@ -56,7 +56,7 @@ public:
    */
   ConditionalUnscentedParticleFilter(B& m, Random& rng,
       const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL, const int maxLook = 2);
+      IO3* out = NULL, const int maxLook = 3);
 
   /**
    * @name High-level interface.
@@ -330,7 +330,7 @@ struct ConditionalUnscentedParticleFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(B& m,
       Random& rng, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL, const int maxLook = 2) {
+      IO3* out = NULL, const int maxLook = 3) {
     return new ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(m, rng, delta, in,
         obs, out, maxLook);
   }
@@ -599,6 +599,9 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     muU.resize(V, P1, false);
     RU.resize(V, P1*V, false);
     ldetRU.resize(P1, false);
+    if (V1::on_device) {
+      synchronize();
+    }
 
     /* initial samples */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
@@ -672,8 +675,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     #pragma omp parallel
     {
-      ///@todo Compare against copying U to host and back up again
-
       int p, q;
 
       /* permits multiple simultaneous kernel launches where supported */
