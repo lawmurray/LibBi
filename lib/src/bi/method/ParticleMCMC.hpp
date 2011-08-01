@@ -461,7 +461,8 @@ public:
   template<Location L, class F, class R>
   void likelihood(const real T, Static<L>& theta, State<L>& s,
       F* filter, R* resampler = NULL, const real relEss = 1.0,
-      const FilterType type = UNCONDITIONED);
+      const FilterType type = UNCONDITIONED)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Apply Metropolis-Hastings criterion to accept or reject proposal.
@@ -773,9 +774,13 @@ void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q0, const V1 x,
     report(c, lambda);
     propose(q);
     prior();
-    likelihood(T, theta, s, filter, resampler, relEss);
-    lambda = 1.0 + lambda0*std::exp(-gamma*total);
-    metropolisHastings(filter, lambda);
+    try {
+      likelihood(T, theta, s, filter, resampler, relEss);
+      lambda = 1.0 + lambda0*std::exp(-gamma*total);
+      metropolisHastings(filter, lambda);
+    } catch (ParticleFilterDegeneratedException) {
+      reject();
+    }
     adapt(q, q0, beta, a, s1);
     output(c);
   }
@@ -800,9 +805,13 @@ void bi::ParticleMCMC<B,IO1,CL>::sample(Q1& q, const V1 x,
     report(c, lambda);
     propose(q);
     prior();
-    likelihood(T, theta, s, filter, resampler, relEss);
-    lambda = 1.0 + lambda0*std::exp(-gamma*total);
-    metropolisHastings(filter, lambda);
+    try {
+      likelihood(T, theta, s, filter, resampler, relEss);
+      lambda = 1.0 + lambda0*std::exp(-gamma*total);
+      metropolisHastings(filter, lambda);
+    } catch (ParticleFilterDegeneratedException) {
+      reject();
+    }
     output(c);
   }
   term(theta);
@@ -816,10 +825,22 @@ void bi::ParticleMCMC<B,IO1,CL>::init(const V1 x, const real T,
   /* pre-condition */
   assert (x.size() == M);
 
-  proposal(x);
-  prior();
-  likelihood(T, theta, s, filter, resampler, relEss);
-  accept(filter);
+  bool done = false;
+  int attempts = 0;
+  while (!done && attempts < 10) {
+    proposal(x);
+    prior();
+    try {
+      likelihood(T, theta, s, filter, resampler, relEss);
+      accept(filter);
+      done = true;
+    } catch (ParticleFilterDegeneratedException) {
+      done = false;
+      ++attempts;
+    }
+  }
+  BI_ASSERT(attempts < 10, "Could not initialise without degenerate " <<
+      "particle filter in 10 attempts");
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -859,13 +880,16 @@ template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F, class R>
 void bi::ParticleMCMC<B,IO1,CL>::likelihood(const real T,
     Static<L>& theta, State<L>& s, F* filter, R* resampler,
-    const real relEss, const FilterType type) {
+    const real relEss, const FilterType type)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   BI_ASSERT(filter->getOutput() != NULL,
       "Output required for filter used with ParticleMCMC");
   assert(out == NULL || filter->getOutput()->size2() == out->size2());
 
+  x2.ll = -1.0/0.0;
   filter->reset();
+
   if (type == UNCONDITIONED) {
     if (initialConditioned) {
       row(theta.get(P_NODE), 0) = subrange(x2.theta, ND + NC, NP);

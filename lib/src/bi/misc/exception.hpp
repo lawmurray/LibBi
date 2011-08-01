@@ -42,6 +42,14 @@ namespace bi {
      */
     int info;
   };
+
+  /**
+   * Particle filter degenerated.
+   */
+  struct ParticleFilterDegeneratedException {
+    //
+  };
+
 }
 
 #endif

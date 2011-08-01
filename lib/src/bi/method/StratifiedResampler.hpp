@@ -8,11 +8,12 @@
 #ifndef BI_METHOD_STRATIFIEDRESAMPLER_HPP
 #define BI_METHOD_STRATIFIEDRESAMPLER_HPP
 
+#include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
 #include "../cuda/math/vector.hpp"
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
-#include "Resampler.hpp"
+#include "../misc/exception.hpp"
 
 namespace bi {
 /**
@@ -79,25 +80,32 @@ public:
    * @copydoc concept::Resampler::resample(V1&, V2&)
    */
   template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta,
+      State<L>& s) throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, V1&, V2&)
+   * @copydoc concept::Resampler::resample(const typename V2::value_type,
+   * V1&, V2&)
    */
   template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(const typename V2::value_type,
+   * const V1&, V1&, V2&)
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, const V1& qlws, V2& lws, V3& as,
+      Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -115,7 +123,8 @@ public:
    * @param n Number of samples to draw.
    */
   template<class V1, class V2>
-  void offspring(const V1& lws, V2& o, const int n);
+  void offspring(const V1& lws, V2& o, const int n)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
@@ -148,7 +157,8 @@ private:
 #include "thrust/adjacent_difference.h"
 
 template<class V1, class V2, bi::Location L>
-void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta,
+    State<L>& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
@@ -160,7 +170,14 @@ void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta, State<
   if (V1::on_device) {
     synchronize();
   }
-  offspring(*lws1, *os1, lws1->size());
+  try {
+    offspring(*lws1, *os1, lws1->size());
+  } catch (ParticleFilterDegeneratedException e) {
+    delete lws1;
+    delete as1;
+    delete os1;
+    throw e;
+  }
   ancestors(*os1, *as1);
   permute(*as1);
   as = *as1;
@@ -175,7 +192,9 @@ void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta, State<
 }
 
 template<class V1, class V2, bi::Location L>
-void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as,
+    Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
@@ -187,7 +206,14 @@ void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as, Static<L>& 
   if (V1::on_device) {
     synchronize();
   }
-  offspring(*lws1, *os1, lws1->size() - 1);
+  try {
+    offspring(*lws1, *os1, lws1->size() - 1);
+  } catch (ParticleFilterDegeneratedException e) {
+    delete lws1;
+    delete as1;
+    delete os1;
+    throw e;
+  }
   ++(*os1)[a];
   ancestors(*os1, *as1);
   permute(*as1);
@@ -204,7 +230,9 @@ void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as, Static<L>& 
 }
 
 template<class V1, class V2, class V3, bi::Location L>
-void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as,
+    Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (qlws.size() == lws.size());
 
@@ -217,7 +245,15 @@ void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L
   if (V1::on_device) {
     synchronize();
   }
-  offspring(*qlws1, *os1, lws1->size());
+  try {
+    offspring(*qlws1, *os1, lws1->size());
+  } catch (ParticleFilterDegeneratedException e) {
+    delete qlws1;
+    delete lws1;
+    delete as1;
+    delete os1;
+    throw e;
+  }
   ancestors(*os1, *as1);
   permute(*as1);
   correct(*as1, *qlws1, *lws1);
@@ -236,7 +272,8 @@ void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L
 
 template<class V1, class V2, class V3, bi::Location L>
 void bi::StratifiedResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+    V2& lws, V3& as, Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (qlws.size() == lws.size());
 
@@ -249,7 +286,15 @@ void bi::StratifiedResampler::resample(const int a, const V1& qlws,
   if (V1::on_device) {
     synchronize();
   }
-  offspring(*qlws1, *os1, lws1->size() - 1);
+  try {
+    offspring(*qlws1, *os1, lws1->size() - 1);
+  } catch (ParticleFilterDegeneratedException e) {
+    delete qlws1;
+    delete lws1;
+    delete as1;
+    delete os1;
+    throw e;
+  }
   ++(*os1)[a];
   ancestors(*os1, *as1);
   permute(*as1);
@@ -269,7 +314,7 @@ void bi::StratifiedResampler::resample(const int a, const V1& qlws,
 
 template<class V1, class V2>
 void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
-    const int n) {
+    const int n) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == os.size());
 
@@ -302,11 +347,10 @@ void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
 
     #ifndef NDEBUG
     int m = thrust::reduce(os.begin(), os.end());
-    BI_WARN(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+    BI_ASSERT(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
     #endif
   } else {
-    BI_WARN(W > 0, "Particle filter has degenerated");
-    bi::fill(os.begin(), os.end(), 0);
+    throw ParticleFilterDegeneratedException();
   }
   synchronize();
 }

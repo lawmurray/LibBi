@@ -78,9 +78,13 @@ public:
    * @param delta Time step for d- and r-nodes.
    * @param fUpdater Updater for f-net.
    * @param oyUpdater Updater for observations of o-net.
+   * @param alpha \f$\alpha\f$ parameter for scaled unscented transformation.
+   * @param beta \f$\beta\f$ parameter for scaled unscented transformation.
+   * @param kappa \f$\kappa\f$ parameter for scaled unscented transformation.
    */
   UnscentedKalmanFilter(B& m, const real delta = 1.0,
-      IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL);
+      IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL, real alpha = 1.0e-3,
+      real beta = 2.0, real kappa = 0.0);
 
   /**
    * Destructor.
@@ -670,9 +674,10 @@ struct UnscentedKalmanFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>* create(
       B& m, const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL) {
+      IO3* out = NULL, real alpha = 1.0e-3, real beta = 2.0,
+      real kappa = 0.0) {
     return new UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>(m, delta, in, obs,
-        out);
+        out, alpha, beta, kappa);
   }
 };
 
@@ -685,15 +690,16 @@ struct UnscentedKalmanFilterFactory {
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
     bi::StaticHandling SH>
 bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::UnscentedKalmanFilter(B& m,
-    const real delta, IO1* in, IO2* obs, IO3* out) :
+    const real delta, IO1* in, IO2* obs, IO3* out, const real alpha,
+    const real beta, const real kappa) :
     m(m),
     N1(0),
     N2(0),
     W(0),
     P(0),
-    alpha(1.0e-3),
-    beta(2.0),
-    kappa(0.0),
+    alpha(alpha),
+    beta(beta),
+    kappa(kappa),
     oyUpdater(*obs),
     sim(m, delta, &rUpdater, in),
     out(out),
@@ -975,13 +981,19 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     /* new r-nodes */
     BOOST_AUTO(Sigma, temp_matrix<M1>(M - NR, M - NR));
     BOOST_AUTO(U, temp_matrix<M1>(M - NR, M - NR));
+    Sigma->clear(); // lower triangle of U assumed zero later, so clear here
+
     subrange(*Sigma, 0, ND + NC, 0, ND + NC) = subrange(corrected.cov(), 0,
         ND + NC, 0, ND + NC);
     if (haveParameters) {
       subrange(*Sigma, ND + NC, NP, ND + NC, NP) = subrange(corrected.cov(),
           ND + NC + NR, NP, ND + NC + NR, NP);
+      subrange(*Sigma, 0, ND + NC, ND + NC, NP) = subrange(corrected.cov(),
+          0, ND + NC, ND + NC + NR, NP);
     }
     chol(*Sigma, *U, 'U');
+
+    /* next lines assume lower triangle of U is zero, cleared above */
     matrix_axpy(a, subrange(*U, 0, ND + NC, 0, ND + NC), subrange(X1,
         1, ND + NC, 0, ND + NC));
     matrix_axpy(-a, subrange(*U, 0, ND + NC, 0, ND + NC), subrange(X1,

@@ -11,6 +11,7 @@
 #include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
 #include "../random/Random.hpp"
+#include "../misc/exception.hpp"
 
 namespace bi {
 /**
@@ -36,25 +37,30 @@ public:
    * @copydoc concept::Resampler::resample(V1&, V2&)
    */
   template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta,
+      State<L>& s) throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(const typename V2::value_type, V1&, V2&)
    */
   template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(const typename V2::value_type, const V1&, V1&, V2&)
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, const V1& qlws, V2& lws, V3& as,
+      Static<L>& theta, State<L>& s)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -71,7 +77,8 @@ public:
    * @param[out] as Ancestry.
    */
   template<class V1, class V2>
-  void ancestors(const V1& lws, V2& as);
+  void ancestors(const V1& lws, V2& as)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
@@ -97,7 +104,8 @@ private:
 #include "thrust/gather.h"
 
 template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::resample(V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+void bi::MultinomialResampler::resample(V1& lws, V2& as, Static<L>& theta,
+    State<L>& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
@@ -108,7 +116,9 @@ void bi::MultinomialResampler::resample(V1& lws, V2& as, Static<L>& theta, State
 }
 
 template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+void bi::MultinomialResampler::resample(const int a, V1& lws, V2& as,
+    Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
@@ -121,7 +131,9 @@ void bi::MultinomialResampler::resample(const int a, V1& lws, V2& as, Static<L>&
 }
 
 template<class V1, class V2, class V3, bi::Location L>
-void bi::MultinomialResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+void bi::MultinomialResampler::resample(const V1& qlws, V2& lws, V3& as,
+    Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   const int P = qlws.size();
   assert (qlws.size() == P);
@@ -136,7 +148,8 @@ void bi::MultinomialResampler::resample(const V1& qlws, V2& lws, V3& as, Static<
 
 template<class V1, class V2, class V3, bi::Location L>
 void bi::MultinomialResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+    V2& lws, V3& as, Static<L>& theta, State<L>& s)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   const int P = qlws.size();
   assert (qlws.size() == P);
@@ -152,7 +165,8 @@ void bi::MultinomialResampler::resample(const int a, const V1& qlws,
 }
 
 template<class V1, class V2>
-void bi::MultinomialResampler::ancestors(const V1& lws, V2& as) {
+void bi::MultinomialResampler::ancestors(const V1& lws, V2& as)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
@@ -191,7 +205,7 @@ void bi::MultinomialResampler::ancestors(const V1& lws, V2& as) {
 
     delete alphas;
   } else {
-    BI_ERROR(W > 0, "Particle filter has degenerated");
+    throw ParticleFilterDegeneratedException();
   }
 
   synchronize();

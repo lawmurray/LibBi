@@ -268,26 +268,27 @@ typename V1::size_type iamax(const V1 x);
  *
  * @ingroup math_op
  */
-template<class T1, class V1, class V2>
-void axpy(const T1 a, const V1 x, V2 y, const bool clear = false);
+template<class V1, class V2>
+void axpy(const typename V1::value_type a, const V1 x, V2 y,
+    const bool clear = false);
 
 /**
  * Matrix-vector multiply.
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class V1, class T2, class V2>
-void gemv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
-    V2 y, const char transA = 'N');
+template<class M1, class V1, class V2>
+void gemv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char transA = 'N');
 
 /**
  * Symmetric matrix-vector multiply.
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class V1, class T2, class V2>
-void symv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
-    V2 y, const char uplo = 'L');
+template<class M1, class V1, class V2>
+void symv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char uplo = 'L');
 
 /**
  * Triangular matrix-vector multiply.
@@ -304,16 +305,18 @@ void trmv(const M1 A, V1 x, const char uplo = 'L', const char transA = 'N');
  *
  * Uses @c gbmv internally, with single leading diagonal band.
  */
-template<class T1, class V1, class V2, class T2, class V3>
-void gdmv(const T1 alpha, const V1 A, const V2 x, const T2 beta, V3 y);
+template<class V1, class V2, class V3>
+void gdmv(const typename V1::value_type alpha, const V1 A, const V2 x,
+    const typename V3::value_type beta, V3 y);
 
 /**
  * Scalar multiply and matrix add.
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class M2>
-void matrix_axpy(const T1 a, const M1 X, M2 Y, const bool clear = false);
+template<class M1, class M2>
+void matrix_axpy(const typename M1::value_type a, const M1 X, M2 Y,
+    const bool clear = false);
 
 /**
  * Matrix scale.
@@ -328,27 +331,29 @@ void matrix_scal(typename M1::value_type alpha, M1 X);
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class M2, class T2, class M3>
-void gemm(const T1 alpha, const M1 A, const M2 X, const T2 beta,
-    M3 Y, const char transA = 'N', const char transX = 'N');
+template<class M1, class M2, class M3>
+void gemm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char transA = 'N',
+    const char transX = 'N');
 
 /**
  * Symmetric matrix-matrix multiply.
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class M2, class T2, class M3>
-void symm(const T1 alpha, const M1 A, const M2 X, const T2 beta, M3 Y,
-    const char side = 'L', const char uplo = 'L');
+template<class M1, class M2, class M3>
+void symm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char side = 'L',
+    const char uplo = 'L');
 
 /**
  * Triangular matrix-matrix multiply.
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class M2>
-void trmm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
-    const char uplo = 'L', const char transA = 'N');
+template<class M1, class M2>
+void trmm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side = 'L', const char uplo = 'L', const char transA = 'N');
 
 /**
  * Diagonal matrix-matrix multiply.
@@ -360,17 +365,17 @@ void trmm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
  * uses multiple calls to #scal and #axpy on columns of @p X and @p Y
  * internally.
  */
-template<class T1, class V1, class M1, class T2, class M2>
-void gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
-    const char side = 'L');
+template<class V1, class M1, class M2>
+void gdmm(const typename V1::value_type alpha, const V1 A, const M1 X,
+    const typename M2::value_type beta, M2 Y, const char side = 'L');
 
 /**
  * Vector outer product and matrix add.
  *
  * @ingroup math_op
  */
-template<class T1, class V1, class V2, class M1>
-void ger(const T1 alpha, const V1 x, const V2 y, M1 A,
+template<class V1, class V2, class M1>
+void ger(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A,
     const bool clear = false);
 
 /**
@@ -378,17 +383,17 @@ void ger(const T1 alpha, const V1 x, const V2 y, M1 A,
  *
  * @ingroup math_op
  */
-template<class T1, class V1, class M1>
-void syr(const T1 alpha, const V1 x, M1 A, const char uplo = 'L',
-    const bool clear = false);
+template<class V1, class M1>
+void syr(const typename V1::value_type alpha, const V1 x, M1 A,
+    const char uplo = 'L', const bool clear = false);
 
 /**
  * Symmetric matrix rank-2 update.
  *
  * @ingroup math_op
  */
-template<class T1, class V1, class V2, class M1>
-void syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
+template<class V1, class V2, class M1>
+void syr2(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A,
     const char uplo = 'L', const bool clear = false);
 
 /**
@@ -396,9 +401,10 @@ void syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class T2, class M2>
-void syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
-    const char uplo = 'L', const char trans = 'N');
+template<class M1, class M2>
+void syrk(const typename M1::value_type alpha, const M1 A,
+    const typename M2::value_type beta, M2 C, const char uplo = 'L',
+    const char trans = 'N');
 
 /**
  * Symmetric positive definite linear system solve.
@@ -422,9 +428,10 @@ void trsv(const M1 A, V1 x, const char uplo = 'L',
  *
  * @ingroup math_op
  */
-template<class T1, class M1, class M2>
-void trsm(const T1 alpha, const M1 A, M2 B, const char side = 'L',
-    const char uplo = 'L', const char trans = 'N', const char diag = 'N');
+template<class M1, class M2>
+void trsm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side = 'L', const char uplo = 'L', const char trans = 'N',
+    const char diag = 'N');
 //@}
 
 }
@@ -739,8 +746,9 @@ inline typename V1::size_type bi::iamax(const V1 x) {
   return result;
 }
 
-template<class T1, class V1, class V2>
-inline void bi::axpy(const T1 a, const V1 x, V2 y, const bool clear) {
+template<class V1, class V2>
+inline void bi::axpy(const typename V1::value_type a, const V1 x, V2 y,
+    const bool clear) {
   typedef typename V1::value_type T2;
   typedef typename V2::value_type T3;
 
@@ -768,9 +776,9 @@ inline void bi::axpy(const T1 a, const V1 x, V2 y, const bool clear) {
   }
 }
 
-template<class T1, class M1, class V1, class T2, class V2>
-void bi::gemv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
-    V2 y, const char transA) {
+template<class M1, class V1, class V2>
+void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char transA) {
   typedef typename M1::value_type T3;
   typedef typename V1::value_type T4;
   typedef typename V2::value_type T5;
@@ -805,9 +813,9 @@ void bi::gemv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
   }
 }
 
-template<class T1, class M1, class V1, class T2, class V2>
-void bi::symv(const T1 alpha, const M1 A, const V1 x, const T2 beta,
-    V2 y, const char uplo = 'N') {
+template<class M1, class V1, class V2>
+void bi::symv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char uplo = 'N') {
   typedef typename M1::value_type T3;
   typedef typename V1::value_type T4;
   typedef typename V2::value_type T5;
@@ -941,8 +949,9 @@ void bi::sum_rows(const M1 X, V1 y) {
   reduce_by_key(keys.begin(), keys.end(), X.begin(), discard, y.begin());
 }
 
-template<class T1, class M1, class M2>
-void bi::matrix_axpy(const T1 a, const M1 X, M2 Y, const bool clear) {
+template<class M1, class M2>
+void bi::matrix_axpy(const typename M1::value_type a, const M1 X, M2 Y,
+    const bool clear) {
   /* pre-conditions */
   assert (X.size1() == Y.size1() && X.size2() == Y.size2());
 
@@ -959,9 +968,7 @@ void bi::matrix_axpy(const T1 a, const M1 X, M2 Y, const bool clear) {
 }
 
 template<class M1>
-inline void bi::matrix_scal(typename M1::value_type alpha, M1 X) {
-  typedef typename M1::value_type T1;
-
+inline void bi::matrix_scal(const typename M1::value_type alpha, M1 X) {
   if (X.size1() == X.lead()) {
     /* do as one vector scal */
     scal(alpha, vec(X));
@@ -974,9 +981,10 @@ inline void bi::matrix_scal(typename M1::value_type alpha, M1 X) {
   }
 }
 
-template<class T1, class M1, class M2, class T2, class M3>
-void bi::gemm(const T1 alpha, const M1 A, const M2 X, const T2 beta,
-    M3 Y, const char transA, const char transX) {
+template<class M1, class M2, class M3>
+void bi::gemm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char transA,
+    const char transX) {
   typedef typename M1::value_type T3;
   typedef typename M2::value_type T4;
   typedef typename M3::value_type T5;
@@ -1023,9 +1031,10 @@ void bi::gemm(const T1 alpha, const M1 A, const M2 X, const T2 beta,
   }
 }
 
-template<class T1, class M1, class M2, class T2, class M3>
-void bi::symm(const T1 alpha, const M1 A, const M2 X, const T2 beta, M3 Y,
-    const char side, const char uplo) {
+template<class M1, class M2, class M3>
+void bi::symm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char side,
+    const char uplo) {
   typedef typename M1::value_type T3;
   typedef typename M2::value_type T4;
   typedef typename M3::value_type T5;
@@ -1064,9 +1073,9 @@ void bi::symm(const T1 alpha, const M1 A, const M2 X, const T2 beta, M3 Y,
   }
 }
 
-template<class T1, class M1, class M2>
-void bi::trmm(const T1 alpha, const M1 A, M2 B, const char side,
-    const char uplo, const char transA) {
+template<class M1, class M2>
+void bi::trmm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side, const char uplo, const char transA) {
   typedef typename M1::value_type T2;
   typedef typename M2::value_type T3;
 
@@ -1101,8 +1110,9 @@ void bi::trmm(const T1 alpha, const M1 A, M2 B, const char side,
   }
 }
 
-template<class T1, class V1, class V2, class T2, class V3>
-void bi::gdmv(const T1 alpha, const V1 A, const V2 x, const T2 beta, V3 y) {
+template<class V1, class V2, class V3>
+void bi::gdmv(const typename V1::value_type alpha, const V1 A, const V2 x,
+    const typename V3::value_type beta, V3 y) {
   typedef typename V3::value_type T3;
 
   /* pre-conditions */
@@ -1133,13 +1143,15 @@ void bi::gdmv(const T1 alpha, const V1 A, const V2 x, const T2 beta, V3 y) {
   }
 }
 
-template<class T1, class V1, class M1, class T2, class M2>
-void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
-    const char side = 'L') {
+template<class V1, class M1, class M2>
+void bi::gdmm(const typename V1::value_type alpha, const V1 A, const M1 X,
+    const typename M2::value_type beta, M2 Y, const char side = 'L') {
   /* pre-conditions */
   assert (side == 'L' || side == 'R');
-  assert (side != 'L' || (A.size() == Y.size1() && Y.size1() == A.size() && Y.size2() == X.size2()));
-  assert (side != 'R' || (X.size2() == A.size() && Y.size1() == X.size1() && Y.size2() == A.size()));
+  assert (side != 'L' || (A.size() == Y.size1() && Y.size1() == A.size() &&
+      Y.size2() == X.size2()));
+  assert (side != 'R' || (X.size2() == A.size() && Y.size1() == X.size1() &&
+      Y.size2() == A.size()));
   int j;
 
   /* while we can make this generic for both host and device types and let
@@ -1201,9 +1213,9 @@ void bi::gdmm(const T1 alpha, const V1 A, const M1 X, const T2 beta, M2 Y,
   }
 }
 
-template<class T1, class V1, class V2, class M1>
-void bi::ger(const T1 alpha, const V1 x, const V2 y, M1 A,
-    const bool clear) {
+template<class V1, class V2, class M1>
+void bi::ger(const typename V1::value_type alpha, const V1 x, const V2 y,
+    M1 A, const bool clear) {
   typedef typename V1::value_type T2;
   typedef typename V2::value_type T3;
   typedef typename M1::value_type T4;
@@ -1240,9 +1252,9 @@ void bi::ger(const T1 alpha, const V1 x, const V2 y, M1 A,
   }
 }
 
-template<class T1, class V1, class M1>
-void bi::syr(const T1 alpha, const V1 x, M1 A, const char uplo,
-    const bool clear) {
+template<class V1, class M1>
+void bi::syr(const typename V1::value_type alpha, const V1 x, M1 A,
+    const char uplo, const bool clear) {
   typedef typename V1::value_type T2;
   typedef typename M1::value_type T3;
 
@@ -1250,7 +1262,7 @@ void bi::syr(const T1 alpha, const V1 x, M1 A, const char uplo,
   assert (uplo == 'U' || uplo == 'L');
   assert (A.size1() == A.size2());
   assert (x.size() == A.size1());
-  //BOOST_STATIC_ASSERT((equals<T2,T3>::value));
+  assert((equals<T2,T3>::value));
 
   if (clear) {
     A.clear();
@@ -1274,17 +1286,17 @@ void bi::syr(const T1 alpha, const V1 x, M1 A, const char uplo,
   }
 }
 
-template<class T1, class V1, class V2, class M1>
-void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
-    const char uplo, const bool clear) {
-  typedef typename V1::value_type T2;
-  typedef typename V2::value_type T3;
-  typedef typename M1::value_type T4;
+template<class V1, class V2, class M1>
+void bi::syr2(const typename V1::value_type alpha, const V1 x, const V2 y,
+    M1 A, const char uplo, const bool clear) {
+  typedef typename V1::value_type T1;
+  typedef typename V2::value_type T2;
+  typedef typename M1::value_type T3;
 
   /* pre-conditions */
   assert (uplo == 'U' || uplo == 'L');
+  assert ((equals<T1,T2>::value));
   assert ((equals<T2,T3>::value));
-  assert ((equals<T3,T4>::value));
 
   if (clear) {
     A.clear();
@@ -1292,7 +1304,7 @@ void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
   if (M1::on_device) {
     BOOST_AUTO(x1, gpu_map_vector(x));
     BOOST_AUTO(y1, gpu_map_vector(y));
-    CUBLAS_CHECKED_CALL(cublas_syr2<T4>::func(bi_omp_cublas_handle,
+    CUBLAS_CHECKED_CALL(cublas_syr2<T3>::func(bi_omp_cublas_handle,
         cublas_uplo(uplo), A.size1(), &alpha, x1->buf(), x1->inc(),
         y1->buf(), y1->inc(), A.buf(), A.lead()));
     synchronize(bi_omp_cublas_handle);
@@ -1304,18 +1316,19 @@ void bi::syr2(const T1 alpha, const V1 x, const V2 y, M1 A,
     if (V1::on_device || V2::on_device) {
       synchronize();
     }
-    cblas_syr2<T4>::func(CblasColMajor, cblas_uplo(uplo), A.size1(), alpha,
+    cblas_syr2<T3>::func(CblasColMajor, cblas_uplo(uplo), A.size1(), alpha,
         x1->buf(), x1->inc(), y1->buf(), y1->inc(), A.buf(), A.lead());
     delete x1;
     delete y1;
   }
 }
 
-template<class T1, class M1, class T2, class M2>
-void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
-    const char uplo, const char trans) {
-  typedef typename M1::value_type T3;
-  typedef typename M2::value_type T4;
+template<class M1, class M2>
+void bi::syrk(const typename M1::value_type alpha, const M1 A,
+    const typename M2::value_type beta, M2 C, const char uplo,
+    const char trans) {
+  typedef typename M1::value_type T1;
+  typedef typename M2::value_type T2;
 
   /* pre-conditions */
   assert (trans == 'N' || trans == 'T');
@@ -1323,13 +1336,13 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
   assert (C.size1() == C.size2());
   assert (trans != 'N' || A.size1() == C.size1());
   assert (trans != 'T' || A.size2() == C.size1());
-  //BOOST_STATIC_ASSERT((equals<T3,T4>::value));
+  assert((equals<T1,T2>::value));
 
   typename M2::size_type k = (trans == 'T') ? A.size1() : A.size2();
 
   if (M2::on_device) {
     BOOST_AUTO(A1, gpu_map_matrix(A));
-    CUBLAS_CHECKED_CALL(cublas_syrk<T4>::func(bi_omp_cublas_handle,
+    CUBLAS_CHECKED_CALL(cublas_syrk<T2>::func(bi_omp_cublas_handle,
         cublas_uplo(uplo), cublas_trans(trans), C.size1(), k, &alpha,
         A1->buf(), A1->lead(), &beta, C.buf(), C.lead()));
     synchronize(bi_omp_cublas_handle);
@@ -1339,7 +1352,7 @@ void bi::syrk(const T1 alpha, const M1 A, const T2 beta, M2 C,
     if (M1::on_device) {
       synchronize();
     }
-    cblas_syrk<T4>::func(CblasColMajor, cblas_uplo(uplo), cblas_trans(trans),
+    cblas_syrk<T2>::func(CblasColMajor, cblas_uplo(uplo), cblas_trans(trans),
         C.size1(), k, alpha, A1->buf(), A1->lead(), beta, C.buf(), C.lead());
     delete A1;
   }
@@ -1412,9 +1425,10 @@ void bi::trsv(const M1 A, V1 x, const char uplo, const char trans,
   }
 }
 
-template<class T1, class M1, class M2>
-void bi::trsm(const T1 alpha, const M1 A, M2 B, const char side,
-    const char uplo = 'L', const char trans = 'N', const char diag = 'N') {
+template<class M1, class M2>
+void bi::trsm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side, const char uplo = 'L', const char trans = 'N',
+    const char diag = 'N') {
   typedef typename M1::value_type T2;
   typedef typename M2::value_type T3;
 

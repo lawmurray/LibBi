@@ -195,10 +195,10 @@ inline real bi::FUpdater<B,IO,CL>::getTime() const {
 template<class B, class IO, bi::Location CL>
 template<bi::Location L>
 void bi::FUpdater<B,IO,CL>::setTime(const real t, State<L>& s) {
-  if (t < in.getTime()) {
+  if (t < getTime()) {
     reset();
   }
-  while (hasNext() && in.getTime() < t) {
+  while (hasNext() && getTime() < t) {
     update(s);
   }
 }

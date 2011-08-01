@@ -376,7 +376,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
       oyUpdater.getNextTime() <= T) {
       t2 = oyUpdater.getNextTime();
-      t1 = std::max(getTime(), ge_step(t2 - 3.0*getDelta(), getDelta()));
+      t1 = ge_step(t2 - getDelta(), getDelta());
     } else {
       t2 = T;
       t1 = getTime();
@@ -388,7 +388,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     }
     prepare(T, theta, s, theta1, s1);
     r = getTime() < T && resample(theta, s, lws, as, resam, relEss);
-    propose(as, lws);
+//    propose(as, lws);
     predict(T, theta, s);
     correct(s, lws);
     output(n, theta, s, r, lws, as);
@@ -405,7 +405,13 @@ template<bi::Location L, class R, class V1>
 void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
-  assert (false);
+  /* initialise pf from fixed starting state */
+  set_rows(s.get(D_NODE), subrange(x0, 0, ND));
+  set_rows(s.get(C_NODE), subrange(x0, ND, NC));
+  set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
+
+  /* filter */
+  filter(T, theta, s, resam, relEss);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
