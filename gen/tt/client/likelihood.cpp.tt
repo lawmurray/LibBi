@@ -180,15 +180,12 @@ void run(Args& args) {
   }
   if (!args.INIT_FILE.empty()) {
     inInit = new SparseInputNetCDFBuffer(m, args.INIT_FILE, args.INIT_NS);
-    inInit->read0(P_NODE, theta.get(P_NODE));
-    inInit->read0(D_NODE, s.get(D_NODE));
-    inInit->read0(C_NODE, s.get(C_NODE));
     if (args.INCLUDE_INITIAL) {
-      subrange(row(X, 0), 0, ND) = row(s.get(D_NODE), 0);
-      subrange(row(X, 0), ND, NC) = row(s.get(C_NODE), 0);
-      subrange(row(X, 0), ND + NC, NP) = row(theta.get(P_NODE), 0);
+      inInit->read0(D_NODE, columns(X, 0, ND));
+      inInit->read0(C_NODE, columns(X, ND, NC));
+      inInit->read0(P_NODE, columns(X, ND + NC, NP));
     } else {
-      row(X, 0) = row(theta.get(P_NODE), 0);
+      inInit->read0(P_NODE, columns(X, 0, NP));
     }
   }
   SparseInputNetCDFBuffer inObs(m, args.OBS_FILE, args.OBS_NS);
