@@ -79,26 +79,34 @@ function contour_model (model, mn, mx, ax, lvl)
     
     % contour plot
     ZZ = reshape(m, size(XX));
-    if isempty(lvl)
-        contourf(XX, YY, ZZ);
+    if isfield(model, 'type') && strcmp(model.type, 'posterior')
+        % kde surface
+        if isempty(lvl)
+            [C, lvl] = contourc(XX, YY, ZZ, 3);
+        end
+        contour(XX, YY, ZZ, lvl, 'k', 'linewidth', 2);
     else
-        contourf(XX, YY, ZZ, lvl);
+        if isempty(lvl)
+            contourf(XX, YY, ZZ);
+        else
+            contourf(XX, YY, ZZ, lvl);
+        end
     end
     
     % extrema
     if !isempty (mn)
         hold on;
-        plot(mn(:,1), mn(:,2), '.w', 'markersize', 20);
+        plot(mn(:,1), mn(:,2), '.k', 'markersize', 15);
     end
     if !isempty (mx)
         hold on;
-        plot(mx(:,1), mx(:,2), '.w', 'markersize', 20);
+        plot(mx(:,1), mx(:,2), '.k', 'markersize', 15);
     end
     
     % transects
     if !isempty (mn) && !isempty (mx)
        for i = 1:rows(mn)
-           line([ mx(1,1) mn(i,1) ], [ mx(1,2) mn(i,2) ], 'color', 'w', ...
+           line([ mx(1,1) mn(i,1) ], [ mx(1,2) mn(i,2) ], 'color', 'k', ...
                 'linewidth', 3);
        end
     end

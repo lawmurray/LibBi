@@ -16,6 +16,7 @@ function plot_defaults ()
     end
 
     set(gca, 'interpreter', 'tex');
+    set(gca, 'ticklength', [0 0]);
     grid on;
     axis tight;
 end
