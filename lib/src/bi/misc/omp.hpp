@@ -23,14 +23,9 @@
  * @arg type Variable type.
  * @arg name Variable name.
  */
-#ifdef __ICC
-#define BI_THREAD_LOCAL_DEC(type, name) \
-extern BI_THREAD type name; \
-#pragma omp threadprivate(name);
-#else
 #define BI_THREAD_LOCAL_DEC(type, name) \
 extern BI_THREAD type name;
-#endif
+
 
 /**
  * @def BI_THREAD_LOCAL_DEF(type, name)
@@ -63,6 +58,13 @@ BI_THREAD_LOCAL_DEC(cublasHandle_t, bi_omp_cublas_handle)
  * also be used for CUBLAS calls.
  */
 BI_THREAD_LOCAL_DEC(cudaStream_t, bi_omp_cuda_stream)
+
+#ifdef __ICC
+#pragma omp threadprivate(bi_omp_tid)
+#pragma omp threadprivate(bi_omp_max_threads)
+#pragma omp threadprivate(bi_omp_cublas_handle)
+#pragma omp threadprivate(bi_omp_cuda_stream)
+#endif
 
 /**
  * Initialise OpenMP environment (thread private variables).
