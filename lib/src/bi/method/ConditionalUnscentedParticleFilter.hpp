@@ -676,8 +676,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
       int q;
 
       /* permits multiple simultaneous kernel launches where supported */
-//      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
-//          bi_omp_cuda_stream));
+      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
+          bi_omp_cuda_stream));
 
       /* transform samples */
       #pragma omp for
@@ -691,8 +691,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
         axpy(1.0, muU2, u2);
       }
 
-//      synchronize(bi_omp_cuda_stream);
-//      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle, 0));
+      synchronize(bi_omp_cuda_stream);
+      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle, 0));
     }
 
     /* weight correct */
