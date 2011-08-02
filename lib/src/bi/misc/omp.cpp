@@ -9,10 +9,10 @@
 
 #include "../cuda/cuda.hpp"
 
-BI_THREAD_LOCAL_DEF(int, bi_omp_tid)
-BI_THREAD_LOCAL_DEF(int, bi_omp_max_threads)
-BI_THREAD_LOCAL_DEF(cublasHandle_t, bi_omp_cublas_handle)
-BI_THREAD_LOCAL_DEF(cudaStream_t, bi_omp_cuda_stream)
+BI_THREAD int bi_omp_tid;
+BI_THREAD int bi_omp_max_threads;
+BI_THREAD cublasHandle_t bi_omp_cublas_handle;
+BI_THREAD cudaStream_t bi_omp_cuda_stream;
 
 void bi_omp_init() {
   /* explicitly turn off dynamic threads, required for threadprivate

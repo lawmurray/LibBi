@@ -512,11 +512,9 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     /* construct observation densities */
     #pragma omp parallel
     {
-      int p;
-
       /* observation means */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
         BOOST_AUTO(muY1, column(muY, p));
 
@@ -525,7 +523,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
       /* mean-correct */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
         BOOST_AUTO(muY1, column(muY, p));
 
@@ -534,7 +532,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
       /* observation covariances */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         BOOST_AUTO(Y1, subrange(X2, p*P2, P2, N2 - W, W));
         BOOST_AUTO(muY1, column(muY, p));
         BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
@@ -545,7 +543,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
       /* observation Cholesky factors */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         BOOST_AUTO(SigmaY1, columns(SigmaY, p*W, W));
         BOOST_AUTO(RY1, columns(RY, p*W, W));
 
@@ -558,7 +556,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
 
       /* complete and scale innovations */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         BOOST_AUTO(RY1, columns(RY, p*W, W));
         BOOST_AUTO(muY1, column(muY, p));
 
@@ -611,11 +609,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     #pragma omp parallel
     {
-      int p, w, offset;
+      int w, offset;
 
       /* noise-observation cross-covariances */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         if ((*as1)(p) == p) {
           offset = ND + NC + NR + NR*(nextra - nupdates);
           BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
@@ -631,7 +629,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
       /* compute conditional means */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         if ((*as1)(p) == p) {
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
           BOOST_AUTO(muU1, column(muU, p));
@@ -642,7 +640,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
       /* compute conditional Cholesky factors */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
         if ((*as1)(p) == p) {
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
           BOOST_AUTO(RU1, columns(RU, p*V, V));
@@ -675,7 +673,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     #pragma omp parallel
     {
-      int p, q;
+      int q;
 
       /* permits multiple simultaneous kernel launches where supported */
 //      CUBLAS_CHECKED_CALL(cublasSetStream(bi_omp_cublas_handle,
@@ -683,7 +681,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
       /* transform samples */
       #pragma omp for
-      for (p = 0; p < P1; ++p) {
+      for (int p = 0; p < P1; ++p) {
 	     	q = (*as1)(p);
   	    BOOST_AUTO(RU2, columns(*RU1, q*V, V));
         BOOST_AUTO(muU2, column(*muU1, q));
