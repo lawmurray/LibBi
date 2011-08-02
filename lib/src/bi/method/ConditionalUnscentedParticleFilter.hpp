@@ -504,7 +504,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     synchronize();
     ly = y;
     log_vector(ly, oLogs);
-    ldetY = std::log(det_vector(ly, oLogs));
+    ldetY = std::log(det_vector(y, oLogs));
 
     /* start on innovations */
     set_columns(J1, ly);
