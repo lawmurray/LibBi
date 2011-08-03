@@ -26,42 +26,41 @@ source config.sh
 SEED=$[$SEED + $ID*$OMP_NUM_THREADS]
 export OMP_NUM_THREADS
 
+if `test "$INIT_FILENAME" != ""`
+then
+    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
+    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
+else
+    INIT_FILE=
+fi
+
+if `test "$FORCE_FILENAME" != ""`
+then
+    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
+    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
+else
+    FORCE_FILE=
+fi
+
+if `test "$OBS_FILENAME" != ""`
+then
+    cp $ROOT/$DATA_DIR/$OBS_FILENAME $LOCAL_DIR
+    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
+else
+    OBS_FILE=
+fi
+
+PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}.nc.0
+STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}.nc.0
+
 
 ##
 ## Launch
 ##
 for i in `seq 1 $JOBS`
 do
-	OBS_FILE=$DATA_DIR/$OBS_FILENAME
 	OUTPUT_FILENAME=${NAME}${SUFFIX}.nc.$ID
 	FILTER_FILE=$LOCAL_DIR/pf${SUFFIX}.nc.$ID
-	
-	if `test "$INIT_FILENAME" != ""`
-	then
-	    cp $DATA_DIR/$INIT_FILENAME $LOCAL_DIR
-	    INIT_FILE=$LOCAL_DIR/$INIT_FILENAME
-	else
-	    INIT_FILE=
-	fi
-	
-	if `test "$FORCE_FILENAME" != ""`
-	then
-	    cp $DATA_DIR/$FORCE_FILENAME $LOCAL_DIR
-	    FORCE_FILE=$LOCAL_DIR/$FORCE_FILENAME
-	else
-	    FORCE_FILE=
-	fi
-	
-	if `test "$OBS_FILENAME" != ""`
-	then
-	    cp $ROOT/$DATA_DIR/$OBS_FILENAME $LOCAL_DIR
-	    OBS_FILE=$LOCAL_DIR/$OBS_FILENAME
-	else
-	    OBS_FILE=
-	fi
-	
-	PROPOSAL_FILE=$RESULTS_DIR/${PROPOSAL_TYPE}.nc.0
-	STARTING_FILE=$RESULTS_DIR/${STARTING_TYPE}.nc.0
 	
 	# run
 	build/mcmc --id=$ID -P $P -T $T --s1=$S1 --s2=$S2 \
