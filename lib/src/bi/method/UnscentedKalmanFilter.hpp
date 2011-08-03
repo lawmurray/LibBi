@@ -803,11 +803,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
   while (state.t < T) {
     tj = obs(T, s);
 
-    if (n == 0) {
-      parameters(tj, true);
-    } else {
-      parameters(tj, false);
-    }
+    parameters(tj, n == 0);
     resize(s, theta, observed, SigmaXY, X1, X2, mu, Sigma);
     if (n == 0) {
       sigmas(x0, X1);
@@ -1172,10 +1168,9 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
     sim.advance(std::min(gt_step(state.t, sim.getDelta()), tj), s);
     state.t = sim.getTime();
 
-    if (n < nextra) {
-      /* copy extra r-nodes now, others later */
-      columns(X2, M + n*NR, NR) = s.get(R_NODE);
-    }
+    /* note, r-node order different here than in advance()! */
+    columns(X2, M + (n - 1)*NR, NR) = s.get(R_NODE);
+
     ++n;
   }
 
@@ -1204,7 +1199,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
   log_columns(s.get(O_NODE), oLogs);
 
   /* copy back to matrix */
-  columns(X2, ND + NC, NR) = s.get(R_NODE);
   columns(X2, N2 - W, W) = s.get(O_NODE);
 }
 

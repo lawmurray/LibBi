@@ -115,24 +115,6 @@ public:
       Static<L2>& theta2, State<L2>& s2);
 
   /**
-   * Perform precomputes for upcoming step, with fixed starting state.
-   *
-   * @tparam V1 Vector type.
-   * @tparam L1 Location.
-   * @tparam L2 Location.
-   *
-   * @param T Time to which to predict.
-   * @param x0 Starting state.
-   * @param[in,out] theta1 Static state of PF.
-   * @param[in,out] s1 State of PF.
-   * @param[out] theta2 Static state for UKF.
-   * @param[out] s2 State for UKF.
-   */
-  template<class V1, Location L1, Location L2>
-  void prepare(const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
-      Static<L2>& theta2, State<L2>& s2);
-
-  /**
    * Propose noise terms for upcoming prediction.
    *
    * @tparam V1 Integer vector type.
@@ -548,7 +530,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
         try {
           chol(SigmaY1, RY1, 'U');
         } catch (CholeskyException) {
-          // let it run, sorts its self out
+          // let it run, sorts itself out
         }
       }
 
@@ -567,15 +549,6 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     synchronize();
     delete Z;
   }
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL,
-    bi::StaticHandling SH>
-template<class V1, bi::Location L1, bi::Location L2>
-void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
-    const real T, const V1 x0, Static<L1>& theta1, State<L1>& s1,
-    Static<L2>& theta2, State<L2>& s) {
-  assert (false);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -616,8 +589,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
           offset = NR + NR*(nextra - nupdates);
           BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
           BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
-          BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, offset, V));
-          BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, offset, V));
+          BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, ND + NC + offset, V));
+          BOOST_AUTO(U2, subrange(X2, p*P2 + 1 + N1 + offset, V, ND + NC + offset, V));
           BOOST_AUTO(SigmaUY1, columns(SigmaUY, p*W, W));
 
           gdmm(Wi, diagonal(U1), Y1, 0.0, SigmaUY1);
