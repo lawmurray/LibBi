@@ -279,7 +279,62 @@ template<bi::Location L, class R, class V1>
 void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
     const real relEss) {
-  assert (false);
+  /* pre-conditions */
+  assert (T > this->getTime());
+  assert (relEss >= 0.0 && relEss <= 1.0);
+
+  typedef typename locatable_vector<ON_HOST,real>::type V2;
+  typedef typename locatable_matrix<ON_HOST,real>::type M2;
+  typedef typename locatable_vector<L,real>::type V3;
+  typedef typename locatable_vector<L,int>::type V4;
+
+  /* ukf temps */
+  Static<ON_HOST> theta1(particle_filter_type::m, theta.size());
+  State<ON_HOST> s1(particle_filter_type::m);
+
+  /* pf temps */
+  V3 lw1s(s.size()), lw2s(s.size());
+  V4 as(s.size());
+
+  /* initialise pf from fixed starting state */
+  set_rows(s.get(D_NODE), subrange(x0, 0, ND));
+  set_rows(s.get(C_NODE), subrange(x0, ND, NC));
+  set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
+
+  /* filter */
+  init(theta, lw1s, lw2s, as);
+  #ifndef USE_CPU
+  #pragma omp parallel num_threads(2)
+  #pragma omp sections
+  #endif
+  {
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
+      if (!particle_filter_type::haveParameters) {
+        theta1 = theta;
+      }
+      this->prepare(T, x0, theta1, s1);
+    }
+
+    #ifndef USE_CPU
+    #pragma omp section
+    #endif
+    {
+      int n = 0, r = 0;
+      while (particle_filter_type::getTime() < T) {
+        r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
+        propose(lw2s);
+        particle_filter_type::predict(T, theta, s);
+        correct(s, lw2s);
+        output(n, theta, s, r, lw1s, lw2s, as);
+        ++n;
+      }
+    }
+  }
+  synchronize();
+  term(theta);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

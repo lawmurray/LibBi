@@ -366,7 +366,8 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* filter */
   init(theta, lws, as);
   #ifndef USE_CPU
-  #pragma omp parallel sections
+  #pragma omp parallel num_threads(2)
+  #pragma omp sections
   #endif
   {
     #ifndef USE_CPU
@@ -394,7 +395,6 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
       }
     }
   }
-
   synchronize();
   term(theta);
 }
