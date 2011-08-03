@@ -458,7 +458,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
   assert (!haveParameters);
 
   real tj = obs(T, s2);
-  parameters(tj);
+  parameters(tj, true);
 
   P1 = s1.size();
   P2 = kalman_filter_type::P;
@@ -495,9 +495,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     ///@todo Next two lines may not be necessary
     theta2.resize(1);
     theta2 = theta1;
-    synchronize();
-    advanceNoise(tj, X1, X2, theta2, s2);
-    synchronize();
+    advanceNoise(tj, X1, X2, theta2, s2, true);
 
     /* observations */
     y = row(s2.get(OY_NODE), 0);
@@ -615,7 +613,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
       #pragma omp for
       for (int p = 0; p < P1; ++p) {
         if ((*as1)(p) == p) {
-          offset = ND + NC + NR + NR*(nextra - nupdates);
+          offset = NR + NR*(nextra - nupdates);
           BOOST_AUTO(Y1, subrange(X2, p*P2 + 1 + offset, V, N2 - W, W));
           BOOST_AUTO(Y2, subrange(X2, p*P2 + 1 + N1 + offset, V, N2 - W, W));
           BOOST_AUTO(U1, subrange(X2, p*P2 + 1 + offset, V, offset, V));
