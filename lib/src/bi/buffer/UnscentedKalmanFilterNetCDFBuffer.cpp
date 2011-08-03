@@ -70,26 +70,26 @@ void UnscentedKalmanFilterNetCDFBuffer::create(const long T) {
   /* corrected state estimate variables */
   muX1Var = ncFile->add_var("filter.mu", netcdf_real, nrDim, nxrowDim);
   BI_ERROR(muX1Var != NULL && muX1Var->is_valid(),
-      "Could not create muX1 variable");
+      "Could not create filter.mu variable");
   SigmaX1Var = ncFile->add_var("filter.Sigma", netcdf_real, nrDim, nxcolDim,
       nxrowDim);
   BI_ERROR(SigmaX1Var != NULL && SigmaX1Var->is_valid(),
-      "Could not create SigmaX1 variable");
+      "Could not create filter.Sigma variable");
 
   /* uncorrected state estimate variables */
   muX2Var = ncFile->add_var("uncorrected.mu", netcdf_real, nrDim, nxrowDim);
   BI_ERROR(muX2Var != NULL && muX2Var->is_valid(),
-      "Could not create muX2 variable");
+      "Could not create uncorrected.mu variable");
   SigmaX2Var = ncFile->add_var("uncorrected.Sigma", netcdf_real, nrDim, nxcolDim,
       nxrowDim);
   BI_ERROR(SigmaX2Var != NULL && SigmaX2Var->is_valid(),
-      "Could not create SigmaX2 variable");
+      "Could not create uncorrected.Sigma variable");
 
   /* uncorrected to corrected state cross-covariance */
   SigmaXXVar = ncFile->add_var("cross.Sigma", netcdf_real, nrDim, nxcolDim,
       nxrowDim);
   BI_ERROR(SigmaXXVar != NULL && SigmaXXVar->is_valid(),
-      "Could not create SigmaXX variable");
+      "Could not create cross.Sigma variable");
 
   /* index variables */
   int id, size = 0;
@@ -132,7 +132,7 @@ void UnscentedKalmanFilterNetCDFBuffer::map(const long T) {
   /* corrected mean variable */
   muX1Var = ncFile->get_var("filter.mu");
   BI_ERROR(muX1Var != NULL && muX1Var->is_valid(),
-      "File does not contain variable muX1");
+      "File does not contain variable filter.mu");
   BI_ERROR(muX1Var->num_dims() == 2, "Variable filter.mu has " <<
       muX1Var->num_dims() << " dimensions, should have 2");
   BI_ERROR(muX1Var->get_dim(0) == nrDim,

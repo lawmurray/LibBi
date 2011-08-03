@@ -233,15 +233,15 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeCorrectedState(const int k,
   BI_UNUSED NcBool ret;
 
   ret = muX1Var->set_cur(offsets);
-  BI_ASSERT(ret, "Index exceeds size reading " << muX1Var->name());
+  BI_ASSERT(ret, "Index exceeds size writing " << muX1Var->name());
   ret = muX1Var->put(mu1->buf(), counts);
-  BI_ASSERT(ret, "Inconvertible type reading " << muX1Var->name());
+  BI_ASSERT(ret, "Inconvertible type writing " << muX1Var->name());
 
   assert (Sigma1->lead() == M);
   ret = SigmaX1Var->set_cur(offsets);
-  BI_ASSERT(ret, "Index exceeds size reading " << SigmaX1Var->name());
+  BI_ASSERT(ret, "Index exceeds size writing " << SigmaX1Var->name());
   ret = SigmaX1Var->put(Sigma1->buf(), counts);
-  BI_ASSERT(ret, "Inconvertible type reading " << SigmaX1Var->name());
+  BI_ASSERT(ret, "Inconvertible type writing " << SigmaX1Var->name());
 
   delete mu1;
   delete Sigma1;
@@ -290,15 +290,15 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeUncorrectedState(const int k,
   BI_UNUSED NcBool ret;
 
   ret = muX2Var->set_cur(offsets);
-  BI_ASSERT(ret, "Index exceeds size reading " << muX2Var->name());
+  BI_ASSERT(ret, "Index exceeds size writing " << muX2Var->name());
   ret = muX2Var->put(mu1->buf(), counts);
-  BI_ASSERT(ret, "Inconvertible type reading " << muX2Var->name());
+  BI_ASSERT(ret, "Inconvertible type writing " << muX2Var->name());
 
   assert (Sigma1->lead() == M);
   ret = SigmaX2Var->set_cur(offsets);
-  BI_ASSERT(ret, "Index exceeds size reading " << SigmaX2Var->name());
+  BI_ASSERT(ret, "Index exceeds size writing " << SigmaX2Var->name());
   ret = SigmaX2Var->put(Sigma1->buf(), counts);
-  BI_ASSERT(ret, "Inconvertible type reading " << SigmaX2Var->name());
+  BI_ASSERT(ret, "Inconvertible type writing " << SigmaX2Var->name());
 
   delete mu1;
   delete Sigma1;
@@ -340,9 +340,9 @@ void bi::UnscentedKalmanFilterNetCDFBuffer::writeCrossState(const int k,
   /* write covariance matrix */
   assert (Sigma1->lead() == M);
   ret = SigmaXXVar->set_cur(offsets);
-  BI_ASSERT(ret, "Index exceeds size reading " << SigmaXXVar->name());
+  BI_ASSERT(ret, "Index exceeds size writing " << SigmaXXVar->name());
   ret = SigmaXXVar->put(Sigma1->buf(), counts);
-  BI_ASSERT(ret, "Inconvertible type reading " << SigmaXXVar->name());
+  BI_ASSERT(ret, "Inconvertible type writing " << SigmaXXVar->name());
 
   delete Sigma1;
 }

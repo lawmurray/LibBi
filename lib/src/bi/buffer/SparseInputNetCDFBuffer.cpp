@@ -247,6 +247,8 @@ void SparseInputNetCDFBuffer::map() {
   nyDim = hasDim("ny") ? mapDim("ny", m.getDimSize(Y_DIM)) : NULL;
   nxDim = hasDim("nx") ? mapDim("nx", m.getDimSize(X_DIM)) : NULL;
   npDim = hasDim("np") ? mapDim("np") : NULL;
+  BI_ERROR(nsDim == NULL || ns < nsDim->size(), "Given index exceeds " <<
+      "length along ns dimension");
 
   /* record dimensions, time and coordinate variables */
   for (i = 0; i < ncFile->num_vars(); ++i) {
