@@ -21,7 +21,6 @@ namespace bi {
  * @tparam B Model type.
  * @tparam IO1 #concept::SparseInputBuffer type.
  * @tparam IO2 #concept::SparseInputBuffer type.
- * @tparam IO3 #concept::ParticleFilterBuffer type.
  * @tparam CL Cache location.
  *
  * @section Concepts
@@ -450,7 +449,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     SigmaY.resize(W, P1*W, false);
     RY.resize(W, P1*W, false);
     ldetRY.resize(P1, false);
-    X1.resize(P1*P2, N2);
+    X1.resize(P1*P2, M);
     X2.resize(P1*P2, N2);
     J1.resize(W, P1);
     J2.resize(W, P1);
@@ -458,7 +457,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     ly.resize(W);
 
     /* construct and propagate sigma points */
-    BOOST_AUTO(Z, temp_matrix<matrix_type>(P1, ND + NC + NR));
+    BOOST_AUTO(Z, temp_matrix<matrix_type>(P1, M));
     columns(*Z, 0, ND) = s1.get(D_NODE);
     columns(*Z, ND, NC) = s1.get(C_NODE);
     columns(*Z, ND + NC, NR) = s1.get(R_NODE);
@@ -469,7 +468,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     #pragma omp parallel for
     #endif
     for (int p = 0; p < P1; ++p) {
-      set_rows(subrange(X1, p*P2, P2, 0, ND + NC + NR), row(*Z, p));
+      set_rows(rows(X1, p*P2, P2), row(*Z, p));
     }
 
     s2.resize(P1*P2, false);
