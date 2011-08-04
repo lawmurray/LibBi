@@ -54,7 +54,7 @@ public:
    */
   AuxiliaryConditionalUnscentedParticleFilter(B& m, Random& rng,
       const real delta = 1.0, IO1* in = NULL, IO2* obs = NULL,
-      IO3* out = NULL, const int maxLook = 3);
+      IO3* out = NULL, const int maxLook = 1);
 
   /**
    * @name High-level interface.
@@ -181,7 +181,7 @@ struct AuxiliaryConditionalUnscentedParticleFilterFactory {
   template<class B, class IO1, class IO2, class IO3>
   static AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>* create(
       B& m, Random& rng, const real delta = 1.0, IO1* in = NULL,
-      IO2* obs = NULL, IO3* out = NULL, const int maxLook = 3) {
+      IO2* obs = NULL, IO3* out = NULL, const int maxLook = 1) {
     return new AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>(
         m, rng, delta, in, obs, out, maxLook);
   }

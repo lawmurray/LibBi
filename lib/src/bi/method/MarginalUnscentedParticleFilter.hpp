@@ -554,14 +554,14 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
   } catch (CholeskyException) {
     while (k2 < (int)mu.size()) {
       /* revert to bootstrap filter */
-      if (mu[k2] == NULL) {
-        mu[k2] = new vector_type(rcorrected.size());
+      if (mu[k2] != NULL) {
+        delete mu[k2];
+        mu[k2] = NULL;
       }
-      if (U[k2] == NULL) {
-        U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
+      if (U[k2] != NULL) {
+        delete U[k2];
+        U[k2] = NULL;
       }
-      mu[k2]->clear();
-      ident(*U[k2]);
       detU[k2] = 1.0;
 
       ++k2;
@@ -579,38 +579,40 @@ template<class V1>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     V1 lws) {
   wait();
-  const int P = lws.size();
-  BOOST_AUTO(&mu, *this->mu[k1]);
-  BOOST_AUTO(&U, *this->U[k1]);
-  real detU = this->detU[k1];
-  int nupdates = mu.size()/NR;
-  BOOST_AUTO(&X, particle_filter_type::rUpdater.buf());
-  BOOST_AUTO(lw1, temp_vector<V1>(lws.size()));
-  BOOST_AUTO(lw2, temp_vector<V1>(lws.size()));
+  if (this->mu[k1] != NULL && this->U[k1] != NULL) {
+    const int P = lws.size();
+    BOOST_AUTO(&mu, *this->mu[k1]);
+    BOOST_AUTO(&U, *this->U[k1]);
+    real detU = this->detU[k1];
+    int nupdates = mu.size()/NR;
+    BOOST_AUTO(&X, particle_filter_type::rUpdater.buf());
+    BOOST_AUTO(lw1, temp_vector<V1>(lws.size()));
+    BOOST_AUTO(lw2, temp_vector<V1>(lws.size()));
 
-  X.resize(P, NR*nupdates, false);
-  if (nupdates > 0) {
-    /* propose */
-    particle_filter_type::rng.gaussians(vec(X));
-    dot_rows(X, *lw1);
-    trmm(1.0, U, X, 'R', 'U');
-    add_rows(X, mu);
-    dot_rows(X, *lw2);
+    X.resize(P, NR*nupdates, false);
+    if (nupdates > 0) {
+      /* propose */
+      particle_filter_type::rng.gaussians(vec(X));
+      dot_rows(X, *lw1);
+      trmm(1.0, U, X, 'R', 'U');
+      add_rows(X, mu);
+      dot_rows(X, *lw2);
 
-    /* correct weights */
-    thrust::transform(lws.begin(), lws.end(), lws.begin(),
-        add_constant_functor<real>(log(detU)));
-    axpy(0.5, *lw1, lws);
-    axpy(-0.5, *lw2, lws);
+      /* correct weights */
+      thrust::transform(lws.begin(), lws.end(), lws.begin(),
+          add_constant_functor<real>(log(detU)));
+      axpy(0.5, *lw1, lws);
+      axpy(-0.5, *lw2, lws);
+    }
+    particle_filter_type::rUpdater.setNext(nupdates);
+
+    if (V1::on_device) {
+      synchronize();
+    }
+    delete lw1;
+    delete lw2;
   }
-  particle_filter_type::rUpdater.setNext(nupdates);
   ++k1;
-
-  if (V1::on_device) {
-    synchronize();
-  }
-  delete lw1;
-  delete lw2;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

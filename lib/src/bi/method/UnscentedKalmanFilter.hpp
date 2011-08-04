@@ -982,9 +982,9 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     const ExpGaussianPdf<V1,M1>& corrected, M2 X1) {
   /* pre-condition */
   assert (corrected.size() == M);
-  assert (X1.size2() == N2 - W);
+  assert (X1.size2() == M);
 
-  set_rows(columns(X1, 0, M), corrected.mean());
+  set_rows(X1, corrected.mean());
   if (nextra < nupdates) {
     /* current r-nodes remain */
     matrix_axpy(a, corrected.std(), subrange(X1, 1, M, 0, M));
