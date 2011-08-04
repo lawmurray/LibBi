@@ -498,7 +498,79 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::prepare(
     const real T, const V1 x0, Static<L>& theta, State<L>& s) {
+  typedef typename locatable_temp_vector<L,real>::type V2;
+  typedef typename locatable_temp_matrix<L,real>::type M2;
 
+  ExpGaussianPdf<V2,M2> corrected(M);
+  ExpGaussianPdf<V2,M2> uncorrected(M);
+  ExpGaussianPdf<V2,M2> rcorrected(0);
+  ExpGaussianPdf<V2,M2> runcorrected(0);
+  ExpGaussianPdf<V2,M2> observed(0);
+  M2 SigmaXX(M, M), SigmaXY(M, 0), SigmaRY(M, 0);
+  M2 X1, X2, Sigma1;
+  V2 mu1;
+  real tj;
+
+  try {
+    kalman_filter_type::init(theta, corrected);
+    while (kalman_filter_type::getTime() < T) {
+      tj = obs(T, s);
+
+      kalman_filter_type::parameters(tj, k2 == 0);
+      kalman_filter_type::resize(s, theta, observed, SigmaXY, X1, X2, mu1,
+          Sigma1);
+      kalman_filter_type::resizeNoise(runcorrected, rcorrected, SigmaRY);
+      if (k2 == 0) {
+        kalman_filter_type::sigmas(x0, X1);
+      } else {
+        kalman_filter_type::sigmas(corrected, X1);
+      }
+      kalman_filter_type::advance(tj, X1, X2, theta, s, k2 == 0);
+      kalman_filter_type::mean(X2, mu1);
+      kalman_filter_type::cov(X2, mu1, Sigma1);
+      kalman_filter_type::predict(mu1, Sigma1, uncorrected, SigmaXY);
+      kalman_filter_type::observe(mu1, Sigma1, observed);
+      kalman_filter_type::predictNoise(mu1, Sigma1, runcorrected, SigmaRY);
+      kalman_filter_type::correct(uncorrected, SigmaXY, s, observed,
+          corrected);
+      kalman_filter_type::correctNoise(runcorrected, SigmaRY, s, observed,
+          rcorrected);
+
+      if (mu[k2] == NULL) {
+        mu[k2] = new vector_type(rcorrected.size());
+      }
+      if (U[k2] == NULL) {
+        U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
+      }
+      *mu[k2] = rcorrected.mean();
+      *U[k2] = rcorrected.std();
+      detU[k2] = sqrt(rcorrected.det());
+
+      ++k2;
+      #ifndef USE_CPU
+      #pragma omp flush(k2)
+      #endif
+    }
+  } catch (CholeskyException) {
+    while (k2 < (int)mu.size()) {
+      /* revert to bootstrap filter */
+      if (mu[k2] == NULL) {
+        mu[k2] = new vector_type(rcorrected.size());
+      }
+      if (U[k2] == NULL) {
+        U[k2] = new matrix_type(rcorrected.size(), rcorrected.size());
+      }
+      mu[k2]->clear();
+      ident(*U[k2]);
+      detU[k2] = 1.0;
+
+      ++k2;
+      #ifndef USE_CPU
+      #pragma omp flush(k2)
+      #endif
+    }
+  }
+  kalman_filter_type::term(theta);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,

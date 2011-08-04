@@ -798,6 +798,9 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     const V1 x0, Static<L>& theta, State<L>& s) {
+  /* pre-condition */
+  assert (x0.size() == ND + NC + NP);
+
   typedef typename locatable_vector<L,real>::type V2;
   typedef typename locatable_matrix<L,real>::type M2;
 
@@ -818,11 +821,10 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::filter(const real T,
     resize(s, theta, observed, SigmaXY, X1, X2, mu, Sigma);
     if (n == 0) {
       sigmas(x0, X1);
-      advance(tj, X1, X2, theta, s, true);
     } else {
       sigmas(corrected, X1);
-      advance(tj, X1, X2, theta, s);
     }
+    advance(tj, X1, X2, theta, s, n == 0);
     mean(X2, mu);
     cov(X2, mu, Sigma);
     if (haveOut) {
@@ -978,6 +980,10 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class V1, class M1, class M2>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     const ExpGaussianPdf<V1,M1>& corrected, M2 X1) {
+  /* pre-condition */
+  assert (corrected.size() == M);
+  assert (X1.size2() == N2 - W);
+
   set_rows(columns(X1, 0, M), corrected.mean());
   if (nextra < nupdates) {
     /* current r-nodes remain */
@@ -1025,13 +1031,21 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class V1, class M1>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     const V1 x0, M1 X1) {
+  /* pre-condition */
+  assert (x0.size() == ND + NC + NP);
+  assert (X1.size2() == N2 - W);
+
   BOOST_AUTO(mu, duplicate_vector(x0));
   log_vector(subrange(*mu, 0, ND), m.getLogs(D_NODE));
   log_vector(subrange(*mu, ND, NC), m.getLogs(C_NODE));
   if (haveParameters) {
-    log_vector(subrange(*mu, ND + NC + NR, NP), m.getLogs(P_NODE));
+    log_vector(subrange(*mu, ND + NC, NP), m.getLogs(P_NODE));
   }
-  set_rows(columns(X1, 0, M), *mu);
+  set_rows(columns(X1, 0, ND), subrange(*mu, 0, ND));
+  set_rows(columns(X1, ND, NC), subrange(*mu, ND, NC));
+  if (haveParameters) {
+    set_rows(columns(X1, ND + NC + NR, NP), subrange(*mu, ND + NC, NP));
+  }
   synchronize();
   delete mu;
 }
@@ -1072,6 +1086,10 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class M1, class M2, bi::Location L>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advance(const real tj,
     const M1 X1, M2 X2, Static<L>& theta, State<L>& s, const bool fixed) {
+  /* pre-conditions */
+  assert (X1.size2() == M);
+  assert (X2.size2() == N2);
+
   /* copy to state */
   s.get(D_NODE) = columns(X1, 0, ND);
   s.get(C_NODE) = columns(X1, ND, NC);
@@ -1151,6 +1169,12 @@ template<class M1, class M2, bi::Location L>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::advanceNoise(
     const real tj, const M1 X1, M2 X2, Static<L>& theta, State<L>& s,
     const bool fixed) {
+  /* pre-conditions */
+  assert (X1.size2() == M);
+  assert (X2.size2() == N2);
+
+  //std::cerr << s.size() << '\t' << tj - state.t << std::endl;
+
   /* copy to state */
   s.get(D_NODE) = columns(X1, 0, ND);
   s.get(C_NODE) = columns(X1, ND, NC);
@@ -1325,6 +1349,11 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<class V1, class M1, class V2, class M2>
 void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::observe(const V1 mu,
     const M1 Sigma, ExpGaussianPdf<V2,M2>& observed) {
+  /* pre-conditions */
+  assert (mu.size() == N2);
+  assert (Sigma.size1() == N2 && Sigma.size2() == N2);
+  assert (observed.size() == W);
+
   observed.mean() = subrange(mu, N2 - W, W);
   observed.cov() = subrange(Sigma, N2 - W, W, N2 - W, W);
   observed.setLogs(oLogs);
