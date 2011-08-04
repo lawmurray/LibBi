@@ -575,7 +575,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
     /* initial samples */
     BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
     U.resize(P1, V);
-    particle_filter_type::rng.gaussians(vec(U)); // can be ascynchronous
+    particle_filter_type::rng.gaussians(vec(U)); // can be asynchronous
     particle_filter_type::rUpdater.setNext(nupdates);
 
     #pragma omp parallel
@@ -620,7 +620,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
           try {
             trsm(1.0, RY1, SigmaUY1, 'R', 'U');
-            ident(RU1);
+            ident(RU1); ///@todo Not if Wiener increments used
             for (w = 0; w < W; ++w) {
               ch1dn(RU1, column(SigmaUY1, w), column(*tmp, p));
             }

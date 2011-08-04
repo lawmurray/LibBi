@@ -305,6 +305,11 @@ public:
    * and observations:
    *
    * \f[\mathcal{Y}_n^{(i)} \leftarrow g(\mathcal{X}_n^{(i)})\,.\f]
+   *
+   * After completion, @p X2 contains the propagated \f$\sigma\f$-points.
+   * The first columns of r-nodes in @p X2 contains the state of r-nodes at
+   * the end of the time interval, with the remainder then appearing in
+   * chronological order. Note this is different to advanceNoise().
    */
   template<class M1, class M2, Location L>
   void advance(const real tj, const M1 X1, M2 X2, Static<L>& theta,
@@ -321,7 +326,7 @@ public:
    *
    * @param tj End time for transformation.
    * @param X1 Starting sigma points.
-   * @param[out] Propagated sigma points.
+   * @param[out] X2 Propagated sigma points.
    * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
@@ -332,6 +337,10 @@ public:
    * and observations:
    *
    * \f[\mathcal{Y}_n^{(i)} \leftarrow g(\mathcal{X}_n^{(i)})\,.\f]
+   *
+   * After completion, @p X2 contains the propagated \f$\sigma\f$-points.
+   * R-nodes appear in chronological order, noting that this is different
+   * to the order returned by advance().
    */
   template<class M1, class M2, Location L>
   void advanceNoise(const real tj, const M1 X1, M2 X2, Static<L>& theta,
@@ -434,6 +443,8 @@ public:
    * @param Sigma Propagated state covariance.
    * @param[out] uncorrected Prediction density over noise terms.
    * @param[out] SigmaXY Noise-observation cross-covariance.
+   *
+   * The order of r-nodes in outputs is chronological.
    */
   template<class V1, class M1, class V2, class M2, class M3>
   void predictNoise(const V1 mu, const M1 Sigma,
@@ -1291,7 +1302,6 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::predictNoise(
       subrange(runcorrected.mean(), NR*nextra, NR) = subrange(mu, ND + NC,
           NR);
     }
-
     subrange(runcorrected.cov(), 0, NR*nextra, 0, NR*nextra) = subrange(
         Sigma, M, NR*nextra, M, NR*nextra);
     if (nextra < nupdates) {
