@@ -1033,7 +1033,7 @@ void bi::UnscentedKalmanFilter<B,IO1,IO2,IO3,CL,SH>::sigmas(
     const V1 x0, M1 X1) {
   /* pre-condition */
   assert (x0.size() == ND + NC + NP);
-  assert (X1.size2() == N2 - W);
+  assert (X1.size2() == M);
 
   BOOST_AUTO(mu, duplicate_vector(x0));
   log_vector(subrange(*mu, 0, ND), m.getLogs(D_NODE));

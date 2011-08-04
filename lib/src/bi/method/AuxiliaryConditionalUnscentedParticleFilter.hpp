@@ -67,21 +67,24 @@ public:
    */
   template<Location L, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL,
-      const real relEss = 1.0);
+      const real relEss = 1.0) throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc ConditionalUnscentedParticleFilter::filter()
    */
   template<Location L, class R, class V1>
   void filter(const real T, const V1 x0, Static<L>& theta, State<L>& s,
-      R* resam = NULL, const real relEss = 1.0);
+      R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
+
 
   /**
    * @copydoc ConditionalUnscentedParticleFilter::filter()
    */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
-      M1& xr, R* resam = NULL, const real relEss = 1.0);
+      M1& xr, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc summarise_apf()
@@ -112,14 +115,16 @@ public:
    */
   template<Location L, class V1, class V2, class R>
   bool resample(Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as,
-      R* resam = NULL, const real relEss = 1.0);
+      R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc AuxiliaryParticleFilter::resample
    */
   template<Location L, class V1, class V2, class R>
   bool resample(Static<L>& theta, State<L>& s, const int a, V1& lw1s,
-      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
+      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   using particle_filter_type::resample;
 
@@ -207,7 +212,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   assert (T >= particle_filter_type::getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -238,7 +243,7 @@ void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filte
       t1 = std::max(getTime(), ge_step(t2 - this->maxLook*getDelta(), getDelta()));
     } else {
       t2 = T;
-      t1 = getTime();
+      t1 = T;
     }
 
     if (t1 > getTime()) {
@@ -279,7 +284,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R, class V1>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
   set_rows(s.get(C_NODE), subrange(x0, ND, NC));
   set_rows(theta.get(P_NODE), subrange(x0, ND + NC, NP));
@@ -292,7 +297,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class M1, class R>
 void bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr,
-    R* resam, const real relEss) {
+    R* resam, const real relEss) throw (ParticleFilterDegeneratedException) {
   assert (false);
 }
 
@@ -322,7 +327,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
     Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
 
@@ -347,7 +352,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
     Static<L>& theta, State<L>& s, const int a, V1& lw1s, V1& lw2s, V2& as,
-    R* resam, const real relEss) {
+    R* resam, const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
   assert (a >= 0 && a < lw1s.size());

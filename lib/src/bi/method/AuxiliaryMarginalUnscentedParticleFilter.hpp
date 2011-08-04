@@ -68,21 +68,23 @@ public:
    */
   template<Location L, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL,
-      const real relEss = 1.0);
+      const real relEss = 1.0) throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc MarginalUnscentedParticleFilter::filter()
    */
   template<Location L, class R, class V1>
   void filter(const real T, const V1 x0, Static<L>& theta, State<L>& s,
-      R* resam = NULL, const real relEss = 1.0);
+      R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc MarginalUnscentedParticleFilter::filter()
    */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
-      M1& xr, R* resam = NULL, const real relEss = 1.0);
+      M1& xr, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc summarise_apf()
@@ -118,14 +120,16 @@ public:
    */
   template<Location L, class V1, class V2, class R>
   bool resample(const real T, Static<L>& theta, State<L>& s, V1& lw1s,
-      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
+      V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc AuxiliaryParticleFilter::resample()
    */
   template<Location L, class V1, class V2, class R>
   bool resample(const real T, Static<L>& theta, State<L>& s, const int a,
-      V1& lw1s, V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0);
+      V1& lw1s, V1& lw2s, V2& as, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Output.
@@ -219,7 +223,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R>
 void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   assert (T > this->getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -236,6 +240,9 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* pf temps */
   V3 lw1s(s.size()), lw2s(s.size());
   V4 as(s.size());
+
+  /* exception thrown? */
+  bool except = false;
 
   /* filter */
   init(theta, lw1s, lw2s, as);
@@ -258,19 +265,29 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     #pragma omp section
     #endif
     {
-      int n = 0, r = 0;
-      while (particle_filter_type::getTime() < T) {
-        r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
-        propose(lw2s);
-        particle_filter_type::predict(T, theta, s);
-        correct(s, lw2s);
-        output(n, theta, s, r, lw1s, lw2s, as);
-        ++n;
+      try {
+        int n = 0, r = 0;
+        while (particle_filter_type::getTime() < T) {
+          r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
+          propose(lw2s);
+          particle_filter_type::predict(T, theta, s);
+          correct(s, lw2s);
+          output(n, theta, s, r, lw1s, lw2s, as);
+          ++n;
+        }
+      } catch (ParticleFilterDegeneratedException) {
+        /* must catch within throwing thread, master thread can throw again
+         * later */
+        except = true;
       }
     }
   }
   synchronize();
   term(theta);
+
+  if (except) {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -278,7 +295,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R, class V1>
 void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   assert (T > this->getTime());
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -295,6 +312,9 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* pf temps */
   V3 lw1s(s.size()), lw2s(s.size());
   V4 as(s.size());
+
+  /* exception thrown? */
+  bool except = false;
 
   /* initialise pf from fixed starting state */
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
@@ -322,19 +342,29 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     #pragma omp section
     #endif
     {
-      int n = 0, r = 0;
-      while (particle_filter_type::getTime() < T) {
-        r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
-        propose(lw2s);
-        particle_filter_type::predict(T, theta, s);
-        correct(s, lw2s);
-        output(n, theta, s, r, lw1s, lw2s, as);
-        ++n;
+      try {
+        int n = 0, r = 0;
+        while (particle_filter_type::getTime() < T) {
+          r = resample(T, theta, s, lw1s, lw2s, as, resam, relEss);
+          propose(lw2s);
+          particle_filter_type::predict(T, theta, s);
+          correct(s, lw2s);
+          output(n, theta, s, r, lw1s, lw2s, as);
+          ++n;
+        }
+      } catch (ParticleFilterDegeneratedException) {
+        /* must catch within throwing thread, master thread can throw again
+         * later */
+        except = true;
       }
     }
   }
   synchronize();
   term(theta);
+
+  if (except) {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -342,7 +372,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class M1, class R>
 void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr,
-    R* resam, const real relEss) {
+    R* resam, const real relEss) throw (ParticleFilterDegeneratedException) {
   assert (false);
 }
 
@@ -372,7 +402,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
     const real T, Static<L>& theta, State<L>& s, V1& lw1s, V1& lw2s, V2& as,
-    R* resam, const real relEss) {
+    R* resam, const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
 
@@ -400,7 +430,8 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class V1, class V2, class R>
 bool bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::resample(
     const real T, Static<L>& theta, State<L>& s, const int a, V1& lw1s,
-    V1& lw2s, V2& as, R* resam, const real relEss) {
+    V1& lw2s, V2& as, R* resam, const real relEss)
+    throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
   assert (a >= 0 && a < lw1s.size());

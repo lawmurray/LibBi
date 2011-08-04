@@ -72,21 +72,23 @@ public:
    */
   template<Location L, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, R* resam = NULL,
-      const real relEss = 1.0);
+      const real relEss = 1.0) throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc ParticleFilter::filter()
    */
   template<Location L, class R, class V1>
   void filter(const real T, const V1 x0, Static<L>& theta, State<L>& s,
-      R* resam = NULL, const real relEss = 1.0);
+      R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc ParticleFilter::filter()
    */
   template<Location L, class M1, class R>
   void filter(const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc,
-      M1& xr, R* resam = NULL, const real relEss = 1.0);
+      M1& xr, R* resam = NULL, const real relEss = 1.0)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc #concept::ParticleFilter::reset()
@@ -280,7 +282,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   assert (T > particle_filter_type::state.t);
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -297,6 +299,9 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* pf temps */
   V3 lws(s.size());
   V4 as(s.size());
+
+  /* exception thrown? */
+  bool except = false;
 
   /* filter */
   init(theta, lws, as);
@@ -318,20 +323,30 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     #pragma omp section
     #endif
     {
-      int n = 0, r = 0;
-      while (particle_filter_type::getTime() < T) {
-        r = n > 0 && resample(theta, s, lws, as, resam, relEss);
-        propose(lws);
-        predict(T, theta, s);
-        correct(s, lws);
-        output(n, theta, s, r, lws, as);
-        ++n;
+      try {
+        int n = 0, r = 0;
+        while (particle_filter_type::getTime() < T) {
+          r = n > 0 && resample(theta, s, lws, as, resam, relEss);
+          propose(lws);
+          predict(T, theta, s);
+          correct(s, lws);
+          output(n, theta, s, r, lws, as);
+          ++n;
+        }
+      } catch (ParticleFilterDegeneratedException) {
+        /* must catch within throwing thread, master thread can throw again
+         * later */
+        except = true;
       }
     }
   }
 
   synchronize();
   term(theta);
+
+  if (except) {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -339,7 +354,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class R, class V1>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, const V1 x0, Static<L>& theta, State<L>& s, R* resam,
-    const real relEss) {
+    const real relEss) throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
   assert (T > particle_filter_type::state.t);
   assert (relEss >= 0.0 && relEss <= 1.0);
@@ -357,6 +372,9 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
   /* pf temps */
   V3 lws(s.size());
   V4 as(s.size());
+
+  /* exception thrown? */
+  bool except = false;
 
   /* initialise pf from fixed starting state */
   set_rows(s.get(D_NODE), subrange(x0, 0, ND));
@@ -384,19 +402,29 @@ void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     #pragma omp section
     #endif
     {
-      int n = 0, r = 0;
-      while (getTime() < T) {
-        r = n > 0 && resample(theta, s, lws, as, resam, relEss);
-        propose(lws);
-        predict(T, theta, s);
-        correct(s, lws);
-        output(n, theta, s, r, lws, as);
-        ++n;
+      try {
+        int n = 0, r = 0;
+        while (getTime() < T) {
+          r = n > 0 && resample(theta, s, lws, as, resam, relEss);
+          propose(lws);
+          predict(T, theta, s);
+          correct(s, lws);
+          output(n, theta, s, r, lws, as);
+          ++n;
+        }
+      } catch (ParticleFilterDegeneratedException) {
+        /* must catch within throwing thread, master thread can throw again
+         * later */
+        except = true;
       }
     }
   }
   synchronize();
   term(theta);
+
+  if (except) {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL,
@@ -404,7 +432,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL,
 template<bi::Location L, class M1, class R>
 void bi::MarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
     const real T, Static<L>& theta, State<L>& s, M1& xd, M1& xc, M1& xr,
-    R* resam, const real relEss) {
+    R* resam, const real relEss) throw (ParticleFilterDegeneratedException) {
   assert (false);
 }
 
