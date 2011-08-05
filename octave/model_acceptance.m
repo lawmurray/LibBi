@@ -41,7 +41,7 @@ function model = model_acceptance (ins, invars, coords, M)
         nc = netcdf(in, 'r');
         P = length(nc('np'));
         ll = nc{'loglikelihood'}(1:P);
-        ll = reshape(ll, M, length(ll)/M);
+        ll = reshape(ll, M, P/M);
     
         % compute expected acceptance rates
         alpha = zeros(columns(ll), 1);
