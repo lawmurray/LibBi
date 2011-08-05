@@ -4,13 +4,13 @@
 % $Date: $
 
 % -*- texinfo -*-
-% @deftypefn {Function File} {@var{model} = } model_posterior (@var{in}, @var{invars}, @var{coords})
+% @deftypefn {Function File} {@var{model} = } model_posterior (@var{ins}, @var{invars}, @var{coords})
 %
 % Construct model for spatial exploration of posterior.
 %
 % @itemize
-% @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
-% mcmc.}
+% @itemize @bullet{ @var{ins} Input file name, or cell array of file
+% names. Gives the name of NetCDF files output by mcmc.}
 %
 % @bullet{ @var{invars} Name of variables from input file to include.
 %
@@ -31,32 +31,44 @@ function model = model_posterior (in, invars, coords, rang)
     if nargin < 4
         rang = [];
     end
-        
-    % read in posterior samples
-    nc = netcdf(in, 'r');
-    P = length(nc('np'));
-    if length (rang) == 0
-        rang = [1:P];
+    if iscell(ins) && !iscellstr(ins)
+        error ('ins must be a string or cell array of strings');
+    elseif ischar(ins)
+        ins = { ins };
     end
 
-    % (standardised) support points
-    X = [];
-    for i = 1:length(invars)
-        if length(coords) >= i
-            X = [ X, read_var(nc, invars{i}, coords{i}, rang, 1) ];
-        else
-            X = [ X, read_var(nc, invars{i}, [], rang, 1)(:) ];
+    % read in support points
+    Xs = [];
+    for j = 1:length(ins)
+        in = ins{j};
+        nc = netcdf(in, 'r');
+        P = length(nc('np'));
+        rg = rang;
+        if length (rg) == 0
+            rg = [1:P];
         end
+
+        X = [];
+        for i = 1:length(invars)
+            if length(coords) >= i
+                X = [ X, read_var(nc, invars{i}, coords{i}, rg, 1) ];
+            else
+                X = [ X, read_var(nc, invars{i}, [], rg, 1)(:) ];
+            end
+        end
+        Xs = [ Xs; X ];
     end
-    mu = mean(X);
-    Sigma = cov(X);
-    X = standardise(X, mu, Sigma);
+    
+    % standardise support points
+    mu = mean(Xs);
+    Sigma = cov(Xs);
+    Xs = standardise(Xs, mu, Sigma);
         
     % result structure
     model.type = 'posterior';
     model.mu = mu;
     model.Sigma = Sigma;
-    model.X = X;
+    model.X = Xs;
         
     % remove any NaNs and infs
     is = find(sum (isfinite (model.X), 2));
