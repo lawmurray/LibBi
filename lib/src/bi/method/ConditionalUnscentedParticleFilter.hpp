@@ -385,7 +385,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::filter(
 
       /* cupf proposal to next observation */
       prepare(T, theta, s, theta1, s1);
-      propose(as1, lws); // preserve as for output, use as1 instead
+      propose(as1, lws); // as1 always 0..P-1
     } else {
       /* cupf proposal over entire time interval */
       prepare(T, theta, s, theta1, s1);
@@ -563,7 +563,7 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
   if (nupdates > 0) {
     BOOST_AUTO(tmp, host_temp_matrix<real>(V, P1));
     BOOST_AUTO(as1, host_map_vector(as));
-    V2 lw1(P1), lw2(P1); // weight correction vectors
+    V2 lw1(P1), lw2(P1), lw3(P1); // weight correction vectors
 
     SigmaUY.resize(V, P1*W, false);
     muU.resize(V, P1, false);
@@ -669,9 +669,11 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     /* weight correct */
     dot_rows(U, lw2);
+    bi::gather(as1->begin(), as1->end(), this->ldetRU.begin(), lw3.begin());
+
     axpy(0.5, lw1, lws);
     axpy(-0.5, lw2, lws);
-    axpy(1.0, ldetRU, lws);
+    axpy(1.0, lw3, lws);
 
     synchronize();
     delete tmp;

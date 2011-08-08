@@ -512,8 +512,12 @@ void bi::AuxiliaryMarginalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::lookahea
 
       /* auxiliary simulation forward */
       BOOST_AUTO(&U, particle_filter_type::rUpdater.buf());
-      U.resize(s.size(), this->mu[this->k1]->size());
-      set_rows(U, *this->mu[this->k1]);
+      U.resize(s.size(), NR*nupdates, false);
+      if (this->mu[this->k1] != NULL) {
+        set_rows(U, *this->mu[this->k1]);
+      } else {
+        U.clear();
+      }
       particle_filter_type::rUpdater.setNext(nupdates);
       this->predict(to, theta, s);
       this->correct(s, lw1s);
