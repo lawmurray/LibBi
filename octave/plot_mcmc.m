@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_mcmc (@var{in}, @var{invar}, @var{coord})
+% @deftypefn {Function File} plot_mcmc (@var{in}, @var{invar}, @var{coord}, @var{ps}, @var{ts})
 %
 % Plot output of the mcmc program.
 %
@@ -20,9 +20,9 @@
 % @end itemize
 % @end deftypefn
 %
-function plot_mcmc (in, invar, coord)
+function plot_mcmc (in, invar, coord, ps, ts)
     % check arguments
-    if nargin < 2 || nargin > 3
+    if nargin < 2 || nargin > 5
         print_usage ();
     end
     if nargin < 3
@@ -30,14 +30,24 @@ function plot_mcmc (in, invar, coord)
     elseif !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
+    if nargin < 4
+        ps = [];
+    end
+    if nargin < 5
+        ts = [];
+    end
     
     % input file
     nci = netcdf(in, 'r');
+    T = length (nci('nr'));
+    if isempty (ts)
+        ts = [1:T];
+    end
 
     % data
-    t = nci{'time'}(:)'; % times
+    t = nci{'time'}(ts)'; % times
     q = [0.025 0.5 0.975]'; % quantiles (median and 95%)
-    X = read_var (nci, invar, coord);
+    X = read_var (nci, invar, coord, ps, ts);
     Q = quantile (X, q, 2);
     
     % plot

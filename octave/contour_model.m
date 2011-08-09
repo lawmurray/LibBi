@@ -84,7 +84,7 @@ function contour_model (model, mn, mx, ax, lvl)
         if isempty(lvl)
             [C, lvl] = contourc(XX, YY, ZZ, 3);
         end
-        contour(XX, YY, ZZ, lvl, 'k', 'linewidth', 2);
+        contour(XX, YY, ZZ, lvl, 'edgecolor', watercolour(2), 'linewidth', 2);
     else
         if isempty(lvl)
             contourf(XX, YY, ZZ);

@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_obs (@var{in}, @var{invars}, @var{coord}, @var{ns})
+% @deftypefn {Function File} plot_obs (@var{in}, @var{invars}, @var{coord}, @var{ts}, @var{ns})
 %
 % Plot observations.
 %
@@ -18,19 +18,24 @@
 % to three elements, giving the x, y and z coordinates of a
 % component of @var{invar} to plot.}
 %
+% @bullet{ @var{ts} (optional) Time indices.
+%
 % @bullet{ @var{ns} (optional) Index along ns dimension of input file.}
 % @end itemize
 % @end deftypefn
 %
-function plot_obs (in, invar, coord, ns)
+function plot_obs (in, invar, coord, ts, ns)
     % check arguments
-    if nargin < 2 || nargin > 4
+    if nargin < 2 || nargin > 5
         print_usage ();
     end
-    if nargin == 2
+    if nargin < 2
         coord = [];
-        ns = 1;
-    elseif nargin == 3
+    end
+    if nargin < 3
+        ts = [];
+    end
+    if nargin < 4
         ns = 1;
     else
         if (!isscalar(ns))
@@ -40,15 +45,17 @@ function plot_obs (in, invar, coord, ns)
             error ('ns must be positive');
         end
     end
+    
 
     % input file
     nci = netcdf(in, 'r');
 
     % read
-    [t y] = read_obs (nci, invar, coord, ns);
+    [t y] = read_obs (nci, invar, coord, ts, ns);
         
     % plot
-    plot(t, y, 'ok', 'markersize', 3.0);
+    plot(t, y, 'ok', 'markersize', 3.0, 'markerfacecolor', 'w', ...
+        'markeredgecolor', 'k');
     %plot_defaults;
     
     ncclose(nci);

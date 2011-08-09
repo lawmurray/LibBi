@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_traj (@var{in}, @var{invar}, @var{coord}, @var{rang})
+% @deftypefn {Function File} plot_traj (@var{in}, @var{invar}, @var{coord}, @var{ps}, @var{ts})
 %
 % Plot trajectories output by simulate, predict, pf, mcmc or likelihood
 % program.
@@ -20,40 +20,47 @@
 % component of @var{invar} to plot.}
 % plot. All trajectories plotted if not specified.
 %
-% @bullet{ @var{rang} (optional) Vector of indices of trajectories to
-% plot.
+% @bullet{ @var{ps} (optional) Trajectory indices.
+%
+% @bullet{ @var{ts} (optional) Time indices.
 % @end itemize
 % @end deftypefn
 %
-function plot_traj (in, invar, coord, rang)
+function plot_traj (in, invar, coord, ps, ts)
     % check arguments
-    if nargin < 2 || nargin > 4
+    if nargin < 2 || nargin > 5
         print_usage ();
     end
     if nargin < 3
         coord = [];
-        rang = [];
-    elseif nargin < 4
-        rang = [];
-    end
-    if !check_coord (coord)
+    elseif !check_coord (coord)
         error ('coord should be a vector with at most three elements');
+    end
+    if nargin < 4
+        ps = [];
+    end
+    if nargin < 5
+        ts = [];
     end
   
     % input file
     nci = netcdf(in, 'r');
 
     % data
-    t = nci{'time'}(:)'; % times
-    P = nci('np')(:);
-    if length(rang) == 0
-        rang = [1:P];
+    P = length (nci('np'));
+    T = length (nci('nr'));
+    if isempty (ps)
+        ps = [1:P];
+    end
+    if isempty (ts)
+        ts = [1:T];
     end
     
-    X = read_var (nci, invar, coord, rang);
+    t = nci{'time'}(ts)'; % times
+    X = read_var (nci, invar, coord, ps, ts);
     
     % plot
-    plot(t, X, 'linewidth', 1, 'color', watercolour(1));
+    plot(t, X, 'linewidth', 1, 'color', gray()(32,:));
     %title(nice_name(name, dims));
     %plot_defaults;
     

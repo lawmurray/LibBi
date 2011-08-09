@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} {@var{y} = } read_obs (@var{nc}, @var{name}, @var{coord}, @var{ns})
+% @deftypefn {Function File} {@var{y} = } read_obs (@var{nc}, @var{name}, @var{coord}, @var{ts}, @var{ns})
 %
 % Read observation from NetCDF file.
 %
@@ -17,19 +17,24 @@
 % element vector containing spatial coordinates for the desired component
 % of this variable.}
 %
+% @bullet{ @var{ts} (optional) Time indices.
+%
 % @bullet{ @var{ns} (optional) Index along ns dimension of input file.}
 % @end itemize
 % @end deftypefn
 %
-function [t y] = read_obs (nc, name, coord, ns)
+function [t y] = read_obs (nc, name, coord, ts, ns)
     % check arguments
-    if nargin < 2 || nargin > 4
+    if nargin < 2 || nargin > 5
         print_usage ();
     end
     if nargin < 3
         coord = [];
     end
     if nargin < 4
+        ts = []
+    end
+    if nargin < 5
         ns = 1;
     end
     
@@ -44,15 +49,17 @@ function [t y] = read_obs (nc, name, coord, ns)
     else
         T = 1;
     end
+    if isempty (ts)
+        ts = [1:T];
+    end
     
     % time variable
     tvar = sprintf('time_%s', name);
     if !ncvarexists(nc, tvar)
         tvar = 'time';
     end
-    K = length(nc{tvar}(:));
-    ts = nc{tvar}(:);
-
+    K = length (nc{tvar}(:));
+    
     % coordinate variable
     dense = 0;
     cvar = sprintf('coord_%s', name);
@@ -83,15 +90,15 @@ function [t y] = read_obs (nc, name, coord, ns)
     if dense
         switch length(coord)
           case 0
-            ys = nc{name}(ns,:);
+            ys = nc{name}(ns,ts);
           case 1
-            ys = nc{name}(ns,:,coord(1));
+            ys = nc{name}(ns,ts,coord(1));
           case 2
-            ys = nc{name}(ns,:,coord(1),coord(2));
+            ys = nc{name}(ns,ts,coord(1),coord(2));
           case 3
-            ys = nc{name}(ns,:,coord(1),coord(2),coord(3));
+            ys = nc{name}(ns,ts,coord(1),coord(2),coord(3));
         end
-        t = ts;
+        t = nc{tvar}(ts);
         y = ys;
     else
         ys = nc{name}(ns,:);
@@ -107,7 +114,7 @@ function [t y] = read_obs (nc, name, coord, ns)
                 end
             end
         end
-        t = ts(find(mask));
+        t = nc{tvar}(find(mask));
         y = ys(find(mask));
     end
 end
