@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} {@var{model} = } model_acceptance (@var{ins}, @var{invars}, @var{coords}, @var{M})
+% @deftypefn {Function File} {@var{model} = } model_acceptance (@var{ins}, @var{invars}, @var{coords}, @var{M}, @var{logs})
 %
 % Construct model for spatial exploration of acceptance rates.
 %
@@ -19,13 +19,19 @@
 %
 % @bullet{ @var{M} Number of repeated likelihood computations for each
 % sample in file.
+%
+% @bullet{ @var{logs} Indices of variables for which to take logarithm
+% before standardising.}
 % @end itemize
 % @end deftypefn
 %
-function model = model_acceptance (ins, invars, coords, M)
+function model = model_acceptance (ins, invars, coords, M, logs)
     % check arguments
-    if nargin != 4
+    if nargin < 4
         print_usage ();
+    end
+    if nargin < 5
+        logs = [];
     end
     if iscell(ins) && !iscellstr(ins)
         error ('ins must be a string or cell array of strings');
@@ -77,6 +83,11 @@ function model = model_acceptance (ins, invars, coords, M)
         end
         Xs = [ Xs; X ];
         alphas = [ alphas; alpha ];
+    end
+    
+    % log-variables
+    for i = 1:length (logs)
+        Xs(:,logs(i)) = log (Xs(:,logs(i)));
     end
     
     % standardise support points
