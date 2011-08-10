@@ -29,13 +29,13 @@ function plot_obs (in, invar, coord, ts, ns)
     if nargin < 2 || nargin > 5
         print_usage ();
     end
-    if nargin < 2
+    if nargin < 3
         coord = [];
     end
-    if nargin < 3
+    if nargin < 4
         ts = [];
     end
-    if nargin < 4
+    if nargin < 5
         ns = 1;
     else
         if (!isscalar(ns))
@@ -52,7 +52,7 @@ function plot_obs (in, invar, coord, ts, ns)
 
     % read
     [t y] = read_obs (nci, invar, coord, ts, ns);
-        
+
     % plot
     plot(t, y, 'ok', 'markersize', 3.0, 'markerfacecolor', 'w', ...
         'markeredgecolor', 'k');

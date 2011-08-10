@@ -44,7 +44,9 @@ function [t y] = read_obs (nc, name, coord, ts, ns)
     
     % check number of dimensions
     numdims = length (ncdim (nc{name}));
-    if ncdimexists (nc, 'nr')
+    if ncdimexists (nc, sprintf('nr_%s', name))
+        T = length (nc(sprintf('nr_%s', name)));
+    elseif ncdimexists (nc, 'nr')
         T = length (nc('nr'));    
     else
         T = 1;

@@ -52,47 +52,76 @@ function X = read_var (nc, name, coord, ps, ts)
     if ncdimexists (nc, 'np')
         P = length (nc('np'));
     else
-        error ('read_var only for files with np dimension');
+        P = 1;
     end
     
-    if length (ps) == 0
+    if isempty (ps)
         ps = [1:P];
     end
-    if length (ts) == 0
+    if isempty (ts)
         ts = [1:T];
     end
     
-    % read    
+    % read
     if numdims == 0
         X = nc{name}(:);
-    elseif numdims == 1
-        X = nc{name}(ps);
+    elseif ncdimexists (nc, 'np')
+        if numdims == 1
+            X = nc{name}(ps);
+        else
+            if length(coord) == 0
+                if numdims == 1
+                    X = nc{name}(ps);
+                else
+                    X = nc{name}(ts,ps);
+                end            
+            elseif length(coord) == 1
+                if numdims == 2
+                    X = nc{name}(coord(1),ps);
+                else
+                    X = nc{name}(ts,coord(1),ps);
+                end
+            elseif length(coord) == 2
+                if numdims == 3
+                    X = nc{name}(coord(1),coord(2),ps);
+                else
+                    X = nc{name}(ts,coord(1),coord(2),ps);
+                end
+            elseif length(coord) == 3
+                if numdims == 4
+                    X = nc{name}(ts,coord(1),coord(2),coord(3),ps);
+                else
+                    X = nc{name}(coord(1),coord(2),coord(3),ps);
+                end
+            end
+        end
     else
         if length(coord) == 0
-            if numdims == 1
-                X = nc{name}(ps);
+            if numdims == 0
+                X = nc{name}(:);
             else
-                X = nc{name}(ts,ps);
-            end            
+                X = nc{name}(ts);
+            end
         elseif length(coord) == 1
-            if numdims == 2
-                X = nc{name}(coord(1),ps);
+            if numdims == 1
+                X = nc{name}(coord(1));
             else
-                X = nc{name}(ts,coord(1),ps);
+                X = nc{name}(ts,coord(1));
             end
         elseif length(coord) == 2
-            if numdims == 3
-                X = nc{name}(coord(1),coord(2),ps);
+            if numdims == 2
+                X = nc{name}(coord(1),coord(2));
             else
-                X = nc{name}(ts,coord(1),coord(2),ps);
+                X = nc{name}(ts,coord(1),coord(2));
             end
         elseif length(coord) == 3
-            if numdims == 4
-                X = nc{name}(ts,coord(1),coord(2),coord(3),ps);
+            if numdims == 3
+                X = nc{name}(ts,coord(1),coord(2),coord(3));
             else
-                X = nc{name}(coord(1),coord(2),coord(3),ps);
+                X = nc{name}(coord(1),coord(2),coord(3));
             end
         end
     end
+    
     X = squeeze(X);
 end
