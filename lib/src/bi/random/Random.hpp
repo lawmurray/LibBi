@@ -376,8 +376,18 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
 
   if (V1::on_device) {
     #ifndef USE_CPU
-    CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng, x.buf(),
-        x.size(), mu, sigma));
+    if (x.size() % 2 == 1) {
+      /* CURAND only does even numbers of random numbers, use CPU generator
+       * for first, CURAND for the rest */
+      *x.begin() = gaussian(mu, sigma);
+      if (x.size() > 1) {
+        CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng,
+            x.buf() + 1, x.size() - 1, mu, sigma));
+      }
+    } else {
+      CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng, x.buf(),
+          x.size(), mu, sigma));
+    }
     #else
     BI_ASSERT(false, "GPU random number generation not enabled");
     #endif

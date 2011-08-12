@@ -563,7 +563,8 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
   if (nupdates > 0) {
     BOOST_AUTO(tmp, host_temp_matrix<real>(V, P1));
     BOOST_AUTO(as1, host_map_vector(as));
-    V2 lw1(P1), lw2(P1), lw3(P1); // weight correction vectors
+    BOOST_AUTO(lw3, host_temp_vector<real>(P1));
+    V2 lw1(P1), lw2(P1);
 
     SigmaUY.resize(V, P1*W, false);
     muU.resize(V, P1, false);
@@ -669,15 +670,16 @@ void bi::ConditionalUnscentedParticleFilter<B,IO1,IO2,IO3,CL,SH>::propose(
 
     /* weight correct */
     dot_rows(U, lw2);
-    bi::gather(as1->begin(), as1->end(), this->ldetRU.begin(), lw3.begin());
+    bi::gather(as1->begin(), as1->end(), this->ldetRU.begin(), lw3->begin());
 
     axpy(0.5, lw1, lws);
     axpy(-0.5, lw2, lws);
-    axpy(1.0, lw3, lws);
+    axpy(1.0, *lw3, lws);
 
     synchronize();
     delete tmp;
     delete as1;
+    delete lw3;
     delete RU1;
     delete muU1;
   }
