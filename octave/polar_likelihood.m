@@ -48,7 +48,7 @@ function polar_likelihood (model, mn, mx, ncontours)
     %axis([-max(d(:)), max(d(:)), -max(d(:)), max(d(:))]);
     
     % setup
-    clf;
+    cla;
     polar(linspace(0, 2*pi, 360), repmat(max(d(:)), 1, 360), '-k');
 
     % plot rays
@@ -67,13 +67,13 @@ function polar_likelihood (model, mn, mx, ncontours)
         C = m(2:end,i);
         
         patch('Faces', F, 'Vertices', V, 'FaceVertexCData', C, 'LineWidth', ...
-              0, 'FaceAlpha', 0.7);
+              1, 'FaceAlpha', 0.7);
     end
         
     % tidy up
     hold off;
     box off;
-    %axis("tight");
-    %ax = max(abs(axis()));
-    %axis([-ax ax -ax ax], 'square', 'off');      
+    axis("tight");
+    ax = max(abs(axis()));
+    axis([-ax ax -ax ax], 'square', 'off');      
 end

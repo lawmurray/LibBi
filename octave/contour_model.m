@@ -96,17 +96,17 @@ function contour_model (model, mn, mx, ax, lvl)
     % extrema
     if !isempty (mn)
         hold on;
-        plot(mn(:,1), mn(:,2), '.k', 'markersize', 15);
+        plot(mn(:,1), mn(:,2), '.w', 'markersize', 15);
     end
     if !isempty (mx)
         hold on;
-        plot(mx(:,1), mx(:,2), '.k', 'markersize', 15);
+        plot(mx(:,1), mx(:,2), '.w', 'markersize', 15);
     end
     
     % transects
     if !isempty (mn) && !isempty (mx)
        for i = 1:rows(mn)
-           line([ mx(1,1) mn(i,1) ], [ mx(1,2) mn(i,2) ], 'color', 'k', ...
+           line([ mx(1,1) mn(i,1) ], [ mx(1,2) mn(i,2) ], 'color', 'w', ...
                 'linewidth', 3);
        end
     end

@@ -4,7 +4,7 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{rang})
+% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{ps}, @var{logn})
 %
 % Plot histogram of parameter samples output by mcmc program.
 %
@@ -18,25 +18,31 @@
 % to three elements, giving the x, y and z coordinates of a
 % component of @var{invar} to plot.}
 %
-% @bullet{ @var{rang} (optional) Vector of indices of samples to
+% @bullet{ @var{ps} (optional) Vector of indices of samples to
 % plot. All samples plotted if not specified.
+%
+% @bullet{logn} (optional) True to histogram log of variable, false
+% otherwise.
 % @end itemize
 % @end deftypefn
 %
-function hist_mcmc (in, invar, coord, rang)
+function hist_mcmc (in, invar, coord, ps, logn)
     % constants
     THRESHOLD = 5e-3; % threshold for bin removal start and end
     BINS = 20;
 
     % check arguments
-    if (nargin < 2 || nargin > 4)
+    if (nargin < 2 || nargin > 5)
         print_usage ();
     end
     if nargin < 3
         coord = [];
     end
     if nargin < 4
-        rang = [];
+        ps = [];
+    end
+    if nargin < 5
+        logn = 0;
     end
     if !check_coord (coord)
         error ('coord should be a vector with at most three elements');
@@ -45,12 +51,15 @@ function hist_mcmc (in, invar, coord, rang)
     % input file
     nci = netcdf (in, 'r');
     P = length (nci('np'));
-    if length (rang) == 0
-        rang = [1:P];
+    if length (ps) == 0
+        ps = [1:P];
     end
     
     % read samples
-    data = read_var (nci, invar, coord, rang, 1);
+    data = read_var (nci, invar, coord, ps, 1);
+    if logn
+        data = log (data);
+    end
     ncclose (nci);
     
     % bin

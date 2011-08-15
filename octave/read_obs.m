@@ -41,46 +41,70 @@ function [t y] = read_obs (nc, name, coord, ts, ns)
     if length (coord) > 3
         error ('coord must be vector of length zero to three');
     end
-    
+    [s e te m t mn] = regexp(name, '(?<prefix>.*?)_?obs$');
+    prefix = mn.prefix;
+
     % check number of dimensions
-    numdims = length (ncdim (nc{name}));
-    if ncdimexists (nc, sprintf('nr_%s', name))
-        T = length (nc(sprintf('nr_%s', name)));
-    elseif ncdimexists (nc, 'nr')
-        T = length (nc('nr'));    
-    else
-        T = 1;
+    tdims = {
+        (sprintf ('nr_%s', name));
+        (sprintf ('nr%s', name));
+        (sprintf ('n%s', name));
+        (sprintf ('nr_%s', prefix));
+        (sprintf ('nr%s', prefix));
+        (sprintf ('n%s', prefix));
+    };
+    T = 1;
+    for i = 1:length (tdims)
+        tdim = tdims{i};
+        if ncdimexists (nc, tdim)
+            T = length (nc(tdim));
+        end
     end
     if isempty (ts)
         ts = [1:T];
     end
     
     % time variable
-    tvar = sprintf('time_%s', name);
-    if !ncvarexists(nc, tvar)
-        tvar = 'time';
+    tvars = {
+        (sprintf ('time_%s', name));
+        (sprintf ('time%s', name));
+        (sprintf ('time_%s', prefix));
+        (sprintf ('time%s', prefix));
+        (sprintf ('time'));
+    };
+    for i = 1:length (tvars)
+        tvar = tvars{i};
+        if ncvarexists (nc, tvar)
+            break;
+        end
     end
     K = length (nc{tvar}(:));
     
     % coordinate variable
-    dense = 0;
-    cvar = sprintf('coord_%s', name);
-    if !ncvarexists(nc, cvar)
-        cvar = 'coord';
-        if !ncvarexists(nc, cvar)
-            cvar = '';
-            dense = 1;
+    cvars = {
+        (sprintf ('coord_%s', name));
+        (sprintf ('cooord%s', name));
+        (sprintf ('coord_%s', prefix));
+        (sprintf ('coord%s', prefix));
+        (sprintf ('coord'));
+    };
+    dense = 1;
+    for i = 1:length (cvars)
+        cvar = cvars{i};
+        if ncvarexists(nc, cvar)
+            cvar = 'coord';
+            dense = 0;
         end
     end
     if !dense
-        if length(coord) > 1
+        if length (coord) > 1
             numdims = length (ncdim (nc{name}));
             if numdims == 1
                 coords = nc{cvar}(:);
             elseif numdims == 2
                 coords = nc{cvar}(:,:);
             else
-                error (sprintf('Variable %s has too many dimensions', cvar));
+                error (sprintf ('Variable %s has too many dimensions', cvar));
             end
             coords = coords + 1; % offset from base 0 to base 1 indexing
         else
