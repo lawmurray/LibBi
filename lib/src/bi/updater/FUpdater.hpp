@@ -158,7 +158,9 @@ inline void bi::FUpdater<B,IO,CL>::update(State<L>& s) {
 
     in.mask();
     in.read(F_NODE, s.get(F_NODE));
-    in.next();
+    if (in.isValid()) {
+      in.next();
+    }
     cache.write(state.p1, s.get(F_NODE));
   }
   ++state.p1;
