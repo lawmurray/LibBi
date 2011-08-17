@@ -56,10 +56,9 @@ function model = model_acceptance (ins, invars, coords, M, logs)
             mx = max(l);
             lsm = mx + log(sum(exp(l - mx)));
             l = exp(l - lsm);
-            l = sort(l, 'descend');
+            l = sort(l, 'ascend');
             b = cumsum(l);
-            c = 1.0 - b;
-            alpha(i) = (l'*b + sum(c))/M;
+            alpha(i) = (2*sum(b) - 1.0)/M;
         end
     
         % support points
