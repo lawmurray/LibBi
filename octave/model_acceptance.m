@@ -53,23 +53,13 @@ function model = model_acceptance (ins, invars, coords, M, logs)
         alpha = zeros(columns(ll), 1);
         for i = 1:length(alpha)
             l = ll(:,i);
-            T = repmat(l, 1, M) - repmat(l', M, 1);
-            T = (T < 0).*T; % max zero
-            T = exp(T)/M;
-            T(1:M+1:end) = ones(M, 1) - (sum(T,1)' - diag(T));
-            
-            % simulate to equilibrium
-            U1 = T;
-            U2 = U1*U1;
-            n = 0;
-            while (n < 32 && norm(U1 - U2, 'fro') > 0)
-                U1 = U2;
-                U2 = U1*U1;
-                U2 = U2./repmat(sum(U2,1), M, 1); % renormalise
-                ++n;
-            end
-            l = U2*ones(M, 1)/M;
-            alpha(i) = l'*(1.0 - diag(T) + 1/M);
+            mx = max(l);
+            lsm = mx + log(sum(exp(l - mx)));
+            l = exp(l - lsm);
+            l = sort(l, 'descend');
+            b = cumsum(l);
+            c = 1.0 - b;
+            alpha(i) = (l'*b + sum(c))/M;
         end
     
         % support points
