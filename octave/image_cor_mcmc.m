@@ -86,7 +86,6 @@ function image_cor_mcmc (in, invars, coords, ps, logns)
     
     % plot
     imagesc(Cor);
-    colorbar;
     set(gca, 'interpreter', 'tex');
     set(gca, 'xtick', 1:length(names));
     set(gca, 'xticklabel', names);

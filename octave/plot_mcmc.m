@@ -4,12 +4,12 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} plot_mcmc (@var{in}, @var{invar}, @var{coord}, @var{ps}, @var{ts})
+% @deftypefn {Function File} plot_mcmc (@var{ins}, @var{invar}, @var{coord}, @var{ps}, @var{ts})
 %
 % Plot output of the mcmc program.
 %
 % @itemize
-% @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
+% @bullet{ @var{ins} Input file.s Gives the names of NetCDF files output by
 % mcmc.}
 %
 % @bullet{ @var{invar} Name of variable from input file to plot.
@@ -20,7 +20,7 @@
 % @end itemize
 % @end deftypefn
 %
-function plot_mcmc (in, invar, coord, ps, ts)
+function plot_mcmc (ins, invar, coord, ps, ts)
     % check arguments
     if nargin < 2 || nargin > 5
         print_usage ();
@@ -36,18 +36,30 @@ function plot_mcmc (in, invar, coord, ps, ts)
     if nargin < 5
         ts = [];
     end
-    
-    % input file
-    nci = netcdf(in, 'r');
-    T = length (nci('nr'));
-    if isempty (ts)
-        ts = [1:T];
+    if iscell (ins) && !iscellstr (ins)
+        error ('ins must be a string or cell array of strings');
+    elseif ischar (ins)
+        ins = { ins };
+    end
+
+    X = [];
+    for i = 1:length (ins)
+        % input file
+        in = ins{i};
+        nci = netcdf(in, 'r');
+        T = length (nci('nr'));
+        if isempty (ts)
+            ts = [1:T];
+        end
+        t = nci{'time'}(ts)'; % times
+        x = read_var (nci, invar, coord, ps, ts);
+        X = [ X x ];
+        
+        ncclose (nci);
     end
 
     % data
-    t = nci{'time'}(ts)'; % times
     q = [0.025 0.5 0.975]'; % quantiles (median and 95%)
-    X = read_var (nci, invar, coord, ps, ts);
     Q = quantile (X, q, 2);
     
     % plot

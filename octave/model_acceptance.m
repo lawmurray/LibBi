@@ -33,9 +33,9 @@ function model = model_acceptance (ins, invars, coords, M, logs)
     if nargin < 5
         logs = [];
     end
-    if iscell(ins) && !iscellstr(ins)
+    if iscell (ins) && !iscellstr (ins)
         error ('ins must be a string or cell array of strings');
-    elseif ischar(ins)
+    elseif ischar (ins)
         ins = { ins };
     end
         

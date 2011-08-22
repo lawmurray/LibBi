@@ -4,12 +4,12 @@
 % $Date$
 
 % -*- texinfo -*-
-% @deftypefn {Function File} hist_mcmc (@var{in}, @var{invar}, @var{coord}, @var{ps}, @var{logn})
+% @deftypefn {Function File} hist_mcmc (@var{ins}, @var{invar}, @var{coord}, @var{ps}, @var{logn})
 %
 % Plot histogram of parameter samples output by mcmc program.
 %
 % @itemize
-% @bullet{ @var{in} Input file. Gives the name of a NetCDF file output by
+% @bullet{ @var{ins} Input files. Gives the names of NetCDF files output by
 % mcmc.}
 %
 % @bullet{ @var{invar} Name of variable from input file to plot.
@@ -26,7 +26,7 @@
 % @end itemize
 % @end deftypefn
 %
-function hist_mcmc (in, invar, coord, ps, logn)
+function hist_mcmc (ins, invar, coord, ps, logn)
     % constants
     THRESHOLD = 5e-3; % threshold for bin removal start and end
     BINS = 20;
@@ -47,26 +47,38 @@ function hist_mcmc (in, invar, coord, ps, logn)
     if !check_coord (coord)
         error ('coord should be a vector with at most three elements');
     end
+    if iscell (ins) && !iscellstr (ins)
+        error ('ins must be a string or cell array of strings');
+    elseif ischar (ins)
+        ins = { ins };
+    end
 
-    % input file
-    nci = netcdf (in, 'r');
-    P = length (nci('np'));
-    if length (ps) == 0
-        ps = [1:P];
+    X = [];
+    for i = 1:length (ins)
+        % input file
+        in = ins{i};
+        nci = netcdf (in, 'r');
+        P = length (nci('np'));
+        if length (ps) == 0
+            ps = [1:P];
+        end
+    
+        % read samples
+        x = read_var (nci, invar, coord, ps, 1);
+        X = [ X; x(:) ];
+        
+        ncclose (nci);
     end
     
-    % read samples
-    data = read_var (nci, invar, coord, ps, 1);
     if logn
-        data = log (data);
+        X = log (X);
     end
-    ncclose (nci);
     
     % bin
-    [nn,xx] = hist(data, BINS);
+    [nn,xx] = hist(X, BINS);
     
     % clean up outlier bins from either end
-    mask = nn > THRESHOLD*length(data);
+    mask = nn > THRESHOLD*length(X);
     found = find(mask, length(mask), "first");
     if length(found) > 1
         % have outliers
@@ -81,14 +93,14 @@ function hist_mcmc (in, invar, coord, ps, logn)
     end
     
     % recompute reference range to restore full number of bins
-    [nn,xx] = hist(data, xx(1):(xx(end)-xx(1))/(BINS-1):xx(end));
-    [mm,yy] = hist(data, xx);
+    [nn,xx] = hist(X, xx(1):(xx(end)-xx(1))/(BINS-1):xx(end));
+    [mm,yy] = hist(X, xx);
     % ^ first above should be with reference range
             
     % scale
     xsize = max(xx) - min(xx); % range of x values in histogram
-    xdelta = xsize / 100; % res for prior distro plot
-    ysize = length(data) / BINS; % average bar height
+    %xdelta = xsize / 100; % res for prior distro plot
+    ysize = mean(mm); % average bar height
 
     % prior
     %x = min([ xx, truth(i) ]):xdelta:max([ xx, truth(i) ]);
@@ -100,6 +112,6 @@ function hist_mcmc (in, invar, coord, ps, logn)
     %peak = max(max(nn) / sum(xsize/BINS*mm), max(y));
                         
     % plot
-    h = bar(xx,mm / sum(xsize/BINS*mm), 1.0); % normalised histogram
+    h = bar(yy,mm/(xsize*ysize), 1.0); % normalised histogram
     set(h, 'FaceColor', fade(watercolour(2),0.5), 'EdgeColor', watercolour(2));
 end
