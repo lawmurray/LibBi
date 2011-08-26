@@ -75,6 +75,8 @@
 : ${S2=1.0}               # starting covariance scaling
 : ${PROPOSAL_TYPE=prior}  # proposal distribution type: file, prior, ukf, urts, pf, pfs or kfb
 : ${STARTING_TYPE=prior}  # starting distribution type: file, prior, ukf, urts, pf, pfs or kfb
+: ${PROPOSAL_FILENAME=}   # proposal distribution file
+: ${STARTING_FILENAME=}   # starting distribution file
 : ${ADAPT=1}              # adapt proposal distribution?
 : ${INCLUDE_INITIAL=1}    # include initial conditions in MCMC rather than filter?
 

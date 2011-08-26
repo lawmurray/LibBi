@@ -230,7 +230,7 @@ void run(Args& args) {
     sample_starting(m, args.STARTING_TYPE, args.STARTING_FILE, args.S2,
         args.INCLUDE_INITIAL, rng, X);
     ++attempts;
-  } while (!(p0(row(X,0)) > 0.0));
+  } while (!is_finite(p0.logDensity(row(X, 0))));
 
   /* sample */
   if (args.ADAPT) {

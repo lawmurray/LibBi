@@ -56,6 +56,7 @@ void sample_distro(B& m, const std::string& type,
 #include "bi/buffer/UnscentedRTSSmootherNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleSmootherNetCDFBuffer.hpp"
+#include "bi/buffer/PdfNetCDFBuffer.hpp"
 #include "bi/math/host_vector.hpp"
 #include "bi/math/host_matrix.hpp"
 #include "bi/math/view.hpp"
@@ -84,7 +85,7 @@ template<class B, class M1>
 void sample_starting(B& m, const std::string& type,
     const std::string& file, const real sd, const bool includeInitial,
     bi::Random& rng, M1 X) {
-  if (type.compare("file") != 0) {
+  if (!type.compare("file") == 0) {
     sample_distro(m, type, file, sd, includeInitial, rng, X);
   }
 }
@@ -128,7 +129,20 @@ bi::ExpGaussianPdf<> init_distro(B& m, const std::string& type,
       ND + NC + NR, NP));
   
   /* overwrite covariance according to proposal type */
-  if (type.compare("ukf") == 0) {
+  if (type.compare("file") == 0) {
+    host_vector<real> mu1(ND + NC + NP);
+    host_matrix<real> Sigma1(ND + NC + NP, ND + NC + NP);
+
+    PdfNetCDFBuffer in(file, NetCDFBuffer::READ_ONLY);
+    in.readPdf(mu1, Sigma1);
+
+    subrange(mu, 0, ND + NC) = subrange(mu1, 0, ND + NC);
+    subrange(Sigma, 0, ND + NC, 0, ND + NC) = subrange(Sigma1, 0, ND + NC, 0,
+        ND + NC);
+    subrange(mu, ND + NC + NR, NP) = subrange(mu1, ND + NC, NP);
+    subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1,
+        ND + NC, NP, ND + NC, NP);
+  } else if (type.compare("ukf") == 0) {
     host_vector<real> mu1(mu.size());
     host_matrix<real> Sigma1(Sigma.size1(), Sigma.size2());
     
@@ -245,7 +259,7 @@ void sample_distro(B& m, const std::string& type,
     m.template getPrior<P_NODE>().samples(rng, X);    
   }
   
-  if (type.compare("ukf") == 0 || type.compare("urts") == 0) {
+  if (type.compare("ukf") == 0 || type.compare("urts") == 0 || type.compare("file") == 0) {
     /* distribution */
     ExpGaussianPdf<> q((includeInitial) ? ND + NC + NP : NP);
   
@@ -286,11 +300,23 @@ void sample_distro(B& m, const std::string& type,
       subrange(mu, ND + NC + NR, NP) = subrange(mu1, ND + NC + NR, NP);
       subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1,
           ND + NC + NR, NP, ND + NC + NR, NP);
-    } else {
-      assert (type.compare("urts") == 0);
+    } else if (type.compare("urts") == 0) {
       UnscentedRTSSmootherNetCDFBuffer in(m, file, NetCDFBuffer::READ_ONLY,
           STATIC_OWN);
       in.readSmoothState(0, mu, Sigma);
+    } else if (type.compare("file") == 0) {
+      host_vector<real> mu1(ND + NC + NP);
+      host_matrix<real> Sigma1(ND + NC + NP, ND + NC + NP);
+
+      PdfNetCDFBuffer in(file, NetCDFBuffer::READ_ONLY);
+      in.readPdf(mu1, Sigma1);
+
+      subrange(mu, 0, ND + NC) = subrange(mu1, 0, ND + NC);
+      subrange(Sigma, 0, ND + NC, 0, ND + NC) = subrange(Sigma1, 0, ND + NC, 0,
+          ND + NC);
+      subrange(mu, ND + NC + NR, NP) = subrange(mu1, ND + NC, NP);
+      subrange(Sigma, ND + NC + NR, NP, ND + NC + NR, NP) = subrange(Sigma1,
+          ND + NC, NP, ND + NC, NP);
     }
     
     /* project down to required components */
