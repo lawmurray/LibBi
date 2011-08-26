@@ -854,7 +854,7 @@ void bi::ParticleMCMC<B,IO1,CL>::propose(Q1& q) {
     BI_ERROR(attempts < 100000, "Could not propose within bounds of prior within 100000 attempts");
     q.sample(rng, this->x1.theta, this->x2.theta);
     ++attempts;
-  } while (!(p0(this->x2.theta) > 0.0));
+  } while (!is_finite(p0.logDensity(this->x2.theta)));
 
   x2.lq = q.logDensity(this->x1.theta, this->x2.theta);
   x1.lq = q.logDensity(this->x2.theta, this->x1.theta);
