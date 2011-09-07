@@ -42,9 +42,14 @@ function [t y] = read_obs (nc, name, coord, ts, ns)
         error ('coord must be vector of length zero to three');
     end
     [s e te m t mn] = regexp(name, '(?<prefix>.*?)_?obs$');
-    prefix = mn.prefix;
+    if !isempty (mn.prefix)
+        prefix = mn.prefix;
+    else
+        prefix = '';
+    end
 
-    % check number of dimensions
+    % check
+    hasnsdim = ncdimexists (nc, 'ns');
     tdims = {
         (sprintf ('nr_%s', name));
         (sprintf ('nr%s', name));
@@ -114,20 +119,37 @@ function [t y] = read_obs (nc, name, coord, ts, ns)
 
     % read
     if dense
-        switch length(coord)
-          case 0
-            ys = nc{name}(ns,ts);
-          case 1
-            ys = nc{name}(ns,ts,coord(1));
-          case 2
-            ys = nc{name}(ns,ts,coord(1),coord(2));
-          case 3
-            ys = nc{name}(ns,ts,coord(1),coord(2),coord(3));
+        if hasnsdim
+            switch length(coord)
+              case 0
+                ys = nc{name}(ns,ts);
+              case 1
+                ys = nc{name}(ns,ts,coord(1));
+              case 2
+                ys = nc{name}(ns,ts,coord(1),coord(2));
+              case 3
+                ys = nc{name}(ns,ts,coord(1),coord(2),coord(3));
+            end
+        else
+            switch length(coord)
+              case 0
+                ys = nc{name}(ts);
+              case 1
+                ys = nc{name}(ts,coord(1));
+              case 2
+                ys = nc{name}(ts,coord(1),coord(2));
+              case 3
+                ys = nc{name}(ts,coord(1),coord(2),coord(3));
+            end
         end
         t = nc{tvar}(ts);
         y = ys;
     else
-        ys = nc{name}(ns,:);
+        if hasnsdim
+            ys = nc{name}(ns,:);
+        else
+            ys = nc{name}(:);
+        end
 
         % mask based on coordinates
         if isempty(coords)
