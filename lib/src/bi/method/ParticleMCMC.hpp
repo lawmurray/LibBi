@@ -1011,7 +1011,11 @@ void bi::ParticleMCMC<B,IO1,CL>::adapt(Q1& q, const Q1& q0,
   matrix_axpy(1.0 - alpha, q0.cov(), Sigma);
   delete theta;
 
-  q.setCov(Sigma);
+  try {
+    q.setCov(Sigma);
+  } catch (CholeskyException e) {
+    q.setCov(q0.cov());
+  }
 }
 
 template<class B, class IO1, bi::Location CL>
