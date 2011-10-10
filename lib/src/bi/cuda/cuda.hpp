@@ -69,6 +69,10 @@
 #define CUDA_FLOOR(x) floor(x)
 #define CUDA_TGAMMA(x) tgamma(x)
 #define CUDA_LGAMMA(x) lgamma(x)
+#define CUDA_COS(x) cos(x)
+#define CUDA_ACOS(x) acos(x)
+#define CUDA_SIN(x) sin(x)
+#define CUDA_ASIN(x) asin(x)
 #else
 #define CUDA_ABS(x) fabsf(x)
 #define CUDA_LOG(x) logf(x)
@@ -85,6 +89,10 @@
 #define CUDA_FLOOR(x) floorf(x)
 #define CUDA_TGAMMA(x) tgammaf(x)
 #define CUDA_LGAMMA(x) lgammaf(x)
+#define CUDA_COS(x) cosf(x)
+#define CUDA_ACOS(x) acosf(x)
+#define CUDA_SIN(x) sinf(x)
+#define CUDA_ASIN(x) asinf(x)
 #endif
 
 /**
