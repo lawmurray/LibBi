@@ -111,7 +111,11 @@ sub cudafunc {
       'fmod' => 'CUDA_FMOD',
       'modf' => 'CUDA_MODF',
       'ceil' => 'CUDA_CEIL',
-      'floor' => 'CUDA_FLOOR'
+      'floor' => 'CUDA_FLOOR',
+      'sin' => 'CUDA_SIN',
+      'asin' => 'CUDA_ASIN',
+      'cos' => 'CUDA_COS',
+      'acos' => 'CUDA_ACOS'
   );
 
   if (exists $funcs{$key}) {
