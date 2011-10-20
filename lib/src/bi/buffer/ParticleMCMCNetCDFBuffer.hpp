@@ -147,7 +147,7 @@ protected:
   NcVar* llVar;
 
   /**
-   * Prior densities variable.
+   * Log-prior densities variable.
    */
   NcVar* lpVar;
 

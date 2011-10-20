@@ -37,9 +37,9 @@ void ParticleMCMCNetCDFBuffer::create() {
   BI_ERROR(llVar != NULL && llVar->is_valid(),
       "Could not create loglikelihood variable");
 
-  lpVar = ncFile->add_var("prior", netcdf_real, npDim);
+  lpVar = ncFile->add_var("logprior", netcdf_real, npDim);
   BI_ERROR(lpVar != NULL && lpVar->is_valid(),
-      "Could not create prior variable");
+      "Could not create logprior variable");
 
   tessVar = ncFile->add_var("time.ess", netcdf_real, nrDim, npDim);
   BI_ERROR(tessVar != NULL && tessVar->is_valid(),
