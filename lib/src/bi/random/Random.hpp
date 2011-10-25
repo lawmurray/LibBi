@@ -283,9 +283,9 @@ inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
   typedef boost::uniform_real<typename V1::value_type> dist_t;
 
   BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
-  exclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
+  inclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
 
-  dist_t dist(0, *(Ps->end() - 1));
+  dist_t dist(0.0, *(Ps->end() - 1));
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
   int p = thrust::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
@@ -461,7 +461,7 @@ void bi::Random::multinomials(const V1 ps, V2 xs) {
   typedef boost::uniform_real<typename V1::value_type> dist_t;
 
   BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
-  exclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
+  inclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
 
   dist_t dist(0, *(Ps->end() - 1));
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
