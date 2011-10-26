@@ -31,52 +31,54 @@ void bi::CUpdater<B,SH>::update(const real t, const real tnxt, State<bi::ON_DEVI
   typedef Pa<ON_DEVICE,B,real,pa,global,global,pa,global,shared,global> V1;
   #endif
 
-  /* execution config */
-  const int P = s.size();
-  const int maxDgx = 16384;
-  const int minDbx = P/maxDgx;
-  const int maxDbx = 512/next_power_2(net_size<B,S>::value);
-  const int idealDbx = 32;
-  #ifdef USE_RIPEN
-  const int idealThreads = 14*512;
-  #endif
-  dim3 Db, Dg;
-  size_t Ns;
-
-  Db.y = net_size<B,S>::value;
-  Db.z = 1;
-
-  #ifdef USE_RIPEN
-  Db.x = std::min(std::min(idealDbx, P), maxDbx);
-  Dg.x = std::min(std::min(static_cast<int>(idealThreads / (Db.x*Db.y*Db.z)), static_cast<int>((P + Db.x - 1) / Db.x)), maxDgx);
-  #else
-  Db.x = std::min(std::max(std::min(idealDbx, P), minDbx), maxDbx);
-  Dg.x = std::min(static_cast<int>((P + Db.x - 1) / Db.x), maxDgx);
-  #endif
-  Dg.y = 1;
-  Dg.z = 1;
-
-  #if defined(USE_ODE_DOPRI5) || defined(USE_ODE_RK43)
-  Ns = Db.x*Db.y*sizeof(real) + 4*Db.x*sizeof(real) + Db.x*sizeof(V1);
-  #else
-  Ns = Db.x*Db.y*sizeof(real);
-  #endif
-
-  BI_ERROR(P % Db.x == 0, "Number of trajectories must be multiple of " <<
-      Db.x << " for device ODE integrator");
-
-  /* launch */
-  if (net_size<B,S>::value > 0 && t < tnxt) {
-    bind(s);
-    #if defined(USE_ODE_DOPRI5)
-    kernelDOPRI5<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
-    #elif defined(USE_ODE_RK4)
-    kernelRK4<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
-    #else
-    kernelRK43<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
+  if (net_size<B,S>::value > 0) {
+    /* execution config */
+    const int P = s.size();
+    const int maxDgx = 16384;
+    const int minDbx = P/maxDgx;
+    const int maxDbx = 512/next_power_2(net_size<B,S>::value);
+    const int idealDbx = 32;
+    #ifdef USE_RIPEN
+    const int idealThreads = 14*512;
     #endif
-    CUDA_CHECK;
-    unbind(s);
+    dim3 Db, Dg;
+    size_t Ns;
+
+    Db.y = net_size<B,S>::value;
+    Db.z = 1;
+
+    #ifdef USE_RIPEN
+    Db.x = std::min(std::min(idealDbx, P), maxDbx);
+    Dg.x = std::min(std::min(static_cast<int>(idealThreads / (Db.x*Db.y*Db.z)), static_cast<int>((P + Db.x - 1) / Db.x)), maxDgx);
+    #else
+    Db.x = std::min(std::max(std::min(idealDbx, P), minDbx), maxDbx);
+    Dg.x = std::min(static_cast<int>((P + Db.x - 1) / Db.x), maxDgx);
+    #endif
+    Dg.y = 1;
+    Dg.z = 1;
+
+    #if defined(USE_ODE_DOPRI5) || defined(USE_ODE_RK43)
+    Ns = Db.x*Db.y*sizeof(real) + 4*Db.x*sizeof(real) + Db.x*sizeof(V1);
+    #else
+    Ns = Db.x*Db.y*sizeof(real);
+    #endif
+
+    BI_ERROR(P % Db.x == 0, "Number of trajectories must be multiple of " <<
+        Db.x << " for device ODE integrator");
+
+    /* launch */
+    if (net_size<B,S>::value > 0 && t < tnxt) {
+      bind(s);
+      #if defined(USE_ODE_DOPRI5)
+      kernelDOPRI5<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
+      #elif defined(USE_ODE_RK4)
+      kernelRK4<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
+      #else
+      kernelRK43<B,SH><<<Dg,Db,Ns>>>(t, tnxt);
+      #endif
+      CUDA_CHECK;
+      unbind(s);
+    }
   }
 }
 
