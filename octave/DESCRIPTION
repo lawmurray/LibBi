@@ -1,8 +1,0 @@
-Name: octbi
-Version: 0.0.0
-Date: $Date$
-Author: Lawrence Murray <lawrence.murray@csiro.au>
-Title: OctBi
-Description: Analysis and visualisation functions for interacting with Bi
-Autoload: on
-Depends: octcdf
