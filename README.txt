@@ -15,10 +15,14 @@ The following packages are required by the library:
   * Boost 1.43 or later, specifically Boost.Random and Boost.TypeOf
     <www.boost.org/>.
 
-The following Perl modules are required:
+The following (non-standard) Perl modules are required:
 
   * Template,
-  * Math::Symbolic.
+  * Math::Symbolic,
+  * Carp::Assert,
+  * Parse::Yapp,
+  * Parse::Lex,
+  * Getopt::ArgvFile.
 
 The following packages are optional:
 
