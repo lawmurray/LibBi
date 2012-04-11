@@ -6,7 +6,7 @@ Requirements
 
 The following packages are required by the library:
 
-  * Thrust 1.3 or later <thrust.googlecode.com>,
+  * Thrust 1.6 or later <thrust.googlecode.com>,
   * NetCDF 4.0.1 or later <www.unidata.ucar.edu/software/netcdf/>,
   * qrupdate <qrupdate.sourceforge.net/>,
   * Boost 1.43 or later, specifically Boost.Random and Boost.TypeOf
