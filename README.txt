@@ -8,7 +8,8 @@ The following packages are required by the library:
 
   * Thrust 1.6 or later <thrust.googlecode.com>,
   * NetCDF 4.0.1 or later <www.unidata.ucar.edu/software/netcdf/>,
-  * qrupdate <qrupdate.sourceforge.net/>,
+  * QRUpdate <qrupdate.sourceforge.net/>,
+  * GNU Scientific Library <www.gnu.org/software/gsl/>,
   * Boost 1.43 or later, specifically Boost.Random and Boost.TypeOf
     <www.boost.org/>,
   * a BLAS implementation <www.netlib.org/blas/>,
