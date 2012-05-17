@@ -18,6 +18,8 @@ The following packages are required by the library:
 For GPU support, the following additional packages are required:
 
   * CUDA 4.0 or later (including CUBLAS and CURAND) <www.nvidia.com/cuda>,
+    noting that to use the version of Thrust included with CUDA, version 5.0
+    or later will be required,
   * MAGMA 0.2 or later <icl.cs.utk.edu/magma/>.
 
 The following packages are optional for building documentation and visualising
