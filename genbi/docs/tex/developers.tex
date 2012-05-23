@@ -1,3 +1,71 @@
+%%%%
+\section{Obtaining the source code}
+
+Bi is available via Subversion at
+\hyperref[hyper][https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi]{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
+would typically check out a working copy of the \textsf{trunk} directory:
+\begin{alltt}{\sf
+svn co https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk bi
+}\end{alltt}
+
+For any endeavours that may temporarily break functionality, working on a
+branch, rather than the main trunk, is essential. A branch can be created by
+copying the trunk into an appropriately named subdirectory of the
+\textsf{branches} directory:
+\begin{alltt}{\sf
+svn copy -m 'Created branch for...' \textbackslash
+  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk \textbackslash
+  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
+}\end{alltt}
+and then checking out a working copy of the branch instead. Branches are not
+required to actually work at any time, so regular commits are encouraged, even
+for code that does not yet compile or run correctly. Note that you may like to
+copy only a particular subdirectory of the trunk, rather than the entire
+thing.
+
+Once modifications are complete, a branch can be merged back into a working
+copy of the trunk:
+\begin{alltt}{\sf
+svn merge --reintegrate \textbackslash
+  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
+}\end{alltt}
+and then the working copy of the trunk committed.
+
+\section{Using the Eclipse IDE}
+
+Bi is set up to use the Eclipse IDE. LibBi works with the Eclipse IDE for
+C/C++, and GenBi with the EPIC (Eclipse Perl Integration) project. From a
+vanilla install of the Eclipse IDE for C/C++ (available at
+\hyperref[hyper][http://www.eclipse.org]{http://www.eclipse.org}), a number of
+additional plugins are supported, and recommended. These are, along with the
+URLs of their update sites:
+\begin{itemize}
+\item Subclipse (Subversion integration) \hyperref[hyper][http://subclipse.tigris.org/update]{http://subclipse.tigris.org/update}
+
+\item Eclox (Doxygen integration) \hyperref[hyper][http://download.gna.org/eclox/update]{http://download.gna.org/eclox/update}
+
+\item EPIC (Perl integration) \hyperref[hyper][http://e-p-i-c.sf.net/updates/testing]{http://e-p-i-c.sf.net/updates/testing}
+
+\item Perl Template Toolkit Editor \hyperref[hyper][http://perleclipse.com/TTEditor/UpdateSite]{http://perleclipse.com/TTEditor/UpdateSite}
+\end{itemize}
+They may be installed via the \textsf{Help > Install New Software...} menu
+item in Eclipse, in each case entering the update site URL.
+
+With Subclipse installed, each of LibBi, GenBi and OctBi may be checked out of
+the Subversion repository as a separate project in Eclipse. Use the
+\textsf{File > New > Other...} menu item and select the \textsf{SVN > Checkout
+  Projects from SVN} item from the list. Enter the URL of the Bi Subversion
+repository trunk (or of a branch), then select one or more of the
+\textsf{libbi}, \textsf{genbi} or \textsf{octbi} directories to check these
+out as Eclipse projects.
+
+For LibBi, you will need to run \textsf{./autogen.sh} then
+\textsf{./configure} from the command line before you can build from within
+Eclipse.
+
+
+%%%%
+\section{Developing Bi}
 
 Developing Bi involves adding or modifying functionality in one or more of its
 major \hyperref[hyper][Components]{components}. A typical exercise is adding
@@ -7,7 +75,7 @@ new functionality in LibBi on which these blocks and actions can draw. Another
 common task is adding a new inference method to LibBi, then adding or
 modifying templates in GenBi to produce the client code that will use this.
 
-\section{Actions, blocks and clients}
+\subsection{Actions, blocks and clients}
 
 A user of Bi is exposed only to those blocks and actions which they explicitly
 write in their model specification file. Developers must be aware that beyond
@@ -59,7 +127,7 @@ It is worth familiarising yourself with this behaviour, and indeed other
 transformations made by GenBi, by using the
 \hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command.
 
-\subsection{Adding a block}
+\subsubsection{Adding a block}
 
 To add a block:
 \begin{enumerate}
@@ -78,7 +146,7 @@ As implementation details of the Perl module and template are subject to
 change, it is highly recommended that you copy and modify an existing, similar
 block type, as the basis for your new block type.
 
-\subsection{Adding an action}
+\subsubsection{Adding an action}
 
 To add an action:
 \begin{enumerate}
@@ -95,7 +163,7 @@ To add an action:
   the code required.
 \end{enumerate}
 
-\subsection{Adding a client\label{Adding_a_client}}
+\subsubsection{Adding a client\label{Adding_a_client}}
 
 To add a client:
 \begin{enumerate}
@@ -121,7 +189,7 @@ To add a client:
 \end{enumerate}
 \end{enumerate}
 
-\section{Designing an extension\label{Designing_an_extension}}
+\subsection{Designing an extension\label{Designing_an_extension}}
 
 Given that there are no particular requirements on actions other than those
 imposed by your own containing block class, there is considerable flexibility
@@ -147,7 +215,7 @@ runtime checks on command-line options in C++ rather than code-generation-time
 checks in the Perl Template Toolkit. This need not be taken to the extreme,
 however: clear and simple template code is preferred over convoluted C++!
 
-\section{Documenting an extension\label{Documenting_an_extension}}
+\subsection{Documenting an extension\label{Documenting_an_extension}}
 
 Reference documentation for actions, blocks and clients is written in the Perl
 module created for them, in standard Perl POD. Likewise, parameters for
@@ -158,7 +226,7 @@ POD documentation in these modules is automatically converted to LaTeX and
 incorporated in the \hyperref[hyper][Reference]{Reference} section of this
 manual.
 
-\section{Style guide\label{Developer_style_guide}}\index{style guide}
+\subsection{Style guide\label{Developer_style_guide}}\index{style guide}
 
 Further to the \hyperref[hyper][Style_guide]{Style guide} for users, the
 following additional recommended pertain to developers:
@@ -171,9 +239,9 @@ following additional recommended pertain to developers:
   should be suffixed with a single underscore.
 \end{itemize}
 
-\section{Other considerations}
+\subsection{Other considerations}
 
-\subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
+\subsubsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
 
 It is important to maintain reproducibility of results under the same random
 number seed\index{random number seed}, typically passed using the
