@@ -60,7 +60,7 @@ struct SparseInputBuffer {
    *
    * @return Number of nodes updated at the current time.
    */
-  int countCurrentNodes(const NodeType type);
+  int countCurrentNodes(const VarType type);
 
   /**
    * Get number of nodes to be updated at the next time.
@@ -69,7 +69,7 @@ struct SparseInputBuffer {
    *
    * @return Number of nodes to be updated at the next time.
    */
-  int countNextNodes(const NodeType type);
+  int countNextNodes(const VarType type);
 
   /**
    * Get nodes that were updated at the current time.
@@ -79,7 +79,7 @@ struct SparseInputBuffer {
    * Will be resized to fit.
    */
   template<class V1>
-  void getCurrentNodes(const NodeType type, V1& ids);
+  void getCurrentNodes(const VarType type, V1& ids);
 
   /**
    * Get ids of nodes to be updated at the next time.
@@ -89,7 +89,7 @@ struct SparseInputBuffer {
    * time. Will be resized to fit.
    */
   template<class V1>
-  void getNextNodes(const NodeType type, V1& ids);
+  void getNextNodes(const VarType type, V1& ids);
 
   /**
    * Calculate number of unique time points in file.

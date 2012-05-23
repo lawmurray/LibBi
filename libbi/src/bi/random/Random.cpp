@@ -12,20 +12,20 @@
 using namespace bi;
 
 Random::Random() : rng(bi_omp_max_threads) {
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   CURAND_CHECKED_CALL(curandCreateGenerator(&devRng, CURAND_RNG_PSEUDO_DEFAULT));
   #endif
 }
 
 Random::Random(const unsigned seed) : rng(bi_omp_max_threads) {
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   CURAND_CHECKED_CALL(curandCreateGenerator(&devRng, CURAND_RNG_PSEUDO_DEFAULT));
   #endif
   this->seed(seed);
 }
 
 Random::~Random() {
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   CURAND_CHECKED_CALL(curandDestroyGenerator(devRng));
   #endif
 }
@@ -40,13 +40,13 @@ void Random::seed(const unsigned seed) {
   }
 
   /* seed device generator */
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   CURAND_CHECKED_CALL(curandSetPseudoRandomGeneratorSeed(devRng, seed));
   #endif
 }
 
 void Random::reset() {
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   /* just re-seeding seems insufficient to reproduce same sequence, so destroy
    * and re-create */
   CURAND_CHECKED_CALL(curandDestroyGenerator(devRng));

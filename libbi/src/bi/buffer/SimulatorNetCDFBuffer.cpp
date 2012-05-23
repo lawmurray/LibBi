@@ -11,20 +11,18 @@
 
 using namespace bi;
 
-SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m,
-    const std::string& file, const FileMode mode,
-    const StaticHandling flag) :
-    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES), flag(flag) {
+SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m,
+    const std::string& file, const FileMode mode) :
+    NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   /* pre-condition */
   assert (mode == READ_ONLY || mode == WRITE);
 
   map();
 }
 
-SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m, const int P,
-    const int T, const std::string& file, const FileMode mode,
-    const StaticHandling flag) :
-    NetCDFBuffer(file, mode), m(m), vars(NUM_NODE_TYPES), flag(flag) {
+SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m, const int P,
+    const int T, const std::string& file, const FileMode mode) :
+    NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
     create(P, T); // set up structure of new file
   } else {
@@ -33,9 +31,6 @@ SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const BayesNet& m, const int P,
 }
 
 SimulatorNetCDFBuffer::~SimulatorNetCDFBuffer() {
-  synchronize();
-  clean();
-
   unsigned i, j;
   for (i = 0; i < vars.size(); ++i) {
     for (j = 0; j < vars[i].size(); ++j) {
@@ -46,13 +41,16 @@ SimulatorNetCDFBuffer::~SimulatorNetCDFBuffer() {
 
 void SimulatorNetCDFBuffer::create(const long P, const long T) {
   int id, i;
-  NodeType type;
+  VarType type;
+  Var* var;
+  Dim* dim;
 
   /* dimensions */
   nrDim = createDim("nr", T);
-  nzDim = createDim("nz", m.getDimSize(Z_DIM));
-  nyDim = createDim("ny", m.getDimSize(Y_DIM));
-  nxDim = createDim("nx", m.getDimSize(X_DIM));
+  for (i = 0; i < m.getNumDims(); ++i) {
+    dim = m.getDim(i);
+    nDims.push_back(createDim(dim->getName().c_str(), dim->getSize()));
+  }
   npDim = createDim("np", P);
 
   /* time variable */
@@ -60,13 +58,15 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
   BI_ERROR(tVar != NULL && tVar->is_valid(), "Could not create time variable");
 
   /* other variables */
-  for (i = 0; i < NUM_NODE_TYPES; ++i) {
-    type = static_cast<NodeType>(i);
-    vars[type].resize(m.getNumNodes(type), NULL);
-    if (type == D_NODE || type == C_NODE || type == R_NODE ||
-        (flag == STATIC_OWN && (type == P_NODE || type == S_NODE))) {
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+    vars[type].resize(m.getNumVars(type), NULL);
+    if (type == D_VAR || type == R_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
-        vars[type][id] = new NcVarBuffer<real>(createVar(m.getNode(type, id)));
+        var = m.getVar(type, id);
+        if (var->getIO()) {
+          vars[type][id] = new NcVarBuffer<real>(createVar(var));
+        }
       }
     }
   }
@@ -75,16 +75,20 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
 void SimulatorNetCDFBuffer::map(const long P, const long T) {
   std::string name;
   int id, i;
-  NodeType type;
-  BayesNode* node;
+  VarType type;
+  Var* node;
+  Dim* dim;
 
   /* dimensions */
   BI_ERROR(hasDim("nr"), "File must have nr dimension");
-  BI_ERROR(hasDim("np"), "File must have np dimension");
   nrDim = mapDim("nr", T);
-  nzDim = hasDim("nz") ? mapDim("nz", m.getDimSize(Z_DIM)) : NULL;
-  nyDim = hasDim("ny") ? mapDim("ny", m.getDimSize(Y_DIM)) : NULL;
-  nxDim = hasDim("nx") ? mapDim("nx", m.getDimSize(X_DIM)) : NULL;
+  for (i = 0; i < m.getNumDims(); ++i) {
+    dim = m.getDim(i);
+    BI_ERROR(hasDim(dim->getName().c_str()), "File must have " <<
+        dim->getName() << " dimension");
+    nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
+  }
+  BI_ERROR(hasDim("np"), "File must have np dimension");
   npDim = mapDim("np", P);
 
   /* time variable */
@@ -93,19 +97,17 @@ void SimulatorNetCDFBuffer::map(const long P, const long T) {
       "File does not contain variable time");
   BI_ERROR(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
       " dimensions, should have 1");
-  NcDim* dim = tVar->get_dim(0);
-  BI_ERROR(dim == nrDim, "Dimension 0 of variable time should be nr");
+  BI_ERROR(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time should be nr");
 
   /* other variables */
-  for (i = 0; i < NUM_NODE_TYPES; ++i) {
-    type = static_cast<NodeType>(i);
-    if (type == D_NODE || type == C_NODE || type == R_NODE ||
-        (flag == STATIC_OWN && (type == P_NODE || type == S_NODE))) {
-      vars[type].resize(m.getNumNodes(type), NULL);
-      for (id = 0; id < m.getNumNodes(type); ++id) {
-        node = m.getNode(type, id);
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+    if (type == D_VAR || type == R_VAR) {
+      vars[type].resize(m.getNumVars(type), NULL);
+      for (id = 0; id < m.getNumVars(type); ++id) {
+        node = m.getVar(type, id);
         if (hasVar(node->getName().c_str())) {
-          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getNode(type, id)));
+          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
         }
       }
     }
@@ -118,7 +120,7 @@ void SimulatorNetCDFBuffer::readTime(const int t, real& x) {
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading " << tVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds reading " << tVar->name());
   ret = tVar->get(&x, 1);
   BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
 }
@@ -129,7 +131,7 @@ void SimulatorNetCDFBuffer::writeTime(const int t, const real& x) {
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size writing " << tVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds writing " << tVar->name());
   ret = tVar->put(&x, 1);
   BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
 }

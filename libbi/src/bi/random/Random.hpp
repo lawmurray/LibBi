@@ -10,9 +10,12 @@
 #ifndef BI_RANDOM_RANDOM_HPP
 #define BI_RANDOM_RANDOM_HPP
 
-#include "../cuda/cuda.hpp"
-#include "../cuda/random/curand.hpp"
 #include "../misc/assert.hpp"
+#include "../cuda/cuda.hpp"
+
+#ifdef ENABLE_GPU
+#include "../cuda/random/curand.hpp"
+#endif
 
 #include "boost/random/mersenne_twister.hpp"
 
@@ -224,7 +227,7 @@ private:
   /**
    * Random number generator on device.
    */
-  #ifndef USE_CPU
+  #ifdef ENABLE_GPU
   curandGenerator_t devRng;
   #endif
 
@@ -237,8 +240,7 @@ private:
 }
 
 #include "../misc/omp.hpp"
-#include "../math/temp_vector.hpp"
-#include "../cuda/math/temp_vector.hpp"
+#include "../math/sim_temp_vector.hpp"
 
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/bernoulli_distribution.hpp"
@@ -282,16 +284,13 @@ inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
 
   typedef boost::uniform_real<typename V1::value_type> dist_t;
 
-  BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
-  inclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
+  typename sim_temp_vector<V1>::type Ps(ps.size());
+  inclusive_scan_sum_exp(ps, Ps);
 
-  dist_t dist(0.0, *(Ps->end() - 1));
+  dist_t dist(0.0, *(Ps.end() - 1));
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
-  int p = thrust::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
-  delete Ps;
-
-  return p;
+  return thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
 }
 
 template<class T1>
@@ -343,13 +342,19 @@ void bi::Random::uniforms(V1 x, const typename V1::value_type lower,
   typedef boost::uniform_real<T1> dist_t;
 
   if (V1::on_device) {
-    assert (lower == 0.0 && upper == 1.0);
-    #ifndef USE_CPU
+    #ifdef ENABLE_GPU
     CURAND_CHECKED_CALL(curand_generate_uniform<T1>::func(devRng, x.buf(),
         x.size()));
     #else
     BI_ASSERT(false, "GPU random number generation not enabled");
     #endif
+    if (lower == 0.0 && upper != 1.0) {
+      mulscal_elements(x, upper);
+    } else if (upper - lower == 1.0) {
+      addscal_elements(x, lower);
+    } else if (lower != 0.0 && upper != 1.0) {
+      axpyscal_elements(x, upper - lower, lower);
+    }
   } else {
     #pragma omp parallel
     {
@@ -375,7 +380,7 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
   typedef boost::normal_distribution<T1> dist_t;
 
   if (V1::on_device) {
-    #ifndef USE_CPU
+    #ifdef ENABLE_GPU
     if (x.size() % 2 == 1) {
       /* CURAND only does even numbers of random numbers, use CPU generator
        * for first, CURAND for the rest */
@@ -417,27 +422,10 @@ void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
 
   if (V1::on_device) {
     /* CURAND doesn't support gamma variates at this stage, generate on host
-     * and upload */
-    BOOST_AUTO(y, host_temp_vector<T1>(x.size()));
-    BOOST_AUTO(z, *y);
-    synchronize();
-
-    #pragma omp parallel
-    {
-      int j;
-      dist_t dist(alpha);
-      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
-
-      #pragma omp for schedule(static)
-      for (j = 0; j < z.size(); ++j) {
-        z(j) = gen();
-      }
-    }
-
+     * and copy */
+    typename temp_host_vector<T1>::type z(x.size());
+    gammas(z, alpha, beta);
     x = z;
-    scal(beta, x);
-    synchronize();
-    delete y;
   } else {
     #pragma omp parallel
     {
@@ -460,19 +448,17 @@ void bi::Random::multinomials(const V1 ps, V2 xs) {
 
   typedef boost::uniform_real<typename V1::value_type> dist_t;
 
-  BOOST_AUTO(Ps, temp_vector<V1>(ps.size()));
-  inclusive_scan_sum_exp(ps.begin(), ps.end(), Ps->begin());
+  typename sim_temp_vector<V1>::type Ps(ps.size());
+  inclusive_scan_sum_exp(ps, Ps);
 
-  dist_t dist(0, *(Ps->end() - 1));
+  dist_t dist(0, *(Ps.end() - 1));
   boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
 
   int i, p;
   for (i = 0; i < xs.size(); ++i) {
-    p = thrust::lower_bound(Ps->begin(), Ps->end(), gen()) - Ps->begin();
+    p = thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
     xs(i) = p;
   }
-
-  delete Ps;
 }
 
 #endif

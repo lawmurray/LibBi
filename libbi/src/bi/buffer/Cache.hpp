@@ -16,7 +16,7 @@ namespace bi {
  *
  * @ingroup io_cache
  *
- * @tparam CL Location for cache.
+ * @tparam T1 Cached type.
  */
 template<class T1>
 class Cache {
@@ -45,7 +45,7 @@ public:
    *
    * @return Page.
    */
-  const T1& get(const int p) const;
+  T1 get(const int p) const;
 
   /**
    * Write page.
@@ -95,7 +95,7 @@ inline int bi::Cache<T1>::size() const {
 }
 
 template<class T1>
-inline const T1& bi::Cache<T1>::get(const int p) const {
+inline T1 bi::Cache<T1>::get(const int p) const {
   /* pre-condition */
   assert (isValid(p));
 

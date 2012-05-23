@@ -9,7 +9,7 @@
 
 using namespace bi;
 
-SparseInputBufferState::SparseInputBufferState() : masks(NUM_NODE_TYPES) {
+SparseInputBufferState::SparseInputBufferState() : masks(NUM_VAR_TYPES) {
   //
 }
 
@@ -20,9 +20,15 @@ SparseInputBufferState::SparseInputBufferState(
   lens = o.lens;
 }
 
-SparseInputBuffer::SparseInputBuffer(const BayesNet& m) : m(m),
-    vDims(NUM_NODE_TYPES), masks0(NUM_NODE_TYPES) {
-  //
+SparseInputBuffer::SparseInputBuffer(const Model& m) : m(m),
+    vDims(NUM_VAR_TYPES), masks0(NUM_VAR_TYPES) {
+  VarType type;
+  int i;
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+    state.masks[type].resize(m.getNumVars(type));
+    masks0[type].resize(m.getNumVars(type));
+  }
 }
 
 void SparseInputBuffer::mark() {

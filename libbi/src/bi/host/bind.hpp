@@ -17,6 +17,8 @@ namespace bi {
  *
  * Bind state to global variables.
  *
+ * @tparam B Model type.
+ *
  * @param s State.
  *
  * The use of global variables for holding the state is motivated by the
@@ -32,84 +34,55 @@ namespace bi {
  * and device memory, to have a common interface for retrieving required
  * data regardless of memory type.
  */
-void bind(State<ON_HOST>& s);
+template<class B>
+void bind(State<B,ON_HOST>& s);
 
 /**
  * @internal
  *
- * @copydoc bind(State<ON_HOST>&)
+ * @copydoc bind(State<B,ON_HOST>&)
  */
-void bind(State<ON_DEVICE>& s);
-
-/**
- * @internal
- *
- * Bind static state to global variables.
- */
-void bind(Static<ON_HOST>& theta);
-
-/**
- * @internal
- *
- * @copydoc bind(Static<ON_HOST>&)
- */
-void bind(Static<ON_DEVICE>& theta);
+template<class B>
+void bind(State<B,ON_DEVICE>& s);
 
 /**
  * @internal
  *
  * Unbind state from global variables.
  */
-void unbind(const State<ON_HOST>& s);
+template<class B>
+void unbind(const State<B,ON_HOST>& s);
 
 /**
  * @internal
  *
  * Unbind state from global variables.
  */
-void unbind(const State<ON_DEVICE>& s);
-
-/**
- * @internal
- *
- * Unbind static state from global variables.
- */
-void unbind(const Static<ON_HOST>& theta);
-
-/**
- * @internal
- *
- * @copydoc unbind(Static<ON_HOST>&)
- */
-void unbind(const Static<ON_DEVICE>& theta);
+template<class B>
+void unbind(const State<B,ON_DEVICE>& s);
 
 }
 
-inline void bi::bind(State<ON_HOST>& s) {
-  host_bind_d(s.get(D_NODE));
-  host_bind_c(s.get(C_NODE));
-  host_bind_r(s.get(R_NODE));
-  host_bind_f(s.get(F_NODE));
-  host_bind_o(s.get(O_NODE));
-  host_bind_oy(s.get(OY_NODE));
-  host_bind_or(s.get(OR_NODE));
+template<class B>
+inline void bi::bind(State<B,ON_HOST>& s) {
+  host_bind_r(s.get(R_VAR));
+  host_bind_d(s.get(D_VAR));
+  host_bind_p(s.get(P_VAR));
+  host_bind_f(s.get(F_VAR));
+  host_bind_o(s.get(O_VAR));
+  host_bind_px(s.get(PX_VAR));
+  host_bind_dx(s.get(DX_VAR));
+  host_bind_ry(s.getAlt(R_VAR));
+  host_bind_dy(s.getAlt(D_VAR));
+  host_bind_py(s.getAlt(P_VAR));
+  host_bind_oy(s.getAlt(O_VAR));
+
+  const_host_bind_p(s.get(P_VAR));
+  const_host_bind_px(s.get(PX_VAR));
 }
 
-inline void bi::bind(Static<ON_HOST>& theta) {
-  host_bind_s(theta.get(S_NODE));
-  host_bind_p(theta.get(P_NODE));
-
-  if (theta.size() == 1) {
-    const_host_bind_s(theta.get(S_NODE));
-    const_host_bind_p(theta.get(P_NODE));
-  }
-}
-
-inline void bi::unbind(const State<ON_HOST>& s) {
-  //
-}
-
-inline void bi::unbind(const Static<ON_HOST>& theta) {
+template<class B>
+inline void bi::unbind(const State<B,ON_HOST>& s) {
   //
 }
 

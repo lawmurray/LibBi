@@ -9,10 +9,9 @@
 #define BI_METHOD_RESAMPLER_HPP
 
 #include "../state/State.hpp"
-#include "../state/Static.hpp"
 #include "../random/Random.hpp"
 #include "../math/scalar.hpp"
-#include "../math/locatable.hpp"
+#include "../misc/location.hpp"
 
 namespace bi {
 /**
@@ -41,7 +40,7 @@ struct resample_ancestors : public std::unary_function<
   /**
    * Constructor.
    */
-  CUDA_FUNC_HOST resample_ancestors(V1& as) : as(thrust::raw_pointer_cast(&as[0])), P(as.size()) {
+  CUDA_FUNC_HOST resample_ancestors(V1 as) : as(thrust::raw_pointer_cast(&as[0])), P(as.size()) {
     //
   }
 
@@ -93,8 +92,8 @@ struct resample_check : public std::binary_function<T,int,T> {
   CUDA_FUNC_BOTH T operator()(const T& lw, const int& o) {
     T eps;
 
-    if (IS_FINITE(lw)) {
-      eps = CUDA_EXP(lw - lW) - o/P; // P of type T, not int, see note above
+    if (BI_IS_FINITE(lw)) {
+      eps = BI_MATH_EXP(lw - lW) - o/P; // P of type T, not int, see note above
       eps *= eps;
     } else {
       eps = 0.0;
@@ -115,13 +114,13 @@ public:
    * @copydoc Resampler::permute()
    */
   template<class V1>
-  static void permute(V1& as);
+  static void permute(V1 as);
 
   /**
    * @copydoc Resampler::copy()
    */
   template<class V1, class M1>
-  static void copy(const V1& as, M1 s);
+  static void copy(const V1 as, M1 s);
 };
 
 /**
@@ -135,7 +134,7 @@ public:
    * @copydoc Resampler::permute()
    */
   template<class V1>
-  static void permute(V1& as) {
+  static void permute(V1 as) {
     /* pre-condition */
     assert (!V1::on_device);
 
@@ -156,22 +155,18 @@ public:
    * @copydoc Resampler::copy()
    */
   template<class V1, class M1>
-  static void copy(const V1& as, M1 X) {
+  static void copy(const V1 as, M1 X) {
     /* pre-condition */
+    assert (!V1::on_device);
     assert (!M1::on_device);
     assert (as.size() <= X.size1());
 
-    BOOST_AUTO(hostAs, host_map_vector(as));
-    if (V1::on_device) {
-      synchronize();
-    }
     int p;
-    for (p = 0; p < hostAs->size(); ++p) {
-      if ((*hostAs)[p] != p) {
-        row(X, p) = row(X, (*hostAs)[p]);
+    for (p = 0; p < as.size(); ++p) {
+      if (as[p] != p) {
+        row(X, p) = row(X, as[p]);
       }
     }
-    delete hostAs;
   }
 };
 
@@ -196,7 +191,7 @@ public:
    * @param[out] as Ancestry.
    */
   template<class V1, class V2>
-  static void ancestors(const V1& os, V2& as);
+  static void ancestors(const V1 os, V2 as);
 
   /**
    * Compute number of offspring of each particle given ancestors.
@@ -208,7 +203,7 @@ public:
    * @param[out] os Offspring.
    */
   template<class V1, class V2>
-  static void offspring(const V1& as, V2& os);
+  static void offspring(const V1 as, V2 os);
 
   /**
    * Permute ancestors to permit in-place copy.
@@ -218,7 +213,7 @@ public:
    * @param[in,out] as Ancestry.
    */
   template<class V1>
-  static void permute(V1& as);
+  static void permute(V1 as);
 
   /**
    * Correct weights after resampling with proposal.
@@ -237,7 +232,7 @@ public:
    * proposal weights (@p qlws) and \f$w^p\f$ the particle weights (@p lws).
    */
   template<class V1, class V2, class V3>
-  static void correct(const V1& as, const V2& qlws, V3& lws);
+  static void correct(const V1 as, const V2 qlws, V3 lws);
 
   /**
    * Replicate and eliminate particles based on ancestry.
@@ -255,16 +250,16 @@ public:
    * constraint.
    */
   template<class V1, class M1>
-  static void copy(const V1& as, M1 X);
+  static void copy(const V1 as, M1 X);
 
   /**
    * Replicate and eliminate particles based on ancestry.
    *
    * @tparam V1 Vector type.
+   * @tparam B Model type.
    * @tparam L Location.
    *
    * @param as Ancestry.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
    * The copy is performed in-place. For each particle @c i that is to be
@@ -273,8 +268,8 @@ public:
    * but not both. Use permute() to ensure that an ancestry satisfies this
    * constraint.
    */
-  template<class V1, Location L>
-  static void copy(const V1& as, Static<L>& theta, State<L>& s);
+  template<class V1, class B, Location L>
+  static void copy(const V1 as, State<B,L>& s);
 
   /**
    * Compute squared error of ancestry.
@@ -297,7 +292,7 @@ public:
    * where \f$W\f$ is the sum of weights.
    */
   template<class V1, class V2>
-  static typename V1::value_type error(const V1& lws, const V2& os);
+  static typename V1::value_type error(const V1 lws, const V2 os);
 
   /**
    * Compute log-likelihood of ancestry.
@@ -312,15 +307,16 @@ public:
    * distribution defined by the weights.
    */
   template<class V1, class V2>
-  static typename V1::value_type loglikelihood(const V1& lws, const V2& os);
+  static typename V1::value_type loglikelihood(const V1 lws, const V2 os);
   //@}
 
 };
 
 }
 
-#include "../math/primitive.hpp"
-#include "../cuda/math/temp_vector.hpp"
+#include "../primitive/vector_primitive.hpp"
+#include "../math/temp_vector.hpp"
+#include "../math/sim_temp_vector.hpp"
 
 #include "thrust/inner_product.h"
 #include "thrust/iterator/counting_iterator.h"
@@ -338,60 +334,53 @@ public:
 #include "boost/mpl/if.hpp"
 
 template<class V1, class V2>
-void bi::Resampler::ancestors(const V1& os, V2& as) {
+void bi::Resampler::ancestors(const V1 os, V2 as) {
   /* pre-conditions */
-  assert (bi::sum(os.begin(), os.end(), 0) == as.size());
+  assert (sum_reduce(os) == as.size());
 
-  BOOST_AUTO(Os, temp_vector<V1>(os.size()));
-  thrust::exclusive_scan(os.begin(), os.end(), Os->begin());
+  typename sim_temp_vector<V1>::type Os(os.size());
+  thrust::exclusive_scan(os.begin(), os.end(), Os.begin());
   BOOST_AUTO(first, thrust::make_zip_iterator(thrust::make_tuple(
       thrust::counting_iterator<int>(0),
       os.begin(),
-      Os->begin())));
+      Os.begin())));
   BOOST_AUTO(last, thrust::make_zip_iterator(thrust::make_tuple(
       thrust::counting_iterator<int>(os.size()),
       os.end(),
-      Os->end())));
+      Os.end())));
   thrust::for_each(first, last, resample_ancestors<V2>(as));
-
-  synchronize();
-  delete Os;
 }
 
 template<class V1, class V2>
-void bi::Resampler::offspring(const V1& as, V2& os) {
+void bi::Resampler::offspring(const V1 as, V2 os) {
   /* pre-conditions */
   assert (os.size() == as.size());
 
   const int P = os.size();
-  BOOST_AUTO(keys, temp_vector<V1>(2*P));
-  BOOST_AUTO(values, temp_vector<V1>(2*P));
+  typename sim_temp_vector<V1>::type keys(2*P), values(2*P);
 
   /* keys will consist of ancestry in [0..P-1], and 0..P-1 in [P..2P-1],
    * ensuring that all particle indices are represented */
-  thrust::copy(as.begin(), as.end(), keys->begin());
-  thrust::sequence(keys->begin() + P, keys->end());
+  thrust::copy(as.begin(), as.end(), keys.begin());
+  thrust::sequence(keys.begin() + P, keys.end());
 
   /* values are 1 for indices originally from the ancestry, 0 for others */
-  thrust::fill(values->begin(), values->begin() + P, 1);
-  thrust::fill(values->begin() + P, values->end(), 0);
+  thrust::fill(values.begin(), values.begin() + P, 1);
+  thrust::fill(values.begin() + P, values.end(), 0);
 
   /* sort all that by key */
-  thrust::sort_by_key(keys->begin(), keys->end(), values->begin());
+  bi::sort_by_key(keys, values);
 
   /* reduce by key to get final offspring counts */
-  thrust::reduce_by_key(keys->begin(), keys->end(), values->begin(),
-      keys->begin(), os.begin());
-
-  delete keys;
-  delete values;
+  thrust::reduce_by_key(keys.begin(), keys.end(), values.begin(),
+      keys.begin(), os.begin());
 
   /* post-condition */
-  assert(thrust::reduce(os.begin(), os.end()) == (int)P);
+  assert(thrust::reduce(os.begin(), os.end()) == P);
 }
 
 template<class V1>
-void bi::Resampler::permute(V1& as) {
+void bi::Resampler::permute(V1 as) {
   typedef typename boost::mpl::if_c<V1::on_device,
       ResamplerDeviceImpl,
       ResamplerHostImpl>::type impl;
@@ -399,34 +388,24 @@ void bi::Resampler::permute(V1& as) {
 }
 
 template<class V1, class V2, class V3>
-void bi::Resampler::correct(const V1& as, const V2& qlws, V3& lws) {
+void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
   /* pre-condition */
   assert (qlws.size() == lws.size());
 
   typedef typename V3::value_type T3;
   const int P = as.size();
 
-  BOOST_AUTO(as1, map_vector(lws, as));
-  BOOST_AUTO(qlws1, map_vector(lws, qlws));
-  BOOST_AUTO(num, temp_vector<V3>(P));
-  BOOST_AUTO(den, temp_vector<V3>(P));
-  synchronize();
+  typename sim_temp_vector<V3>::type num(P), den(P);
 
-  thrust::gather(as1->begin(), as1->end(), lws.begin(), num->begin());
-  thrust::gather(as1->begin(), as1->end(), qlws1->begin(), den->begin());
+  thrust::gather(as.begin(), as.end(), lws.begin(), num.begin());
+  thrust::gather(as.begin(), as.end(), qlws.begin(), den.begin());
   lws.resize(P);
-  thrust::transform(num->begin(), num->end(), den->begin(), lws.begin(),
+  thrust::transform(num.begin(), num.end(), den.begin(), lws.begin(),
       thrust::minus<T3>());
-
-  synchronize();
-  delete as1;
-  delete qlws1;
-  delete num;
-  delete den;
 }
 
 template<class V1, class M1>
-void bi::Resampler::copy(const V1& as, M1 s) {
+void bi::Resampler::copy(const V1 as, M1 s) {
   /* pre-condition */
   assert (as.size() <= s.size1());
 
@@ -436,53 +415,24 @@ void bi::Resampler::copy(const V1& as, M1 s) {
   impl::copy(as, s);
 }
 
-template<class V1, bi::Location L>
-void bi::Resampler::copy(const V1& as, Static<L>& theta, State<L>& s) {
-  bool own = theta.size() > 1;
-
+template<class V1, class B, bi::Location L>
+void bi::Resampler::copy(const V1 as, State<B,L>& s) {
   s.resize(std::max(s.size(), as.size()), true);
-  if (own) {
-    theta.resize(std::max(theta.size(), as.size()), true);
-  }
-
-  /* create views of all nodes together, to allow copy in one kernel
-   * launch when operating on device */
-  BOOST_AUTO(X, columns(s.X, 0, s.get(D_NODE).size2() + s.get(C_NODE).size2() + s.get(R_NODE).size2()));
-  BOOST_AUTO(K, columns(theta.K, 0, theta.get(S_NODE).size2() + theta.get(P_NODE).size2()));
-
-  if (V1::on_device == State<L>::on_device) {
-    copy(as, X);
-    if (own) {
-      copy(as, K);
-    }
-  } else {
-    BOOST_AUTO(as1, map_vector(s, as));
-    synchronize();
-    copy(*as1, X);
-    if (own) {
-      copy(*as1, K);
-    }
-    synchronize();
-    delete as1;
-  }
-
+  copy(as, s.getDyn());
   s.resize(as.size(), true);
-  if (own) {
-    theta.resize(as.size(), true);
-  }
 }
 
 template<class V1, class V2>
-typename V1::value_type bi::Resampler::error(const V1& lws, const V2& os) {
-  real lW = log_sum_exp(lws.begin(), lws.end(), REAL(0.0));
+typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
+  real lW = log_sum_exp(lws.begin(), lws.end(), BI_REAL(0.0));
 
-  return thrust::inner_product(lws.begin(), lws.end(), os.begin(), REAL(0.0),
+  return thrust::inner_product(lws.begin(), lws.end(), os.begin(), BI_REAL(0.0),
       thrust::plus<real>(), resample_check<real>(lW, lws.size()));
 }
 
 template<class V1, class V2>
-typename V1::value_type bi::Resampler::loglikelihood(const V1& lws,
-    const V2& os) {
+typename V1::value_type bi::Resampler::loglikelihood(const V1 lws,
+    const V2 os) {
   /* pre-condition */
   assert (lws.size() == os.size());
 
@@ -499,10 +449,10 @@ typename V1::value_type bi::Resampler::loglikelihood(const V1& lws,
   T1 logDen = thrust::reduce(iter2, iter2 + P);
 
   /* exponent */
-  T1 lW = log_sum_exp(lws.begin(), lws.end(), REAL(0.0)); // log total weight
+  T1 lW = log_sum_exp(lws.begin(), lws.end(), BI_REAL(0.0)); // log total weight
   BOOST_AUTO(nlws, thrust::make_transform_iterator(lws.begin(),
       add_constant_functor<T1>(-lW))); // normalised log weights
-  T1 expon = thrust::inner_product(os.begin(), os.end(), nlws, REAL(0.0));
+  T1 expon = thrust::inner_product(os.begin(), os.end(), nlws, BI_REAL(0.0));
 
   return logNum - logDen + expon;
 }

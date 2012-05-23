@@ -8,10 +8,8 @@
 #ifndef BI_BUFFER_NCVARBUFFER_HPP
 #define BI_BUFFER_NCVARBUFFER_HPP
 
-#include "../math/host_matrix.hpp"
-#include "../math/host_vector.hpp"
-#include "../math/temp_vector.hpp"
-#include "../math/view.hpp"
+#include "../math/matrix.hpp"
+#include "../math/vector.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -54,6 +52,11 @@ public:
    * @see NetCDF C++ interface.
    */
   const char* name();
+
+  /**
+   * @see NetCDF C++ interface.
+   */
+  int num_dims();
 
   /**
    * @see NetCDF C++ interface.
@@ -120,6 +123,9 @@ private:
 };
 }
 
+#include "../math/temp_vector.hpp"
+#include "../math/view.hpp"
+
 template<class T>
 bi::NcVarBuffer<T>::NcVarBuffer(NcVar* var) :
     var(var), offset(0), k(0), K(0), useCache(true) {
@@ -138,6 +144,11 @@ bi::NcVarBuffer<T>::~NcVarBuffer() {
 template<class T>
 const char* bi::NcVarBuffer<T>::name() {
   return var->name();
+}
+
+template<class T>
+inline int bi::NcVarBuffer<T>::num_dims() {
+  return var->num_dims();
 }
 
 template<class T>
@@ -242,14 +253,12 @@ NcBool bi::NcVarBuffer<T>::get(T* buf, const long* counts) {
     } else {
       /* don't have what we need in buffer, defer to underlying file */
       assert (k == K);
-      BOOST_AUTO(offsets, host_temp_vector<long>(var->num_dims()));
-      offsets->clear();
-      (*offsets)(offsets->size() - 1) = offset;
+      temp_host_vector<long>::type offsets(var->num_dims());
+      offsets.clear();
+      offsets(offsets.size() - 1) = offset;
 
-      ret = var->set_cur(offsets->buf());
+      ret = var->set_cur(offsets.buf());
       ret = var->get(buf, counts);
-
-      delete offsets;
     }
   } else {
     flush();
@@ -267,22 +276,18 @@ inline NcVar* bi::NcVarBuffer<T>::get_var() {
 template<class T>
 void bi::NcVarBuffer<T>::flush() {
   if (K > 0) {
-    BOOST_AUTO(offsets, host_temp_vector<long>(var->num_dims()));
-    BOOST_AUTO(counts, host_temp_vector<long>(var->num_dims()));
+    temp_host_vector<long>::type offsets(var->num_dims()), counts(var->num_dims());
 
-    bi::fill(counts->begin(), counts->end(), 1);
-    (*offsets)(offsets->size() - 1) = offset;
-    (*counts)(counts->size() - 1) = K;
+    set_elements(counts, 1);
+    offsets(offsets.size() - 1) = offset;
+    counts(counts.size() - 1) = K;
 
     int j = 0;
-    write(offsets->buf(), counts->buf(), 0, j);
+    write(offsets.buf(), counts.buf(), 0, j);
     assert (j == this->buf.size2());
 
     k = 0;
     K = 0;
-
-    delete offsets;
-    delete counts;
   }
 
   /* post-condition */

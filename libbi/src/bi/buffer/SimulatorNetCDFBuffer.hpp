@@ -11,9 +11,6 @@
 #include "NetCDFBuffer.hpp"
 #include "NcVarBuffer.hpp"
 #include "../state/State.hpp"
-#include "../math/locatable.hpp"
-#include "../misc/Pipelineable.hpp"
-#include "../math/temp_matrix.hpp"
 #include "../method/misc.hpp"
 
 #include <vector>
@@ -28,37 +25,29 @@ namespace bi {
  *
  * #concept::SimulatorBuffer
  */
-class SimulatorNetCDFBuffer :
-    public NetCDFBuffer,
-    public Pipelineable<host_matrix_temp_type<real>::type> {
+class SimulatorNetCDFBuffer : public NetCDFBuffer {
 public:
   /**
    * Constructor.
    *
-   * @param m BayesNet.
+   * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes and s-nodes should be
-   * read/written.
    */
-  SimulatorNetCDFBuffer(const BayesNet& m, const std::string& file,
-      const FileMode mode = READ_ONLY,
-      const StaticHandling flag = STATIC_SHARED);
+  SimulatorNetCDFBuffer(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY);
 
   /**
    * Constructor.
    *
-   * @param m BayesNet.
+   * @param m Model.
    * @param P Number of trajectories to hold in file.
    * @param T Number of time points to hold in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes and s-nodes should be
-   * read/written.
    */
-  SimulatorNetCDFBuffer(const BayesNet& m, const int P, const int T,
-      const std::string& file, const FileMode mode = READ_ONLY,
-      const StaticHandling flag = STATIC_SHARED);
+  SimulatorNetCDFBuffer(const Model& m, const int P, const int T,
+      const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
    * Destructor.
@@ -101,39 +90,38 @@ public:
    * @copydoc concept::SimulatorBuffer::readState()
    */
   template<class M1>
-  void readState(const NodeType type, const int t, M1 s);
+  void readState(const VarType type, const int t, M1 X);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeState()
    */
   template<class M1>
-  void writeState(const NodeType type, const int t, const M1 s,
+  void writeState(const VarType type, const int t, const M1 X,
       const int p = 0);
 
   /**
    * @copydoc concept::SimulatorBuffer::readTrajectory()
    */
   template<class M1>
-  void readTrajectory(const NodeType type, const int p, M1 x);
+  void readTrajectory(const VarType type, const int p, M1 X);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeTrajectory()
    */
   template<class M1>
-  void writeTrajectory(const NodeType type, const int p, const M1 x);
+  void writeTrajectory(const VarType type, const int p, const M1 X);
 
   /**
    * @copydoc concept::SimulatorBuffer::readSingle()
    */
   template<class V1>
-  void readSingle(const NodeType type, const int p, const int t, V1 x);
+  void readSingle(const VarType type, const int p, const int t, V1 x);
 
   /**
    * @copydoc concept::SimulatorBuffer::writeSingle()
    */
   template<class V1>
-  void writeSingle(const NodeType type, const int p, const int t,
-      const V1 x);
+  void writeSingle(const VarType type, const int p, const int t, const V1 x);
 
 protected:
   /**
@@ -157,7 +145,7 @@ protected:
   /**
    * Model.
    */
-  const BayesNet& m;
+  const Model& m;
 
   /**
    * Time dimension.
@@ -165,19 +153,9 @@ protected:
   NcDim* nrDim;
 
   /**
-   * Z-dimension.
+   * Model dimensions.
    */
-  NcDim* nzDim;
-
-  /**
-   * Y-dimension.
-   */
-  NcDim* nyDim;
-
-  /**
-   * X-dimension.
-   */
-  NcDim* nxDim;
+  std::vector<NcDim*> nDims;
 
   /**
    * P-dimension (trajectories).
@@ -193,11 +171,6 @@ protected:
    * Node variables, indexed by type.
    */
   std::vector<std::vector<NcVarBuffer<real>*> > vars;
-
-  /**
-   * Static handling flag.
-   */
-  StaticHandling flag;
 };
 }
 
@@ -217,362 +190,379 @@ void bi::SimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
   /* pre-condition */
   assert (t >= 0 && t + T <= nrDim->size());
 
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading " << tVar->name());
-  ret = tVar->get(x.buf(), T);
-  BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds reading " << tVar->name());
+
+  if (V1::on_device || x.inc() != 1) {
+    temp_vector_type x1(x.size());
+    ret = tVar->get(x1.buf(), T);
+    BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+    x = x1;
+  } else {
+    ret = tVar->get(x.buf(), T);
+    BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+  }
 }
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T, const V1 x) {
+void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T,
+    const V1 x) {
   /* pre-condition */
   assert (t >= 0 && t + T <= nrDim->size());
 
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size writing " << tVar->name());
-  ret = tVar->put(x.buf(), T);
+  BI_ASSERT(ret, "Indexing out of bounds writing " << tVar->name());
+
+  if (V1::on_device || x.inc() != 1) {
+    temp_vector_type x1(x.size());
+    x1 = x;
+    synchronize(V1::on_device);
+    ret = tVar->put(x1.buf(), T);
+  } else {
+    ret = tVar->put(x.buf(), T);
+  }
   BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readState(const NodeType type,
-    const int t, M1 s) {
-  long offsets[5], counts[5];
+void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
+    M1 X) {
+  /* pre-conditions */
+  assert (X.size1() == npDim->size());
+
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
   BI_UNUSED NcBool ret;
 
-  int start, id, j, size;
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    BI_ERROR (vars[type][id] != NULL, "Variable " <<
-        m.getNode(type, id)->getName() << " does not exist in file");
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
 
-    j = 0;
-    size = 1;
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = t;
-      counts[j] = 1;
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nzDim) {
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
       offsets[j] = 0;
-      counts[j] = nzDim->size();
-      size *= nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      size *= nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      size *= nxDim->size();
-      ++j;
-    }
-    assert (vars[type][id]->get_dim(j) == npDim);
-    offsets[j] = 0;
-    counts[j] = s.size1();
+      counts[j] = X.size1();
 
-    start = m.getNodeStart(type, id);
-    ret = vars[type][id]->get_var()->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
+      ret = ncVar->get_var()->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
 
-    if (M1::on_device) {
-      /* read into contiguous buffer on host */
-      clean();
-      BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), size));
-      ret = vars[type][id]->get_var()->get(buf->buf(), counts);
-      subrange(s, 0, s.size1(), start, size) = *buf;
-      add(buf);
-    } else {
-      ret = vars[type][id]->get_var()->get(subrange(s, 0, s.size1(), start, size).buf(), counts);
+      if (M1::on_device || X.lead() != X.size1()) {
+        temp_matrix_type X1(X.size1(), size);
+        ret = ncVar->get_var()->get(X1.buf(), counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        columns(X, start, size) = X1;
+      } else {
+        ret = ncVar->get_var()->get(columns(X, start, size).buf(),
+            counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      }
     }
-    BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
   }
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::writeState(const NodeType type,
-    const int t, const M1 s, const int p) {
-  long offsets[5], counts[5];
+void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
+    const M1 X, const int p) {
+  /* pre-conditions */
+  assert (X.size1() <= npDim->size());
+
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
   BI_UNUSED NcBool ret;
 
-  int start, id, j, size;
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    BI_ERROR (vars[type][id] != NULL, "Variable " <<
-        m.getNode(type, id)->getName() << " does not exist in file");
-    j = 0;
-    size = 1;
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = t;
-      counts[j] = 1;
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nzDim) {
-      offsets[j] = 0;
-      counts[j] = nzDim->size();
-      size *= nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      size *= nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      size *= nxDim->size();
-      ++j;
-    }
-    assert (vars[type][id]->get_dim(j) == npDim);
-    offsets[j] = p;
-    counts[j] = s.size1();
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
 
-    start = m.getNodeStart(type, id);
-    ret = vars[type][id]->get_var()->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
 
-    if (M1::on_device || s.size1() != s.lead()) { // on device or not contiguous
-      /* copy to contiguous buffer on host */
-      BOOST_AUTO(buf, host_temp_matrix<real>(s.size1(), size));
-      *buf = subrange(s, 0, s.size1(), start, size);
-      synchronize();
-      ret = vars[type][id]->get_var()->put(buf->buf(), counts);
-      delete buf;
-    } else {
-      ret = vars[type][id]->get_var()->put(subrange(s, 0, s.size1(), start, size).buf(), counts);
-		}
-    BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
+      counts[j] = X.size1();
+
+      ret = ncVar->get_var()->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+
+      if (M1::on_device || X.lead() != X.size1()) {
+        temp_matrix_type X1(X.size1(), size);
+        X1 = columns(X, start, size);
+        synchronize(M1::on_device);
+        ret = ncVar->get_var()->put(X1.buf(), counts.buf());
+      } else {
+        ret = ncVar->get_var()->put(columns(X, start, size).buf(),
+            counts.buf());
+      }
+      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    }
   }
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readTrajectory(const NodeType type,
-    const int p, M1 x) {
+void bi::SimulatorNetCDFBuffer::readTrajectory(const VarType type,
+    const int p, M1 X) {
+  /* pre-conditions */
+  assert (p >= 0 && p < npDim->size());
+  assert (X.size1() == m.getNetSize(type));
+  assert (X.size2() == nrDim->size());
+
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
+  BI_UNUSED NcBool ret;
+
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
+
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
+
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = 0;
+        counts[j] = nrDim->size();
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
+      counts[j] = 1;
+
+      temp_matrix_type X1(size, X.size2());
+      ret = ncVar->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      ret = ncVar->get(X1.buf(), counts.buf());
+      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      rows(X, start, size) = X1;
+    }
+  }
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeTrajectory(const VarType type,
+    const int p, const M1 X) {
   /* pre-conditions */
   assert (p < npDim->size());
-  assert (x.size1() == m.getNetSize(type));
-  assert (x.size2() == nrDim->size());
+  assert (X.size1() == m.getNetSize(type));
+  assert (X.size2() == nrDim->size());
 
-  int id, j, start, size;
-  long offsets[5];
-  long counts[5];
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
   BI_UNUSED NcBool ret;
 
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    start = m.getNodeStart(type, id);
-    size = m.getNodeSize(type, id);
-    j = 0;
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
 
-    clean();
-    BOOST_AUTO(x1, host_temp_matrix<typename M1::value_type>(size, nrDim->size()));
-    assert(x1->size1() == x1->lead());
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = 0;
-      counts[j] = nrDim->size();
-      ++j;
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = 0;
+        counts[j] = nrDim->size();
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
+      counts[j] = 1;
+
+      temp_matrix_type X1(size, X1.size2());
+      X1 = rows(X, start, size);
+      ret = ncVar->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      ret = ncVar->put(X1.buf(), counts.buf());
+      BI_ASSERT(ret, "Inconvertible type writing " << ncVar->name());
     }
-    if (vars[type][id]->get_dim(j) == nzDim) {
-      offsets[j] = 0;
-      counts[j] = nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      ++j;
-    }
-    offsets[j] = p;
-    counts[j] = 1;
-
-    ret = vars[type][id]->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
-    ret = vars[type][id]->get(x1->buf(), counts);
-    BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
-    rows(x, start, size) = *x1;
-    add(x1);
-  }
-}
-
-template<class M1>
-void bi::SimulatorNetCDFBuffer::writeTrajectory(const NodeType type,
-    const int p, const M1 x) {
-  /* pre-conditions */
-  assert (p < npDim->size());
-  assert (x.size1() == m.getNetSize(type));
-  assert (x.size2() == nrDim->size());
-
-  int id, j, start, size;
-  long offsets[5];
-  long counts[5];
-  BI_UNUSED NcBool ret;
-
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    start = m.getNodeStart(type, id);
-    size = m.getNodeSize(type, id);
-    j = 0;
-
-    BOOST_AUTO(x1, host_temp_matrix<typename M1::value_type>(size, nrDim->size()));
-    assert(x1->size1() == x1->lead());
-
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = 0;
-      counts[j] = nrDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nzDim) {
-      offsets[j] = 0;
-      counts[j] = nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      ++j;
-    }
-    offsets[j] = p;
-    counts[j] = 1;
-
-    *x1 = rows(x, start, size);
-    ret = vars[type][id]->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
-    synchronize();
-    ret = vars[type][id]->put(x1->buf(), counts);
-    BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
-    delete x1;
   }
 }
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::readSingle(const NodeType type,
-    const int p, const int t, V1 x) {
+void bi::SimulatorNetCDFBuffer::readSingle(const VarType type, const int p,
+    const int t, V1 x) {
   /* pre-conditions */
   assert (t >= 0 && t < nrDim->size());
   assert (p >= 0 && p < npDim->size());
   assert (x.size() == m.getNetSize(type));
 
-  int id, j, start, size;
-  long offsets[5];
-  long counts[5];
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, id, i, j, size, dims;
   BI_UNUSED NcBool ret;
 
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    start = m.getNodeStart(type, id);
-    size = 1;
-    j = 0;
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = t;
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
+
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
       counts[j] = 1;
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nzDim) {
-      offsets[j] = 0;
-      counts[j] = nzDim->size();
-      size *= nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      size *= nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      size *= nxDim->size();
-      ++j;
-    }
-    offsets[j] = p;
-    counts[j] = 1;
 
-    ret = vars[type][id]->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size reading " << vars[type][id]->name());
-
-    if (V1::on_device || x.inc() > 1) {
-      clean();
-      BOOST_AUTO(buf, host_temp_matrix<real>(size, 1));
-      ret = vars[type][id]->get(buf->buf(), counts);
-      subrange(x, start, size) = column(*buf, 0);
-      add(buf);
-    } else {
-      ret = vars[type][id]->get(x.buf() + start, counts);
+      ret = ncVar->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      if (V1::on_device || x.inc() != 1) {
+        temp_vector_type x1(size);
+        ret = ncVar->get(x1.buf(), counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        subrange(x, start, size) = x1;
+      } else {
+        ret = ncVar->get(subrange(x, start, size).buf(), counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      }
     }
-    BI_ASSERT(ret, "Inconvertible type reading " << vars[type][id]->name());
   }
 }
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::writeSingle(const NodeType type,
+void bi::SimulatorNetCDFBuffer::writeSingle(const VarType type,
     const int p, const int t, const V1 x) {
   /* pre-conditions */
   assert (t >= 0 && t < nrDim->size());
   assert (p >= 0 && p < npDim->size());
-  assert (x.size() == m.getNetSize(type) && x.inc() == 1);
+  assert (x.size() == m.getNetSize(type));
 
-  int id, j, start;
-  long offsets[5];
-  long counts[5];
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
   BI_UNUSED NcBool ret;
 
-  BOOST_AUTO(buf, host_map_matrix(x));
-  if (V1::on_device) {
-    synchronize();
-  }
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
 
-  for (id = 0; id < m.getNumNodes(type); ++id) {
-    start = m.getNodeStart(type, id);
-    j = 0;
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
 
-    if (vars[type][id]->get_dim(j) == nrDim) {
-      offsets[j] = t;
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
       counts[j] = 1;
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nzDim) {
-      offsets[j] = 0;
-      counts[j] = nzDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nyDim) {
-      offsets[j] = 0;
-      counts[j] = nyDim->size();
-      ++j;
-    }
-    if (vars[type][id]->get_dim(j) == nxDim) {
-      offsets[j] = 0;
-      counts[j] = nxDim->size();
-      ++j;
-    }
-    offsets[j] = p;
-    counts[j] = 1;
 
-    ret = vars[type][id]->set_cur(offsets);
-    BI_ASSERT(ret, "Index exceeds size writing " << vars[type][id]->name());
-    ret = vars[type][id]->put(buf->buf() + start, counts);
-    BI_ASSERT(ret, "Inconvertible type writing " << vars[type][id]->name());
+      ret = ncVar->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+
+      if (V1::on_device || x.inc() != 1) {
+        temp_vector_type x1(size);
+        x1 = subrange(x, start, size);
+        synchronize(V1::on_device);
+        ret = ncVar->put(x1.buf(), counts.buf());
+      } else {
+        ret = ncVar->put(subrange(x, start, size).buf(), counts.buf());
+      }
+      BI_ASSERT(ret, "Inconvertible type writing " << ncVar->name());
+    }
   }
-
-  delete buf;
 }
 
 #endif

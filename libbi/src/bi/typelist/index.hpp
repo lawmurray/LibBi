@@ -45,6 +45,16 @@ struct index_impl<tail,X,X,reps> {
   static const int value = reps;
 };
 
+/**
+ * @internal
+ *
+ * Implementation, error case.
+ */
+template<class head, class X, unsigned reps>
+struct index_impl<empty_typelist,head,X,reps> {
+  //
+};
+
 }
 
 #endif

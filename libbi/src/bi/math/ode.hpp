@@ -11,7 +11,7 @@
 #ifndef BI_MATH_ODE_HPP
 #define BI_MATH_ODE_HPP
 
-#include "../ode/IntegratorConstants.hpp"
+#include "../host/ode/IntegratorConstants.hpp"
 
 /**
  * Set basic ODE parameters.

@@ -12,11 +12,8 @@
 
 #include <iostream>
 
-#include "../cuda/cuda.hpp"
-#include "host_vector.hpp"
-#include "host_matrix.hpp"
-#include "../cuda/math/vector.hpp"
-#include "../cuda/math/matrix.hpp"
+#include "vector.hpp"
+#include "matrix.hpp"
 
 /**
  * Output host vector.
@@ -26,7 +23,7 @@
  * @param X Host matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1>& x) {
+std::ostream& operator<<(std::ostream& stream, const bi::host_vector_handle<T1>& x) {
   int i;
   for (i = 0; i < x.size(); ++i) {
     stream << x(i);
@@ -38,30 +35,6 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T
 }
 
 /**
- * Output device vector.
- *
- * @tparam T1 Scalar type.
- *
- * @param X Device matrix.
- */
-template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1>& x) {
-  BOOST_AUTO(z, bi::host_map_vector(x));
-  int i;
-
-  bi::synchronize();
-  for (i = 0; i < z->size(); ++i) {
-    stream << (*z)(i);
-    if (i != z->size() - 1) {
-      stream << ' ';
-    }
-  }
-  delete z;
-
-  return stream;
-}
-
-/**
  * Output host matrix.
  *
  * @tparam T1 Scalar type.
@@ -69,7 +42,7 @@ std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1
  * @param X Host matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1>& X) {
+std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_handle<T1>& X) {
   int i, j;
   for (i = 0; i < X.size1(); ++i) {
     for (j = 0; j < X.size2(); ++j) {
@@ -84,6 +57,31 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T
   return stream;
 }
 
+#ifdef ENABLE_GPU
+/**
+ * Output device vector.
+ *
+ * @tparam T1 Scalar type.
+ *
+ * @param X Device matrix.
+ */
+template<class T1>
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_handle<T1>& x) {
+  using namespace bi;
+
+  typename temp_host_vector<T1>::type z(x);
+  synchronize();
+
+  int i;
+  for (i = 0; i < z.size(); ++i) {
+    stream << z(i);
+    if (i != z.size() - 1) {
+      stream << ' ';
+    }
+  }
+  return stream;
+}
+
 /**
  * Output device matrix.
  *
@@ -92,24 +90,25 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T
  * @param X Device matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1>& X) {
-  BOOST_AUTO(Z, bi::host_map_matrix(X));
-  int i, j;
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_handle<T1>& X) {
+  using namespace bi;
 
-  bi::synchronize();
-  for (i = 0; i < Z->size1(); ++i) {
-    for (j = 0; j < Z->size2(); ++j) {
-      stream << (*Z)(i,j);
-      if (j != Z->size2() - 1) {
+  typename temp_host_matrix<T1>::type Z(X);
+  synchronize();
+
+  int i, j;
+  for (i = 0; i < Z.size1(); ++i) {
+    for (j = 0; j < Z.size2(); ++j) {
+      stream << Z(i,j);
+      if (j != Z.size2() - 1) {
         stream << ' ';
-      } else if (i != X.size1() - 1) {
+      } else if (i != Z.size1() - 1) {
         stream << std::endl;
       }
     }
   }
-  delete Z;
-
   return stream;
 }
+#endif
 
 #endif

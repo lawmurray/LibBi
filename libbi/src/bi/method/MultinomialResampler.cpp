@@ -7,7 +7,7 @@
  */
 #include "MultinomialResampler.hpp"
 
-bi::MultinomialResampler::MultinomialResampler(Random& rng, const bool sort)
-    : rng(rng), sort(sort) {
+bi::MultinomialResampler::MultinomialResampler(const bool sort) :
+    sort(sort) {
   //
 }

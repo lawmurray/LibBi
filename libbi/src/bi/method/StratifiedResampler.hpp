@@ -10,7 +10,7 @@
 
 #include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
-#include "../cuda/math/vector.hpp"
+#include "../math/vector.hpp"
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
 #include "../misc/exception.hpp"
@@ -46,8 +46,8 @@ struct resample_offspring : public std::unary_function<T,int> {
    * @return Number of offspring for particle at this index.
    */
   CUDA_FUNC_BOTH int operator()(const T Ws) {
-    if (W > REAL(0.0) && Ws > REAL(0.0)) {
-      return static_cast<int>(Ws/W*n - a + REAL(1.0));
+    if (W > BI_REAL(0.0) && Ws > BI_REAL(0.0)) {
+      return static_cast<int>(Ws/W*n - a + BI_REAL(1.0));
     } else {
       return 0;
     }
@@ -67,45 +67,41 @@ public:
   /**
    * Constructor.
    *
-   * @param rng Random number generator.
    * @param sort True to pre-sort weights, false otherwise.
    */
-  StratifiedResampler(Random& rng, const bool sort = true);
+  StratifiedResampler(const bool sort = true);
 
   /**
    * @name High-level interface
    */
   //@{
   /**
-   * @copydoc concept::Resampler::resample(V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class B, Location L>
+  void resample(Random&, V1 lws, V2 as, State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta,
-      State<L>& s) throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type,
-   * V1&, V2&)
-   */
-  template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random&, const V1 qlws, V2 lws, V3 as, State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type,
-   * const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as,
-      Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class B, Location L>
+  void resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
+
+  /**
+   * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, State<B,L>&)
+   */
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
+      State<B,L>& s) throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -118,21 +114,17 @@ public:
    * @tparam V1 Floating point vector type.
    * @tparam V2 Integral vector type.
    *
+   * @param rng Random number generator.
    * @param lws Log-weights.
    * @param[out] o Offspring.
    * @param n Number of samples to draw.
    */
   template<class V1, class V2>
-  void offspring(const V1& lws, V2& o, const int n)
+  void offspring(Random& rng, const V1 lws, V2 o, const int n)
       throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
-  /**
-   * Random number generator.
-   */
-  Random& rng;
-
   /**
    * Pre-sort weights?
    */
@@ -140,11 +132,11 @@ private:
 };
 }
 
-#include "../math/functor.hpp"
-#include "../math/primitive.hpp"
-#include "../math/locatable.hpp"
+#include "../primitive/vector_primitive.hpp"
+#include "../primitive/matrix_primitive.hpp"
+#include "../misc/location.hpp"
 #include "../math/temp_vector.hpp"
-#include "../cuda/math/temp_vector.hpp"
+#include "../math/sim_temp_vector.hpp"
 
 #include "thrust/sequence.h"
 #include "thrust/fill.h"
@@ -156,185 +148,96 @@ private:
 #include "thrust/for_each.h"
 #include "thrust/adjacent_difference.h"
 
-template<class V1, class V2, bi::Location L>
-void bi::StratifiedResampler::resample(V1& lws, V2& as, Static<L>& theta,
-    State<L>& s) throw (ParticleFilterDegeneratedException) {
+template<class V1, class V2, class B, bi::Location L>
+void bi::StratifiedResampler::resample(Random& rng, V1 lws, V2 as,
+    State<B,L>& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
   /* typically faster on host, so copy to there */
-  BOOST_AUTO(lws1, host_map_vector(lws));
-  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
-  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
+  const int P = lws.size();
+  typename sim_temp_vector<V2>::type os(P);
 
-  if (V1::on_device) {
-    synchronize();
-  }
-  try {
-    offspring(*lws1, *os1, lws1->size());
-  } catch (ParticleFilterDegeneratedException e) {
-    delete lws1;
-    delete as1;
-    delete os1;
-    throw e;
-  }
-  ancestors(*os1, *as1);
-  permute(*as1);
-  as = *as1;
+  offspring(rng, lws, os, P);
+  ancestors(os, as);
+  permute(as);
   lws.clear();
-  copy(as, theta, s);
-  if (as.on_device) {
-    synchronize();
-  }
-  delete lws1;
-  delete as1;
-  delete os1;
+  copy(as, s);
 }
 
-template<class V1, class V2, bi::Location L>
-void bi::StratifiedResampler::resample(const int a, V1& lws, V2& as,
-    Static<L>& theta, State<L>& s)
-    throw (ParticleFilterDegeneratedException) {
+template<class V1, class V2, class B, bi::Location L>
+void bi::StratifiedResampler::resample(Random& rng, const int a, V1 lws,
+    V2 as, State<B,L>& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
 
-  BOOST_AUTO(lws1, host_map_vector(lws));
-  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
-  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
+  const int P = lws.size();
+  typename sim_temp_vector<V2>::type os(P);
 
-  if (V1::on_device) {
-    synchronize();
-  }
-  try {
-    offspring(*lws1, *os1, lws1->size() - 1);
-  } catch (ParticleFilterDegeneratedException e) {
-    delete lws1;
-    delete as1;
-    delete os1;
-    throw e;
-  }
-  ++(*os1)[a];
-  ancestors(*os1, *as1);
-  permute(*as1);
-  as = *as1;
-  copy(as, theta, s);
+  offspring(rng, lws, os, P - 1);
+  ++os[a];
+  ancestors(os, as);
+  permute(as);
+  copy(as, s);
   lws.clear();
-
-  if (V2::on_device) {
-    synchronize();
-  }
-  delete lws1;
-  delete as1;
-  delete os1;
 }
 
-template<class V1, class V2, class V3, bi::Location L>
-void bi::StratifiedResampler::resample(const V1& qlws, V2& lws, V3& as,
-    Static<L>& theta, State<L>& s)
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::StratifiedResampler::resample(Random& rng, const V1 qlws, V2 lws,
+    V3 as, State<B,L>& s) throw (ParticleFilterDegeneratedException) {
+  /* pre-condition */
+  assert (qlws.size() == lws.size());
+
+  /* typically faster on host, so copy to there */
+  const int P = lws.size();
+  typename sim_temp_vector<V3>::type os(P);
+
+  offspring(rng, qlws, os, P);
+  ancestors(os, as);
+  permute(as);
+  correct(as, qlws, lws);
+  copy(as, s);
+}
+
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::StratifiedResampler::resample(Random& rng, const int a,
+    const V1 qlws, V2 lws, V3 as, State<B,L>& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (qlws.size() == lws.size());
 
   /* typically faster on host, so copy to there */
-  BOOST_AUTO(qlws1, host_map_vector(qlws));
-  BOOST_AUTO(lws1, host_map_vector(lws));
-  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
-  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
+  const int P = lws.size();
+  typename sim_temp_vector<V3>::type os(P);
 
-  if (V1::on_device) {
-    synchronize();
-  }
-  try {
-    offspring(*qlws1, *os1, lws1->size());
-  } catch (ParticleFilterDegeneratedException e) {
-    delete qlws1;
-    delete lws1;
-    delete as1;
-    delete os1;
-    throw e;
-  }
-  ancestors(*os1, *as1);
-  permute(*as1);
-  correct(*as1, *qlws1, *lws1);
-  as = *as1;
-  lws = *lws1;
-  copy(as, theta, s);
-
-  if (V2::on_device || V3::on_device) {
-    synchronize();
-  }
-  delete qlws1;
-  delete lws1;
-  delete as1;
-  delete os1;
-}
-
-template<class V1, class V2, class V3, bi::Location L>
-void bi::StratifiedResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as, Static<L>& theta, State<L>& s)
-    throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  assert (qlws.size() == lws.size());
-
-  /* typically faster on host, so copy to there */
-  BOOST_AUTO(qlws1, host_map_vector(qlws));
-  BOOST_AUTO(lws1, host_map_vector(lws));
-  BOOST_AUTO(as1, host_temp_vector<int>(lws.size()));
-  BOOST_AUTO(os1, host_temp_vector<int>(lws.size()));
-
-  if (V1::on_device) {
-    synchronize();
-  }
-  try {
-    offspring(*qlws1, *os1, lws1->size() - 1);
-  } catch (ParticleFilterDegeneratedException e) {
-    delete qlws1;
-    delete lws1;
-    delete as1;
-    delete os1;
-    throw e;
-  }
-  ++(*os1)[a];
-  ancestors(*os1, *as1);
-  permute(*as1);
-  correct(*as1, *qlws1, *lws1);
-  as = *as1;
-  lws = *lws1;
-  copy(as, theta, s);
-
-  if (V2::on_device || V3::on_device) {
-    synchronize();
-  }
-  delete qlws1;
-  delete lws1;
-  delete as1;
-  delete os1;
+  offspring(rng, qlws, os, P - 1);
+  ++os[a];
+  ancestors(os, as);
+  permute(as);
+  correct(as, qlws, lws);
+  copy(as, s);
 }
 
 template<class V1, class V2>
-void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
+void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int n) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == os.size());
 
-  static BI_UNUSED const Location L2 = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
-  typedef typename V2::value_type T2;
-  typedef typename locatable_temp_vector<L2,T1>::type V3;
-  typedef typename locatable_temp_vector<L2,T2>::type V4;
 
   const int P = lws.size();
-  V3 lws1(P), Ws(P);
-  V4 Os(P), ps(P);
+  typename sim_temp_vector<V1>::type lws1(P), Ws(P);
+  typename sim_temp_vector<V2>::type Os(P), ps(P);
   T1 W, a;
   lws1 = lws;
 
   if (sort) {
-    bi::sequence(ps.begin(), ps.end(), 0);
-    bi::sort_by_key(lws1.begin(), lws1.end(), ps.begin());
+    seq_elements(ps, 0);
+    bi::sort_by_key(lws1, ps);
   }
-  bi::inclusive_scan_sum_exp(lws1.begin(), lws1.end(), Ws.begin());
+  bi::inclusive_scan_sum_exp(lws1, Ws);
 
   W = *(Ws.end() - 1); // sum of weights
   if (W > 0) {
@@ -342,7 +245,7 @@ void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
     thrust::transform(Ws.begin(), Ws.end(), Os.begin(), resample_offspring<T1>(a, W, n));
     thrust::adjacent_difference(Os.begin(), Os.end(), os.begin());
     if (sort) {
-      bi::sort_by_key(ps.begin(), ps.end(), os.begin());
+      bi::sort_by_key(ps, os);
     }
 
     #ifndef NDEBUG
@@ -352,7 +255,6 @@ void bi::StratifiedResampler::offspring(const V1& lws, V2& os,
   } else {
     throw ParticleFilterDegeneratedException();
   }
-  synchronize();
 }
 
 #endif

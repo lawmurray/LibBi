@@ -24,42 +24,41 @@ public:
   /**
    * Constructor.
    *
-   * @param rng Random number generator.
    * @param sort True to pre-sort weights, false otherwise.
    */
-  MultinomialResampler(Random& rng, const bool sort = true);
+  MultinomialResampler(const bool sort = true);
 
   /**
    * @name High-level interface
    */
   //@{
   /**
-   * @copydoc concept::Resampler::resample(V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class B, Location L>
+  void resample(Random& rng, V1 lws, V2 as, State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta,
-      State<L>& s) throw (ParticleFilterDegeneratedException);
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random& rng, const V1 qlws, V2 lws, V3 as,
+      State<B,L>& s) throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class B, Location L>
+  void resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as,
-      Static<L>& theta, State<L>& s)
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
+      State<B,L>& s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -73,20 +72,16 @@ public:
    * @tparam V1 Floating point vector type.
    * @tparam V2 Integer vector type.
    *
+   * @param rng Random number generator.
    * @param lws Log-weights.
    * @param[out] as Ancestry.
    */
   template<class V1, class V2>
-  void ancestors(const V1& lws, V2& as)
+  void ancestors(Random& rng, const V1 lws, V2 as)
       throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
-  /**
-   * %Random number generator.
-   */
-  Random& rng;
-
   /**
    * Pre-sort weights?
    */
@@ -95,7 +90,8 @@ private:
 
 }
 
-#include "../cuda/math/temp_vector.hpp"
+#include "../math/temp_vector.hpp"
+#include "../math/sim_temp_vector.hpp"
 
 #include "thrust/sequence.h"
 #include "thrust/fill.h"
@@ -103,36 +99,36 @@ private:
 #include "thrust/scan.h"
 #include "thrust/gather.h"
 
-template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::resample(V1& lws, V2& as, Static<L>& theta,
-    State<L>& s) throw (ParticleFilterDegeneratedException) {
+template<class V1, class V2, class B, bi::Location L>
+void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as,
+    State<B,L>& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
-  ancestors(lws, as);
+  ancestors(rng, lws, as);
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   lws.clear();
 }
 
-template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::resample(const int a, V1& lws, V2& as,
-    Static<L>& theta, State<L>& s)
+template<class V1, class V2, class B, bi::Location L>
+void bi::MultinomialResampler::resample(Random& rng, const int a, V1 lws,
+    V2 as, State<B,L>& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
 
-  ancestors(lws, as);
+  ancestors(rng, lws, as);
   as[0] = a;
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   lws.clear();
 }
 
-template<class V1, class V2, class V3, bi::Location L>
-void bi::MultinomialResampler::resample(const V1& qlws, V2& lws, V3& as,
-    Static<L>& theta, State<L>& s)
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::MultinomialResampler::resample(Random& rng, const V1 qlws, V2 lws,
+    V3 as, State<B,L>& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   const int P = qlws.size();
@@ -140,15 +136,15 @@ void bi::MultinomialResampler::resample(const V1& qlws, V2& lws, V3& as,
   assert (lws.size() == P);
   assert (as.size() == P);
 
-  ancestors(qlws, as);
+  ancestors(rng, qlws, as);
   permute(as);
   correct(as, qlws, lws);
-  copy(as, theta, s);
+  copy(as, s);
 }
 
-template<class V1, class V2, class V3, bi::Location L>
-void bi::MultinomialResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as, Static<L>& theta, State<L>& s)
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::MultinomialResampler::resample(Random& rng, const int a,
+    const V1 qlws, V2 lws, V3 as, State<B,L>& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   const int P = qlws.size();
@@ -157,15 +153,15 @@ void bi::MultinomialResampler::resample(const int a, const V1& qlws,
   assert (as.size() == P);
   assert (a >= 0 && a < P);
 
-  ancestors(qlws, as);
+  ancestors(rng, qlws, as);
   as[0] = a;
   permute(as);
   correct(as, qlws, lws);
-  copy(as, theta, s);
+  copy(as, s);
 }
 
 template<class V1, class V2>
-void bi::MultinomialResampler::ancestors(const V1& lws, V2& as)
+void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   assert (lws.size() == as.size());
@@ -173,47 +169,34 @@ void bi::MultinomialResampler::ancestors(const V1& lws, V2& as)
   typedef typename V1::value_type T1;
   const int P = lws.size();
 
-  BOOST_AUTO(lws1, temp_vector<V1>(P));
-  BOOST_AUTO(as1, temp_vector<V2>(P));
-  BOOST_AUTO(Ws, temp_vector<V1>(P));
-  BOOST_AUTO(ps, temp_vector<V2>(P));
-  BOOST_AUTO(hostAlphas, host_temp_vector<T1>(P));
+  typename sim_temp_vector<V1>::type lws1(P), Ws(P), alphas(P);
+  typename sim_temp_vector<V2>::type as1(P), ps(P);
   T1 W;
 
   /* weights */
   if (sort) {
-    *lws1 = lws;
-    bi::sequence(ps->begin(), ps->end(), 0);
-    bi::sort_by_key(lws1->begin(), lws1->end(), ps->begin());
-    bi::inclusive_scan_sum_exp(lws1->begin(), lws1->end(), Ws->begin());
+    lws1 = lws;
+    seq_elements(ps, 0);
+    bi::sort_by_key(lws1, ps);
+    bi::inclusive_scan_sum_exp(lws1, Ws);
   } else {
-    bi::inclusive_scan_sum_exp(lws.begin(), lws.end(), Ws->begin());
+    bi::inclusive_scan_sum_exp(lws, Ws);
   }
-  W = *(Ws->end() - 1); // sum of weights
+  W = *(Ws.end() - 1); // sum of weights
   if (W > 0) {
     /* random numbers */
-    rng.uniforms(hostAlphas, 0.0, W);
-    BOOST_AUTO(alphas, map_vector(lws, *hostAlphas));
+    rng.uniforms(alphas, 0.0, W);
 
     /* sample */
     if (sort) {
-      thrust::upper_bound(Ws->begin(), Ws->end(), alphas->begin(), alphas->end(), as1->begin());
-      thrust::gather(as1->begin(), as1->end(), ps->begin(), as.begin());
+      thrust::upper_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
+      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
     } else {
-      thrust::upper_bound(Ws->begin(), Ws->end(), alphas->begin(), alphas->end(), as.begin());
+      thrust::upper_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
     }
-
-    delete alphas;
   } else {
     throw ParticleFilterDegeneratedException();
   }
-
-  synchronize();
-  delete lws1;
-  delete as1;
-  delete Ws;
-  delete ps;
-  delete hostAlphas;
 }
 
 #endif

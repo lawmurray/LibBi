@@ -8,12 +8,10 @@
 #ifndef BI_BUFFER_SPARSEINPUTBUFFER_HPP
 #define BI_BUFFER_SPARSEINPUTBUFFER_HPP
 
-#include "SparseMask.hpp"
-#include "../model/BayesNet.hpp"
+#include "Mask.hpp"
+#include "../model/Model.hpp"
 #include "../misc/Markable.hpp"
 #include "../math/scalar.hpp"
-#include "../math/temp_vector.hpp"
-#include "../math/temp_matrix.hpp"
 
 #include <map>
 
@@ -29,12 +27,12 @@ struct SparseInputBufferState {
   /**
    * Integral vector type for ids in dense and sparse masks.
    */
-  typedef host_vector_temp_type<int>::type vector_type;
+  typedef temp_host_vector<int>::type vector_type;
 
   /**
    * Mask type.
    */
-  typedef SparseMask<> mask_type;
+  typedef Mask<> mask_type;
 
   /**
    * Constructor.
@@ -82,7 +80,7 @@ public:
    * @param m Model.
    * @param flags Flags to pass to InputBuffer constructor.
    */
-  SparseInputBuffer(const BayesNet& m);
+  SparseInputBuffer(const Model& m);
 
   /**
    * @copydoc concept::InputBuffer::getTime()
@@ -94,24 +92,24 @@ public:
    *
    * The total number of active variables at the current time.
    */
-  int size(const NodeType type) const;
+  int size(const VarType type) const;
 
   /**
    * @copydoc concept::InputBuffer::size0()
    *
    * The total number of active static variables.
    */
-  int size0(const NodeType type) const;
+  int size0(const VarType type) const;
 
   /**
    * @copydoc concept::InputBuffer::getDenseMask()
    */
-  const SparseInputBufferState::mask_type& getMask(const NodeType type) const;
+  const SparseInputBufferState::mask_type& getMask(const VarType type) const;
 
   /**
    * @copydoc concept::InputBuffer::getMask0()
    */
-  const SparseInputBufferState::mask_type& getMask0(const NodeType type) const;
+  const SparseInputBufferState::mask_type& getMask0(const VarType type) const;
 
   /**
    * @copydoc concept::InputBuffer::isValid()
@@ -137,7 +135,7 @@ protected:
   /**
    * Model.
    */
-  const BayesNet& m;
+  const Model& m;
 
   /**
    * Record dimension to time variable associations, indexed by record
@@ -157,12 +155,12 @@ protected:
    * Record dimension to model variable associations, indexed by record
    * dimension id and type.
    */
-  std::vector<std::vector<std::list<int> > > vAssoc;
+  std::vector<std::vector<std::vector<int> > > vAssoc;
 
   /**
    * Model variables not associated with record dimension, indexed by type.
    */
-  std::vector<std::list<int> > vUnassoc;
+  std::vector<std::vector<int> > vUnassoc;
 
   /**
    * Time variable to record dimension associations, indexed by time variable
@@ -194,21 +192,21 @@ inline real bi::SparseInputBuffer::getTime() const {
   return state.times.begin()->first;
 }
 
-inline int bi::SparseInputBuffer::size(const NodeType type) const {
+inline int bi::SparseInputBuffer::size(const VarType type) const {
   return state.masks[type].size();
 }
 
-inline int bi::SparseInputBuffer::size0(const NodeType type) const {
+inline int bi::SparseInputBuffer::size0(const VarType type) const {
   return masks0[type].size();
 }
 
 inline const bi::SparseInputBufferState::mask_type&
-    bi::SparseInputBuffer::getMask(const NodeType type) const {
+    bi::SparseInputBuffer::getMask(const VarType type) const {
   return state.masks[type];
 }
 
 inline const bi::SparseInputBufferState::mask_type&
-    bi::SparseInputBuffer::getMask0(const NodeType type) const {
+    bi::SparseInputBuffer::getMask0(const VarType type) const {
   return masks0[type];
 }
 

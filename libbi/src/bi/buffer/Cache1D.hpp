@@ -60,7 +60,7 @@ public:
    *
    * @return Page.
    */
-  const T1& get(const int p) const;
+  T1 get(const int p) const;
 
   /**
    * Write page.
@@ -146,7 +146,7 @@ inline int bi::Cache1D<T1>::size() const {
 }
 
 template<class T1>
-inline const T1& bi::Cache1D<T1>::get(const int p) const {
+inline T1 bi::Cache1D<T1>::get(const int p) const {
   /* pre-condition */
   assert (isValid(p));
 

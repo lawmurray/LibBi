@@ -11,7 +11,10 @@
 #define BI_MISC_OMP_HPP
 
 #include "compile.hpp"
+#ifdef ENABLE_GPU
+#include "../cuda/cuda.hpp"
 #include "../cuda/math/cublas.hpp"
+#endif
 
 #include "omp.h"
 
@@ -25,6 +28,7 @@ extern BI_THREAD int bi_omp_tid;
  */
 extern BI_THREAD int bi_omp_max_threads;
 
+#ifdef ENABLE_GPU
 /**
  * CUBLAS context handle for CUBLAS function calls (API v2).
  */
@@ -35,21 +39,26 @@ extern BI_THREAD cublasHandle_t bi_omp_cublas_handle;
  * also be used for CUBLAS calls.
  */
 extern BI_THREAD cudaStream_t bi_omp_cuda_stream;
+#endif
 
 #ifdef __ICC
 #pragma omp threadprivate(bi_omp_tid)
 #pragma omp threadprivate(bi_omp_max_threads)
+#ifdef ENABLE_GPU
 #pragma omp threadprivate(bi_omp_cublas_handle)
 #pragma omp threadprivate(bi_omp_cuda_stream)
 #endif
+#endif
 
 /**
- * Initialise OpenMP environment (thread private variables).
+ * Initialise OpenMP environment.
+ *
+ * @param threads Number of threads. Zero for the default.
  */
-void bi_omp_init();
+void bi_omp_init(const int threads = 0);
 
 /**
- * Terminate OpenMP environment (thread private variables).
+ * Terminate OpenMP environment.
  */
 void bi_omp_term();
 

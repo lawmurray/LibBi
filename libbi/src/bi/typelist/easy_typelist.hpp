@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_TYPELIST_EASYTYPELIST_HPP
-#define BI_TYPELIST_EASYTYPELIST_HPP
+#ifndef BI_TYPELIST_EASY_TYPELIST_HPP
+#define BI_TYPELIST_EASY_TYPELIST_HPP
 
 #include "typelist.hpp"
 #include "front.hpp"

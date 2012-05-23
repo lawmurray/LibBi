@@ -8,6 +8,8 @@
 #ifndef BI_BUFFER_SIMULATORCACHE_HPP
 #define BI_BUFFER_SIMULATORCACHE_HPP
 
+#include "../math/loc_temp_matrix.hpp"
+
 #include <vector>
 
 namespace bi {
@@ -24,7 +26,7 @@ public:
   /**
    * Type of page.
    */
-  typedef typename locatable_matrix<L,real>::type page_type;
+  typedef typename loc_temp_matrix<L,real>::type page_type;
 
   /**
    * Possible modes.
@@ -101,7 +103,7 @@ public:
    *
    * @param t Time index.
    */
-  const page_type& getState(const int t) const;
+  page_type getState(const int t) const;
 
   /**
    * Read valid state.
@@ -112,7 +114,7 @@ public:
    * @param[out] s State.
    */
   template<class M2>
-  void readState(const int t, M2& s) const;
+  void readState(const int t, M2 s) const;
 
   /**
    * Write state.
@@ -123,7 +125,7 @@ public:
    * @param s State.
    */
   template<class M2>
-  void writeState(const int t, const M2& s);
+  void writeState(const int t, const M2 s);
 
   /**
    * Swap state.
@@ -138,7 +140,7 @@ public:
    * marked as invalid.
    */
   template<class M2>
-  void swapReadState(const int t, M2& s);
+  void swapReadState(const int t, M2 s);
 
   /**
    * Swap state.
@@ -153,7 +155,7 @@ public:
    * marked as valid.
    */
   template<class M2>
-  void swapWriteState(const int p, M2& s);
+  void swapWriteState(const int p, M2 s);
 
   /**
    * Is trajectory valid?
@@ -178,7 +180,7 @@ public:
    * @param[out] x Trajectory. Rows index variables, columns times.
    */
   template<class M2>
-  void readTrajectory(const int t, M2& x) const;
+  void readTrajectory(const int t, M2 x) const;
 
   /**
    * Write trajectory.
@@ -189,7 +191,7 @@ public:
    * @param x Trajectory. Rows index variables, columns times.
    */
   template<class M2>
-  void writeTrajectory(const int t, const M2& s);
+  void writeTrajectory(const int t, const M2 s);
 
   /**
    * Clean cache. All pages are no longer dirty. Typically called after cache
@@ -280,7 +282,7 @@ inline bool bi::SimulatorCache<L>::isDirtyState(const int t) const {
 }
 
 template<bi::Location L>
-inline const typename bi::SimulatorCache<L>::page_type& bi::SimulatorCache<L>::getState(
+inline typename bi::SimulatorCache<L>::page_type bi::SimulatorCache<L>::getState(
     const int t) const {
   /* pre-condition */
   assert (isValidState(t));
@@ -290,7 +292,7 @@ inline const typename bi::SimulatorCache<L>::page_type& bi::SimulatorCache<L>::g
 
 template<bi::Location L>
 template<class M2>
-inline void bi::SimulatorCache<L>::readState(const int t, M2& s) const {
+inline void bi::SimulatorCache<L>::readState(const int t, M2 s) const {
   /* pre-condition */
   assert (getMode() == STATE_MODE && isValidState(t));
 
@@ -299,7 +301,7 @@ inline void bi::SimulatorCache<L>::readState(const int t, M2& s) const {
 
 template<bi::Location L>
 template<class M2>
-inline void bi::SimulatorCache<L>::writeState(const int t, const M2& s) {
+inline void bi::SimulatorCache<L>::writeState(const int t, const M2 s) {
   /* pre-condition */
   assert (getMode() == STATE_MODE);
 
@@ -326,7 +328,7 @@ inline void bi::SimulatorCache<L>::writeState(const int t, const M2& s) {
 
 template<bi::Location L>
 template<class M2>
-inline void bi::SimulatorCache<L>::swapReadState(const int t, M2& s) {
+inline void bi::SimulatorCache<L>::swapReadState(const int t, M2 s) {
   /* pre-condition */
   assert (getMode() == STATE_MODE && isValidState(s));
 
@@ -339,7 +341,7 @@ inline void bi::SimulatorCache<L>::swapReadState(const int t, M2& s) {
 
 template<bi::Location L>
 template<class M2>
-inline void bi::SimulatorCache<L>::swapWriteState(const int t, M2& s) {
+inline void bi::SimulatorCache<L>::swapWriteState(const int t, M2 s) {
   /* pre-condition */
   assert (getMode() == STATE_MODE && t < size2());
 
@@ -363,7 +365,7 @@ bool bi::SimulatorCache<L>::isDirtyTrajectory(const int p) const {
 
 template<bi::Location L>
 template<class M2>
-void bi::SimulatorCache<L>::readTrajectory(const int p, M2& x) const {
+void bi::SimulatorCache<L>::readTrajectory(const int p, M2 x) const {
   /* pre-condition */
   assert(getMode() == TRAJECTORY_MODE && isValidTrajectory(p));
   assert(x.size2() == size2());
@@ -376,7 +378,7 @@ void bi::SimulatorCache<L>::readTrajectory(const int p, M2& x) const {
 
 template<bi::Location L>
 template<class M2>
-void bi::SimulatorCache<L>::writeTrajectory(const int p, const M2& x) {
+void bi::SimulatorCache<L>::writeTrajectory(const int p, const M2 x) {
   /* pre-condition */
   assert(getMode() == TRAJECTORY_MODE);
 

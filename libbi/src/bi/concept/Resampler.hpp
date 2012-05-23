@@ -26,13 +26,12 @@ struct Resampler {
    *
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
    * The weights @p lws are set to be uniform after the resampling.
    */
   template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(V1& lws, V2& as, State<B,L>& s);
 
   /**
    * Resample state with proposal weights.
@@ -45,7 +44,6 @@ struct Resampler {
    * @param qlws Proposal log-weights.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
    * The resample is performed using the weights @p qlws. The weights @p lws
@@ -53,7 +51,7 @@ struct Resampler {
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const V1& qlws, V2& lws, V3& as, State<B,L>& s);
 
   /**
    * Resample state with conditioned outcome.
@@ -65,7 +63,6 @@ struct Resampler {
    * @param a Conditioned outcome for single ancestor.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
    * Sets the first ancestor to @p a and draws the remainder as normal. Final
@@ -76,7 +73,7 @@ struct Resampler {
    * The weights @p lws are set to be uniform after the resampling.
    */
   template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, V1& lws, V2& as, State<B,L>& s);
 
   /**
    * Resample state with proposal weights and conditioned outcome.
@@ -90,7 +87,6 @@ struct Resampler {
    * @param qlws Proposal log-weights.
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
    *
    * Sets the first ancestor to @p a and draws the remainder as normal. Final
@@ -103,6 +99,6 @@ struct Resampler {
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
   template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  void resample(const int a, const V1& qlws, V2& lws, V3& as, State<B,L>& s);
 };
 }

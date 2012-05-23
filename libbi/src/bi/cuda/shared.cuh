@@ -2,136 +2,122 @@
  * @file
  *
  * Functions for manipulating state objects in shared memory.
-
+ *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$
  * $Date$
  *
- * Each thread executed on the GPU is associated with one node (across y) in
- * one trajectory (across x). These are implicitly calculated from the
- * execution configuration and thread ids.
- *
- * Shared memory is currently supported only for c-nodes and d-nodes, and not
- * simultaneously.
- *
- * Some of these functions rely on constant memory also and should be used in
- * conjunction with those in constant.cuh. First bind a model object to the
- * global constant memory variables using constant_bind() on the host, then
- * initialise shared memory using shared_init() on the device. Any of
- * the shared memory fetch and put functions may then be used on the device
- * to read and write data to shared rather than global memory. At completion,
- * call shared_commit() on the device to commit the changes to shared memory
- * back to global memory, and then constant_unbind() on the host.
+ * Shared memory is supported for an arbitrary subset of the nodes of a model.
+ * A type list is used to determine which nodes can be found in shared
+ * memory, with others deferred to global memory.
  */
 #ifndef BI_CUDA_SHARED_CUH
 #define BI_CUDA_SHARED_CUH
 
 #include "cuda.hpp"
-#include "../state/Coord.hpp"
 
 /**
- * @internal
- *
  * Shared memory.
  */
 extern CUDA_VAR_SHARED real shared_mem[];
 
 namespace bi {
 /**
- * @internal
+ * Initialise shared host memory.
  *
- * @def SHARED_INIT_DEC
+ * @tparam B Model type.
+ * @tparam S Action type list describing variables in shared host memory.
  *
- * Macro for shared memory init function declarations.
+ * @param p Trajectory id.
+ * @param i Variable id.
+ *
+ * Initialise shared host memory by copying the relevant variables of the
+ * given trajectory from host memory.
  */
-#define SHARED_INIT_DEC(name) \
-  /**
-    @internal
-
-    Copy state into shared memory.
-   */ \
-  CUDA_FUNC_DEVICE void shared_init_##name();
-
-SHARED_INIT_DEC(c)
-SHARED_INIT_DEC(d)
+template<class B, class S>
+CUDA_FUNC_DEVICE void shared_init(const int p, const int i);
 
 /**
- * @internal
+ * Commit shared host memory changes.
  *
- * @def SHARED_COMMIT_DEC
+ * @tparam B Model type.
+ * @tparam S Action type list describing variables in shared host memory.
  *
- * Macro for shared memory commit function declarations.
+ * @param p Trajectory id.
+ * @param i Variable id.
+ *
+ * Write shared host memory changes to the given output.
  */
-#define SHARED_COMMIT_DEC(name) \
-  /**
-    @internal
-
-    Commit changes in shared memory back to state.
-   */ \
-  CUDA_FUNC_DEVICE void shared_commit_##name();
-
-SHARED_COMMIT_DEC(c)
-SHARED_COMMIT_DEC(d)
+template<class B, class S>
+CUDA_FUNC_DEVICE void shared_commit(const int p, const int i);
 
 /**
- * @internal
- *
  * Fetch node value from shared memory.
  *
  * @ingroup state_gpu
  *
- * @tparam B Model type.
+ * @tparam S Type list giving nodes in shared memory.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @return Value of the node pertaining to the current thread, in the
- * trajectory pertaining to the current thread.
+ * @param ix Serial coordinate.
+ *
+ * @return Value.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE real shared_fetch(const Coord& cox);
+template<class S, class X>
+CUDA_FUNC_DEVICE real shared_fetch(const int ix);
 
 /**
- * @internal
- *
- * Set name##-node value in shared memory.
+ * Set node value in shared memory.
  *
  * @ingroup state_gpu
  *
- * @tparam B Model type.
+ * @tparam S Type list giving nodes in shared memory.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
+ * @param ix Serial coordinate.
  * @param val Value to set.
- *
- * Sets the value of the name##-node pertaining to the current thread, in the
- * trajectory pertaining to the current thread.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE void shared_put(const Coord& cox, const real& val);
+template<class S, class X>
+CUDA_FUNC_DEVICE void shared_put(const int ix, const real& val);
 
 /**
- * @internal
- *
  * Facade for state in shared memory.
  *
  * @ingroup state_gpu
+ *
+ * @tparam S Type list giving nodes in shared memory.
  */
+template<class S>
 struct shared {
   static const bool on_device = true;
 
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE real fetch(const int p, const Coord& cox) {
-    return shared_fetch<B,X,Xo,Yo,Zo>(cox);
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE real fetch(const int p, const int ix) {
+    if (contains<S,X>::value) {
+      return shared_fetch<S,X>(ix);
+    } else {
+      return global_fetch<B,X>(p, ix);
+    }
   }
 
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE void put(const int p, const Coord& cox,
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE void put(const int p, const int ix,
       const real& val) {
-    shared_put<B,X,Xo,Yo,Zo>(val);
+    if (contains<S,X>::value) {
+      return shared_put<S,X>(ix, val);
+    } else {
+      return global_put<B,X>(p, ix, val);
+    }
+  }
+
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE void init(const int p, const int ix) {
+    shared_put<S,X>(ix, global_fetch<B,X>(p, ix));
+  }
+
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE void commit(const int p, const int ix) {
+    global_put<B,X>(p, ix, shared_fetch<S,X>(ix));
   }
 };
 
@@ -139,65 +125,35 @@ struct shared {
 
 #include "constant.cuh"
 #include "global.cuh"
+#include "shared_init_visitor.cuh"
+#include "shared_commit_visitor.cuh"
 
-/**
- * @internal
- *
- * @def SHARED_INIT_DEF
- *
- * Macro for shared memory init function definitions.
- */
-#define SHARED_INIT_DEF(name, Name) \
-  inline void bi::shared_init_##name() { \
-    real* share = reinterpret_cast<real*>(shared_mem); \
-    const int id = threadIdx.y; \
-    const int p = blockIdx.x*blockDim.x + threadIdx.x; \
-    const int q = id*blockDim.x + threadIdx.x; \
-    \
-    if (p < constP) { \
-      share[q] = global##Name##State(p, id); \
-    } \
-  }
-
-SHARED_INIT_DEF(c, C)
-SHARED_INIT_DEF(d, D)
-
-/**
- * @internal
- *
- * @def SHARED_COMMIT_DEF
- *
- * Macro for shared memory commit function definitions.
- */
-#define SHARED_COMMIT_DEF(name, Name) \
-  inline void bi::shared_commit_##name() { \
-    real* share = reinterpret_cast<real*>(shared_mem); \
-    const int id = threadIdx.y; \
-    const int p = blockIdx.x*blockDim.x + threadIdx.x; \
-    const int q = id*blockDim.x + threadIdx.x; \
-    \
-    if (p < constP) { \
-      global##Name##State(p, id) = share[q]; \
-    } \
-  }
-
-SHARED_COMMIT_DEF(c, C)
-SHARED_COMMIT_DEF(d, D)
-
-template<class B, class X, int Xo, int Yo, int Zo>
-inline real bi::shared_fetch(const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
-  const int q = i*blockDim.x + threadIdx.x;
-
-  return shared_mem[q];
+template<class B, class S>
+inline void bi::shared_init(const int p, const int i) {
+  shared<S> pax;
+  shared_init_visitor<B,S>::accept(pax, p, i);
 }
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline void bi::shared_put(const Coord& cox, const real& val) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
-  const int q = i*blockDim.x + threadIdx.x;
+template<class B, class S>
+inline void bi::shared_commit(const int p, const int i) {
+  shared<S> pax;
+  shared_commit_visitor<B,S>::accept(pax, p, i);
+}
 
-  shared_mem[q] = val;
+template<class S, class X>
+inline real bi::shared_fetch(const int ix) {
+  const int i = target_start<S,X>::value + ix;
+  const int j = blockDim.x*i + threadIdx.x;
+
+  return shared_mem[j];
+}
+
+template<class S, class X>
+inline void bi::shared_put(const int ix, const real& val) {
+  const int i = target_start<S,X>::value + ix;
+  const int j = blockDim.x*i + threadIdx.x;
+
+  shared_mem[j] = val;
 }
 
 #endif

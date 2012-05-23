@@ -11,52 +11,37 @@
 #include "../math/scalar.hpp"
 #include "../buffer/Cache2D.hpp"
 
+#include <set>
+
 namespace bi {
 /**
- * Flags to control filter behaviour with regard to p- and s-nodes.
+ * Initial condition handling options.
  */
-enum StaticHandling {
+enum InitialConditionMode {
   /**
-   * All trajectories share p- and s-nodes.
+   * Include initial conditions in the method.
    */
-  STATIC_SHARED,
+  INCLUDE_INITIAL,
 
   /**
-   * Each trajectory has own p- and s-nodes.
+   * Exclude initial conditions from the method.
    */
-  STATIC_OWN
+  EXCLUDE_INITIAL
 };
 
 /**
- * Behaviour types for handling initial conditions in ParticleMCMC.
+ * Optimisation mode.
  */
-enum InitialConditionType {
+enum OptimiserMode {
   /**
-   * All trajectories share same initial condition, which becomes part of
-   * the MCMC process.
+   * Maximum likelihood estimation.
    */
-  INITIAL_CONDITIONED,
+  MAXIMUM_LIKELIHOOD,
 
   /**
-   * Each trajectory has own initial condition, which is drawn from the
-   * prior as part of the filtering process.
+   * Maximum a posteriori.
    */
-  INITIAL_SAMPLED
-};
-
-/**
- * Filter types for likelihood calculation in ParticleMCMC.
- */
-enum FilterType {
-  /**
-   * Unconditioned filter.
-   */
-  UNCONDITIONED,
-
-  /**
-   * Filter conditioned on current state trajectory.
-   */
-  CONDITIONED
+  MAXIMUM_A_POSTERIORI
 };
 
 /**
@@ -199,6 +184,8 @@ void summarise_apf(const Cache2D<T1>& lw1s, const Cache2D<T1>& lw2s, T1* ll,
 
 #include "../math/temp_vector.hpp"
 #include "../math/scalar.hpp"
+#include "../primitive/vector_primitive.hpp"
+#include "../primitive/matrix_primitive.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -252,100 +239,86 @@ void bi::offset_insert(std::set<T>& xs, InputIterator first, InputIterator last,
 template<class T1, class V2, class V3>
 void bi::summarise_pf(const Cache2D<T1>& lws, T1* ll, V2* lls, V3* ess) {
   const int T = lws.size();
-  BOOST_AUTO(ess1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls2, host_temp_vector<real>(T));
+  typename temp_host_vector<real>::type ess1(T), lls1(T), lls2(T);
   double ll1;
 
   /* compute log-likelihoods and ESS at each time */
   int n;
   real logsum1, sum1, sum2;
   for (n = 0; n < T; ++n) {
-    BOOST_AUTO(lws1, duplicate_vector(lws.get(n)));
+    typename temp_host_vector<real>::type lws1(lws.get(n).size());
+    lws1 = lws.get(n);
 
-    bi::sort(lws1->begin(), lws1->end());
-    logsum1 = log_sum_exp(lws1->begin(), lws1->end(), 0.0);
+    bi::sort(lws1);
+    logsum1 = logsumexp_reduce(lws1);
     sum1 = exp(logsum1);
-    sum2 = sum_exp_square(lws1->begin(), lws1->end(), 0.0);
+    sum2 = sumexpsq_reduce(lws1);
 
-    (*lls1)(n) = logsum1 - std::log(lws1->size());
-    (*ess1)(n) = (sum1*sum1)/sum2;
-
-    delete lws1;
+    lls1(n) = logsum1 - std::log(lws1.size());
+    ess1(n) = (sum1*sum1)/sum2;
   }
 
   /* compute marginal log-likelihood */
-  *lls2 = *lls1;
-  bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
+  lls2 = lls1;
+  bi::sort(lls2);
+  ll1 = sum_reduce(lls2);
 
   /* write to output params, where given */
   if (ll != NULL) {
     *ll = ll1;
   }
   if (lls != NULL) {
-    *lls = *lls1;
+    *lls = lls1;
   }
   if (ess != NULL) {
-    *ess = *ess1;
+    *ess = ess1;
   }
-
-  delete ess1;
-  delete lls1;
-  delete lls2;
 }
 
 template<class T1, class V1, class V2>
 void bi::summarise_apf(const Cache2D<T1>& lw1s, const Cache2D<T1>& lw2s,
     T1* ll, V1* lls, V2* ess) {
   const int T = lw1s.size();
-  BOOST_AUTO(ess1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls1, host_temp_vector<real>(T));
-  BOOST_AUTO(lls2, host_temp_vector<real>(T));
+  typename temp_host_vector<real>::type ess1(T), lls1(T), lls2(T);
   real ll1;
 
   /* compute log-likelihoods and ESS at each time */
   int n;
   real logsum1, logsum2, sum2, sum3;
   for (n = 0; n < T; ++n) {
-    BOOST_AUTO(lw1s1, duplicate_vector(lw1s.get(n)));
-    BOOST_AUTO(lw2s1, duplicate_vector(lw2s.get(n)));
-    assert (lw1s1->size() == lw2s1->size());
+    typename temp_host_vector<real>::type lw1s1(lw1s.get(n).size());
+    lw1s1 = lw1s.get(n);
+    typename temp_host_vector<real>::type lw2s1(lw2s.get(n).size());
+    lw2s1 = lw2s.get(n);
+    assert (lw1s1.size() == lw2s1.size());
 
-    bi::sort(lw1s1->begin(), lw1s1->end());
-    bi::sort(lw2s1->begin(), lw2s1->end());
+    bi::sort(lw1s1);
+    bi::sort(lw2s1);
 
-    logsum1 = log_sum_exp(lw1s1->begin(), lw1s1->end(), 0.0);
-    logsum2 = log_sum_exp(lw2s1->begin(), lw2s1->end(), 0.0);
+    logsum1 = logsumexp_reduce(lw1s1);
+    logsum2 = logsumexp_reduce(lw2s1);
     sum2 = exp(logsum2);
-    sum3 = sum_exp_square(lw2s1->begin(), lw2s1->end(), 0.0);
+    sum3 = sumexpsq_reduce(lw2s1);
 
-    (*lls1)(n) = logsum1 + logsum2 - 2*std::log(lw1s1->size());
-    (*ess1)(n) = (sum2*sum2)/sum3;
-
-    delete lw1s1;
-    delete lw2s1;
+    lls1(n) = logsum1 + logsum2 - 2.0*std::log(lw1s1.size());
+    ess1(n) = (sum2*sum2)/sum3;
   }
 
   /* compute marginal log-likelihood */
-  *lls2 = *lls1;
-  bi::sort(lls2->begin(), lls2->end());
-  ll1 = bi::sum(lls2->begin(), lls2->end(), 0.0);
+  lls2 = lls1;
+  bi::sort(lls2);
+  ll1 = sum_reduce(lls2);
 
   /* write to output params, where given */
   if (ll != NULL) {
     *ll = ll1;
   }
   if (lls != NULL) {
-    *lls = *lls1;
+    *lls = lls1;
   }
   if (ess != NULL) {
-    *ess = *ess1;
+    *ess = ess1;
   }
-
-  delete ess1;
-  delete lls1;
-  delete lls2;
 }
 
 #endif

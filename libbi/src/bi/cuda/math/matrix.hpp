@@ -9,20 +9,18 @@
 #define BI_CUDA_MATH_MATRIX_HPP
 
 #include "vector.hpp"
-#include "../../misc/pitched_range.hpp"
-#include "../../misc/cross_pitched_range.hpp"
-#include "../../misc/assert.hpp"
 #include "../cuda.hpp"
+#include "../../primitive/pitched_range.hpp"
+#include "../../primitive/cross_pitched_range.hpp"
+#include "../../misc/assert.hpp"
 #include "../../misc/compile.hpp"
 #include "../../typelist/equals.hpp"
-
-#include <typeinfo>
 
 namespace bi {
 /**
  * Lightweight view of matrix on device.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
  *
@@ -183,9 +181,15 @@ namespace bi {
 /**
  * View of (sub-)matrix in device memory.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
+ *
+ * Copy and assignment semantics are as follows:
+ *
+ * @li Copies are always shallow, using the default copy constructor.
+ *
+ * @li Assignments are always deep.
  */
 template<class T = real>
 class CUDA_ALIGN(16) gpu_matrix_reference : public gpu_matrix_handle<T> {
@@ -301,8 +305,6 @@ public:
 
 }
 
-#include "../../math/view.hpp"
-
 template<class T>
 inline bi::gpu_matrix_reference<T>::gpu_matrix_reference(
     const gpu_matrix_reference<T>& o) {
@@ -356,6 +358,7 @@ bi::gpu_matrix_reference<T>& bi::gpu_matrix_reference<T>::operator=(
     const M1& o) {
   /* pre-conditions */
   assert (this->size1() == o.size1() && this->size2() == o.size2());
+  assert ((equals<T,typename M1::value_type>::value));
 
   if (!this->same(o)) {
     cudaMemcpyKind kind = (M1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
@@ -459,7 +462,7 @@ void bi::gpu_matrix_reference<T>::clear() {
   if (this->lead() == this->size1()) {
     vec(*this).clear();
   } else {
-    bi::fill(this->begin(), this->end(), static_cast<T>(0));
+    thrust::fill(this->begin(), this->end(), static_cast<T>(0));
   }
 }
 
@@ -468,10 +471,19 @@ namespace bi {
  * Matrix in device memory. Stored densely in column-major ordering.
  * Shallow copy, deep assignment.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
  * @tparam A STL allocator.
+ *
+ * Copy and assignment semantics are as follows:
+ *
+ * @li Copies of other device matrices are always shallow, regardless of
+ * allocator. The newly constructed matrix acts as a view of the copied
+ * matrix only, will not free its buffer on destruction, and will become
+ * invalid if its buffer is freed elsewhere.
+ *
+ * @li Assignments are always deep.
  */
 template<class T = real, class A = device_allocator<T> >
 class CUDA_ALIGN(16) gpu_matrix : public gpu_matrix_reference<T> {
@@ -482,8 +494,6 @@ public:
   typedef gpu_matrix_reference<T> matrix_reference_type;
   typedef gpu_vector_reference<T> vector_reference_type;
   static const bool on_device = true;
-  static const bool is_symmetric = false;
-  static const bool is_triangular = false;
 
   /**
    * Default constructor.
@@ -619,24 +629,21 @@ bi::gpu_matrix<T,A>::gpu_matrix(const gpu_matrix<T,A>& o) : gpu_matrix_reference
 template<class T, class A>
 template<class M1>
 bi::gpu_matrix<T,A>::gpu_matrix(const M1 o) :
-    gpu_matrix_reference<T>(NULL, o.size1(), o.size2(), o.size1()), own(true) {
-  /* pre-conditions */
-  assert (this->size1() >= 0 && this->size2() >= 0);
-
-  if (this->size1()*this->size2() > 0) {
-    this->ptr = alloc.allocate(this->size1()*this->size2());
+    gpu_matrix_reference<T>(const_cast<T*>(o.buf()), o.size1(), o.size2(),
+    o.lead()), own(false) {
+  /* shallow copy is now done, do deep copy if necessary */
+  if (!M1::on_device) {
+    this->ptr = (this->size1()*this->size2() > 0) ? alloc.allocate(this->size1()*this->size2()) : NULL;
+    this->ld = this->size1();
+    this->own = true;
+    this->operator=(o);
   }
-  this->operator=(o);
 }
 
 template<class T, class A>
 bi::gpu_matrix<T,A>::~gpu_matrix() {
-  if (own) {
-    if (this->rows > 0) {
-      alloc.deallocate(this->ptr, this->ld*this->cols);
-    } else {
-      alloc.deallocate(this->ptr, 0);
-    }
+  if (own && this->ptr != NULL) {
+    alloc.deallocate(this->ptr, this->size1()*this->size2());
   }
 }
 
@@ -707,7 +714,7 @@ void bi::gpu_matrix<T,A>::resize(const size_type rows, const size_type cols,
 
     /* free old buffer */
     if (this->ptr != NULL) {
-      alloc.deallocate(this->ptr, this->ld*this->cols);
+      alloc.deallocate(this->ptr, this->size1()*this->size2());
     }
 
     /* assign new buffer */
@@ -728,140 +735,6 @@ void bi::gpu_matrix<T,A>::swap(gpu_matrix<T,A>& o) {
   std::swap(this->ptr, o.ptr);
   std::swap(this->ld, o.ld);
   std::swap(this->own, o.own);
-}
-
-namespace bi {
-/**
- * Symmetric matrix in device memory. Stored densely in column-major ordering.
- *
- * @tparam T Value type.
- * @tparam A STL allocator.
- */
-template<class T, class A = device_allocator<T> >
-class CUDA_ALIGN(16) gpu_symmetric_matrix : public gpu_matrix<T,A> {
-public:
-  typedef T value_type;
-  typedef int size_type;
-  typedef int difference_type;
-  typedef gpu_matrix_reference<T> matrix_reference_type;
-  typedef gpu_vector_reference<T> vector_reference_type;
-  typedef thrust::device_ptr<T> pointer;
-  typedef thrust::device_ptr<const T> const_pointer;
-  typedef typename pitched_range<pointer>::iterator iterator;
-  typedef typename pitched_range<const_pointer>::iterator const_iterator;
-  static const bool on_device = true;
-  static const bool is_symmetric = true;
-  static const bool is_triangular = false;
-
-  /**
-   * Constructor.
-   *
-   * @param size Number of rows and columns.
-   */
-  gpu_symmetric_matrix(const size_type size);
-
-  /**
-   * Assignment operator.
-   */
-  gpu_symmetric_matrix& operator=(const gpu_symmetric_matrix<T,A>& o);
-
-  /**
-   * Generic assignment operator.
-   *
-   * @tparam M1 Matrix type.
-   */
-  template<class M1>
-  gpu_symmetric_matrix<T,A>& operator=(const M1& o);
-
-} BI_ALIGN(16);
-
-}
-
-template<class T, class A>
-bi::gpu_symmetric_matrix<T,A>::gpu_symmetric_matrix(const size_type size)
-    : gpu_matrix<T,A>(size, size) {
-  //
-}
-
-template<class T, class A>
-inline bi::gpu_symmetric_matrix<T,A>& bi::gpu_symmetric_matrix<T,A>::operator=(
-    const gpu_symmetric_matrix<T,A>& o) {
-  gpu_matrix<T,A>::operator=(static_cast<gpu_matrix<T,A> >(o));
-  return *this;
-}
-
-template<class T, class A>
-template<class M1>
-inline bi::gpu_symmetric_matrix<T,A>& bi::gpu_symmetric_matrix<T,A>::operator=(
-    const M1& o) {
-  gpu_matrix<T,A>::operator=(o);
-  return *this;
-}
-
-namespace bi {
-/**
- * Triangular matrix in GPU memory. Stored densely in column-major ordering.
- *
- * @tparam T Value type.
- * @tparam A STL allocator.
- */
-template<class T, class A = device_allocator<T> >
-class CUDA_ALIGN(16) gpu_triangular_matrix : public gpu_matrix<T,A> {
-public:
-  typedef T value_type;
-  typedef int size_type;
-  typedef int difference_type;
-  typedef gpu_matrix_reference<T> matrix_reference_type;
-  typedef gpu_vector_reference<T> vector_reference_type;
-  typedef thrust::device_ptr<T> pointer;
-  typedef thrust::device_ptr<const T> const_pointer;
-  typedef typename pitched_range<pointer>::iterator iterator;
-  typedef typename pitched_range<const_pointer>::iterator const_iterator;
-  static const bool on_device = true;
-  static const bool is_symmetric = false;
-  static const bool is_triangular = true;
-
-  /**
-   * @copydoc gpu_symmetric_matrix::gpu_symmetric_matrix(const size_type)
-   */
-  gpu_triangular_matrix(const size_type size);
-
-  /**
-   * Assignment operator.
-   */
-  gpu_triangular_matrix<T,A>& operator=(const gpu_triangular_matrix<T,A>& o);
-
-  /**
-   * Generic assignment operator.
-   *
-   * @tparam M1 Matrix type.
-   */
-  template<class M1>
-  gpu_triangular_matrix<T,A>& operator=(const M1& o);
-
-} BI_ALIGN(16);
-
-}
-
-template<class T, class A>
-bi::gpu_triangular_matrix<T,A>::gpu_triangular_matrix(const size_type size) :
-    gpu_matrix<T,A>(size, size) {
-  //
-}
-
-template<class T, class A>
-inline bi::gpu_triangular_matrix<T,A>& bi::gpu_triangular_matrix<T,A>::operator=(
-    const gpu_triangular_matrix<T,A>& o) {
-  gpu_matrix<T,A>::operator=(static_cast<gpu_matrix<T,A> >(o));
-  return *this;
-}
-
-template<class T, class A>
-template<class M1>
-inline bi::gpu_triangular_matrix<T,A>& bi::gpu_triangular_matrix<T,A>::operator=(
-    const M1& o) {
-  gpu_matrix<T,A>::operator=(o);
-  return *this;
 }
 
 #endif

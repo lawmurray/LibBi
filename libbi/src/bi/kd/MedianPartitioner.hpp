@@ -74,15 +74,13 @@ bool bi::MedianPartitioner::init(const M1 X, const V1 is) {
   }
 
   /* split on median of selected dimension */
-  BOOST_AUTO(values, host_temp_vector<real>(is.size()));
-  thrust::gather(is.begin(), is.end(), column(X,longest).begin(), values->begin());
-  int median = values->size()/2;
-  std::nth_element(values->begin(), values->begin() + median, values->end());
+  temp_host_vector<real>::type values(is.size());
+  thrust::gather(is.begin(), is.end(), column(X,longest).begin(), values.begin());
+  int median = values.size()/2;
+  std::nth_element(values.begin(), values.begin() + median, values.end());
 
-  this->value = (*values)(median);
+  this->value = values(median);
   this->index = longest;
-
-  delete values;
 
   return maxlen > 0.0;
 }

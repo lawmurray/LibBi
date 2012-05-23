@@ -9,16 +9,15 @@
 
 using namespace bi;
 
-ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const BayesNet& m,
-    const std::string& file, const FileMode mode, StaticHandling flag) :
-    SimulatorNetCDFBuffer(m, file, mode, flag) {
+ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
+    const std::string& file, const FileMode mode) :
+    SimulatorNetCDFBuffer(m, file, mode) {
   map();
 }
 
-ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const BayesNet& m,
+ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
     const int P, const int T, const std::string& file,
-    const FileMode mode, StaticHandling flag) :
-    SimulatorNetCDFBuffer(m, P, T, file, mode, flag) {
+    const FileMode mode) : SimulatorNetCDFBuffer(m, P, T, file, mode) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {
@@ -82,7 +81,7 @@ void ParticleFilterNetCDFBuffer::readLogWeight(const int t,
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, p);
-  BI_ASSERT(ret, "Index exceeds size reading " << lwVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds reading " << lwVar->name());
   ret = lwVar->get(&lw, 1, 1);
   BI_ASSERT(ret, "Inconvertible type reading " << lwVar->name());
 }
@@ -95,7 +94,7 @@ void ParticleFilterNetCDFBuffer::writeLogWeight(const int t,
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, p);
-  BI_ASSERT(ret, "Index exceeds size writing " << lwVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds writing " << lwVar->name());
   ret = lwVar->put(&lw, 1, 1);
   BI_ASSERT(ret, "Inconvertible type writing " << lwVar->name());
 }
@@ -108,7 +107,7 @@ void ParticleFilterNetCDFBuffer::readAncestor(const int t,
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, p);
-  BI_ASSERT(ret, "Index exceeds size reading " << aVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds reading " << aVar->name());
   ret = aVar->get(&a, 1, 1);
   BI_ASSERT(ret, "Inconvertible type reading " << aVar->name());
 }
@@ -121,7 +120,7 @@ void ParticleFilterNetCDFBuffer::writeAncestor(const int t,
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, p);
-  BI_ASSERT(ret, "Index exceeds size writing " << aVar->name());
+  BI_ASSERT(ret, "Indexing out of bounds writing " << aVar->name());
   ret = aVar->put(&a, 1, 1);
   BI_ASSERT(ret, "Inconvertible type writing " << aVar->name());
 }
@@ -132,7 +131,7 @@ void ParticleFilterNetCDFBuffer::readResample(const int t, int& r) {
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading resample");
+  BI_ASSERT(ret, "Indexing out of bounds reading resample");
   ret = rVar->get(&r, 1);
   BI_ASSERT(ret, "Inconvertible type reading resample");
 }
@@ -143,7 +142,7 @@ void ParticleFilterNetCDFBuffer::writeResample(const int t, const int r) {
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading resample");
+  BI_ASSERT(ret, "Indexing out of bounds reading resample");
   ret = rVar->put(&r, 1);
   BI_ASSERT(ret, "Inconvertible type reading resample");
 }

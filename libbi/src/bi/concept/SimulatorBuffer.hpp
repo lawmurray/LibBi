@@ -75,7 +75,7 @@ struct SimulatorBuffer {
    * given type.
    */
   template<class M1>
-  void readState(const NodeType type, const int t, M1& s);
+  void readState(const VarType type, const int t, M1& s);
 
   /**
    * Write state.
@@ -88,7 +88,7 @@ struct SimulatorBuffer {
    * type.
    */
   template<class M1>
-  void writeState(const NodeType type, const int t, const M1& s);
+  void writeState(const VarType type, const int t, const M1& s);
 
   /**
    * Read trajectory.
@@ -101,7 +101,7 @@ struct SimulatorBuffer {
    * columns times.
    */
   template<class M1>
-  void readTrajectory(const NodeType type, const int p, M1& x);
+  void readTrajectory(const VarType type, const int p, M1& x);
 
   /**
    * Write trajectory.
@@ -114,7 +114,7 @@ struct SimulatorBuffer {
    * columns times.
    */
   template<class M1>
-  void writeTrajectory(const NodeType type, const int p, const M1& x);
+  void writeTrajectory(const VarType type, const int p, const M1& x);
 
   /**
    * Read state of particular trajectory at particular time.
@@ -125,7 +125,7 @@ struct SimulatorBuffer {
    * @param[out] x State.
    */
   template<class V1>
-  void readSingle(const NodeType type, const int p, const int t, V1& x);
+  void readSingle(const VarType type, const int p, const int t, V1& x);
 
   /**
    * Write state of particular trajectory at particular time.
@@ -136,7 +136,7 @@ struct SimulatorBuffer {
    * @param x State.
    */
   template<class V1>
-  void writeSingle(const NodeType type, const int p, const int t,
+  void writeSingle(const VarType type, const int p, const int t,
       const V1& x);
 };
 

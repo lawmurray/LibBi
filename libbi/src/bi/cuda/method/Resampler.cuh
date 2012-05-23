@@ -8,53 +8,47 @@
 #ifndef BI_CUDA_METHOD_RESAMPLER_CUH
 #define BI_CUDA_METHOD_RESAMPLER_CUH
 
-#include "../kernel/ResamplerKernel.cuh"
+#include "ResamplerKernel.cuh"
 #include "../math/temp_vector.hpp"
 
 #include "thrust/fill.h"
 
 template<class V1>
-void bi::ResamplerDeviceImpl::permute(V1& as) {
+void bi::ResamplerDeviceImpl::permute(V1 as) {
   /* pre-condition */
   assert (V1::on_device);
 
   const int P = as.size();
 
-  BOOST_AUTO(is, gpu_temp_vector<int>(P));
-  thrust::fill(is->begin(), is->end(), -1);
+  temp_gpu_vector<int>::type is(P);
+  thrust::fill(is.begin(), is.end(), -1);
 
   dim3 Dg, Db;
   Db.x = std::min(128, P);
   Dg.x = (P + Db.x - 1) / Db.x;
 
-  kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is->buf(), P);
-  synchronize();
-  delete is;
+  kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
+  CUDA_CHECK;
 }
 
 template<class V1, class M1>
-void bi::ResamplerDeviceImpl::copy(const V1& as, M1 s) {
+void bi::ResamplerDeviceImpl::copy(const V1 as, M1 X) {
   /* pre-condition */
-  assert (as.size() == static_cast<typename V1::size_type>(s.size1()));
+  assert (as.size() == X.size1());
+  assert (V1::on_device);
   assert (M1::on_device);
 
-  BOOST_AUTO(devAs, gpu_map_vector(as));
-
-  const int P = s.size1();
-  const int N = s.size2();
+  const int P = X.size1();
+  const int N = X.size2();
 
   dim3 Dg, Db;
   Db.x = std::min(128, P);
-  Dg.x = (P + Db.x - 1) / Db.x;
-  Db.y = (128 + Db.x - 1) / Db.x;
-  Dg.y = (N + Db.y - 1) / Dg.y;
+  Dg.x = (P + Db.x - 1)/Db.x;
+  Db.y = (128 + Db.x - 1)/Db.x;
+  Dg.y = (N + Db.y - 1)/Dg.y;
 
-  kernelResamplerCopy<<<Dg,Db>>>(devAs->buf(), s);
-
-  if (!V1::on_device) {
-    synchronize();
-  }
-  delete devAs;
+  kernelResamplerCopy<<<Dg,Db>>>(as.buf(), X);
+  CUDA_CHECK;
 }
 
 #endif

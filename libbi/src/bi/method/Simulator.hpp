@@ -8,14 +8,8 @@
 #ifndef BI_METHOD_SIMULATOR_HPP
 #define BI_METHOD_SIMULATOR_HPP
 
-#include "../state/Static.hpp"
 #include "../state/State.hpp"
-#include "../updater/SUpdater.hpp"
-#include "../updater/DUpdater.hpp"
-#include "../updater/CUpdater.hpp"
-#include "../updater/RUpdater.hpp"
 #include "../updater/FUpdater.hpp"
-#include "../updater/PUpdater.hpp"
 #include "../buffer/SimulatorCache.hpp"
 #include "../buffer/Cache1D.hpp"
 #include "../misc/Markable.hpp"
@@ -45,24 +39,21 @@ bi::SimulatorState::SimulatorState() : t(0.0) {
 
 namespace bi {
 /**
- * %Simulator for dynamic models.
+ * %Simulator for state-space models.
  *
  * @ingroup method
  *
  * @tparam B Model type.
- * @tparam U1 Updater type (for r-net).
  * @tparam IO1 #concept::SparseInputBuffer type.
  * @tparam IO2 #concept::SimulatorBuffer type.
  * @tparam CL Cache location.
- * @tparam SH Static handling.
  *
  * @section Concepts
  *
  * #concept::Markable
  */
-template<class B, class U1 = RUpdater<B>,
-    class IO1 = SparseInputNetCDFBuffer, class IO2 = SimulatorNetCDFBuffer,
-    Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
+template<class B, class IO1 = SparseInputNetCDFBuffer,
+    class IO2 = SimulatorNetCDFBuffer, Location CL = ON_HOST>
 class Simulator : public Markable<SimulatorState> {
 public:
   /**
@@ -74,13 +65,10 @@ public:
    * Constructor.
    *
    * @param m Model.
-   * @param delta Time step for d- and r-nodes.
-   * @param rUpdater Updater for r-net.
    * @param in Input for f-net.
    * @param out Output.
    */
-  Simulator(B& m, const real delta = 1.0, U1* rUpdater = NULL,
-      IO1* in = NULL, IO2* out = NULL);
+  Simulator(B& m, IO1* in = NULL, IO2* out = NULL);
 
   /**
    * Destructor.
@@ -94,7 +82,7 @@ public:
    *
    * @return Cache for given node type.
    */
-  const cache_type& getCache(const NodeType type) const;
+  const cache_type& getCache(const VarType type) const;
 
   /**
    * @name High-level interface
@@ -103,13 +91,15 @@ public:
    */
   //@{
   /**
-   * Simulate forward.
+   * Simulate stochastic model forward.
    *
    * @tparam L Location.
+   * @tparam IO3 #concept::SparseInputBuffer type.
    *
+   * @param rng Random number generator.
    * @param T Time to which to simulate.
-   * @param[in,out] theta Static state.
    * @param[in,out] s State.
+   * @param inInit Initialisation file.
    *
    * If an output buffer is given, it is filled with:
    *
@@ -120,18 +110,28 @@ public:
    * Note, then, that if the buffer has space for storing only one state,
    * it is the ending state that is output.
    */
-  template<Location L>
-  void simulate(const real T, Static<L>& theta, State<L>& s);
+  template<Location L, class IO3>
+  void simulate(Random& rng, const real T, State<B,L>& s, IO3* inInit);
+
+  /**
+   * Simulate deterministic model forward.
+   *
+   * @tparam L Location.
+   * @tparam IO3 #concept::SparseInputBuffer type.
+   *
+   * @param T Time to which to simulate.
+   * @param[in,out] s State.
+   * @param inInit Initialisation file.
+   *
+   * @see sample
+   */
+  template<Location L, class IO3>
+  void simulate(const real T, State<B,L>& s, IO3* inInit);
 
   /**
    * Reset to starting point.
    */
   void reset();
-
-  /**
-   * Get time step.
-   */
-  real getDelta() const;
 
   /**
    * Get the current time.
@@ -145,7 +145,7 @@ public:
    * @param[out] s State.
    */
   template<Location L>
-  void setTime(const real t, State<L>& s);
+  void setTime(const real t, State<B,L>& s);
 
   /**
    * Get output buffer.
@@ -161,35 +161,123 @@ public:
    */
   //@{
   /**
-   * Initialise.
+   * Initialise for stochastic simulation.
+   *
+   * @tparam L Location.
+   * @tparam IO3 #concept::SparseInputBuffer type.
+   *
+   * @param rng Random number generator.
+   * @param s State.
+   * @param inInit Initialisation file.
+   */
+  template<Location L, class IO3>
+  void init(Random& rng, State<B,L>& s, IO3* inInit = NULL);
+
+  /**
+   * Initialise for deterministic simulation.
+   *
+   * @tparam L Location.
+   * @tparam IO3 #concept::SparseInputBuffer type.
+   *
+   * @param s State.
+   * @param inInit Initialisation file.
+   */
+  template<Location L, class IO3>
+  void init(State<B,L>& s, IO3* inInit = NULL);
+
+  /**
+   * Initialise for stochastic simulation, with fixed starting point.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   *
+   * @param rng Random number generator.
+   * @param x0 Fixed starting point, as vector containing parameters, then
+   * optionally followed by state variables.
+   * @param s State.
+   */
+  template<Location L, class V1>
+  void init(Random& rng, const V1 x0, State<B,L>& s);
+
+  /**
+   * Initialise for deterministic simulation, with fixed starting point.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   *
+   * @param x0 Fixed starting point, as vector containing parameters, then
+   * optionally followed by state variables.
+   * @param s State.
+   */
+  template<Location L, class V1>
+  void init(const V1 x0, State<B,L>& s);
+
+  /**
+   * Advance stochastic model forward.
    *
    * @tparam L Location.
    *
-   * @param theta Static state.
+   * @param rng Random number generator.
+   * @param tnxt Time to which to advance.
+   * @param[in,out] s State.
+   * @param inInit Initialisation file.
    */
   template<Location L>
-  void init(Static<L>& theta);
+  void advance(Random& rng, const real tnxt, State<B,L>& s);
 
   /**
-   * Simulate forward.
+   * Advance deterministic model forward.
    *
    * @tparam L Location.
    *
    * @param tnxt Time to which to advance.
    * @param[in,out] s State.
    */
-  template<bi::Location L>
-  void advance(const real tnxt, State<L>& s);
+  template<Location L>
+  void advance(const real tnxt, State<B,L>& s);
+
+  /**
+   * Advanced lookahead model forward.
+   *
+   * @tparam L Location.
+   *
+   * @param rng Random number generator.
+   * @param tnxt Time to which to advance.
+   * @param[in,out] s State.
+   */
+  template<Location L>
+  void lookahead(Random& rng, const real tnxt, State<B,L>& s);
+
+  /**
+   * Advanced lookahead model forward.
+   *
+   * @tparam L Location.
+   *
+   * @param tnxt Time to which to advance.
+   * @param[in,out] s State.
+   */
+  template<Location L>
+  void lookahead(const real tnxt, State<B,L>& s);
+
+  /**
+   * Simulate the observation model for the current time.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State.
+   */
+  template<Location L>
+  void observe(State<B,L>& s);
 
   /**
    * Output static state.
    *
    * @tparam L Location.
    *
-   * @param theta Static state.
+   * @param s State.
    */
-  template<bi::Location L>
-  void output0(const Static<L>& theta);
+  template<Location L>
+  void output0(const State<B,L>& s);
 
   /**
    * Output state.
@@ -199,8 +287,8 @@ public:
    * @param k Time index.
    * @param s State.
    */
-  template<bi::Location L>
-  void output(const int k, const Static<L>& theta, const State<L>& s);
+  template<Location L>
+  void output(const int k, const State<B,L>& s);
 
   /**
    * Flush state cache to file.
@@ -209,7 +297,7 @@ public:
    *
    * Flushes the cache for the given node type to file.
    */
-  void flush(const NodeType type);
+  void flush(const VarType type);
 
   /**
    * Flush all caches to file.
@@ -218,13 +306,8 @@ public:
 
   /**
    * Clean up.
-   *
-   * @tparam L Location.
-   *
-   * @param theta Static state.
    */
-  template<bi::Location L>
-  void term(Static<L>& theta);
+  void term();
 
   //@}
 
@@ -255,39 +338,14 @@ private:
   B& m;
 
   /**
-   * Time step.
-   */
-  real delta;
-
-  /**
-   * Updater for s-net.
-   */
-  SUpdater<B,SH> sUpdater;
-
-  /**
-   * Updater for d-net.
-   */
-  DUpdater<B,SH> dUpdater;
-
-  /**
-   * Updater for c-net.
-   */
-  CUpdater<B,SH> cUpdater;
-
-  /**
    * Updater for f-net;
    */
   FUpdater<B,IO1,CL>* fUpdater;
 
   /**
-   * Updater for p-net.
+   * Input buffer.
    */
-  PUpdater<B> pUpdater;
-
-  /**
-   * Updater for r-net.
-   */
-  U1* rUpdater;
+  IO1* inInput;
 
   /**
    * Output buffer.
@@ -305,17 +363,12 @@ private:
   std::vector<cache_type> caches;
 
   /**
-   * Is rUpdater not null?
-   */
-  bool haveRUpdater;
-
-  /**
-   * Is fUpdater not null?
+   * Is fUpdater not NULL?
    */
   bool haveFUpdater;
 
   /**
-   * Is out not null?
+   * Is out not NULL?
    */
   bool haveOut;
 
@@ -323,6 +376,10 @@ private:
    * State.
    */
   SimulatorState state;
+
+  /* net sizes, for convenience */
+  static const int ND = net_size<typename B::DTypeList>::value;
+  static const int NP = net_size<typename B::PTypeList>::value;
 };
 
 /**
@@ -332,7 +389,7 @@ private:
  *
  * @see Simulator
  */
-template<Location CL = ON_HOST, StaticHandling SH = STATIC_SHARED>
+template<Location CL = ON_HOST>
 struct SimulatorFactory {
   /**
    * Create simulator.
@@ -341,10 +398,10 @@ struct SimulatorFactory {
    *
    * @see Simulator::Simulator()
    */
-  template<class B, class U1, class IO1, class IO2>
-  static Simulator<B,U1,IO1,IO2,CL,SH>* create(B& m, const real delta = 1.0,
-      U1* rUpdater = NULL, IO1* in = NULL, IO2* out = NULL) {
-    return new Simulator<B,U1,IO1,IO2,CL,SH>(m, delta, rUpdater, in, out);
+  template<class B, class IO1, class IO2>
+  static Simulator<B,IO1,IO2,CL>* create(B& m, IO1* in = NULL,
+      IO2* out = NULL) {
+    return new Simulator<B,IO1,IO2,CL>(m, in, out);
   }
 };
 
@@ -352,67 +409,55 @@ struct SimulatorFactory {
 
 #include "misc.hpp"
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-bi::Simulator<B,U1,IO1,IO2,CL,SH>::Simulator(B& m, const real delta,
-    U1* rUpdater, IO1* in, IO2* out) :
-    m(m), delta(delta), rUpdater(rUpdater), out(out), caches(NUM_NODE_TYPES),
-    haveRUpdater(rUpdater != NULL), haveOut(out != NULL && out->size2() > 0) {
+template<class B, class IO1, class IO2, bi::Location CL>
+bi::Simulator<B,IO1,IO2,CL>::Simulator(B& m, IO1* in, IO2* out) :
+    m(m),
+    inInput(in),
+    out(out),
+    caches(NUM_VAR_TYPES),
+    haveOut(out != NULL && out->size2() > 0) {
   haveFUpdater = in != NULL;
   fUpdater = (haveFUpdater) ? new FUpdater<B,IO1,CL>(*in) : NULL;
   reset();
 
   /* post-conditions */
-  assert (rUpdater != NULL || !haveRUpdater);
   assert (fUpdater != NULL || !haveFUpdater);
   assert (!(out == NULL || out->size2() == 0) || !haveOut);
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-bi::Simulator<B,U1,IO1,IO2,CL,SH>::~Simulator() {
+template<class B, class IO1, class IO2, bi::Location CL>
+bi::Simulator<B,IO1,IO2,CL>::~Simulator() {
   flush();
   delete fUpdater;
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-inline IO2* bi::Simulator<B,U1,IO1,IO2,CL,SH>::getOutput() {
+template<class B, class IO1, class IO2, bi::Location CL>
+inline IO2* bi::Simulator<B,IO1,IO2,CL>::getOutput() {
   return out;
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-inline const typename bi::Simulator<B,U1,IO1,IO2,CL,SH>::cache_type& bi::Simulator<B,U1,IO1,IO2,CL,SH>::getCache(
-    const NodeType type) const {
+template<class B, class IO1, class IO2, bi::Location CL>
+inline const typename bi::Simulator<B,IO1,IO2,CL>::cache_type& bi::Simulator<B,IO1,IO2,CL>::getCache(
+    const VarType type) const {
   return caches[type];
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-inline real bi::Simulator<B,U1,IO1,IO2,CL,SH>::getTime() const {
+template<class B, class IO1, class IO2, bi::Location CL>
+inline real bi::Simulator<B,IO1,IO2,CL>::getTime() const {
   return state.t;
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-inline real bi::Simulator<B,U1,IO1,IO2,CL,SH>::getDelta() const {
-  return delta;
-}
-
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
+template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
-inline void bi::Simulator<B,U1,IO1,IO2,CL,SH>::setTime(const real t,
-    State<L>& s) {
+inline void bi::Simulator<B,IO1,IO2,CL>::setTime(const real t,
+    State<B,L>& s) {
   state.t = t;
   if (haveFUpdater) {
     fUpdater->setTime(t, s);
   }
 }
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-inline void bi::Simulator<B,U1,IO1,IO2,CL,SH>::reset() {
+template<class B, class IO1, class IO2, bi::Location CL>
+inline void bi::Simulator<B,IO1,IO2,CL>::reset() {
   Markable<SimulatorState>::unmark();
   state.t = 0.0;
   if (haveFUpdater) {
@@ -420,20 +465,51 @@ inline void bi::Simulator<B,U1,IO1,IO2,CL,SH>::reset() {
   }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::simulate(const real tnxt,
-     Static<L>& theta, State<L>& s) {
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class IO3>
+void bi::Simulator<B,IO1,IO2,CL>::simulate(Random& rng, const real tnxt,
+     State<B,L>& s, IO3* inInit) {
   const real t0 = state.t;
   const int K = (haveOut) ? out->size2() : 1;
   real tk;
   int k;
 
-  init(theta);
-  output0(theta);
+  init(rng, s, inInit);
+  output0(s);
   if (K > 1) {
-    output(0, theta, s);
+    output(0, s);
+  }
+  for (k = 0; k == 0 || k < K - 1; ++k) { // enters at least once
+    /* time of next output */
+    tk = (k == K - 1) ? tnxt : t0 + (tnxt - t0)*(k + 1)/(K - 1);
+
+    /* advance */
+    advance(rng, tk, s);
+
+    /* output */
+    if (K > 1) {
+      output(k + 1, s);
+    } else {
+      output(0, s);
+    }
+  }
+  synchronize();
+  term();
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class IO3>
+void bi::Simulator<B,IO1,IO2,CL>::simulate(const real tnxt, State<B,L>& s,
+    IO3* inInit) {
+  const real t0 = state.t;
+  const int K = (haveOut) ? out->size2() : 1;
+  real tk;
+  int k;
+
+  init(s, inInit);
+  output0(s);
+  if (K > 1) {
+    output(0, s);
   }
   for (k = 0; k == 0 || k < K - 1; ++k) { // enters at least once
     /* time of next output */
@@ -444,51 +520,102 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::simulate(const real tnxt,
 
     /* output */
     if (K > 1) {
-      output(k + 1, theta, s);
+      output(k + 1, s);
     } else {
-      output(0, theta, s);
+      output(0, s);
     }
   }
   synchronize();
-  term(theta);
+  term();
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::init(Static<L>& theta) {
-  pUpdater.update(theta);
-  sUpdater.update(theta);
-  bind(theta);
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class IO3>
+void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, State<B,L>& s,
+    IO3* inInit) {
+  if (inInput != NULL) {
+    inInput->read0(F_VAR, s.get(F_VAR));
+  }
+  m.parameterSamples(rng, s);
+  if (inInit != NULL) {
+    inInit->read0(P_VAR, s.get(P_VAR));
+  }
+  m.parameterPostSamples(rng, s);
+  m.initialSamples(rng, s);
+  if (inInit != NULL) {
+    inInit->read0(D_VAR, s.get(D_VAR));
+  }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class IO3>
+void bi::Simulator<B,IO1,IO2,CL>::init(State<B,L>& s, IO3* inInit) {
+  if (inInput != NULL) {
+    inInput->read0(F_VAR, s.get(F_VAR));
+  }
+  m.parameterSimulate(s);
+  if (inInit != NULL) {
+    inInit->read0(P_VAR, s.get(P_VAR));
+  }
+  m.parameterPostSimulate(s);
+  m.initialSimulate(s);
+  if (inInit != NULL) {
+    inInit->read0(D_VAR, s.get(D_VAR));
+  }
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class V1>
+void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 x0,
+    State<B,L>& s) {
+  /* pre-condition */
+  assert (x0.size() == NP || x0.size() == NP + ND);
+
+  vec(s.get(P_VAR)) = subrange(x0, 0, NP);
+  m.parameterPostSamples(rng, s);
+  if (x0.size() == NP + ND) {
+    set_rows(s.get(D_VAR), subrange(x0, NP, ND));
+  } else {
+    m.initialSamples(rng, s);
+  }
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L, class V1>
+void bi::Simulator<B,IO1,IO2,CL>::init(const V1 x0, State<B,L>& s) {
+  /* pre-condition */
+  assert (x0.size() == NP || x0.size() == NP + ND);
+
+  vec(s.get(P_VAR)) = subrange(x0, 0, NP);
+  m.parameterPostSimulate(s);
+  if (x0.size() == NP + ND) {
+    set_rows(s.get(D_VAR), subrange(x0, NP, ND));
+  } else {
+    m.initialSimulate(s);
+  }
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt,
-     State<L>& s) {
+void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
+    State<B,L>& s) {
   /* pre-condition */
   assert (fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
-  if (haveFUpdater && fUpdater->hasNext() &&
-      sgn*(fUpdater->getTime() - ti) >= 0.0) {
+  if (haveFUpdater && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
     tf = fUpdater->getTime();
   } else {
     tf = tnxt + sgn*1.0;
   }
-  if (m.getNumNodes(D_NODE) > 0 || (m.getNumNodes(R_NODE) && haveRUpdater)) {
-    td = ge_step(ti, sgn*delta);
-  } else {
-    td = tnxt + sgn*1.0;
-  }
 
   do { // over intermediate stopping points
+    td = gt_step(ti, sgn*m.getDelta());
     tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
 
     if (sgn*ti >= sgn*tf) {
-      /* update f-net */
+      /* update forcings */
       fUpdater->update(s);
       if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
         tf = fUpdater->getTime();
@@ -497,20 +624,8 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt,
       }
     }
 
-    if (sgn*ti >= sgn*td) {
-      td = gt_step(td, sgn*delta);
-
-      /* update r-net */
-      if (haveRUpdater) {
-        rUpdater->update(ti, td, s);
-      }
-
-      /* update d-net */
-      dUpdater.update(ti, td, s);
-    }
-
-    /* update c-net */
-    cUpdater.update(ti, tj, s);
+    /* update noise and state */
+    m.transitionSamples(rng, ti, tj, s);
 
     ti = tj;
   } while (sgn*ti < sgn*tnxt);
@@ -520,38 +635,153 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::advance(const real tnxt,
   assert (state.t == tnxt);
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
+template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::output0(const Static<L>& theta) {
-  if (haveOut && SH == STATIC_SHARED) {
+void bi::Simulator<B,IO1,IO2,CL>::advance(const real tnxt, State<B,L>& s) {
+  /* pre-condition */
+  assert (fabs(tnxt - state.t) > 0.0);
+
+  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+  real ti = state.t, tj, tf, td;
+  if (haveFUpdater && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
+    tf = fUpdater->getTime();
+  } else {
+    tf = tnxt + sgn*1.0;
+  }
+
+  do { // over intermediate stopping points
+    td = gt_step(ti, sgn*m.getDelta());
+    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+
+    if (sgn*ti >= sgn*tf) {
+      /* update forcings */
+      fUpdater->update(s);
+      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+        tf = fUpdater->getTime();
+      } else {
+        tf = tnxt + sgn*1.0;
+      }
+    }
+
+    /* update noise and state */
+    m.transitionSimulate(ti, tj, s);
+
+    ti = tj;
+  } while (sgn*ti < sgn*tnxt);
+  state.t = tnxt;
+
+  /* post-condition */
+  assert (state.t == tnxt);
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L>
+void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
+    State<B,L>& s) {
+  /* pre-condition */
+  assert (fabs(tnxt - state.t) > 0.0);
+
+  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+  real ti = state.t, tj, tf, td;
+  if (haveFUpdater && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
+    tf = fUpdater->getTime();
+  } else {
+    tf = tnxt + sgn*1.0;
+  }
+
+  do { // over intermediate stopping points
+    td = gt_step(ti, sgn*m.getDelta());
+    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+
+    if (sgn*ti >= sgn*tf) {
+      /* update forcings */
+      fUpdater->update(s);
+      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+        tf = fUpdater->getTime();
+      } else {
+        tf = tnxt + sgn*1.0;
+      }
+    }
+
+    /* update noise and state */
+    m.lookaheadTransitionSamples(rng, ti, tj, s);
+
+    ti = tj;
+  } while (sgn*ti < sgn*tnxt);
+  state.t = tnxt;
+
+  /* post-condition */
+  assert (state.t == tnxt);
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L>
+void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt,
+    State<B,L>& s) {
+  /* pre-condition */
+  assert (fabs(tnxt - state.t) > 0.0);
+
+  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+  real ti = state.t, tj, tf, td;
+  if (haveFUpdater && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
+    tf = fUpdater->getTime();
+  } else {
+    tf = tnxt + sgn*1.0;
+  }
+
+  do { // over intermediate stopping points
+    td = gt_step(ti, sgn*m.getDelta());
+    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+
+    if (sgn*ti >= sgn*tf) {
+      /* update forcings */
+      fUpdater->update(s);
+      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+        tf = fUpdater->getTime();
+      } else {
+        tf = tnxt + sgn*1.0;
+      }
+    }
+
+    /* update noise and state */
+    m.lookaheadTransitionSimulate(ti, tj, s);
+
+    ti = tj;
+  } while (sgn*ti < sgn*tnxt);
+  state.t = tnxt;
+
+  /* post-condition */
+  assert (state.t == tnxt);
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L>
+void bi::Simulator<B,IO1,IO2,CL>::observe(State<B,L>& s) {
+  m.observationSimulate(s);
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+template<bi::Location L>
+void bi::Simulator<B,IO1,IO2,CL>::output0(const State<B,L>& s) {
+  if (haveOut) {
     setCacheMode(cache_type::STATE_MODE);
-    caches[P_NODE].writeState(0, theta.get(P_NODE));
-    caches[S_NODE].writeState(0, theta.get(S_NODE));
+    caches[P_VAR].writeState(0, s.get(P_VAR));
   }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
+template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::output(const int k,
-    const Static<L>& theta, const State<L>& s) {
+void bi::Simulator<B,IO1,IO2,CL>::output(const int k, const State<B,L>& s) {
   if (haveOut) {
     timeCache.put(k, state.t);
     setCacheMode(cache_type::STATE_MODE);
-    caches[D_NODE].writeState(k, s.get(D_NODE));
-    caches[C_NODE].writeState(k, s.get(C_NODE));
-    caches[R_NODE].writeState(k, s.get(R_NODE));
-    if (SH == STATIC_OWN) {
-      caches[P_NODE].writeState(k, theta.get(P_NODE));
-      caches[S_NODE].writeState(k, theta.get(S_NODE));
-    }
+    caches[D_VAR].writeState(k, s.get(D_VAR));
+    caches[R_VAR].writeState(k, s.get(R_VAR));
   }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::flush(const NodeType type) {
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::flush(const VarType type) {
   int k, p, P;
   cache_type& cache = caches[type];
 
@@ -583,17 +813,11 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::flush(const NodeType type) {
   cache.clean();
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::flush() {
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::flush() {
   /* state caches */
-  flush(D_NODE);
-  flush(C_NODE);
-  flush(R_NODE);
-  if (SH == STATIC_OWN) {
-    flush(P_NODE);
-    flush(S_NODE);
-  }
+  flush(D_VAR);
+  flush(R_VAR);
 
   /* time cache */
   int t = 0, T = 0;
@@ -612,38 +836,33 @@ void bi::Simulator<B,U1,IO1,IO2,CL,SH>::flush() {
   timeCache.clean();
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-template<bi::Location L>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::term(Static<L>& theta) {
-  unbind(theta);
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::term() {
+  //
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::setCacheMode(
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::setCacheMode(
     const typename cache_type::Mode mode) {
   int i;
-  for (i = 0; i < NUM_NODE_TYPES; ++i) {
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
     if (caches[i].getMode() != mode) {
-      flush((NodeType)i);
+      flush((VarType)i);
     }
     caches[i].setMode(mode);
   }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::mark() {
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::mark() {
   Markable<SimulatorState>::mark(state);
   if (haveFUpdater) {
     fUpdater->mark();
   }
 }
 
-template<class B, class U1, class IO1, class IO2, bi::Location CL,
-    bi::StaticHandling SH>
-void bi::Simulator<B,U1,IO1,IO2,CL,SH>::restore() {
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::restore() {
   Markable<SimulatorState>::restore(state);
   if (haveFUpdater) {
     fUpdater->restore();

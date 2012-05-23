@@ -10,31 +10,36 @@
 #ifndef BI_HOST_HOST_HPP
 #define BI_HOST_HOST_HPP
 
+#include "../math/vector.hpp"
+#include "../math/matrix.hpp"
 #include "../misc/macro.hpp"
-#include "../state/Coord.hpp"
+#include "../traits/var_traits.hpp"
+#include "../traits/net_traits.hpp"
 
 /**
  * @internal
  *
  * @def HOST_STATE_DEC
  *
- * Macro for global state variable declarations in main memory.
+ * Macro for declaring host global variable for input buffer.
  */
 #define HOST_STATE_DEC(name, Name) \
   /**
-    Main memory name##-state.
+    Main memory name##-state input.
    */ \
   static bi::host_matrix_handle<real> host##Name##State;
 
-HOST_STATE_DEC(s, S)
-HOST_STATE_DEC(d, D)
-HOST_STATE_DEC(c, C)
 HOST_STATE_DEC(r, R)
+HOST_STATE_DEC(d, D)
+HOST_STATE_DEC(p, P)
 HOST_STATE_DEC(f, F)
 HOST_STATE_DEC(o, O)
-HOST_STATE_DEC(p, P)
+HOST_STATE_DEC(dx, DX)
+HOST_STATE_DEC(px, PX)
+HOST_STATE_DEC(ry, RY)
+HOST_STATE_DEC(dy, DY)
+HOST_STATE_DEC(py, PY)
 HOST_STATE_DEC(oy, OY)
-HOST_STATE_DEC(or, OR)
 
 namespace bi {
 /**
@@ -42,76 +47,78 @@ namespace bi {
  *
  * @def HOST_BIND_DEC
  *
- * Macro for bind function declarations.
+ * Macro for declaring bind function for node type.
  */
 #define HOST_BIND_DEC(name) \
   /**
-    @internal
-
-    Bind name##-net state to main memory.
+    Bind name##-net input buffer to main memory.
 
     @ingroup state_host
 
     @param s State.
    */ \
-   CUDA_FUNC_HOST void host_bind_##name(host_matrix_reference<real>& s);
+   CUDA_FUNC_HOST void host_bind_##name(host_matrix_reference<real> s);
 
-HOST_BIND_DEC(s)
-HOST_BIND_DEC(d)
-HOST_BIND_DEC(c)
 HOST_BIND_DEC(r)
+HOST_BIND_DEC(d)
+HOST_BIND_DEC(p)
 HOST_BIND_DEC(f)
 HOST_BIND_DEC(o)
-HOST_BIND_DEC(p)
+HOST_BIND_DEC(dx)
+HOST_BIND_DEC(px)
+HOST_BIND_DEC(ry)
+HOST_BIND_DEC(dy)
+HOST_BIND_DEC(py)
 HOST_BIND_DEC(oy)
-HOST_BIND_DEC(or)
 
 /**
- * @internal
- *
  * Fetch node value from main memory.
  *
  * @ingroup state_host
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param p Trajectory id. Ignored for f- and oy-node requests, as only one
- * trajectory is ever stored.
- * @param cox Base coordinates.
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
  *
  * @return Value of the given node.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-real host_fetch(const int p, const Coord& cox);
+template<class B, class X>
+real host_fetch(const int p, const int ix);
 
 /**
- * @internal
+ * Fetch node value alternative buffer in main memory.
  *
+ * @ingroup state_host
+ *
+ * @tparam B Model type.
+ * @tparam X Node type.
+ *
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
+ *
+ * @return Value of the given node.
+ */
+template<class B, class X>
+real host_fetch_alt(const int p, const int ix);
+
+/**
  * Set node value in main memory.
  *
  * @ingroup state_host
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param p Trajectory id. Ignored for f- and oy-node requests, as only one
- * trajectory is ever stored.
- * @param cox Base coordinates.
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
  * @param val Value to set for the given node.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-void host_put(const int p, const Coord& cox, const real& val);
+template<class B, class X>
+void host_put(const int p, const int ix, const real& val);
 
 /**
- * @internal
- *
  * Facade for state in main memory.
  *
  * @ingroup state_host
@@ -122,17 +129,25 @@ struct host {
   /**
    * Fetch value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static real fetch(const int p, const Coord& cox) {
-    return host_fetch<B,X,Xo,Yo,Zo>(p, cox);
+  template<class B, class X>
+  static real fetch(const int p, const int ix) {
+    return host_fetch<B,X>(p, ix);
+  }
+
+  /**
+   * Fetch alternative value.
+   */
+  template<class B, class X>
+  static real fetch_alt(const int p, const int ix) {
+    return host_fetch_alt<B,X>(p, ix);
   }
 
   /**
    * Put value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static void put(const int p, const Coord& cox, const real& val) {
-    host_put<B,X,Xo,Yo,Zo>(p, cox, val);
+  template<class B, class X>
+  static void put(const int p, const int ix, const real& val) {
+    host_put<B,X>(p, ix, val);
   }
 };
 
@@ -143,65 +158,83 @@ struct host {
  *
  * @def HOST_BIND_DEF
  *
- * Macro for bind function definitions.
+ * Macro for defining bind function for node type.
  */
 #define HOST_BIND_DEF(name, Name) \
-  inline void bi::host_bind_##name(host_matrix_reference<real>& s) { \
+  inline void bi::host_bind_##name(host_matrix_reference<real> s) { \
     host##Name##State.copy(s); \
   }
 
-HOST_BIND_DEF(s, S)
-HOST_BIND_DEF(d, D)
-HOST_BIND_DEF(c, C)
 HOST_BIND_DEF(r, R)
+HOST_BIND_DEF(d, D)
+HOST_BIND_DEF(p, P)
 HOST_BIND_DEF(f, F)
 HOST_BIND_DEF(o, O)
-HOST_BIND_DEF(p, P)
+HOST_BIND_DEF(dx, DX)
+HOST_BIND_DEF(px, PX)
+HOST_BIND_DEF(ry, RY)
+HOST_BIND_DEF(dy, DY)
+HOST_BIND_DEF(py, PY)
 HOST_BIND_DEF(oy, OY)
-HOST_BIND_DEF(or, OR)
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline real bi::host_fetch(const int p, const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline real bi::host_fetch(const int p, const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
   real result;
 
-  if (is_s_node<X>::value) {
-    result = hostSState(p, i);
-  } else if (is_d_node<X>::value) {
+  if (is_d_var<X>::value) {
     result = hostDState(p, i);
-  } else if (is_c_node<X>::value) {
-    result = hostCState(p, i);
-  } else if (is_r_node<X>::value) {
+  } else if (is_dx_var<X>::value) {
+    result = hostDXState(p, i);
+  } else if (is_r_var<X>::value) {
     result = hostRState(p, i);
-  } else if (is_f_node<X>::value) {
+  } else if (is_f_var<X>::value) {
     result = hostFState(0, i);
-  } else if (is_o_node<X>::value) {
-    result = hostOYState(0, i);
-  } else if (is_p_node<X>::value) {
-    result = hostPState(p, i);
+  } else if (is_o_var<X>::value) {
+    result = hostOState(p, i);
+  } else if (is_p_var<X>::value) {
+    result = hostPState(0, i);
+  } else if (is_px_var<X>::value) {
+    result = hostPXState(0, i);
   }
   return result;
 }
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline void bi::host_put(const int p, const Coord& cox,
-    const real& val) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline real bi::host_fetch_alt(const int p, const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
+  real result;
 
-  if (is_s_node<X>::value) {
-    hostSState(p, i) = val;
-  } else if (is_d_node<X>::value) {
+  if (is_d_var<X>::value) {
+    result = hostDYState(p, i);
+  } else if (is_r_var<X>::value) {
+    result = hostRYState(p, i);
+  } else if (is_o_var<X>::value) {
+    result = hostOYState(0, i);
+  } else if (is_p_var<X>::value) {
+    result = hostPYState(0, i);
+  }
+  return result;
+}
+
+template<class B, class X>
+inline void bi::host_put(const int p, const int ix, const real& val) {
+  const int i = var_net_start<B,X>::value + ix;
+
+  if (is_d_var<X>::value) {
     hostDState(p, i) = val;
-  } else if (is_c_node<X>::value) {
-    hostCState(p, i) = val;
-  } else if (is_r_node<X>::value) {
+  } else if (is_dx_var<X>::value) {
+    hostDXState(p, i) = val;
+  } else if (is_r_var<X>::value) {
     hostRState(p, i) = val;
-  } else if (is_f_node<X>::value) {
+  } else if (is_f_var<X>::value) {
     hostFState(0, i) = val;
-  } else if (is_o_node<X>::value) {
-    hostOYState(0, i) = val;
-  } else if (is_p_node<X>::value) {
-    hostPState(p, i) = val;
+  } else if (is_o_var<X>::value) {
+    hostOState(p, i) = val;
+  } else if (is_p_var<X>::value) {
+    hostPState(0, i) = val;
+  } else if (is_px_var<X>::value) {
+    hostPXState(0, i) = val;
   }
 }
 

@@ -20,7 +20,6 @@
 #define BI_CUDA_TEXTURE_CUH
 
 #include "cuda.hpp"
-#include "../state/Coord.hpp"
 
 /**
  * @internal
@@ -40,15 +39,13 @@
    */ \
   texture<float,2,cudaReadModeElementType> tex##Name##State;
 
-TEXTURE_STATE_DEC(S)
 TEXTURE_STATE_DEC(D)
-TEXTURE_STATE_DEC(C)
+TEXTURE_STATE_DEC(DX)
 TEXTURE_STATE_DEC(R)
 TEXTURE_STATE_DEC(F)
 TEXTURE_STATE_DEC(O)
 TEXTURE_STATE_DEC(P)
-TEXTURE_STATE_DEC(OY)
-TEXTURE_STATE_DEC(OR)
+TEXTURE_STATE_DEC(PX)
 
 namespace bi {
 /**
@@ -71,15 +68,13 @@ namespace bi {
   template<class M1> \
   CUDA_FUNC_HOST void texture_bind_##name(M1& s);
 
-TEXTURE_BIND_DEC(s)
 TEXTURE_BIND_DEC(d)
-TEXTURE_BIND_DEC(c)
+TEXTURE_BIND_DEC(dx)
 TEXTURE_BIND_DEC(r)
 TEXTURE_BIND_DEC(f)
 TEXTURE_BIND_DEC(o)
 TEXTURE_BIND_DEC(p)
-TEXTURE_BIND_DEC(oy)
-TEXTURE_BIND_DEC(or)
+TEXTURE_BIND_DEC(px)
 
 /**
  * @internal
@@ -98,42 +93,32 @@ TEXTURE_BIND_DEC(or)
    */ \
   CUDA_FUNC_HOST void texture_unbind_##name();
 
-TEXTURE_UNBIND_DEC(s)
 TEXTURE_UNBIND_DEC(d)
-TEXTURE_UNBIND_DEC(c)
+TEXTURE_UNBIND_DEC(dx)
 TEXTURE_UNBIND_DEC(r)
 TEXTURE_UNBIND_DEC(f)
 TEXTURE_UNBIND_DEC(o)
 TEXTURE_UNBIND_DEC(p)
-TEXTURE_UNBIND_DEC(oy)
-TEXTURE_UNBIND_DEC(or)
+TEXTURE_UNBIND_DEC(px)
 
 /**
- * @internal
- *
- * Texture-assisted fetch of name##-node value from global memory.
+ * Texture-assisted fetch of name##-var value from global memory.
  *
  * @ingroup state_gpu
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param p Trajectory id. Ignored for f- and oy-node requests, as only one
- * trajectory is ever stored.
- * @param cox Base coordinates.
+ * @param p Trajectory id.
+ * @param cox Serial coordinate.
  *
  * @return Value of the given node for the trajectory associated with the
  * calling thread.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE float texture_fetch(const int p, const Coord& cox);
+template<class B, class X>
+CUDA_FUNC_DEVICE float texture_fetch(const int p, const int cox);
 
 /**
- * @internal
- *
  * Facade for state in texture memory.
  *
  * @ingroup state_gpu
@@ -144,9 +129,9 @@ struct texture {
   /**
    * Fetch.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE float fetch(const int p, const Coord& cox) {
-    return texture_fetch<B,X,Xo,Yo,Zo>(p, cox);
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE float fetch(const int p, const int cox) {
+    return texture_fetch<B,X>(p, cox);
   }
 };
 
@@ -170,15 +155,13 @@ struct texture {
         &channelDesc, s.size1(), s.size2(), s.lead()*sizeof(real))); \
   }
 
-TEXTURE_BIND_DEF(s, S)
 TEXTURE_BIND_DEF(d, D)
-TEXTURE_BIND_DEF(c, C)
+TEXTURE_BIND_DEF(dx, DX)
 TEXTURE_BIND_DEF(r, R)
 TEXTURE_BIND_DEF(f, F)
 TEXTURE_BIND_DEF(o, O)
 TEXTURE_BIND_DEF(p, P)
-TEXTURE_BIND_DEF(oy, OY)
-TEXTURE_BIND_DEF(or, OR)
+TEXTURE_BIND_DEF(px, PX)
 
 /**
  * @def TEXTURE_UNBIND_DEF
@@ -193,36 +176,34 @@ TEXTURE_BIND_DEF(or, OR)
     CUDA_CHECKED_CALL(cudaUnbindTexture(tex##Name##State)); \
   }
 
-TEXTURE_UNBIND_DEF(s, S)
 TEXTURE_UNBIND_DEF(d, D)
-TEXTURE_UNBIND_DEF(c, C)
+TEXTURE_UNBIND_DEF(dx, DX)
 TEXTURE_UNBIND_DEF(r, R)
 TEXTURE_UNBIND_DEF(f, F)
 TEXTURE_UNBIND_DEF(o, O)
 TEXTURE_UNBIND_DEF(p, P)
-TEXTURE_UNBIND_DEF(oy, OY)
-TEXTURE_UNBIND_DEF(or, OR)
+TEXTURE_UNBIND_DEF(px, PX)
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline float bi::texture_fetch(const int p, const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline float bi::texture_fetch(const int p, const int cox) {
+  const int i = var_net_start<B,X>::value + cox;
 
-  if (is_s_node<X>::value) {
-    return tex2D(texSState, p, i);
-  } else if (is_d_node<X>::value) {
+  if (is_d_var<X>::value) {
     return tex2D(texDState, p, i);
-  } else if (is_c_node<X>::value) {
-    return tex2D(texCState, p, i);
-  } else if (is_r_node<X>::value) {
+  } else if (is_dx_var<X>::value) {
+    return tex2D(texDXState, p, i);
+  } else if (is_r_var<X>::value) {
     return tex2D(texRState, p, i);
-  } else if (is_f_node<X>::value) {
+  } else if (is_f_var<X>::value) {
     return tex2D(texFState, 0, i);
-  } else if (is_o_node<X>::value) {
-    return tex2D(texOState, 0, i);
-  } else if (is_p_node<X>::value) {
-    return tex2D(texPState, p, i);
+  } else if (is_o_var<X>::value) {
+    return tex2D(texOState, p, i);
+  } else if (is_p_var<X>::value) {
+    return tex2D(texPState, 0, i);
+  } else if (is_px_var<X>::value) {
+    return tex2D(texPXState, 0, i);
   } else {
-    return REAL(1.0 / 0.0);
+    return BI_REAL(1.0 / 0.0);
   }
 }
 

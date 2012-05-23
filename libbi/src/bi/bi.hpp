@@ -40,10 +40,7 @@
  *
  * @defgroup math Math
  *
- *   @defgroup math_gpu Device vectors and matrices
- *   @ingroup math
- *
- *   @defgroup math_host Host vectors and matrices
+ *   @defgroup math_matvec Matrix and vector containers
  *   @ingroup math
  *
  *   @defgroup math_view Matrix and vector views
@@ -52,17 +49,38 @@
  *   @defgroup math_op Matrix and vector operations
  *   @ingroup math
  *
- *   @defgroup math_primitive Vector primitives
+ *   @defgroup math_multi_op Matrix and vector batch operations
  *   @ingroup math
  *
- *   @defgroup math_functor Functors
- *   @ingroup math
+ *   These operations are BLAS-like operations that are performed on multiple
+ *   input arguments simultaneously. Each accepts a @c P argument indicating
+ *   the number of operations to be performed. Vector arguments are passed
+ *   as matrices of @c P rows, where each row gives a vector. Matrix
+ *   arguments are passed as matrices with @c P times as many rows as usual,
+ *   with rows of each of the @c P matrices interleaved.
  *
- *   @defgroup math_pdf Probability density functions
+ *   @defgroup math_ode Ordinary differential equations
  *   @ingroup math
  *
  *   @defgroup math_rng Random number generation
  *   @ingroup math
+ *
+ * @defgroup primitive Primitives
+ *
+ *   @defgroup primitive_functor Functors
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_iterators Iterators
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_vector Vector primitives
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_matrix Matrix primitives
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_allocators Allocators
+ *   @ingroup primitive
  *
  * @defgroup kd kd trees
  *
@@ -85,12 +103,6 @@
  * @defgroup concept Concepts
  *
  * @defgroup misc Miscellaneous
- *
- *   @defgroup misc_iterators Iterators
- *   @ingroup misc
- *
- *   @defgroup misc_allocators Allocators
- *   @ingroup misc
  */
 
 /**
@@ -117,6 +129,28 @@
  * and linking a single <i>*.cu</i> file with explicit template instantiations
  * of the methods being used (e.g. #bi::Simulator, #bi::ParticleFilter)
  * should be sufficient to satisfy the outstanding device code dependencies.
+ */
+
+/**
+ * @page Coding
+ *
+ * @section Coding Coding conventions
+ *
+ * The following names are used for template parameters (where <i>n</i>
+ * is an integer):
+ *
+ * @li <tt>B</tt> for the model type,
+ * @li <tt>T<i>n</i></tt> for scalar types,
+ * @li <tt>V<i>n</i></tt> for matrix types,
+ * @li <tt>M<i>n</i></tt> for vector types,
+ * @li <tt>Q<i>n</i></tt> for pdf types,
+ * @li <tt>S</tt> for variable type lists,
+ * @li <tt>A</tt> for action type lists,
+ * @li <tt>L</tt> for location (host or device),
+ * @li <tt>CL</tt> for location of a cache,
+ * @li <tt>PX</tt> for parents type,
+ * @li <tt>CX</tt> for coordinates type,
+ * @li <tt>OX</tt> for output type.
  */
 
 /**

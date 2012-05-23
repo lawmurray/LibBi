@@ -24,7 +24,7 @@ namespace bi {
  */
 template<class T1, class T2>
 struct append {
-  typedef append<typename push_back_spec<T1,typename front_spec<T2>::type>::type,typename pop_front_spec<T2>::type> type;
+  typedef typename append<typename push_back_spec<T1,typename front_spec<T2>::type>::type,typename pop_front_spec<T2>::type>::type type;
 };
 
 /**

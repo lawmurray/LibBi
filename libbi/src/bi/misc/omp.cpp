@@ -11,10 +11,13 @@
 
 BI_THREAD int bi_omp_tid;
 BI_THREAD int bi_omp_max_threads;
+
+#ifdef ENABLE_GPU
 BI_THREAD cublasHandle_t bi_omp_cublas_handle;
 BI_THREAD cudaStream_t bi_omp_cuda_stream;
+#endif
 
-void bi_omp_init() {
+void bi_omp_init(const int threads) {
   /* explicitly turn off dynamic threads, required for threadprivate
    * guarantees */
   omp_set_dynamic(0);
@@ -22,12 +25,17 @@ void bi_omp_init() {
   /* allow nested parallelism */
   omp_set_nested(1);
 
+  /* set number of threads */
+  if (threads > 0) {
+    omp_set_num_threads(threads);
+  }
+
   int max_threads = omp_get_max_threads(); // must be outside parallel block
   #pragma omp parallel
   {
     bi_omp_tid = omp_get_thread_num();
     bi_omp_max_threads = max_threads;
-    #ifndef USE_CPU
+    #ifdef ENABLE_GPU
     CUBLAS_CHECKED_CALL(cublasCreate(&bi_omp_cublas_handle));
     CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
     #endif
@@ -37,7 +45,7 @@ void bi_omp_init() {
 void bi_omp_term() {
   #pragma omp parallel
   {
-    #ifndef USE_CPU
+    #ifdef ENABLE_GPU
     CUBLAS_CHECKED_CALL(cublasDestroy(bi_omp_cublas_handle));
     CUDA_CHECKED_CALL(cudaStreamDestroy(bi_omp_cuda_stream));
     #endif

@@ -10,15 +10,13 @@
  *
  * Constant memory may be used for storing model parent structures, and for
  * storing states which are constant for all trajectories -- f-, o- and
- * p-nodes states.
+ * p-vars states.
  */
 #ifndef BI_CUDA_CONSTANT_CUH
 #define BI_CUDA_CONSTANT_CUH
 
 #include "cuda.hpp"
-#include "../model/model.hpp"
 #include "../misc/macro.hpp"
-#include "../state/Coord.hpp"
 
 /**
  * @def CONST_STATE_SIZE
@@ -31,7 +29,7 @@
  * Constant memory buffers.
  */
 static CUDA_VAR_CONSTANT real const_mem_p[CONST_STATE_SIZE];
-static CUDA_VAR_CONSTANT real const_mem_s[CONST_STATE_SIZE];
+static CUDA_VAR_CONSTANT real const_mem_px[CONST_STATE_SIZE];
 
 namespace bi {
 /**
@@ -39,48 +37,40 @@ namespace bi {
  *
  * @def CONSTANT_BIND_DEC
  *
- * Macro for functions binding state to constant memory. State on device
- * is copied to constant memory on device.
+ * Macro for functions binding state to constant memory. State in device
+ * memory is copied to constant device memory.
  */
 #define CONSTANT_BIND_DEC(name) \
   /**
-    @internal
-
     Bind state to %constant memory.
 
     @ingroup state_gpu
    */ \
   template<class M1> \
-  CUDA_FUNC_HOST void const_bind_##name(const M1& s);
+  CUDA_FUNC_HOST void const_bind_##name(const M1 s);
 
-CONSTANT_BIND_DEC(s)
 CONSTANT_BIND_DEC(p)
+CONSTANT_BIND_DEC(px)
+
 /**
- * @internal
- *
  * Fetch node value from %constant memory.
  *
  * @ingroup state_gpu
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param cox Base coordinates.
+ * @param cox Serial coordinate.
  *
  * @return Value of the given node.
  *
  * Note that only one trajectory is ever stored in constant memory, so no
  * @c p argument is given, unlike global_fetch().
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE real const_fetch(const Coord& cox);
+template<class B, class X>
+CUDA_FUNC_DEVICE real const_fetch(const int cox);
 
 /**
- * @internal
- *
  * Facade for node state in %constant memory.
  *
  * @ingroup state_gpu
@@ -91,9 +81,9 @@ struct constant {
   /**
    * Fetch value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE real fetch(const int p, const Coord& cox) {
-    return const_fetch<B,X,Xo,Yo,Zo>(cox);
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE real fetch(const int p, const int cox) {
+    return const_fetch<B,X>(cox);
   }
 };
 
@@ -108,7 +98,7 @@ struct constant {
  */
 #define CONSTANT_BIND_DEF(name, Name) \
   template<class M1> \
-  inline void bi::const_bind_##name(const M1& s) { \
+  inline void bi::const_bind_##name(const M1 s) { \
     /* pre-condition */ \
     assert (M1::on_device); \
     assert (s.size1() == 1 && s.lead() == 1); \
@@ -118,32 +108,30 @@ struct constant {
         0, cudaMemcpyDeviceToDevice, 0)); \
   }
 
-CONSTANT_BIND_DEF(s, S)
 CONSTANT_BIND_DEF(p, P)
+CONSTANT_BIND_DEF(px, PX)
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline real bi::const_fetch(const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline real bi::const_fetch(const int cox) {
+  const int i = var_net_start<B,X>::value + cox;
 
-  if (is_p_node<X>::value) {
+  if (is_p_var<X>::value) {
     return const_mem_p[i];
-  } else if (is_s_node<X>::value) {
-    return const_mem_s[i];
+  } else if (is_px_var<X>::value) {
+    return const_mem_px[i];
   } else {
-    return REAL(1.0 / 0.0);
+    return BI_REAL(1.0 / 0.0);
   }
 }
 
 /**
- * @internal
- *
  * Number of trajectories, in %constant memory.
+ *
+ * @todo Remove this, use *.size1() on global variables instead.
  */
 static CUDA_VAR_CONSTANT int constP;
 
 /**
- * @internal
- *
  * Host-side guard for writing to #constP, saves host-to-device copy when
  * unchanged.
  */
@@ -151,8 +139,6 @@ static int guardP = -1;
 
 namespace bi {
 /**
- * @internal
- *
  * Bind number of trajectories to %constant memory.
  *
  * @ingroup state_gpu

@@ -76,9 +76,9 @@ struct ParticleMCMCBuffer : public ParticleFilterBuffer {
    * @tparam M1 Matrix type.
    *
    * @param p Particle index.
-   * @param[out] xd Trajectory of d-nodes.
-   * @param[out] xc Trajectory of c-nodes.
-   * @param[out] xr Trajectory of r-nodes.
+   * @param[out] xd Trajectory of d-vars.
+   * @param[out] xc Trajectory of c-vars.
+   * @param[out] xr Trajectory of r-vars.
    *
    * @note This is usually a horizontal read, implying memory or hard disk
    * striding.
@@ -90,9 +90,9 @@ struct ParticleMCMCBuffer : public ParticleFilterBuffer {
    * Write single particle trajectory.
    *
    * @param p Particle index.
-   * @param xd Trajectory of d-nodes.
-   * @param xc Trajectory of c-nodes.
-   * @param xr Trajectory of r-nodes.
+   * @param xd Trajectory of d-vars.
+   * @param xc Trajectory of c-vars.
+   * @param xr Trajectory of r-vars.
    *
    * @note This is usually horizontal write, implying memory or hard disk
    * striding.

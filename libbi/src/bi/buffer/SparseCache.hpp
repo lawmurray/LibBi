@@ -8,6 +8,8 @@
 #ifndef BI_BUFFER_SPARSECACHE_HPP
 #define BI_BUFFER_SPARSECACHE_HPP
 
+#include "../math/loc_matrix.hpp"
+
 #include <vector>
 
 namespace bi {
@@ -47,7 +49,7 @@ public:
    * @param[out] x Page.
    */
   template<class M2>
-  void read(const int p, M2& x) const;
+  void read(const int p, M2 x) const;
 
   /**
    * Write page.
@@ -58,7 +60,7 @@ public:
    * @param x Page.
    */
   template<class M2>
-  void write(const int p, const M2& x);
+  void write(const int p, const M2 x);
 
   /**
    * Swap page.
@@ -72,7 +74,7 @@ public:
    * The result is similar to read(), and the page is marked as invalid.
    */
   template<class M2>
-  void swapRead(const int p, M2& x);
+  void swapRead(const int p, M2 x);
 
   /**
    * Swap page.
@@ -86,13 +88,13 @@ public:
    * The result is similar to write(), and the page is marked as valid.
    */
   template<class M2>
-  void swapWrite(const int p, M2& x);
+  void swapWrite(const int p, M2 x);
 
 private:
   /**
    * Type of pages.
    */
-  typedef typename locatable_matrix<CL,real>::type page_type;
+  typedef typename loc_matrix<CL,real>::type page_type;
 
   /**
    * Clear cache.
@@ -131,7 +133,7 @@ inline int bi::SparseCache<CL>::size() const {
 
 template<bi::Location CL>
 template<class M2>
-inline void bi::SparseCache<CL>::read(const int p, M2& x) const {
+inline void bi::SparseCache<CL>::read(const int p, M2 x) const {
   /* pre-condition */
   assert (isValid(p));
 
@@ -140,7 +142,7 @@ inline void bi::SparseCache<CL>::read(const int p, M2& x) const {
 
 template<bi::Location CL>
 template<class M2>
-inline void bi::SparseCache<CL>::write(const int p, const M2& x) {
+inline void bi::SparseCache<CL>::write(const int p, const M2 x) {
   if (size() <= p) {
     pages.resize(p + 1);
     pages[p] = new page_type(x.size1(), x.size2());
@@ -155,7 +157,7 @@ inline void bi::SparseCache<CL>::write(const int p, const M2& x) {
 
 template<bi::Location CL>
 template<class M2>
-inline void bi::SparseCache<CL>::swapRead(const int p, M2& x) {
+inline void bi::SparseCache<CL>::swapRead(const int p, M2 x) {
   /* pre-condition */
   assert (isValid(p));
 
@@ -168,7 +170,7 @@ inline void bi::SparseCache<CL>::swapRead(const int p, M2& x) {
 
 template<bi::Location CL>
 template<class M2>
-inline void bi::SparseCache<CL>::swapWrite(const int p, M2& x) {
+inline void bi::SparseCache<CL>::swapWrite(const int p, M2 x) {
   /* pre-condition */
   assert (p < size());
 

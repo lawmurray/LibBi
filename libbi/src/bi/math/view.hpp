@@ -8,11 +8,6 @@
 #ifndef BI_MATH_VIEW_HPP
 #define BI_MATH_VIEW_HPP
 
-#include "host_vector.hpp"
-#include "host_matrix.hpp"
-#include "../cuda/math/vector.hpp"
-#include "../cuda/math/matrix.hpp"
-
 #include "boost/mpl/if.hpp"
 
 namespace bi {
@@ -23,9 +18,13 @@ namespace bi {
  */
 template<class V1>
 struct vector_as_matrix_type {
-  typedef host_matrix_reference<typename V1::value_type> host_type;
-  typedef gpu_matrix_reference<typename V1::value_type> gpu_type;
-  typedef typename boost::mpl::if_c<V1::on_device,gpu_type,host_type>::type type;
+  typedef typename V1::value_type value_type;
+
+  #ifdef ENABLE_GPU
+  typedef typename boost::mpl::if_c<V1::on_device,gpu_matrix_reference<value_type>,host_matrix_reference<value_type> >::type type;
+  #else
+  typedef host_matrix_reference<value_type> type;
+  #endif
 };
 
 /**
@@ -49,11 +48,13 @@ typename M1::vector_reference_type column(M1 A,
  * @tparam M1 Matrix type.
  *
  * @param start First column index.
- * @param len Length of range.
+ * @param len Number of columns.
+ * @param stride Stride between columns to select.
  */
 template<class M1>
 typename M1::matrix_reference_type columns(M1 A,
-    const typename M1::size_type start, const typename M1::size_type len);
+    const typename M1::size_type start, const typename M1::size_type len,
+    const typename M1::size_type stride = 1);
 
 /**
  * Single row of a matrix.
@@ -76,7 +77,7 @@ typename M1::vector_reference_type row(M1 A,
  * @tparam M1 Matrix type.
  *
  * @param start First row index.
- * @param len Length of range.
+ * @param len Number of rows.
  */
 template<class M1>
 typename M1::matrix_reference_type rows(M1 A,
@@ -91,13 +92,15 @@ typename M1::matrix_reference_type rows(M1 A,
  *
  * @param x Vector.
  * @param start Starting index of range.
- * @param len Length of range.
+ * @param len Number of elements.
+ * @param stride Stride between elements.
  *
  * @return Subrange.
  */
 template<class V1>
 typename V1::vector_reference_type subrange(V1 x,
-    const typename V1::size_type start, const typename V1::size_type len);
+    const typename V1::size_type start, const typename V1::size_type len,
+    const typename V1::size_type stride = 1);
 
 /**
  * Subrange of a matrix.
@@ -214,12 +217,16 @@ inline typename M1::vector_reference_type bi::column(M1 A,
 
 template<class M1>
 inline typename M1::matrix_reference_type bi::columns(M1 A,
-    const typename M1::size_type start, const typename M1::size_type len) {
+    const typename M1::size_type start, const typename M1::size_type len,
+    const typename M1::size_type stride) {
   /* pre-condition */
-  assert (start >= 0 && len >= 0 && start + len <= A.size2());
+  assert (start >= 0);
+  assert (len >= 0);
+  assert (stride >= 1);
+  assert (start + stride*(len - 1) < A.size2());
 
   return typename M1::matrix_reference_type(A.buf() + start*A.lead(),
-      A.size1(), len, A.lead());
+      A.size1(), len, stride*A.lead());
 }
 
 template<class M1>
@@ -244,12 +251,16 @@ inline typename M1::matrix_reference_type bi::rows(M1 A,
 
 template<class V1>
 inline typename V1::vector_reference_type bi::subrange(V1 x,
-    const typename V1::size_type start, const typename V1::size_type len) {
+    const typename V1::size_type start, const typename V1::size_type len,
+    const typename V1::size_type stride) {
   /* pre-condition */
-  assert (start >= 0 && len >= 0 && start + len <= x.size());
+  assert (start >= 0);
+  assert (len >= 0);
+  assert (stride >= 1);
+  assert (start + stride*len <= x.size());
 
   return typename V1::vector_reference_type(x.buf() + start*x.inc(), len,
-      x.inc());
+      stride*x.inc());
 }
 
 template<class M1>

@@ -11,12 +11,15 @@
 #define BI_MATH_MISC_HPP
 
 #include "scalar.hpp"
+#include "../cuda/cuda.hpp"
+
+#include <cmath>
 
 namespace bi {
 /**
  * Factorial.
  *
- * @group math
+ * @ingroup math
  */
 CUDA_FUNC_BOTH int factorial(const int n);
 
@@ -38,7 +41,7 @@ CUDA_FUNC_BOTH double rel_err(const double a, const double b);
  *
  */
 template<class T>
-CUDA_FUNC_BOTH int is_finite(const T x);
+CUDA_FUNC_BOTH bool is_finite(const T x);
 
 }
 
@@ -61,9 +64,9 @@ inline int bi::next_power_2(const int n) {
 }
 
 inline double bi::rel_err(const double a, const double b) {
-  double diff = CUDA_ABS(a - b);
-  double abs_a = CUDA_ABS(a);
-  double abs_b = CUDA_ABS(b);
+  double diff = fabs(a - b);
+  double abs_a = fabs(a);
+  double abs_b = fabs(b);
 
   if (a == b) { // absorbs a == b == 0.0 case
     return 0.0;
@@ -73,12 +76,11 @@ inline double bi::rel_err(const double a, const double b) {
 }
 
 template<class T>
-inline int bi::is_finite(const T x) {
-  #ifdef USE_CPU
-  return isfinite(x);
-  #else
-  return isfinite(x);
-  #endif
+inline bool bi::is_finite(const T x) {
+  /* having compile and link issues with std::isfinite() or just isfinite()
+   * with various compilers, so have rolled own instead */
+  T zero = static_cast<T>(0);
+  return x*zero == zero;
 }
 
 #endif

@@ -7,7 +7,6 @@
  */
 #include "MetropolisResampler.hpp"
 
-bi::MetropolisResampler::MetropolisResampler(Random& rng,
-    const int C, const int A) : rng(rng), C(C), A(A) {
+bi::MetropolisResampler::MetropolisResampler(const int C) : C(C) {
   //
 }

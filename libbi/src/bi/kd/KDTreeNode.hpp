@@ -241,7 +241,7 @@ private:
   /**
    * Node types.
    */
-  enum KDTreeNodeType {
+  enum KDTreeVarType {
     LEAF,
     PRUNE,
     INTERNAL
@@ -285,7 +285,7 @@ private:
   /**
    * Node type.
    */
-  KDTreeNodeType type;
+  KDTreeVarType type;
 
   #ifndef __CUDACC__
   /**

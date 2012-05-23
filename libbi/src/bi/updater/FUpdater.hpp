@@ -8,8 +8,8 @@
 #ifndef BI_UPDATER_FUPDATER_HPP
 #define BI_UPDATER_FUPDATER_HPP
 
-#include "../math/host_matrix.hpp"
-#include "../misc/pinned_allocator.hpp"
+#include "../math/matrix.hpp"
+#include "../primitive/pinned_allocator.hpp"
 #include "../misc/Markable.hpp"
 #include "../buffer/SparseCache.hpp"
 #include "../buffer/Cache1D.hpp"
@@ -73,7 +73,7 @@ public:
    * @param s State to update.
    */
   template<Location L>
-  void update(State<L>& s);
+  void update(State<B,L>& s);
 
   /**
    * Reset to begin reading from first time record again.
@@ -103,7 +103,7 @@ public:
    * time @p t.
    */
   template<Location L>
-  void setTime(const real t, State<L>& s);
+  void setTime(const real t, State<B,L>& s);
 
   /**
    * @copydoc concept::Markable::mark()
@@ -145,9 +145,9 @@ bi::FUpdater<B,IO,CL>::FUpdater(IO& in) : in(in) {
 
 template<class B, class IO, bi::Location CL>
 template<bi::Location L>
-inline void bi::FUpdater<B,IO,CL>::update(State<L>& s) {
+inline void bi::FUpdater<B,IO,CL>::update(State<B,L>& s) {
   if (cache.isValid(state.p1)) {
-    cache.read(state.p1, s.get(F_NODE));
+    cache.read(state.p1, s.get(F_VAR));
     //cache.swapRead(state.p, s.Kf);
   } else {
     while (state.p2 < state.p1) {
@@ -157,11 +157,11 @@ inline void bi::FUpdater<B,IO,CL>::update(State<L>& s) {
     assert (state.p1 == state.p2);
 
     in.mask();
-    in.read(F_NODE, s.get(F_NODE));
+    in.read(F_VAR, s.get(F_VAR));
     if (in.isValid()) {
       in.next();
     }
-    cache.write(state.p1, s.get(F_NODE));
+    cache.write(state.p1, s.get(F_VAR));
   }
   ++state.p1;
 
@@ -196,7 +196,7 @@ inline real bi::FUpdater<B,IO,CL>::getTime() const {
 
 template<class B, class IO, bi::Location CL>
 template<bi::Location L>
-void bi::FUpdater<B,IO,CL>::setTime(const real t, State<L>& s) {
+void bi::FUpdater<B,IO,CL>::setTime(const real t, State<B,L>& s) {
   if (t < getTime()) {
     reset();
   }

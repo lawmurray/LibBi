@@ -24,7 +24,7 @@ public:
    * @copydoc MetropolisResampler::ancestors()
    */
   template<class V1, class V2>
-  static void ancestors(const V1& lws, V2& as, Random& rng, int C);
+  static void ancestors(Random& rng, const V1 lws, V2 as, int C);
 };
 
 /**
@@ -38,7 +38,7 @@ public:
    * @copydoc MetropolisResampler::ancestors()
    */
   template<class V1, class V2>
-  static void ancestors(const V1& lws, V2& as, Random& rng, int C);
+  static void ancestors(Random& rng, const V1 lws, V2 as, int C);
 };
 
 /**
@@ -54,39 +54,37 @@ public:
   /**
    * Constructor.
    *
-   * @param rng A random number generator.
    * @param C Number of Metropolis steps to take.
-   * @param A Number of accelerated steps to take.
    */
-  MetropolisResampler(Random& rng, const int C, const int A = 0);
+  MetropolisResampler(const int C);
 
   /**
    * @name High-level interface
    */
   //@{
   /**
-   * @copydoc concept::Resampler::resample(V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  template<class V1, class V2, class B, Location L>
+  void resample(Random& rng, V1 lws, V2 as, State<B,L>& s);
 
   /**
-   * @copydoc concept::Resampler::resample(const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, State<B,L>& s);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s);
+  template<class V1, class V2, class B, Location L>
+  void resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s);
 
   /**
-   * @copydoc concept::Resampler::resample(const typename V2::value_type, const V1&, V1&, V2&)
+   * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s);
+  template<class V1, class V2, class V3, class B, Location L>
+  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, State<B,L>& s);
   //@}
 
   /**
@@ -99,73 +97,66 @@ public:
    * @tparam V1 Floating point vector type.
    * @tparam V2 Integer vector type.
    *
+   * @param rng Random number generator.
    * @param lws Log-weights.
    * @param[out] as Ancestry.
    */
   template<class V1, class V2>
-  void ancestors(const V1& lws, V2& as);
+  void ancestors(Random& rng, const V1 lws, V2 as);
   //@}
 
 private:
   /**
-   * %Random number generator.
-   */
-  Random& rng;
-
-  /**
    * Number of Metropolis steps to take.
    */
   int C;
-
-  /**
-   * Number of accelerated steps to take.
-   */
-  int A;
 };
 
 }
 
-template<class V1, class V2, bi::Location L>
-void bi::MetropolisResampler::resample(V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+template<class V1, class V2, class B, bi::Location L>
+void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, State<B,L>& s) {
   /* pre-condition */
   assert (lws.size() == as.size());
 
-  ancestors(lws, as);
+  ancestors(rng, lws, as);
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   lws.clear();
 }
 
-template<class V1, class V2, bi::Location L>
-void bi::MetropolisResampler::resample(const int a, V1& lws, V2& as, Static<L>& theta, State<L>& s) {
+template<class V1, class V2, class B, bi::Location L>
+void bi::MetropolisResampler::resample(Random& rng, const int a, V1 lws,
+    V2 as, State<B,L>& s) {
   /* pre-condition */
   assert (lws.size() == as.size());
   assert (a >= 0 && a < as.size());
 
-  ancestors(lws, as);
+  ancestors(rng, lws, as);
   as[0] = a;
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   lws.clear();
 }
 
-template<class V1, class V2, class V3, bi::Location L>
-void bi::MetropolisResampler::resample(const V1& qlws, V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
+    V3 as, State<B,L>& s) {
   /* pre-condition */
   const int P = qlws.size();
   assert (qlws.size() == P);
   assert (lws.size() == P);
   assert (as.size() == P);
 
-  ancestors(qlws, as);
+  ancestors(rng, qlws, as);
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   correct(as, qlws, lws);
 }
 
-template<class V1, class V2, class V3, bi::Location L>
-void bi::MetropolisResampler::resample(const int a, const V1& qlws,
-    V2& lws, V3& as, Static<L>& theta, State<L>& s) {
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::MetropolisResampler::resample(Random& rng, const int a,
+    const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
   /* pre-condition */
   const int P = qlws.size();
   assert (qlws.size() == P);
@@ -173,23 +164,24 @@ void bi::MetropolisResampler::resample(const int a, const V1& qlws,
   assert (as.size() == P);
   assert (a >= 0 && a < P);
 
-  ancestors(qlws, as);
+  ancestors(rng, qlws, as);
   as[0] = a;
   permute(as);
-  copy(as, theta, s);
+  copy(as, s);
   correct(as, qlws, lws);
 }
 
 template<class V1, class V2>
-void bi::MetropolisResampler::ancestors(const V1& lws, V2& as) {
+void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as) {
   typedef typename boost::mpl::if_c<V1::on_device,
       MetropolisResamplerDeviceImpl,
       MetropolisResamplerHostImpl>::type impl;
-  impl::ancestors(lws, as, rng, C);
+  impl::ancestors(rng, lws, as, C);
 }
 
 template<class V1, class V2>
-void bi::MetropolisResamplerHostImpl::ancestors(const V1& lws, V2& as, Random& rng, int C) {
+void bi::MetropolisResamplerHostImpl::ancestors(Random& rng, const V1 lws,
+    V2 as, int C) {
   const int P = lws.size();
 
   #pragma omp parallel
@@ -206,7 +198,7 @@ void bi::MetropolisResamplerHostImpl::ancestors(const V1& lws, V2& as, Random& r
         lw2 = lws[p2];
         alpha = rng.uniform<real>();
 
-        if (alpha < CUDA_EXP(lw2 - lw1)) {
+        if (alpha < BI_MATH_EXP(lw2 - lw1)) {
           /* accept */
           p1 = p2;
           lw1 = lw2;

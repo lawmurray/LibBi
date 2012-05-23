@@ -10,11 +10,10 @@
  *
  * @see constant.cuh
  */
-#ifndef BI_HOST_CONST_HOST_HPP
-#define BI_HOST_CONST_HOST_HPP
+#ifndef BI_HOST_CONSTHOST_HPP
+#define BI_HOST_CONSTHOST_HPP
 
 #include "../misc/macro.hpp"
-#include "../state/Coord.hpp"
 
 /**
  * @internal
@@ -29,8 +28,8 @@
    */ \
   static bi::host_matrix_handle<real> constHost##Name##State;
 
-CONST_HOST_STATE_DEC(s, S)
 CONST_HOST_STATE_DEC(p, P)
+CONST_HOST_STATE_DEC(px, PX)
 
 namespace bi {
 /**
@@ -42,42 +41,48 @@ namespace bi {
  */
 #define CONST_HOST_BIND_DEC(name) \
   /**
-    @internal
-
     Bind name##-net state to main memory.
 
     @ingroup state_host
 
     @param s State.
    */ \
-   CUDA_FUNC_HOST void const_host_bind_##name(host_matrix_reference<real>& s);
+   CUDA_FUNC_HOST void const_host_bind_##name(host_matrix_reference<real> s);
 
-CONST_HOST_BIND_DEC(s)
 CONST_HOST_BIND_DEC(p)
+CONST_HOST_BIND_DEC(px)
 
 /**
- * @internal
- *
  * Fetch node value from constant main memory.
  *
  * @ingroup state_host
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param cox Base coordinates.
+ * @param ix Serial coordinate.
  *
  * @return Value of the given node.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-real const_host_fetch(const Coord& cox);
+template<class B, class X>
+real const_host_fetch(const int ix);
 
 /**
- * @internal
+ * Fetch alternative node value from constant main memory.
  *
+ * @ingroup state_host
+ *
+ * @tparam B Model type.
+ * @tparam X Node type.
+ *
+ * @param ix Serial coordinate.
+ *
+ * @return Value of the given node.
+ */
+template<class B, class X>
+real const_host_fetch_alt(const int ix);
+
+/**
  * Facade for state in constant main memory.
  *
  * @ingroup state_host
@@ -88,10 +93,19 @@ struct const_host {
   /**
    * Fetch value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static real fetch(const int p, const Coord& cox) {
-    return const_host_fetch<B,X,Xo,Yo,Zo>(cox);
+  template<class B, class X>
+  static real fetch(const int p, const int ix) {
+    return const_host_fetch<B,X>(ix);
   }
+
+  /**
+   * Fetch alternative value.
+   */
+  template<class B, class X>
+  static real fetch_alt(const int p, const int ix) {
+    return host_fetch_alt<B,X>(p, ix);
+  }
+
 };
 
 }
@@ -104,25 +118,33 @@ struct const_host {
  * Macro for bind function definitions.
  */
 #define CONST_HOST_BIND_DEF(name, Name) \
-  inline void bi::const_host_bind_##name(host_matrix_reference<real>& s) { \
+  inline void bi::const_host_bind_##name(host_matrix_reference<real> s) { \
     constHost##Name##State.copy(s); \
   }
 
-CONST_HOST_BIND_DEF(s, S)
 CONST_HOST_BIND_DEF(p, P)
+CONST_HOST_BIND_DEF(px, PX)
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline real bi::const_host_fetch(const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline real bi::const_host_fetch(const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
   real result;
 
-  if (is_s_node<X>::value) {
-    result = constHostSState(0, i);
-  } else if (is_p_node<X>::value) {
+  if (is_p_var<X>::value) {
     result = constHostPState(0, i);
+  } else if (is_px_var<X>::value) {
+    result = constHostPXState(0, i);
   } else {
     BI_ASSERT(false, "Unsupported node type");
   }
+  return result;
+}
+
+template<class B, class X>
+inline real bi::const_host_fetch_alt(const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
+  real result;
+
   return result;
 }
 

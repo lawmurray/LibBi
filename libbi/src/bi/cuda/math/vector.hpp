@@ -9,10 +9,11 @@
 #define BI_CUDA_MATH_VECTOR_HPP
 
 #include "../cuda.hpp"
-#include "../../math/primitive.hpp"
 #include "../../math/scalar.hpp"
 #include "../../misc/compile.hpp"
-#include "../../misc/strided_range.hpp"
+#include "../../primitive/device_allocator.hpp"
+#include "../../primitive/strided_range.hpp"
+#include "../../primitive/vector_primitive.hpp"
 #include "../../typelist/equals.hpp"
 
 #include "thrust/device_ptr.h"
@@ -22,12 +23,12 @@ namespace bi {
 /**
  * Lightweight view of vector on device.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
  *
- * Importantly, this class has only the default constructors and destructors,
- * allowing it to be instantiated in constant memory on the device.
+ * This class has only the default constructors and destructors,
+ * allowing it to be instantiated in constant memory on device.
  */
 template<class T = real>
 class CUDA_ALIGN(16) gpu_vector_handle {
@@ -190,11 +191,17 @@ inline bool bi::gpu_vector_handle<T>::same(const V1& o) const {
 
 namespace bi {
 /**
- * View of (sub-)vector in device memory.
+ * View of vector in device memory.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
+ *
+ * Copy and assignment semantics are as follows:
+ *
+ * @li Copies are always shallow, using the default copy constructor.
+ *
+ * @li Assignments are always deep.
  */
 template<class T = real>
 class CUDA_ALIGN(16) gpu_vector_reference : public gpu_vector_handle<T> {
@@ -329,7 +336,7 @@ inline bi::gpu_vector_reference<T>& bi::gpu_vector_reference<T>::operator=(
       CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
           this->size()*sizeof(T), cudaMemcpyDeviceToDevice, 0));
     } else {
-      bi::copy(o.begin(), o.end(), this->begin());
+      copy_elements(*this, o);
     }
   }
 
@@ -350,7 +357,7 @@ inline bi::gpu_vector_reference<T>& bi::gpu_vector_reference<T>::operator=(
       CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
           this->size()*sizeof(T), kind, 0));
     } else {
-      bi::copy(o.begin(), o.end(), this->begin());
+      copy_elements(*this, o);
     }
   }
 
@@ -438,20 +445,27 @@ inline void bi::gpu_vector_reference<T>::clear() {
   if (this->inc() == 1) {
     CUDA_CHECKED_CALL(cudaMemsetAsync(this->buf(), 0, this->size()*sizeof(T)));
   } else {
-    bi::fill(this->begin(), this->end(), static_cast<T>(0));
+    thrust::fill(this->begin(), this->end(), static_cast<T>(0));
   }
 }
-
-#include "../../misc/device_allocator.hpp"
 
 namespace bi {
 /**
  * Vector in device memory. Shallow copy, deep assignment.
  *
- * @ingroup math_gpu
+ * @ingroup math_matvec
  *
  * @tparam T Value type.
  * @tparam A STL allocator.
+ *
+ * Copy and assignment semantics are as follows:
+ *
+ * @li Copies of other device vectors are always shallow, regardless of
+ * allocator. The newly constructed vector acts as a view of the copied
+ * vector only, will not free its buffer on destruction, and will become
+ * invalid if its buffer is freed elsewhere.
+ *
+ * @li Assignments are always deep.
  */
 template<class T = real, class A = device_allocator<T> >
 class CUDA_ALIGN(16) gpu_vector : public gpu_vector_reference<T> {
@@ -479,12 +493,12 @@ public:
   CUDA_FUNC_HOST gpu_vector(const size_type size);
 
   /**
-   * Shallow copy constructor.
+   * Copy constructor.
    */
   CUDA_FUNC_HOST gpu_vector(const gpu_vector<T,A>& o);
 
   /**
-   * Deep copy constructor.
+   * Generic copy constructor.
    */
   template<class V1>
   CUDA_FUNC_HOST gpu_vector(const V1 o);
@@ -566,7 +580,7 @@ bi::gpu_vector<T,A>::gpu_vector() : vector_reference_type(NULL, 0),
 
 template<class T, class A>
 bi::gpu_vector<T,A>::gpu_vector(const size_type size) :
-vector_reference_type(NULL, size), own(true) {
+    vector_reference_type(NULL, size), own(true) {
   /* pre-condition */
   assert (size >= 0);
 
@@ -578,26 +592,27 @@ vector_reference_type(NULL, size), own(true) {
 template<class T, class A>
 bi::gpu_vector<T,A>::gpu_vector(const gpu_vector<T,A>& o) :
     vector_reference_type(o), own(false) {
-  this->copy(o);
+  //
 }
 
 template<class T, class A>
 template<class V1>
 bi::gpu_vector<T,A>::gpu_vector(const V1 o) :
-    gpu_vector_reference<T>(NULL, o.size(), 1), own(true) {
-  /* pre-condition */
-  assert (this->size() >= 0);
-
-  if (this->size() > 0) {
-    this->ptr = alloc.allocate(this->size());
+    gpu_vector_reference<T>(const_cast<V1*>(&o)->buf(), o.size(), o.inc()),
+    own(false) {
+  /* shallow copy is now done, do deep copy if necessary */
+  if (!V1::on_device) {
+    this->ptr = (this->size() > 0) ? alloc.allocate(this->size()) : NULL;
+    this->inc1 = 1;
+    this->own = true;
+    this->operator=(o);
   }
-  this->operator=(o);
 }
 
 template<class T, class A>
 bi::gpu_vector<T,A>::~gpu_vector() {
   if (own && this->ptr != NULL) {
-    alloc.deallocate(this->ptr, this->size1);
+    alloc.deallocate(this->buf(), this->size());
   }
 }
 
@@ -639,8 +654,12 @@ void bi::gpu_vector<T,A>::resize(const size_type size, const bool preserve) {
     }
 
     /* copy across contents */
-    if (preserve) {
-      bi::copy(this->begin(), this->end(), pointer(ptr));
+    if (preserve && ptr != NULL) {
+      if (this->inc() == 1) {
+        thrust::copy(this->fast_begin(), this->fast_begin() + std::min(this->size1, size), pointer(ptr));
+      } else {
+        thrust::copy(this->begin(), this->begin() + std::min(this->size1, size), pointer(ptr));
+      }
     }
 
     /* free old buffer */

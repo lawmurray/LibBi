@@ -12,40 +12,33 @@
 
 #include "constant.cuh"
 #include "../misc/macro.hpp"
-#include "../state/Coord.hpp"
 
 /**
  * @internal
  *
  * @def GLOBAL_STATE_DEC
  *
- * Macro for global state variable declarations.
+ * Macro for declaring device global variable for input buffer.
  */
 #define GLOBAL_STATE_DEC(name, Name) \
   /**
-    @internal
-
-    Global memory name##-state.
+    Global memory name##-state input.
    */ \
   static CUDA_VAR_CONSTANT bi::gpu_matrix_handle<real> global##Name##State; \
   \
   /**
-    @internal
-
-    Host-side guard for writing to #global##Name##State, saves host-to-device
-    copy when unchanged.
+    Host-side guard for writing to #global##Name##State, saves
+    host-to-device copy when unchanged.
    */ \
   static bi::gpu_matrix_handle<real> guard##Name##State;
 
-GLOBAL_STATE_DEC(s, S)
 GLOBAL_STATE_DEC(d, D)
-GLOBAL_STATE_DEC(c, C)
+GLOBAL_STATE_DEC(dx, DX)
 GLOBAL_STATE_DEC(r, R)
 GLOBAL_STATE_DEC(f, F)
 GLOBAL_STATE_DEC(o, O)
 GLOBAL_STATE_DEC(p, P)
-GLOBAL_STATE_DEC(oy, OY)
-GLOBAL_STATE_DEC(or, OR)
+GLOBAL_STATE_DEC(px, PX)
 
 namespace bi {
 /**
@@ -53,79 +46,61 @@ namespace bi {
  *
  * @def GLOBAL_BIND_DEC
  *
- * Macro for bind function declarations.
+ * Macro for declaring bind function for node type.
  */
 #define GLOBAL_BIND_DEC(name) \
   /**
     @internal
 
-    Bind name##-net state to global memory.
+    Bind name##-net input buffer to global memory.
 
     @ingroup state_gpu
 
     @param s State.
    */ \
    template<class M1> \
-   CUDA_FUNC_HOST void global_bind_##name(M1& s);
+   CUDA_FUNC_HOST void global_bind_##name(M1 s);
 
-GLOBAL_BIND_DEC(s)
 GLOBAL_BIND_DEC(d)
-GLOBAL_BIND_DEC(c)
+GLOBAL_BIND_DEC(dx)
 GLOBAL_BIND_DEC(r)
 GLOBAL_BIND_DEC(f)
 GLOBAL_BIND_DEC(o)
 GLOBAL_BIND_DEC(p)
-GLOBAL_BIND_DEC(oy)
-GLOBAL_BIND_DEC(or)
+GLOBAL_BIND_DEC(px)
 
 /**
- * @internal
- *
  * Fetch node value from global memory.
  *
  * @ingroup state_gpu
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param p Trajectory id. Ignored for f- and oy-node requests, as only one
- * trajectory is ever stored.
- * @param cox Base coordinates.
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
  *
- * @return Value of the given node.
+ * @return Value.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE real global_fetch(const int p, const Coord& cox);
+template<class B, class X>
+CUDA_FUNC_DEVICE real global_fetch(const int p, const int ix);
 
 /**
- * @internal
- *
  * Set node value in global memory.
  *
  * @ingroup state_gpu
  *
  * @tparam B Model type.
  * @tparam X Node type.
- * @tparam Xo X-offset.
- * @tparam Yo Y-offset.
- * @tparam Zo Z-offset.
  *
- * @param p Trajectory id. Ignored for f- and oy-node requests, as only one
- * trajectory is ever stored.
- * @param cox Base coordinates.
- *
- * @param val Value to set for the given node.
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
+ * @param val Value to set.
  */
-template<class B, class X, int Xo, int Yo, int Zo>
-CUDA_FUNC_DEVICE void global_put(const int p, const Coord& cox,
-    const real& val);
+template<class B, class X>
+CUDA_FUNC_DEVICE void global_put(const int p, const int ix, const real& val);
 
 /**
- * @internal
- *
  * Facade for state in global memory.
  *
  * @ingroup state_gpu
@@ -136,18 +111,18 @@ struct global {
   /**
    * Fetch value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE real fetch(const int p, const Coord& cox) {
-    return global_fetch<B,X,Xo,Yo,Zo>(p, cox);
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE real fetch(const int p, const int ix) {
+    return global_fetch<B,X>(p, ix);
   }
 
   /**
    * Put value.
    */
-  template<class B, class X, int Xo, int Yo, int Zo>
-  static CUDA_FUNC_DEVICE void put(const int p, const Coord& cox,
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE void put(const int p, const int ix,
       const real& val) {
-    global_put<B,X,Xo,Yo,Zo>(p, cox, val);
+    global_put<B,X>(p, ix, val);
   }
 };
 
@@ -158,14 +133,14 @@ struct global {
  *
  * @def GLOBAL_BIND_DEF
  *
- * Macro for bind function definitions.
+ * Macro for defining bind function for node type.
  *
- * @note bind methods are inlined due to implied static storage of
+ * @note These bind methods must be inlined due to implied static storage of
  * __constant__ vars.
  */
 #define GLOBAL_BIND_DEF(name, Name) \
   template<class M1> \
-  inline void bi::global_bind_##name(M1& s) { \
+  inline void bi::global_bind_##name(M1 s) { \
     if (s.size1()*s.size2() > 0 && !guard##Name##State.same(s)) { \
       CUDA_SET_CONSTANT(gpu_matrix_handle<real>, \
           MACRO_QUOTE(global##Name##State), s); \
@@ -173,60 +148,57 @@ struct global {
     } \
   }
 
-GLOBAL_BIND_DEF(s, S)
 GLOBAL_BIND_DEF(d, D)
-GLOBAL_BIND_DEF(c, C)
+GLOBAL_BIND_DEF(dx, DX)
 GLOBAL_BIND_DEF(r, R)
 GLOBAL_BIND_DEF(f, F)
 GLOBAL_BIND_DEF(o, O)
 GLOBAL_BIND_DEF(p, P)
-GLOBAL_BIND_DEF(oy, OY)
-GLOBAL_BIND_DEF(or, OR)
+GLOBAL_BIND_DEF(px, PX)
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline real bi::global_fetch(const int p, const Coord& cox) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline real bi::global_fetch(const int p, const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
   real result;
 
-  if (is_s_node<X>::value) {
-    result = globalSState(p, i);
-  } else if (is_d_node<X>::value) {
+  if (is_d_var<X>::value) {
     result = globalDState(p, i);
-  } else if (is_c_node<X>::value) {
-    result = globalCState(p, i);
-  } else if (is_r_node<X>::value) {
+  } else if (is_dx_var<X>::value) {
+    result = globalDXState(p, i);
+  } else if (is_r_var<X>::value) {
     result = globalRState(p, i);
-  } else if (is_f_node<X>::value) {
+  } else if (is_f_var<X>::value) {
     result = globalFState(0, i);
-  } else if (is_o_node<X>::value) {
-    result = globalOYState(0, i);
-  } else if (is_p_node<X>::value) {
-    result = globalPState(p, i);
+  } else if (is_o_var<X>::value) {
+    result = globalOState(p, i);
+  } else if (is_p_var<X>::value) {
+    result = globalPState(0, i);
+  } else if (is_px_var<X>::value) {
+    result = globalPXState(0, i);
   } else {
-    result = REAL(1.0 / 0.0);
+    result = BI_REAL(1.0/0.0);
   }
   return result;
 }
 
-template<class B, class X, int Xo, int Yo, int Zo>
-inline void bi::global_put(const int p, const Coord& cox,
-    const real& val) {
-  const int i = cox.Coord::index<B,X,Xo,Yo,Zo>();
+template<class B, class X>
+inline void bi::global_put(const int p, const int ix, const real& val) {
+  const int i = var_net_start<B,X>::value + ix;
 
-  if (is_s_node<X>::value) {
-    globalSState(p, i) = val;
-  } else if (is_d_node<X>::value) {
+  if (is_d_var<X>::value) {
     globalDState(p, i) = val;
-  } else if (is_c_node<X>::value) {
-    globalCState(p, i) = val;
-  } else if (is_r_node<X>::value) {
+  } else if (is_dx_var<X>::value) {
+    globalDXState(p, i) = val;
+  } else if (is_r_var<X>::value) {
     globalRState(p, i) = val;
-  } else if (is_f_node<X>::value) {
+  } else if (is_f_var<X>::value) {
     globalFState(0, i) = val;
-  } else if (is_o_node<X>::value) {
-    globalOYState(0, i) = val;
-  } else if (is_p_node<X>::value) {
-    globalPState(p, i) = val;
+  } else if (is_o_var<X>::value) {
+    globalOState(p, i) = val;
+  } else if (is_p_var<X>::value) {
+    globalPState(0, i) = val;
+  } else if (is_px_var<X>::value) {
+    globalPXState(0, i) = val;
   }
 }
 

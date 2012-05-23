@@ -31,7 +31,7 @@ public:
   /**
    * Node type.
    */
-  typedef KDTreeNode<V1,M1> node_type;
+  typedef KDTreeNode<V1,M1> var_type;
 
   /**
    * Default constructor.
@@ -86,7 +86,7 @@ public:
    *
    * @return Root node.
    */
-  node_type* getRoot();
+  var_type* getRoot();
 
   /**
    * Get size.
@@ -100,13 +100,13 @@ public:
    *
    * @param root Root node.
    */
-  void setRoot(node_type* root);
+  void setRoot(var_type* root);
 
 private:
   /**
    * Root node of the tree.
    */
-  node_type* root;
+  var_type* root;
 
   /**
    * Build \f$kd\f$ tree node.
@@ -121,7 +121,7 @@ private:
    * @return The node. Caller has ownership.
    */
   template<class M2, class V2, class S1>
-  static node_type* build(const M2 X, const V2 lw, S1 partitioner,
+  static var_type* build(const M2 X, const V2 lw, S1 partitioner,
       const std::vector<int>& is, const int depth = 0);
 
   #ifndef __CUDACC__
@@ -186,7 +186,7 @@ bi::KDTree<V1,M1>::~KDTree() {
 template<class V1, class M1>
 bi::KDTree<V1,M1>& bi::KDTree<V1,M1>::operator=(const KDTree<V1,M1>& o) {
   delete root;
-  root = (o.root == NULL) ? NULL : new node_type(o.root);
+  root = (o.root == NULL) ? NULL : new var_type(o.root);
   
   return *this;
 }
@@ -197,7 +197,7 @@ inline bi::KDTreeNode<V1,M1>* bi::KDTree<V1,M1>::getRoot() {
 }
 
 template<class V1, class M1>
-inline void bi::KDTree<V1,M1>::setRoot(node_type* root) {
+inline void bi::KDTree<V1,M1>::setRoot(var_type* root) {
   this->root = root;
 }
 
@@ -208,24 +208,24 @@ inline int bi::KDTree<V1,M1>::getSize() {
 
 template<class V1, class M1>
 template<class M2, class V2, class S1>
-typename bi::KDTree<V1,M1>::node_type* bi::KDTree<V1,M1>::build(const M2 X,
+typename bi::KDTree<V1,M1>::var_type* bi::KDTree<V1,M1>::build(const M2 X,
     const V2 lw, S1 partitioner, const std::vector<int>& is, const int depth) {
   /* pre-condition */
   assert (is.size() > 0);
 
-  node_type* result;
+  var_type* result;
   int i;
   
   if (is.size() == 1) {
     /* leaf node */
-    result = new node_type(X, lw, is.front(), depth);
+    result = new var_type(X, lw, is.front(), depth);
   } else if (is.size() <= 4) {
     /* prune node */
-    result = new node_type(X, lw, is, depth);
+    result = new var_type(X, lw, is, depth);
   } else {
     /* internal node */
     if (partitioner.init(X, is)) {
-      node_type *left, *right; // child nodes
+      var_type *left, *right; // child nodes
       std::vector<int> ls, rs; // indices of left, right components
       ls.reserve(is.size()/2 + 1);
       rs.reserve(is.size()/2 + 1);
@@ -240,22 +240,22 @@ typename bi::KDTree<V1,M1>::node_type* bi::KDTree<V1,M1>::build(const M2 X,
 
       if (ls.size() == 0) {
         /* degenerate case left child, make prune node from right */
-        result = new node_type(X, lw, rs, depth);
+        result = new var_type(X, lw, rs, depth);
       } else if (rs.size() == 0) {
         /* degenerate right child, make prune node from left*/
-        result = new node_type(X, lw, ls, depth);
+        result = new var_type(X, lw, ls, depth);
       } else {
         /* internal node */
         left = build(X, lw, partitioner, ls, depth + 1);
         right = build(X, lw, partitioner, rs, depth + 1);
       
-        result = new node_type(left, right, depth);
+        result = new var_type(left, right, depth);
       }
     } else {
       /* Degenerate case, usually occurs when all points are identical or
          one has negligible weight, so that they cannot be partitioned
          spatially. Put them all into one prune node... */
-      result = new node_type(X, lw, is, depth);
+      result = new var_type(X, lw, is, depth);
     }
   }
 

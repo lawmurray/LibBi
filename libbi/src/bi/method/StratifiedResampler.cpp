@@ -9,7 +9,6 @@
 
 using namespace bi;
 
-StratifiedResampler::StratifiedResampler(Random& rng, const bool sort) :
-    rng(rng), sort(sort) {
+StratifiedResampler::StratifiedResampler(const bool sort) : sort(sort) {
   //
 }

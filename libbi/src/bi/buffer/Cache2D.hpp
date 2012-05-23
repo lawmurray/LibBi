@@ -8,7 +8,7 @@
 #ifndef BI_BUFFER_CACHE2D_HPP
 #define BI_BUFFER_CACHE2D_HPP
 
-#include "../math/host_matrix.hpp"
+#include "../math/matrix.hpp"
 
 namespace bi {
 /**
@@ -68,7 +68,7 @@ public:
    *
    * @return Value.
    */
-  const T1& get(const int i, const int j) const;
+  T1 get(const int i, const int j) const;
 
   /**
    * Read page.
@@ -163,7 +163,7 @@ inline int bi::Cache2D<T1>::size() const {
 }
 
 template<class T1>
-inline const T1& bi::Cache2D<T1>::get(const int i, const int j) const {
+inline T1 bi::Cache2D<T1>::get(const int i, const int j) const {
   /* pre-condition */
   assert (isValid(j));
 

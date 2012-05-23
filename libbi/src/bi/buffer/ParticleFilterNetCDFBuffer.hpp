@@ -26,31 +26,24 @@ public:
   /**
    * Constructor.
    *
-   * @param m BayesNet.
+   * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes and s-nodes should be
-   * read/written.
    */
-  ParticleFilterNetCDFBuffer(const BayesNet& m, const std::string& file,
-      const FileMode mode = READ_ONLY,
-      const StaticHandling flag = STATIC_SHARED);
+  ParticleFilterNetCDFBuffer(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY);
 
   /**
    * Constructor.
    *
-   * @param m BayesNet.
+   * @param m Model.
    * @param P Number of samples in file.
    * @param T Number of time points in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param flag Indicates whether or not p-nodes and s-nodes should be
-   * read/written.
    */
-  ParticleFilterNetCDFBuffer(const BayesNet& m, const int P,
-      const int T, const std::string& file,
-      const FileMode mode = READ_ONLY,
-      const StaticHandling flag = STATIC_SHARED);
+  ParticleFilterNetCDFBuffer(const Model& m, const int P,
+      const int T, const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
    * Destructor.
@@ -61,13 +54,13 @@ public:
    * @copydoc #concept::ParticleFilterBuffer::readLogWeights()
    */
   template<class V1>
-  void readLogWeights(const int t, V1& lws);
+  void readLogWeights(const int t, V1 lws);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::writeLogWeights()
    */
   template<class V1>
-  void writeLogWeights(const int t, const V1& lws);
+  void writeLogWeights(const int t, const V1 lws);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::readLogWeight()
@@ -83,13 +76,13 @@ public:
    * @copydoc #concept::ParticleFilterBuffer::readAncestors()
    */
   template<class V1>
-  void readAncestors(const int t, V1& a);
+  void readAncestors(const int t, V1 a);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::writeAncestors()
    */
   template<class V1>
-  void writeAncestors(const int t, const V1& a);
+  void writeAncestors(const int t, const V1 a);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::readAncestor()
@@ -115,13 +108,13 @@ public:
    * @copydoc #concept::ParticleFilterBuffer::readResamples()
    */
   template<class V1>
-  void readResamples(const int t, V1& r);
+  void readResamples(const int t, V1 r);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::writeResamples()
    */
   template<class V1>
-  void writeResamples(const int t, const V1& r);
+  void writeResamples(const int t, const V1 r);
 
 protected:
   /**
@@ -149,110 +142,153 @@ protected:
    */
   NcVar* rVar;
 };
-
 }
 
+#include "../math/temp_vector.hpp"
+
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t,
-    V1& lws) {
+void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t, V1 lws) {
   /* pre-conditions */
-  assert (!V1::on_device);
-  assert (lws.size() == npDim->size() && lws.inc() == 1);
+  assert (lws.size() == npDim->size());
   assert (t >= 0 && t < nrDim->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Index exceeds size reading logweight");
-  ret = lwVar->get(lws.buf(), 1, npDim->size());
-  BI_ASSERT(ret, "Inconvertible type reading logweight");
+  BI_ASSERT(ret, "Indexing out of bounds reading logweight");
+
+  if (V1::on_device || lws.inc() != 1) {
+    temp_vector_type lws1(lws.size());
+    ret = lwVar->get(lws1.buf(), 1, npDim->size());
+    BI_ASSERT(ret, "Inconvertible type reading logweight");
+    lws = lws1;
+  } else {
+    ret = lwVar->get(lws.buf(), 1, npDim->size());
+    BI_ASSERT(ret, "Inconvertible type reading logweight");
+  }
 }
 
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const int t,
-    const V1& lws) {
+    const V1 lws) {
   /* pre-conditions */
-  assert (lws.size() == npDim->size() && lws.inc() == 1);
+  assert (lws.size() == npDim->size());
   assert (t >= 0 && t < nrDim->size());
 
-  BOOST_AUTO(lws1, host_map_vector(lws));
-  if (V1::on_device) {
-    synchronize();
-  }
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Index exceeds size writing logweight");
-  ret = lwVar->put(lws1->buf(), 1, npDim->size());
-  BI_ASSERT(ret, "Inconvertible type writing logweight");
+  BI_ASSERT(ret, "Indexing out of bounds writing logweight");
 
-  delete lws1;
+  if (V1::on_device || lws.inc() != 1) {
+    temp_vector_type lws1(lws.size());
+    lws1 = lws;
+    synchronize(V1::on_device);
+    ret = lwVar->put(lws1.buf(), 1, npDim->size());
+  } else {
+    ret = lwVar->put(lws.buf(), 1, npDim->size());
+  }
+  BI_ASSERT(ret, "Inconvertible type writing logweight");
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1& a) {
+void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
   /* pre-conditions */
-  assert (!V1::on_device);
-  assert (a.size() == npDim->size() && a.inc() == 1);
+  assert (a.size() == npDim->size());
   assert (t >= 0 && t < nrDim->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Index exceeds size reading ancestor");
-  ret = aVar->get(a.buf(), 1, npDim->size());
-  BI_ASSERT(ret, "Inconvertible type reading ancestor");
+  BI_ASSERT(ret, "Indexing out of bounds reading ancestors");
+
+  if (V1::on_device || a.inc() != 1) {
+    temp_vector_type a1(a.size());
+    ret = aVar->get(a1.buf(), 1, npDim->size());
+    BI_ASSERT(ret, "Inconvertible type reading ancestors");
+    a = a1;
+  } else {
+    ret = aVar->get(a.buf(), 1, npDim->size());
+    BI_ASSERT(ret, "Inconvertible type reading ancestors");
+  }
 }
 
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
-    const V1& a) {
+    const V1 a) {
   /* pre-conditions */
-  assert (a.size() == npDim->size() && a.inc() == 1);
+  assert (a.size() == npDim->size());
   assert (t >= 0 && t < nrDim->size());
 
-  BOOST_AUTO(a1, host_map_vector(a));
-  if (V1::on_device) {
-    synchronize();
-  }
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Index exceeds size writing ancestor");
-  ret = aVar->put(a1->buf(), 1, npDim->size());
-  BI_ASSERT(ret, "Inconvertible type writing ancestor");
+  BI_ASSERT(ret, "Indexing out of bounds writing ancestors");
 
-  delete a1;
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1& r) {
-  /* pre-condition */
-  assert (!V1::on_device);
-  assert (t >= 0 && t + r.size() <= nrDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading resample");
-  ret = rVar->get(r.buf(), r.size());
-  BI_ASSERT(ret, "Inconvertible type reading resample");
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t, const V1& r) {
-  /* pre-condition */
-  assert (t >= 0 && t + r.size() <= nrDim->size());
-
-  BOOST_AUTO(r1, host_map_vector(r));
-  if (V1::on_device) {
-    synchronize();
+  if (V1::on_device || a.inc() != 1) {
+    temp_vector_type a1(a.size());
+    a1 = a;
+    synchronize(V1::on_device);
+    ret = aVar->put(a1.buf(), 1, npDim->size());
+  } else {
+    ret = aVar->put(a.buf(), 1, npDim->size());
   }
+  BI_ASSERT(ret, "Inconvertible type writing ancestors");
+}
+
+template<class V1>
+void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
+  /* pre-condition */
+  assert (t >= 0 && t + r.size() <= nrDim->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Index exceeds size reading resample");
-  ret = rVar->put(r1->buf(), r1->size());
-  BI_ASSERT(ret, "Inconvertible type reading resample");
+  BI_ASSERT(ret, "Indexing out of bounds reading resamples");
 
-  delete r1;
+  if (V1::on_device || r.inc() != 1) {
+    temp_vector_type r1(r.size());
+    ret = rVar->get(r1.buf(), r1.size());
+    BI_ASSERT(ret, "Inconvertible type reading resamples");
+    r = r1;
+  } else {
+    ret = rVar->get(r.buf(), r.size());
+    BI_ASSERT(ret, "Inconvertible type reading resamples");
+  }
+}
+
+template<class V1>
+void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t,
+    const V1 r) {
+  /* pre-condition */
+  assert (t >= 0 && t + r.size() <= nrDim->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
+  BI_UNUSED NcBool ret;
+  ret = rVar->set_cur(t);
+  BI_ASSERT(ret, "Indexing out of bounds reading resamples");
+
+  if (V1::on_device || r.inc() != 1) {
+    temp_vector_type r1(r.size());
+    r1 = r;
+    synchronize(V1::on_device);
+    ret = rVar->put(r1.buf(), r1.size());
+  } else {
+    ret = rVar->put(r.buf(), r.size());
+  }
+  BI_ASSERT(ret, "Inconvertible type reading resamples");
 }
 
 #endif
