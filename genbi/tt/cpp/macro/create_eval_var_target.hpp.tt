@@ -1,0 +1,13 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_eval_var_target(action) BLOCK-%]
+/**
+ * Eval target (to variable).
+ */
+typedef Var[% action.get_target.get_var.get_name %] Target[% action.get_id %];
+[%-END-%]

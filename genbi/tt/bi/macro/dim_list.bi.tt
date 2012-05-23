@@ -1,0 +1,16 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+
+[%-MACRO dim_list(var) BLOCK-%]
+[%-'[' IF var.num_dims-%]
+[%-FOREACH dim IN var.get_dims-%]
+[%-dim.get_name-%]
+[%-IF !loop.last %],[% END-%]
+[%-END-%]
+[%-']' IF var.num_dims-%]
+[%-END-%]

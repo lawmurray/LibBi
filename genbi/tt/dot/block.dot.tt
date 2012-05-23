@@ -1,0 +1,23 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+subgraph cluster_block[% block.get_id %] {
+  label="Block [% block.get_id %]: [% block.get_name %]";
+  color="#000000";
+
+[%-FOREACH ref IN block.get_vars %]
+[%-INCLUDE ref.dot.tt FILTER indent(2) %]
+[%-END-%]
+
+[%-FOREACH subblock IN block.get_blocks %]
+[%-INCLUDE block.dot.tt block = subblock FILTER indent(2) %]
+[%-END-%]
+  
+[%-FOREACH action IN block.get_actions %]
+[%-INCLUDE action.dot.tt action = action FILTER indent(2) %]
+[%-END-%]
+}

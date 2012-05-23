@@ -1,0 +1,337 @@
+%%
+
+top_levels
+    : top_level
+    | top_levels top_level
+    ;
+
+top_level
+    : model
+    ;
+
+model
+    : MODEL spec '{' model_definitions '}' { $_[0]->model($_[2], $_[4]) }
+    | MODEL spec '{' '}'                   { $_[0]->model($_[2]) }
+    ;
+
+spec
+    : IDENTIFIER '(' positional_args ',' named_args ')' { $_[0]->spec($_[1], [], $_[3], $_[5]) }
+    | IDENTIFIER '(' positional_args ')'                { $_[0]->spec($_[1], [], $_[3]) }
+    | IDENTIFIER '(' named_args ')'                     { $_[0]->spec($_[1], [], [], $_[3]) }
+    | IDENTIFIER '(' ')'                                { $_[0]->spec($_[1]) }
+    | IDENTIFIER                                        { $_[0]->spec($_[1]) }
+    ;
+
+array_spec
+    : IDENTIFIER '[' dim_args ']' '(' positional_args ',' named_args ')' { $_[0]->spec($_[1], $_[3], $_[6], $_[8]) }
+    | IDENTIFIER '[' dim_args ']' '(' positional_args ')'                { $_[0]->spec($_[1], $_[3], $_[6]) }
+    | IDENTIFIER '[' dim_args ']' '(' named_args ')'                     { $_[0]->spec($_[1], $_[3], [], $_[6]) }
+    | IDENTIFIER '[' dim_args ']' '(' ')'                                { $_[0]->spec($_[1], $_[3]) }
+    | IDENTIFIER '[' dim_args ']'                                        { $_[0]->spec($_[1], $_[3]) }
+    ;
+
+positional_args
+    : positional_args ',' positional_arg { $_[0]->append($_[1], $_[3]) }
+    | positional_arg                     { $_[0]->append($_[1]) }
+    ;
+
+positional_arg
+    : expression { $_[0]->positional_arg($_[1]) }
+    ;
+
+named_args
+    : named_args ',' named_arg { $_[0]->append($_[1], $_[3]) }
+    | named_arg                { $_[0]->append($_[1]) }
+    ;
+    
+named_arg
+    : IDENTIFIER '=' expression { $_[0]->named_arg($_[1], $_[3]) }
+    ;
+
+model_definitions
+    : model_definitions model_definition { $_[0]->append($_[1], $_[2]) }
+    | model_definition                   { $_[0]->append($_[1]) }
+    ;
+
+model_definition
+    : dim
+    | state
+    | state_aux
+    | noise
+    | input
+    | obs
+    | param
+    | param_aux
+    | const
+    | inline
+    | top_block
+    ;
+    
+dim
+    : DIM dim_declarations { $_[2] }
+    ;
+
+dim_declarations
+    : dim_declarations ',' dim_declaration { $_[0]->append($_[1], $_[3]) }
+    | dim_declaration                      { $_[0]->append($_[1]) }
+    ;
+    
+dim_declaration
+    : spec ';' { $_[0]->dim($_[1]) }
+    | spec     { $_[0]->dim($_[1]) }
+    ;
+
+const
+    : CONST const_declarations { $_[2] }
+    ;
+
+const_declarations
+    : const_declarations ',' const_declaration { $_[0]->append($_[1], $_[3]) }
+    | const_declaration                        { $_[0]->append($_[1]) }
+    ;
+    
+const_declaration
+    : IDENTIFIER '=' expression ';' { $_[0]->const($_[1], $_[3]) }
+    | IDENTIFIER '=' expression     { $_[0]->const($_[1], $_[3]) }
+    ;
+
+inline
+    : INLINE inline_declarations { $_[2] }
+    ;
+
+inline_declarations
+    : inline_declarations ',' inline_declaration { $_[0]->append($_[1], $_[3]) }
+    | inline_declaration                         { $_[0]->append($_[1]) }
+    ;
+    
+inline_declaration
+    : IDENTIFIER '=' expression ';' { $_[0]->inline($_[1], $_[3]) }
+    | IDENTIFIER '=' expression     { $_[0]->inline($_[1], $_[3]) }
+    ;
+
+state
+    : STATE var_declarations ';' { $_[0]->state($_[2]) }
+    | STATE var_declarations     { $_[0]->state($_[2]) }
+    ;
+
+state_aux
+    : STATE_AUX var_declarations ';' { $_[0]->state_aux($_[2]) }
+    | STATE_AUX var_declarations     { $_[0]->state_aux($_[2]) }
+    ;
+
+noise
+    : NOISE var_declarations ';' { $_[0]->noise($_[2]) }
+    | NOISE var_declarations     { $_[0]->noise($_[2]) }
+    ;
+
+input
+    : INPUT var_declarations ';' { $_[0]->input($_[2]) }
+    | INPUT var_declarations     { $_[0]->input($_[2]) }
+    ;
+
+obs
+    : OBS var_declarations ';' { $_[0]->obs($_[2]) }
+    | OBS var_declarations     { $_[0]->obs($_[2]) }
+    ;
+
+param
+    : PARAM var_declarations ';' { $_[0]->param($_[2]) }
+    | PARAM var_declarations     { $_[0]->param($_[2]) }
+    ;
+
+param_aux
+    : PARAM_AUX var_declarations ';' { $_[0]->param_aux($_[2]) }
+    | PARAM_AUX var_declarations     { $_[0]->param_aux($_[2]) }
+    ;
+
+var_declarations
+    : var_declarations ',' var_declaration { $_[0]->append($_[1], $_[3]) }
+    | var_declaration                      { $_[1] }
+    ;
+    
+var_declaration
+    : array_spec
+    | spec
+    ;
+    
+dim_args
+    : dim_args ',' dim_arg { $_[0]->append($_[1], $_[3]) }
+    | dim_arg              { $_[0]->append($_[1]) }
+    ;
+
+dim_arg
+    : IDENTIFIER { $_[0]->dim_arg($_[1]) }
+    ;
+
+dim_aliases
+    : dim_aliases ',' dim_alias { $_[0]->append($_[1], $_[3]) }
+    | dim_alias                 { $_[0]->append($_[1]) }
+    ;
+
+dim_alias
+    : IDENTIFIER { $_[0]->dim_alias($_[1]) }
+    ;
+    
+offset_args
+    : offset_args ',' offset_arg { $_[0]->append($_[1], $_[3]) }
+    | offset_arg                 { $_[0]->append($_[1]) }
+    ;
+
+offset_arg
+    : IDENTIFIER              { $_[0]->offset($_[1]) }
+    | IDENTIFIER '-' LITERAL  { $_[0]->offset($_[1], -1, $_[3]) }
+    | IDENTIFIER '+' LITERAL  { $_[0]->offset($_[1], 1, $_[3]) }
+    | '-' LITERAL             { $_[0]->offset($_[1], -1, $_[2]) }
+    | LITERAL                 { $_[0]->offset($_[1], 1, $_[2]) }
+    ;
+
+top_block
+    : SUB block { $_[0]->commit_block($_[2]) }
+    ;
+
+do
+    : DO block      { $_[0]->commit_block($_[2]) }
+    | do THEN block { $_[0]->append($_[1], $_[0]->commit_block($_[3])) }
+    ;
+
+block 
+    : spec '{' block_definitions '}' { $_[0]->block($_[1], $_[3]) }
+    | spec '{' '}'                   { $_[0]->block($_[1]) }
+    | '{' block_definitions '}'      { $_[0]->block(undef, $_[2]) }
+    | '{' '}'                        { $_[0]->block() }
+    ;
+
+block_definitions
+    : block_definitions block_definition { $_[0]->append($_[1], $_[2]) }
+    | block_definition                   { $_[0]->append($_[1]) }
+    ;
+
+block_definition
+    : do
+    | distributed_as
+    | set_to
+    | const
+    | inline
+    | block
+    ;
+
+distributed_as
+    : IDENTIFIER '[' dim_aliases ']' '~' expression ';' { $_[0]->action($_[1], $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_aliases ']' '~' expression     { $_[0]->action($_[1], $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '~' expression ';'                     { $_[0]->action($_[1], undef, $_[2], $_[3]) }
+    | IDENTIFIER '~' expression                         { $_[0]->action($_[1], undef, $_[2], $_[3]) }
+    ;
+
+set_to
+    : IDENTIFIER '[' dim_aliases ']' SET_TO expression ';' { $_[0]->action($_[1], $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_aliases ']' SET_TO expression     { $_[0]->action($_[1], $_[3], $_[5], $_[6]) }
+    | IDENTIFIER SET_TO expression ';'                     { $_[0]->action($_[1], undef, $_[2], $_[3]) }
+    | IDENTIFIER SET_TO expression                         { $_[0]->action($_[1], undef, $_[2], $_[3]) }
+    ;
+
+/* the remaining rules pertain to expressions, and are adapted from the ANSI C
+   grammar; in particular, assignment, increment, decrement and bitwise
+   operators are removed, the sizeof operator and type casts removed, and
+   named argument support added */
+
+postfix_expression
+    : LITERAL                                     { $_[0]->literal($_[1]) }
+    | STRING_LITERAL                              { $_[0]->string_literal($_[1]) }
+    | IDENTIFIER                                  { $_[0]->identifier($_[1]) }
+    | IDENTIFIER '[' offset_args ']'              { $_[0]->identifier($_[1], $_[3]) }
+    | IDENTIFIER '(' positional_args ')'          { $_[0]->function($_[1], $_[3]) }
+    | IDENTIFIER '(' ')'                          { $_[0]->function($_[1]) }
+    | '(' conditional_expression ')'              { $_[0]->parens($_[2]) }
+    ;
+
+unary_expression
+    : postfix_expression             { $_[1] }
+    | unary_operator cast_expression { $_[0]->unary_operator($_[1], $_[2]) }
+/*  | SIZEOF unary_expression        { $_[0]->unary_operator($_[1], $_[2]) }*/
+/*  | SIZEOF '(' TYPE_NAME ')'       { $_[0]->unary_operator($_[1], $_[3]) }*/
+    ;
+
+unary_operator
+    : '+' { $_[1] }
+    | '-' { $_[1] }
+/*  | '~' { $_[1] }*/
+    | '!' { $_[1] }
+    ;
+
+cast_expression
+    : unary_expression                  { $_[1] }
+/*  | '(' TYPE_NAME ')' cast_expression { $_[0]->expression(@_[1..$#_]) }*/
+    ;
+
+multiplicative_expression
+    : cast_expression                                       { $_[1] }
+    | multiplicative_expression '*' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression ELEM_MUL_OP cast_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression '/' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression ELEM_DIV_OP cast_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+/*  | multiplicative_expression '%' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    ;
+
+additive_expression
+    : multiplicative_expression                                 { $_[1] }
+    | additive_expression '+' multiplicative_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | additive_expression ELEM_ADD_OP multiplicative_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | additive_expression '-' multiplicative_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | additive_expression ELEM_SUB_OP multiplicative_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
+shift_expression
+    : additive_expression                           { $_[1] }
+/*  | shift_expression LEFT_OP additive_expression  { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+/*  | shift_expression RIGHT_OP additive_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    ;
+
+relational_expression
+    : shift_expression                             { $_[1] }
+    | relational_expression '<' shift_expression   { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | relational_expression '>' shift_expression   { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | relational_expression LE_OP shift_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | relational_expression GE_OP shift_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
+equality_expression
+    : relational_expression                           { $_[1] }
+    | equality_expression EQ_OP relational_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | equality_expression NE_OP relational_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
+and_expression
+    : equality_expression                    { $_[1] }
+/*  | and_expression '&' equality_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    ;
+
+exclusive_or_expression
+    : and_expression                             { $_[1] }
+/*  | exclusive_or_expression '^' and_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    ;
+
+inclusive_or_expression
+    : exclusive_or_expression                             { $_[1] }
+/*  | inclusive_or_expression '|' exclusive_or_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    ;
+
+logical_and_expression
+    : inclusive_or_expression                               { $_[1] }
+    | logical_and_expression AND_OP inclusive_or_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
+logical_or_expression
+    : logical_and_expression                             { $_[1] }
+    | logical_or_expression OR_OP logical_and_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
+conditional_expression
+    : logical_or_expression                                                       { $_[1] }
+    | logical_or_expression '?' conditional_expression ':' conditional_expression { $_[0]->ternary_operator($_[1], $_[2], $_[3], $_[4], $_[5]) }
+    ;
+
+expression
+    : conditional_expression { $_[0]->expression($_[1]) }
+    ;
+
+%%

@@ -1,0 +1,10 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO get_sparse_var_alt(expr) BLOCK-%]
+s.template getSparseVarAlt<Var[% expr.get_var.get_name %]>(mask)
+[%-END-%]

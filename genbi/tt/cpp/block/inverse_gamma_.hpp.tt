@@ -1,0 +1,63 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+/**
+ * Block: inverse_gamma_.
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+  
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+
+  [% declare_static_function('sample') %]
+  [% declare_static_function('logdensity') %]
+
+  [% declare_sparse_static_function('sample') %]
+  [% declare_sparse_static_function('logdensity') %]
+};
+
+#include "bi/updater/StaticSampler.hpp"
+#include "bi/updater/StaticLogDensity.hpp"
+#include "bi/updater/SparseStaticSampler.hpp"
+#include "bi/updater/SparseStaticLogDensity.hpp"
+
+[% sig_dynamic_function('sample') %] {
+  if (onDelta) {
+    samples(rng, s);
+  }
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  if (onDelta) {
+    logDensities(s, p);
+  }
+}
+
+[% sig_static_function('sample') %] {
+  bi::StaticSampler<[% model_class_name %],action_typelist>::samples(rng, s);
+}
+
+[% sig_static_function('logdensity') %] {
+  bi::StaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, p);
+}
+
+[% sig_sparse_static_function('sample') %] {
+  bi::SparseStaticSampler<[% model_class_name %],action_typelist>::samples(rng, mask, s);
+}
+
+[% sig_sparse_static_function('logdensity') %] {
+  bi::SparseStaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, mask, p);
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

@@ -1,0 +1,13 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_action_typedef(block) BLOCK %]
+  /**
+   * Type list for actions.
+   */
+  typedef GET_TYPETREE(Block[% block.get_id %]ActionTypeList) action_typelist;
+[% END-%]

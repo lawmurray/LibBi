@@ -1,0 +1,48 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[% PROCESS block/misc/header.hpp.tt %]
+
+#include "bi/pdf/IIDGaussianPdf.hpp"
+
+/**
+ * Block: standard_wiener_.
+ */
+class [% class_name %] {
+public:
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+};
+
+[% sig_dynamic_function('sample') %] {
+  BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
+  if (fabs(t2 - t1) > 0.0) {
+    bi::IIDGaussianPdf q(X.size2(), fabs(t2 - t1));
+    q.samples(rng, [% get_var(block.get_action.get_target) %]);
+  } else {
+    X.clear();
+  }
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  if (fabs(t2 - t1) > 0.0) {
+    BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
+    BOOST_AUTO(XY, [% get_var_alt(block.get_action.get_target) %]);
+    
+    bi::IIDGaussianPdf q(X.size2(), fabs(t2 - t1));
+    q.logDensities(XY, p);
+  }
+  
+  if (XY.size1() == 1) {
+    set_rows(X, row(XY, 0));
+  } else {
+    X = XY;
+  }
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

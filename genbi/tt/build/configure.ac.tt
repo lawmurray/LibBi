@@ -1,0 +1,94 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+AC_INIT([[% model.get_name %]], [0.0.0], [bug-report@example.com], [[% model.get_name %]], [http://www.example.com])
+AC_PREREQ([2.59])
+AC_LANG([C++])
+AM_INIT_AUTOMAKE([1.10 no-define foreign])
+#AC_CONFIG_HEADERS([config.h])
+
+# Conditionals used by make
+AC_ARG_ENABLE([double],
+     [  --enable-double         use double-precision floating point],
+     [case "${enableval}" in
+       yes) double=true ;;
+       no)  double=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-double]) ;;
+     esac],[double=true])
+AM_CONDITIONAL([ENABLE_DOUBLE], [test x$double = xtrue])
+
+AC_ARG_ENABLE([gpu],
+     [  --enable-gpu            use CUDA-enabled GPU device],
+     [case "${enableval}" in
+       yes) gpu=true ;;
+       no)  gpu=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-gpu]) ;;
+     esac],[gpu=false])
+AM_CONDITIONAL([ENABLE_GPU], [test x$gpu = xtrue])
+
+AC_ARG_ENABLE([sse],
+     [  --enable-sse            use SSE intrinsics],
+     [case "${enableval}" in
+       yes) sse=true ;;
+       no)  sse=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-sse]) ;;
+     esac],[sse=false])
+AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
+
+# Compilers
+#if test x$gpu = xtrue; then
+  compilers="g++" # don't permit icpc, OpenMP compatibility issues
+#else
+#  compilers="icpc g++"
+#fi
+
+# Checks for programs.
+AC_PROG_CXX([$compilers])
+
+# Compiler characteristics
+AC_OPENMP
+
+# Checks of programs
+
+# Checks for libraries
+AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([atlas], [main], [], []) # may be required if ATLAS cblas succeeds below
+AC_SEARCH_LIBS([cblas_dgemv], [openblas openblaso cblas], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([dgemv_], [openblas openblaso blas f77blas], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([dpotrf_], [openblas openblaso lapack], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([gsl], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([netcdf], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([netcdf_c++], [main], [], [AC_MSG_ERROR([required library not found])])
+
+if test x$gpu = xtrue; then
+	AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
+	AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
+	AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
+	AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
+	AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
+fi
+
+if test x$CXX = xicpc; then
+	AC_CHECK_LIB([bi], [main], [], [AC_MSG_ERROR([required library not found])], [-openmp])
+else
+	AC_CHECK_LIB([bi], [main], [], [AC_MSG_ERROR([required library not found])], [-lgomp])
+fi
+
+# Checks for header files
+AC_HEADER_ASSERT
+
+# Checks for typedefs, structures, and compiler characteristics
+AC_HEADER_STDBOOL
+AC_C_INLINE
+
+# Checks for library functions
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

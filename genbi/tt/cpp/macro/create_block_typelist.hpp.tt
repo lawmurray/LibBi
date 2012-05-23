@@ -1,0 +1,17 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_block_typelist(block) BLOCK %]
+/**
+ * Type list of sub-blocks.
+ */
+BEGIN_TYPELIST(Block[% block.get_id %]BlockTypeList)
+[% FOREACH subblock IN block.get_blocks-%]
+SINGLE_TYPE(1, Block[% subblock.get_id %])
+[% END-%]
+END_TYPELIST()
+[% END-%]

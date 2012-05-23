@@ -1,0 +1,37 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO sig_action_static_function(function) BLOCK %]
+  [% IF function == 'simulate' %]
+  template <class CX, class PX, class OX>
+  void [% class_name %]::simulate(const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  [% ELSIF function == 'sample' %]
+  template <class CX, class PX, class OX>
+  void [% class_name %]::samples(bi::Random& rng, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  [% ELSIF function == 'logdensity' %]
+  template <class CX, class PX, class OX, class T1>
+  void [% class_name %]::logDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
+  [% ELSE %]
+  template <class CX, class PX, class T1>
+  void [% class_name %]::[% function %](const int p, const CX& cox, const PX& pax, T1& x)
+  [% END %]
+[% END-%]
+[%-MACRO sig_action_dynamic_function(function) BLOCK %]
+  [% IF function == 'simulate' %]
+  template <class T1, class CX, class PX, class OX>
+  void [% class_name %]::simulate(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  [% ELSIF function == 'sample' %]
+  template <class T1, class CX, class PX, class OX>
+  void [% class_name %]::samples(bi::Random& rng, const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  [% ELSIF function == 'logdensity' %]
+  template <class T1, class CX, class PX, class OX, class T1>
+  void [% class_name %]::logDensities(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
+  [% ELSE %]
+  template <class T1, class CX, class PX, class T2>
+  void [% class_name %]::[% function %](const T1 t1, const T1 t2, const int p, const CX& cox, const PX& pax, T2& x)
+  [% END %]
+[% END-%]

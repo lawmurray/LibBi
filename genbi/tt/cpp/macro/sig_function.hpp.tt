@@ -1,0 +1,58 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO sig_static_function(function) BLOCK %]
+  [% IF function == 'sample' %]
+  template<bi::Location L>
+  void [% class_name %]::samples(bi::Random& rng, bi::State<[% model_class_name %],L>& s)
+  [% ELSIF function == 'simulate' %]
+  template<bi::Location L>
+  void [% class_name %]::simulate(bi::State<[% model_class_name %],L>& s)
+  [% ELSIF function == 'density' %]
+  template<bi::Location L, class V1>
+  void [% class_name %]::densities(bi::State<[% model_class_name %],L>& s, V1 p)
+  [% ELSIF function == 'logdensity' %]
+  template<bi::Location L, class V1>
+  void [% class_name %]::logDensities(bi::State<[% model_class_name %],L>& s, V1 p)
+  [% ELSE %]
+  [% THROW 'unknown function type' %]
+  [% END %]
+[% END-%]
+[%-MACRO sig_dynamic_function(function) BLOCK %]
+  [% IF function == 'sample' %]
+  template<class T1, bi::Location L>
+  void [% class_name %]::samples(bi::Random& rng, const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s)
+  [% ELSIF function == 'simulate' %]
+  template<class T1, bi::Location L>
+  void [% class_name %]::simulate(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s)
+  [% ELSIF function == 'density' %]
+  template<class T1, bi::Location L, class V1>
+  void [% class_name %]::densities(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s, V1 p)
+  [% ELSIF function == 'logdensity' %]
+  template<class T1, bi::Location L, class V1>
+  void [% class_name %]::logDensities(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s, V1 p)
+  [% ELSE %]
+  [% THROW 'unknown function type' %]
+  [% END %]
+[% END-%]
+[%-MACRO sig_sparse_static_function(function) BLOCK %]
+  [% IF function == 'sample' %]
+  template<bi::Location L>
+  void [% class_name %]::samples(bi::Random& rng, bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask)
+  [% ELSIF function == 'simulate' %]
+  template<bi::Location L>
+  void [% class_name %]::simulate(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask)
+  [% ELSIF function == 'density' %]
+  template<bi::Location L, class V1>
+  void [% class_name %]::densities(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask, V1 p)
+  [% ELSIF function == 'logdensity' %]
+  template<bi::Location L, class V1>
+  void [% class_name %]::logDensities(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask, V1 p)
+  [% ELSE %]
+  [% THROW 'unknown function type' %]
+  [% END %]
+[% END-%]

@@ -1,0 +1,133 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/cuda/cuda.hpp"
+#include "bi/math/ode.hpp"
+#include "bi/kd/kde.hpp"
+#include "bi/random/Random.hpp"
+#include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/StratifiedResampler.hpp"
+#include "bi/method/MultinomialResampler.hpp"
+#include "bi/method/MetropolisResampler.hpp"
+#include "bi/method/KernelResampler.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include "boost/typeof/typeof.hpp"
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <getopt.h>
+
+#ifdef ENABLE_GPU
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+  
+  /* bi init */
+  #ifdef __CUDACC__
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init(THREADS);
+
+  /* NetCDF error reporting */
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* model */
+  model_type m;
+  
+  /* state */
+  State<model_type,LOCATION> s(m, P);
+  P = s.size(); // may change according to implementation
+
+  /* inputs */
+  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL, *inObs = NULL;
+  if (!INPUT_FILE.empty()) {
+    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit->read0(P_VAR, s.get(P_VAR));
+    inInit->read0(D_VAR, s.get(D_VAR));
+  }
+  if (!OBS_FILE.empty()) {
+    inObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS);
+  }
+
+  /* output */
+  const int Y = (inObs == NULL) ? 1 : inObs->countUniqueTimes(T);
+  ParticleFilterNetCDFBuffer* out;
+  if (OUTPUT) {
+    out = new ParticleFilterNetCDFBuffer(m, P, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  } else {
+    out = NULL;
+  }
+
+  /* resampler */
+  [% IF client.get_named_arg('resampler') == 'kernel' %]
+  real h;
+  if (B_ABS > 0.0) {
+    h = B_ABS;
+  } else {
+    h = B_REL*hopt(N, P);
+  }
+  StratifiedResampler base(SORT);
+  KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, h, SHRINK);
+  [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+  MetropolisResampler resam(C);
+  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+  MultinomialResampler resam(SORT);
+  [% ELSE %]
+  StratifiedResampler resam(SORT);
+  [% END %]
+
+  /* filter */
+  [% IF client.get_named_arg('filter') == 'pf1' %]
+  BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, inObs, out)));
+  [% ELSE %]
+  BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, inObs, out)));
+  [% END %]
+
+  TicToc timer;
+  filter->filter(rng, T, s, inInit);
+  
+  /* output timing results */
+  if (TIME) {
+    synchronize();
+    std::cout << timer.toc() << std::endl;
+  }
+
+  delete filter;
+  delete out;
+  delete inInput;
+  delete inInit;
+  delete inObs;
+
+  return 0;
+}

@@ -1,0 +1,26 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-PROCESS macro/alias_dims.hpp.tt-%]
+[%-PROCESS macro/create_action_typedef.hpp.tt-%]
+[%-PROCESS macro/create_action_typelist.hpp.tt-%]
+[%-PROCESS macro/create_action_typetree.hpp.tt-%]
+[%-PROCESS macro/create_block_typedef.hpp.tt-%]
+[%-PROCESS macro/create_block_typelist.hpp.tt-%]
+[%-PROCESS macro/create_eval_var_coord.hpp.tt-%]
+[%-PROCESS macro/create_eval_var_target.hpp.tt-%]
+[%-PROCESS macro/declare_action_function.hpp.tt-%]
+[%-PROCESS macro/declare_function.hpp.tt-%]
+[%-PROCESS macro/get_var.hpp.tt-%]
+[%-PROCESS macro/get_var_alt.hpp.tt-%]
+[%-PROCESS macro/get_sparse_var.hpp.tt-%]
+[%-PROCESS macro/get_sparse_var_alt.hpp.tt-%]
+[%-PROCESS macro/read_argv.cpp.tt-%]
+[%-PROCESS macro/read_input.hpp.tt-%]
+[%-PROCESS macro/sig_action_function.hpp.tt-%]
+[%-PROCESS macro/sig_function.hpp.tt-%]
+[%-PROCESS macro/write_output.hpp.tt-%]

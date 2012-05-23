@@ -1,0 +1,163 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/cuda/cuda.hpp"
+#include "bi/math/ode.hpp"
+#include "bi/state/State.hpp"
+#include "bi/random/Random.hpp"
+#include "bi/method/ParticleMarginalMetropolisHastings.hpp"
+[% IF client.get_named_arg('filter') == 'ekf' %]
+#include "bi/method/ExtendedKalmanFilter.hpp"
+[% ELSE %]
+#include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/StratifiedResampler.hpp"
+#include "bi/method/MultinomialResampler.hpp"
+#include "bi/method/MetropolisResampler.hpp"
+#include "bi/method/KernelResampler.hpp"
+[% END %]
+#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
+#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+
+#ifdef __CUDACC__
+#include "bi/cuda/device.cuh"
+#endif
+
+#include "boost/typeof/typeof.hpp"
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <getopt.h>
+
+#ifdef ENABLE_GPU
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+  
+  /* bi init */
+  #ifdef __CUDACC__
+  int dev = chooseDevice(ID);
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init(THREADS);
+
+  /* NetCDF error reporting */
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* model */
+  model_type m;
+
+  /* state and intermediate results */
+  State<model_type,LOCATION> s(m, P);
+  P = s.size(); // may change according to implementation
+
+  /* initial condition handling */
+  InitialConditionMode initial;
+  if (INCLUDE_INITIAL) {
+    initial = bi::INCLUDE_INITIAL;
+  } else {
+    initial = bi::EXCLUDE_INITIAL;
+  }
+
+  /* inputs */
+  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
+  if (!INPUT_FILE.empty()) {
+    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+  }
+  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
+  const int Y = inObs.countUniqueTimes(T);
+
+  /* filter output */
+  [% IF client.get_named_arg('filter') == 'ekf' %]
+  KalmanFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+      outFilter = new KalmanFilterNetCDFBuffer(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+  }
+  [% ELSE %]
+  ParticleFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+      outFilter = new ParticleFilterNetCDFBuffer(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+  }
+  [% END %]
+  
+  /* outputs */
+  ParticleMCMCNetCDFBuffer* out = NULL;
+  if (OUTPUT && !OUTPUT_FILE.empty()) {
+      out = new ParticleMCMCNetCDFBuffer(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  }
+
+  /* filter */
+  [% IF client.get_named_arg('filter') == 'ekf' %]
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory<LOCATION>::create(m, inInput, &inObs, outFilter)));
+  [% ELSE %]
+    /* resampler */
+    [% IF client.get_named_arg('resampler') == 'kernel' %]
+    real h;
+    if (B_ABS > 0.0) {
+      h = B_ABS;
+    } else {
+      h = B_REL*hopt(N, P);
+    }
+    StratifiedResampler base(SORT);
+    KernelResampler<model_type,StratifiedResampler> resam(m, &base, h, SHRINK);
+    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler resam(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler resam(SORT);
+    [% ELSE %]
+    StratifiedResampler resam(SORT);
+    [% END %]
+    
+    /* particle filter */
+    [% IF client.get_named_arg('filter') == 'pf1' %]
+    BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
+    [% ELSE %]
+    BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
+    [% END %]
+  [% END %]
+
+  /* sampler */
+  BOOST_AUTO(sampler, ParticleMarginalMetropolisHastingsFactory<LOCATION>::create(
+      m, out, initial));
+
+  /* sample */
+  sampler->sample(rng, T, s, filter, inInit, D);
+ 
+  /* wrap up */
+  std::cout << sampler->getNumAccepted() << " of " <<
+      sampler->getNumSteps() << " proposals accepted" << std::endl;
+
+  delete sampler;
+  delete filter;
+  delete inInput;
+  delete inInit;
+}

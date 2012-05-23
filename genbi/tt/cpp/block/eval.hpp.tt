@@ -1,0 +1,139 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+/**
+ * Block: eval.
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+
+  [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
+  [% declare_static_function('sample') %]
+  [% declare_static_function('logdensity') %]
+
+  [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+
+  [% IF block.can_simulate %][% declare_sparse_static_function('simulate') %][% END %]
+  [% declare_sparse_static_function('sample') %]
+  [% declare_sparse_static_function('logdensity') %]  
+};
+
+#include "bi/updater/DynamicUpdater.hpp"
+#include "bi/updater/StaticUpdater.hpp"
+#include "bi/updater/SparseStaticUpdater.hpp"
+
+[%-IF block.can_simulate %]
+[% sig_static_function('simulate') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(s);
+  [%-END %]
+}
+[% END-%]
+
+[% sig_static_function('sample') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, s);
+  [%-END %]
+}
+
+[% sig_static_function('logdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(s, p);
+  [%-END %]
+}
+
+[%-IF block.can_simulate %]
+[% sig_dynamic_function('simulate') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
+  [%-END %]
+}
+[% END-%]
+
+[% sig_dynamic_function('sample') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, t1, t2, onDelta, s);
+  [%-END %]
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s, p);
+  [%-END %]
+}
+
+[%-IF block.can_simulate %]
+[% sig_sparse_static_function('simulate') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(s, mask);
+  [%-END %]
+}
+[% END-%]
+
+[% sig_sparse_static_function('sample') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, s, mask);
+  [%-END %]
+}
+
+[% sig_sparse_static_function('logdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(s, mask, p);
+  [%-END %]
+}
+
+[% PROCESS 'block/misc/footer.hpp.tt' %]

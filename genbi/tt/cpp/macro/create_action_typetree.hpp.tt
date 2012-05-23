@@ -1,0 +1,15 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_action_typetree(block) BLOCK-%]
+/**
+ * Type tree for actions.
+ */
+BEGIN_TYPETREE(Block[% block.get_id %]ActionTypeList)
+[% block.get_actions.to_typetree %]
+END_TYPETREE()
+[% END %]

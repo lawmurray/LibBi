@@ -1,0 +1,13 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_block_typedef(block) BLOCK %]
+  /**
+   * Type list of sub-blocks.
+   */
+  typedef GET_TYPETREE(Block[% block.get_id %]BlockTypeList) block_typelist;
+[% END-%]

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+mkdir -p src/Parse
+yapp -m Parse::Bi -o src/Parse/Bi.pm src/bi.yp

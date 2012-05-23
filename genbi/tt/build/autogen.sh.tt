@@ -1,0 +1,10 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+#!/bin/sh
+
+autoreconf --install >/dev/null 2> /dev/null

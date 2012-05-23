@@ -1,0 +1,83 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/method/RTSSmoother.hpp"
+#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
+#include "bi/buffer/KalmanSmootherNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+#include <sys/time.h>
+#include <getopt.h>
+
+#ifdef ENABLE_GPU
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+
+  /* bi init */
+  #ifdef __CUDACC__
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init(THREADS);
+
+  /* NetCDF error reporting */
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* model */
+  model_type m;
+
+  /* inputs */
+  KalmanFilterNetCDFBuffer in(m, FILTER_FILE, NetCDFBuffer::READ_ONLY);
+
+  /* output */
+  KalmanSmootherNetCDFBuffer* out;
+  if (OUTPUT) {
+    out = new KalmanSmootherNetCDFBuffer(m, in.size1(), in.size2()/2,
+        OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  } else {
+    out = NULL;
+  }
+
+  /* state */
+  State<model_type,LOCATION> s(m, in.size1());
+
+  /* smooth */
+  BOOST_AUTO(smoother, (RTSSmootherFactory<LOCATION>::create(m, &in, out)));
+  TicToc timer;
+  smoother->smooth(s);
+  delete smoother;
+
+  /* output timing results */
+  if (TIME) {
+    std::cout << timer.toc() << std::endl;
+  }
+
+  delete out;
+
+  return 0;
+}

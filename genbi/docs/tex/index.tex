@@ -1,0 +1,57 @@
+\documentclass[a4paper,11pt,times]{report}
+
+\usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{alltt}
+\usepackage{html}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage{lmodern} % vertically centres tilde in code
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{microtype}
+
+\parskip 11pt
+\parindent 0pt
+
+\title{\Huge{Bi User Guide, Developer Guide and Reference\\DRAFT}}
+\author{Lawrence Murray}
+
+% Prevents `--' in command-line options being interpreted as en-dash ligatures
+\DisableLigatures{family=sf*}
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{User Guide\label{User_Guide}}
+
+\input{users}
+
+\chapter{Developer Guide\label{Developer_Guide}}
+
+\input{developers}
+
+\chapter{Reference\label{Reference}}
+
+\section{Models}
+\input{models}
+
+\section{Actions}
+\input{actions}
+
+\section{Blocks}
+\input{blocks}
+
+\section{Clients}
+\input{common}
+\input{clients}
+
+\printindex
+
+\end{document}

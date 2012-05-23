@@ -1,0 +1,55 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[% PROCESS block/misc/header.hpp.tt %]
+
+[%-create_block_typelist(block)-%]
+
+/**
+ * Block: [% block.get_name %].
+ */
+class [% class_name %] {
+public:
+  [%-create_block_typedef(block)-%]
+
+  [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+  
+  /**
+   * Time step.
+   */
+  static real getDelta();
+};
+
+
+inline real [% class_name %]::getDelta() {
+  return [% block.get_named_arg('delta').eval_const %];
+}
+
+[%-IF block.can_simulate %]
+[% sig_dynamic_function('simulate') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
+  [%-END %]
+}
+[% END-%]
+
+[% sig_dynamic_function('sample') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, t1, t2, onDelta, s);
+  [%-END %]
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s);
+  [%-END %]
+}
+ 
+[% PROCESS block/misc/footer.hpp.tt %]

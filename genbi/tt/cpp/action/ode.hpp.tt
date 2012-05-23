@@ -1,0 +1,40 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: ode.
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  /**
+   * Compute time derivative of variable.
+   */
+  template <class T1, class CX, class PX, class T2>
+  static CUDA_FUNC_BOTH void dfdt(const T1 t, const int p,
+      const CX& cox, const PX& pax, T2& dfdt);
+};
+
+template <class T1, class CX, class PX, class T2>
+inline void [% class_name %]::dfdt(const T1 t, const int p,
+      const CX& cox, const PX& pax, T2& dfdt) {
+  [% alias_dims(action) %]
+  [% read_input(action.get_named_arg('dfdt')) %]
+  
+  dfdt = [% action.get_named_arg('dfdt').to_cpp %];
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

@@ -1,0 +1,80 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+mean = action.get_named_arg('mean');
+std = action.get_named_arg('std');
+log = action.get_named_arg('log').eval_const;
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: gaussian.
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  [% declare_action_static_function('mean') %]
+  [% declare_action_static_function('std') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+};
+
+#include "bi/math/pi.hpp"
+
+[% sig_action_static_function('mean') %] {
+  [% alias_dims(action) %]
+  [% read_input(mean) %]
+  
+  x = [% mean.to_cpp %];
+}
+
+[% sig_action_static_function('std') %] {
+  [% alias_dims(action) %]
+  [% read_input(std) %]
+  
+  x = [% std.to_cpp %];
+}
+
+[% sig_action_static_function('sample') %] {
+  real mu, sigma, u;
+    
+  mean(p, cox, pax, mu);
+  std(p, cox, pax, sigma);
+  [% IF log %]
+  u = BI_MATH_EXP(rng.gaussian(mu, sigma));
+  [% ELSE %]
+  u = rng.gaussian(mu, sigma);
+  [% END %]
+    
+  x.template put<target_type>(p, ix, u);
+}
+
+[% sig_action_static_function('logdensity') %] {
+  real mu, sigma, xy;
+    
+  mean(p, cox, pax, mu);
+  std(p, cox, pax, sigma);
+  xy = pax.template fetch_alt<target_type>(p, ix);
+
+  [% IF log %]
+  lp += BI_REAL(-0.5)*BI_MATH_POW((BI_MATH_LOG(xy) - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma*xy);
+  [% ELSE %]
+  lp += BI_REAL(-0.5)*BI_MATH_POW((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
+  [% END %]
+  x.template put<target_type>(p, ix, xy);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

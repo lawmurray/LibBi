@@ -1,0 +1,16 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+PROCESS macro/arg_list.bi.tt
+-%]
+sub [% block.get_name %][% arg_list(block) %] { // Block[% block.get_id %]
+[% FOREACH action IN block.get_actions %]
+[%-INCLUDE action.bi.tt FILTER indent(2)-%]
+[%-END-%]
+[% FOREACH block IN block.get_blocks %]
+[%-INCLUDE block.bi.tt FILTER indent(2)-%]
+[%-END-%]
+}

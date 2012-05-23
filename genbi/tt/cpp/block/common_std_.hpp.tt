@@ -1,0 +1,65 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+std = block.get_action.get_named_arg('std');
+target = block.get_action.get_target;
+-%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+/**
+ * Block: common_std_.
+ */
+class [% class_name %] {
+public:
+  [% declare_static_function('sample') %]
+  [% declare_static_function('density') %]
+  [% declare_static_function('logdensity') %]
+
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('density') %]
+  [% declare_dynamic_function('logdensity') %]
+};
+
+#include "bi/primitive/matrix_primitive.hpp"
+
+[% sig_static_function('sample') %] {
+  BOOST_AUTO(std, [% get_var(std) %]);
+  BOOST_AUTO(target, [% get_var(target) %]);
+
+  set_rows(target, std);
+}
+
+[% sig_static_function('density') %] {
+  BI_ERROR(false, "Cannot compute density of gemv_ action");
+}
+
+[% sig_static_function('logdensity') %] {
+  BI_ERROR(false, "Cannot compute log-density of gemv_ action");
+}
+
+[% sig_dynamic_function('sample') %] {
+  if (onDelta) {
+    samples(rng, s);
+  }
+}
+
+[% sig_dynamic_function('density') %] {
+  if (onDelta) {
+    densities(s, p);
+  }
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  if (onDelta) {
+    logDensities(s, p);
+  }
+}
+
+[% PROCESS 'block/misc/footer.hpp.tt' %]

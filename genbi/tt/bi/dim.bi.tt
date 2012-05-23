@@ -1,0 +1,9 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+PROCESS macro/arg_list.bi.tt
+-%]
+dim [% dim.get_name %][% arg_list(dim) %]

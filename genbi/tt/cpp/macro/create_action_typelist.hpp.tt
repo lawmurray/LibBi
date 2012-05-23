@@ -1,0 +1,17 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO create_action_typelist(block) BLOCK-%]
+/**
+ * Type list for actions.
+ */
+BEGIN_TYPELIST(Block[% block.get_id %]ActionTypeList)
+[% FOREACH action IN block.get_actions-%]
+SINGLE_TYPE(1, Action[% action.get_id %])
+[% END-%]
+END_TYPELIST()
+[% END %]

@@ -1,0 +1,720 @@
+\section{Introduction\label{Introduction}}
+
+Bi (short for ``Bayesian inference'') is used for probabilistic inference over
+state-space models, including simulation, filtering and smoothing for state
+estimation, and optimisation and sampling for parameter estimation.
+
+Bi supports state-space models of the form:
+\begin{equation*}
+p(\mathbf{y}_{1:T},\mathbf{x}_{1:T},\boldsymbol{\theta}) =
+\underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
+\underbrace{p(\mathbf{x}_0|\boldsymbol{\theta})}_{\text{initial}}
+\prod_{t=1}^T
+\underbrace{p(\mathbf{x}_t|\mathbf{x}_{t-1},\boldsymbol{\theta})}_{\text{transition}}
+\underbrace{p(\mathbf{y}_t|\mathbf{x}_t,\boldsymbol{\theta})}_{\text{observation}}.
+\end{equation*}
+where $t = 1,\ldots,T$ indexes time, $\mathbf{y}_{1:T}$ are observations,
+$\mathbf{x}_{1:T}$ are state variables, and $\boldsymbol{\theta}$ are
+parameters.
+
+The model is hierarchically factored into four particular conditional
+probability densities:
+\begin{itemize}
+\item the parameter model, specifying the prior density over parameters,
+\item the initial condition model, specifying the prior density over initial
+  conditions, conditioned on the parameters,
+\item the transition model, specifying the transition density conditioned on
+  the parameters and previous state,
+\item the observation model, specifying the observation density conditioned on
+  the parameters and current state.
+\end{itemize}
+Each of these is explicitly specified using the
+\hyperref[hyper][Modelling_language]{Bi modelling language}\index{modelling
+  language}.
+
+We begin with a brief example to set the scene. Consider the following
+Lotka-Volterra-like predator-prey model between zooplankton (predator, $Z$)
+and phytoplankton (prey, $P$):
+\begin{eqnarray*}
+\frac{dP}{dt} &=& \alpha_t P - cPZ\\
+\frac{dZ}{dt} &=& ecPZ - m_lZ - m_q Z^2.
+\end{eqnarray*}
+Here, $t$ is time (in days), with prescribed constants $c = .25$, $e = .3$,
+$m_l = .1$ and $m_q = .1$. The stochastic growth term, $\alpha_t$, is updated
+in discrete time by drawing $\alpha_t \sim \mathcal{N}(\mu,\sigma)$
+daily. Parameters to be estimated are $\mu$ and $\sigma$, and $P$ is observed,
+with noise, at daily intervals.
+
+The model above might be specified in the Bi modelling language as follows:
+\begin{alltt}{\sf
+    /**
+     * Lotka-Volterra-like phytoplankton-zooplankton (PZ) model.
+     */
+    model PZ \{
+      const c = 0.25     // zooplankton clearance rate
+      const e = 0.3      // zooplankton growth efficiency
+      const m_l = 0.1    // zooplankton linear mortality
+      const m_q = 0.1    // zooplankton quadratic mortality
+
+      param mu, sigma     // mean and standard deviation of phytoplankton growth
+      state P, Z         // phytoplankton, zooplankton
+      noise alpha        // stochastic phytoplankton growth rate
+      obs P_obs          // observations of phytoplankton
+  
+      sub parameter \{
+        mu ~ uniform(0.0, 1.0)
+        sigma ~ uniform(0.0, 0.5)
+      \}
+  
+      sub initial \{
+        P ~ log_normal(log(2.0), 0.2)
+        Z ~ log_normal(log(2.0), 0.1)
+      \}
+
+      sub transition(delta = 1.0) \{
+        do \{
+          alpha ~ normal(mu, sigma)
+        \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+          P <- ode(alpha*P - c*P*Z)
+          Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
+        \}
+      \}
+
+      sub observation \{
+        P_obs ~ log_normal(log(P), 0.2)
+      \}
+    \}
+}\end{alltt}
+
+This would be saved in a file named {\sf PZ.bi}. We can now consider
+performing various tasks with the Bi command-line interface, the simplest of
+which is simulating from the model:
+\begin{alltt}{\sf
+bi simulate --model-file PZ.bi -P 128 -T 365 -K 366 --output-file results/simulate.nc
+}\end{alltt}
+This command will simulate 128 trajectories of the model ({\sf -P 128}), each
+of 365 days ({\sf -T 365}), outputting the results to the NetCDF\index{NetCDF}
+file {\sf results/simulate.nc} every day ({\sf -K 366}).
+
+The \hyperref[hyper][Command_line_interface]{command-line interface} provides
+numerous other functionality, including filtering and smoothing the model with
+respect to data, and optimising or sampling its parameters.
+
+\section{Components\label{Components}}
+
+Bi consists of three components:
+\begin{description}
+\item[LibBi,]\index{LibBi} which provides classes and functions for simulation
+  and inference, numerical computing, memory management and I/O. It is written
+  in C++ with extensive use of generic programming concepts.
+\item[GenBi,]\index{GenBi} which parses the Bi modelling language, constructs
+  and optimises an internal model representation, and generates C++ code for
+  compiling against LibBi. It is written in Perl using object-oriented
+  concepts, and the Perl Template Toolkit for code generation.
+\item[OctBi,]\index{OctBi} which provides a set of functions for GNU Octave
+  for querying, analysing and visualising outputs.
+\end{description}
+
+The \hyperref[hyper][Command_line_interface]{command-line interface} provides
+for interaction with LibBi and GenBi. OctBi can be installed separately as a
+GNU Octave package for easily working with output files from this.
+
+\section{The Bi modelling language\label{Modelling_language}}
+
+A model specification file contains a single model specification. The
+specification always starts with an outer \hyperref[hyper][model]{\sf
+  model}\index{model} statement that declares and names the model. It then
+proceeds with declarations of dimensions and variables, followed by four
+\emph{top-level blocks} -- \hyperref[hyper][parameter]{\sf parameter},
+\hyperref[hyper][initial]{\sf initial}, \hyperref[hyper][transition]{\sf
+  transition} and \hyperref[hyper][observation]{\sf observation} -- that
+describe the factors of the hierarchical model.
+
+A suitable template is:
+\begin{alltt}{\sf
+    model \textsl{Name} \{
+      // declare dimensions...
+      // declare variables...
+
+      sub parameter \{
+        // specify the parameter model
+      \}
+
+      sub initial \{
+        // specify the initial condition model
+      \}
+
+      sub transition \{
+        // specify the transition model
+      \}
+
+      sub observation \{
+        // specify the observation model
+      \}
+    \}
+}\end{alltt}
+
+Note that the contents of the \hyperref[hyper][model]{\sf model}\index{model}
+statement and each top-level block are contained in curly braces ({\sf
+\{\(\ldots\)\}}), in typical C-style. Comments are also C-style, an inline
+comment being wrapped by \textsf{/*} and \textsf{*/}, and the double-slash
+(\textsf{//}) denoting an end-of-line comment. Semicolons at the end of each
+line are optional.
+
+Each top-level blocks may contain further nested \emph{blocks}, which
+in turn contain \emph{actions}, each of which specifies the distribution of,
+or means to evaluate, a variable.
+
+\subsection{Dimensions\label{Dimensions}}
+
+\subsection{Variables\label{Variables}}
+
+\subsection{Actions\label{Actions}}
+
+Within each top-level block, a probability density is specified using
+\emph{actions}. If \textsf{x} is some variable already declared, an action
+takes the form:
+\begin{alltt}{\sf
+    x ~ \textsl{name}(\textsl{arguments}, ...)
+}\end{alltt}
+or
+\begin{alltt}{\sf
+    x <- \textsl{name}(\textsl{arguments}, ...)
+}\end{alltt}
+
+The first form indicates that the (random) variable \textsf{x} is distributed
+according to the action given on the right. Such actions are usually, and
+unsurprisingly, named after common parametric distributions (e.g.
+\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian},
+\hyperref[hyper][gamma]{\sf gamma}\index{gamma} and
+\hyperref[hyper][uniform]{\sf uniform}\index{uniform}).
+
+The second form indicates that the (deterministic) variable \textsf{x} should
+be assigned a value evaluated according to the action given on the right. Such
+actions may require the evaluation of a simple scalar, vector or matrix
+expression, or may required more complicated processing, such as the numerical
+integration of ordinary differential equations\index{ordinary differential
+  equations} (e.g. the \hyperref[hyper][ode]{\sf ode}\index{ode} action).
+
+Actions support both \emph{named}\index{named arguments} and \emph{positional}
+arguments\index{positional arguments}, and this will be indicated in their
+documentation. Positional arguments are interpreted by the order given. For
+example
+\begin{alltt}{\sf
+    x ~ gaussian(0.0, 1.0)
+}\end{alltt}
+means that \textsf{x} is distributed according to the
+\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} action with, by the
+definition of that action, mean $0.0$ and standard deviation $1.0$.
+
+The \hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} action also
+happens to support named arguments, so the following is equivalent:
+\begin{alltt}{\sf
+    x ~ gaussian(mean = 0.0, std = 1.0)
+}\end{alltt}
+The order of named arguments is unimportant, so the following is also
+equivalent:
+\begin{alltt}{\sf
+    x ~ gaussian(std = 1.0, mean = 0.0)
+}\end{alltt}
+
+Positional and named arguments may be mixed, but all positional arguments must
+appear before all named arguments. Thus, this is valid:
+\begin{alltt}{\sf
+    x ~ gaussian(0.0, std = 1.0)
+}\end{alltt}
+but these are not:
+\begin{alltt}{\sf
+    x ~ gaussian(mean = 0.0, 1.0)
+    x ~ gaussian(std = 1.0, 0.0)
+}\end{alltt}
+This avoids ambiguity.
+
+Refer to the definition of a particular action to determine which arguments
+may be passed in positional, named or either form.
+
+\subsection{Serialisation\label{Serialisation}}
+
+It is assumed that all actions within the same block are independent, and can
+be evaluated concurrently. Where dependencies exist between actions, the
+\hyperref[hyper][do_then]{\sf do.. then}\index{do.. then} clause may be used to
+serialise actions so as to satisfy prerequisites:
+\begin{alltt}{\sf
+    do \{
+      eps ~ gaussian(0.0, 1.0)
+    \} then \{
+      x <- A*x + eps
+    \}
+}\end{alltt}
+Here, the variable \textsf{x} depends on the variable \textsf{eps} first being
+evaluated.
+
+Any number of {\sf then} parts may follow the initial {\sf do}.
+
+Under the hood, Bi assumes that it can evaluate actions within the same block
+in parallel, unless it is told otherwise. The \hyperref[hyper][do_then]{\sf
+  do.. then}\index{do.. then} clause is the only way to tell it otherwise.
+
+\subsection{Blocks}
+
+Some actions are more complicated and can be wrapped in \emph{named blocks}. A
+good example is the \hyperref[hyper][ode]{\sf ode}\index{ode} action. This
+describes the differential equation\index{ordinary differential equations} for
+a single variable, which must be grouped with other actions that describe the
+differential equations of other variables in the same system. The grouping is
+achieved by the \hyperref[hyper][ode]{\sf ode}\index{ode} named block.
+
+Consider the following Lotka-Volterra-type\index{Lotka-Volterra} transition
+model:
+\begin{alltt}{\sf
+    sub transition \{
+      sub ode \{
+        P <- ode(alpha*P - c*P*Z)
+        Z <- ode(e*c*P*Z - m_l*Z)
+      \}
+    \}
+}\end{alltt}
+Here, the additional \hyperref[hyper][ode]{\sf ode}\index{ode} block combines
+the two actions into the one system of ordinary differential equations.
+
+Note that every action is automatically wrapped in an appropriate enclosing
+block like this by GenBi. Indeed, in this case, GenBi will implicitly wrap the
+two \hyperref[hyper][ode]{\sf ode}\index{ode} actions in the one
+\hyperref[hyper][ode]{\sf ode}\index{ode} block anyway, so that explicitly
+doing so is unnecessary (but unharmful). Like actions, however, blocks can
+take arguments; explicitly giving the enclosing block permits arguments to be
+changed. In this case, the \hyperref[hyper][ode]{\sf ode}\index{ode} block has
+parameters to configure the numerical integrator used to simulate the
+differential system. These can be adjusted:
+\begin{alltt}{\sf
+    sub transition \{
+      sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+        P <- ode(alpha*P - c*P*Z)
+        Z <- ode(e*c*P*Z - m_l*Z)
+      \}
+    \}
+}\end{alltt}
+
+The top-level \hyperref[hyper][transition]{\sf transition}\index{transition}
+block, too, has an optional argument, giving the time-step for discrete-time
+parts of the system. While not too useful here given the continuous-time
+model, this argument can nevertheless be given:
+\begin{alltt}{\sf
+    sub transition(delta = 1.0) \{
+      sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+        P <- ode(alpha*P - c*P*Z)
+        Z <- ode(e*c*P*Z - m_l*Z)
+      \}
+    \}
+}\end{alltt}
+
+Arguments, both positional and named, work for blocks as they do for actions.
+
+Finally, named blocks can be used in a \hyperref[hyper][do_then]{\sf
+  do.. then}\index{do.. then} clause. The \textsf{do} or \textsf{then} keyword
+simply replaces the \textsf{sub} keyword, for example:
+\begin{alltt}{\sf
+    sub transition(delta = 1.0) \{
+      do \{
+        alpha ~ normal(mu, sigma)
+      \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+        P <- ode(alpha*P - c*P*Z)
+        Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
+      \}
+    \}
+}\end{alltt}
+
+The implicit wrapping of actions in blocks by GenBi should be intuitive. To
+see precisely what transformations are being made to the model, use the
+\hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command.
+
+\subsection{Expressions\label{Expressions}}
+
+Bi supports expressions over scalars, vectors and matrices, as well as the
+special type \textit{element}, which requires some explanation. These are
+defined as follows:
+\begin{itemize}
+
+\item a \textit{scalar}\index{scalar} is a literal, constant or variable that
+  is not declared over any dimensions,
+
+\item a \textit{vector}\index{vector} is a variable declared over
+  exactly one dimension,
+
+\item a \textit{matrix}\index{matrix} is a variable declared over exactly two
+  dimensions,
+
+\item variables declared over three or more dimensions are not given a special
+  name,
+
+\item an \textit{element} is a reference to a single element of any
+  variable declared over one or more dimensions.
+
+\end{itemize}
+
+The particular distinction of the element type in Bi will be unfamiliar to
+most users. Syntactically, whenever square brackets are used to refer to a
+single element of a variable (e.g. \textsf{a[i]}), that symbol is of the
+element type.
+
+There are a few implications of these definitions that may not be immediately
+obvious (or intuitive):
+\begin{itemize}
+\item A variable declared over a single dimension of size one is considered a
+  vector, not a scalar. Any variable declared over more than one dimension,
+  where all of those dimensions have size one, is likewise not considered a
+  scalar. The reason for this is that the particular boundary conditions of
+  its dimensions may convey different behaviour to that of a scalar.
+
+\item An element, despite referring to a single value, is not a scalar! In
+  binary operations, elements may be paired with scalars, but not with vectors
+  or matrices. Scalars, on the other hand, may be paired with vectors and
+  matrices. The element syntax is, essentially, a concise means of describing
+  element-wise transformation kernels (element expressions\index{element
+    expressions}) that are readily performed in parallel.
+
+\end{itemize}
+
+Special classes of expression are:
+\begin{itemize}
+\item A \textit{constant expression}\index{constant expression} is one that
+  can be evaluated at compile-time. It must be scalar, and may refer to
+  literals, constants and inlines that expand to other constant expressions
+  only.
+\item A \textit{static expression}\index{static expression} is one that does
+  not depend on time. It may refer to literals, constants, variables of type
+  \textsf{param}, and inlines that expand to other static expressions only.
+\item A \textit{common expression}\index{common expression} is one that does
+  not depend on the state of a particular trajectory. It may refer to
+  literals, constants, variables of type \textsf{param} or \textsf{input}, and
+  inlines that expand to other common expressions only.
+\item An \textit{element expression}\index{element expression} is one that
+  references at least one element. It may refer to literals, constants,
+  scalars and elements only.
+\end{itemize}
+Note that a constant expression is a static expression, and a static
+expression is a common expression.
+
+Element expressions are used for more complicated computations that cannot be
+expressed in matrix form, or that when expressed as such become contrived.
+They are appropriate when each element of the target variable can be expressed
+as a function of scalars and/or the elements of other variables.
+
+Consider the following example describing a Lorenz 96 model:
+
+\begin{alltt}{\sf
+    dim x(size = 20, boundary = 'cyclic')
+    param F
+    state X[x]
+    \(\ldots\)
+    X[i] <- ode(X[i - 1]*(X[i + 1] - X[i - 2]) - X[i] + F)
+}\end{alltt}
+
+Here, \textsf{X} is a vector variable declared along the \textsf{x}
+dimension. The final line is an \hyperref[hyper][ode]{\sf ode}\index{ode}
+action giving the derivative of the \textsf{i}th element of \textsf{X}. The
+presence of the element syntax \textsf{X[i]} is what makes this an element
+expression.
+
+The \textit{alias} \textsf{i} on the left-hand side is an arbitrary name for
+indexing along the dimension of \textsf{X}. Note the way in which \textsf{i}
+is used on the right-hand side to refer to other elements of the \textsf{X}
+vector. Indexing expressions that appear between square brackets, such as
+\textsf{[i + 1]}, \textsf{[i - 2]} and \textsf{[i]} above must be constant
+expressions\index{constant expression}. Note that, in this particular case,
+any such expressions that evaluate to outside the bounds of \textsf{X} will
+wrap around to the start or end of the vector, as the \textsf{x} dimension is
+declared with \textsf{boundary = 'cyclic'}.
+
+Consider another example:
+\begin{alltt}{\sf
+    dim m(20)
+    state D[m,m], x[m], y[m]
+    \(\ldots\)
+    D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
+}\end{alltt}
+
+This computes the Euclidean distance matrix \textsf{D} between several points
+with coordinates given in the vectors \textsf{x} and \textsf{y}. This
+demonstrates how multiple indices, in this case \textsf{i} and \textsf{j}, may
+be used. The particular selection of \textsf{i} and \textsf{j} is again
+arbitrary; any name may be used.
+
+Element expressions may use any scalar operators and functions. All operands
+and arguments must be scalars or elements. Thus the following is not
+permitted:
+\begin{alltt}{\sf
+    d[i] <- dot(x, y)
+}\end{alltt}
+as \hyperref[hyper][dot]{\sf dot}\index{dot} is a vector function. One might
+consider expressing the same as:
+\begin{alltt}{\sf
+    do \{
+      c <- dot(x,y)
+    \} then \{
+      d[i] <- c
+    \}
+}\end{alltt}
+where the dot product is first stored in the scalar variable \textsf{c}, and
+then copied into each element of the vector \textsf{d}.
+
+\subsection{Operators\label{Operators}}
+
+\subsection{Functions\label{Functions}}
+
+\section{Command line interface\label{Command_line_interface}}\index{command line}
+
+Methods are applied to models via the command line interface of Bi. Invoke Bi
+via the command line as:
+\begin{alltt}{\sf
+    bi \textit{command} \textit{options} ...
+}\end{alltt}
+where \textsf{\textit{command}} is any one of the following:
+\begin{itemize}
+\item \textsf{\hyperref[hyper][simulate]{simulate}} to simulate trajectories
+  from a model,
+\item \textsf{\hyperref[hyper][filter]{filter}} for filtering problems using the
+  model and observations,
+\item \textsf{\hyperref[hyper][smooth]{smooth}} for smoothing problems using the
+  model and observations,
+\item \textsf{\hyperref[hyper][optimise]{optimise}} for parameter optimisation
+  problems using the model and observations,
+\item \textsf{\hyperref[hyper][sample]{sample}} for parameter sampling
+  problems using the model and observations,
+\item \textsf{\hyperref[hyper][draw]{draw}} to visualise a model (useful for
+  debugging and development),
+\item \textsf{\hyperref[hyper][rewrite]{rewrite}} to process a model and
+  output a new model after applying internal transformations and optimisations
+  (useful for debugging and development),
+\end{itemize}
+and available \textsf{\textit{options}} depend on the command.
+
+Options for each command may be specified in a configuration file\index{config
+  file} or on the command line itself. For a configuration file, give the name
+of the file on the command line, preceded by \textsf{@}, e.g.
+\begin{alltt}{\sf
+    bi \textit{command} @command.conf
+}\end{alltt}
+An option given on the command line override an option of the same name given
+in the configuration file.
+
+\section{Data files\label{Data_files}}
+
+Input data is provided to Bi in the format of NetCDF\index{NetCDF} files. The
+structure of such files is specified here.
+
+\subsection{Input files}
+
+Each node in the model is associated with the variable of the same name in the
+NetCDF file. Nodes which cannot be associated with a NetCDF variable will
+produce warnings at runtime if an attempt is made to read or write to them
+while debugging is enabled. Extraneous variables in the NetCDF file are
+ignored.
+
+Each variable may be defined along one or more of the following dimensions, in
+the order given:
+\begin{enumerate}
+\item A dimension named \textsf{ns}, used to index multiple experiments set up
+  in the same file. If not given for a variable, that variable is assumed to
+  be the same for all experiments.
+\item Any number of dimensions with names matching those given in the model
+  specification.
+\item A dimension named \textsf{np}, used to index values of the variable over
+  trajectories. If not given for a variable, that variable is assumed to be
+  the same for all trajectories. Its length should be greater than or equal to
+  the number of trajectories being simulated. Variables of type
+  \textsf{param}, \textsf{input} and \textsf{obs} may not use an \textsf{np}
+  dimension.
+\end{enumerate}
+
+Additionally, a search for \emph{time variables}\index{time variable} is
+made. Time variables have a name prefixed by ``time''. Each such variable may
+be defined along an arbitrary single inner dimension, and optionally along the
+\textsf{ns} dimension as an outer dimension also. The former dimension becomes
+a \emph{record dimension}\index{record dimension}. The time variable gives the
+time associated with each index of the dimension. Its values must be
+monotonically non-decreasing across the dimension.
+
+Any other variables may be specified across the same record dimension,
+giving their values at the times given by the associated time variable.
+A variable may only be associated with one record dimension, and s- and
+p-vars may not be associated with one at all. If a variable is not defined
+across a record dimension, it is assumed to have the same value at all
+times.
+
+For each time variable, a search is made for an associated \emph{coordinate
+  variable}\index{coordinate variable}. This is a variable of the same name,
+but with the ``time'' prefix replaced by ``coord''. Its purpose is to specify
+the coordinates for spatial nodes of the model that have a corresponding
+variable in the file associated with the time variable. Each coordinate
+variable should be defined along an optional innermost dimension indexing the
+dimensions for nodes of two or more dimensions, then the same record dimension
+as the time variable, and optionally along the \textsf{ns} dimension as the
+outermost dimension.
+
+If a multidimensional variable is associated with a coordinate variable with
+fewer components than the number of dimensions along which it is defined,
+these are assumed to index the outermost dimensions. That is, a variable may
+be sparse in some dimensions and dense in others, but the sparse dimensions
+must be the outermost.
+
+If a variable specified across one or more dimensions in the model cannot be
+associated with a coordinate variable, then it is assumed to be dense across
+all of its dimensions in the NetCDF file.
+
+Record dimensions, time variables and coordinate variables facilitate sparse
+representation by storing only the change-points for each variable over
+time. Dense representations are incorporated via the special case where all
+variables are associated with the same time variable (or equivalently, where
+all time variables are identical), and no coordinate variables are used.
+
+\subsection{Output files}
+
+\section{Bringing it all together\label{Bringing_it_all_together}}
+
+The precise way in which input files and the model specification interact is
+best demonstrated in the steps taken to simulate a model. Computing densities
+is similar. The \emph{initialisation file} referred to in the proceeding steps
+is that given by the {\sf --init-file} command-line option, and the
+\emph{input file} that given by {\sf --input-file}.
+\begin{enumerate}
+\item Any {\sf input} variables in the input file that are not associated with
+  a time variable are initialised by reading from the file.
+\item The \hyperref[hyper][parameter]{\sf parameter}\index{parameter}
+  top-level block is sampled.
+\item Any {\sf param} variables in the input file are overwritten by reading
+  from the file.
+\item Any static expressions extracted by GenBi for precomputation are
+  evaluated.
+\item The \hyperref[hyper][initial]{\sf initial}\index{initial} top-level
+  block is sampled.
+\item Any {\sf state} variables in the input file are overwritten by reading
+  from the file.
+\item The \hyperref[hyper][transition]{\sf transition}\index{transition}
+  top-level block is sampled forward through time. Sampling stops at each time
+  that an {\sf input} variable is to change, according to the input file, at
+  which point the {\sf input} variable is updated and sampling of the
+  \hyperref[hyper][transition]{\sf transition}\index{transition} block
+  continues. Continuous-time\index{continuous time} components of the
+  \hyperref[hyper][transition]{\sf transition}\index{transition} block
+  (e.g. \hyperref[hyper][ode]{\sf ode}\index{ode} actions) are always
+  actioned. The remaining, discrete-time\index{discrete time} components, are
+  only actioned when the current time is an integer multiple of the time step
+  given by the \hyperref[hyper][transition]{\sf transition}\index{transition}
+  block's {\sf delta} argument.
+\end{enumerate}
+
+Note two important points in this procedure:
+\begin{itemize}
+\item An {\sf input} variable in the input file that is not associated with a
+  time variable is initialised before anything else, whereas an {\sf input}
+  variable that is associated with a time variable is not initialised until
+  simulation begins, even if the first entry of that variable indicates an
+  update at time zero.
+\item While the \hyperref[hyper][parameter]{\sf parameter}\index{parameter}
+  and \hyperref[hyper][initial]{\sf initial}\index{initial} blocks are
+  sampled, the samples may be later overwritten from the initialisation
+  file. Thus, the initialisation file need not contain a complete set of
+  variables in order to ensure that all variables are initialised before
+  simulation proceeds. This also ensures
+  \hyperref[hyper][Pseudorandom_reproducibility]{pseudorandom
+    reproducibility}\index{pseudorandom numbers} regardless of the presence,
+  or content, of the initialisation file.
+\end{itemize}
+
+\section{Performance guide\label{Performance guide}\index{performance}}
+
+One of the aims of Bi is to alleviate you, the user, from performance
+considerations. Consequently, there is little scope in the modelling language
+for performance tuning, but little need either. Where you have some control is
+in compilation and I/O.
+
+Bi will do the following for you:
+\begin{itemize}
+\item Precompute constant subexpressions.
+\item Precompute static subexpressions in the transition and observation
+  models.
+\end{itemize}
+
+Reducing redundant or repetitious computations is thus unnecessary where these
+are constant or static subexpressions. For example, taking the square-root of
+a variance parameter need not be of concern:
+\begin{alltt}{\sf
+    param sigma2
+    \(\ldots\)
+    sub transition \{
+        epsilon ~ gaussian(mu, sqrt(sigma2))
+        \(\ldots\)
+    \}
+}\end{alltt}
+Here, \textsf{sqrt(sigma2)} will be extracted and precomputed outside of the
+transition model -- \textsf{sigma2} is a parameter, and so
+\textsf{sqrt(sigma2)} a static expression.
+
+Use the \hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command if you
+wish to inspect the transformations that GenBi makes to a model.
+
+The following I/O and configuration issues are worth considering:
+\begin{itemize}
+\item When declaring a variable, use the \textsf{io} argument to omit it from
+  output files if it will not be of interest.
+
+\item The \textsf{--debug} command-line option is recommended for test runs to
+  enable the assertion checking\index{assertion checking} that ensures valid
+  code generation and input files. For production runs, however, it need not
+  be used, and this will give significant performance improvements.
+
+\item Experiment with the \textsf{--gpu} command-line option to make use of a
+  CUDA-enabled GPU\index{GPU}. This will usually improve performance when a
+  sufficient number of model trajectories are to be simulated.
+
+\item Experiment with the \textsf{--sse} option to make use of CPU SSE
+  instructions\index{SSE}\index{SIMD}. These can provide up to a two-fold
+  (double precision) or four-fold (single precision) speed-up. Be careful
+  though: models making heavy use of math functions such as \textsf{exp},
+  \textsf{log} and trigonometric functions may instead run slower.
+
+\item Experiment with using single precision\index{single precision} by using
+  the \textsf{--no-double} command line option. Assuming numerical error is
+  tolerable, this can offer significant performance improvements, especially
+  when used with the \textsf{--gpu} or \textsf{--sse} options (where single
+  precision facilitates both computational and memory efficiencies).
+
+\item \index{multithreading}Experiment with the \textsf{--threads} command
+  line option to set the number of CPU threads. One can typically expect a
+  linear speedup in the number of threads for methods based on the simulation
+  of many trajectories (e.g. the particle filter). Depreciating returns may be
+  apparent for other methods.
+
+\item Use optimised libraries for your platform, especially the
+  BLAS\index{BLAS} and LAPACK\index{LAPACK} libraries.
+
+\item Use the Intel C++ compiler\index{Intel compiler} if
+  available. Anecdotally, this tends to produce code that runs 10-20\% faster
+  than \textsf{gcc}\index{gcc}. The \textsf{configure} scripts for both LibBi
+  and client programs will automatically detect this compiler\index{compiler},
+  and use it if available.
+
+\end{itemize}
+
+\section{Style guide\label{Style_guide}}\index{style guide}
+
+The following naming conventions are recommended:
+\begin{itemize}
+\item Model names are CamelCase, the first letter always capitalised.
+\item Action and block names are all lowercase, with multiple words separated
+  by '\_' (the underscore).
+\item Dimension and variable names should be consistent, where possible, with
+  their counterparts in a description of the model as it might appear in a
+  scientific paper. For example, single upper-case letters for the names of
+  matrix variables are appropriate, and standard symbols (rather than
+  descriptive names) are encouraged. Greek letters should be written out in
+  full, the first letter capitalised for the capital version
+  (e.g. \textsf{gamma} and \textsf{Gamma}).
+\item Comments should be used liberally, with descriptions provided for all
+  dimensions and variables in particular. Consider including units as part of
+  the description, where relevant.
+\item Names ending in '\_' (the underscore) are intended for internal use
+  only, and so no such names should generally appear in a model specification.
+\item Indent using two spaces, and do not use tabs.
+\end{itemize}

@@ -1,0 +1,235 @@
+
+Developing Bi involves adding or modifying functionality in one or more of its
+major \hyperref[hyper][Components]{components}. A typical exercise is adding
+block and action types to GenBi to introduce new features, such as support for
+additional probability density functions. This may also involve implementing
+new functionality in LibBi on which these blocks and actions can draw. Another
+common task is adding a new inference method to LibBi, then adding or
+modifying templates in GenBi to produce the client code that will use this.
+
+\section{Actions, blocks and clients}
+
+A user of Bi is exposed only to those blocks and actions which they explicitly
+write in their model specification file. Developers must be aware that beyond
+these \textit{explicit} blocks, additional \textit{implicit} blocks are
+inserted according to the actions specified by the user. In particular, each
+action has a preferred parent block type. If the user, in writing their model
+specification, does not explicitly place an action within its
+preferred block type, the action will be implicitly wrapped in it anyway.
+
+For example, take the model specification:
+\begin{alltt}{\sf
+    sub transition \{
+      do \{
+        x <- a*x + b
+        y <- c*y + d
+      \} then \{
+        x ~ uniform(x - 1.0, x + 1.0)
+        y ~ gaussian(y, 1.0)
+      \}
+    \}
+}\end{alltt}
+The \hyperref[hyper][uniform]{\sf uniform}\index{uniform} and
+\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} actions prefer
+different parent block types. These additional block types will be inserted,
+to give the equivalent of the user having specified:
+\begin{alltt}{\sf
+    sub transition \{
+      do \{
+        x <- a*x + b
+        y <- c*y + d
+      \} then \{
+        sub uniform_ \{
+          x ~ uniform(x - 1.0, x + 1.0)
+        \}
+        sub gaussian_ \{
+          y ~ gaussian(y, 1.0)
+        \}
+      \}  
+    \}
+}\end{alltt}
+
+For the developer, then, actions and blocks are always written in tandem.
+Note the underscore suffix on \textsf{uniform\_} and \textsf{gaussian\_} is a
+convention that marks these as blocks for internal use only -- the user is not
+intended to use them explicitly (see the \hyperref[hyper][Style_guide]{\sf
+  Style guide}\index{style guide}).
+
+It is worth familiarising yourself with this behaviour, and indeed other
+transformations made by GenBi, by using the
+\hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command.
+
+\subsection{Adding a block}
+
+To add a block:
+\begin{enumerate}
+\item Choose a name for the block.
+\item Create a Perl module \textsf{Bi::Block::\textit{name}} in the
+  file \textsf{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
+  ``CamelCase'' naming conventions should be ignored in favour of Bi block
+  naming conventions here.
+\item Create a new Perl Template Toolkit template
+  \textsf{gen/src/tt/block/\textit{name}.hpp.tt}. When rendered, the template
+  will be passed a single variable named \textsf{block}, which is an object of
+  the class created in the previous step.
+\end{enumerate}
+
+As implementation details of the Perl module and template are subject to
+change, it is highly recommended that you copy and modify an existing, similar
+block type, as the basis for your new block type.
+
+\subsection{Adding an action}
+
+To add an action:
+\begin{enumerate}
+\item Choose a name for the action.
+\item Create a Perl module \textsf{Bi::Block::\textit{name}} in the
+  file \textsf{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
+  ``CamelCase'' naming conventions should be ignored in favour of Bi action
+  naming conventions here.
+\item If necessary, create a new Perl Template Toolkit template
+  \textsf{gen/src/tt/action/\textit{name}.hpp.tt}. When rendered, the template
+  will be passed a single variable named \textsf{action}, which is an object
+  of the class created in the previous step. Often, this template is not
+  necessary, such as when the template for the containing block generates all
+  the code required.
+\end{enumerate}
+
+\subsection{Adding a client\label{Adding_a_client}}
+
+To add a client:
+\begin{enumerate}
+\item Consider whether an existing client can be modified or a new client
+  should be added. For an existing client, edit the corresponding Perl module
+  \textsf{src/Bi/Client/\textit{name}.pm}. For a new client, choose a name
+  and create a new Perl module \textsf{src/Bi/Client/\textit{name}.pm}. Again,
+  Bi client naming conventions should be favoured over Perl module naming
+  conventions.
+\item Consider whether an existing template can be modified or a new template
+  should be created. For an existing template, edit the corresponding template
+  in \textsf{tt/cpp/client/\textit{template}.cpp.tt}. For a new template:
+\begin{enumerate}
+\item Create files \textsf{tt/cpp/client/\textit{template}.cpp.tt} and
+  \textsf{tt/cpp/client/\textit{template}.cu.tt}. Note that the second
+  typically only needs to \textsf{\#include} the former, the \textsf{*.cu}
+  file extension is merely needed for a CUDA-enabled compile.
+\item Modify the Perl module to select this template for use where
+  appropriate.
+\item Add the template name to the list given at the top of
+  \textsf{tt/build/Makefile.am.tt} to ensure that a build fule is generated
+  for it.
+\end{enumerate}
+\end{enumerate}
+
+\section{Designing an extension\label{Designing_an_extension}}
+
+Given that there are no particular requirements on actions other than those
+imposed by your own containing block class, there is considerable flexibility
+in designing block and action behaviour. This section provides some guidance
+as to best practice.
+
+It is recommended that most logic is written in blocks, rather than
+actions. This allows multiple actions to be combined where doing so will
+improve performance (e.g. minimising the number of kernel launches on a GPU
+device, and maximising parallelism). Note that, unless otherwise specified,
+arguments to an action are unrolled and evaluated prior to any calls to the
+action and its containing block. All arguments are thus passed as the
+variables holding the evaluated result.
+
+Complex C++ code should form part of LibBi rather than GenBi. The C++ code
+generated by templates should typically be limited to arranging for a few
+function calls into LibBi, where most of the work will be done.
+
+When writing templates for client programs, consider that it is advantageous
+for the user that they can change command line arguments without the C++ code
+changing, and thus triggering a recompile. This can be achieved by writing
+runtime checks on command-line options in C++ rather than code-generation-time
+checks in the Perl Template Toolkit. This need not be taken to the extreme,
+however: clear and simple template code is preferred over convoluted C++!
+
+\section{Documenting an extension\label{Documenting_an_extension}}
+
+Reference documentation for actions, blocks and clients is written in the Perl
+module created for them, in standard Perl POD. Likewise, parameters for
+actions and blocks, and command-line options for clients, are enumerated in
+these. The idea of this is to keep implementation and documentation together.
+
+POD documentation in these modules is automatically converted to LaTeX and
+incorporated in the \hyperref[hyper][Reference]{Reference} section of this
+manual.
+
+\section{Style guide\label{Developer_style_guide}}\index{style guide}
+
+Further to the \hyperref[hyper][Style_guide]{Style guide} for users, the
+following additional recommended pertain to developers:
+\begin{itemize}
+\item Action, block, client and argument names are all lowercase, with
+  multiple words separated by '\_' (the underscore). Uppercase may be used in
+  exceptional cases where this convention becomes contrived. A good example is
+  matrix arguments, which might naturally be named with uppercase letters.
+\item Actions, blocks and arguments that are not meant to be used explicitly
+  should be suffixed with a single underscore.
+\end{itemize}
+
+\section{Other considerations}
+
+\subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
+
+It is important to maintain reproducibility of results under the same random
+number seed\index{random number seed}, typically passed using the
+\textsf{--seed} option on the command line. Real time impacts should be
+considered, such as favouring static scheduling\index{static scheduling} over
+dynamic scheduling\index{dynamic scheduling} for OpenMP\index{OpenMP} thread
+blocks. Consider the following:
+\begin{alltt}{\sf
+    Random rng;
+
+    #pragma omp parallel for
+    for (int i = 0; i < N; ++i) \{
+       x = rng.uniform();
+       \(\ldots\)
+    \}
+}\end{alltt}
+
+\textsf{Random} maintains a separate pseudorandom number
+generator\index{pseudorandom number generation} for each OpenMP thread. If
+dynamically scheduled, the above loop gives no guarantees as to the number of
+variates drawn from each generator, so that reproducibility of results for a
+given seed is not guaranteed. Static scheduling should be enforced in this
+case to ensure reproducibility:
+\begin{alltt}{\sf
+    Random rng;
+
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < N; ++i) \{
+       x = rng.uniform();
+       \(\ldots\)
+    \}
+}\end{alltt}
+
+A more subtle consideration is the conditional generation of
+variates. Consider the following code, evaluating a
+Metropolis-Hastings\index{Metropolis-Hastings} acceptance criterion:
+\begin{alltt}{\sf
+    alpha = (l1*p1*q2)/(l2*p2*q1);
+    if (alpha >= 1.0 || rng.uniform() < alpha) \{
+      accept();
+    \} else \{
+      reject();
+    \}
+}\end{alltt}
+Here, \textsf{rng.uniform()} is called only when \textsf{alpha >= 1.0} (given
+operator short-circuiting). We might prefer, however, that across multiple
+runs with the same seed, the pseudorandom number generator is always in the
+same state for the $n$th iteration, regardless of the acceptance criteria
+across the preceding iterations. Moving the variate generation outside the
+conditional will fix this:
+\begin{alltt}{\sf
+    alpha = (l1*p1*q2)/(l2*p2*q1);
+    u = rng.uniform();
+    if (alpha >= 1.0 || u < alpha) \{
+      accept();
+    \} else \{
+      reject();
+    \}
+}\end{alltt}

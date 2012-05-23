@@ -1,0 +1,75 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+lower = action.get_named_arg('lower');
+upper = action.get_named_arg('upper');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: uniform.
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  [% declare_action_static_function('lower') %]
+  [% declare_action_static_function('upper') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+};
+
+#include "bi/math/pi.hpp"
+
+[% sig_action_static_function('lower') %] {
+  [% alias_dims(action) %]
+  [% read_input(lower) %]
+  
+  x = [% lower.to_cpp %];
+}
+
+[% sig_action_static_function('upper') %] {
+  [% alias_dims(action) %]
+  [% read_input(upper) %]
+  
+  x = [% upper.to_cpp %];
+}
+
+[% sig_action_static_function('sample') %] {
+  real mn, mx, u;
+    
+  lower(p, cox, pax, mn);
+  upper(p, cox, pax, mx);
+  u = rng.uniform(mn, mx);
+    
+  x.template put<target_type>(p, ix, u);
+}
+
+[% sig_action_static_function('logdensity') %] {
+  real mn, mx, xy;
+    
+  lower(p, cox, pax, mn);
+  upper(p, cox, pax, mx);
+  xy = pax.template fetch_alt<target_type>(p, ix);
+
+  if (xy >= mn && xy <= mx) {
+    lp += -BI_MATH_LOG(mx - mn);
+  } else {
+    lp = BI_REAL(-1.0)/BI_REAL(0.0);
+  }
+  x.template put<target_type>(p, ix, xy);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

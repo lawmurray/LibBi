@@ -1,0 +1,30 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-PROCESS macro/arg_list.bi.tt-%]
+model [% model.get_name %][% arg_list(model) %] {
+[% FOREACH dim IN model.get_dims %]
+[%-INCLUDE dim.bi.tt FILTER indent(2) %]
+[%-END-%]
+
+[% FOREACH const IN model.get_consts-%]
+[%-INCLUDE const.bi.tt FILTER indent(2) %]
+[%-END-%]
+
+[% FOREACH var IN model.get_vars-%]
+[%-INCLUDE var.bi.tt FILTER indent(2) %]
+[%-END-%]
+
+[% FOREACH inline IN model.get_inlines %]
+[%-INCLUDE inline.bi.tt FILTER indent(2) %]
+[%-END-%]
+
+[% FOREACH block IN model.get_blocks %]
+[%-INCLUDE block.bi.tt FILTER indent(2) %]
+
+[%-END-%]
+}

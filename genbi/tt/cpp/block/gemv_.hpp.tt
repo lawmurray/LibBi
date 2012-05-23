@@ -1,0 +1,63 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+A = block.get_action.get_named_arg('A');
+x = block.get_action.get_named_arg('x');
+y = block.get_action.get_target;
+-%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+/**
+ * Block: gemv_.
+ */
+class [% class_name %] {
+public:
+  [% declare_static_function('simulate') %]
+  [% declare_static_function('sample') %]
+  [% declare_static_function('logdensity') %]
+
+  [% declare_static_function('simulate') %]
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+};
+
+#include "bi/primitive/matrix_primitive.hpp"
+
+[% sig_static_function('simulate') %] {
+  BOOST_AUTO(A, [% get_var(A) %]);
+  BOOST_AUTO(x, [% get_var(x) %]);
+  BOOST_AUTO(y, [% get_var(y) %]);
+  
+  bi::multi_gemv_(A, x, y);
+}
+
+[% sig_static_function('sample') %] {
+  simulate(s);
+}
+
+[% sig_static_function('logdensity') %] {
+  simulate(s);
+}
+
+[% sig_dynamic_function('simulate') %] {
+  if (onDelta) {
+    simulate(s);
+  }
+}
+
+[% sig_dynamic_function('sample') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% PROCESS 'block/misc/footer.hpp.tt' %]

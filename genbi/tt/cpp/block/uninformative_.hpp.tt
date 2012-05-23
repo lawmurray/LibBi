@@ -1,0 +1,68 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+/**
+ * Block: uninformative_.
+ */
+class [% class_name %] {
+public:
+  [% declare_static_function('sample') %]
+  [% declare_static_function('logdensity') %]
+
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+
+  [% declare_sparse_static_function('sample') %]
+  [% declare_sparse_static_function('logdensity') %]
+};
+
+[% sig_static_function('sample') %] {
+  BI_ERROR(false, "Cannot sample from uninformative distribution");
+}
+
+[% sig_static_function('logdensity') %] {
+  BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
+  BOOST_AUTO(XY, [% get_var_alt(block.get_action.get_target) %]);
+  if (XY.size1() == 1) {
+    set_rows(X, row(XY, 0));
+  } else {
+    X = XY;
+  }
+}
+
+[% sig_dynamic_function('sample') %] {
+  BI_ERROR(false, "Cannot sample from uninformative distribution");
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
+  BOOST_AUTO(XY, [% get_var_alt(block.get_action.get_target) %]);
+  if (XY.size1() == 1) {
+    set_rows(X, row(XY, 0));
+  } else {
+    X = XY;
+  }
+}
+
+[% sig_sparse_static_function('sample') %] {
+  BI_ERROR(false, "Cannot sample from uninformative distribution");
+}
+
+[% sig_sparse_static_function('logdensity') %] {
+  BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
+  BOOST_AUTO(XY, [% get_var_alt(block.get_action.get_target) %]);
+  if (XY.size1() == 1) {
+    set_rows(X, row(XY, 0));
+  } else {
+    X = XY;
+  }
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

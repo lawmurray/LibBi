@@ -1,0 +1,65 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+/**
+ * Block: ode.
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+  
+  [% declare_dynamic_function('simulate') %]
+  [% declare_dynamic_function('sample') %]
+  [% declare_dynamic_function('logdensity') %]
+  
+private:
+  /**
+   * Algorithms.
+   */
+  enum Algorithm {
+    RK4,
+    RK43,
+    DOPRI5
+  };
+};
+
+#include "bi/ode/RK4Integrator.hpp"
+#include "bi/ode/DOPRI5Integrator.hpp"
+#include "bi/ode/RK43Integrator.hpp"
+#include "bi/math/ode.hpp"
+
+[% sig_dynamic_function('simulate') %] {
+  /* initialise integrator */
+  static const real ATOLER = [% block.get_named_arg('atoler').eval_const %];
+  static const real RTOLER = [% block.get_named_arg('rtoler').eval_const %];
+  static const real H = [% block.get_named_arg('h').eval_const %];
+  bi_ode_init(H, ATOLER, RTOLER);
+
+  /* integrate */  
+  [% IF block.get_named_arg('alg').eval_const == 'rk4' %]
+  bi::RK4Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);
+  [% ELSIF block.get_named_arg('alg').eval_const == 'dopri5' %]
+  bi::DOPRI5Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);
+  [% ELSE %]
+  bi::RK43Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);
+  [% END %]
+}
+
+[% sig_dynamic_function('sample') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

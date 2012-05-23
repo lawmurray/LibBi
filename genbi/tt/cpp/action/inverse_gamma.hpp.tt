@@ -1,0 +1,74 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+shape = action.get_named_arg('shape');
+scale = action.get_named_arg('scale');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: inverse_gamma.
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  [% declare_action_static_function('shape') %]
+  [% declare_action_static_function('scale') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+};
+
+#include "bi/math/pi.hpp"
+
+[% sig_action_static_function('shape') %] {
+  [% alias_dims(action) %]
+  [% read_input(shape) %]
+  
+  x = [% shape.to_cpp %];
+}
+
+[% sig_action_static_function('scale') %] {
+  [% alias_dims(action) %]
+  [% read_input(scale) %]
+  
+  x = [% scale.to_cpp %];
+}
+
+[% sig_action_static_function('sample') %] {
+  real sh, sc, u;
+
+  shape(p, cox, pax, sh);
+  scale(p, cox, pax, sc);
+  u = BI_REAL(1.0)/rng.gamma(sh, BI_REAL(1.0)/sc);
+
+  x.template put<target_type>(p, ix, u);
+}
+
+[% sig_action_static_function('logdensity') %] {
+  real sh, sc, logZ, xy;
+
+  shape(p, cox, pax, sh);
+  scale(p, cox, pax, sc);
+  
+  xy = pax.template fetch_alt<target_type>(p, ix);
+
+  logZ = BI_MATH_LGAMMA(sh) - sh*BI_MATH_LOG(sc);
+  lp += (-sh - BI_REAL(1.0))*BI_MATH_LOG(xy) - sc/xy - logZ;
+
+  x.template put<target_type>(p, ix, xy);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

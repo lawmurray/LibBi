@@ -1,0 +1,84 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/cuda/cuda.hpp"
+#include "bi/math/ode.hpp"
+#include "bi/random/Random.hpp"
+#include "bi/method/ParticleFilterSmoother.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleSmootherNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+#include <sys/time.h>
+#include <getopt.h>
+
+#define LOCATION ON_HOST
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+
+  /* command line arguments */
+  [% read_argv(client) %]
+
+  /* bi init */
+  #ifdef __CUDACC__
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init(THREADS);
+
+  /* NetCDF error reporting */
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* model */
+  model_type m;
+  
+  /* random number generator */
+  Random rng(SEED);
+
+  /* inputs */
+  ParticleFilterNetCDFBuffer in(m, FILTER_FILE, NetCDFBuffer::READ_ONLY);
+
+  /* state and intermediate results */
+  const int P = in.size1();
+  const int T = in.size2();
+  State<model_type,LOCATION> s(m, P);
+  assert (P == s.size());
+
+  /* output */
+  ParticleSmootherNetCDFBuffer* out = NULL;
+  if (OUTPUT) {
+    out = new ParticleSmootherNetCDFBuffer(m, P, T, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  }
+
+  /* smooth */
+  TicToc timer;
+  BOOST_AUTO(smoother, (ParticleFilterSmootherFactory<bi::Location,STATIC_SHARED>::create(m, out)));
+  smoother->smooth(s, &in);
+  delete smoother;
+
+  /* output timing results */
+  if (TIME) {
+    std::cout << timer.toc() << std::endl;
+  }
+
+  delete out;
+
+  return 0;
+}

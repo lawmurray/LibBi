@@ -1,0 +1,18 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+
+[%-MACRO arg_list(item) BLOCK-%]
+[%-'(' IF (item.num_args || item.num_named_args)-%]
+[%-FOREACH arg IN item.get_args-%]
+[%-arg.to_bi %][% IF !(loop.last && item.num_named_args == 0) %], [% END-%]
+[%-END-%]
+[%-FOREACH name IN item.get_named_args.keys-%]
+[%-name %] = [% item.get_named_args.$name.to_bi %][% IF !loop.last %], [% END-%]
+[%-END-%]
+[%-')' IF (item.num_args || item.num_named_args)-%]
+[%-END-%]

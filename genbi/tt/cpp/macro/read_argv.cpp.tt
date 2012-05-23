@@ -1,0 +1,66 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO read_argv(client) BLOCK %]
+
+  enum {
+    [%-FOREACH param IN client.get_params-%]
+    [%-IF param.name.length > 1 %]
+    [% param.name.replace('-', '_') | upper %]_ARG,
+    [%-END-%]
+    [%-END %]
+    NUM_LONG_ARGS
+  };
+  
+  [% TYPES = { 'int' => 'int', 'float' => 'real', 'string' => 'std::string' } %]
+  [%-FOREACH param IN client.get_params %]
+  [% TYPES.${param.type} %] [% param.name.replace('-', '_') | upper-%]
+  [%-IF param.exists('default')-%]
+  [%-IF param.type == 'string'-%]
+  = std::string("[% param.default %]")
+  [%-ELSE-%]
+  = [%-param.default-%]
+  [%-END-%]
+  [%-END-%];
+  [%-END %]
+   
+  int c, option_index;
+
+  option long_options[] = {
+      [%-FOREACH param IN client.get_params %]
+      [%-IF param.name.length > 1 %]
+      {"[% param.name %]", required_argument, 0, [% param.name.replace('-', '_') | upper %]_ARG },
+      [%-END-%]
+      [%-END %]
+      {0, 0, 0, 0}
+  };
+  const char* short_options = "[% FOREACH param IN client.get_params %][% IF param.name.length == 1 %][% param.name %]:[% END %][% END %]";
+  
+  do {
+    c = getopt_long(argc, argv, short_options, long_options, &option_index);
+    if (optarg) {
+      switch (c) {
+      [%-FOREACH param IN client.get_params-%]
+      [%-IF param.name.length > 1 %]
+      case [% param.name.replace('-', '_') | upper %]_ARG:
+      [%-ELSE %]
+      case '[% param.name %]':
+      [%-END %]      
+        [%-IF param.type == 'int' %]
+        [% param.name.replace('-', '_') | upper %] = atoi(optarg);
+        [%-ELSIF param.type == 'float' %]
+        [% param.name.replace('-', '_') | upper %] = atof(optarg);
+        [%-ELSE %]
+        [% param.name.replace('-', '_') | upper %] = std::string(optarg);
+        [%-END %]
+        break;
+      [%-END %]
+      }
+    }
+  } while (c != -1);
+
+[% END-%]

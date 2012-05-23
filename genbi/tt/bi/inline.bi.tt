@@ -1,0 +1,8 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+inline [% inline.get_name %] = [% inline.get_expr.to_bi %]

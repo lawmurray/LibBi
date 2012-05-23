@@ -1,0 +1,114 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/cuda/cuda.hpp"
+#include "bi/math/ode.hpp"
+#include "bi/random/Random.hpp"
+#include "bi/updater/RUpdater.hpp"
+#include "bi/method/Simulator.hpp"
+#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/SimulatorNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include <iostream>
+#include <string>
+#include <unistd.h>
+#include <getopt.h>
+
+#ifndef ENABLE_GPU
+#define LOCATION ON_HOST
+#else
+#define LOCATION ON_DEVICE
+#endif
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+
+  /* bi init */
+  #ifdef __CUDACC__
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #endif
+  bi_omp_init(THREADS);
+
+  /* NetCDF error reporting */
+  NcError ncErr(NcError::silent_nonfatal);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* model */
+  model_type m;
+
+  /* simulation file to extend */
+  SimulatorNetCDFBuffer inSimulate(m, SIMULATE_FILE, NetCDFBuffer::READ_ONLY);
+  P = inSimulate.size1();
+  
+  /* state */
+  State<LOCATION> s(m, P);
+  assert (P == s.size());
+
+  /* inputs */
+  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
+  if (!INPUT_FILE.empty()) {
+    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+  }
+  
+  /* output */
+  SimulatorNetCDFBuffer* out = NULL;
+  if (OUTPUT && !OUTPUT_FILE.empty()) {
+    out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE,
+        NetCDFBuffer::REPLACE,
+        INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
+  }
+
+  /* initialise parameters */
+  if (inInput != NULL) {
+    inInput->read0(F_VAR, s.get(F_VAR));
+  }
+  m.parameterSamples(rng, s);
+  if (inInit != NULL) {
+    inInit->read0(P_VAR, s.get(P_VAR));
+  }
+  m.parameterPostSamples(rng, s);
+
+  /* initialise initial conditions (from last state of simulate file) */
+  real t;
+  inSimulate.readTime(inSimulate.size2() - 1, t);
+  inSimulate.readState(D_VAR, inSimulate.size2() - 1, s.get(D_VAR));
+
+  /* simulate */
+  TicToc timer;
+  BOOST_AUTO(sim, (SimulatorFactory<LOCATION>::create(m, inInput, out)));
+  sim->setTime(t, s);
+  sim->sample(rng, U, s);
+  delete sim;
+
+  /* output timing results */
+  if (TIME) {
+    std::cout << timer.toc() << std::endl;
+  }
+
+  delete out;
+  delete inInput;
+  delete inInit;
+
+  return 0;
+}

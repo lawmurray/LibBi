@@ -1,0 +1,20 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+digraph model {
+  compound=true;
+  overlap=scale;
+  splines=true;
+  sep=.2;
+  d2tgraphstyle="scale=0.6"
+  nslimit=4.0;
+  mclimit=4.0;
+
+[% FOREACH block IN model.get_blocks %]
+[%-INCLUDE block.dot.tt block = block FILTER indent(2) %]
+[%-END-%]
+}

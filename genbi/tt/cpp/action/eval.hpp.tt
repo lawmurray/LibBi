@@ -1,0 +1,73 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[%-
+  expr = action.get_named_arg('expr')
+-%]
+/**
+ * Action: eval.
+ */
+struct [% class_name %] {
+  /**
+   * Variable type.
+   */
+  typedef Var[% action.get_target.get_var.get_name %] target_type;
+
+  /**
+   * Dynamic update.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam CX Coord type.
+   * @tparam PX Parents type.
+   * @tparam OX Output type.
+   *
+   * @param t1 Start of time interval.
+   * @param t2 End of time interval.
+   * @param p Trajectory id.
+   * @param ix Serialised coordinate for output.
+   * @param cox Coordinates.
+   * @param pax Parents input.
+   * @param[out] x Output.
+   */
+  template <class T1, class CX, class PX, class OX>
+  static CUDA_FUNC_BOTH void f(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x);
+      
+  /**
+   * Static update.
+   *
+   * @tparam CX Coord type.
+   * @tparam PX Parents type.
+   * @tparam OX Output type.
+   *
+   * @param p Trajectory id.
+   * @param ix Serialised coordinate for output.
+   * @param cox Coordinates.
+   * @param pax Parents input.
+   * @param[out] x Output.
+   */
+  template <class CX, class PX, class OX>
+  static CUDA_FUNC_BOTH void f(const int p, const int ix, const CX& cox, const PX& pax, OX& x);
+};
+
+template <class T1, class CX, class PX, class OX>
+inline void [% class_name %]::f(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x) {  
+  [% alias_dims(action) %]
+  [% read_input(expr) %]
+  [% write_output(expr) %]
+}
+
+template <class CX, class PX, class OX>
+inline void [% class_name %]::f(const int p, const int ix, const CX& cox, const PX& pax, OX& x) {
+  [% alias_dims(action) %]
+  [% read_input(expr) %]
+  [% write_output(expr) %]
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]
