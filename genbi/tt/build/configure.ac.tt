@@ -59,7 +59,7 @@ AC_OPENMP
 AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([atlas], [main], [], []) # may be required if ATLAS cblas succeeds below
-AC_SEARCH_LIBS([cblas_dgemv], [openblas openblaso cblas], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([cblas_dgemv], [openblas openblaso cblas gslcblas], [], [AC_MSG_ERROR([required library not found])])
 AC_SEARCH_LIBS([dgemv_], [openblas openblaso blas f77blas], [], [AC_MSG_ERROR([required library not found])])
 AC_SEARCH_LIBS([dpotrf_], [openblas openblaso lapack], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required library not found])])
