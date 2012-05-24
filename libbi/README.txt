@@ -44,7 +44,7 @@ first to generate a configure script via GNU Autoconf:
 
 To build the library, use:
 
-./configure CXXFLAGS="-03"
+./configure CXXFLAGS="-O3"
 make -j 4
 make install
 
