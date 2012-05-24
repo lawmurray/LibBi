@@ -132,9 +132,9 @@ inline bi::ParticleMarginalMetropolisHastingsState::ParticleMarginalMetropolisHa
     theta(M),
     xd(m.getNetSize(D_VAR), T),
     xr(m.getNetSize(R_VAR), T),
-    ll(0.0),
-    lp(0.0),
-    lq(0.0) {
+    ll(-1.0/0.0),
+    lp(-1.0/0.0),
+    lq(-1.0/0.0) {
   //
 }
 
@@ -519,28 +519,67 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
   /* pre-conditions */
   assert(!haveOut || filter->getOutput()->size2() == out->size2());
 
-  /* propose */
+  typename temp_host_vector<real>::type lp(1);
+
+  int P = s.size();
+  s.resize(1, true);
+
+  /* proposal */
+  row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
   m.proposalParameterSamples(rng, s);
+  subrange(x2.theta, 0, NP) = row(s.get(P_VAR), 0);
   if (initial == INCLUDE_INITIAL) {
+    row(s.get(D_VAR), 0) = subrange(x1.theta, NP, ND);
     m.proposalInitialSamples(rng, s);
+    subrange(x2.theta, NP, ND) = row(s.get(D_VAR), 0);
   }
 
-  /* prior */
-  //if (initial == INCLUDE_INITIAL) {
-  //  row(s.get(P_VAR), 0) = subrange(x2.theta, ND, NP);
-  //  m.parameterLogDensities(s, x2.lp);
-  //  set_rows(s.get(D_VAR), subrange(x2.theta, 0, ND));
-  //  m.initialLogDensities(s, x2.lp);
-  //} else {
-  //  row(s.get(P_VAR), 0) = subrange(x2.theta, 0, NP);
-  //  m.parameterLogDensities(s, x2.lp);
-  //  m.initialSamples(rng, s);
-  //}
+  /* reverse proposal log-density */
+  lp.clear();
+  row(s.get(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  row(s.getAlt(P_VAR), 0) = subrange(x1.theta, 0, NP);
+  m.proposalParameterLogDensities(s, lp);
+  if (initial == INCLUDE_INITIAL) {
+    row(s.get(D_VAR), 0) = subrange(x2.theta, NP, ND);
+    row(s.getAlt(D_VAR), 0) = subrange(x1.theta, NP, ND);
+    m.proposalInitialLogDensities(s, lp);
+  }
+  x1.lq = lp(0);
+
+  /* prior log-density */
+  lp.clear();
+  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  m.parameterLogDensities(s, lp);
+  if (initial == INCLUDE_INITIAL) {
+    row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
+    m.initialLogDensities(s, lp);
+  }
+  x2.lp = lp(0);
+
+  /* proposal log-density */
+  lp.clear();
+  row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
+  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  m.proposalParameterLogDensities(s, lp);
+  if (initial == INCLUDE_INITIAL) {
+    row(s.get(D_VAR), 0) = subrange(x1.theta, NP, ND);
+    row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
+    m.proposalInitialLogDensities(s, lp);
+  }
+  x2.lq = lp(0);
+
+  /* prepare for filter */
+  s.resize(P, true);
+  if (initial == INCLUDE_INITIAL) {
+    set_rows(s.get(D_VAR), subrange(x2.theta, NP, ND));
+  } else {
+    m.initialSamples(rng, s);
+  }
 
   /* likelihood */
   filter->reset();
   try {
-    x2.ll = filter->filter(rng, T, x1.theta, s);
+    x2.ll = filter->filter(rng, T, x2.theta, s);
   } catch (CholeskyException e) {
     x2.ll = -1.0/0.0; // -inf
   } catch (ParticleFilterDegeneratedException e) {
@@ -598,9 +637,9 @@ template<class B, class IO1, bi::Location CL>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::output(const int c) {
   if (haveOut) {
     out->writeSample(c, subrange(x1.theta, 0, NP)); // only p-var portion
+    out->writeParticle(c, x1.xd, x1.xr);
     out->writeLogLikelihood(c, x1.ll);
     out->writeLogPrior(c, x1.lp);
-    out->writeParticle(c, x1.xd, x1.xr);
   }
 }
 
@@ -612,12 +651,18 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::report(const int c) {
   std::cerr << '\t';
   std::cerr.width(10);
   std::cerr << this->getState().lp;
+  std::cerr << '\t';
+  std::cerr.width(10);
+  std::cerr << this->getState().lq;
   std::cerr << "\tbeats\t";
   std::cerr.width(10);
   std::cerr << this->getOtherState().ll;
   std::cerr << '\t';
   std::cerr.width(10);
   std::cerr << this->getOtherState().lp;
+  std::cerr << '\t';
+  std::cerr.width(10);
+  std::cerr << this->getOtherState().lq;
   std::cerr << '\t';
   if (this->wasLastAccepted()) {
     std::cerr << "accept";

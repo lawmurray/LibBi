@@ -291,6 +291,7 @@ struct NelderMeadOptimiserFactory {
 
 #include "Resampler.hpp"
 #include "../math/misc.hpp"
+#include "../math/view.hpp"
 #include "../math/temp_vector.hpp"
 #include "../misc/exception.hpp"
 
@@ -431,16 +432,24 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
     void* params) {
   typedef NelderMeadOptimiserParams<B,L,F> param_type;
   param_type* p = reinterpret_cast<param_type*>(params);
-  typename temp_host_vector<double>::type lp(p->s->size());
+  typename temp_host_vector<real>::type lp(1);
   lp.clear();
+
+  int P = p->s->size();
+  p->s->resize(1, true);
 
   /* initialise */
   vec(p->s->getAlt(P_VAR)) = subrange(gsl_vector_reference(x), 0, NP);
   p->m->parameterLogDensities(*p->s, lp);
   p->m->parameterPostLogDensities(*p->s, lp);
   if (p->initial == INCLUDE_INITIAL) {
-    set_rows(p->s->getAlt(D_VAR), subrange(gsl_vector_reference(x), NP, ND));
+    row(p->s->getAlt(D_VAR), 0) = subrange(gsl_vector_reference(x), NP, ND);
     p->m->initialLogDensities(*p->s, lp);
+  }
+
+  p->s->resize(P, true);
+  if (p->initial == INCLUDE_INITIAL) {
+    set_rows(p->s->get(D_VAR), subrange(gsl_vector_reference(x), NP, ND));
   }
 
   /* evaluate */

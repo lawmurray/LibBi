@@ -440,7 +440,7 @@ void bi::SimulatorNetCDFBuffer::writeTrajectory(const VarType type,
       offsets[j] = p;
       counts[j] = 1;
 
-      temp_matrix_type X1(size, X1.size2());
+      temp_matrix_type X1(size, X.size2());
       X1 = rows(X, start, size);
       ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
