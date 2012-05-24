@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
   /* outputs */
   ParticleMCMCNetCDFBuffer* out = NULL;
   if (OUTPUT && !OUTPUT_FILE.empty()) {
-      out = new ParticleMCMCNetCDFBuffer(m, C, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+      out = new ParticleMCMCNetCDFBuffer(m, D, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   }
 
   /* filter */
@@ -156,8 +156,10 @@ int main(int argc, char* argv[]) {
   std::cout << sampler->getNumAccepted() << " of " <<
       sampler->getNumSteps() << " proposals accepted" << std::endl;
 
-  delete sampler;
   delete filter;
+  delete sampler;
   delete inInput;
   delete inInit;
+  delete outFilter;
+  delete out;
 }
