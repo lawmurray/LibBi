@@ -14,6 +14,7 @@ The following (non-standard) Perl modules are required:
   * Carp::Assert,
   * Parse::Yapp,
   * Parse::Lex,
+  * File::Slurp,
   * Getopt::ArgvFile.
 
 The following packages are optional for building the manual and visualising
