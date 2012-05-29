@@ -1,9 +1,9 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
 # compile and link flags
-AM_CPPFLAGS = $(OPENMP_CPPFLAGS) -I/usr/local/cuda/include
+AM_CPPFLAGS = $(OPENMP_CPPFLAGS)
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
-AM_LDFLAGS = $(OPENMP_LDFLAGS) -L/usr/local/cuda/lib -L/usr/local/cuda/lib64
+AM_LDFLAGS = $(OPENMP_LDFLAGS)
 ACLOCAL_AMFLAGS = -I m4
 
 # CUDA files setup

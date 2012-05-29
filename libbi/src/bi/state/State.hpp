@@ -67,21 +67,41 @@ public:
   State<B,L>& operator=(const State<B,L2>& o);
 
   /**
-   * Number of trajectories.
+   * Set the active range of trajectories in the state.
+   *
+   * @param p The starting index.
+   * @param P The number of trajectories.
+   *
+   * It is required that <tt>p == roundup(p)</tt> and
+   * <tt>P == roundup(P)</tt> to ensure correct memory alignment. See
+   * #roundup.
+   */
+  void setRange(const int p, const int P);
+
+  /**
+   * Number of trajectories in the state.
    */
   int size() const;
 
   /**
-   * Resize.
+   * Maximum number of trajectories that can be presently stored in the
+   * state.
+   */
+  int sizeMax() const;
+
+  /**
+   * Resize buffers.
    *
-   * @param P Number of trajectories to store.
+   * @param maxP Maximum number of trajectories to store.
    * @param preserve True to preserve existing values, false otherwise.
    *
    * Resizes the state to store at least @p P number of trajectories.
    * Storage for additional trajectories may be added in some contexts,
-   * see #roundup.
+   * see #roundup. This affects the maximum size (see #maxSize), but not
+   * the number of trajectories currently active (see #size and #setRange).
+   * The active range of trajectories will be shrunk if necessary.
    */
-  void resize(const int P, const bool preserve = true);
+  void resizeMax(const int maxP, const bool preserve = true);
 
   /**
    * Resize sparse buffers for observations.
@@ -348,6 +368,11 @@ public:
   matrix_type Ksp;
 
   /**
+   * Index of starting trajectory in @p Xdn and @p Xsp.
+   */
+  int p;
+
+  /**
    * Number of trajectories.
    */
   int P;
@@ -404,6 +429,7 @@ bi::State<B,L>::State(const B& m, const int P) :
     Xsp(Xdn.size1(), 0),
     Kdn(1, 2*NP + NF + NPX), // includes py-vars
     Ksp(1, 0),
+    p(0),
     P(P),
     W(0) {
   clear();
@@ -416,6 +442,7 @@ bi::State<B,L>::State(const State<B,L>& o) :
     Xsp(o.Xsp.size1(), o.Xsp.size2()),
     Kdn(o.Kdn.size1(), o.Kdn.size2()),
     Ksp(o.Ksp.size1(), o.Ksp.size2()),
+    p(o.p),
     P(o.P),
     W(o.W) {
   *this = o;
@@ -427,6 +454,7 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   Xsp = o.Xsp;
   Kdn = o.Kdn;
   Ksp = o.Ksp;
+  p = o.p;
   P = o.P;
   W = o.W;
 
@@ -440,10 +468,22 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   Xsp = o.Xsp;
   Kdn = o.K;
   Ksp = o.Ksp;
+  p = o.p;
   P = o.P;
   W = o.W;
 
   return *this;
+}
+
+template<class B, bi::Location L>
+inline void bi::State<B,L>::setRange(const int start, const int len) {
+  /* pre-condition */
+  assert (p >= 0 && P >= 0 && p + P <= sizeMax());
+  assert (p == roundup(p));
+  assert (P == roundup(P));
+
+  this->p = p;
+  this->P = P;
 }
 
 template<class B, bi::Location L>
@@ -452,16 +492,16 @@ inline int bi::State<B,L>::size() const {
 }
 
 template<class B, bi::Location L>
-inline void bi::State<B,L>::resize(const int P, const bool preserve) {
-  const int P1 = roundup(P);
+inline int bi::State<B,L>::sizeMax() const {
+  return Xdn.size();
+}
 
-  if (P1 <= this->Xdn.size1()) {
-    this->P = P1;
-  } else {
-    Xdn.resize(P1, Xdn.size2(), preserve);
-    Xsp.resize(P1, Xsp.size2(), preserve);
-  }
-  this->P = P1;
+template<class B, bi::Location L>
+inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
+  const int maxP1 = roundup(maxP);
+
+  Xdn.resize(maxP1, Xdn.size2(), preserve);
+  Xsp.resize(maxP1, Xsp.size2(), preserve);
 }
 
 template<class B, bi::Location L>
@@ -483,17 +523,17 @@ template<class B, bi::Location L>
 inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(const VarType type) {
   switch (type) {
   case R_VAR:
-    return subrange(Xdn, 0, P, 0, NR);
+    return subrange(Xdn, p, P, 0, NR);
   case D_VAR:
-    return subrange(Xdn, 0, P, NR, ND);
+    return subrange(Xdn, p, P, NR, ND);
   case O_VAR:
-    return subrange(Xdn, 0, P, NR + ND, NO);
+    return subrange(Xdn, p, P, NR + ND, NO);
   case DX_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO, NDX);
+    return subrange(Xdn, p, P, NR + ND + NO, NDX);
   case RY_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO + NDX, NR);
+    return subrange(Xdn, p, P, NR + ND + NO + NDX, NR);
   case DY_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO + NDX + NR, ND);
+    return subrange(Xdn, p, P, NR + ND + NO + NDX + NR, ND);
   case P_VAR:
     return columns(Kdn, 0, NP);
   case PY_VAR:
@@ -513,17 +553,17 @@ template<class B, bi::Location L>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(const VarType type) const {
   switch (type) {
   case R_VAR:
-    return subrange(Xdn, 0, P, 0, NR);
+    return subrange(Xdn, p, P, 0, NR);
   case D_VAR:
-    return subrange(Xdn, 0, P, NR, ND);
+    return subrange(Xdn, p, P, NR, ND);
   case O_VAR:
-    return subrange(Xdn, 0, P, NR + ND, NO);
+    return subrange(Xdn, p, P, NR + ND, NO);
   case DX_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO, NDX);
+    return subrange(Xdn, p, P, NR + ND + NO, NDX);
   case RY_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO + NDX, NR);
+    return subrange(Xdn, p, P, NR + ND + NO + NDX, NR);
   case DY_VAR:
-    return subrange(Xdn, 0, P, NR + ND + NO + NDX + NR, ND);
+    return subrange(Xdn, p, P, NR + ND + NO + NDX + NR, ND);
   case P_VAR:
     return columns(Kdn, 0, NP);
   case PY_VAR:
@@ -717,13 +757,13 @@ const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVa
 
 template<class B, bi::Location L>
 typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
-  return subrange(Xdn, 0, P, 0, NR + ND);
+  return subrange(Xdn, p, P, 0, NR + ND);
 }
 
 template<class B, bi::Location L>
 const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn()
     const {
-  return subrange(Xdn, 0, P, 0, NR + ND);
+  return subrange(Xdn, p, P, 0, NR + ND);
 }
 
 template<class B, bi::Location L>
@@ -732,7 +772,7 @@ typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getStd() {
   const int size = B::getStdSize();
   const int sqrt_size = std::sqrt(size);
 
-  return reshape(subrange(get(DX_VAR), 0, P, start, size), P*sqrt_size, sqrt_size);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*sqrt_size, sqrt_size);
 }
 
 template<class B, bi::Location L>
@@ -742,7 +782,7 @@ const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getStd()
   const int size = B::getStdSize();
   const int sqrt_size = std::sqrt(size);
 
-  return reshape(subrange(get(DX_VAR), 0, P, start, size), P*sqrt_size, sqrt_size);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*sqrt_size, sqrt_size);
 }
 
 template<class B, bi::Location L>

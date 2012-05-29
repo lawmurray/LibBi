@@ -33,6 +33,12 @@ AC_ARG_ENABLE([sse],
      esac],[sse=false])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
 
+# Add standard CUDA directories
+#if test x$gpu = xtrue; then
+	CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include"
+	LDFLAGS="$LDFLAGS -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib"
+#fi
+
 # Defines
 AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_OMP])
 

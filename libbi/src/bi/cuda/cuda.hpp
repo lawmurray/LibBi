@@ -14,8 +14,6 @@
 
 #ifdef ENABLE_GPU
 #include "cuda_runtime.h"
-#else
-typedef int cudaStream_t;
 #endif
 
 #ifdef __CUDACC__
@@ -142,6 +140,7 @@ namespace bi {
     #endif
   }
 
+  #ifdef ENABLE_GPU
   /**
    * Synchronize with device.
    *
@@ -149,12 +148,11 @@ namespace bi {
    * @param sync True to synchronize, false if not.
    */
   inline void synchronize(cudaStream_t stream, const bool sync = true) {
-    #ifdef ENABLE_GPU
     if (sync) {
       CUDA_CHECKED_CALL(cudaStreamSynchronize(stream));
     }
-    #endif
   }
+  #endif
 }
 
 #endif
