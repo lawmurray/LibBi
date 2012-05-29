@@ -79,7 +79,12 @@ public:
   void setRange(const int p, const int P);
 
   /**
-   * Number of trajectories in the state.
+   * Starting index of active range.
+   */
+  int start() const;
+
+  /**
+   * Number of trajectories in active range.
    */
   int size() const;
 
@@ -478,12 +483,20 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
 template<class B, bi::Location L>
 inline void bi::State<B,L>::setRange(const int start, const int len) {
   /* pre-condition */
-  assert (p >= 0 && P >= 0 && p + P <= sizeMax());
-  assert (p == roundup(p));
-  assert (P == roundup(P));
+  assert (p >= 0 && p == roundup(p));
+  assert (p >= 0 && P == roundup(P));
+
+  if (p + P > sizeMax()) {
+    resizeMax(p + P, true);
+  }
 
   this->p = p;
   this->P = P;
+}
+
+template<class B, bi::Location L>
+inline int bi::State<B,L>::start() const {
+  return p;
 }
 
 template<class B, bi::Location L>
@@ -493,7 +506,7 @@ inline int bi::State<B,L>::size() const {
 
 template<class B, bi::Location L>
 inline int bi::State<B,L>::sizeMax() const {
-  return Xdn.size();
+  return Xdn.size1();
 }
 
 template<class B, bi::Location L>
@@ -502,6 +515,12 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
 
   Xdn.resize(maxP1, Xdn.size2(), preserve);
   Xsp.resize(maxP1, Xsp.size2(), preserve);
+  if (p > sizeMax()) {
+    p = sizeMax();
+  }
+  if (p + P > sizeMax()) {
+    P = sizeMax() - p;
+  }
 }
 
 template<class B, bi::Location L>

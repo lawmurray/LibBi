@@ -417,9 +417,9 @@ void bi::Resampler::copy(const V1 as, M1 s) {
 
 template<class V1, class B, bi::Location L>
 void bi::Resampler::copy(const V1 as, State<B,L>& s) {
-  s.resize(std::max(s.size(), as.size()), true);
+  s.setRange(s.start(), std::max(s.size(), as.size()));
   copy(as, s.getDyn());
-  s.resize(as.size(), true);
+  s.setRange(s.start(), as.size());
 }
 
 template<class V1, class V2>
