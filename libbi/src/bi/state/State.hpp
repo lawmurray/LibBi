@@ -481,7 +481,7 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
 }
 
 template<class B, bi::Location L>
-inline void bi::State<B,L>::setRange(const int start, const int len) {
+inline void bi::State<B,L>::setRange(const int p, const int P) {
   /* pre-condition */
   assert (p >= 0 && p == roundup(p));
   assert (p >= 0 && P == roundup(P));

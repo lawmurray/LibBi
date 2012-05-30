@@ -521,8 +521,8 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
 
   typename temp_host_vector<real>::type lp(1);
 
-  int P = s.size();
-  s.resize(1, true);
+  const int P = s.size();
+  s.setRange(0, 1);
 
   /* proposal */
   row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
@@ -569,7 +569,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
   x2.lq = lp(0);
 
   /* prepare for filter */
-  s.resize(P, true);
+  s.setRange(0, P);
   if (initial == INCLUDE_INITIAL) {
     set_rows(s.get(D_VAR), subrange(x2.theta, NP, ND));
   } else {
