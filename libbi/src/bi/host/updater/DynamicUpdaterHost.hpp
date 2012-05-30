@@ -52,7 +52,7 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
   OX x;
   bind(s);
 
-  #pragma omp parallel for private(p, pax)
+  #pragma omp parallel for private(p)
   for (p = 0; p < s.size(); ++p) {
     Visitor::accept(t1, t2, p, pax, x);
   }

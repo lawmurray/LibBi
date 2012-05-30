@@ -25,6 +25,9 @@ void bi_omp_init(const int threads) {
   /* allow nested parallelism */
   omp_set_nested(1);
 
+  /* use static scheduling for pseudorandom sequence reproducibility */
+  omp_set_schedule(omp_sched_static, 0);
+
   /* set number of threads */
   if (threads > 0) {
     omp_set_num_threads(threads);

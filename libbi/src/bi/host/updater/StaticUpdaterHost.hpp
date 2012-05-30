@@ -44,7 +44,7 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
   OX x;
   bind(s);
 
-  #pragma omp parallel for private(p, pax)
+  #pragma omp parallel for private(p)
   for (p = 0; p < s.size(); ++p) {
     Visitor::accept(p, pax, x);
   }

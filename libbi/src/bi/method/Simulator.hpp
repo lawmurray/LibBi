@@ -533,14 +533,20 @@ template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class IO3>
 void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, State<B,L>& s,
     IO3* inInit) {
+  const int P = s.size();
+  s.setRange(0, 1);
+
   if (inInput != NULL) {
     inInput->read0(F_VAR, s.get(F_VAR));
   }
   m.parameterSamples(rng, s);
+
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
   }
   m.parameterPostSamples(rng, s);
+
+  s.setRange(0, P);
   m.initialSamples(rng, s);
   if (inInit != NULL) {
     inInit->read0(D_VAR, s.get(D_VAR));
