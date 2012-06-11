@@ -45,9 +45,7 @@ sub evaluate {
     my $self = new Bi::Visitor; 
     bless $self, $class;
     
-    my $args = [];    
-    $expr->accept($self, $args);
-    return pop(@$args);
+    return $expr->accept($self);
 }
 
 =item B<visit>(I<node>)
@@ -66,6 +64,12 @@ sub visit {
             } elsif ($node->get_expr2->is_const && $node->get_expr2->eval_const == 0.0) {
                 $node = $node->get_expr1;
             }
+        } elsif ($node->get_op eq '-') {
+            if ($node->get_expr1->is_const && $node->get_expr1->eval_const == 0.0) {
+                $node = new Bi::Expression::UnaryOperator('-', $node->get_expr2);
+            } elsif ($node->get_expr2->is_const && $node->get_expr2->eval_const == 0.0) {
+                $node = $node->get_expr1;
+            }
         } elsif ($node->get_op eq '*') {
             if ($node->get_expr1->is_const && $node->get_expr1->eval_const == 1.0) {
                 $node = $node->get_expr2;
@@ -75,6 +79,10 @@ sub visit {
                 $node = $node->get_expr1;
             } elsif ($node->get_expr2->is_const && $node->get_expr2->eval_const == 0.0) {
                 $node = $node->get_expr2;
+            }
+        } elsif ($node->get_op eq '/') {
+            if ($node->get_expr2->is_const && $node->get_expr2->eval_const == 1.0) {
+                $node = $node->get_expr1;
             }
         }
     } elsif ($node->isa('Bi::Expression::Function')) {

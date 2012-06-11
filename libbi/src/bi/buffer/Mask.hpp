@@ -29,22 +29,25 @@ class Mask {
   friend class Mask<ON_DEVICE>;
 
 public:
+  /**
+   * Vector type.
+   */
   typedef typename loc_temp_vector<L,int>::type vector_type;
 
   /**
    * Default constructor.
    *
-   * @param N Number of variables.
+   * @param numVars Number of variables.
    */
-  Mask(const int N = 0);
+  Mask(const int numVars = 0);
 
   /**
-   * Copy constructor.
+   * Shallow copy constructor.
    */
   Mask(const Mask<L>& o);
 
   /**
-   * Generic copy constructor.
+   * Generic (deep) copy constructor.
    */
   template<Location L2>
   Mask(const Mask<L2>& o);
@@ -85,36 +88,22 @@ public:
    * @param indices Serial indices of active coordinates.
    */
   template<class V1, class V2>
-  void addSparseMask(const V1 ids, const V2 indices);
+  void addSparseMask(const V1 ids, const V2 ixs);
 
   /**
-   * Number of active variables in mask.
+   * Get number of variables.
    */
-  int size() const;
+  CUDA_FUNC_BOTH int getNumVars() const;
 
   /**
-   * Resize. Set number of variables.
+   * Size of mask.
    */
-  void resize(const int size);
+  CUDA_FUNC_BOTH int size() const;
 
   /**
    * Clear mask.
    */
   void clear();
-
-  /**
-   * Perform all precomputes after adding masks.
-   */
-  void init();
-
-  /**
-   * Is a variable active in the mask?
-   *
-   * @param id Variable id.
-   *
-   * @return True if the variable is active in the mask, false otherwise.
-   */
-  bool isActive(const int id) const;
 
   /**
    * Is a variable active in the mask and dense?
@@ -124,7 +113,7 @@ public:
    * @return True if the variable is active in the mask and dense, false
    * otherwise.
    */
-  bool isDense(const int id) const;
+  CUDA_FUNC_BOTH bool isDense(const int id) const;
 
   /**
    * Is a variable active in the mask and sparse?
@@ -134,16 +123,7 @@ public:
    * @return True if the variable is active in the mask and sparse, false
    * otherwise.
    */
-  bool isSparse(const int id) const;
-
-  /**
-   * Get starting index for variable in the mask.
-   *
-   * @param id Variable id.
-   *
-   * @return Starting index of the variable with the given id.
-   */
-  int getStart(const int id) const;
+  CUDA_FUNC_BOTH bool isSparse(const int id) const;
 
   /**
    * Get size of a variable in the mask.
@@ -152,7 +132,7 @@ public:
    *
    * @return Size of the variable.
    */
-  int getSize(const int id) const;
+  CUDA_FUNC_BOTH int getSize(const int id) const;
 
   /**
    * Translate a sparse index in the mask into a dense index.
@@ -162,7 +142,7 @@ public:
    *
    * @return Dense index.
    */
-  int getIndex(const int id, const int i) const;
+  CUDA_FUNC_BOTH int getIndex(const int id, const int i) const;
 
   /**
    * Get serial indices for sparse variable.
@@ -171,50 +151,63 @@ public:
    *
    * @return Serial indices.
    */
-  const vector_type* getIndices(const int id) const;
+  CUDA_FUNC_BOTH const typename vector_type::vector_reference_type getIndices(const int id) const;
 
 private:
   /**
-   * Dense mask, sizes indexed by id, zero if not in mask.
+   * Initialise mask.
+   *
+   * @param numVars Number of variables.
    */
-  std::vector<int> denseMask;
+  void init(const int numVars);
 
   /**
-   * Sparse mask, indexes into #indices indexed by id, -1 if not in mask.
+   * Dense mask size.
    */
-  std::vector<int> sparseMask;
+  int denseSize;
 
   /**
-   * Starting indices, indexed by id, -1 if not in mask.
+   * Sparse mask size.
    */
-  std::vector<int> starts;
+  int sparseSize;
 
   /**
-   * Size of mask.
+   * Dense mask, sizes indexed by variable id, zero if not in mask.
    */
-  int sz;
+  vector_type denseSizes;
 
   /**
-   * Indices buffers.
+   * Sparse mask, sizes indexed by variable id, zero if not in mask.
    */
-  std::vector<vector_type*> indices;
+  vector_type sparseSizes;
 
   /**
-   * Destroy buffers.
+   * Offsets into #ixs, indexed by variable id.
    */
-  void destroy();
+  vector_type sparseStarts;
+
+  /**
+   * Serialised coordinates for sparsely masked variables.
+   */
+  vector_type ixs;
 };
 }
 
 template<bi::Location L>
-bi::Mask<L>::Mask(const int N) : denseMask(N, 0), sparseMask(N, -1),
-    starts(N, -1), sz(0) {
-  //
+bi::Mask<L>::Mask(const int numVars) {
+  init(numVars);
+  clear();
 }
 
 template<bi::Location L>
-bi::Mask<L>::Mask(const Mask<L>& o) {
-  operator=(o);
+bi::Mask<L>::Mask(const Mask<L>& o) :
+    sparseSize(o.sparseSize),
+    denseSize(o.denseSize),
+    denseSizes(o.denseSizes),
+    sparseSizes(o.sparseSizes),
+    ixs(o.ixs),
+    sparseStarts(o.sparseStarts) {
+  //
 }
 
 template<bi::Location L>
@@ -225,23 +218,19 @@ bi::Mask<L>::Mask(const Mask<L2>& o) {
 
 template<bi::Location L>
 bi::Mask<L>::~Mask() {
-  destroy();
+  //
 }
 
 template<bi::Location L>
 bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L>& o) {
-  destroy();
-  indices.clear();
-  denseMask = o.denseMask;
-  sparseMask = o.sparseMask;
-  starts = o.starts;
-  sz = o.sz;
+  ixs.resize(o.ixs.size(), false);
 
-  BOOST_AUTO(iter1, indices.begin());
-  BOOST_AUTO(iter2, o.indices.begin());
-  for (; iter1 != indices.end(); ++iter1, ++iter2) {
-    *iter1 = new vector_type(**iter2);
-  }
+  denseSize = o.denseSize;
+  sparseSize = o.sparseSize;
+  denseSizes = o.denseSizes;
+  sparseSizes = o.sparseSizes;
+  ixs = o.ixs;
+  sparseStarts = o.sparseStarts;
 
   return *this;
 }
@@ -249,134 +238,110 @@ bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L>& o) {
 template<bi::Location L>
 template<bi::Location L2>
 bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L2>& o) {
-  destroy();
-  indices.clear();
-  denseMask = o.denseMask;
-  sparseMask = o.sparseMask;
-  starts = o.starts;
-  sz = o.sz;
+  ixs.resize(o.ixs.size(), false);
 
-  BOOST_AUTO(iter1, indices.begin());
-  BOOST_AUTO(iter2, o.indices.begin());
-  for (; iter1 != indices.end(); ++iter1, ++iter2) {
-    *iter1 = new vector_type(**iter2);
-  }
+  denseSize = o.denseSize;
+  sparseSize = o.sparseSize;
+  denseSizes = o.denseSizes;
+  sparseSizes = o.sparseSizes;
+  ixs = o.ixs;
+  sparseStarts = o.sparseStarts;
 
   return *this;
 }
 
 template<bi::Location L>
-inline int bi::Mask<L>::size() const {
-  return sz;
+inline int bi::Mask<L>::getNumVars() const {
+  return denseSizes.size();
 }
 
 template<bi::Location L>
-void bi::Mask<L>::resize(const int size) {
-  denseMask.resize(size, 0);
-  sparseMask.resize(size, -1);
-  starts.resize(size, -1);
+inline int bi::Mask<L>::size() const {
+  return denseSize + sparseSize;
 }
 
 template<bi::Location L>
 inline void bi::Mask<L>::clear() {
-  destroy();
-  std::fill(denseMask.begin(), denseMask.end(), 0);
-  std::fill(sparseMask.begin(), sparseMask.end(), -1);
-  std::fill(starts.begin(), starts.end(), -1);
-  sz = 0;
-  indices.clear();
-}
-
-template<bi::Location L>
-inline void bi::Mask<L>::init() {
-  int id, start = 0;
-  for (id = 0; id < (int)starts.size(); ++id) {
-    if (denseMask[id] > 0) {
-      starts[id] = start;
-      start += denseMask[id];
-    } else if (sparseMask[id] != -1) {
-      starts[id] = start;
-      start += indices[sparseMask[id]]->size();
-    } else {
-      starts[id] = -1;
-    }
-  }
-  sz = start;
+  denseSize = 0;
+  sparseSize = 0;
+  denseSizes.clear();
+  sparseSizes.clear();
+  sparseStarts.clear();
+  ixs.resize(0, false);
 }
 
 template<bi::Location L>
 void bi::Mask<L>::addDenseMask(const int id, const int size) {
-  denseMask[id] = size;
-  sparseMask[id] = -1;
+  /* pre-condition */
+  assert (L == ON_HOST);
+
+  denseSizes(id) = size;
+  denseSize += size;
 }
 
 template<bi::Location L>
 template<class V1, class V2>
 void bi::Mask<L>::addSparseMask(const V1 ids, const V2 indices) {
-  const int i = this->indices.size();
-  this->indices.push_back(new vector_type(indices));
+  /* pre-condition */
+  assert (L == ON_HOST);
 
-  BOOST_AUTO(iter, ids.begin());
-  for (; iter != ids.end(); ++iter) {
-    denseMask[*iter] = 0;
-    sparseMask[*iter] = i;
+  int start = ixs.size();
+  int size = indices.size();
+
+  ixs.resize(start + size, true);
+  subrange(ixs, start, size) = indices;
+  sparseSize += ids.size()*size;
+
+  int id;
+  for (id = 0; id < ids.size(); ++id) {
+    sparseStarts(id) = start;
+    sparseSizes(id) = size;
   }
-}
-
-template<bi::Location L>
-inline void bi::Mask<L>::destroy() {
-  BOOST_AUTO(iter, indices.begin());
-  for (; iter != indices.end(); ++iter) {
-    delete *iter;
-  }
-}
-
-template<bi::Location L>
-inline bool bi::Mask<L>::isActive(const int id) const {
-  return starts[id] >= 0;
 }
 
 template<bi::Location L>
 inline bool bi::Mask<L>::isDense(const int id) const {
-  return denseMask[id] > 0;
+  return denseSizes(id) > 0;
 }
 
 template<bi::Location L>
 inline bool bi::Mask<L>::isSparse(const int id) const {
-  return sparseMask[id] >= 0;
-}
-
-template<bi::Location L>
-inline int bi::Mask<L>::getStart(const int id) const {
-  return starts[id];
+  return sparseSizes(id) > 0;
 }
 
 template<bi::Location L>
 inline int bi::Mask<L>::getSize(const int id) const {
-  if (sparseMask[id] >= 0) {
-    return indices[sparseMask[id]]->size();
+  if (isDense(id)) {
+    return denseSizes(id);
+  } else if (isSparse(id)) {
+    return sparseSizes(id);
   } else {
-    return denseMask[id];
+    return 0;
   }
 }
 
 template<bi::Location L>
 inline int bi::Mask<L>::getIndex(const int id, const int i) const {
-  if (sparseMask[id] >= 0) {
-    return (*indices[sparseMask[id]])(i);
+  if (isSparse(id)) {
+    return ixs(sparseStarts(id) + i);
   } else {
     return i;
   }
 }
 
 template<bi::Location L>
-const typename bi::Mask<L>::vector_type* bi::Mask<L>::getIndices(
-    const int id) const {
-  if (sparseMask[id] >= 0) {
-    return indices[sparseMask[id]];
-  } else {
-    return NULL;
-  }
+const typename bi::Mask<L>::vector_type::vector_reference_type
+    bi::Mask<L>::getIndices(const int id) const {
+  return subrange(ixs, sparseStarts(id), sparseSizes(id));
+}
+
+template<bi::Location L>
+inline void bi::Mask<L>::init(const int numVars) {
+  denseSizes.resize(numVars, false);
+  sparseSizes.resize(numVars, false);
+  ixs.resize(0, false);
+  sparseStarts.resize(numVars, false);
+  clear();
 }
 
 #endif

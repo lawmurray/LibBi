@@ -12,7 +12,7 @@
   expr = action.get_named_arg('expr')
 -%]
 /**
- * Action: eval.
+ * Action: [% action.get_name %].
  */
 struct [% class_name %] {
   /**

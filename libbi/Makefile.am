@@ -16,6 +16,8 @@ lib_LTLIBRARIES = libbi.la
 libbi_la_SOURCES = \
   src/bi/bi.cpp \
   src/bi/model/Coord.cpp \
+  src/bi/buffer/FlexiParticleFilterNetCDFBuffer.cpp \
+  src/bi/buffer/FlexiSimulatorNetCDFBuffer.cpp \
   src/bi/buffer/KalmanFilterNetCDFBuffer.cpp \
   src/bi/buffer/NetCDFBuffer.cpp \
   src/bi/buffer/OptimiserNetCDFBuffer.cpp \
@@ -45,7 +47,8 @@ libbi_la_SOURCES += \
   src/bi/cuda/device.cu \
   src/bi/cuda/math/magma.cu \
   src/bi/cuda/math/cublas.cu \
-  src/bi/cuda/random/curand.cu
+  src/bi/cuda/random/Random.cu \
+  src/bi/cuda/random/RandomKernel.cu
 endif
 
 include_HEADERS = \

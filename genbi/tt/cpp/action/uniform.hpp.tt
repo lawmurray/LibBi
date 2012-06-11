@@ -9,6 +9,7 @@
 [%-
 lower = action.get_named_arg('lower');
 upper = action.get_named_arg('upper');
+range = action.make_range;
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
@@ -16,7 +17,7 @@ upper = action.get_named_arg('upper');
 [% create_eval_var_target(action) %]
 
 /**
- * Action: uniform.
+ * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
@@ -27,8 +28,10 @@ public:
 
   [% declare_action_static_function('lower') %]
   [% declare_action_static_function('upper') %]
+  [% declare_action_static_function('range') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
 };
 
 #include "bi/math/pi.hpp"
@@ -45,6 +48,13 @@ public:
   [% read_input(upper) %]
   
   x = [% upper.to_cpp %];
+}
+
+[% sig_action_static_function('range') %] {
+  [% alias_dims(action) %]
+  [% read_input(upper) %]
+  
+  x = [% range.to_cpp %];
 }
 
 [% sig_action_static_function('sample') %] {
@@ -69,6 +79,21 @@ public:
   } else {
     lp = BI_REAL(-1.0)/BI_REAL(0.0);
   }
+  x.template put<target_type>(p, ix, xy);
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  real rn, xy;
+
+  xy = pax.template fetch_alt<target_type>(p, ix);
+  
+  [% IF range.is_common %]
+  range(p, cox, pax, rn);
+  lp += -BI_MATH_LOG(rn);
+  [% ELSE %]
+  lp = BI_REAL(1.0/0.0);
+  [% END %]
+
   x.template put<target_type>(p, ix, xy);
 }
 

@@ -81,6 +81,10 @@ public:
       throw (ParticleFilterDegeneratedException);
   //@}
 
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as, int P)
+      throw (ParticleFilterDegeneratedException);
+
 private:
   /**
    * Pre-sort weights?
@@ -171,6 +175,45 @@ void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
 
   typename sim_temp_vector<V1>::type lws1(P), Ws(P), alphas(P);
   typename sim_temp_vector<V2>::type as1(P), ps(P);
+  T1 W;
+
+  /* weights */
+  if (sort) {
+    lws1 = lws;
+    seq_elements(ps, 0);
+    bi::sort_by_key(lws1, ps);
+    bi::inclusive_scan_sum_exp(lws1, Ws);
+  } else {
+    bi::inclusive_scan_sum_exp(lws, Ws);
+  }
+  W = *(Ws.end() - 1); // sum of weights
+  if (W > 0) {
+    /* random numbers */
+    rng.uniforms(alphas, 0.0, W);
+
+    /* sample */
+    if (sort) {
+      thrust::upper_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
+      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
+    } else {
+      thrust::upper_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
+    }
+  } else {
+    throw ParticleFilterDegeneratedException();
+  }
+}
+
+template<class V1, class V2>
+void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as, int P)
+    throw (ParticleFilterDegeneratedException) {
+  /* pre-condition */
+  assert (as.size() == P);
+
+  typedef typename V1::value_type T1;
+  const int lwsSize = lws.size();
+
+  typename sim_temp_vector<V1>::type lws1(lwsSize), Ws(lwsSize), alphas(P);
+  typename sim_temp_vector<V2>::type as1(P), ps(lwsSize);
   T1 W;
 
   /* weights */

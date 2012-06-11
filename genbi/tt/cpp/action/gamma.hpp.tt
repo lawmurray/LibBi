@@ -16,7 +16,7 @@ scale = action.get_named_arg('scale');
 [% create_eval_var_target(action) %]
 
 /**
- * Action: gamma.
+ * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
@@ -29,6 +29,7 @@ public:
   [% declare_action_static_function('scale') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
 };
 
 #include "bi/math/pi.hpp"
@@ -66,7 +67,25 @@ public:
   xy = pax.template fetch_alt<target_type>(p, ix);
 
   logZ = BI_MATH_LGAMMA(sh) + sh*BI_MATH_LOG(sc);
-  lp += BI_MATH_EXP((sh - BI_REAL(1.0))*BI_MATH_LOG(xy) - xy/sc - logZ);
+  lp += (sh - BI_REAL(1.0))*BI_MATH_LOG(xy) - xy/sc - logZ;
+
+  x.template put<target_type>(p, ix, xy);
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  real sh, sc, xy;
+    
+  shape(p, cox, pax, sh);
+  scale(p, cox, pax, sc);
+
+  xy = pax.template fetch_alt<target_type>(p, ix);
+    
+  [% IF shape.is_common && scale.is_common %]
+  lp += (sh - BI_REAL(1.0))*(BI_MATH_LOG(sh - BI_REAL(1.0)) + BI_REAL(1.0))) -
+      BI_MATH_LGAMMA(sh) - BI_MATH_LOG(sc);
+  [% ELSE %]
+  lp = BI_REAL(1.0/0.0);
+  [% END %]
 
   x.template put<target_type>(p, ix, xy);
 }

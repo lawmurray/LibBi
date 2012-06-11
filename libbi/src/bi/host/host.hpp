@@ -88,7 +88,7 @@ template<class B, class X>
 real host_fetch(const int p, const int ix);
 
 /**
- * Fetch node value alternative buffer in main memory.
+ * Fetch node value from alternative buffer in main memory.
  *
  * @ingroup state_host
  *

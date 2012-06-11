@@ -32,17 +32,29 @@ struct SparseInputBufferState {
   /**
    * Mask type.
    */
-  typedef Mask<> mask_type;
+  typedef Mask<ON_HOST> mask_type;
 
   /**
    * Constructor.
+   *
+   * @param m Model.
    */
-  SparseInputBufferState();
+  SparseInputBufferState(const Model& m);
 
   /**
    * Copy constructor.
    */
   SparseInputBufferState(const SparseInputBufferState& o);
+
+  /**
+   * Destructor.
+   */
+  ~SparseInputBufferState();
+
+  /**
+   * Assignment operator.
+   */
+  SparseInputBufferState& operator=(const SparseInputBufferState& o);
 
   /**
    * Current offset into each record dimension.
@@ -57,7 +69,7 @@ struct SparseInputBufferState {
   /**
    * Mask of active nodes at the current time, indexed by type.
    */
-  std::vector<mask_type> masks;
+  std::vector<mask_type*> masks;
 
   /**
    * Time variable ids keyed by their current time.
@@ -74,6 +86,11 @@ namespace bi {
  */
 class SparseInputBuffer : public Markable<SparseInputBufferState> {
 public:
+  /**
+   * Mask type.
+   */
+  typedef SparseInputBufferState::mask_type mask_type;
+
   /**
    * Constructor.
    *
@@ -179,7 +196,7 @@ protected:
    * Mask of active nodes that are not associated with a time variable,
    * indexed by type.
    */
-  std::vector<SparseInputBufferState::mask_type> masks0;
+  std::vector<mask_type*> masks0;
 
   /**
    * Current state of buffer.
@@ -193,21 +210,21 @@ inline real bi::SparseInputBuffer::getTime() const {
 }
 
 inline int bi::SparseInputBuffer::size(const VarType type) const {
-  return state.masks[type].size();
+  return state.masks[type]->size();
 }
 
 inline int bi::SparseInputBuffer::size0(const VarType type) const {
-  return masks0[type].size();
+  return masks0[type]->size();
 }
 
-inline const bi::SparseInputBufferState::mask_type&
+inline const bi::SparseInputBuffer::mask_type&
     bi::SparseInputBuffer::getMask(const VarType type) const {
-  return state.masks[type];
+  return *state.masks[type];
 }
 
-inline const bi::SparseInputBufferState::mask_type&
+inline const bi::SparseInputBuffer::mask_type&
     bi::SparseInputBuffer::getMask0(const VarType type) const {
-  return masks0[type];
+  return *masks0[type];
 }
 
 inline bool bi::SparseInputBuffer::isValid() const {

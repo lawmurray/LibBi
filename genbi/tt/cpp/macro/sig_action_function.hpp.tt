@@ -10,11 +10,14 @@
   template <class CX, class PX, class OX>
   void [% class_name %]::simulate(const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'sample' %]
-  template <class CX, class PX, class OX>
-  void [% class_name %]::samples(bi::Random& rng, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  template <class R1, class CX, class PX, class OX>
+  void [% class_name %]::samples(R1& rng, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'logdensity' %]
   template <class CX, class PX, class OX, class T1>
   void [% class_name %]::logDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
+  [% ELSIF function == 'maxlogdensity' %]
+  template <class CX, class PX, class OX, class T1>
+  void [% class_name %]::maxLogDensity(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
   [% ELSE %]
   template <class CX, class PX, class T1>
   void [% class_name %]::[% function %](const int p, const CX& cox, const PX& pax, T1& x)
@@ -25,8 +28,8 @@
   template <class T1, class CX, class PX, class OX>
   void [% class_name %]::simulate(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'sample' %]
-  template <class T1, class CX, class PX, class OX>
-  void [% class_name %]::samples(bi::Random& rng, const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  template <class R1, class T1, class CX, class PX, class OX>
+  void [% class_name %]::samples(R1& rng, const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'logdensity' %]
   template <class T1, class CX, class PX, class OX, class T1>
   void [% class_name %]::logDensities(const T1 t1, const T1 t2, const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)

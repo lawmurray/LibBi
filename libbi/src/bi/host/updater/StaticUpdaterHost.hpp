@@ -39,14 +39,18 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef StaticUpdaterVisitorHost<B,S,PX,OX> Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p)
-  for (p = 0; p < s.size(); ++p) {
-    Visitor::accept(p, pax, x);
+  #pragma omp parallel
+  {
+    PX pax;
+    OX x;
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); ++p) {
+      Visitor::accept(p, pax, x);
+    }
   }
   unbind(s);
 }

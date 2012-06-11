@@ -20,6 +20,7 @@ public:
   [% declare_dynamic_function('simulate') %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
   
 private:
   /**
@@ -35,14 +36,14 @@ private:
 #include "bi/ode/RK4Integrator.hpp"
 #include "bi/ode/DOPRI5Integrator.hpp"
 #include "bi/ode/RK43Integrator.hpp"
-#include "bi/math/ode.hpp"
+#include "bi/ode/IntegratorConstants.hpp"
 
 [% sig_dynamic_function('simulate') %] {
   /* initialise integrator */
   static const real ATOLER = [% block.get_named_arg('atoler').eval_const %];
   static const real RTOLER = [% block.get_named_arg('rtoler').eval_const %];
   static const real H = [% block.get_named_arg('h').eval_const %];
-  bi_ode_init(H, ATOLER, RTOLER);
+  bi_ode_set(H, ATOLER, RTOLER);
 
   /* integrate */  
   [% IF block.get_named_arg('alg').eval_const == 'rk4' %]
@@ -59,6 +60,10 @@ private:
 }
 
 [% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 

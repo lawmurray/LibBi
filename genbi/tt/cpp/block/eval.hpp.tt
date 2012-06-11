@@ -20,14 +20,17 @@ public:
   [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
   [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
 
   [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
 
   [% IF block.can_simulate %][% declare_sparse_static_function('simulate') %][% END %]
   [% declare_sparse_static_function('sample') %]
   [% declare_sparse_static_function('logdensity') %]  
+  [% declare_sparse_static_function('maxlogdensity') %]  
 };
 
 #include "bi/updater/DynamicUpdater.hpp"
@@ -62,7 +65,17 @@ public:
   [% END %]
   
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(s, p);
+  Block[% subblock.get_id %]::logDensities(s, lp);
+  [%-END %]
+}
+
+[% sig_static_function('maxlogdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, lp);
   [%-END %]
 }
 
@@ -100,7 +113,19 @@ public:
   }
   
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s, p);
+  Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s, lp);
+  [%-END %]
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(t1, t2, onDelta, s, lp);
   [%-END %]
 }
 
@@ -132,7 +157,17 @@ public:
   [% END %]
 
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(s, mask, p);
+  Block[% subblock.get_id %]::logDensities(s, mask, lp);
+  [%-END %]
+}
+
+[% sig_sparse_static_function('maxlogdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, mask, lp);
   [%-END %]
 }
 

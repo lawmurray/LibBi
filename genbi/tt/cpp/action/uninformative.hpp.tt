@@ -1,0 +1,39 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+#include "bi/math/pi.hpp"
+
+[% sig_action_static_function('logdensity') %] {
+  real xy = pax.template fetch_alt<target_type>(p, ix);
+  x.template put<target_type>(p, ix, xy);
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  real xy = pax.template fetch_alt<target_type>(p, ix);
+  x.template put<target_type>(p, ix, xy);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

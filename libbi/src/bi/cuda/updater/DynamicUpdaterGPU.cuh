@@ -28,26 +28,28 @@ public:
 };
 }
 
-#include "DUpdateKernel.cuh"
+#include "DynamicUpdaterKernel.cuh"
+#include "../bind.cuh"
+#include "../device.hpp"
 
 template<class B, class S>
 template<class T1>
 void bi::DynamicUpdaterGPU<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_DEVICE>& s) {
-  static const int N = net_size<S>::value;
+  static const int N = block_size<S>::value;
   const int P = s.size();
   dim3 Db, Dg;
-  size_t Ns;
 
-  Db.x = std::min(128, P);
+  Db.x = std::min(deviceIdealThreadsPerBlock(), P);
   Db.y = 1;
   Dg.x = (P + Db.x - 1)/Db.x;
   Dg.y = N;
-  Ns = 0;
 
   if (N > 0) {
-    kernelDynamicUpdater<B,S,T1><<<Dg,Db,Ns>>>(t1, t2);
+    bind(s);
+    kernelDynamicUpdater<B,S,T1><<<Dg,Db>>>(t1, t2);
     CUDA_CHECK;
+    unbind(s);
   }
 }
 

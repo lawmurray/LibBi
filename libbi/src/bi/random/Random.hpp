@@ -4,45 +4,40 @@
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$
  * $Date$
- *
- * Imported from dysii 1.4.0, originally indii/ml/aux/Random.hpp
  */
 #ifndef BI_RANDOM_RANDOM_HPP
 #define BI_RANDOM_RANDOM_HPP
 
+#include "Rng.hpp"
 #include "../misc/assert.hpp"
+#include "../misc/location.hpp"
 #include "../cuda/cuda.hpp"
-
-#ifdef ENABLE_GPU
-#include "../cuda/random/curand.hpp"
-#endif
-
-#include "boost/random/mersenne_twister.hpp"
-
-#include <vector>
 
 namespace bi {
 /**
- * Pseudorandom number generator.
+ * Manager for pseudorandom number generation (PRNG).
  *
  * @ingroup math_rng
  *
- * Uses the Mersenne Twister algorithm for generating pseudorandom variates,
- * as implemented by Boost.
+ * Supports multithreaded (and thread safe) PRNG on both host and device,
+ * using one PRNG per host thread, and one PRNG per device thread.
  *
- * The functions of this class are thread-safe (using OpenMP), utilising one
- * random number generator per thread. Each random number generator is
- * seeded differently from the one seed given. Experimental results suggest
- * that this is sufficient with the Mersenne Twister given its large period.
- * Parallel generation of random numbers is used in the plural methods,
- * with static scheduling to ensure reproducibility with the same seed.
+ * The high-level interface of Random includes singular functions for
+ * generating single variates (e.g. #uniform, #gaussian), plural functions
+ * for filling vectors with variates (e.g. #uniforms, #gaussians), and
+ * getters and setters for each thread's PRNG.
  *
- * @section Random_references References
+ * More efficient than multiple calls to the singular functions is to use
+ * #getHostRng or #getDevRng to get the base PRNG for the current thread,
+ * and generate several variates from it.
  *
- * @anchor Matsumoto1998 Matsumoto, M. and Nishimura,
- * T. Mersenne Twister: A 623-dimensionally equidistributed
- * uniform pseudorandom number generator. <i>ACM Transactions on
- * Modeling and Computer Simulation</i>, <b>1998</b>, 8, 3-30.
+ * This is particularly the case with device generation, where, within a
+ * kernel function, a variable of type <tt>Rng<ON_DEVICE></tt> can be
+ * created in local memory, the PRNG for the current thread retrieve via
+ * #getDevRng and copied into it, then variates generated from the local
+ * variable before it is copied back to global memory with #setDevRng.
+ *
+ * Internally, the plural methods take this approach.
  */
 class Random {
 public:
@@ -52,11 +47,18 @@ public:
   Random();
 
   /**
-   * Constructor. Initialise and seed random number generator.
+   * Constructor. Initialise and seed all random number generators.
    *
    * @param seed Seed value.
+   *
+   * @seealso #seeds
    */
   Random(const unsigned seed);
+
+  /**
+   * Shallow copy constructor.
+   */
+  Random(const Random& o);
 
   /**
    * Destructor.
@@ -64,26 +66,15 @@ public:
   ~Random();
 
   /**
+   * @name Singular methods
+   */
+  //@{
+  /**
    * Seed random number generator.
    *
    * @param seed Seed value.
    */
   void seed(const unsigned seed);
-
-  /**
-   * Reset random number generator with last used seed.
-   */
-  void reset();
-
-  /**
-   * Generate a boolean value from a Bernoulli distribution.
-   *
-   * @param p Probability of true, between 0 and 1 inclusive.
-   *
-   * @return The random boolean value, 1 for true, 0 for false.
-   */
-  template<class T1>
-  unsigned bernoulli(const T1 p = 0.5);
 
   /**
    * Generate a random integer from a uniform distribution over a
@@ -155,6 +146,21 @@ public:
    */
   template<class T1>
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
+  //@}
+
+  /**
+   * @name Plural methods
+   */
+  //@{
+  /**
+   * Seed all random number generators.
+   *
+   * @param seed Seed value.
+   *
+   * All random number generators are seeded differently using a function of
+   * @p seed.
+   */
+  void seeds(const unsigned seed);
 
   /**
    * Generate random numbers from a multinomial distribution with given
@@ -212,159 +218,114 @@ public:
   template<class V1>
   void gammas(V1 x, const typename V1::value_type alpha = 1.0,
       const typename V1::value_type beta = 1.0);
+  //@}
+
+  /**
+   * @name Base PRNGs
+   */
+  //@{
+  /**
+   * Get the current host thread's random number generator.
+   */
+  Rng<ON_HOST>& getHostRng();
+
+  #ifdef ENABLE_GPU
+  /**
+   * Get the current device thread's random number generator.
+   */
+  CUDA_FUNC_DEVICE Rng<ON_DEVICE>& getDevRng();
+
+  /**
+   * Set the current device thread's random number generator. This is
+   * typically used when the state of the random number generator is read
+   * into local memory and modified, and so must be copied back to global
+   * memory.
+   */
+  CUDA_FUNC_DEVICE void setDevRng(const Rng<ON_DEVICE>& rng);
+  #endif
+  //@}
 
 private:
   /**
-   * Type of random number generator on host.
+   * Seed random number generators on host.
    */
-  typedef boost::mt19937 rng_t;
+  void hostSeeds(const unsigned seed);
+
+  /**
+   * Seed random number generators on device.
+   */
+  void devSeeds(const unsigned seed);
 
   /**
    * Random number generators on host.
    */
-  std::vector<rng_t> rng;
+  Rng<ON_HOST>* hostRngs;
 
-  /**
-   * Random number generator on device.
-   */
   #ifdef ENABLE_GPU
-  curandGenerator_t devRng;
+  /**
+   * Random number generators on device.
+   */
+  Rng<ON_DEVICE>* devRngs;
   #endif
 
   /**
-   * Original seed.
+   * Does this object own the host and device random number generators? This
+   * is largely used to ensure that when copying to device in a kernel
+   * launch, the random number generators are not destroyed on exit.
    */
-  unsigned originalSeed;
+  bool own;
 };
-
 }
 
-#include "../misc/omp.hpp"
-#include "../math/sim_temp_vector.hpp"
-
-#include "boost/random/uniform_int.hpp"
-#include "boost/random/bernoulli_distribution.hpp"
-#include "boost/random/uniform_real.hpp"
-#include "boost/random/normal_distribution.hpp"
-#include "boost/random/gamma_distribution.hpp"
-#include "boost/random/variate_generator.hpp"
-
-#include "thrust/binary_search.h"
-
-template<class T1>
-inline unsigned bi::Random::bernoulli(const T1 p) {
-  /* pre-condition */
-  assert (p >= 0.0 && p <= 1.0);
-
-  typedef boost::bernoulli_distribution<unsigned> dist_t;
-
-  dist_t dist(p);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return gen();
+inline void bi::Random::seed(const unsigned seed) {
+  getHostRng().seed(seed);
 }
 
 template<class T1>
 inline T1 bi::Random::uniformInt(const T1 lower, const T1 upper) {
-  /* pre-condition */
-  assert (upper >= lower);
-
-  typedef boost::uniform_int<T1> dist_t;
-
-  dist_t dist(lower, upper);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return gen();
+  return getHostRng().uniformInt(lower, upper);
 }
 
 template<class V1>
 inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
-  /* pre-condition */
-  assert (ps.size() > 0);
-
-  typedef boost::uniform_real<typename V1::value_type> dist_t;
-
-  typename sim_temp_vector<V1>::type Ps(ps.size());
-  inclusive_scan_sum_exp(ps, Ps);
-
-  dist_t dist(0.0, *(Ps.end() - 1));
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
+  return getHostRng().multinomial(ps);
 }
 
 template<class T1>
 inline T1 bi::Random::uniform(const T1 lower, const T1 upper) {
-  /* pre-condition */
-  assert (upper >= lower);
-
-  typedef boost::uniform_real<T1> dist_t;
-
-  dist_t dist(lower, upper);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return gen();
+  return getHostRng().uniform(lower, upper);
 }
 
 template<class T1>
 inline T1 bi::Random::gaussian(const T1 mu, const T1 sigma) {
-  /* pre-condition */
-  assert (sigma >= 0.0);
-
-  typedef boost::normal_distribution<T1> dist_t;
-
-  dist_t dist(mu, sigma);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return gen();
+  return getHostRng().gaussian(mu, sigma);
 }
 
 template<class T1>
 inline T1 bi::Random::gamma(const T1 alpha, const T1 beta) {
-  /* pre-condition */
-  assert (alpha > 0.0 && beta > 0.0);
-
-  typedef boost::gamma_distribution<T1> dist_t;
-
-  dist_t dist(alpha);
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
-
-  return beta*gen();
+  return getHostRng().gamma(alpha, beta);
 }
 
 template<class V1>
 void bi::Random::uniforms(V1 x, const typename V1::value_type lower,
-    const typename V1::value_type  upper) {
+    const typename V1::value_type upper) {
   /* pre-condition */
   assert (upper >= lower);
 
   typedef typename V1::value_type T1;
-  typedef boost::uniform_real<T1> dist_t;
+  typedef boost::uniform_real<T1> dist_type;
 
   if (V1::on_device) {
-    #ifdef ENABLE_GPU
-    CURAND_CHECKED_CALL(curand_generate_uniform<T1>::func(devRng, x.buf(),
-        x.size()));
-    #else
-    BI_ASSERT(false, "GPU random number generation not enabled");
-    #endif
-    if (lower == 0.0 && upper != 1.0) {
-      mulscal_elements(x, upper);
-    } else if (upper - lower == 1.0) {
-      addscal_elements(x, lower);
-    } else if (lower != 0.0 && upper != 1.0) {
-      axpyscal_elements(x, upper - lower, lower);
-    }
+    BI_ERROR(false, "Not implemented");
   } else {
     #pragma omp parallel
     {
+      BOOST_AUTO(rng, getHostRng());
       int j;
-      dist_t dist(lower, upper);
-      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
 
       #pragma omp for schedule(static)
       for (j = 0; j < x.size(); ++j) {
-        x(j) = gen();
+        x(j) = rng.uniform(lower, upper);
       }
     }
   }
@@ -377,35 +338,19 @@ void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
   assert (sigma >= 0.0);
 
   typedef typename V1::value_type T1;
-  typedef boost::normal_distribution<T1> dist_t;
+  typedef boost::normal_distribution<T1> dist_type;
 
   if (V1::on_device) {
-    #ifdef ENABLE_GPU
-    if (x.size() % 2 == 1) {
-      /* CURAND only does even numbers of random numbers, use CPU generator
-       * for first, CURAND for the rest */
-      *x.begin() = gaussian(mu, sigma);
-      if (x.size() > 1) {
-        CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng,
-            x.buf() + 1, x.size() - 1, mu, sigma));
-      }
-    } else {
-      CURAND_CHECKED_CALL(curand_generate_normal<T1>::func(devRng, x.buf(),
-          x.size(), mu, sigma));
-    }
-    #else
-    BI_ASSERT(false, "GPU random number generation not enabled");
-    #endif
+    BI_ERROR(false, "Not implemented");
   } else {
     #pragma omp parallel
     {
+      BOOST_AUTO(rng, getHostRng());
       int j;
-      dist_t dist(mu, sigma);
-      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
 
       #pragma omp for schedule(static)
       for (j = 0; j < x.size(); ++j) {
-        x(j) = gen();
+        x(j) = rng.gaussian(mu, sigma);
       }
     }
   }
@@ -418,24 +363,19 @@ void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
   assert (alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
-  typedef boost::gamma_distribution<T1> dist_t;
+  typedef boost::gamma_distribution<T1> dist_type;
 
   if (V1::on_device) {
-    /* CURAND doesn't support gamma variates at this stage, generate on host
-     * and copy */
-    typename temp_host_vector<T1>::type z(x.size());
-    gammas(z, alpha, beta);
-    x = z;
+    BI_ERROR(false, "Not implemented");
   } else {
     #pragma omp parallel
     {
+      BOOST_AUTO(rng, getHostRng());
       int j;
-      dist_t dist(alpha);
-      boost::variate_generator<rng_t&,dist_t> gen(rng[bi_omp_tid], dist);
 
       #pragma omp for schedule(static)
       for (j = 0; j < x.size(); ++j) {
-        x(j) = beta*gen();
+        x(j) = rng.gamma(alpha, beta);
       }
     }
   }
@@ -446,19 +386,35 @@ void bi::Random::multinomials(const V1 ps, V2 xs) {
   /* pre-condition */
   assert (ps.size() > 0);
 
-  typedef boost::uniform_real<typename V1::value_type> dist_t;
+  typedef typename V1::value_type T1;
 
-  typename sim_temp_vector<V1>::type Ps(ps.size());
-  inclusive_scan_sum_exp(ps, Ps);
+  if (V1::on_device) {
+    BI_ERROR(false, "Not implemented");
+  } else {
+    BOOST_AUTO(rng, getHostRng());
+    typename sim_temp_vector<V1>::type Ps(ps.size());
+    inclusive_scan_sum_exp(ps, Ps);
 
-  dist_t dist(0, *(Ps.end() - 1));
-  boost::variate_generator<rng_t&, dist_t> gen(rng[bi_omp_tid], dist);
+    T1 u;
+    T1 lower = 0.0;
+    T1 upper = *(Ps.end() - 1);
 
-  int i, p;
-  for (i = 0; i < xs.size(); ++i) {
-    p = thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
-    xs(i) = p;
+    int i, p;
+    for (i = 0; i < xs.size(); ++i) {
+      u = rng.uniform(lower, upper);
+      p = thrust::lower_bound(Ps.begin(), Ps.end(), u) - Ps.begin();
+
+      xs(i) = p;
+    }
   }
 }
+
+inline bi::Rng<bi::ON_HOST>& bi::Random::getHostRng() {
+  return hostRngs[bi_omp_tid];
+}
+
+#ifdef __CUDACC__
+#include "../cuda/random/Random.cuh"
+#endif
 
 #endif

@@ -20,6 +20,7 @@ public:
   [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
   
   /**
    * Time step.
@@ -49,6 +50,12 @@ inline real [% class_name %]::getDelta() {
 [% sig_dynamic_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s);
+  [%-END %]
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(t1, t2, onDelta, s);
   [%-END %]
 }
  

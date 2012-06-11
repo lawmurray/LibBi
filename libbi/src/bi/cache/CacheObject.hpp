@@ -5,33 +5,26 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_CACHE_HPP
-#define BI_BUFFER_CACHE_HPP
+#ifndef BI_CACHE_CACHEOBJECT_HPP
+#define BI_CACHE_CACHEOBJECT_HPP
 
-#include <vector>
+#include "Cache.hpp"
 
 namespace bi {
 /**
- * Cache for SparseInputBuffer reads.
+ * Generic cache for arbitrary type.
  *
  * @ingroup io_cache
  *
- * @tparam T1 Cached type.
+ * @tparam T1 Type.
  */
 template<class T1>
-class Cache {
+class CacheObject : public Cache {
 public:
   /**
    * Destructor.
    */
-  ~Cache();
-
-  /**
-   * Is page valid?
-   *
-   * @param p Page index.
-   */
-  bool isValid(const int p) const;
+  ~CacheObject();
 
   /**
    * Number of pages in cache.
@@ -58,44 +51,35 @@ public:
   template<class T2>
   void put(const int p, const T2& x);
 
-private:
   /**
-   * Clear cache.
+   * Empty cache.
    */
-  void clear();
+  void empty();
 
+private:
   /**
    * Pages.
    *
-   * Note page_type uses a shallow copy, so we store @em pointers in this
-   * vector, lest we end up with shallow copy hell when resizing.
+   * It is assumed that page_type may have a shallow copy constructor, so
+   * that @em pointers are stored, lest we end up with shallow copy hell when
+   * resizing!
    */
   std::vector<T1*> pages;
-
-  /**
-   * Validity of each page.
-   */
-  std::vector<bool> valids;
 };
 }
 
 template<class T1>
-bi::Cache<T1>::~Cache() {
-  clear();
+bi::CacheObject<T1>::~CacheObject() {
+  empty();
 }
 
 template<class T1>
-inline bool bi::Cache<T1>::isValid(const int p) const {
-  return p < size() && valids[p];
-}
-
-template<class T1>
-inline int bi::Cache<T1>::size() const {
+inline int bi::CacheObject<T1>::size() const {
   return (int)pages.size();
 }
 
 template<class T1>
-inline T1 bi::Cache<T1>::get(const int p) const {
+inline T1 bi::CacheObject<T1>::get(const int p) const {
   /* pre-condition */
   assert (isValid(p));
 
@@ -104,28 +88,29 @@ inline T1 bi::Cache<T1>::get(const int p) const {
 
 template<class T1>
 template<class T2>
-inline void bi::Cache<T1>::put(const int p, const T2& x) {
+inline void bi::CacheObject<T1>::put(const int p, const T2& x) {
   if (size() <= p) {
     pages.resize(p + 1);
     pages[p] = new T1();
-    valids.resize(p + 1, false);
+    Cache::resize(p + 1);
   }
+  pages[p]->resize(x.size());
   *pages[p] = x;
-  valids[p] = true;
+  setValid(p);
 
   /* post-condition */
   assert (isValid(p));
 }
 
 template<class T1>
-void bi::Cache<T1>::clear() {
+void bi::CacheObject<T1>::empty() {
   BOOST_AUTO(iter, pages.begin());
   while (iter != pages.end()) {
     delete *iter;
     ++iter;
   }
   pages.clear();
-  valids.clear();
+  Cache::empty();
 }
 
 #endif

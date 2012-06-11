@@ -37,7 +37,7 @@ of the same size as the target giving the standard deviations of those
 variables. For a general multivariate distribution, a matrix giving the
 upper-triangular Cholesky factor of the covariance matrix.
 
-=item * C<log> (position 2, default false)
+=item * C<log> (default false)
 
 True for a log-normal distribution, false for a normal distribution. Must be
 a constant expression. For clarity, consider using the L<log_normal> or
@@ -59,7 +59,6 @@ our $ACTION_ARGS = [
   },
   {
     name => 'log',
-    positional => 1,
     default => 0
   }
 ];
@@ -76,6 +75,8 @@ sub validate {
     $self->ensure_op('~');
     $self->ensure_scalar('mean');
     $self->ensure_scalar('std');
+    $self->ensure_scalar('log');
+    $self->ensure_const('log');
 	$self->set_parent('gaussian_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);

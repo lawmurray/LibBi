@@ -6,43 +6,77 @@
 ## $Date$
 %]
 
-[% PROCESS block/misc/header.hpp.tt %]
+[%-PROCESS block/misc/header.hpp.tt-%]
 
-#include "bi/pdf/IIDGaussianPdf.hpp"
+[% create_action_typetree(block) %]
 
 /**
- * Block: standard_wiener_.
+ * Block: [% block.get_name %].
  */
 class [% class_name %] {
 public:
+  [% create_action_typedef(block) %]
+  
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
+
+  [% declare_static_function('sample') %]
+  [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
+
+  [% declare_sparse_static_function('sample') %]
+  [% declare_sparse_static_function('logdensity') %]
+  [% declare_sparse_static_function('maxlogdensity') %]
 };
 
+#include "bi/updater/StaticSampler.hpp"
+#include "bi/updater/StaticLogDensity.hpp"
+#include "bi/updater/StaticMaxLogDensity.hpp"
+#include "bi/updater/SparseStaticSampler.hpp"
+#include "bi/updater/SparseStaticLogDensity.hpp"
+#include "bi/updater/SparseStaticMaxLogDensity.hpp"
+
 [% sig_dynamic_function('sample') %] {
-  BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
-  if (fabs(t2 - t1) > 0.0) {
-    bi::IIDGaussianPdf q(X.size2(), fabs(t2 - t1));
-    q.samples(rng, [% get_var(block.get_action.get_target) %]);
-  } else {
-    X.clear();
+  if (onDelta) {
+    samples(rng, s);
   }
 }
 
 [% sig_dynamic_function('logdensity') %] {
-  if (fabs(t2 - t1) > 0.0) {
-    BOOST_AUTO(X, [% get_var(block.get_action.get_target) %]);
-    BOOST_AUTO(XY, [% get_var_alt(block.get_action.get_target) %]);
-    
-    bi::IIDGaussianPdf q(X.size2(), fabs(t2 - t1));
-    q.logDensities(XY, p);
+  if (onDelta) {
+    logDensities(s, lp);
   }
-  
-  if (XY.size1() == 1) {
-    set_rows(X, row(XY, 0));
-  } else {
-    X = XY;
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
+  if (onDelta) {
+    maxLogDensities(s, lp);
   }
+}
+
+[% sig_static_function('sample') %] {
+  bi::StaticSampler<[% model_class_name %],action_typelist>::samples(rng, s);
+}
+
+[% sig_static_function('logdensity') %] {
+  bi::StaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, lp);
+}
+
+[% sig_static_function('maxlogdensity') %] {
+  bi::StaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, lp);
+}
+
+[% sig_sparse_static_function('sample') %] {
+  bi::SparseStaticSampler<[% model_class_name %],action_typelist>::samples(rng, mask, s);
+}
+
+[% sig_sparse_static_function('logdensity') %] {
+  bi::SparseStaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, mask, lp);
+}
+
+[% sig_sparse_static_function('maxlogdensity') %] {
+  bi::SparseStaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, mask, lp);
 }
 
 [%-PROCESS block/misc/footer.hpp.tt-%]

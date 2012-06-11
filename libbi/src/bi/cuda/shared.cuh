@@ -93,7 +93,7 @@ struct shared {
 
   template<class B, class X>
   static CUDA_FUNC_DEVICE real fetch(const int p, const int ix) {
-    if (contains<S,X>::value) {
+    if (block_contains_target<S,X>::value) {
       return shared_fetch<S,X>(ix);
     } else {
       return global_fetch<B,X>(p, ix);
@@ -103,7 +103,7 @@ struct shared {
   template<class B, class X>
   static CUDA_FUNC_DEVICE void put(const int p, const int ix,
       const real& val) {
-    if (contains<S,X>::value) {
+    if (block_contains_target<S,X>::value) {
       return shared_put<S,X>(ix, val);
     } else {
       return global_put<B,X>(p, ix, val);

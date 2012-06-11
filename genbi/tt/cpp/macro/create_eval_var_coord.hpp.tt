@@ -65,7 +65,7 @@ public:
   /**
    * Prefix increment operator.
    */
-  [% class_name %]& operator++() {
+  CUDA_FUNC_BOTH [% class_name %]& operator++() {
     inc();
     return *this;
   }
@@ -73,7 +73,7 @@ public:
   /**
    * Postfix increment operator.
    */
-  [% class_name %] operator++(int) {
+  CUDA_FUNC_BOTH [% class_name %] operator++(int) {
     [% class_name %] tmp(*this);
     inc();
     return tmp;
@@ -82,7 +82,7 @@ public:
   /**
    * Prefix decrement operator.
    */
-  [% class_name %]& operator--() {
+  CUDA_FUNC_BOTH [% class_name %]& operator--() {
     dec();
     return *this;
   }
@@ -90,7 +90,7 @@ public:
   /**
    * Postfix decrement operator.
    */
-  [% class_name %] operator--(int) {
+  CUDA_FUNC_BOTH [% class_name %] operator--(int) {
     [% class_name %] tmp(*this);
     dec();
     return tmp;

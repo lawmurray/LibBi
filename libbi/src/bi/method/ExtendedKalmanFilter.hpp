@@ -284,11 +284,6 @@ protected:
    */
   int M;
 
-  /**
-   * Is out not NULL?
-   */
-  bool haveOut;
-
   /* net sizes, for convenience */
   static const int NR = net_size<typename B::RTypeList>::value;
   static const int ND = net_size<typename B::DTypeList>::value;
@@ -336,8 +331,7 @@ bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::ExtendedKalmanFilter(B& m,
     oyUpdater(*obs),
     sim(m, in, out),
     out(out),
-    M(m.getNetSize(R_VAR) + m.getNetSize(D_VAR)),
-    haveOut(out != NULL) {
+    M(m.getNetSize(R_VAR) + m.getNetSize(D_VAR)) {
   reset();
 }
 
@@ -594,7 +588,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::output(const int k,
     const State<B,L>& s) {
-  if (haveOut) {
+  if (out != NULL) {
     sim.output(k, s);
 
     /* copy to contiguous buffer */

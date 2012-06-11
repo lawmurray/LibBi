@@ -383,11 +383,6 @@ private:
   int M;
 
   /**
-   * Is out not NULL?
-   */
-  bool haveOut;
-
-  /**
    * Current state.
    */
   ParticleMarginalMetropolisHastingsState x1;
@@ -457,9 +452,8 @@ bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::ParticleMarginalMetropolisHast
     m(m),
     out(out),
     M(NP + ((initial == INCLUDE_INITIAL) ? ND : 0)),
-    haveOut(out != NULL),
-    x1(m, M, haveOut ? out->size2() : 0),
-    x2(m, M, haveOut ? out->size2() : 0),
+    x1(m, M, (out != NULL) ? out->size2() : 0),
+    x2(m, M, (out != NULL) ? out->size2() : 0),
     initial(initial),
     lastAccepted(false),
     accepted(0),
@@ -517,9 +511,10 @@ template<bi::Location L, class F>
 bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     const real T, State<B,L>& s, F* filter, const FilterMode type) {
   /* pre-conditions */
-  assert(!haveOut || filter->getOutput()->size2() == out->size2());
+  assert(filter->getOutput() != NULL);
+  assert(out == NULL || filter->getOutput()->size2() == out->size2());
 
-  typename temp_host_vector<real>::type lp(1);
+  typename loc_temp_vector<L,real>::type lp(1);
 
   const int P = s.size();
   s.setRange(0, 1);
@@ -544,7 +539,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     row(s.getAlt(D_VAR), 0) = subrange(x1.theta, NP, ND);
     m.proposalInitialLogDensities(s, lp);
   }
-  x1.lq = lp(0);
+  x1.lq = *lp.begin();
 
   /* prior log-density */
   lp.clear();
@@ -554,7 +549,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
     m.initialLogDensities(s, lp);
   }
-  x2.lp = lp(0);
+  x2.lp = *lp.begin();
 
   /* proposal log-density */
   lp.clear();
@@ -566,7 +561,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
     m.proposalInitialLogDensities(s, lp);
   }
-  x2.lq = lp(0);
+  x2.lq = *lp.begin();
 
   /* prepare for filter */
   s.setRange(0, P);
@@ -635,7 +630,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::reject() {
 
 template<class B, class IO1, bi::Location CL>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::output(const int c) {
-  if (haveOut) {
+  if (out != NULL) {
     out->writeSample(c, subrange(x1.theta, 0, NP)); // only p-var portion
     out->writeParticle(c, x1.xd, x1.xr);
     out->writeLogLikelihood(c, x1.ll);

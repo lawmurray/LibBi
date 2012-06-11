@@ -13,7 +13,7 @@
 
 namespace bi {
 /**
- * Static updater, on GPU.
+ * Static updater, on device.
  *
  * @ingroup method_updater
  *
@@ -27,24 +27,26 @@ public:
 };
 }
 
-#include "SUpdateKernel.cuh"
+#include "StaticUpdaterKernel.cuh"
+#include "../bind.cuh"
+#include "../device.hpp"
 
 template<class B, class S>
 void bi::StaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s) {
   static const int N = block_size<S>::value;
   const int P = s.size();
   dim3 Db, Dg;
-  size_t Ns;
 
-  Db.x = std::min(128, P);
-  Db.y = 1;
+  Db.x = std::min(deviceIdealThreadsPerBlock(), P);
   Dg.x = (P + Db.x - 1)/Db.x;
+  Db.y = 1;
   Dg.y = N;
-  Ns = 0;
 
   if (N > 0) {
-    kernelStaticUpdater<B,S><<<Dg,Db,Ns>>>();
+    bind(s);
+    kernelStaticUpdater<B,S><<<Dg,Db>>>();
     CUDA_CHECK;
+    unbind(s);
   }
 }
 

@@ -97,6 +97,7 @@
   { \
     cudaError_t cudaErr; \
     cudaErr = call; \
+    cudaThreadSynchronize(); \
     BI_ASSERT(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
@@ -114,6 +115,7 @@
 #define CUDA_CHECK \
   { \
     cudaError_t cudaErr; \
+    cudaThreadSynchronize(); \
     cudaErr = cudaGetLastError(); \
     BI_ASSERT(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }

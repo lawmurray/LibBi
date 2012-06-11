@@ -15,20 +15,34 @@ namespace bi {
  * Kernel function for sparse static updates.
  *
  * @tparam B Model type.
- * @tparam B1 Mask block type.
+ * @tparam S Action type list.
  *
- * @param ids Ids of variables to update.
- * @param start Offset into output.
- * @param P Number of trajectories to update.
+ * @param mask Mask.
  */
-template<class B, class B1>
-CUDA_FUNC_GLOBAL void kernelSparseStaticUpdater(const B1 mask, const int start,
-    const int P);
+template<class B, class S>
+CUDA_FUNC_GLOBAL void kernelSparseStaticUpdater(const Mask<ON_DEVICE> mask);
 
 }
 
-template<class B, class B1>
-void bi::kernelSparseStaticUpdater(const B1 mask, const int start, const int P) {
+#include "SparseStaticUpdaterVisitorGPU.cuh"
+#include "../constant.cuh"
+#include "../global.cuh"
+#include "../../state/Pa.hpp"
+
+template<class B, class S>
+void bi::kernelSparseStaticUpdater(const Mask<ON_DEVICE> mask) {
+  typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
+  typedef Ox<ON_DEVICE,B,real,global> OX;
+  typedef SparseStaticUpdaterVisitorGPU<B,S,PX,OX> Visitor;
+
+  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+  PX pax;
+  OX x;
+
+  /* update */
+  if (p < constP) {
+    Visitor::accept(mask, p, pax, x);
+  }
 
 }
 

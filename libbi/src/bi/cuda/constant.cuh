@@ -120,7 +120,7 @@ inline real bi::const_fetch(const int cox) {
   } else if (is_px_var<X>::value) {
     return const_mem_px[i];
   } else {
-    return BI_REAL(1.0 / 0.0);
+    return BI_REAL(1.0/0.0);
   }
 }
 

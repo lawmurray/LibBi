@@ -4,54 +4,62 @@
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$
  * $Date$
- *
- * Imported from dysii 1.4.0, originally indii/ml/aux/Random.cpp
  */
 #include "Random.hpp"
 
+#ifdef ENABLE_GPU
+#include "../cuda/device.hpp"
+#endif
+
 using namespace bi;
 
-Random::Random() : rng(bi_omp_max_threads) {
+Random::Random() : own(true) {
+  hostRngs = new Rng<ON_HOST>[bi_omp_max_threads];
   #ifdef ENABLE_GPU
-  CURAND_CHECKED_CALL(curandCreateGenerator(&devRng, CURAND_RNG_PSEUDO_DEFAULT));
+  CUDA_CHECKED_CALL(cudaMalloc((void**)&devRngs,
+      deviceIdealThreads()*sizeof(Rng<ON_DEVICE>)));
   #endif
 }
 
-Random::Random(const unsigned seed) : rng(bi_omp_max_threads) {
+Random::Random(const unsigned seed) : own(true) {
+  hostRngs = new Rng<ON_HOST>[bi_omp_max_threads];
   #ifdef ENABLE_GPU
-  CURAND_CHECKED_CALL(curandCreateGenerator(&devRng, CURAND_RNG_PSEUDO_DEFAULT));
+  CUDA_CHECKED_CALL(cudaMalloc((void**)&devRngs,
+      deviceIdealThreads()*sizeof(Rng<ON_DEVICE>)));
   #endif
-  this->seed(seed);
+
+  this->seeds(seed);
+}
+
+Random::Random(const Random& o) {
+  hostRngs = o.hostRngs;
+  #ifdef ENABLE_GPU
+  devRngs = o.devRngs;
+  #endif
+  own = false;
 }
 
 Random::~Random() {
-  #ifdef ENABLE_GPU
-  CURAND_CHECKED_CALL(curandDestroyGenerator(devRng));
-  #endif
-}
-
-void Random::seed(const unsigned seed) {
-  originalSeed = seed;
-
-  /* seed host generators */
-  unsigned i;
-  for (i = 0; i < rng.size(); ++i) {
-    rng[i].seed(seed + i);
+  if (own) {
+    delete[] hostRngs;
+    hostRngs = NULL;
+    #ifdef ENABLE_GPU
+    CUDA_CHECKED_CALL(cudaFree(devRngs));
+    devRngs = NULL;
+    #endif
   }
+}
 
-  /* seed device generator */
+void Random::seeds(const unsigned seed) {
+  hostSeeds(seed);
   #ifdef ENABLE_GPU
-  CURAND_CHECKED_CALL(curandSetPseudoRandomGeneratorSeed(devRng, seed));
+  devSeeds(seed);
   #endif
 }
 
-void Random::reset() {
-  #ifdef ENABLE_GPU
-  /* just re-seeding seems insufficient to reproduce same sequence, so destroy
-   * and re-create */
-  CURAND_CHECKED_CALL(curandDestroyGenerator(devRng));
-  CURAND_CHECKED_CALL(curandCreateGenerator(&devRng, CURAND_RNG_PSEUDO_DEFAULT));
-  #endif
-
-  this->seed(originalSeed);
+void Random::hostSeeds(const unsigned seed) {
+  #pragma omp parallel
+  {
+    this->seed(seed + bi_omp_tid);
+  }
 }

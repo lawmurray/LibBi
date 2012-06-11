@@ -8,8 +8,6 @@
 #ifndef BI_CUDA_UPDATER_STATICUPDATERVISITORGPU_CUH
 #define BI_CUDA_UPDATER_STATICUPDATERVISITORGPU_CUH
 
-#include "../../typelist/typelist.hpp"
-
 namespace bi {
 /**
  * Visitor for static updates, on device.
@@ -23,7 +21,7 @@ template<class B, class S, class PX, class OX>
 class StaticUpdaterVisitorGPU {
 public:
   /**
-   * Update d-net.
+   * Update.
    *
    * @param p Trajectory id.
    * @param i Variable id.

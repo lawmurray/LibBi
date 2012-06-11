@@ -47,14 +47,18 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p)
-  for (p = 0; p < s.size(); ++p) {
-    Visitor::accept(t1, t2, p, pax, x);
+  #pragma omp parallel
+  {
+    PX pax;
+    OX x;
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); ++p) {
+      Visitor::accept(t1, t2, p, pax, x);
+    }
   }
   unbind(s);
 }

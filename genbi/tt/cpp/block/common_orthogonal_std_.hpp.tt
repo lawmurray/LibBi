@@ -20,22 +20,18 @@ target = block.get_action.get_target;
  */
 class [% class_name %] {
 public:
-  [% declare_static_function('sample') %]
   [% declare_static_function('simulate') %]
-  [% declare_static_function('density') %]
+  [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
 
-  [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('simulate') %]
-  [% declare_dynamic_function('density') %]
+  [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
 };
 
 #include "bi/primitive/matrix_primitive.hpp"
-
-[% sig_static_function('sample') %] {
-  simulate(s);
-}
 
 [% sig_static_function('simulate') %] {
   BOOST_AUTO(std, [% get_var(std) %]);
@@ -45,7 +41,7 @@ public:
   set_rows(columns(target, 0, cols, cols + 1), vec(std));
 }
 
-[% sig_static_function('density') %] {
+[% sig_static_function('sample') %] {
   simulate(s);
 }
 
@@ -53,8 +49,8 @@ public:
   simulate(s);
 }
 
-[% sig_dynamic_function('sample') %] {
-  simulate(t1, t2, onDelta, s);
+[% sig_static_function('maxlogdensity') %] {
+  simulate(s);
 }
 
 [% sig_dynamic_function('simulate') %] {
@@ -63,11 +59,15 @@ public:
   }
 }
 
-[% sig_dynamic_function('density') %] {
+[% sig_dynamic_function('sample') %] {
   simulate(t1, t2, onDelta, s);
 }
 
 [% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 

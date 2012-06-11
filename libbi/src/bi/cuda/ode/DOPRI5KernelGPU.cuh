@@ -12,8 +12,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * Kernel function for DOPRI5IntegratorGPU.
  *
  * @tparam B Model type.

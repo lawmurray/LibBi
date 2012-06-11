@@ -12,9 +12,9 @@
 #include "../primitive/pinned_allocator.hpp"
 #include "../misc/Markable.hpp"
 #include "../buffer/Mask.hpp"
-#include "../buffer/SparseCache.hpp"
-#include "../buffer/Cache.hpp"
-#include "../buffer/Cache1D.hpp"
+#include "../cache/SparseCache.hpp"
+#include "../cache/Cache1D.hpp"
+#include "../cache/CacheMask.hpp"
 
 namespace bi {
 /**
@@ -162,12 +162,12 @@ private:
   /**
    * Cache for masks.
    */
-  Cache<mask_type> maskCache;
+  CacheMask<CL> maskCache;
 
   /**
    * Cache for masks on host.
    */
-  Cache<host_mask_type> maskHostCache;
+  CacheMask<ON_HOST> maskHostCache;
 
   /**
    * State.
@@ -190,7 +190,6 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<B,L>& s) {
   /* current observations and mask */
   if (cache.isValid(state.p1)) {
     assert (maskCache.isValid(state.p1));
-    s.resizeSparse(maskCache.get(state.p1).size(), false);
     cache.read(state.p1, s.get(OY_VAR));
     //cache.swapRead(state.p1, s.get(OY_VAR));
   } else {
@@ -201,8 +200,7 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<B,L>& s) {
     assert (state.p1 == state.p2);
 
     in.mask();
-    s.resizeSparse(in.getMask(O_VAR).size(), false);
-    in.readContiguous(O_VAR, vec(s.get(OY_VAR)));
+    in.read(O_VAR, s.get(OY_VAR));
 
     cache.write(state.p1, s.get(OY_VAR));
     maskCache.put(state.p1, in.getMask(O_VAR));

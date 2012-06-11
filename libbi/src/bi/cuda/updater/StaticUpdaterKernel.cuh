@@ -12,8 +12,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * Kernel function for static update.
  *
  * @tparam B Model type.
@@ -24,14 +22,14 @@ CUDA_FUNC_GLOBAL void kernelStaticUpdater();
 
 }
 
+#include "StaticUpdaterVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
-#include "../updater/StaticUpdaterVisitorGPU.cuh"
 #include "../../state/Pa.hpp"
 
 template<class B, class S>
 void bi::kernelStaticUpdater() {
-  typedef Pa<ON_DEVICE,B,real,constant,global,global,global> PX;
+  typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
   typedef Ox<ON_DEVICE,B,real,global> OX;
   typedef StaticUpdaterVisitorGPU<B,S,PX,OX> Visitor;
 

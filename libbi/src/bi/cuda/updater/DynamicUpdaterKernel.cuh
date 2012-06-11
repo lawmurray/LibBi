@@ -12,8 +12,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * Kernel function for dynamic update.
  *
  * @tparam B Model type.

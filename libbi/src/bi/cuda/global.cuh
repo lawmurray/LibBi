@@ -32,13 +32,17 @@
    */ \
   static bi::gpu_matrix_handle<real> guard##Name##State;
 
-GLOBAL_STATE_DEC(d, D)
-GLOBAL_STATE_DEC(dx, DX)
 GLOBAL_STATE_DEC(r, R)
+GLOBAL_STATE_DEC(d, D)
+GLOBAL_STATE_DEC(p, P)
 GLOBAL_STATE_DEC(f, F)
 GLOBAL_STATE_DEC(o, O)
-GLOBAL_STATE_DEC(p, P)
+GLOBAL_STATE_DEC(dx, DX)
 GLOBAL_STATE_DEC(px, PX)
+GLOBAL_STATE_DEC(ry, RY)
+GLOBAL_STATE_DEC(dy, DY)
+GLOBAL_STATE_DEC(py, PY)
+GLOBAL_STATE_DEC(oy, OY)
 
 namespace bi {
 /**
@@ -61,13 +65,17 @@ namespace bi {
    template<class M1> \
    CUDA_FUNC_HOST void global_bind_##name(M1 s);
 
-GLOBAL_BIND_DEC(d)
-GLOBAL_BIND_DEC(dx)
 GLOBAL_BIND_DEC(r)
+GLOBAL_BIND_DEC(d)
+GLOBAL_BIND_DEC(p)
 GLOBAL_BIND_DEC(f)
 GLOBAL_BIND_DEC(o)
-GLOBAL_BIND_DEC(p)
+GLOBAL_BIND_DEC(dx)
 GLOBAL_BIND_DEC(px)
+GLOBAL_BIND_DEC(ry)
+GLOBAL_BIND_DEC(dy)
+GLOBAL_BIND_DEC(py)
+GLOBAL_BIND_DEC(oy)
 
 /**
  * Fetch node value from global memory.
@@ -84,6 +92,22 @@ GLOBAL_BIND_DEC(px)
  */
 template<class B, class X>
 CUDA_FUNC_DEVICE real global_fetch(const int p, const int ix);
+
+/**
+ * Fetch node value from alternative buffer in global memory.
+ *
+ * @ingroup state_gpu
+ *
+ * @tparam B Model type.
+ * @tparam X Node type.
+ *
+ * @param p Trajectory id.
+ * @param ix Serial coordinate.
+ *
+ * @return Value.
+ */
+template<class B, class X>
+CUDA_FUNC_DEVICE real global_fetch_alt(const int p, const int ix);
 
 /**
  * Set node value in global memory.
@@ -114,6 +138,14 @@ struct global {
   template<class B, class X>
   static CUDA_FUNC_DEVICE real fetch(const int p, const int ix) {
     return global_fetch<B,X>(p, ix);
+  }
+
+  /**
+   * Fetch alternative value.
+   */
+  template<class B, class X>
+  static CUDA_FUNC_DEVICE real fetch_alt(const int p, const int ix) {
+    return global_fetch_alt<B,X>(p, ix);
   }
 
   /**
@@ -148,13 +180,17 @@ struct global {
     } \
   }
 
-GLOBAL_BIND_DEF(d, D)
-GLOBAL_BIND_DEF(dx, DX)
 GLOBAL_BIND_DEF(r, R)
+GLOBAL_BIND_DEF(d, D)
+GLOBAL_BIND_DEF(p, P)
 GLOBAL_BIND_DEF(f, F)
 GLOBAL_BIND_DEF(o, O)
-GLOBAL_BIND_DEF(p, P)
+GLOBAL_BIND_DEF(dx, DX)
 GLOBAL_BIND_DEF(px, PX)
+GLOBAL_BIND_DEF(ry, RY)
+GLOBAL_BIND_DEF(dy, DY)
+GLOBAL_BIND_DEF(py, PY)
+GLOBAL_BIND_DEF(oy, OY)
 
 template<class B, class X>
 inline real bi::global_fetch(const int p, const int ix) {
@@ -177,6 +213,23 @@ inline real bi::global_fetch(const int p, const int ix) {
     result = globalPXState(0, i);
   } else {
     result = BI_REAL(1.0/0.0);
+  }
+  return result;
+}
+
+template<class B, class X>
+inline real bi::global_fetch_alt(const int p, const int ix) {
+  const int i = var_net_start<B,X>::value + ix;
+  real result;
+
+  if (is_d_var<X>::value) {
+    result = globalDYState(p, i);
+  } else if (is_r_var<X>::value) {
+    result = globalRYState(p, i);
+  } else if (is_o_var<X>::value) {
+    result = globalOYState(0, i);
+  } else if (is_p_var<X>::value) {
+    result = globalPYState(0, i);
   }
   return result;
 }

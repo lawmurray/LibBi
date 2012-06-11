@@ -32,24 +32,28 @@ public:
 
 #include "SparseStaticUpdaterVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/SpOx.hpp"
+#include "../../state/Ox.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 void bi::SparseStaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask) {
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef SpOx<ON_HOST,B,real,host> OX;
+  typedef Ox<ON_HOST,B,real,host> OX;
   typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p)
-  for (p = 0; p < s.size(); ++p) {
-    Visitor::accept(mask, p, pax, x);
+  #pragma omp parallel
+  {
+    PX pax;
+    OX x;
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); ++p) {
+      Visitor::accept(mask, p, pax, x);
+    }
   }
   unbind(s);
 }
@@ -58,7 +62,7 @@ template<class B, class S>
 void bi::SparseStaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask, const int p) {
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef SpOx<ON_HOST,B,real,host> OX;
+  typedef Ox<ON_HOST,B,real,host> OX;
   typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> Visitor;
 
   PX pax;

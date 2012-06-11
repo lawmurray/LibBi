@@ -31,7 +31,7 @@ public:
   /**
    * Mask type
    */
-  typedef SparseInputBufferState::mask_type mask_type;
+  typedef mask_type mask_type;
 
   /**
    * Constructor.
@@ -148,7 +148,7 @@ private:
    * @param[out] X Output.
    */
   template<class M1>
-  void read(const VarType type, SparseInputBufferState::mask_type& mask,
+  void read(const VarType type, mask_type& mask,
       M1 X);
 
   /**
@@ -161,8 +161,7 @@ private:
    * @param[out] x Output.
    */
   template<class V1>
-  void readContiguous(const VarType type,
-      SparseInputBufferState::mask_type& mask, V1 x);
+  void readContiguous(const VarType type, mask_type& mask, V1 x);
 
   /**
    * Densely-masked read into matrix.
@@ -373,28 +372,28 @@ inline bool bi::SparseInputNetCDFBuffer::isSparse(const int rDim) {
 
 template<class M1>
 void bi::SparseInputNetCDFBuffer::read(const VarType type, M1 X) {
-  read(type, state.masks[type], X);
+  read(type, *state.masks[type], X);
 }
 
 template<class V1>
 void bi::SparseInputNetCDFBuffer::readContiguous(const VarType type, V1 x) {
-  readContiguous(type, state.masks[type], x);
+  readContiguous(type, *state.masks[type], x);
 }
 
 template<class M1>
 void bi::SparseInputNetCDFBuffer::read0(const VarType type, M1 X) {
-  read(type, masks0[type], X);
+  read(type, *masks0[type], X);
 }
 
 template<class V1>
 void bi::SparseInputNetCDFBuffer::readContiguous0(const VarType type,
     V1 x) {
-  readContiguous(type, masks0[type], x);
+  readContiguous(type, *masks0[type], x);
 }
 
 template<class M1>
 void bi::SparseInputNetCDFBuffer::read(const VarType type,
-    SparseInputBufferState::mask_type& mask, M1 X) {
+    mask_type& mask, M1 X) {
   /* pre-condition */
   assert (X.size2() == m.getNetSize(type));
 
@@ -408,27 +407,26 @@ void bi::SparseInputNetCDFBuffer::read(const VarType type,
     if (mask.isDense(id)) {
       readDense(type, id, columns(X, start, size));
     } else if (mask.isSparse(id)) {
-      readSparse(type, id, *mask.getIndices(id), columns(X, start, size));
+      readSparse(type, id, mask.getIndices(id), columns(X, start, size));
     }
   }
 }
 
 template<class V1>
 void bi::SparseInputNetCDFBuffer::readContiguous(const VarType type,
-    SparseInputBufferState::mask_type& mask, V1 x) {
+    mask_type& mask, V1 x) {
   /* pre-condition */
   assert (x.size() == mask.size());
 
-  int id, start, size;
+  int id, start = 0, size;
   for (id = 0; id < m.getNumVars(type); ++id) {
-    start = mask.getStart(id);
     size = mask.getSize(id);
-
     if (mask.isDense(id)) {
       readContiguousDense(type, id, subrange(x, start, size));
     } else if (mask.isSparse(id)) {
       readContiguousSparse(type, id, subrange(x, start, size));
     }
+    start += size;
   }
 }
 

@@ -23,10 +23,12 @@ public:
   [% declare_static_function('simulate') %]
   [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
 
   [% declare_dynamic_function('simulate') %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
 };
 
 #include "bi/primitive/matrix_primitive.hpp"
@@ -47,6 +49,10 @@ public:
   simulate(s);
 }
 
+[% sig_static_function('maxlogdensity') %] {
+  simulate(s);
+}
+
 [% sig_dynamic_function('simulate') %] {
   if (onDelta) {
     simulate(s);
@@ -58,6 +64,10 @@ public:
 }
 
 [% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 

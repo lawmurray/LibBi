@@ -5,17 +5,13 @@
  * $Rev: 2489 $
  * $Date: 2012-04-25 18:42:38 +0800 (Wed, 25 Apr 2012) $
  */
-#include "device.cuh"
+#include "device.hpp"
 
 #include "cuda.hpp"
-#include "..//misc/assert.hpp"
 
 #include <vector>
 
 int bi::chooseDevice(const int rank) {
-  #ifndef ENABLE_GPU
-  return -1;
-  #else
   int dev, num;
   cudaDeviceProp prop;
   std::vector<int> valid;
@@ -35,5 +31,28 @@ int bi::chooseDevice(const int rank) {
   CUDA_CHECKED_CALL(cudaGetDevice(&dev));
 
   return dev;
-  #endif
+}
+
+int bi::deviceIdealThreads() {
+  int dev;
+  cudaDeviceProp prop;
+  CUDA_CHECKED_CALL(cudaGetDevice(&dev));
+  CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
+
+  return prop.multiProcessorCount*deviceIdealThreadsPerBlock();
+}
+
+int bi::deviceIdealThreadsPerBlock() {
+  int dev;
+  cudaDeviceProp prop;
+  CUDA_CHECKED_CALL(cudaGetDevice(&dev));
+  CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
+
+  if (prop.major == 1) {
+    return 128;
+  } else if (prop.major == 2) {
+    return 256;
+  } else {
+    return 512;
+  }
 }

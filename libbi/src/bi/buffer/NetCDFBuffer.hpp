@@ -119,11 +119,41 @@ protected:
   /**
    * Create variable in NetCDF file.
    *
-   * @param node Node in model for which to create variable in NetCDF file.
+   * @param var Variable in model for which to create variable in NetCDF file.
    *
    * @return The variable.
+   *
+   * The NetCDF variable is declared along the following dimensions, from
+   * innermost to outermost:
+   *
+   * @li the @c np dimension,
+   *
+   * @li if the model variable has dimensions, the NetCDF dimensions that
+   * correspond to these,
+   *
+   * @li if the variable is dynamic (e.g. a state variable), the
+   * @c nr dimension,
+   *
+   * @li if it exists, the @c ns dimension.
    */
-  NcVar* createVar(const Var* node);
+  NcVar* createVar(const Var* var);
+
+  /**
+   * Create variable in NetCDF file using the flexible format.
+   *
+   * @param var Dynamic variable in model for which to create variable in
+   * NetCDF file.
+   *
+   * @return The variable.
+   *
+   * @li the @c npr unlimited dimension,
+   *
+   * @li if the model variable has dimensions, the NetCDF dimensions that
+   * correspond to these,
+   *
+   * @li if it exists, the @c ns dimension.
+   */
+  NcVar* createFlexiVar(const Var* node);
 
   /**
    * Map dimension in existing NetCDF file.

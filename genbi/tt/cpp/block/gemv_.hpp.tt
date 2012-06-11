@@ -22,10 +22,12 @@ public:
   [% declare_static_function('simulate') %]
   [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
 
   [% declare_static_function('simulate') %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
+  [% declare_dynamic_function('maxlogdensity') %]
 };
 
 #include "bi/primitive/matrix_primitive.hpp"
@@ -35,7 +37,7 @@ public:
   BOOST_AUTO(x, [% get_var(x) %]);
   BOOST_AUTO(y, [% get_var(y) %]);
   
-  bi::multi_gemv_(A, x, y);
+  bi::multi_gemv(A, x, y);
 }
 
 [% sig_static_function('sample') %] {
@@ -43,6 +45,10 @@ public:
 }
 
 [% sig_static_function('logdensity') %] {
+  simulate(s);
+}
+
+[% sig_static_function('maxlogdensity') %] {
   simulate(s);
 }
 
@@ -57,6 +63,10 @@ public:
 }
 
 [% sig_dynamic_function('logdensity') %] {
+  simulate(t1, t2, onDelta, s);
+}
+
+[% sig_dynamic_function('maxlogdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 

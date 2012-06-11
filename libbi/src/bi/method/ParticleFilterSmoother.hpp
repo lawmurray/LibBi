@@ -152,11 +152,6 @@ private:
    * State.
    */
   ParticleFilterSmootherState state;
-
-  /**
-   * Is out not NULL?
-   */
-  bool haveOut;
 };
 
 /**
@@ -190,8 +185,7 @@ template<class B, class IO1, bi::Location CL>
 bi::ParticleFilterSmoother<B,IO1,CL>::ParticleFilterSmoother(
     B& m, IO1* out) :
     m(m),
-    out(out),
-    haveOut(out != NULL && out->size2() > 0) {
+    out(out) {
   //
 }
 
@@ -269,7 +263,7 @@ template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class V1>
 void bi::ParticleFilterSmoother<B,IO1,CL>::output(const int k,
     const State<B,L>& s, const V1 lws) {
-  if (haveOut) {
+  if (out != NULL) {
     out->writeTime(k, state.t);
     out->writeState(D_VAR, k, s.get(D_VAR));
     out->writeState(R_VAR, k, s.get(R_VAR));

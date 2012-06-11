@@ -45,7 +45,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'D',
       type => 'int',
-      default => '1'
+      default => 1
     },
     {
       name => 'filter-file',

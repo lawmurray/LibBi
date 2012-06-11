@@ -65,7 +65,7 @@ void SparseInputNetCDFBuffer::mask() {
 
   /* clear existing masks */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    state.masks[i].clear();
+    state.masks[i]->clear();
   }
 
   /* construct new masks */
@@ -83,11 +83,6 @@ void SparseInputNetCDFBuffer::mask() {
       ++iter;
     }
   }
-
-  /* precomputes */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    state.masks[i].init();
-  }
 }
 
 void SparseInputNetCDFBuffer::mask0() {
@@ -95,16 +90,11 @@ void SparseInputNetCDFBuffer::mask0() {
 
   /* clear existing masks */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    masks0[i].clear();
+    masks0[i]->clear();
   }
 
   maskDense0();
   maskSparse0();
-
-  /* precomputes */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    masks0[i].init();
-  }
 }
 
 void SparseInputNetCDFBuffer::maskDense(const int rDim) {
@@ -117,7 +107,7 @@ void SparseInputNetCDFBuffer::maskDense(const int rDim) {
     readIds(rDim, type, ids);
 
     for (j = 0; j < ids.size(); ++j) {
-      state.masks[type].addDenseMask(ids[j], m.getVar(type, ids[j])->getSize());
+      state.masks[type]->addDenseMask(ids[j], m.getVar(type, ids[j])->getSize());
     }
   }
 }
@@ -131,7 +121,7 @@ void SparseInputNetCDFBuffer::maskSparse(const int rDim) {
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
     readIds(rDim, type, ids);
-    state.masks[type].addSparseMask(ids, indices);
+    state.masks[type]->addSparseMask(ids, indices);
   }
 }
 
@@ -143,7 +133,7 @@ void SparseInputNetCDFBuffer::maskDense0() {
     type = static_cast<VarType>(i);
     for (j = 0; j < (int)vUnassoc[type].size(); ++j) {
       id = vUnassoc[type][j];
-      masks0[type].addDenseMask(id, m.getVar(type, id)->getSize());
+      masks0[type]->addDenseMask(id, m.getVar(type, id)->getSize());
     }
   }
 }
@@ -163,7 +153,7 @@ void SparseInputNetCDFBuffer::maskSparse0() {
         if (vAssoc[rDim][i].size() > 0) {
           ids.resize(vAssoc[rDim][i].size());
           std::copy(vAssoc[rDim][i].begin(), vAssoc[rDim][i].end(), ids.begin());
-          masks0[i].addSparseMask(ids, indices);
+          masks0[i]->addSparseMask(ids, indices);
         }
       }
     }

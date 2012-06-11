@@ -9,7 +9,7 @@
 #define BI_METHOD_MISC_HPP
 
 #include "../math/scalar.hpp"
-#include "../buffer/Cache2D.hpp"
+#include "../cache/Cache2D.hpp"
 
 #include <set>
 

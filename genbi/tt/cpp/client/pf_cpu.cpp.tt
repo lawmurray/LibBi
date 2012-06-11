@@ -12,7 +12,6 @@
 #include "model/[% class_name %].hpp"
 
 #include "bi/cuda/cuda.hpp"
-#include "bi/math/ode.hpp"
 #include "bi/kd/kde.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleFilter.hpp"
@@ -21,6 +20,7 @@
 #include "bi/method/MultinomialResampler.hpp"
 #include "bi/method/MetropolisResampler.hpp"
 #include "bi/method/KernelResampler.hpp"
+#include "bi/ode/IntegratorConstants.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
   bi_omp_init(THREADS);
+  bi_ode_init();
 
   /* NetCDF error reporting */
   NcError ncErr(NcError::silent_nonfatal);

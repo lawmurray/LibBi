@@ -22,10 +22,12 @@ public:
   [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
   [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
   
   [% IF block.can_simulate %][% declare_sparse_static_function('simulate') %][% END %]
   [% declare_sparse_static_function('sample') %]
   [% declare_sparse_static_function('logdensity') %]
+  [% declare_sparse_static_function('maxlogdensity') %]
 };
 
 [% IF block.can_simulate %]
@@ -45,7 +47,13 @@ public:
 
 [% sig_static_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(s, p);
+  Block[% subblock.get_id %]::logDensities(s, lp);
+  [%-END %]
+}
+
+[% sig_static_function('maxlogdensity') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, lp);
   [%-END %]
 }
 
@@ -65,7 +73,13 @@ public:
 
 [% sig_sparse_static_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(s, mask, p);
+  Block[% subblock.get_id %]::logDensities(s, mask, lp);
+  [%-END %]
+}
+
+[% sig_sparse_static_function('maxlogdensity') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, mask, lp);
   [%-END %]
 }
 

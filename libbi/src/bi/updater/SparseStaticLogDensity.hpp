@@ -53,7 +53,7 @@ public:
 
   #ifdef __CUDACC__
   /**
-   * Update state.
+   * Evaluate log-density.
    *
    * @tparam V1 Vector type.
    *
@@ -68,7 +68,7 @@ public:
       V1 lp);
 
   /**
-   * Update single trajectory.
+   * Evaluate log-density for single trajectory.
    *
    * @tparam V1 Vector type.
    *
@@ -109,14 +109,14 @@ void bi::SparseStaticLogDensity<B,S>::logDensities(State<B,ON_HOST>& s,
 template<class B, class S>
 template<class V1>
 void bi::SparseStaticLogDensity<B,S>::logDensities(State<B,ON_DEVICE>& s,
-    const Mask<ON_HOST>& mask, V1 lp) {
+    const Mask<ON_DEVICE>& mask, V1 lp) {
   SparseStaticLogDensityGPU<B,S>::logDensities(s, mask, lp);
 }
 
 template<class B, class S>
 template<class V1>
 void bi::SparseStaticLogDensity<B,S>::logDensities(State<B,ON_DEVICE>& s,
-    const int p, const Mask<ON_HOST>& mask, V1 lp) {
+    const int p, const Mask<ON_DEVICE>& mask, V1 lp) {
   SparseStaticLogDensityGPU<B,S>::logDensities(s, p, mask, lp);
 }
 #endif

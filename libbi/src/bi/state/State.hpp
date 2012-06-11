@@ -109,16 +109,6 @@ public:
   void resizeMax(const int maxP, const bool preserve = true);
 
   /**
-   * Resize sparse buffers for observations.
-   *
-   * @param W Number of observations.
-   * @param preserve True to preserve existing values, false otherwise.
-   *
-   * Resizes the state to store at least @p W observations.
-   */
-  void resizeSparse(const int W, const bool preserve = true);
-
-  /**
    * Clear.
    */
   void clear();
@@ -240,83 +230,6 @@ public:
   const matrix_reference_type getVarAlt(const VarType type, const int id) const;
 
   /**
-   * Get buffer for sparse variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @return Given buffer.
-   */
-  template<class X>
-  matrix_reference_type getSparseVar(const Mask<L>& mask);
-
-  /**
-   * Get buffer for sparse variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  template<class X>
-  const matrix_reference_type getSparseVar(const Mask<L>& mask) const;
-
-  /**
-   * Get buffer for sparse variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  matrix_reference_type getSparseVar(const VarType type, const int id, const Mask<L>& mask);
-
-  /**
-   * Get buffer for sparse variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  const matrix_reference_type getSparseVar(const VarType type, const int id, const Mask<L>& mask) const;
-
-  /**
-   * Get alternative buffer for sparse variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @return Given buffer.
-   */
-  template<class X>
-  matrix_reference_type getSparseVarAlt(const Mask<L>& mask);
-
-  /**
-   * Get alternative buffer for sparse variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  template<class X>
-  const matrix_reference_type getSparseVarAlt(const Mask<L>& mask) const;
-
-  /**
-   * Get alternative buffer for sparse variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  matrix_reference_type getSparseVarAlt(const VarType type, const int id, const Mask<L>& mask);
-
-  /**
    * Get alternative buffer for sparse variable.
    *
    * @param type Node type.
@@ -358,19 +271,9 @@ public:
   matrix_type Xdn;
 
   /**
-   * Storage for sparse non-shared variables (o-).
-   */
-  matrix_type Xsp;
-
-  /**
    * Storage for dense shared variables (f-, s- and p-).
    */
   matrix_type Kdn;
-
-  /**
-   * Storage for sparse shared variables (oy-).
-   */
-  matrix_type Ksp;
 
   /**
    * Index of starting trajectory in @p Xdn and @p Xsp.
@@ -381,11 +284,6 @@ public:
    * Number of trajectories.
    */
   int P;
-
-  /**
-   * Number of observations in sparse buffers.
-   */
-  int W;
 
   /**
    * Round up number of trajectories as required by implementation.
@@ -431,12 +329,9 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const B& m, const int P) :
     m(m),
     Xdn(roundup(P), NR + ND + NO + NDX + NR + ND), // includes dy- and ry-vars
-    Xsp(Xdn.size1(), 0),
-    Kdn(1, 2*NP + NF + NPX), // includes py-vars
-    Ksp(1, 0),
+    Kdn(1, 2*NP + NPX + NF + NO), // includes py- and oy-vars
     p(0),
-    P(P),
-    W(0) {
+    P(P) {
   clear();
 }
 
@@ -444,24 +339,18 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
     m(o.m),
     Xdn(o.Xdn.size1(), o.Xdn.size2()),
-    Xsp(o.Xsp.size1(), o.Xsp.size2()),
     Kdn(o.Kdn.size1(), o.Kdn.size2()),
-    Ksp(o.Ksp.size1(), o.Ksp.size2()),
     p(o.p),
-    P(o.P),
-    W(o.W) {
+    P(o.P) {
   *this = o;
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   Xdn = o.Xdn;
-  Xsp = o.Xsp;
   Kdn = o.Kdn;
-  Ksp = o.Ksp;
   p = o.p;
   P = o.P;
-  W = o.W;
 
   return *this;
 }
@@ -470,12 +359,9 @@ template<class B, bi::Location L>
 template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   Xdn = o.X;
-  Xsp = o.Xsp;
   Kdn = o.K;
-  Ksp = o.Ksp;
   p = o.p;
   P = o.P;
-  W = o.W;
 
   return *this;
 }
@@ -484,7 +370,7 @@ template<class B, bi::Location L>
 inline void bi::State<B,L>::setRange(const int p, const int P) {
   /* pre-condition */
   assert (p >= 0 && p == roundup(p));
-  assert (p >= 0 && P == roundup(P));
+  assert (P >= 0 && P == roundup(P));
 
   if (p + P > sizeMax()) {
     resizeMax(p + P, true);
@@ -514,7 +400,6 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
   const int maxP1 = roundup(maxP);
 
   Xdn.resize(maxP1, Xdn.size2(), preserve);
-  Xsp.resize(maxP1, Xsp.size2(), preserve);
   if (p > sizeMax()) {
     p = sizeMax();
   }
@@ -524,18 +409,9 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
 }
 
 template<class B, bi::Location L>
-inline void bi::State<B,L>::resizeSparse(const int W, bool preserve) {
-  Xsp.resize(Xsp.size1(), W, preserve);
-  Ksp.resize(Ksp.size1(), W, preserve);
-  this->W = W;
-}
-
-template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
   rows(Xdn, 0, P).clear();
-  rows(Xsp, 0, P).clear();
   Kdn.clear();
-  Ksp.clear();
 }
 
 template<class B, bi::Location L>
@@ -557,12 +433,12 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(const 
     return columns(Kdn, 0, NP);
   case PY_VAR:
     return columns(Kdn, NP, NP);
-  case F_VAR:
-    return columns(Kdn, 2*NP, NF);
   case PX_VAR:
-    return columns(Kdn, 2*NP + NF, NPX);
+    return columns(Kdn, 2*NP, NPX);
+  case F_VAR:
+    return columns(Kdn, 2*NP + NPX, NF);
   case OY_VAR:
-    return Ksp;
+    return columns(Kdn, 2*NP + NPX + NF, NO);
   default:
     BI_ERROR(false, "Unsupported type");
   }
@@ -587,12 +463,12 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return columns(Kdn, 0, NP);
   case PY_VAR:
     return columns(Kdn, NP, NP);
-  case F_VAR:
-    return columns(Kdn, 2*NP, NF);
   case PX_VAR:
-    return columns(Kdn, 2*NP + NF, NPX);
+    return columns(Kdn, 2*NP, NPX);
+  case F_VAR:
+    return columns(Kdn, 2*NP + NPX, NF);
   case OY_VAR:
-    return Ksp;
+    return columns(Kdn, 2*NP + NPX + NF, NO);
   default:
     BI_ERROR(false, "Unsupported type");
   }
@@ -689,92 +565,6 @@ const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt(
 }
 
 template<class B, bi::Location L>
-template<class X>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVar(
-    const Mask<L>& mask) {
-  static const VarType type = var_type<X>::value;
-  static const int id = var_id<X>::value;
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-template<class X>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVar(
-    const Mask<L>& mask) const {
-  static const VarType type = var_type<X>::value;
-  static const int id = var_id<X>::value;
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVar(
-    const VarType type, const int id, const Mask<L>& mask) {
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVar(
-    const VarType type, const int id, const Mask<L>& mask) const {
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-template<class X>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVarAlt(
-    const Mask<L>& mask) {
-  static const VarType type = alt_type<var_type<X>::value>::value;
-  static const int id = var_id<X>::value;
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-template<class X>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVarAlt(
-    const Mask<L>& mask) const {
-  static const VarType type = alt_type<var_type<X>::value>::value;
-  static const int id = var_id<X>::value;
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVarAlt(
-    const VarType type, const int id, const Mask<L>& mask) {
-  const VarType alt = m.getAltType(type);
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(alt), start, size);
-}
-
-template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getSparseVarAlt(
-    const VarType type, const int id, const Mask<L>& mask) const {
-  const VarType alt = m.getAltType(type);
-  const int start = mask.getStart(id);
-  const int size = mask.getSize(id);
-
-  return columns(get(alt), start, size);
-}
-
-template<class B, bi::Location L>
 typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
   return subrange(Xdn, p, P, 0, NR + ND);
 }
@@ -829,7 +619,7 @@ int bi::State<B,L>::roundup(const int P) {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::serialize(Archive& ar, const unsigned version) {
-  ar & Xdn & Xsp & Kdn & Ksp & W;
+  ar & Xdn & Kdn;
 }
 #endif
 

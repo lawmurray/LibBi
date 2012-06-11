@@ -280,7 +280,7 @@ sub _make {
     
     my $builddir = $self->{_builddir};
     my $cwd = getcwd();
-    my $cmd = "make $options $target";
+    my $cmd = "make -j 4 $options $target";
     
     chdir($builddir);
     my $ret = system($cmd);

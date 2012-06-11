@@ -39,24 +39,30 @@ public:
 
 #include "SparseStaticSamplerVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/SpOx.hpp"
+#include "../../state/Ox.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask) {
+  typedef Rng<ON_HOST> R1;
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef SpOx<ON_HOST,B,real,host> OX;
+  typedef Ox<ON_HOST,B,real,host> OX;
   typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p)
-  for (p = 0; p < s.size(); ++p) {
-    Visitor::accept(rng, mask, p, pax, x);
+  #pragma omp parallel
+  {
+    PX pax;
+    OX x;
+    R1& rng1 = rng.getHostRng();
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); ++p) {
+      Visitor::accept(rng, mask, p, pax, x);
+    }
   }
   unbind(s);
 }
@@ -65,13 +71,13 @@ template<class B, class S>
 void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
     const int p, const Mask<ON_HOST>& mask) {
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef SpOx<ON_HOST,B,real,host> OX;
+  typedef Ox<ON_HOST,B,real,host> OX;
   typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(rng, mask, p, pax, x);
+  Visitor::accept(rng.getHostRng(), mask, p, pax, x);
   unbind(s);
 }
 

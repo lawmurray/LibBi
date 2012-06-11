@@ -175,11 +175,6 @@ private:
    */
   RauchTungStriebelSmootherState state;
 
-  /**
-   * Is out not NULL?
-   */
-  bool haveOut;
-
   /* net sizes, for convenience */
   static const int ND = net_size<typename B::DTypeList>::value;
   static const int NR = net_size<typename B::RTypeList>::value;
@@ -220,8 +215,7 @@ template<class B, class IO1, class IO2, bi::Location CL>
 bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::RauchTungStriebelSmoother(B& m, IO1* in, IO2* out) :
     m(m),
     in(in),
-    out(out),
-    haveOut(out != NULL) {
+    out(out) {
   /* pre-condition */
   assert (in != NULL);
 
@@ -309,7 +303,7 @@ void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::correct(State<B,L>& s) {
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::output(const int k, const State<B,L>& s) {
-  if (haveOut) {
+  if (out != NULL) {
     typename temp_host_matrix<real>::type S(M,M);
     S = subrange(s.getStd(), 0, M, 0, M);
 

@@ -42,8 +42,8 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  ParticleFilterNetCDFBuffer(const Model& m, const int P,
-      const int T, const std::string& file, const FileMode mode = READ_ONLY);
+  ParticleFilterNetCDFBuffer(const Model& m, const int P, const int T,
+      const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
    * Destructor.
@@ -157,16 +157,16 @@ void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t, V1 lws) {
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Indexing out of bounds reading logweight");
+  BI_ASSERT(ret, "Indexing out of bounds reading variable logweight");
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
     ret = lwVar->get(lws1.buf(), 1, npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading logweight");
+    BI_ASSERT(ret, "Inconvertible type reading variable logweight");
     lws = lws1;
   } else {
     ret = lwVar->get(lws.buf(), 1, npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading logweight");
+    BI_ASSERT(ret, "Inconvertible type reading variable logweight");
   }
 }
 
@@ -182,7 +182,7 @@ void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const int t,
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Indexing out of bounds writing logweight");
+  BI_ASSERT(ret, "Indexing out of bounds writing variable logweight");
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
@@ -192,7 +192,7 @@ void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const int t,
   } else {
     ret = lwVar->put(lws.buf(), 1, npDim->size());
   }
-  BI_ASSERT(ret, "Inconvertible type writing logweight");
+  BI_ASSERT(ret, "Inconvertible type writing variable logweight");
 }
 
 template<class V1>
@@ -206,16 +206,16 @@ void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Indexing out of bounds reading ancestors");
+  BI_ASSERT(ret, "Indexing out of bounds reading variable ancestor");
 
   if (V1::on_device || a.inc() != 1) {
     temp_vector_type a1(a.size());
     ret = aVar->get(a1.buf(), 1, npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading ancestors");
+    BI_ASSERT(ret, "Inconvertible type reading variable ancestor");
     a = a1;
   } else {
     ret = aVar->get(a.buf(), 1, npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading ancestors");
+    BI_ASSERT(ret, "Inconvertible type reading variable ancestor");
   }
 }
 
@@ -231,7 +231,7 @@ void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(t, 0);
-  BI_ASSERT(ret, "Indexing out of bounds writing ancestors");
+  BI_ASSERT(ret, "Indexing out of bounds writing variable ancestor");
 
   if (V1::on_device || a.inc() != 1) {
     temp_vector_type a1(a.size());
@@ -241,7 +241,7 @@ void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
   } else {
     ret = aVar->put(a.buf(), 1, npDim->size());
   }
-  BI_ASSERT(ret, "Inconvertible type writing ancestors");
+  BI_ASSERT(ret, "Inconvertible type writing variable ancestor");
 }
 
 template<class V1>
@@ -254,16 +254,16 @@ void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading resamples");
+  BI_ASSERT(ret, "Indexing out of bounds reading variable resamples");
 
   if (V1::on_device || r.inc() != 1) {
     temp_vector_type r1(r.size());
     ret = rVar->get(r1.buf(), r1.size());
-    BI_ASSERT(ret, "Inconvertible type reading resamples");
+    BI_ASSERT(ret, "Inconvertible type reading variable resamples");
     r = r1;
   } else {
     ret = rVar->get(r.buf(), r.size());
-    BI_ASSERT(ret, "Inconvertible type reading resamples");
+    BI_ASSERT(ret, "Inconvertible type reading variable resamples");
   }
 }
 
@@ -278,7 +278,7 @@ void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t,
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading resamples");
+  BI_ASSERT(ret, "Indexing out of bounds reading variable resamples");
 
   if (V1::on_device || r.inc() != 1) {
     temp_vector_type r1(r.size());
@@ -288,7 +288,7 @@ void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t,
   } else {
     ret = rVar->put(r.buf(), r.size());
   }
-  BI_ASSERT(ret, "Inconvertible type reading resamples");
+  BI_ASSERT(ret, "Inconvertible type reading variable resamples");
 }
 
 #endif

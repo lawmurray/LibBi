@@ -58,6 +58,7 @@ int main(int argc, char* argv[]) {
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
   bi_omp_init(THREADS);
+  bi_ode_init();
 
   /* NetCDF error reporting */
   NcError ncErr(NcError::silent_nonfatal);

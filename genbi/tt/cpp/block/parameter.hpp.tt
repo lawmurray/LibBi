@@ -16,10 +16,11 @@
 class [% class_name %] {
 public:
   [%-create_block_typedef(block)-%]
-
+  
   [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
   [% declare_static_function('sample') %]
   [% declare_static_function('logdensity') %]
+  [% declare_static_function('maxlogdensity') %]
 };
 
 [% IF block.can_simulate %]
@@ -38,7 +39,13 @@ public:
 
 [% sig_static_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::logDensities(s, p);
+  Block[% subblock.get_id %]::logDensities(s, lp);
+  [%-END %]
+}
+
+[% sig_static_function('maxlogdensity') %] {
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, lp);
   [%-END %]
 }
 

@@ -14,13 +14,17 @@
 
 template<class B>
 void bi::bind(State<B,ON_DEVICE>& s) {
-  global_bind_d(s.get(D_VAR));
-  global_bind_dx(s.get(DX_VAR));
   global_bind_r(s.get(R_VAR));
+  global_bind_d(s.get(D_VAR));
+  global_bind_p(s.get(P_VAR));
   global_bind_f(s.get(F_VAR));
   global_bind_o(s.get(O_VAR));
-  global_bind_p(s.get(P_VAR));
+  global_bind_dx(s.get(DX_VAR));
   global_bind_px(s.get(PX_VAR));
+  global_bind_ry(s.get(RY_VAR));
+  global_bind_dy(s.get(DY_VAR));
+  global_bind_py(s.get(PY_VAR));
+  global_bind_oy(s.get(OY_VAR));
 
   const_bind(s.size());
 

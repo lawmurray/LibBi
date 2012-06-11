@@ -10,8 +10,9 @@
 
 #include "Simulator.hpp"
 #include "../updater/OYUpdater.hpp"
-#include "../buffer/Cache1D.hpp"
-#include "../buffer/Cache2D.hpp"
+#include "../cache/Cache1D.hpp"
+#include "../cache/Cache2D.hpp"
+#include "../cache/CacheVector.hpp"
 #include "../misc/Markable.hpp"
 #include "../misc/location.hpp"
 
@@ -167,6 +168,11 @@ public:
    */
   template<Location L>
   void setTime(const real t, State<B,L>& s);
+
+  /**
+   * Get relative ESS
+   */
+  real getEssRel() const;
 
   /**
    * Get output buffer.
@@ -377,17 +383,12 @@ protected:
   /**
    * Cache for log-weights.
    */
-  Cache2D<real> logWeightsCache;
+  CacheVector<typename loc_temp_vector<CL,real>::type> logWeightsCache;
 
   /**
    * Cache for ancestry.
    */
-  Cache2D<int> ancestorsCache;
-
-  /**
-   * Is out not NULL?
-   */
-  bool haveOut;
+  CacheVector<typename loc_temp_vector<CL,int>::type> ancestorsCache;
 
   /* net sizes, for convenience */
   static const int ND = net_size<typename B::DTypeList>::value;
@@ -434,16 +435,12 @@ bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::ParticleFilter(B& m, R* resam,
     oyUpdater(*obs),
     resam(resam),
     essRel(essRel),
-    out(out),
-    haveOut(out != NULL && out->size2() > 0) {
+    out(out) {
   /* pre-conditions */
   assert (essRel >= 0.0 && essRel <= 1.0);
   assert (obs != NULL);
 
   reset();
-
-  /* post-conditions */
-  assert (!(out == NULL || out->size2() == 0) || !haveOut);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
@@ -462,6 +459,11 @@ inline void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::setTime(const real t,
     State<B,L>& s) {
   state.t = t;
   sim.setTime(t, s);
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+inline real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::getEssRel() const {
+  return essRel;
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
@@ -594,7 +596,7 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::sampleTrajectory(Random& rng,
     cold = row(sim.getCache(D_VAR).getState(t), a);
     colr = row(sim.getCache(R_VAR).getState(t), a);
 
-    a = ancestorsCache.get(a, t);
+    a = *(ancestorsCache.get(t).begin() + a);
     --t;
   }
 }
@@ -694,7 +696,7 @@ template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::output(const int k,
     const State<B,L>& s, const int r, const V1 lws, const V2 as) {
-  if (haveOut) {
+  if (out != NULL) {
     sim.output(k, s);
     resamplingCache.put(k, r);
     logWeightsCache.put(k, lws);
@@ -713,7 +715,7 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::normalise(V1 lws) {
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::flush() {
   int p;
-  if (haveOut) {
+  if (out != NULL) {
     synchronize();
 
     sim.flush();
@@ -722,14 +724,14 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::flush() {
     out->writeResamples(0, resamplingCache.getPages());
     resamplingCache.clean();
 
-    assert (logWeightsCache.isValid());
     for (p = 0; p < logWeightsCache.size(); ++p) {
+      assert (logWeightsCache.isValid(p));
       out->writeLogWeights(p, logWeightsCache.get(p));
     }
     logWeightsCache.clean();
 
-    assert (ancestorsCache.isValid());
     for (p = 0; p < ancestorsCache.size(); ++p) {
+      assert (ancestorsCache.isValid(p));
       out->writeAncestors(p, ancestorsCache.get(p));
     }
     ancestorsCache.clean();

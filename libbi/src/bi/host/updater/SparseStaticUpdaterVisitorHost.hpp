@@ -67,14 +67,12 @@ inline void bi::SparseStaticUpdaterVisitorHost<B,S,L,PX,OX>::accept(
   coord_type cox;
 
   if (mask.isDense(id)) {
-    x.setStart(mask.getStart(id));
-    while (ix < target_size<target_type>::value) {
+    while (ix < mask.getSize(id)) {
       front::f(p, ix, cox, pax, x);
       ++cox;
       ++ix;
     }
   } else if (mask.isSparse(id)) {
-    x.setStart(mask.getStart(id));
     while (ix < mask.getSize(id)) {
       cox.setIndex(mask.getIndex(id, ix));
       front::f(p, ix, cox, pax, x);

@@ -49,7 +49,7 @@ public:
 
   #ifdef __CUDACC__
   /**
-   * Update state.
+   * Evaluate log-density.
    *
    * @tparam V1 Vector type.
    *
@@ -62,7 +62,7 @@ public:
   static void logDensities(State<B,ON_DEVICE>& s, V1 lp);
 
   /**
-   * Update single trajectory.
+   * Evaluate log-density for single trajectory.
    *
    * @tparam V1 Vector type.
    *

@@ -49,6 +49,20 @@ our $ACTION_ARGS = [
   }
 ];
 
+=item B<make_range>
+
+Construct an expression giving the range of the distribution.
+
+=cut
+sub make_range {
+    my $self = shift;
+    my $lower = $self->get_named_arg('lower')->clone;
+    my $upper = $self->get_named_arg('upper')->clone;
+    my $range = new Bi::Expression::BinaryOperator($upper, '-', $lower);
+    
+    return $range->simplify;
+}
+
 sub validate {
     my $self = shift;
     

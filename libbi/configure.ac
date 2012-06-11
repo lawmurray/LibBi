@@ -77,6 +77,7 @@ AC_CHECK_LIB([netcdf], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([netcdf_c++], [main], [], [AC_MSG_ERROR([required library not found])])
 
 if test x$gpu = xtrue; then
+	AC_CHECK_LIB([cuda], [main], [], [])
 	AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
 	AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])
 	AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([library not found (required with --enable-gpu)])])

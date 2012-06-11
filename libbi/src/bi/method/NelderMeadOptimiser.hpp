@@ -226,11 +226,6 @@ private:
   int M;
 
   /**
-   * Is out not NULL?
-   */
-  bool haveOut;
-
-  /**
    * Optimisation mode.
    */
   OptimiserMode mode;
@@ -301,7 +296,6 @@ bi::NelderMeadOptimiser<B,IO1,CL>::NelderMeadOptimiser(B& m, IO1* out,
     m(m),
     out(out),
     M(NP + ((initial == INCLUDE_INITIAL) ? ND : 0)),
-    haveOut(out != NULL),
     mode(mode),
     initial(initial),
     state(M) {
@@ -383,7 +377,7 @@ bool bi::NelderMeadOptimiser<B,IO1,CL>::hasConverged(const real stopSize) {
 template<class B, class IO1, bi::Location CL>
 template<bi::Location L>
 void bi::NelderMeadOptimiser<B,IO1,CL>::output(const int k, const State<B,L>& s) {
-  if (haveOut) {
+  if (out != NULL) {
     out->writeState(P_VAR, k, vec(s.get(P_VAR)));
     if (initial == INCLUDE_INITIAL) {
       out->writeState(D_VAR, k, row(s.get(D_VAR), 0));

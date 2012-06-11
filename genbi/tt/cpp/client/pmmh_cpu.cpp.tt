@@ -12,7 +12,6 @@
 #include "model/[% class_name %].hpp"
 
 #include "bi/cuda/cuda.hpp"
-#include "bi/math/ode.hpp"
 #include "bi/state/State.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleMarginalMetropolisHastings.hpp"
@@ -26,14 +25,11 @@
 #include "bi/method/MetropolisResampler.hpp"
 #include "bi/method/KernelResampler.hpp"
 [% END %]
+#include "bi/ode/IntegratorConstants.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-
-#ifdef __CUDACC__
-#include "bi/cuda/device.cuh"
-#endif
 
 #include "boost/typeof/typeof.hpp"
 
@@ -59,10 +55,10 @@ int main(int argc, char* argv[]) {
   
   /* bi init */
   #ifdef __CUDACC__
-  int dev = chooseDevice(ID);
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
   bi_omp_init(THREADS);
+  bi_ode_init();
 
   /* NetCDF error reporting */
   NcError ncErr(NcError::silent_nonfatal);

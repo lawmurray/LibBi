@@ -12,10 +12,10 @@ namespace bi {
 /**
  * Visitor for StaticSamplerHost.
  */
-template<class B, class S, class PX, class OX>
+template<class B, class S, class R1, class PX, class OX>
 class StaticSamplerVisitorHost {
 public:
-  static void accept(Random& rng, const int p, const PX& pax, OX& x);
+  static void accept(R1& rng, const int p, const PX& pax, OX& x);
 };
 
 /**
@@ -23,10 +23,10 @@ public:
  *
  * Base case of StaticSamplerVisitorHost.
  */
-template<class B, class PX, class OX>
-class StaticSamplerVisitorHost<B,empty_typelist,PX,OX> {
+template<class B, class R1, class PX, class OX>
+class StaticSamplerVisitorHost<B,empty_typelist,R1,PX,OX> {
 public:
-  static void accept(Random& rng, const int p, const PX& pax, OX& x) {
+  static void accept(R1& rng, const int p, const PX& pax, OX& x) {
     //
   }
 };
@@ -36,8 +36,8 @@ public:
 #include "../../typelist/pop_front.hpp"
 #include "../../traits/target_traits.hpp"
 
-template<class B, class S, class PX, class OX>
-void bi::StaticSamplerVisitorHost<B,S,PX,OX>::accept(Random& rng, const int p, const PX& pax, OX& x) {
+template<class B, class S, class R1, class PX, class OX>
+void bi::StaticSamplerVisitorHost<B,S,R1,PX,OX>::accept(R1& rng, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -50,7 +50,7 @@ void bi::StaticSamplerVisitorHost<B,S,PX,OX>::accept(Random& rng, const int p, c
     ++cox;
     ++ix;
   }
-  StaticSamplerVisitorHost<B,pop_front,PX,OX>::accept(rng, p, pax, x);
+  StaticSamplerVisitorHost<B,pop_front,R1,PX,OX>::accept(rng, p, pax, x);
 }
 
 #endif

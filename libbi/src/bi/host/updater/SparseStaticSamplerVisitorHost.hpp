@@ -47,14 +47,12 @@ void bi::SparseStaticSamplerVisitorHost<B,S,PX,OX>::accept(Random& rng, const Ma
   int ix = 0;
   coord_type cox;
   if (mask.isDense(id)) {
-    x.setStart(mask.getStart(id));
     while (ix < target_size<target_type>::value) {
       front::samples(rng, p, ix, cox, pax, x);
       ++cox;
       ++ix;
     }
   } else if (mask.isSparse(id)) {
-    x.setStart(mask.getStart(id));
     while (ix < mask.getSize(id)) {
       cox.setIndex(mask.getIndex(id, ix));
       front::samples(rng, p, ix, cox, pax, x);

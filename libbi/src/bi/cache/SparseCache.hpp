@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_SPARSECACHE_HPP
-#define BI_BUFFER_SPARSECACHE_HPP
+#ifndef BI_CACHE_SPARSECACHE_HPP
+#define BI_CACHE_SPARSECACHE_HPP
 
 #include "../math/loc_matrix.hpp"
 

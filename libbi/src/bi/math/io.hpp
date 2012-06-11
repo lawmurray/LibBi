@@ -10,10 +10,12 @@
 #ifndef BI_MATH_IO_HPP
 #define BI_MATH_IO_HPP
 
-#include <iostream>
-
 #include "vector.hpp"
 #include "matrix.hpp"
+#include "temp_vector.hpp"
+#include "temp_matrix.hpp"
+
+#include <iostream>
 
 /**
  * Output host vector.
@@ -23,7 +25,7 @@
  * @param X Host matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_vector_handle<T1>& x) {
+std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1>& x) {
   int i;
   for (i = 0; i < x.size(); ++i) {
     stream << x(i);
@@ -42,7 +44,7 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_vector_handle<T1>&
  * @param X Host matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_handle<T1>& X) {
+std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1>& X) {
   int i, j;
   for (i = 0; i < X.size1(); ++i) {
     for (j = 0; j < X.size2(); ++j) {
@@ -66,7 +68,7 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_handle<T1>&
  * @param X Device matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_handle<T1>& x) {
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1>& x) {
   using namespace bi;
 
   typename temp_host_vector<T1>::type z(x);
@@ -90,7 +92,7 @@ std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_handle<T1>& 
  * @param X Device matrix.
  */
 template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_handle<T1>& X) {
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1>& X) {
   using namespace bi;
 
   typename temp_host_matrix<T1>::type Z(X);

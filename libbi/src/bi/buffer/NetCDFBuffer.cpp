@@ -24,13 +24,12 @@ NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
     ncFile = new NcFile(file.c_str(), NcFile::Write);
     break;
   case NEW:
-    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0,
-        NcFile::Offset64Bits);
+    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Netcdf4);
     ncFile->set_fill(NcFile::NoFill);
     break;
   case REPLACE:
     ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0,
-        NcFile::Offset64Bits);
+        NcFile::Netcdf4);
     ncFile->set_fill(NcFile::NoFill);
     break;
   default:
@@ -82,6 +81,33 @@ NcVar* NetCDFBuffer::createVar(const Var* var) {
   }
   if (hasDim("np")) {
     dims.push_back(mapDim("np"));
+  }
+
+  ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),
+      &dims[0]);
+  BI_ERROR(ncVar != NULL && ncVar->is_valid(), "Could not create variable " <<
+      var->getName());
+
+  return ncVar;
+}
+
+NcVar* NetCDFBuffer::createFlexiVar(const Var* var) {
+  /* pre-condition */
+  assert (var != NULL && (var->getType() == D_VAR ||
+      var->getType() == R_VAR || var->getType() == F_VAR));
+
+  NcVar* ncVar;
+  std::vector<const NcDim*> dims;
+  int i;
+
+  if (hasDim("ns")) {
+    dims.push_back(mapDim("ns"));
+  }
+  for (i = 0; i < var->getNumDims(); ++i) {
+    dims.push_back(mapDim(var->getDim(i)->getName().c_str()));
+  }
+  if (hasDim("nrp")) {
+    dims.push_back(mapDim("nrp"));
   }
 
   ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),

@@ -12,8 +12,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * Kernel function for RK4IntegratorGPU.
  *
  * @tparam B Model type.

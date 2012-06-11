@@ -17,7 +17,7 @@ log = action.get_named_arg('log').eval_const;
 [% create_eval_var_target(action) %]
 
 /**
- * Action: gaussian.
+ * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
@@ -30,6 +30,7 @@ public:
   [% declare_action_static_function('std') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
 };
 
 #include "bi/math/pi.hpp"
@@ -64,9 +65,10 @@ public:
 
 [% sig_action_static_function('logdensity') %] {
   real mu, sigma, xy;
-    
+
   mean(p, cox, pax, mu);
   std(p, cox, pax, sigma);
+  
   xy = pax.template fetch_alt<target_type>(p, ix);
 
   [% IF log %]
@@ -74,6 +76,24 @@ public:
   [% ELSE %]
   lp += BI_REAL(-0.5)*BI_MATH_POW((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
   [% END %]
+  x.template put<target_type>(p, ix, xy);
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  real sigma, xy;
+  xy = pax.template fetch_alt<target_type>(p, ix);
+  
+  [% IF (std.is_common && action.get_target.get_var.get_type == 'obs') || (!log && std.is_common) %]
+  std(p, cox, pax, sigma);
+  [% IF log %]
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma*xy);
+  [% ELSE %]
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
+  [% END %]
+  [% ELSE %]
+  lp = BI_REAL(1.0/0.0);
+  [% END %]
+  
   x.template put<target_type>(p, ix, xy);
 }
 

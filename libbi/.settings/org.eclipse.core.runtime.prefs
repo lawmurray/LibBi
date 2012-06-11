@@ -1,4 +1,3 @@
-#Thu Jul 09 10:27:43 WST 2009
 content-types/enabled=false
 content-types/org.eclipse.cdt.core.cxxHeader/file-names=.cuh
 content-types/org.eclipse.cdt.core.cxxSource/file-names=.cu

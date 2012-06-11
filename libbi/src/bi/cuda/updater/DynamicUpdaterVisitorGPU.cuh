@@ -8,8 +8,6 @@
 #ifndef BI_CUDA_UPDATER_DYNAMICUPDATERVISITORGPU_CUH
 #define BI_CUDA_UPDATER_DYNAMICUPDATERVISITORGPU_CUH
 
-#include "../../typelist/typelist.hpp"
-
 namespace bi {
 /**
  * Visitor for dynamic update, on GPU.

@@ -48,14 +48,18 @@ void bi::StaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, V1 lp) {
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef StaticLogDensityVisitorHost<B,S,PX,OX> Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p)
-  for (p = 0; p < s.size(); ++p) {
-    Visitor::accept(p, pax, x, lp(p));
+  #pragma omp parallel
+  {
+    PX pax;
+    OX x;
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); ++p) {
+      Visitor::accept(p, pax, x, lp(p));
+    }
   }
   unbind(s);
 }

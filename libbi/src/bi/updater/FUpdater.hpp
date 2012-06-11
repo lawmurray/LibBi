@@ -11,8 +11,8 @@
 #include "../math/matrix.hpp"
 #include "../primitive/pinned_allocator.hpp"
 #include "../misc/Markable.hpp"
-#include "../buffer/SparseCache.hpp"
-#include "../buffer/Cache1D.hpp"
+#include "../cache/SparseCache.hpp"
+#include "../cache/Cache1D.hpp"
 
 namespace bi {
 /**

@@ -344,6 +344,36 @@ sub process_args {
     $self->set_named_args($args);
 }
 
+=item B<ensure_const>(I<name>)
+
+Ensure that named argument I<name> is a constant expression.
+
+=cut
+sub ensure_const {
+    my $self = shift;
+    my $name = shift;
+    
+    if (!(!$self->is_named_arg($name) || $self->get_named_arg($name)->is_const)) {
+        my $action = $self->get_name;
+        die("argument '$name' to action '$action' must be a constant expression\n");
+    }
+}
+
+=item B<ensure_common>(I<name>)
+
+Ensure that named argument I<name> is a common expression.
+
+=cut
+sub ensure_common {
+    my $self = shift;
+    my $name = shift;
+    
+    if (!(!$self->is_named_arg($name) || $self->get_named_arg($name)->is_common)) {
+        my $action = $self->get_name;
+        die("argument '$name' to action '$action' must be a common expression\n");
+    }
+}
+
 =item B<ensure_scalar>(I<name>)
 
 Ensure that named argument I<name> is a scalar.
