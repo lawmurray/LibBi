@@ -19,7 +19,6 @@
  * MAGMA.
  */
 typedef int magma_int_t;
-#include "auxiliary.h"
 #include "magma_s.h"
 #include "magma_d.h"
 
