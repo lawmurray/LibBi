@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
 
   [% IF client.get_named_arg('filter') == 'anpf' && client.get_named_arg('joint_adaptation') == '1' %]
   sampler->sample_together(rng, T, s, filter, inInit, NSAMPLES);
-  [% ELSIF client.get_named_arg('conditional_pf') == '1' %]
+  [% ELSIF client.get_named_arg('conditional-pf') == '1' %]
   sampler->sample(rng, T, s, filter, inInit, NSAMPLES, CONDITIONED);
   [% ELSE %]
   sampler->sample(rng, T, s, filter, inInit, NSAMPLES);
