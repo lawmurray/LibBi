@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <getopt.h>
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
 #else
 #define LOCATION ON_HOST
@@ -39,15 +39,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
 
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* model */
   model_type m;
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   KalmanSmootherNetCDFBuffer* out;
-  if (OUTPUT) {
+  if (ENABLE_OUTPUT) {
     out = new KalmanSmootherNetCDFBuffer(m, in.size1(), in.size2()/2,
         OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
@@ -67,17 +68,27 @@ int main(int argc, char* argv[]) {
   /* state */
   State<model_type,LOCATION> s(m, in.size1());
 
-  /* smooth */
+  /* smoother */
   BOOST_AUTO(smoother, (RTSSmootherFactory<LOCATION>::create(m, &in, out)));
+  
+  /* smooth */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
   TicToc timer;
+
   smoother->smooth(s);
-  delete smoother;
+  synchronize();
 
   /* output timing results */
-  if (TIME) {
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
+  delete smoother;
   delete out;
 
   return 0;

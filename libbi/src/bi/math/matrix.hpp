@@ -9,7 +9,7 @@
 #define BI_MATH_MATRIX_HPP
 
 #include "../host/math/matrix.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/matrix.hpp"
 #endif
 

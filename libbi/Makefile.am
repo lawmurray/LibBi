@@ -1,20 +1,34 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
 # compile and link flags
-AM_CPPFLAGS = $(OPENMP_CPPFLAGS)
+AM_CPPFLAGS = $(OPENMP_CPPFLAGS) $(CUDA_CPPFLAGS) -DTHRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_OMP
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
-AM_LDFLAGS = $(OPENMP_LDFLAGS)
+AM_LDFLAGS = $(OPENMP_LDFLAGS) $(CUDA_LDFLAGS)
 ACLOCAL_AMFLAGS = -I m4
 
 # CUDA files setup
-CUDA = nvcc
-CUDAFLAGS = -w -arch sm_13 -Xcompiler="$(OPENMP_CXXFLAGS)"
-#  -Xptxas="-v"
+if ENABLE_MPI
+if ENABLE_VAMPIR
+NVCC = mpicxx-vt --vt:cxx "perl nvcc_wrapper.pl nvcc" --vt:inst manual --vt:mpi
+else
+NVCC = perl nvcc_wrapper.pl nvcc `mpicxx -showme:compile`
+endif
+else
+NVCC = perl nvcc_wrapper.pl nvcc
+endif
+
+NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+NVCC_CXXFLAGS = $(CUDA_CXXFLAGS) -w -arch sm_13 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+
+if ENABLE_INTEL
+  NVCC_CXXFLAGS += -ccbin icc -Xcompiler=-gcc
+endif
 
 # libraries
 lib_LTLIBRARIES = libbi.la
 libbi_la_SOURCES = \
   src/bi/bi.cpp \
+  src/bi/init.cpp \
   src/bi/model/Coord.cpp \
   src/bi/buffer/FlexiParticleFilterNetCDFBuffer.cpp \
   src/bi/buffer/FlexiSimulatorNetCDFBuffer.cpp \
@@ -23,6 +37,7 @@ libbi_la_SOURCES = \
   src/bi/buffer/OptimiserNetCDFBuffer.cpp \
   src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \
   src/bi/buffer/ParticleMCMCNetCDFBuffer.cpp \
+  src/bi/buffer/SMC2NetCDFBuffer.cpp \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
   src/bi/buffer/SparseInputBuffer.cpp \
   src/bi/buffer/SparseInputNetCDFBuffer.cpp \
@@ -31,53 +46,77 @@ libbi_la_SOURCES = \
   src/bi/host/math/lapack.cpp \
   src/bi/host/math/qrupdate.cpp \
   src/bi/host/ode/IntegratorConstants.cpp \
+  src/bi/host/random/RandomHost.cpp \
   src/bi/method/MetropolisResampler.cpp \
   src/bi/method/MultinomialResampler.cpp \
   src/bi/method/StratifiedResampler.cpp \
   src/bi/misc/omp.cpp \
+  src/bi/mpi/mpi.cpp \
   src/bi/random/Random.cpp
-  
+
 if ENABLE_SSE
 libbi_la_SOURCES += \
   src/bi/sse/sse_shared_host.cpp
 endif
-  
-if ENABLE_GPU
+
+if ENABLE_CUDA
 libbi_la_SOURCES += \
   src/bi/cuda/device.cu \
   src/bi/cuda/math/magma.cu \
   src/bi/cuda/math/cublas.cu \
-  src/bi/cuda/random/Random.cu \
+  src/bi/cuda/random/RandomGPU.cu \
   src/bi/cuda/random/RandomKernel.cu
 endif
 
+#if ENABLE_MPI
+#libbi_la_SOURCES += 
+#endif
+
 include_HEADERS = \
   src/bi/bi.hpp
-  
+
 # other
 dist_noinst_SCRIPTS = autogen.sh
 
 # command line options
-if ENABLE_DOUBLE
-CUDAFLAGS += -DENABLE_DOUBLE
-CXXFLAGS += -DENABLE_DOUBLE
+if ENABLE_SINGLE
+CPPFLAGS += -DENABLE_SINGLE
 endif
 
-if ENABLE_GPU
-CUDAFLAGS += -DENABLE_GPU
-CXXFLAGS += -DENABLE_GPU -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP
-else
-CUDAFLAGS += -Xcompiler -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP
-CXXFLAGS += -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP
+if ENABLE_CUDA
+CPPFLAGS += -DENABLE_CUDA
 endif
 
 if ENABLE_SSE
-CXXFLAGS += -DENABLE_SSE -msse3
+CPPFLAGS += -DENABLE_SSE
+CXXFLAGS += -msse3
+endif
+
+if ENABLE_MKL
+CXXFLAGS += -DENABLE_MKL
+endif
+
+if ENABLE_MPI
+CPPFLAGS += -DENABLE_MPI
+endif
+
+if ENABLE_VAMPIR
+CPPFLAGS += -DENABLE_VAMPIR -DVTRACE
 endif
 
 # suffix rules for CUDA files
 .cu.o:
-	$(CUDA) -c $(CUDAFLAGS) $(CPPFLAGS) -o $@ $<
+	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \
+	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $$depbase.Tpo $< && \
+	$(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	echo -n 'src/' > $$depbase.Po && \
+	cat $$depbase.Tpo >> $$depbase.Po && \
+	rm -f $$depbase.Tpo
 
 .cu.lo:
-	$(LIBTOOL) --tag=CC --mode=compile ./nvcc_wrapper.pl $(CUDA) -c $(CUDAFLAGS) $(CPPFLAGS) -o $@ $<
+	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.lo$$||'` && \
+	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $$depbase.Tpo $< && \
+	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	echo -n 'src/' > $$depbase.Plo && \
+	cat $$depbase.Tpo >> $$depbase.Plo && \
+	rm -f $$depbase.Tpo

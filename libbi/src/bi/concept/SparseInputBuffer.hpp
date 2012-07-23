@@ -29,7 +29,7 @@ struct SparseInputBuffer {
   /**
    * Reset to beginning of buffer.
    */
-  void reset() = 0;
+  void rewind() = 0;
 
   /**
    * Get current time.

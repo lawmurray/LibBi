@@ -409,6 +409,17 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, c
   //
   [%-END %]
 }
+
+template<class T1, bi::Location L, class V1>
+void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
+  [%-IF model.is_block(toplevel)-%]
+  Block[% model.get_block(toplevel).get_id %]::maxLogDensities(t1, t2, onDelta(t1, t2), s, lp);
+  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
+  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(t1, t2, s, lp);
+  [% ELSE %]
+  //
+  [%-END %]
+}
 [% END %]
 
 [%-FOREACH toplevel IN STATIC_BLOCKS %]
@@ -440,6 +451,17 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% c
   Block[% model.get_block(toplevel).get_id %]::logDensities(s, lp);
   [% ELSIF MAP_BLOCKS.exists(toplevel) %]
   [% MAP_BLOCKS.${toplevel} | to_camel_case %]LogDensities(s, lp);
+  [% ELSE %]
+  //
+  [%-END %]
+}
+
+template<bi::Location L, class V1>
+void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s, V1 lp) {
+  [%-IF model.is_block(toplevel) %]
+  Block[% model.get_block(toplevel).get_id %]::maxLogDensities(s, lp);
+  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
+  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -478,6 +500,18 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% c
   Block[% model.get_block(toplevel).get_id %]::logDensities(s, mask, lp);
   [% ELSIF MAP_BLOCKS.exists(toplevel) %]
   [% MAP_BLOCKS.${toplevel} | to_camel_case %]LogDensities(s, mask, lp);
+  [% ELSE %]
+  //
+  [%-END %]
+}
+
+template<bi::Location L, class V1>
+void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s,
+    const bi::Mask<L>& mask, V1 lp) {
+  [%-IF model.is_block(toplevel) %]
+  Block[% model.get_block(toplevel).get_id %]::maxLogDensities(s, mask, lp);
+  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
+  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(s, mask, lp);
   [% ELSE %]
   //
   [%-END %]

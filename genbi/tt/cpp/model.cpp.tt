@@ -15,6 +15,7 @@
  * $Date$
  */
 #include "[% class_name %].hpp"
+#include "../options.hpp"
 
 using namespace bi;
 

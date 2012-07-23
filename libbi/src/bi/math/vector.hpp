@@ -9,7 +9,7 @@
 #define BI_MATH_VECTOR_HPP
 
 #include "../host/math/vector.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/vector.hpp"
 #endif
 

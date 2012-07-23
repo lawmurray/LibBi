@@ -120,6 +120,7 @@ protected:
    * Create variable in NetCDF file.
    *
    * @param var Variable in model for which to create variable in NetCDF file.
+   * @param nr Should @c nr dimension be forced, even for static variables?
    *
    * @return The variable.
    *
@@ -136,7 +137,7 @@ protected:
    *
    * @li if it exists, the @c ns dimension.
    */
-  NcVar* createVar(const Var* var);
+  NcVar* createVar(const Var* var, const bool nr = false);
 
   /**
    * Create variable in NetCDF file using the flexible format.

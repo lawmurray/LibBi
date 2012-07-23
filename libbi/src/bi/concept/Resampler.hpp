@@ -22,7 +22,7 @@ struct Resampler {
    *
    * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
-   * @tparam L Location.
+   * @tparam O1 Compatible copy() type.
    *
    * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry.
@@ -30,8 +30,9 @@ struct Resampler {
    *
    * The weights @p lws are set to be uniform after the resampling.
    */
-  template<class V1, class V2, Location L>
-  void resample(V1& lws, V2& as, State<B,L>& s);
+  template<class V1, class V2, class O1>
+  void resample(V1& lws, V2& as, O1& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Resample state with proposal weights.
@@ -39,7 +40,7 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    * @tparam V3 Integral vector type.
-   * @tparam L Location.
+   * @tparam O1 Compatible copy() type.
    *
    * @param qlws Proposal log-weights.
    * @param[in,out] lws Log-weights.
@@ -50,15 +51,16 @@ struct Resampler {
    * are then set as importance weights, such that if \f$a^i = p\f$,
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const V1& qlws, V2& lws, V3& as, State<B,L>& s);
+  template<class V1, class V2, class O1>
+  void resample(const V1& qlws, V2& lws, V3& as, O1& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Resample state with conditioned outcome.
    *
    * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
-   * @tparam L Location.
+   * @tparam O1 Compatible copy() type.
    *
    * @param a Conditioned outcome for single ancestor.
    * @param[in,out] lws Log-weights.
@@ -72,8 +74,9 @@ struct Resampler {
    *
    * The weights @p lws are set to be uniform after the resampling.
    */
-  template<class V1, class V2, Location L>
-  void resample(const int a, V1& lws, V2& as, State<B,L>& s);
+  template<class V1, class V2, class O1>
+  void resample(const int a, V1& lws, V2& as, O1& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Resample state with proposal weights and conditioned outcome.
@@ -81,7 +84,7 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    * @tparam V3 Integral vector type.
-   * @tparam L Location.
+   * @tparam O1 Compatible copy() type.
    *
    * @param a Conditioned outcome for single ancestor.
    * @param qlws Proposal log-weights.
@@ -98,7 +101,38 @@ struct Resampler {
    * are then set as importance weights, such that if \f$a^i = p\f$,
    * \f$w^i = 1/q^p\f$, where \f$q^p\f$ is the proposal weight.
    */
-  template<class V1, class V2, class V3, Location L>
-  void resample(const int a, const V1& qlws, V2& lws, V3& as, State<B,L>& s);
+  template<class V1, class V2, class V3, class O1>
+  void resample(const int a, const V1& qlws, V2& lws, V3& as, O1& s)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select ancestors.
+   *
+   * @tparam V1 Floating point vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] as Ancestors.
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select offspring.
+   *
+   * @tparam V1 Floating point vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] os Offspring.
+   * @param P Total number of offspring.
+   */
+  template<class V1, class V2>
+  void offspring(Random& rng, const V1 lws, V2 os, const int P);
+      throw (ParticleFilterDegeneratedException);
+
 };
 }

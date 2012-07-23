@@ -26,14 +26,14 @@ use Carp::Assert;
 use Bi::Model::Dim;
 
 our $VAR_ARGS = [
-  {
-    name => 'io',
-    default => 1
-  },
-  {
-      name => 'tmp',
-      default => 0
-  }
+    {
+        name => 'io',
+        default => 1
+    },
+    {
+        name => 'tmp',
+        default => 0
+    }
 ];
 
 =item B<new>(I<name>, I<dims>, I<args>, I<named_args>)
@@ -42,11 +42,11 @@ Constructor.
 
 =over 4
 
-=item B<name>
+=item I<name>
 
 Unique name of the variable.
 
-=item B<dims>
+=item I<dims>
 
 Ordered list of the dimensions associated with the variable, as
 L<Bi::Model::Dim> objects.

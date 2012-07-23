@@ -38,7 +38,7 @@ public:
   static void update(State<B,ON_HOST>& s, const Mask<ON_HOST>& mask,
       const int p);
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /**
    * Update state.
    *

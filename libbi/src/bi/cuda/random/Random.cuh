@@ -8,11 +8,11 @@
 #ifndef BI_CUDA_RANDOM_RANDOM_CUH
 #define BI_CUDA_RANDOM_RANDOM_CUH
 
-inline bi::Rng<bi::ON_DEVICE>& bi::Random::getDevRng() {
+inline bi::RngGPU& bi::Random::getDevRng() {
   return devRngs[blockIdx.x*blockDim.x + threadIdx.x];
 }
 
-inline void bi::Random::setDevRng(const Rng<ON_DEVICE>& rng) {
+inline void bi::Random::setDevRng(const RngGPU& rng) {
   devRngs[blockIdx.x*blockDim.x + threadIdx.x] = rng;
 }
 

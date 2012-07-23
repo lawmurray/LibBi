@@ -107,13 +107,13 @@ public:
    *
    * @param rng Random number generator.
    * @param T Time to which to filter.
-   * @param x0 Starting state.
+   * @param theta0 Parameters.
    * @param[out] s State.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class V1>
-  real filter(Random& rng, const real T, const V1 x0, State<B,L>& s)
+  real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s)
       throw (CholeskyException);
 
   /**
@@ -176,11 +176,11 @@ public:
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
-   * @param x0 Starting state.
+   * @param theta0 Parameters.
    * @param s State.
    */
   template<Location L, class V1>
-  void init(Random& rng, const V1 x0, State<B,L>& s);
+  void init(Random& rng, const V1 theta0, State<B,L>& s);
 
   /**
    * Predict.
@@ -380,7 +380,7 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
-    const real T, const V1 x0, State<B,L>& s)
+    const real T, const V1 theta0, State<B,L>& s)
     throw (CholeskyException) {
   /* pre-conditions */
   assert (T >= state.t);
@@ -388,9 +388,9 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
   int n = 0;
   state.ll = 0.0;
 
-  init(rng, x0, s);
+  init(rng, theta0, s);
   while (state.t < T) {
-    if (x0.size() == NP || state.t > 0) {
+    if (theta0.size() == NP || state.t > 0) {
       predict(T, s);
     } else {
       predictFixed(T, s);
@@ -398,7 +398,7 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
     output(n, s);
     ++n;
 
-    if (x0.size() == NP || state.t > 0.0) {
+    if (theta0.size() == NP || state.t > 0.0) {
       correct(s);
     } else {
       correctFixed(s);
@@ -436,13 +436,8 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
-    const V1 x0, State<B,L>& s) {
-  sim.init(rng, x0, s);
-  if (x0.size() == ND + NP) {
-    /* initial state fixed, so use zero covariance */
-    BOOST_AUTO(S, s.getStd());
-    S.clear();
-  }
+    const V1 theta0, State<B,L>& s) {
+  sim.init(rng, theta0, s);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
@@ -468,6 +463,11 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
   while (state.t < to) {
     sim.advance(to, s);
     state.t = sim.getTime();
+  }
+
+  /* update observations */
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
+    oyUpdater.update(s);
   }
 
   /* post-condition */
@@ -503,8 +503,7 @@ template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s)
     throw (CholeskyException) {
   /* update observations at current time */
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
-    oyUpdater.update(s);
+  if (oyUpdater.getTime() == getTime()) {
     state.W = oyUpdater.getMask().size();
 
     //BOOST_AUTO(mask, oyUpdater.getMask());
@@ -524,7 +523,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s)
     columns(S, M, W).clear();
     sim.observe(s);
 
-    BOOST_AUTO(mu1, vec(columns(s.Xdn, start, size)));
+    BOOST_AUTO(mu1, vec(columns(s.getDyn(), start, size)));
     BOOST_AUTO(mu2, vec(s.get(O_VAR)));
     BOOST_AUTO(U1, subrange(S, start, P*size, start, size));
     BOOST_AUTO(U2, subrange(S, P*M, P*W, M, W));

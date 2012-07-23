@@ -16,7 +16,7 @@
     NUM_LONG_ARGS
   };
   
-  [% TYPES = { 'int' => 'int', 'float' => 'real', 'string' => 'std::string' } %]
+  [% TYPES = { 'int' => 'int', 'float' => 'real', 'bool' => 'bool', 'string' => 'std::string' } %]
   [%-FOREACH param IN client.get_params %]
   [% TYPES.${param.type} %] [% param.name.replace('-', '_') | upper-%]
   [%-IF param.exists('default')-%]
@@ -54,6 +54,8 @@
         [% param.name.replace('-', '_') | upper %] = atoi(optarg);
         [%-ELSIF param.type == 'float' %]
         [% param.name.replace('-', '_') | upper %] = atof(optarg);
+        [%-ELSIF param.type == 'bool' %]
+        [% param.name.replace('-', '_') | upper %] = atoi(optarg);
         [%-ELSE %]
         [% param.name.replace('-', '_') | upper %] = std::string(optarg);
         [%-END %]

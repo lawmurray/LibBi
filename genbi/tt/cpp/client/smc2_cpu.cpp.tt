@@ -1,0 +1,216 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev: 2596 $
+## $Date: 2012-05-24 14:32:32 +0000 (Thu, 24 May 2012) $
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/state/State.hpp"
+#include "bi/random/Random.hpp"
+#include "bi/method/SMC2.hpp"
+[% IF client.get_named_arg('filter') == 'ekf' %]
+#include "bi/method/ExtendedKalmanFilter.hpp"
+[% ELSE %]
+#include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/AdaptiveNParticleFilter.hpp"
+#include "bi/method/StratifiedResampler.hpp"
+#include "bi/method/MultinomialResampler.hpp"
+#include "bi/method/MetropolisResampler.hpp"
+#include "bi/method/KernelResampler.hpp"
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
+[% END %]
+#include "bi/ode/IntegratorConstants.hpp"
+#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
+#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/SMC2NetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+#ifdef ENABLE_MPI
+#include "bi/mpi/method/DistributedResampler.hpp"
+#endif
+
+#include "boost/typeof/typeof.hpp"
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <getopt.h>
+
+#ifdef ENABLE_CUDA
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+using namespace bi;
+
+int main(int argc, char* argv[]) {
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+  
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  #endif
+  
+  /* NetCDF init */
+  NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* model */
+  model_type m;
+
+  /* state and intermediate results */
+  State<model_type,LOCATION> s(m, P);
+  P = s.size(); // may change according to implementation
+
+  /* inputs */
+  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
+  if (!INPUT_FILE.empty()) {
+    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS);
+  }
+  if (!INIT_FILE.empty()) {
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+  }
+  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
+  const int Y = inObs.countUniqueTimes(T);
+
+  /* filter output */      
+  [% IF client.get_named_arg('filter') == 'ekf' %]
+  KalmanFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+    outFilter = new KalmanFilterNetCDFBuffer(m, P, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
+  }
+  [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+  FlexiParticleFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+    outFilter = new FlexiParticleFilterNetCDFBuffer(m, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
+  }
+  [% ELSE %]
+  ParticleFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+    outFilter = new ParticleFilterNetCDFBuffer(m, P, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
+  }
+  [% END %]
+  
+  /* outputs */
+  SMC2NetCDFBuffer* out = NULL;
+  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
+      out = new SMC2NetCDFBuffer(m, NSAMPLES, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+  }
+
+  /* filter */
+  [% IF client.get_named_arg('filter') == 'ekf' %]
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory<LOCATION>::create(m, inInput, &inObs, outFilter)));
+  [% ELSE %]
+    /* x-particles resampler */
+    [% IF client.get_named_arg('resampler') == 'kernel' %]
+    real h;
+    if (B_ABS > 0.0) {
+      h = B_ABS;
+    } else {
+      h = B_REL*hopt(N, P);
+    }
+    StratifiedResampler base(ENABLE_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler resam(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler resam(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler resam(ENABLE_SORT);
+    [% END %]
+
+    /* particle filter */
+    [% IF client.get_named_arg('filter') == 'pf1' %]
+    BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
+    [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+      /* stopper */
+      [% IF client.get_named_arg('stopper') == 'deterministic' %]
+      Stopper stopper(P);
+      [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+      SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+      MinimumESSStopper stopper(MIN_ESS_REL, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+      StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'var' %]
+      VarStopper stopper(REL_THRESHOLD, MAX_P);
+      [% END %]
+    BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory<LOCATION>::create(m, &resam, &stopper, ESS_REL, BLOCK_P, inInput, &inObs, outFilter)));
+    [% ELSE %]
+    BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
+    [% END %]
+  [% END %]
+  
+  /* theta-particles resampler */
+  [% IF mpi %]
+    [% IF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler thetabase(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler thetabase(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler thetabase(ENABLE_SORT);
+    [% END %]
+    DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase);
+  [% ELSE %]
+    [% IF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler thetaresam(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler thetaresam(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler thetaresam(ENABLE_SORT);
+    [% END %]
+  [% END %]
+     
+  /* sampler */
+  BOOST_AUTO(sampler, SMC2Factory<LOCATION>::create(m, &thetaresam, out));
+
+  /* sample */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+
+  sampler->sample(rng, T, s, filter, inInit, NSAMPLES, NMOVES,
+      SAMPLE_ESS_REL, ENABLE_LOCAL_MOVE, LOCAL_MOVE_SCALE);
+  synchronize();
+  
+  /* output timing results */
+  if (ENABLE_TIMING) {
+    std::cout << timer.toc() << std::endl;
+  }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
+
+  delete filter;
+  delete sampler;
+  delete inInput;
+  delete inInit;
+  delete outFilter;
+  delete out;
+}

@@ -39,7 +39,7 @@ void bi::kernelSparseStaticSampler(Random rng, const Mask<ON_DEVICE> mask) {
   PX pax;
   OX x;
 
-  Rng<ON_DEVICE> rng1(rng.getDevRng()); // local copy, faster
+  RngGPU rng1(rng.getDevRng()); // local copy, faster
   Visitor::accept(rng1, mask, pax, x);
   rng.setDevRng(rng1);
 }

@@ -10,7 +10,7 @@
 
 #include "temp_vector.hpp"
 #include "../host/math/sim_temp_vector.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/sim_temp_vector.hpp"
 #endif
 
@@ -38,7 +38,7 @@ struct sim_temp_vector {
    */
   typedef typename VM1::value_type T;
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<VM1::on_device,
       temp_gpu_vector<T>,
       temp_host_vector<T> >::type::type type;

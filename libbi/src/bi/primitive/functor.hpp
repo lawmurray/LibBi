@@ -73,7 +73,7 @@ struct square_functor : public std::unary_function<T,T> {
 template<typename T>
 struct sqrt_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return CUDA_SQRT(x);
+    return BI_MATH_SQRT(x);
   }
 };
 
@@ -85,7 +85,7 @@ struct sqrt_functor : public std::unary_function<T,T> {
 template<typename T>
 struct rcp_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return CUDA_POW(x, -1);
+    return BI_MATH_POW(x, -1);
   }
 };
 
@@ -363,7 +363,7 @@ struct pow_constant_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return CUDA_POW(x, k);
+    return BI_MATH_POW(x, k);
   }
 };
 

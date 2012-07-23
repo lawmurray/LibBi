@@ -33,12 +33,9 @@ public:
    * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param initial Initial condition mode -- include or exclude initial
-   * conditions in output.
    */
   OptimiserNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY,
-      const InitialConditionMode initial = EXCLUDE_INITIAL);
+      const FileMode mode = READ_ONLY);
 
   /**
    * Destructor.
@@ -85,19 +82,13 @@ public:
 protected:
   /**
    * Set up structure of NetCDF file.
-   *
-   * @param initial Initial condition mode -- include or exclude initial
-   * conditions in output.
    */
-  void create(const InitialConditionMode initial);
+  void create();
 
   /**
    * Map structure of existing NetCDF file.
-   *
-   * @param initial Initial condition mode -- include or exclude initial
-   * conditions in output.
    */
-  void map(const InitialConditionMode initial);
+  void map();
 
   /**
    * Model.

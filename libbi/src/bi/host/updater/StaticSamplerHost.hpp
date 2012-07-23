@@ -42,7 +42,7 @@ public:
 
 template<class B, class S>
 void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s) {
-  typedef Rng<ON_HOST> R1;
+  typedef RngHost R1;
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef StaticSamplerVisitorHost<B,S,R1,PX,OX> Visitor;
@@ -67,7 +67,7 @@ void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s) {
 template<class B, class S>
 void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
     const int p) {
-  typedef Rng<ON_HOST> R1;
+  typedef RngHost R1;
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef StaticSamplerVisitorHost<B,S,R1,PX,OX> Visitor;

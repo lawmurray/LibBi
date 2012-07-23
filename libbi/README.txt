@@ -27,6 +27,11 @@ For GPU support, the following additional packages are required:
   * CUDA 4.0 or later (including CUBLAS and CURAND) <www.nvidia.com/cuda>,
   * MAGMA 0.2 or later <icl.cs.utk.edu/magma/>.
 
+For MPI support, the following additional packages are required:
+
+  * An MPI implementation,
+  * Boost.MPI and Boost.Serialization <www.boost.org/>.
+
 The following packages are optional for building documentation:
 
   * Doxygen <www.doxygen.org> for building source code documentation.

@@ -57,7 +57,7 @@ inline cublasDiagType_t cublas_diag(const char diag) {
  * Synchronizes on the stream associated with the CUBLAS handle.
  */
 inline void synchronize(cublasHandle_t handle) {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   cudaStream_t stream;
   cublasGetStream(handle, &stream);
   synchronize(stream);

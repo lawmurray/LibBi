@@ -40,7 +40,9 @@ vanilla install of the Eclipse IDE for C/C++ (available at
 additional plugins are supported, and recommended. These are, along with the
 URLs of their update sites:
 \begin{itemize}
-\item Subclipse (Subversion integration) \hyperref[hyper][http://subclipse.tigris.org/update]{http://subclipse.tigris.org/update}
+\item Subclipse (Subversion integration)
+  \hyperref[hyper][http://subclipse.tigris.org/update]{http://subclipse.tigris.org/update\_1.8.x}
+  (change 1.8 to match your Subversion version)
 
 \item Eclox (Doxygen integration) \hyperref[hyper][http://download.gna.org/eclox/update]{http://download.gna.org/eclox/update}
 
@@ -62,6 +64,10 @@ out as Eclipse projects.
 For LibBi, you will need to run \textsf{./autogen.sh} then
 \textsf{./configure} from the command line before you can build from within
 Eclipse.
+
+A custom code style is available in the \textsf{custom\_code\_style.xml} file,
+and should be used. This may be loaded via the \textsf{Window > Preferences}
+dialog, using the \textsf{Import...} button under \textsf{C/C++ > Code Style}.
 
 
 %%%%
@@ -239,9 +245,7 @@ following additional recommended pertain to developers:
   should be suffixed with a single underscore.
 \end{itemize}
 
-\subsection{Other considerations}
-
-\subsubsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
+\subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
 
 It is important to maintain reproducibility of results under the same random
 number seed\index{random number seed}, typically passed using the
@@ -301,3 +305,22 @@ conditional will fix this:
       reject();
     \}
 }\end{alltt}
+
+\subsection{Shallow copy, deep assignment}
+
+Typically, classes in LibBi follow a ``shallow copy, deep assignment''
+idiom. The idiom is most apparent in the case of vector and matrix types. A
+copy of a vector or matrix object is shallow -- the new object merely contains
+a pointer to the memory buffer underlying the existing object. An assignment
+of a vector or matrix is deep, however -- the contents of the memory buffer
+underlying the existing object is copied into that of the new object.
+
+Often the default copy constructor is sufficient to achieve a shallow copy,
+while an override of the default assignment operator may be necessary to
+achieve deep assignment.
+
+\emph{Generic} copy constructors and assignment operators are also
+common. These are templated overloads of the default versions which accept, as
+arguments, objects of some class other than the containing class. When a
+generic copy constructor or assignment operator is used, the default copy
+constructor or assignment operator should always be overridden also.

@@ -23,6 +23,8 @@ use base 'Bi::Visitor';
 use warnings;
 use strict;
 
+use Bi::Visitor::TargetReplacer;
+
 use Carp::Assert;
 use Bi::Utility qw(set_union set_intersect push_unique);
 
@@ -151,7 +153,7 @@ sub visit {
                     $self->get_model->add_var($tmp);
         
                     # update references to this variable in children
-                    $self->replace_targets($node, $var, $tmp);
+                    Bi::Visitor::TargetReplacer->evaluate($node, $var, $tmp);
                         
                     # add copy back to commit block
                     $action = Bi::Model::Action->new_copy_action(
@@ -176,46 +178,6 @@ sub visit {
     }
     
     return $result;
-}
-
-=item B<replace_targets>(I<block>, I<from>, I<to>)
-
-Recursively replace any actions in I<block> that target variable
-I<from> to instead target variable I<to>.
-
-=over 4
-
-=item I<block> Root L<Bi::Model::Block> through which to recursively
-descend.
-
-=item I<from> L<Bi::Model::Var> to replace.
-
-=item I<to> L<Bi::Model::Var> with which to replace.
-
-=back
-
-No return value.
-
-=cut
-sub replace_targets {
-    my $self = shift;
-    my $block = shift;
-    my $from = shift;
-    my $to = shift;
-    
-    my $action;
-    my $sub_block;
-    my $ident;
-    
-    foreach $action (@{$block->get_actions}) {
-        if ($action->get_target->get_var->equals($from)) {
-            $ident = new Bi::Expression::VarIdentifier($to, $action->get_target->get_offsets);
-            $action->set_target($ident);
-        }
-    }
-    foreach $sub_block (@{$block->get_blocks}) {
-        $self->replace_targets($sub_block, $from, $to);
-    }
 }
 
 1;

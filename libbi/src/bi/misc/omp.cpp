@@ -12,7 +12,7 @@
 BI_THREAD int bi_omp_tid;
 BI_THREAD int bi_omp_max_threads;
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 BI_THREAD cublasHandle_t bi_omp_cublas_handle;
 BI_THREAD cudaStream_t bi_omp_cuda_stream;
 #endif
@@ -38,7 +38,7 @@ void bi_omp_init(const int threads) {
   {
     bi_omp_tid = omp_get_thread_num();
     bi_omp_max_threads = max_threads;
-    #ifdef ENABLE_GPU
+    #ifdef ENABLE_CUDA
     CUBLAS_CHECKED_CALL(cublasCreate(&bi_omp_cublas_handle));
     CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
     #endif
@@ -48,7 +48,7 @@ void bi_omp_init(const int threads) {
 void bi_omp_term() {
   #pragma omp parallel
   {
-    #ifdef ENABLE_GPU
+    #ifdef ENABLE_CUDA
     CUBLAS_CHECKED_CALL(cublasDestroy(bi_omp_cublas_handle));
     CUDA_CHECKED_CALL(cudaStreamDestroy(bi_omp_cuda_stream));
     #endif

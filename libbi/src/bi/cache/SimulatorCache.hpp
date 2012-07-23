@@ -149,6 +149,14 @@ inline void bi::SimulatorCache<L>::writeState(const int t, const M2 s) {
     Cache::resize(t + 1);
   }
 
+  int ps1 = pages[t]->size1();
+  int ps2 = pages[t]->size2();
+  int ss1 = s.size1();
+  int ss2 = s.size2();
+  if (ps1 != ss1 || ps2 != ss2) {
+    pages[t]->resize(ss1,ss2);
+  }
+
   *pages[t] = s;
   setValid(t);
   setDirty(t);

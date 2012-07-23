@@ -9,7 +9,7 @@
 #define BI_MATH_TEMPVECTOR_HPP
 
 #include "../host/math/temp_vector.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/temp_vector.hpp"
 #endif
 

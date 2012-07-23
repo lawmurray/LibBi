@@ -520,7 +520,7 @@ struct multi_potrs_impl {
 #include "../primitive/stuttered_range.hpp"
 
 #include "../host/math/multi_operation.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/multi_operation.hpp"
 #endif
 

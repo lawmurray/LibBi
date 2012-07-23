@@ -12,8 +12,6 @@
 
 namespace bi {
 /**
- * @internal
- *
  * ResamplerDeviceImpl::permute() kernel.
  *
  * @tparam T1 Integer type.
@@ -25,7 +23,30 @@ namespace bi {
  * @param P Number of particles.
  */
 template<class T1, class T2>
-CUDA_FUNC_GLOBAL void kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is, const int P);
+CUDA_FUNC_GLOBAL void kernelResamplerPrePermute(T1* __restrict__ as,
+    T2* __restrict__ is, const int P);
+
+/**
+ * ResamplerDeviceImpl::permute() kernel.
+ *
+ * @tparam T1 Integer type.
+ * @tparam T2 Signed integer type.
+ *
+ * @param as[in,out] Ancestry to be permuted.
+ * @param is[in,out] Workspace vector. All elements should be initialised to
+ * -1.
+ * @param P Number of particles.
+ *
+ * This function is only correct for @p as consisting of indices,
+ * <tt>0..P-1</tt>, in all other cases it returns a valid ancestry vector,
+ * but one that does not necessarily satisfy the requirement that, if @c i
+ * appears at least once in the ancestry vector, then <tt>as[i] == i</tt>.
+ * Running #kernelResamplerPrePermute with the same arguments before calling
+ * kernelResamplerPermute provides this guarantee.
+ */
+template<class T1, class T2>
+CUDA_FUNC_GLOBAL void kernelResamplerPermute(T1* __restrict__ as,
+    T2* __restrict__ is, const int P);
 
 /**
  * @internal
@@ -44,23 +65,30 @@ CUDA_FUNC_GLOBAL void kernelResamplerCopy(const T1* __restrict__ as, M1 s);
 }
 
 template<class T1, class T2>
-void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is, const int P) {
+void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
+    const int P) {
   int id = blockIdx.x*blockDim.x + threadIdx.x;
-  T1 a;
   if (id < P) {
-    a = as[id];
+    T1 a = as[id];
+    if (a < P) {
+      atomicCAS(&is[a], -1, id);
+    }
   }
-  __syncthreads();
+}
+
+template<class T1, class T2>
+void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
+    const int P) {
+  int id = blockIdx.x*blockDim.x + threadIdx.x;
   if (id < P) {
+    T1 a = as[id];
     int claimedBy, next;
 
     /* first try to claim same place as ancestor index */
-    claimedBy = atomicCAS(&is[a], -1, id);
+    next = (a < P) ? a : id;
+    claimedBy = atomicCAS(&is[next], -1, id);
 
-    if (claimedBy < 0) {
-      // claim successful, done
-      id = a;
-    } else {
+    if (claimedBy != id && claimedBy >= 0) {
       // claim unsuccessful, try to claim own place...
       claimedBy = id;
       do {
@@ -68,11 +96,10 @@ void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is, const 
         claimedBy = atomicCAS(&is[next], -1, id);
         // ...and continue following trace until free space found
       } while (claimedBy >= 0);
-      id = next;
     }
 
     /* write ancestor into claimed place */
-    as[id] = a;
+    as[next] = a;
   }
 }
 

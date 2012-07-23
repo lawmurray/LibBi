@@ -182,28 +182,28 @@ public:
    */
   //@{
   /**
-   * Select ancestor of each particle given offspring.
+   * Compute ancestor vector from offspring vector.
    *
    * @tparam V1 Integral vector type.
    * @tparam V2 Integral vector type.
    *
    * @param os Offspring.
-   * @param[out] as Ancestry.
+   * @param[out] as Ancestors.
    */
   template<class V1, class V2>
-  static void ancestors(const V1 os, V2 as);
+  static void offspringToAncestors(const V1 os, V2 as);
 
   /**
-   * Compute number of offspring of each particle given ancestors.
+   * Compute offspring vector from ancestors vector.
    *
    * @tparam V1 Integral vector type.
    * @tparam V2 Integral vector type.
    *
-   * @param as Ancestry.
+   * @param as Ancestors.
    * @param[out] os Offspring.
    */
   template<class V1, class V2>
-  static void offspring(const V1 as, V2 os);
+  static void ancestorsToOffspring(const V1 as, V2 os);
 
   /**
    * Permute ancestors to permit in-place copy.
@@ -235,13 +235,13 @@ public:
   static void correct(const V1 as, const V2 qlws, V3 lws);
 
   /**
-   * Replicate and eliminate particles based on ancestry.
+   * In-place copy based on ancestry.
    *
    * @tparam V1 Vector type.
    * @tparam M1 Matrix type.
    *
    * @param as Ancestry.
-   * @param[in,out] X State.
+   * @param[in,out] X Matrix. Rows of the matrix are copied.
    *
    * The copy is performed in-place. For each particle @c i that is to be
    * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
@@ -253,7 +253,7 @@ public:
   static void copy(const V1 as, M1 X);
 
   /**
-   * Replicate and eliminate particles based on ancestry.
+   * In-place copy based on ancestry.
    *
    * @tparam V1 Vector type.
    * @tparam B Model type.
@@ -261,20 +261,38 @@ public:
    *
    * @param as Ancestry.
    * @param[in,out] s State.
-   *
-   * The copy is performed in-place. For each particle @c i that is to be
-   * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
-   * @c i. This ensures that all particles are either read or (over)written,
-   * but not both. Use permute() to ensure that an ancestry satisfies this
-   * constraint.
    */
   template<class V1, class B, Location L>
   static void copy(const V1 as, State<B,L>& s);
 
   /**
+   * In-place copy based on ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam T1 Assignable type.
+   *
+   * @param as Ancestry,
+   * @oaram[in,out] v STL vector.
+   */
+  template<class V1, class T1>
+  static void copy(const V1 as, std::vector<T1*>& v);
+
+  /**
+   * Compute effective sample size (ESS) of log-weights.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @tparam lws Log-weights.
+   *
+   * @return ESS.
+   */
+  template<class V1>
+  static typename V1::value_type ess(const V1 lws);
+
+  /**
    * Compute squared error of ancestry.
    *
-   * @tparam V1 Floating point vector type.
+   * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
    *
    * @param lws Log-weights.
@@ -297,7 +315,7 @@ public:
   /**
    * Compute log-likelihood of ancestry.
    *
-   * @tparam V1 Floating point vector type.
+   * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
    *
    * @param lws Log-weights.
@@ -309,7 +327,6 @@ public:
   template<class V1, class V2>
   static typename V1::value_type loglikelihood(const V1 lws, const V2 os);
   //@}
-
 };
 
 }
@@ -334,7 +351,7 @@ public:
 #include "boost/mpl/if.hpp"
 
 template<class V1, class V2>
-void bi::Resampler::ancestors(const V1 os, V2 as) {
+void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
   /* pre-conditions */
   assert (sum_reduce(os) == as.size());
 
@@ -352,7 +369,7 @@ void bi::Resampler::ancestors(const V1 os, V2 as) {
 }
 
 template<class V1, class V2>
-void bi::Resampler::offspring(const V1 as, V2 os) {
+void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
   /* pre-conditions */
   assert (os.size() == as.size());
 
@@ -420,6 +437,25 @@ void bi::Resampler::copy(const V1 as, State<B,L>& s) {
   s.setRange(s.start(), std::max(s.size(), as.size()));
   copy(as, s.getDyn());
   s.setRange(s.start(), as.size());
+}
+
+template<class V1, class T1>
+void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
+  /* pre-condition */
+  assert (!V1::on_device);
+
+  int i;
+  for (i = 0; i < as.size(); ++i) {
+    if (i != as(i)) {
+      v[i]->resize(v[as(i)]->size());
+      *v[i] = *v[as(i)];
+    }
+  }
+}
+
+template<class V1>
+typename V1::value_type bi::Resampler::ess(const V1 lws) {
+  return ess_reduce(lws);
 }
 
 template<class V1, class V2>

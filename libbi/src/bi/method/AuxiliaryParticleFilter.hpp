@@ -55,7 +55,7 @@ public:
    * @copydoc ParticleFilter::filter(Random&, const real, const V1, State<B,L>&)
    */
   template<Location L, class V1>
-  real filter(Random& rng, const real T, const V1 x0, State<B,L>& s);
+  real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s);
 
   /**
    * @copydoc ParticleFilter::filter(Random&, const real, State<B,:>&, M1, M1)
@@ -97,15 +97,14 @@ public:
    * @tparam V2 Vector type.
    *
    * @param rng Random number generator.
-   * @param x0 Fixed starting point, as vector containing parameters, then
-   * optionally followed by state variables.
+   * @param theta0 Parameters.
    * @param s State.
    * @param[out] lw1s Stage 1 log-weights.
    * @param[out] lw2s Stage 2 log-weights.
    * @param[out] as Ancestry.
    */
   template<Location L, class V1, class V2, class V3>
-  void init(Random& rng, const V1 x0, State<B,L>& s, V2 lw1s, V2 lw2s, V3 as);
+  void init(Random& rng, const V1 theta0, State<B,L>& s, V2 lw1s, V2 lw2s, V3 as);
 
   /**
    * Resample particles.
@@ -248,7 +247,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
-    const real T, const V1 x0, State<B,L>& s) {
+    const real T, const V1 theta0, State<B,L>& s) {
   /* pre-conditions */
   assert (T >= this->getTime());
 
@@ -258,7 +257,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
   typename loc_temp_vector<L,int>::type as(P);
 
   real ll = 0.0;
-  init(rng, x0, s, lw1s, lw2s, as);
+  init(rng, theta0, s, lw1s, lw2s, as);
   while (this->getTime() < T) {
     r = resample(rng, T, s, lw1s, lw2s, as);
     predict(rng, T, s);
@@ -326,12 +325,12 @@ void bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng,
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2, class V3>
 void bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng,
-    const V1 x0, State<B,L>& s, V2 lw1s, V2 lw2s, V3 as) {
+    const V1 theta0, State<B,L>& s, V2 lw1s, V2 lw2s, V3 as) {
   /* pre-condition */
   assert (lw1s.size() == lw2s.size());
   assert (lw2s.size() == as.size());
 
-  ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(rng, x0, s, lw1s, as);
+  ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(rng, theta0, s, lw1s, as);
   set_elements(lw2s, 0.0);
 }
 
@@ -349,7 +348,7 @@ bool bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::resample(Random& rng,
     lw1s = lw2s;
     if (this->resam != NULL && to > this->state.t) {
       this->lookahead(T, s, lw1s);
-      if (this->essRel >= 1.0 || ess_reduce(lw1s) <= s.size()*this->essRel) {
+      if (this->essRel >= 1.0 || this->resam->ess(lw1s) <= s.size()*this->essRel) {
         this->resam->resample(rng, lw1s, lw2s, as, s);
         r = true;
       } else {
@@ -378,7 +377,7 @@ bool bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::resample(Random& rng,
     const real to = this->oyUpdater.getNextTime();
     if (this->resam != NULL && to > this->state.t) {
       this->lookahead(T, s, lw1s);
-      if (this->essRel >= 1.0 || ess_reduce(lw1s) <= s.size()*this->essRel) {
+      if (this->essRel >= 1.0 || this->resam->ess(lw1s) <= s.size()*this->essRel) {
         this->resam->resample(rng, a, lw1s, lw2s, as, s);
         r = true;
       } else {

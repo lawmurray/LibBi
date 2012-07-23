@@ -17,6 +17,11 @@ The following (non-standard) Perl modules are required:
   * File::Slurp,
   * Getopt::ArgvFile.
 
+The following packages are required to do anything useful with GenBi:
+
+  * a C++ compiler,
+  * the GNU Autotools: autoconf, automake and libtool <www.gnu.org/software/>.
+
 The following packages are optional for building the manual and visualising
 models:
 

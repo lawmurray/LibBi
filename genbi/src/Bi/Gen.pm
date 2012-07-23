@@ -36,16 +36,20 @@ use Bi::Model;
 use Bi::Expression;
 use Bi::Visitor::ToCpp;
 
-=item B<new>(I<ttdir>)
+=item B<new>(I<ttdirs>, I<outdir>)
 
 Constructor.
 
 =over 4
 
-=item I<ttdirs> Array reference, of directories containing Perl Template
+=item I<ttdirs> 
+
+Array reference, of directories containing Perl Template
 Toolkit templates, or scalar giving single directory.
 
-=item I<outdir> Directory in which to output results.
+=item I<outdir> (optional)
+
+Directory in which to output results.
 
 =back
 

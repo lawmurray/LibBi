@@ -11,10 +11,8 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/Simulator.hpp"
-#include "bi/ode/IntegratorConstants.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/SimulatorNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -24,7 +22,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#ifndef ENABLE_GPU
+#ifndef ENABLE_CUDA
 #define LOCATION ON_HOST
 #else
 #define LOCATION ON_DEVICE
@@ -33,21 +31,23 @@
 using namespace bi;
 
 int main(int argc, char* argv[]) {
+
   /* model type */
   typedef [% class_name %] model_type;
   
   /* command line arguments */
   [% read_argv(client) %]
 
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -70,22 +70,32 @@ int main(int argc, char* argv[]) {
 
   /* output */
   SimulatorNetCDFBuffer* out = NULL;
-  if (OUTPUT && !OUTPUT_FILE.empty()) {
+  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
     out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE,
         NetCDFBuffer::REPLACE);
   }
 
-  /* simulate */
-  TicToc timer;
+  /* simulator */
   BOOST_AUTO(sim, (SimulatorFactory<LOCATION>::create(m, inInput, out)));
+
+  /* simulate */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+  
   sim->simulate(rng, T, s, inInit);
-  delete sim;
+  synchronize();
 
   /* output timing results */
-  if (TIME) {
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
+  delete sim;
   delete out;
   delete inInput;
   delete inInit;

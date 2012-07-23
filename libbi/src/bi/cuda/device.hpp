@@ -17,7 +17,6 @@ namespace bi {
  * @return Id of device.
  */
 int chooseDevice(const int rank);
-
 /**
  * Compute the ideal number of threads on the device. This is heuristic,
  * currently twice the ideal number of threads per block

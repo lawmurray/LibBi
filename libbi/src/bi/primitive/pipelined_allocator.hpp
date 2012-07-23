@@ -94,7 +94,7 @@ public:
   void empty();
 
 private:
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /**
    * Buffer lists, indexed by thread.
    */
@@ -116,7 +116,7 @@ private:
 
 #include "../misc/omp.hpp"
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 template<class A>
 std::vector<std::list<typename bi::pipelined_allocator<A>::pointer> > bi::pipelined_allocator<A>::bufs;
 
@@ -129,7 +129,7 @@ std::vector<std::list<cudaEvent_t> > bi::pipelined_allocator<A>::evts;
 
 template<class A>
 inline void bi::pipelined_allocator<A>::deallocate(pointer p, size_type num) {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   init();
   clean();
   add(p, num);
@@ -140,7 +140,7 @@ inline void bi::pipelined_allocator<A>::deallocate(pointer p, size_type num) {
 
 template<class A>
 void bi::pipelined_allocator<A>::init() {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   if (bi_omp_max_threads > (int)evts.size()) {
     /* this outer conditional avoids the critical section most the time, but
      * multiple threads may get this far */
@@ -159,7 +159,7 @@ void bi::pipelined_allocator<A>::init() {
 
 template<class A>
 void bi::pipelined_allocator<A>::clean() {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   BOOST_AUTO(evtIter, evts[bi_omp_tid].begin());
   BOOST_AUTO(bufIter, bufs[bi_omp_tid].begin());
   BOOST_AUTO(sizeIter, sizes[bi_omp_tid].begin());
@@ -184,7 +184,7 @@ void bi::pipelined_allocator<A>::clean() {
 
 template<class A>
 void bi::pipelined_allocator<A>::add(pointer buf, size_type num) {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /* record event so as to know when buffer can be deallocated */
   cudaEvent_t evt;
   CUDA_CHECKED_CALL(cudaEventCreateWithFlags(&evt, cudaEventDisableTiming));
@@ -198,7 +198,7 @@ void bi::pipelined_allocator<A>::add(pointer buf, size_type num) {
 
 template<class A>
 inline void bi::pipelined_allocator<A>::empty() {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   BOOST_AUTO(evtIter, evts[bi_omp_tid].begin());
   BOOST_AUTO(bufIter, bufs[bi_omp_tid].begin());
   BOOST_AUTO(sizeIter, sizes[bi_omp_tid].begin());

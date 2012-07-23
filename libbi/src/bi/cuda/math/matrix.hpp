@@ -16,6 +16,10 @@
 #include "../../misc/compile.hpp"
 #include "../../typelist/equals.hpp"
 
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/base_object.hpp"
+#include "boost/serialization/array.hpp"
+
 namespace bi {
 /**
  * Lightweight view of matrix on device.
@@ -301,9 +305,31 @@ public:
    * Set all entries to zero.
    */
   CUDA_FUNC_HOST void clear();
+
+private:
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
+
 } BI_ALIGN(16);
 
 }
+
+#include "../../host/math/temp_matrix.hpp"
 
 template<class T>
 inline bi::gpu_matrix_reference<T>::gpu_matrix_reference(
@@ -466,6 +492,40 @@ void bi::gpu_matrix_reference<T>::clear() {
   }
 }
 
+template<class T>
+template<class Archive>
+void bi::gpu_matrix_reference<T>::save(Archive& ar, const unsigned version) const {
+  size_type rows = this->size1(), cols = this->size2(), i, j;
+
+  typename temp_host_matrix<T>::type tmp(rows, cols);
+  tmp = *this;
+  synchronize();
+
+  ar & rows & cols;
+  for (j = 0; j < cols; ++j) {
+    for (i = 0; i < rows; ++i) {
+      ar & tmp(i,j);
+    }
+  }
+}
+
+template<class T>
+template<class Archive>
+void bi::gpu_matrix_reference<T>::load(Archive& ar, const unsigned version) {
+  size_type rows, cols, i, j;
+
+  ar & rows & cols;
+  assert (this->size1() == rows && this->size2() == cols);
+
+  typename temp_host_matrix<T>::type tmp(rows, cols);
+  for (j = 0; j < cols; ++j) {
+    for (i = 0; i < rows; ++i) {
+      ar & tmp(i,j);
+    }
+  }
+  *this = tmp;
+}
+
 namespace bi {
 /**
  * Matrix in device memory. Stored densely in column-major ordering.
@@ -586,6 +646,17 @@ private:
    * copy constructor, true otherwise.
    */
   bool own;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void serialize(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  friend class boost::serialization::access;
 
 } BI_ALIGN(16);
 
@@ -735,6 +806,12 @@ void bi::gpu_matrix<T,A>::swap(gpu_matrix<T,A>& o) {
   std::swap(this->ptr, o.ptr);
   std::swap(this->ld, o.ld);
   std::swap(this->own, o.own);
+}
+
+template<class T, class A>
+template<class Archive>
+void bi::gpu_matrix<T,A>::serialize(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<gpu_matrix_reference<T> >(*this);
 }
 
 #endif

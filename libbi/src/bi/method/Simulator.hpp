@@ -129,7 +129,12 @@ public:
   void simulate(const real T, State<B,L>& s, IO3* inInit);
 
   /**
-   * Reset to starting point.
+   * Rewind to time zero.
+   */
+  void rewind();
+
+  /**
+   * Rewind and unmark.
    */
   void reset();
 
@@ -192,12 +197,11 @@ public:
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
-   * @param x0 Fixed starting point, as vector containing parameters, then
-   * optionally followed by state variables.
+   * @param theta0 Parameters.
    * @param s State.
    */
   template<Location L, class V1>
-  void init(Random& rng, const V1 x0, State<B,L>& s);
+  void init(Random& rng, const V1 theta0, State<B,L>& s);
 
   /**
    * Initialise for deterministic simulation, with fixed starting point.
@@ -205,12 +209,11 @@ public:
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
-   * @param x0 Fixed starting point, as vector containing parameters, then
-   * optionally followed by state variables.
+   * @param theta0 Parameters.
    * @param s State.
    */
   template<Location L, class V1>
-  void init(const V1 x0, State<B,L>& s);
+  void init(const V1 theta0, State<B,L>& s);
 
   /**
    * Advance stochastic model forward.
@@ -321,6 +324,10 @@ public:
    */
   void restore();
 
+  void top();
+
+  void pop();
+
 private:
   /**
    * Model.
@@ -430,6 +437,15 @@ inline void bi::Simulator<B,IO1,IO2,CL>::setTime(const real t,
     fUpdater->setTime(t, s);
   }
 }
+
+template<class B, class IO1, class IO2, bi::Location CL>
+inline void bi::Simulator<B,IO1,IO2,CL>::rewind() {
+  state.t = 0.0;
+  if (fUpdater != NULL) {
+    fUpdater->rewind();
+  }
+}
+
 template<class B, class IO1, class IO2, bi::Location CL>
 inline void bi::Simulator<B,IO1,IO2,CL>::reset() {
   Markable<SimulatorState>::unmark();
@@ -546,15 +562,15 @@ void bi::Simulator<B,IO1,IO2,CL>::init(State<B,L>& s, IO3* inInit) {
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class V1>
-void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 x0,
+void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta0,
     State<B,L>& s) {
   /* pre-condition */
-  assert (x0.size() == NP || x0.size() == NP + ND);
+  assert (theta0.size() == NP || theta0.size() == NP + ND);
 
-  vec(s.get(P_VAR)) = subrange(x0, 0, NP);
+  vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
   m.parameterPostSamples(rng, s);
-  if (x0.size() == NP + ND) {
-    set_rows(s.get(D_VAR), subrange(x0, NP, ND));
+  if (theta0.size() == NP + ND) {
+    set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
   } else {
     m.initialSamples(rng, s);
   }
@@ -562,14 +578,14 @@ void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 x0,
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class V1>
-void bi::Simulator<B,IO1,IO2,CL>::init(const V1 x0, State<B,L>& s) {
+void bi::Simulator<B,IO1,IO2,CL>::init(const V1 theta0, State<B,L>& s) {
   /* pre-condition */
-  assert (x0.size() == NP || x0.size() == NP + ND);
+  assert (theta0.size() == NP || theta0.size() == NP + ND);
 
-  vec(s.get(P_VAR)) = subrange(x0, 0, NP);
+  vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
   m.parameterPostSimulate(s);
-  if (x0.size() == NP + ND) {
-    set_rows(s.get(D_VAR), subrange(x0, NP, ND));
+  if (theta0.size() == NP + ND) {
+    set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
   } else {
     m.initialSimulate(s);
   }
@@ -813,6 +829,22 @@ void bi::Simulator<B,IO1,IO2,CL>::restore() {
   Markable<SimulatorState>::restore(state);
   if (fUpdater != NULL) {
     fUpdater->restore();
+  }
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::top() {
+  Markable<SimulatorState>::top(state);
+  if (fUpdater != NULL) {
+    fUpdater->top();
+  }
+}
+
+template<class B, class IO1, class IO2, bi::Location CL>
+void bi::Simulator<B,IO1,IO2,CL>::pop() {
+  Markable<SimulatorState>::pop();
+  if (fUpdater != NULL) {
+    fUpdater->pop();
   }
 }
 

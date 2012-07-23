@@ -492,7 +492,7 @@ void sort_by_key(V1 keys, V2 values);
  * NaN values do not contribute to the sum.
  */
 template<class V1, class V2>
-void exclusive_scan_sum_exp(const V1 x, V2 X);
+void exclusive_scan_sum_expu(const V1 x, V2 X);
 
 /**
  * Sum-exp inclusive scan, unnormalised.
@@ -512,7 +512,7 @@ void exclusive_scan_sum_exp(const V1 x, V2 X);
  * NaN values do not contribute to the sum.
  */
 template<class V1, class V2>
-void inclusive_scan_sum_exp(const V1 x, V2 X);
+void inclusive_scan_sum_expu(const V1 x, V2 X);
 
 /**
  * Gather.
@@ -523,6 +523,15 @@ void inclusive_scan_sum_exp(const V1 x, V2 X);
  */
 template<class V1, class V2, class V3>
 void gather(const V1 map, const V2 input, V3 result);
+
+template<class V1, class V2, class V3>
+void scatter(const V1 input, const V2 map, V3 result);
+
+template<class V1>
+int find(const V1 input, const typename V1::value_type y);
+
+template<class V1>
+bool equal(const V1 input1, const V1 input2);
 
 //@}
 
@@ -537,6 +546,7 @@ void gather(const V1 map, const V2 input, V3 result);
 #include "thrust/copy.h"
 #include "thrust/sort.h"
 #include "thrust/gather.h"
+#include "thrust/equal.h"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -812,7 +822,7 @@ inline void bi::sort_by_key(V1 keys, V2 values) {
 }
 
 template<class V1, class V2>
-inline void bi::exclusive_scan_sum_exp(const V1 x, V2 X) {
+inline void bi::exclusive_scan_sum_expu(const V1 x, V2 X) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
@@ -827,7 +837,7 @@ inline void bi::exclusive_scan_sum_exp(const V1 x, V2 X) {
 }
 
 template<class V1, class V2>
-inline void bi::inclusive_scan_sum_exp(const V1 x, V2 X) {
+inline void bi::inclusive_scan_sum_expu(const V1 x, V2 X) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
@@ -848,6 +858,36 @@ inline void bi::gather(const V1 map, const V2 input, V3 result) {
         result.fast_begin());
   } else {
     thrust::gather(map.begin(), map.end(), input.begin(), result.begin());
+  }
+}
+
+template<class V1, class V2, class V3>
+inline void bi::scatter(const V1 input, const V2 map, V3 result) {
+  if (map.inc() == 1 && input.inc() == 1 && result.inc() == 1) {
+    thrust::scatter(input.fast_begin(), input.fast_end(), map.fast_begin(),
+        result.fast_begin());
+  } else {
+    thrust::scatter(input.begin(), input.end(), map.begin(), result.begin());
+  }
+}
+
+template<class V1>
+inline int bi::find(const V1 input, const typename V1::value_type y) {
+
+  if (input.inc() == 1) {
+    return thrust::find(input.fast_begin(), input.fast_end(), y) - input.fast_begin();
+  } else {
+    return thrust::find(input.begin(), input.end(), y) - input.begin();
+  }
+}
+
+template<class V1>
+inline bool bi::equal(const V1 input1, const V1 input2) {
+
+  if (input1.inc() == 1 && input2.inc() == 1) {
+    return thrust::equal(input1.fast_begin(), input1.fast_end(), input2.fast_begin());
+  } else {
+    return thrust::equal(input1.begin(), input1.end(), input2.begin());
   }
 }
 

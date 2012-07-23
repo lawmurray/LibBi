@@ -41,8 +41,8 @@ void bi::SparseStaticSamplerGPU<B,S>::update(Random& rng,
   if (mask.size() > 0) {
     dim3 Dg, Db;
 
-    Db.x = std::min(deviceIdealThreadsPerBlock(), P); // over trajectories
-    Dg.x = (P + Db.x - 1)/Db.x;
+    Db.x = deviceIdealThreadsPerBlock();
+    Dg.x = (std::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
     bind(s);
     Random rng1(rng);

@@ -45,7 +45,7 @@ public:
 template<class B, class S>
 void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask) {
-  typedef Rng<ON_HOST> R1;
+  typedef RngHost R1;
   typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
   typedef Ox<ON_HOST,B,real,host> OX;
   typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> Visitor;

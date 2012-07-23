@@ -9,7 +9,7 @@
 #define BI_MATH_TEMPMATRIX_HPP
 
 #include "../host/math/temp_matrix.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/temp_matrix.hpp"
 #endif
 

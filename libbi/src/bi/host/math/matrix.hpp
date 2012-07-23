@@ -13,6 +13,10 @@
 #include "../../primitive/cross_pitched_range.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/base_object.hpp"
+#include "boost/serialization/array.hpp"
+
 namespace bi {
 /**
  * Lightweight view of matrix on host.
@@ -108,6 +112,24 @@ public:
    */
   size_type ld;
 
+private:
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -175,6 +197,35 @@ inline bool bi::host_matrix_handle<T>::same(const M1& o) const {
       on_device == M1::on_device && this->buf() == o.buf() &&
       this->size1() == o.size1() && this->size2() == o.size2() &&
       this->lead() == o.lead());
+}
+
+template<class T>
+template<class Archive>
+void bi::host_matrix_handle<T>::load(Archive& ar, const unsigned version) {
+  size_type rows, cols, i, j;
+
+  ar & rows & cols;
+  assert (this->size1() == rows && this->size2() == cols);
+
+  for (j = 0; j < cols; ++j) {
+    for (i = 0; i < rows; ++i) {
+      ar & (*this)(i,j);
+    }
+  }
+}
+
+template<class T>
+template<class Archive>
+void bi::host_matrix_handle<T>::save(Archive& ar, const unsigned version) const {
+  size_type rows = this->size1(), cols = this->size2(), i, j;
+
+  ar & rows & cols;
+
+  for (j = 0; j < cols; ++j) {
+    for (i = 0; i < rows; ++i) {
+      ar & (*this)(i,j);
+    }
+  }
 }
 
 namespace bi {
@@ -299,7 +350,6 @@ public:
   void clear();
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -310,7 +360,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -473,23 +522,11 @@ inline void bi::host_matrix_reference<T>::clear() {
   }
 }
 
-#ifndef __CUDACC__
 template<class T>
 template<class Archive>
-inline void bi::host_matrix_reference<T>::serialize(Archive& ar,
-    const unsigned version) {
-  size_type j, rows = this->rows, cols = this->cols;
-
-  ar & rows;
-  ar & cols;
-  assert (rows == this->rows && cols == this->cols);
-
-  for (j = 0; j < this->size2(); ++j) {
-    vector_reference_type col(column(*this, j));
-    ar & col;
-  }
+void bi::host_matrix_reference<T>::serialize(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<host_matrix_handle<T> >(*this);
 }
-#endif
 
 namespace bi {
 /**
@@ -621,7 +658,6 @@ private:
    */
   bool own;
 
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -632,7 +668,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 }
 
@@ -755,13 +790,10 @@ void bi::host_matrix<T,A>::swap(host_matrix<T,A>& o) {
   std::swap(this->own, o.own);
 }
 
-#ifndef __CUDACC__
 template<class T, class A>
 template<class Archive>
-void bi::host_matrix<T,A>::serialize(Archive& ar,
-    const unsigned version) {
+void bi::host_matrix<T,A>::serialize(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<host_matrix_reference<T> >(*this);
 }
-#endif
 
 #endif

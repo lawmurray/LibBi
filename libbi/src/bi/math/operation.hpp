@@ -601,7 +601,7 @@ struct potrs_impl {
 #include "../primitive/matrix_primitive.hpp"
 #include "../typelist/equals.hpp"
 #include "../host/math/operation.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/math/operation.hpp"
 #endif
 

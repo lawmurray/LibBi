@@ -59,7 +59,7 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T
   return stream;
 }
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 /**
  * Output device vector.
  *

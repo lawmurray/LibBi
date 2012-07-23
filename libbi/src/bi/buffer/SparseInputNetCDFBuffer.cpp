@@ -20,7 +20,7 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
     NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns) {
   map();
   mask0();
-  reset();
+  rewind();
 }
 
 SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
@@ -28,7 +28,7 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
     vars(NUM_VAR_TYPES), ns(o.ns) {
   map();
   mask0();
-  reset();
+  rewind();
 }
 
 SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
@@ -160,7 +160,7 @@ void SparseInputNetCDFBuffer::maskSparse0() {
   }
 }
 
-void SparseInputNetCDFBuffer::reset() {
+void SparseInputNetCDFBuffer::rewind() {
   int tVar, rDim;
   real t;
   set_elements(state.starts, 0);

@@ -5,31 +5,12 @@
  * $Rev: 2589 $
  * $Date: 2012-05-23 13:15:11 +0800 (Wed, 23 May 2012) $
  */
-#ifndef BI_RANDOM_RNG_HPP
-#define BI_RANDOM_RNG_HPP
-
-#include "../cuda/cuda.hpp"
-#include "../misc/location.hpp"
+#ifndef BI_HOST_RANDOM_RNG_HPP
+#define BI_HOST_RANDOM_RNG_HPP
 
 #include "boost/random/mersenne_twister.hpp"
 
-#ifdef ENABLE_GPU
-#include "curand_kernel.h"
-#endif
-
 namespace bi {
-/**
- * Pseudorandom number generator.
- *
- * @ingroup math_rng
- *
- * @tparam L Location.
- */
-template<Location L>
-class Rng {
-  //
-};
-
 /**
  * Pseudorandom number generator, on host.
  *
@@ -45,8 +26,7 @@ class Rng {
  * uniform pseudorandom number generator. <i>ACM Transactions on
  * Modeling and Computer Simulation</i>, <b>1998</b>, 8, 3-30.
  */
-template<>
-class Rng<ON_HOST> {
+class RngHost {
 public:
   /**
    * Seed random number generator.
@@ -137,60 +117,90 @@ private:
    */
   rng_type rng;
 };
-
-#ifdef ENABLE_GPU
-/**
- * Pseudorandom number generator, on device.
- *
- * @ingroup math_rng
- */
-template<>
-class Rng<ON_DEVICE> {
-public:
-  /**
-   * @copydoc Rng<ON_HOST>::seed
-   */
-  CUDA_FUNC_DEVICE void seed(const unsigned seed);
-
-  /**
-   * @copydoc Rng<ON_HOST>::uniformInt
-   */
-  template<class T1>
-  CUDA_FUNC_DEVICE T1 uniformInt(const T1 lower = 0, const T1 upper = 1);
-
-  /**
-   * @copydoc Rng<ON_HOST>::uniform
-   */
-  CUDA_FUNC_DEVICE float uniform(const float lower = 0.0f, const float upper = 1.0f);
-
-  /**
-   * @copydoc Rng<ON_HOST>::uniform
-   */
-  CUDA_FUNC_DEVICE double uniform(const double lower = 0.0, const double upper = 1.0);
-
-  /**
-   * @copydoc Rng<ON_HOST>::gaussian
-   */
-  CUDA_FUNC_DEVICE float gaussian(const float mu = 0.0f, const float sigma = 1.0f);
-
-  /**
-   * @copydoc Rng<ON_HOST>::gaussian
-   */
-  CUDA_FUNC_DEVICE double gaussian(const double mu = 0.0, const double sigma = 1.0);
-
-private:
-  /**
-   * CURAND state.
-   */
-  curandState rng;
-};
-#endif
-
 }
 
-#include "../host/random/Rng.hpp"
-#ifdef __CUDACC__
-#include "../cuda/random/Rng.cuh"
-#endif
+#include "../../misc/location.hpp"
+#include "../../misc/omp.hpp"
+#include "../../math/sim_temp_vector.hpp"
+
+#include "boost/random/uniform_int.hpp"
+#include "boost/random/uniform_real.hpp"
+#include "boost/random/normal_distribution.hpp"
+#include "boost/random/gamma_distribution.hpp"
+#include "boost/random/variate_generator.hpp"
+
+#include "thrust/binary_search.h"
+
+inline void bi::RngHost::seed(const unsigned seed) {
+  rng.seed(seed);
+}
+
+template<class T1>
+inline T1 bi::RngHost::uniformInt(const T1 lower, const T1 upper) {
+  /* pre-condition */
+  assert (upper >= lower);
+
+  typedef boost::uniform_int<T1> dist_type;
+
+  dist_type dist(lower, upper);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return gen();
+}
+
+template<class V1>
+inline typename V1::difference_type bi::RngHost::multinomial(const V1 ps) {
+  /* pre-condition */
+  assert (ps.size() > 0);
+
+  typedef boost::uniform_real<typename V1::value_type> dist_type;
+
+  typename sim_temp_vector<V1>::type Ps(ps.size());
+  inclusive_scan_sum_expu(ps, Ps);
+
+  dist_type dist(0.0, *(Ps.end() - 1));
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
+}
+
+template<class T1>
+inline T1 bi::RngHost::uniform(const T1 lower, const T1 upper) {
+  /* pre-condition */
+  assert (upper >= lower);
+
+  typedef boost::uniform_real<T1> dist_type;
+
+  dist_type dist(lower, upper);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return gen();
+}
+
+template<class T1>
+inline T1 bi::RngHost::gaussian(const T1 mu, const T1 sigma) {
+  /* pre-condition */
+  assert (sigma >= 0.0);
+
+  typedef boost::normal_distribution<T1> dist_type;
+
+  dist_type dist(mu, sigma);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return gen();
+}
+
+template<class T1>
+inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  assert (alpha > 0.0 && beta > 0.0);
+
+  typedef boost::gamma_distribution<T1> dist_type;
+
+  dist_type dist(alpha);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return beta*gen();
+}
 
 #endif

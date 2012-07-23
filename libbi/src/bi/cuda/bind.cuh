@@ -28,7 +28,7 @@ void bi::bind(State<B,ON_DEVICE>& s) {
 
   const_bind(s.size());
 
-  #if !defined(ENABLE_DOUBLE) and defined(ENABLE_TEXTURE)
+  #if defined(ENABLE_SINGLE) and defined(ENABLE_TEXTURE)
   texture_bind_r(s.get(R_VAR));
   texture_bind_d(s.get(D_VAR));
   #endif
@@ -39,7 +39,7 @@ void bi::bind(State<B,ON_DEVICE>& s) {
 
 template<class B>
 void bi::unbind(const State<B,ON_DEVICE>& s) {
-  #if !defined(ENABLE_DOUBLE) and defined(ENABLE_TEXTURE)
+  #if defined(ENABLE_SINGLE) and defined(ENABLE_TEXTURE)
   texture_unbind_r();
   texture_unbind_d();
   #endif

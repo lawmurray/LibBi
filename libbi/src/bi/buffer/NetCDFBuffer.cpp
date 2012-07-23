@@ -11,10 +11,10 @@
 
 using namespace bi;
 
-#ifdef ENABLE_DOUBLE
-NcType netcdf_real = ncDouble;
-#else
+#ifdef ENABLE_SINGLE
 NcType netcdf_real = ncFloat;
+#else
+NcType netcdf_real = ncDouble;
 #endif
 
 NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
@@ -64,7 +64,7 @@ NcDim* NetCDFBuffer::createDim(const char* name) {
   return ncDim;
 }
 
-NcVar* NetCDFBuffer::createVar(const Var* var) {
+NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr) {
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
   VarType type = var->getType();
@@ -73,7 +73,7 @@ NcVar* NetCDFBuffer::createVar(const Var* var) {
   if (hasDim("ns")) {
     dims.push_back(mapDim("ns"));
   }
-  if (hasDim("nr") && (type == D_VAR || type == R_VAR || type == F_VAR)) {
+  if (hasDim("nr") && (nr || type == D_VAR || type == R_VAR || type == F_VAR)) {
     dims.push_back(mapDim("nr"));
   }
   for (i = 0; i < var->getNumDims(); ++i) {

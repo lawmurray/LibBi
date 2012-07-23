@@ -20,7 +20,7 @@ template<class V1>
 struct vector_as_matrix_type {
   typedef typename V1::value_type value_type;
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,gpu_matrix_reference<value_type>,host_matrix_reference<value_type> >::type type;
   #else
   typedef host_matrix_reference<value_type> type;
@@ -257,7 +257,7 @@ inline typename V1::vector_reference_type bi::subrange(V1 x,
   assert (start >= 0);
   assert (len >= 0);
   assert (stride >= 1);
-  assert (start + stride*len <= x.size());
+  assert (start + stride*(len - 1) < x.size());
 
   return typename V1::vector_reference_type(x.buf() + start*x.inc(), len,
       stride*x.inc());

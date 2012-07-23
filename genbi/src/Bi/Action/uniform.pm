@@ -82,7 +82,7 @@ sub mean {
     # (lower + upper)/2
     my $lower = new Bi::Expression::Parens($self->get_named_arg('lower')->clone);
     my $upper = new Bi::Expression::Parens($self->get_named_arg('upper')->clone);
-    my $mean = new Bi::Expression::BinaryOperator(Bi::Expression::Literal(0.5), '*', new Bi::Expression::Parens(new Bi::Expression::BinaryOperator('+', [ $lower, $upper ])));
+    my $mean = new Bi::Expression::BinaryOperator(new Bi::Expression::Literal(0.5), '*', new Bi::Expression::Parens(new Bi::Expression::BinaryOperator($lower, '+', $upper)));
 
     return $mean;
 }

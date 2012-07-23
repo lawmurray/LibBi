@@ -65,6 +65,9 @@
  *   @defgroup math_rng Random number generation
  *   @ingroup math
  *
+ *   @defgroup math_pdf Probability density functions
+ *   @ingroup math
+ *
  * @defgroup primitive Primitives
  *
  *   @defgroup primitive_functor Functors

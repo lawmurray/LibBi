@@ -284,12 +284,20 @@ sub get_action {
 
 =item B<get_block>(I<i>)
 
-Get sub-block by index.
+Get single sub-block.
+
+=over 4
+
+=item * I<i> Sub-block index. Defaults to 0.,
+
+=back
+
+Returns the sub-block.
 
 =cut
 sub get_block {
     my $self = shift;
-    my $i = shift;
+    my $i = (@_) ? shift : 0;
     
     return $self->get_blocks->[$i];
 }
@@ -457,6 +465,28 @@ sub unshift_blocks {
     }
 }
 
+=item B<pop_block>
+
+Remove sub-block from end.
+
+=cut
+sub pop_block {
+    my $self = shift;
+    
+    pop(@{$self->get_blocks});
+}
+
+=item B<shift_block>
+
+Remove sub-block from start.
+
+=cut
+sub shift_block {
+    my $self = shift;
+    
+    shift(@{$self->get_blocks});
+}
+
 =item B<sink_children>(I<model>)
 
 Sinks all sub-blocks and actions into one containing block, which then
@@ -466,6 +496,8 @@ becomes the sole child of the block.
 sub sink_children {
     my $self = shift;
     my $model = shift;
+
+    assert (defined($model) && $model->isa('Bi::Model')) if DEBUG;
     
     my $block = new Bi::Model::Block($model->next_block_id, undef, [], {},
         $self->get_actions, $self->get_blocks);

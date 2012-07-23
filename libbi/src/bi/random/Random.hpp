@@ -8,7 +8,10 @@
 #ifndef BI_RANDOM_RANDOM_HPP
 #define BI_RANDOM_RANDOM_HPP
 
-#include "Rng.hpp"
+#include "../host/random/RngHost.hpp"
+#ifdef ENABLE_CUDA
+#include "../cuda/random/RngGPU.hpp"
+#endif
 #include "../misc/assert.hpp"
 #include "../misc/location.hpp"
 #include "../cuda/cuda.hpp"
@@ -32,7 +35,7 @@ namespace bi {
  * and generate several variates from it.
  *
  * This is particularly the case with device generation, where, within a
- * kernel function, a variable of type <tt>Rng<ON_DEVICE></tt> can be
+ * kernel function, a variable of type <tt>RngGPU</tt> can be
  * created in local memory, the PRNG for the current thread retrieve via
  * #getDevRng and copied into it, then variates generated from the local
  * variable before it is copied back to global memory with #setDevRng.
@@ -227,13 +230,13 @@ public:
   /**
    * Get the current host thread's random number generator.
    */
-  Rng<ON_HOST>& getHostRng();
+  RngHost& getHostRng();
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /**
    * Get the current device thread's random number generator.
    */
-  CUDA_FUNC_DEVICE Rng<ON_DEVICE>& getDevRng();
+  CUDA_FUNC_DEVICE RngGPU& getDevRng();
 
   /**
    * Set the current device thread's random number generator. This is
@@ -241,31 +244,21 @@ public:
    * into local memory and modified, and so must be copied back to global
    * memory.
    */
-  CUDA_FUNC_DEVICE void setDevRng(const Rng<ON_DEVICE>& rng);
+  CUDA_FUNC_DEVICE void setDevRng(const RngGPU& rng);
   #endif
   //@}
 
 private:
   /**
-   * Seed random number generators on host.
-   */
-  void hostSeeds(const unsigned seed);
-
-  /**
-   * Seed random number generators on device.
-   */
-  void devSeeds(const unsigned seed);
-
-  /**
    * Random number generators on host.
    */
-  Rng<ON_HOST>* hostRngs;
+  RngHost* hostRngs;
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /**
    * Random number generators on device.
    */
-  Rng<ON_DEVICE>* devRngs;
+  RngGPU* devRngs;
   #endif
 
   /**
@@ -276,6 +269,11 @@ private:
   bool own;
 };
 }
+
+#include "../host/random/RandomHost.hpp"
+#ifdef ENABLE_CUDA
+#include "../cuda/random/RandomGPU.hpp"
+#endif
 
 inline void bi::Random::seed(const unsigned seed) {
   getHostRng().seed(seed);
@@ -309,107 +307,47 @@ inline T1 bi::Random::gamma(const T1 alpha, const T1 beta) {
 template<class V1>
 void bi::Random::uniforms(V1 x, const typename V1::value_type lower,
     const typename V1::value_type upper) {
-  /* pre-condition */
-  assert (upper >= lower);
-
-  typedef typename V1::value_type T1;
-  typedef boost::uniform_real<T1> dist_type;
-
-  if (V1::on_device) {
-    BI_ERROR(false, "Not implemented");
-  } else {
-    #pragma omp parallel
-    {
-      BOOST_AUTO(rng, getHostRng());
-      int j;
-
-      #pragma omp for schedule(static)
-      for (j = 0; j < x.size(); ++j) {
-        x(j) = rng.uniform(lower, upper);
-      }
-    }
-  }
+  #ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
+  #else
+  typedef RandomHost impl;
+  #endif
+  impl::uniforms(*this, x, lower, upper);
 }
 
 template<class V1>
 void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
     const typename V1::value_type sigma) {
-  /* pre-condition */
-  assert (sigma >= 0.0);
-
-  typedef typename V1::value_type T1;
-  typedef boost::normal_distribution<T1> dist_type;
-
-  if (V1::on_device) {
-    BI_ERROR(false, "Not implemented");
-  } else {
-    #pragma omp parallel
-    {
-      BOOST_AUTO(rng, getHostRng());
-      int j;
-
-      #pragma omp for schedule(static)
-      for (j = 0; j < x.size(); ++j) {
-        x(j) = rng.gaussian(mu, sigma);
-      }
-    }
-  }
+  #ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
+  #else
+  typedef RandomHost impl;
+  #endif
+  impl::gaussians(*this, x, mu, sigma);
 }
 
 template<class V1>
 void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
     const typename V1::value_type beta) {
-  /* pre-condition */
-  assert (alpha > 0.0 && beta > 0.0);
-
-  typedef typename V1::value_type T1;
-  typedef boost::gamma_distribution<T1> dist_type;
-
-  if (V1::on_device) {
-    BI_ERROR(false, "Not implemented");
-  } else {
-    #pragma omp parallel
-    {
-      BOOST_AUTO(rng, getHostRng());
-      int j;
-
-      #pragma omp for schedule(static)
-      for (j = 0; j < x.size(); ++j) {
-        x(j) = rng.gamma(alpha, beta);
-      }
-    }
-  }
+  #ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
+  #else
+  typedef RandomHost impl;
+  #endif
+  impl::gammas(*this, x, alpha, beta);
 }
 
 template<class V1, class V2>
 void bi::Random::multinomials(const V1 ps, V2 xs) {
-  /* pre-condition */
-  assert (ps.size() > 0);
-
-  typedef typename V1::value_type T1;
-
-  if (V1::on_device) {
-    BI_ERROR(false, "Not implemented");
-  } else {
-    BOOST_AUTO(rng, getHostRng());
-    typename sim_temp_vector<V1>::type Ps(ps.size());
-    inclusive_scan_sum_exp(ps, Ps);
-
-    T1 u;
-    T1 lower = 0.0;
-    T1 upper = *(Ps.end() - 1);
-
-    int i, p;
-    for (i = 0; i < xs.size(); ++i) {
-      u = rng.uniform(lower, upper);
-      p = thrust::lower_bound(Ps.begin(), Ps.end(), u) - Ps.begin();
-
-      xs(i) = p;
-    }
-  }
+  #ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
+  #else
+  typedef RandomHost impl;
+  #endif
+  impl::uniforms(*this, ps, xs);
 }
 
-inline bi::Rng<bi::ON_HOST>& bi::Random::getHostRng() {
+inline bi::RngHost& bi::Random::getHostRng() {
   return hostRngs[bi_omp_tid];
 }
 

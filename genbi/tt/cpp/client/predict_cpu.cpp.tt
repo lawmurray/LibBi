@@ -10,7 +10,6 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/Simulator.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
@@ -23,7 +22,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#ifndef ENABLE_GPU
+#ifndef ENABLE_CUDA
 #define LOCATION ON_HOST
 #else
 #define LOCATION ON_DEVICE
@@ -38,15 +37,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
 
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   
   /* output */
   SimulatorNetCDFBuffer* out = NULL;
-  if (OUTPUT && !OUTPUT_FILE.empty()) {
+  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
     out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE,
         NetCDFBuffer::REPLACE,
         INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
@@ -94,18 +94,28 @@ int main(int argc, char* argv[]) {
   inSimulate.readTime(inSimulate.size2() - 1, t);
   inSimulate.readState(D_VAR, inSimulate.size2() - 1, s.get(D_VAR));
 
-  /* simulate */
-  TicToc timer;
+  /* simulator */
   BOOST_AUTO(sim, (SimulatorFactory<LOCATION>::create(m, inInput, out)));
   sim->setTime(t, s);
+
+  /* simulate */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+
   sim->sample(rng, U, s);
-  delete sim;
+  synchronize();
 
   /* output timing results */
-  if (TIME) {
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
+  delete sim;
   delete out;
   delete inInput;
   delete inInit;

@@ -71,3 +71,11 @@ void SparseInputBuffer::mark() {
 void SparseInputBuffer::restore() {
   Markable<SparseInputBufferState>::restore(state);
 }
+
+void SparseInputBuffer::top() {
+  Markable<SparseInputBufferState>::top(state);
+}
+
+void SparseInputBuffer::pop() {
+  Markable<SparseInputBufferState>::pop();
+}

@@ -31,12 +31,6 @@ program is specified).
 
 =item * C<--verbose> Enable verbose reporting.
 
-=item * C<--debug> Enable assertion checking.
-
-=item * C<--gdb> Run within the C<gdb> debugger.
-
-=item * C<--valgrind> Run within C<valgrind>.
-
 =item * C<--dry-build> Generate code, but do not build or execute.
 
 =item * C<--dry-run> Generate code and build, but do not execute.
@@ -60,10 +54,12 @@ use Bi::Model;
 use Bi::Gen::Dot;
 use Bi::Gen::Cpp;
 use Bi::Gen::Build;
-use Bi::Gen::Bi;
+use Bi::Gen::Doxyfile;
 use Bi::Client;
 use Bi::Optimiser;
-use Bi::Visitor::Lineariser;
+use Bi::Visitor::ExtendedTransformer;
+use Bi::Visitor::ParamToStateTransformer;
+use Bi::Visitor::InitialToParamTransformer;
 
 use Carp;
 use Carp::Assert;
@@ -84,7 +80,6 @@ sub new {
         _verbose => 0,
         _dry_run => 0,
         _dry_build => 0,
-        _debug => 0,
         _cmd => undef,
         _model_file => undef
     };
@@ -96,7 +91,6 @@ sub new {
         'verbose!' => \$self->{_verbose},
         'dry-run!' => \$self->{_dry_run},
         'dry-build!' => \$self->{_dry_build},
-        'debug!' => \$self->{_debug},
         'model-file=s' => \$self->{_model_file},
         );
     GetOptions(@args) || die("could not read command line arguments\n");
@@ -124,7 +118,7 @@ sub do {
     my $cmd = $self->{_cmd};
     eval {
         if ($self->{_help}) {
-               $self->help;
+           $self->help;
         } elsif (!defined($cmd) || $cmd eq '') {
             die("no command given\n");
         } elsif ($cmd eq 'setup') {
@@ -133,8 +127,8 @@ sub do {
             $self->clean;
         } elsif ($cmd eq 'draw') {
             $self->draw;
-        } elsif ($cmd eq 'rewrite') {
-              $self->rewrite;
+        } elsif ($cmd eq 'document') {
+        	$self->document;
         } else {
             $self->client;
         }
@@ -187,12 +181,12 @@ sub draw {
     }
 }
 
-=item B<rewrite>
+=item B<document>
 
-Write new model specification after optimisations.
+Write Doxygen configuration file and generate HTML documentation.
 
 =cut
-sub rewrite {
+sub document {
     my $self = shift;
     
     if (!defined $self->{_model_file}) {
@@ -204,12 +198,12 @@ sub rewrite {
         my $model = $parser->parse($fh);
         $fh->close;
         
-        my $optimiser = new Bi::Optimiser($model);
-        $optimiser->optimise();
-
         my $outdir = '.' . $model->get_name;   
-        my $bi = new Bi::Gen::Bi($outdir);
-        $bi->gen($model);
+        my $doxyfile = new Bi::Gen::Doxyfile($outdir);
+        $doxyfile->gen($model);
+        
+        chdir($outdir);
+        exec('doxygen') || die("exec failed ($!)\n");;
     }
 }
 
@@ -235,41 +229,44 @@ sub client {
 
     my $outdir = '.' . $model->get_name;
 
-    
     my $optimiser = new Bi::Optimiser($model);
     my $cpp = new Bi::Gen::Cpp($outdir);
     my $build = new Bi::Gen::Build($outdir);
-    my $builder = new Bi::Builder($outdir, $self->{_verbose}, $self->{_debug});    
-    my $client = new Bi::Client($cmd, $outdir, $self->{_verbose}, $self->{_debug});    
+    my $builder = new Bi::Builder($outdir, $self->{_verbose});    
+    my $client = new Bi::Client($cmd, $outdir, $self->{_verbose});    
 
     $self->_report("Processing arguments...");
     $client->process_args;
-
-    if ($client->get_linearise) {
-        $self->_report("Linearising model...");
-        Bi::Visitor::Lineariser->evaluate($model);
+    
+    $self->_report("Transforming model...");
+    if ($client->get_named_arg('transform-param-to-state')) {
+        Bi::Visitor::ParamToStateTransformer->evaluate($model);
+    } elsif ($client->get_named_arg('transform-initial-to-param')) {
+        Bi::Visitor::InitialToParamTransformer->evaluate($model);
+    }
+    if ($client->get_named_arg('transform-extended')) {
+        Bi::Visitor::ExtendedTransformer->evaluate($model);
     }
 
-    $self->_report("Optimising...");
+    $self->_report("Optimising model...");
     $optimiser->optimise();
 
-    $self->_report("Generating model code...");
-    $cpp->gen($model);
+    if ($client->is_cpp) {
+        $self->_report("Generating code...");
+        $cpp->gen($model, $client);
+        
+        $self->_report("Generating build system...");
+        $build->gen($model);
 
-    $self->_report("Generating client code...");
-    $cpp->process_client($model, $client);
-    
-    $self->_report("Generating build code...");
-    $build->gen($model);
-    
-    if (!$self->{_dry_build}) {
-        $self->_report("Building...");
-        $builder->build($client->get_binary);
-    
-        if (!$self->{_dry_run}) {
-            $self->_report("Running...");
-            $client->exec;
+        if (!$self->{_dry_build}) {
+            $self->_report("Building...");
+            $builder->build($client->get_binary);
         }
+    }
+    
+    if (!$self->{_dry_run}) {
+        $self->_report("Running...");
+        $client->exec($model);
     }
 }
 

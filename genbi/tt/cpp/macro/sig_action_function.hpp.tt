@@ -17,7 +17,7 @@
   void [% class_name %]::logDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
   [% ELSIF function == 'maxlogdensity' %]
   template <class CX, class PX, class OX, class T1>
-  void [% class_name %]::maxLogDensity(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
+  void [% class_name %]::maxLogDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
   [% ELSE %]
   template <class CX, class PX, class T1>
   void [% class_name %]::[% function %](const int p, const CX& cox, const PX& pax, T1& x)

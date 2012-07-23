@@ -33,17 +33,16 @@ use Bi::Model;
 use Bi::Expression;
 use Bi::Visitor::ToAscii;
 
-=item B<new>(I<outdir>)
+=item B<new>
 
 Constructor.
 
 =cut
 sub new {
     my $class = shift;
-    my $outdir = shift;
 
     my $ttdir = File::Spec->catdir($Bin, '..', 'tt', 'bi');
-    my $self = Bi::Gen->new($ttdir, $outdir);
+    my $self = Bi::Gen->new($ttdir);
 
     $self->get_tt->context->define_vmethod( 'hash', 'to_bi', \&to_bi);
 
@@ -62,7 +61,7 @@ sub gen {
     my $model = shift;
 
     # pre-condition
-    assert($model->isa('Bi::Model')) if DEBUG;
+    assert(defined($model) && $model->isa('Bi::Model')) if DEBUG;
 
     # model
     $self->process_templates('model', { 'model' => $model });

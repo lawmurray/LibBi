@@ -9,6 +9,10 @@ Bi::Client - generic client program.
     $client->process_args;
     $client->exec;  # if successful, never returns
 
+=head1 COMMAND LINE
+
+Common command line options are documented in the developer guide.
+
 =cut
 
 package Bi::Client;
@@ -21,11 +25,88 @@ use Cwd qw(abs_path);
 use Getopt::Long qw(:config pass_through no_auto_abbrev);
 use FindBin qw($Bin);
 
+# options specific to execution
+our @EXEC_OPTIONS = (
+    {
+      name => 'with-gdb',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-cuda-gdb',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-valgrind',
+      type => 'bool',
+      default => 0
+    }
+);
+
+# options to pass to client program
+our @CLIENT_OPTIONS = (
+    {
+      name => 'seed',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'threads',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'enable-timing',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'enable-output',
+      type => 'bool',
+      default => 1
+    },
+    {
+      name => 'with-gperftools',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'gperftools-file',
+      type => 'string',
+      default => 'pprof.prof'
+    },
+    {
+      name => 'with-mpi',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'mpi-np',
+      type => 'int',
+    },
+    {
+      name => 'transform-extended',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'transform-param-to-state',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'transform-initial-to-param',
+      type => 'bool',
+      default => 0
+    }
+);
+
 =head1 METHODS
 
 =over 4
 
-=item B<new>(I<cmd>, I<builddir>, I<verbose>, I<debug>)
+=item B<new>(I<cmd>, I<builddir>, I<verbose>)
 
 Constructor.
 
@@ -36,8 +117,6 @@ Constructor.
 =item * I<builddir> The build directory
 
 =item * I<verbose> Is verbosity enabled?
-
-=item * I<debug> Is debugging enabled?
 
 =back
 
@@ -51,19 +130,16 @@ sub new {
     my $cmd = shift;
     my $builddir = shift;
     my $verbose = shift;
-    my $debug = shift;
     
     $builddir = abs_path($builddir);
     my $self = {
         _builddir => $builddir,
         _verbose => $verbose,
-        _debug => $debug,
         _binary => '',
-        _gdb => 0,
-        _cuda_gdb => 0,
-        _valgrind => 0,
-        _params => [],
-        _args => {}
+        _params => [ @CLIENT_OPTIONS ],
+        _exec_params => [ @EXEC_OPTIONS ],
+        _args => {},
+        _exec_args => {},
     };
     
     # look up appropriate class name
@@ -71,6 +147,15 @@ sub new {
     eval ("require $class") || die("don't know what to do with command '$cmd'\n");
     
     bless $self, $class;
+    
+    # override default gperftools output file
+    foreach my $param (@{$self->get_params}) {
+    	if ($param->{name} eq 'gperftools-file') {
+    		$param->{default} = "$cmd.prof";
+    	}
+    }
+        
+    # common arguments
     $self->init;
     return $self;
 }
@@ -85,14 +170,34 @@ sub get_binary {
     return $self->{_binary};
 }
 
+=item B<is_cpp>
+
+Is this a C++ client?
+
+=cut
+sub is_cpp {
+    return 1;
+}
+
 =item B<get_params>
 
-Get formal parameters of the client program as a hash. 
+Get formal parameters to be passed to the client program as a hashref. 
 
 =cut
 sub get_params {
     my $self = shift;
     return $self->{_params};
+}
+
+=item B<get_exec_params>
+
+Get formal parameters not to be passed to the client program as a hashref.
+Get formal parameters of the client program as a hash. 
+
+=cut
+sub get_exec_params {
+    my $self = shift;
+    return $self->{_exec_params};
 }
 
 =item B<get_args>
@@ -107,6 +212,18 @@ sub get_args {
     return $self->{_args};
 }
 
+=item B<get_exec_args>
+
+Get arguments not to be passed to the client program as a hashref. These are
+available after a call to B<process_args>.
+
+=cut
+sub get_exec_args {
+    my $self = shift;
+    
+    return $self->{_exec_args};
+}
+
 =item B<is_named_arg>(I<name>)
 
 Is there a named argument of name I<name>?
@@ -119,9 +236,21 @@ sub is_named_arg {
     return exists $self->get_args->{$name} && defined $self->get_args->{$name};
 }
 
+=item B<is_named_exec_arg>(I<name>)
+
+Is there a named argument of name I<name>?
+
+=cut
+sub is_named_exec_arg {
+    my $self = shift;
+    my $name = shift;
+    
+    return exists $self->get_exec_args->{$name} && defined $self->get_exec_args->{$name};
+}
+
 =item B<get_named_arg>(I<name>)
 
-Get named argument to the client program.
+Get named argument.
 
 =cut
 sub get_named_arg {
@@ -131,13 +260,42 @@ sub get_named_arg {
     return $self->get_args->{$name};
 }
 
-=item B<get_linearise>
+=item B<set_named_arg>(I<name>, I<value>)
 
-Should model be linearised for this client?
+Set named argument.
 
 =cut
-sub get_linearise {
-    return 0;
+sub set_named_arg {
+    my $self = shift;
+    my $name = shift;
+    my $value = shift;
+    
+    $self->get_args->{$name} = $value;
+}
+
+=item B<get_named_exec_arg>(I<name>)
+
+Get named argument.
+
+=cut
+sub get_named_exec_arg {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->get_exec_args->{$name};
+}
+
+=item B<set_named_exec_arg>(I<name>, I<value>)
+
+Set named argument.
+
+=cut
+sub set_named_exec_arg {
+    my $self = shift;
+    my $name = shift;
+    my $value = shift;
+    
+    $self->get_exec_args->{$name} = $value;
 }
 
 =item B<process_args>
@@ -149,20 +307,11 @@ sub process_args {
     my $self = shift;
     
     my $param;
-    my @args = (
-        'gdb!' => \$self->{_gdb},
-        'cuda-gdb!' => \$self->{_cuda_gdb},
-        'valgrind!' => \$self->{_valgrind}
-    );
+    my @args;
 
-    # run arguments
-    foreach $param (@{$self->{_params}}) {
-        if (defined $param->{default}) {
-            $self->{_args}->{$param->{name}} = $param->{default};
-        }        
-        push(@args, $param->{name} . '=' . substr($param->{type}, 0, 1));       
-        push(@args, \$self->{_args}->{$param->{name}});
-    }
+    # arguments
+    push(@args, @{$self->_load_options($self->get_params, $self->{_args})});
+    push(@args, @{$self->_load_options($self->get_exec_params, $self->{_exec_args})});
 
     GetOptions(@args) || die("could not read command line arguments\n");
     
@@ -195,12 +344,18 @@ sub exec {
         }
     }
 
-    if ($self->{_cuda_gdb}) {
+    if ($self->get_named_exec_arg('with-cuda-gdb')) {
         unshift(@argv, "cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
-    } elsif ($self->{_gdb}) {
+    } elsif ($self->get_named_exec_arg('with-gdb')) {
         unshift(@argv, "gdb -q -ex run --args $builddir/" . $self->{_binary});
-    } elsif ($self->{_valgrind}) {
+    } elsif ($self->get_named_exec_arg('with-valgrind')) {
         unshift(@argv, "valgrind --leak-check=full $builddir/" . $self->{_binary});
+    } elsif ($self->get_named_arg('with-mpi')) {
+        my $np = '';
+        if ($self->is_named_arg('mpi-np')) {
+            $np = " -np " . int($self->get_named_arg('mpi-np'));
+        }
+        unshift(@argv, "mpirun$np $builddir/" . $self->{_binary});
     } else {
         unshift(@argv, "$builddir/" . $self->{_binary});
     }
@@ -212,6 +367,47 @@ sub exec {
     
     $ENV{LD_LIBRARY_PATH} .= ':' . File::Spec->catdir($Bin, '..', '..', 'lib', '.libs');
     exec($cmd) || die("exec failed ($!)\n");
+}
+
+=item B<_load_options>(I<params>, I<args>)
+
+Set up Getopt::Long specification using I<params> parameters, to write
+arguments to I<args>. Return the specification.
+
+=cut
+sub _load_options {
+	my $self = shift;
+	my $params = shift;
+	my $args = shift;
+	
+	my $param;
+	my $arg;
+	my @args;
+	
+	foreach $param (@$params) {
+        if (defined $param->{default}) {
+            $args->{$param->{name}} = $param->{default};
+        }
+        if ($param->{type} eq 'bool') {
+        	my $name = $param->{name};
+        	
+	        push(@args, $name);
+        	push(@args, sub { $args->{$param->{name}} = 1 });
+        	
+        	if ($name =~ s/^with\-/without\-/) {
+        		push(@args, $name);
+        		push(@args, sub { $args->{$param->{name}} = 0 });
+        	} elsif ($name =~ s/^enable\-/disable\-/) {
+        		push(@args, $name);
+        		push(@args, sub { $args->{$param->{name}} = 0 });
+        	}
+        } else {
+	        push(@args, $param->{name} . '=' . substr($param->{type}, 0, 1));
+	        push(@args, \$args->{$param->{name}});
+        }       
+	}
+	
+	return \@args;
 }
 
 1;

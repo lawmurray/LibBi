@@ -10,7 +10,6 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleFilterSmoother.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
@@ -37,15 +36,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
 
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* model */
   model_type m;
@@ -64,21 +64,31 @@ int main(int argc, char* argv[]) {
 
   /* output */
   ParticleSmootherNetCDFBuffer* out = NULL;
-  if (OUTPUT) {
+  if (ENABLE_OUTPUT) {
     out = new ParticleSmootherNetCDFBuffer(m, P, T, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   }
 
-  /* smooth */
-  TicToc timer;
+  /* smoother */
   BOOST_AUTO(smoother, (ParticleFilterSmootherFactory<bi::Location,STATIC_SHARED>::create(m, out)));
+
+  /* smooth */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+
   smoother->smooth(s, &in);
-  delete smoother;
+  synchronize();
 
   /* output timing results */
-  if (TIME) {
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
+  delete smoother;
   delete out;
 
   return 0;

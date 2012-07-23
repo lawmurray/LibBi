@@ -29,3 +29,46 @@ The following options are supported:
 =item * C<--model-file> the model specification file.
 
 =back
+=head1 METHODS
+
+=over 4
+
+=cut
+
+package Bi::Client::rewrite;
+
+use base 'Bi::Client';
+use warnings;
+use strict;
+
+use Bi::Gen::Bi;
+
+sub init {
+    my $self = shift;
+
+    $self->{_binary} = undef;
+}
+
+sub is_cpp {
+    return 0;
+}
+
+sub exec {
+    my $self = shift;
+    my $model = shift;
+    
+    my $bi = new Bi::Gen::Bi();
+    $bi->gen($model);
+}
+
+1;
+
+=back
+
+=head1 AUTHOR
+
+Lawrence Murray <lawrence.murray@csiro.au>
+
+=head1 VERSION
+
+$Rev$ $Date$

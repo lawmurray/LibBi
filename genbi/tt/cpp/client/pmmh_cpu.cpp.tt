@@ -11,7 +11,6 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/state/State.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleMarginalMetropolisHastings.hpp"
@@ -19,17 +18,25 @@
 #include "bi/method/ExtendedKalmanFilter.hpp"
 [% ELSE %]
 #include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AdaptiveNParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/method/MultinomialResampler.hpp"
 #include "bi/method/MetropolisResampler.hpp"
 #include "bi/method/KernelResampler.hpp"
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
 [% END %]
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -38,7 +45,7 @@
 #include <string>
 #include <getopt.h>
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
 #else
 #define LOCATION ON_HOST
@@ -53,15 +60,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
   
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -72,14 +80,6 @@ int main(int argc, char* argv[]) {
   /* state and intermediate results */
   State<model_type,LOCATION> s(m, P);
   P = s.size(); // may change according to implementation
-
-  /* initial condition handling */
-  InitialConditionMode initial;
-  if (INCLUDE_INITIAL) {
-    initial = bi::INCLUDE_INITIAL;
-  } else {
-    initial = bi::EXCLUDE_INITIAL;
-  }
 
   /* inputs */
   SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
@@ -96,19 +96,24 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('filter') == 'ekf' %]
   KalmanFilterNetCDFBuffer* outFilter = NULL;
   if (!FILTER_FILE.empty()) {
-      outFilter = new KalmanFilterNetCDFBuffer(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+      outFilter = new KalmanFilterNetCDFBuffer(m, P, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
+  }
+  [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+  FlexiParticleFilterNetCDFBuffer* outFilter = NULL;
+  if (!FILTER_FILE.empty()) {
+      outFilter = new FlexiParticleFilterNetCDFBuffer(m, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
   }
   [% ELSE %]
   ParticleFilterNetCDFBuffer* outFilter = NULL;
   if (!FILTER_FILE.empty()) {
-      outFilter = new ParticleFilterNetCDFBuffer(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
+      outFilter = new ParticleFilterNetCDFBuffer(m, P, Y, append_rank(FILTER_FILE), NetCDFBuffer::REPLACE);
   }
   [% END %]
   
   /* outputs */
   ParticleMCMCNetCDFBuffer* out = NULL;
-  if (OUTPUT && !OUTPUT_FILE.empty()) {
-      out = new ParticleMCMCNetCDFBuffer(m, D, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
+      out = new ParticleMCMCNetCDFBuffer(m, NSAMPLES, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
 
   /* filter */
@@ -123,19 +128,33 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(N, P);
     }
-    StratifiedResampler base(SORT);
-    KernelResampler<model_type,StratifiedResampler> resam(m, &base, h, SHRINK);
+    StratifiedResampler base(ENABLE_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler resam(C);
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(SORT);
+    MultinomialResampler resam(ENABLE_SORT);
     [% ELSE %]
-    StratifiedResampler resam(SORT);
+    StratifiedResampler resam(ENABLE_SORT);
     [% END %]
     
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'pf1' %]
     BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
+    [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+      /* stopper */
+      [% IF client.get_named_arg('stopper') == 'deterministic' %]
+      Stopper stopper(P);
+      [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+      SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+      MinimumESSStopper stopper(MIN_ESS_REL, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+      StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'var' %]
+      VarStopper stopper(REL_THRESHOLD, MAX_P);
+      [% END %]
+    BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory<LOCATION>::create(m, &resam, &stopper, ESS_REL, BLOCK_P, inInput, &inObs, outFilter)));
     [% ELSE %]
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
     [% END %]
@@ -143,14 +162,34 @@ int main(int argc, char* argv[]) {
 
   /* sampler */
   BOOST_AUTO(sampler, ParticleMarginalMetropolisHastingsFactory<LOCATION>::create(
-      m, out, initial));
+      m, out));
 
   /* sample */
-  sampler->sample(rng, T, s, filter, inInit, D);
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+
+  [% IF client.get_named_arg('filter') == 'anpf' && client.get_named_arg('joint_adaptation') == '1' %]
+  sampler->sample_together(rng, T, s, filter, inInit, NSAMPLES);
+  [% ELSIF client.get_named_arg('conditional_pf') == '1' %]
+  sampler->sample(rng, T, s, filter, inInit, NSAMPLES, CONDITIONED);
+  [% ELSE %]
+  sampler->sample(rng, T, s, filter, inInit, NSAMPLES);
+  [% END %]
+  synchronize();
  
   /* wrap up */
   std::cout << sampler->getNumAccepted() << " of " <<
       sampler->getNumSteps() << " proposals accepted" << std::endl;
+
+  /* output timing results */
+  if (ENABLE_TIMING) {
+    std::cout << timer.toc() << std::endl;
+  }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
   delete filter;
   delete sampler;

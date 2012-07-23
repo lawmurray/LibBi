@@ -12,7 +12,7 @@
 
 #include "../misc/assert.hpp"
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "cuda_runtime.h"
 #endif
 
@@ -90,7 +90,7 @@
  *
  * @arg Function call.
  */
-#ifndef ENABLE_GPU
+#ifndef ENABLE_CUDA
 #define CUDA_CHECKED_CALL(call)
 #elif !defined(NDEBUG)
 #define CUDA_CHECKED_CALL(call) \
@@ -109,7 +109,7 @@
  *
  * Check for CUDA errors and fail if detected.
  */
-#ifndef ENABLE_GPU
+#ifndef ENABLE_CUDA
 #define CUDA_CHECK
 #elif !defined(NDEBUG)
 #define CUDA_CHECK \
@@ -126,7 +126,7 @@
 /**
  * Synchronize on device. Corresponds to a call to cudaThreadSynchronize().
  *
- * @note Does nothing unless ENABLE_GPU defined.
+ * @note Does nothing unless ENABLE_CUDA defined.
  */
 namespace bi {
   /**
@@ -135,14 +135,14 @@ namespace bi {
    * @param sync True to synchronize, false if not.
    */
   inline void synchronize(const bool sync = true) {
-    #ifdef ENABLE_GPU
+    #ifdef ENABLE_CUDA
     if (sync) {
       CUDA_CHECKED_CALL(cudaThreadSynchronize());
     }
     #endif
   }
 
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   /**
    * Synchronize with device.
    *

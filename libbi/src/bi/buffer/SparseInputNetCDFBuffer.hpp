@@ -85,9 +85,9 @@ public:
   void next();
 
   /**
-   * @copydoc #concept::SparseInputBuffer::reset()
+   * @copydoc #concept::SparseInputBuffer::rewind()
    */
-  void reset();
+  void rewind();
 
   /**
    * @copydoc #concept::SparseInputBuffer::countUniqueTimes()

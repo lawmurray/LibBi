@@ -17,6 +17,8 @@
 #include "../sse/sse.hpp"
 #endif
 
+#include "boost/serialization/split_member.hpp"
+
 namespace bi {
 /**
  * %State of Model %model.
@@ -51,7 +53,7 @@ public:
   State(const B& m, const int P = 1);
 
   /**
-   * Copy constructor (deep copy).
+   * Shallow copy constructor.
    */
   State(const State<B,L>& o);
 
@@ -89,6 +91,19 @@ public:
   int size() const;
 
   /**
+   * Resize buffers.
+   *
+   * @param P Number of trajectories to store.
+   * @param preserve True to preserve existing values, false otherwise.
+   *
+   * Resizes the state to store at least @p P number of trajectories.
+   * Storage for additional trajectories may be added in some contexts,
+   * see #roundup. The active range will be set to the full buffer, with
+   * previously active trajectories optionally preserved.
+   */
+  void resize(const int P, const bool preserve = true);
+
+  /**
    * Maximum number of trajectories that can be presently stored in the
    * state.
    */
@@ -100,7 +115,7 @@ public:
    * @param maxP Maximum number of trajectories to store.
    * @param preserve True to preserve existing values, false otherwise.
    *
-   * Resizes the state to store at least @p P number of trajectories.
+   * Resizes the state to store at least @p maxP number of trajectories.
    * Storage for additional trajectories may be added in some contexts,
    * see #roundup. This affects the maximum size (see #maxSize), but not
    * the number of trajectories currently active (see #size and #setRange).
@@ -260,6 +275,7 @@ public:
    */
   const matrix_reference_type getStd() const;
 
+private:
   /**
    * Model.
    */
@@ -310,18 +326,23 @@ public:
   static const int NDX = net_size<typename B::DXTypeList>::value;
   static const int NPX = net_size<typename B::PXTypeList>::value;
 
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
   template<class Archive>
-  void serialize(Archive& ar, const unsigned version);
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
 
   /*
    * Boost.Serialization requirements.
    */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 }
 
@@ -338,19 +359,17 @@ bi::State<B,L>::State(const B& m, const int P) :
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
     m(o.m),
-    Xdn(o.Xdn.size1(), o.Xdn.size2()),
-    Kdn(o.Kdn.size1(), o.Kdn.size2()),
+    Xdn(o.Xdn),
+    Kdn(o.Kdn),
     p(o.p),
     P(o.P) {
-  *this = o;
+  //
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
-  Xdn = o.Xdn;
+  rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  p = o.p;
-  P = o.P;
 
   return *this;
 }
@@ -358,10 +377,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
 template<class B, bi::Location L>
 template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
-  Xdn = o.X;
-  Kdn = o.K;
-  p = o.p;
-  P = o.P;
+  rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
+  Kdn = o.Kdn;
 
   return *this;
 }
@@ -388,6 +405,26 @@ inline int bi::State<B,L>::start() const {
 template<class B, bi::Location L>
 inline int bi::State<B,L>::size() const {
   return P;
+}
+
+template<class B, bi::Location L>
+inline void bi::State<B,L>::resize(const int P, const bool preserve) {
+  const int P1 = roundup(P);
+
+  if (preserve && p != 0) {
+    /* move active range to start of buffer, being careful of overlap */
+    int n = 0, N = std::min(this->P, P1);
+    while (p < N - n) {
+      /* be careful of overlap */
+      rows(Xdn, n, p) = rows(Xdn, p + n, p);
+      n += p;
+    }
+    rows(Xdn, n, N - n) = rows(Xdn, p + n, N - n);
+  }
+
+  Xdn.resize(P1, Xdn.size2(), preserve);
+  p = 0;
+  this->P = P1;
 }
 
 template<class B, bi::Location L>
@@ -615,12 +652,25 @@ int bi::State<B,L>::roundup(const int P) {
   return P1;
 }
 
-#ifndef __CUDACC__
 template<class B, bi::Location L>
 template<class Archive>
-void bi::State<B,L>::serialize(Archive& ar, const unsigned version) {
-  ar & Xdn & Kdn;
+void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
+  ar & P;
+
+  BOOST_AUTO(Xdn1, rows(Xdn, p, P));
+  ar & Xdn1;
+  ar & Kdn;
 }
-#endif
+
+template<class B, bi::Location L>
+template<class Archive>
+void bi::State<B,L>::load(Archive& ar, const unsigned version) {
+  ar & P;
+  resize(P);
+
+  BOOST_AUTO(Xdn1, rows(Xdn, p, P));
+  ar & Xdn1;
+  ar & Kdn;
+}
 
 #endif

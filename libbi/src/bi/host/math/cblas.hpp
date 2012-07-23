@@ -11,7 +11,11 @@
 #include "../../misc/assert.hpp"
 
 extern "C" {
-  #include "cblas.h"
+#ifdef ENABLE_MKL
+#include "mkl_cblas.h"
+#else
+#include "cblas.h"
+#endif
 }
 
 #include "boost/typeof/typeof.hpp"

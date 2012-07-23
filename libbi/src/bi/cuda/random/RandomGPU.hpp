@@ -1,0 +1,57 @@
+/**
+ * @file
+ *
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * $Rev: 2720 $
+ * $Date: 2012-06-14 13:50:32 +0800 (Thu, 14 Jun 2012) $
+ */
+#ifndef BI_RANDOM_RANDOMGPU_HPP
+#define BI_RANDOM_RANDOMGPU_HPP
+
+namespace bi {
+class Random;
+
+/**
+ * Implementation of Random on device.
+ */
+struct RandomGPU {
+  /**
+   * @copydoc Random::seeds
+   */
+  static void seeds(Random& rng, const unsigned seed);
+
+  /**
+   * @copydoc Random::multinomials
+   */
+  template<class V1, class V2>
+  static void multinomials(Random& rng, const V1 ps, V2 xs);
+
+  /**
+   * @copydoc Random::uniforms
+   */
+  template<class V1>
+  static void uniforms(Random& rng, V1 x,
+      const typename V1::value_type lower = 0.0,
+      const typename V1::value_type upper = 1.0);
+
+  /**
+   * @copydoc Random::gaussians
+   */
+  template<class V1>
+  static void gaussians(Random& rng, V1 x, const typename V1::value_type mu =
+      0.0, const typename V1::value_type sigma = 1.0);
+
+  /**
+   * @copydoc Random::gammas
+   */
+  template<class V1>
+  static void gammas(Random& rng, V1 x, const typename V1::value_type alpha =
+      1.0, const typename V1::value_type beta = 1.0);
+};
+}
+
+#ifdef __CUDACC__
+#include "RandomGPU.cuh"
+#endif
+
+#endif

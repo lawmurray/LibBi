@@ -11,52 +11,8 @@ Bi::Builder - builds client programs on demand.
 
 =head1 COMMAND LINE
 
-The following arguments are read from the command line to control various
-aspects of the build. Each may be prefixed with C<no-> to instead disable
-the associated functionality.
-
-=over 4
-
-=item * C<--verbose>
-
-Enable verbose reporting.
-
-=item * C<--warn>
-
-Enable compiler warnings.
-
-=item * C<--debug>
-
-Enable debugging mode. This will enable assertion checking.
-
-=item * C<--profile>
-
-Enable profiling with C<gprof>.
-
-=item * C<--native>
-
-Compile for native platform.
-
-=item * C<--gpu>
-
-Enable CUDA device code.
-
-=item * C<--sse>
-
-Enable SSE host code.
-
-=item * C<--double>
-
-Use double-precision floating point.
-
-=item * C<--force>
-
-Force all build steps to be performed, even when determined to be not
-required. This is useful as a workaround of any faults in detecting
-changes, or when system headers or libraries change and recompilation or
-relinking is required.
-
-=back
+Options are read from the command line to control various aspects of the
+build. See the Bi user manual for details.
 
 =head1 METHODS
 
@@ -73,8 +29,9 @@ use Carp::Assert;
 use Cwd qw(abs_path getcwd);
 use Getopt::Long qw(:config pass_through);
 use File::Spec;
+use File::Slurp;
 
-=item B<new>(I<builddir>, I<verbose>, I<debug>)
+=item B<new>(I<builddir>, I<verbose>)
 
 Constructor.
 
@@ -84,8 +41,6 @@ Constructor.
 
 =item * I<verbose> Is verbosity enabled?
 
-=item * I<debug> Is debugging enabled?
-
 =back
 
 Returns the new object.
@@ -94,38 +49,50 @@ Returns the new object.
 sub new {
     my $class = shift;
     my $builddir = shift;
-    my $verbose = shift;
-    my $debug = shift;
+    my $verbose = int(shift);
     
     $builddir = abs_path($builddir);
     my $self = {
         _builddir => $builddir,
         _verbose => $verbose,
-        _debug => $debug,
         _warn => 0,
-        _gpu => 0,
-        _profile => 0,
         _native => 0,
-        _sse => 0,
-        _double => 1,
         _force => 0,
+        _assert => 1,
+        _cuda => 0,
+        _sse => 0,
+	_mkl => 0,
+        _mpi => 0,
+        _vampir => 0,
+        _single => 0,
         _tstamps => {}
     };
     bless $self, $class;
     
     # command line options
     my @args = (
-        'warn!' => \$self->{_warn},
-        'profile!' => \$self->{_profile},
-        'native!' => \$self->{_native},
-        'gpu!' => \$self->{_gpu},
-        'sse!' => \$self->{_sse},
-        'double!' => \$self->{_double},
-        'force!' => \$self->{_force}
+        'warn' => \$self->{_warn},
+        'native' => \$self->{_native},
+        'force' => \$self->{_force},
+        'enable-assert' => sub { $self->{_assert} = 1 },
+        'disable-assert' => sub { $self->{_assert} = 0 },
+        'enable-cuda' => sub { $self->{_cuda} = 1 },
+        'disable-cuda' => sub { $self->{_cuda} = 0 },
+        'enable-sse' => sub { $self->{_sse} = 1 },
+        'disable-sse' => sub { $self->{_sse} = 0 },
+        'enable-mkl' => sub { $self->{_mkl} = 1 },
+        'disable-mkl' => sub { $self->{_mkl} = 0 },
+        'enable-mpi' => sub { $self->{_mpi} = 1 },
+        'disable-mpi' => sub { $self->{_mpi} = 0 },
+        'enable-vampir' => sub { $self->{_vampir} = 1 },
+        'disable-vampir' => sub { $self->{_vampir} = 0 },
+        'enable-single' => sub { $self->{_single} = 1 },
+        'disable-single' => sub { $self->{_single} = 0 },
     );
     GetOptions(@args) || die("could not read command line arguments\n");
     
     # time stamp dependencies
+    $self->_stamp(File::Spec->catfile($builddir, 'src', 'options.hpp'));
     $self->_stamp(File::Spec->catfile($builddir, 'autogen.sh'));
     $self->_stamp(File::Spec->catfile($builddir, 'configure.ac'));
     $self->_stamp(File::Spec->catfile($builddir, 'Makefile.am'));
@@ -201,45 +168,53 @@ sub _configure {
     my $self = shift;
 
     my $builddir = $self->{_builddir};
-    if ($self->{_force} ||
-        $self->_is_modified(File::Spec->catfile($builddir, 'configure'))) {
-        my $cwd = getcwd();
-        my $cxxflags = '-O3 -funroll-loops';
-        my $linkflags = '';
-        my $options = '';
+    my $cwd = getcwd();
+    my $cxxflags = '-O3 -g3 -funroll-loops';
+    my $linkflags = '';
+    my $options = '';
+
+    if (!$self->{_verbose}) {
+        $options .= ' --silent'; 
+    }
+    if (!$self->{_force}) {
+        $options .= ' --config-cache';
+    }
+
+    $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
+    $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
+    $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
+    $options .= $self->{_mkl} ? ' --enable-mkl' : ' --disable-mkl';
+    $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
+    $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
+    $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
+    
+    # write options file
+    my $options_file = File::Spec->catfile($builddir, 'src', 'options.hpp');
+    my $options_content = "//$options\n";
         
-        if ($self->{_warn}) {
-            $cxxflags .= " -Wall";
-            $linkflags .= " -Wall";
-        }
-        if ($self->{_debug}) {
-            $cxxflags .= ' -g3';
-        } else {
-            $cxxflags .= ' -g0';
-            $options .= " --disable-assert";
-        }
-        if ($self->{_profile}) {
-            $cxxflags .= " -pg";
-            $linkflags .= " -pg";
-        }
-        if ($self->{_native}) {
-            $cxxflags .= " -march=native";
-        }
-        if (!$self->{_debug} && !$self->{_profile}) {
-            $cxxflags .= " -fomit-frame-pointer";
-        }
-        if (!$self->{_verbose}) {
-            $options .= ' --silent'; 
-        }
-        $options .= $self->{_gpu} ? ' --enable-gpu' : ' --disable-gpu';
-        $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
-        $options .= $self->{_double} ? ' --enable-double' : ' --disable-double';
-        if (!$self->{_force}) {
-            $options .= ' --config-cache';
+    if (!-e $options_file || read_file($options_file) ne $options_content) {
+    	write_file($options_file, $options_content);
+    }
+        
+    if ($self->{_warn}) {
+        $cxxflags .= " -Wall";
+        $linkflags .= " -Wall";
+    }
+    if ($self->{_native}) {
+        $cxxflags .= " -march=native";
+    }
+
+    if ($self->{_force} ||
+        $self->_is_modified($options_file) ||
+        $self->_is_modified(File::Spec->catfile($builddir, 'configure'))) {
+        
+        my $cmd = "./configure $options CXXFLAGS='$cxxflags' LINKFLAGS='$linkflags'";
+        if ($self->{_verbose}) {
+            print "$cmd\n";
         }
         
         chdir($builddir);
-        my $ret = system("./configure $options CXXFLAGS='$cxxflags' LINKFLAGS='$linkflags'");
+        my $ret = system($cmd);
         if ($? == -1) {
             die("./configure failed to execute ($!)\n");
         } elsif ($? & 127) {
@@ -269,7 +244,7 @@ sub _make {
     my $self = shift;
     my $client = shift;
     
-    my $target = $client . "_" . ($self->{_gpu} ? 'gpu' : 'cpu');
+    my $target = $client . "_" . ($self->{_cuda} ? 'gpu' : 'cpu');
     my $options = '';
     if (!$self->{_verbose}) {
         $options .= ' --quiet'; 
@@ -281,6 +256,10 @@ sub _make {
     my $builddir = $self->{_builddir};
     my $cwd = getcwd();
     my $cmd = "make -j 4 $options $target";
+    
+    if ($self->{_verbose}) {
+        print "$cmd\n";
+    }
     
     chdir($builddir);
     my $ret = system($cmd);

@@ -120,11 +120,10 @@ sub init {
     $self->{_name} = $name;
     $self->{_args} = $args;
     $self->{_named_args} = $named_args;
-    $self->{_blocks} = $blocks;
-    $self->{_consts} = $consts;
-    $self->{_inlines} = $inlines;
     
-    $self->_build_named_blocks;
+    $self->_rebuild_blocks($blocks);
+    $self->_rebuild_consts($consts);
+    $self->_rebuild_inlines($inlines);
 }
 
 =item B<get_name>
@@ -705,23 +704,6 @@ sub tmp_var {
     return $name;
 }
 
-=item B<_build_named_blocks>
-
-Build hash of blocks by name.
-
-=cut
-sub _build_named_blocks {
-    my $self = shift;
-    
-    $self->{_named_blocks} = {};
-    my $block;
-    foreach $block (@{$self->get_blocks}) {
-        if (defined $block->get_name) {
-            $self->{_named_blocks}->{$block->get_name} = $block;
-        }
-    }
-}
-
 =item B<validate>
 
 Validate model.
@@ -744,14 +726,123 @@ sub accept {
     my @args = @_;
 
     Bi::ArgHandler::accept($self, $visitor, @args);
-    @{$self->{_dims}} = map { $_->accept($visitor, @args) } @{$self->get_dims};
-    @{$self->{_consts}} = map { $_->accept($visitor, @args) } @{$self->get_consts};
-    @{$self->{_vars}} = map { $_->accept($visitor, @args) } @{$self->get_vars};
-    @{$self->{_inlines}} = map { $_->accept($visitor, @args) } @{$self->get_inlines};
-    @{$self->{_blocks}} = map { $_->accept($visitor, @args) } @{$self->get_blocks};
-    $self->_build_named_blocks;
+
+    my @dims = map { $_->accept($visitor, @args) } @{$self->get_dims};
+    $self->_rebuild_dims(\@dims);
+
+    my @consts = map { $_->accept($visitor, @args) } @{$self->get_consts};
+    $self->_rebuild_consts(\@consts);
+
+    my @vars = map { $_->accept($visitor, @args) } @{$self->get_vars};
+    $self->_rebuild_vars(\@vars);
+
+    my @inlines = map { $_->accept($visitor, @args) } @{$self->get_inlines};
+    $self->_rebuild_inlines(\@inlines);
+
+    my @blocks = map { $_->accept($visitor, @args) } @{$self->get_blocks};    
+    $self->_rebuild_blocks(\@blocks);
 
     return $visitor->visit($self, @args);
+}
+
+=item B<_rebuild_dims>(I<dims>)
+
+Rebuild dimension attributes.
+
+=cut
+sub _rebuild_dims {
+    my $self = shift;
+    my $dims = shift;
+
+    $self->{_dims} = [];
+    $self->{_dim_names} = {};
+
+    foreach my $dim (@$dims) {
+        $self->add_dim($dim);
+    }
+}
+
+=item B<_rebuild_consts>(I<consts>)
+
+Rebuild constant attributes.
+
+=cut
+sub _rebuild_consts {
+    my $self = shift;
+    my $consts = shift;
+
+    $self->{_consts} = [];
+    $self->{_const_names} = {};
+
+    foreach my $const (@$consts) {
+        $self->add_const($const);
+    }
+}
+
+=item B<_rebuild_vars>(I<vars>)
+
+Rebuild variable attributes.
+
+=cut
+sub _rebuild_vars {
+    my $self = shift;
+    my $vars = shift;
+
+    $self->{_vars} = [];
+    $self->{_state_vars} = [];
+    $self->{_state_aux__vars} = [];
+    $self->{_noise_vars} = [];
+    $self->{_input_vars} = [];
+    $self->{_obs_vars} = [];
+    $self->{_param_vars} = [];
+    $self->{_param_aux__vars} = [];
+        
+    $self->{_var_names} = {};
+    $self->{_state_names} = {};
+    $self->{_state_aux__names} = {};
+    $self->{_noise_names} = {};
+    $self->{_input_names} = {};
+    $self->{_obs_names} = {};
+    $self->{_param_names} = {};
+    $self->{_param_aux__names} = {};
+
+    foreach my $var (@$vars) {
+        $self->add_var($var);
+    }
+}
+
+=item B<_rebuild_inlines>(I<inlines>)
+
+Rebuild inline attributes.
+
+=cut
+sub _rebuild_inlines {
+    my $self = shift;
+    my $inlines = shift;
+
+    $self->{_inlines} = [];
+    $self->{_inline_names} = {};
+
+    foreach my $inline (@$inlines) {
+        $self->add_inline($inline);
+    }
+}
+
+=item B<_rebuild_blocks>(I<blocks>)
+
+Rebuild block attributes.
+
+=cut
+sub _rebuild_blocks {
+    my $self = shift;
+    my $blocks = shift;
+
+    $self->{_blocks} = [];
+    $self->{_named_blocks} = {};
+
+    foreach my $block (@$blocks) {
+        $self->add_block($block);
+    }
 }
 
 1;

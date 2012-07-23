@@ -1,13 +1,12 @@
 =head1 NAME
 
-Bi::Visitor::Lineariser - visitor for constructing linearised version of a
+Bi::Visitor::ExtendedTransformer - visitor for constructing linearised version of a
 transition block.
 
 =head1 SYNOPSIS
 
-    use Bi::Visitor::Lineariser;
-
-    Bi::Visitor::Lineariser->evaluate($model);
+    use Bi::Visitor::ExtendedTransformer;
+    Bi::Visitor::ExtendedTransformer->evaluate($model);
 
 =head1 INHERITS
 
@@ -19,7 +18,7 @@ L<Bi::Visitor>
 
 =cut
 
-package Bi::Visitor::Lineariser;
+package Bi::Visitor::ExtendedTransformer;
 
 use base 'Bi::Visitor';
 use warnings;

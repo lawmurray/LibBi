@@ -7,6 +7,6 @@
  */
 #include "RandomKernel.cuh"
 
-void bi::kernelDevSeeds(Random rng, const unsigned seed) {
+void bi::kernelSeeds(Random rng, const unsigned seed) {
   rng.getDevRng().seed(seed);
 }

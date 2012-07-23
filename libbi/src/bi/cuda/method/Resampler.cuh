@@ -10,6 +10,7 @@
 
 #include "ResamplerKernel.cuh"
 #include "../math/temp_vector.hpp"
+#include "../../misc/omp.hpp"
 
 #include "thrust/fill.h"
 
@@ -19,13 +20,15 @@ void bi::ResamplerDeviceImpl::permute(V1 as) {
   assert (V1::on_device);
 
   const int P = as.size();
-
   temp_gpu_vector<int>::type is(P);
   thrust::fill(is.begin(), is.end(), -1);
 
   dim3 Dg, Db;
   Db.x = std::min(128, P);
-  Dg.x = (P + Db.x - 1) / Db.x;
+  Dg.x = (P + Db.x - 1)/Db.x;
+
+  kernelResamplerPrePermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
+  CUDA_CHECK;
 
   kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
   CUDA_CHECK;
@@ -34,11 +37,12 @@ void bi::ResamplerDeviceImpl::permute(V1 as) {
 template<class V1, class M1>
 void bi::ResamplerDeviceImpl::copy(const V1 as, M1 X) {
   /* pre-condition */
-  assert (as.size() == X.size1());
+  assert (as.size() <= X.size1());
   assert (V1::on_device);
   assert (M1::on_device);
 
-  const int P = X.size1();
+//  const int P = X.size1();
+  const int P = as.size();
   const int N = X.size2();
 
   dim3 Dg, Db;

@@ -16,6 +16,10 @@
 #include "../../primitive/vector_primitive.hpp"
 #include "../../typelist/equals.hpp"
 
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/base_object.hpp"
+#include "boost/serialization/array.hpp"
+
 #include "thrust/device_ptr.h"
 #include "thrust/iterator/detail/normal_iterator.h"
 
@@ -306,9 +310,30 @@ public:
    */
   CUDA_FUNC_HOST void clear();
 
+private:
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
+
 } BI_ALIGN(16);
 
 }
+
+#include "../../host/math/temp_vector.hpp"
 
 template<class T>
 inline bi::gpu_vector_reference<T>::gpu_vector_reference(T* data,
@@ -449,6 +474,36 @@ inline void bi::gpu_vector_reference<T>::clear() {
   }
 }
 
+template<class T>
+template<class Archive>
+void bi::gpu_vector_reference<T>::save(Archive& ar, const unsigned version) const {
+  size_type size = this->size(), i;
+
+  typename temp_host_vector<T>::type tmp(size);
+  tmp = *this;
+  synchronize();
+
+  ar & size;
+  for (i = 0; i < size; ++i) {
+    ar & tmp(i);
+  }
+}
+
+template<class T>
+template<class Archive>
+void bi::gpu_vector_reference<T>::load(Archive& ar, const unsigned version) {
+  size_type size, i;
+
+  ar & size;
+  assert (this->size() == size);
+
+  typename temp_host_vector<T>::type tmp(size);
+  for (i = 0; i < size; ++i) {
+    ar & tmp(i);
+  }
+  *this = tmp;
+}
+
 namespace bi {
 /**
  * Vector in device memory. Shallow copy, deep assignment.
@@ -568,6 +623,17 @@ private:
    */
   bool own;
 
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void serialize(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  friend class boost::serialization::access;
+
 } BI_ALIGN(16);
 
 }
@@ -683,6 +749,12 @@ void bi::gpu_vector<T,A>::swap(gpu_vector<T,A>& o) {
   std::swap(this->size1, o.size1);
   std::swap(this->inc1, o.inc1);
   std::swap(this->own, o.own);
+}
+
+template<class T, class A>
+template<class Archive>
+void bi::gpu_vector<T,A>::serialize(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<gpu_vector_reference<T> >(*this);
 }
 
 #endif

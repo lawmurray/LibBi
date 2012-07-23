@@ -41,8 +41,8 @@ void bi::StaticSamplerGPU<B,S>::samples(Random& rng, State<B,ON_DEVICE>& s) {
   const int P = s.size();
   dim3 Db, Dg;
 
-  Db.x = std::min(deviceIdealThreadsPerBlock(), P);
-  Dg.x = std::min(deviceIdealThreads()/Db.x, (P + Db.x - 1)/Db.x);
+  Db.x = deviceIdealThreadsPerBlock();
+  Dg.x = (std::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
   if (N > 0) {
     bind(s);

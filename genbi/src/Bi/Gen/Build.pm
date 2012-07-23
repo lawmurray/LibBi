@@ -60,7 +60,7 @@ sub gen {
     # pre-condition
     assert($model->isa('Bi::Model')) if DEBUG;
 
-    foreach my $file ('autogen.sh', 'configure.ac', 'Makefile.am') {
+    foreach my $file ('nvcc_wrapper.pl', 'autogen.sh', 'configure.ac', 'Makefile.am') {
         $self->process_template("$file.tt", { 'model' => $model }, $file);
     }
 }

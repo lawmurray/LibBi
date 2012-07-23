@@ -48,23 +48,6 @@ Index along the C<ns> dimension of C<--init-file> to use.
 
 Index along the C<ns> dimension of C<--input-file> to use.
 
-=item * C<--seed> (default 0)
-
-Pseudorandom number generator seed.
-
-=item * C<--time> (default 0)
-
-True to time the run, false otherwise.
-
-=item * C<--output> (default 1)
-
-True to produce output, false otherwise.
-
-=item * C<--threads I<N>> (default 0)
-
-Run with C<I<N>> threads. If zero, the number of threads used is the default
-for OpenMP on the platform.
-
 =back
 
 =cut
@@ -103,26 +86,6 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'input-ns',
-      type => 'int',
-      default => 0
-    },
-    {
-      name => 'seed',
-      type => 'int',
-      default => 0
-    },
-    {
-      name => 'time',
-      type => 'int',
-      default => 0
-    },
-    {
-      name => 'output',
-      type => 'int',
-      default => 1
-    },
-    {
-      name => 'threads',
       type => 'int',
       default => 0
     }

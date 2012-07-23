@@ -22,16 +22,56 @@
  *
  * Number of packed elements in an sse_real variable.
  */
-#ifdef ENABLE_DOUBLE
-#define BI_SSE_SIZE 2
-#else
+#ifdef ENABLE_SINGLE
 #define BI_SSE_SIZE 4
+#else
+#define BI_SSE_SIZE 2
 #endif
 
 /*
  * Function aliases.
  */
-#ifdef ENABLE_DOUBLE
+#ifdef ENABLE_SINGLE
+#define BI_SSE_ADD_S _mm_add_ss
+#define BI_SSE_ADD_P _mm_add_ps
+#define BI_SSE_SUB_S _mm_sub_ss
+#define BI_SSE_SUB_P _mm_sub_ps
+#define BI_SSE_MUL_S _mm_mul_ss
+#define BI_SSE_MUL_P _mm_mul_ps
+#define BI_SSE_DIV_S _mm_div_ss
+#define BI_SSE_DIV_P _mm_div_ps
+#define BI_SSE_SQRT_S _mm_sqrt_ss
+#define BI_SSE_SQRT_P _mm_sqrt_ps
+#define BI_SSE_MAX_P _mm_max_ps
+#define BI_SSE_MIN_P _mm_min_ps
+#define BI_SSE_LOAD_S _mm_load_ss
+#define BI_SSE_LOAD_P _mm_load_ps
+#define BI_SSE_LOAD1_P _mm_load1_ps
+#define BI_SSE_STORE_S _mm_store_ss
+#define BI_SSE_STORE_P _mm_store_ps
+#define BI_SSE_STORE1_P _mm_store1_ps
+#define BI_SSE_SET_S _mm_set_ss
+#define BI_SSE_SET_P _mm_set_ps
+#define BI_SSE_SET1_P _mm_set1_ps
+#define BI_SSE_SHUFFLE_P _mm_shuffle_ps
+#define BI_SSE_CVT_S _mm_cvtss_f32 // get first component
+#define BI_SSE_CMPEQ_S _mm_cmpeq_ss
+#define BI_SSE_CMPEQ_P _mm_cmpeq_ps
+#define BI_SSE_CMPLT_S _mm_cmplt_ss
+#define BI_SSE_CMPLT_P _mm_cmplt_ps
+#define BI_SSE_CMPLE_S _mm_cmple_ss
+#define BI_SSE_CMPLE_P _mm_cmple_ps
+#define BI_SSE_CMPGT_S _mm_cmpgt_ss
+#define BI_SSE_CMPGT_P _mm_cmpgt_ps
+#define BI_SSE_CMPGE_S _mm_cmpge_ss
+#define BI_SSE_CMPGE_P _mm_cmpge_ps
+#define BI_SSE_CMPNEQ_S _mm_cmpneq_ss
+#define BI_SSE_CMPNEQ_P _mm_cmpneq_ps
+#define BI_SSE_AND_P _mm_and_ps
+#define BI_SSE_ANDNOT_P _mm_andnot_ps
+#define BI_SSE_HADD_P _mm_hadd_ps
+#define BI_SSE_ROTATE_LEFT(x) BI_SSE_SHUFFLE_P(x, x, _MM_SHUFFLE(0,3,2,1))
+#else
 #define BI_SSE_ADD_S _mm_add_sd
 #define BI_SSE_ADD_P _mm_add_pd
 #define BI_SSE_SUB_S _mm_sub_sd
@@ -73,46 +113,6 @@
 #define BI_SSE_ANDNOT_P _mm_andnot_pd
 #define BI_SSE_HADD_P _mm_hadd_pd // horizontal add
 #define BI_SSE_ROTATE_LEFT(x) BI_SSE_SHUFFLE_P(x, x, _MM_SHUFFLE(1,0,3,2))
-#else
-#define BI_SSE_ADD_S _mm_add_ss
-#define BI_SSE_ADD_P _mm_add_ps
-#define BI_SSE_SUB_S _mm_sub_ss
-#define BI_SSE_SUB_P _mm_sub_ps
-#define BI_SSE_MUL_S _mm_mul_ss
-#define BI_SSE_MUL_P _mm_mul_ps
-#define BI_SSE_DIV_S _mm_div_ss
-#define BI_SSE_DIV_P _mm_div_ps
-#define BI_SSE_SQRT_S _mm_sqrt_ss
-#define BI_SSE_SQRT_P _mm_sqrt_ps
-#define BI_SSE_MAX_P _mm_max_ps
-#define BI_SSE_MIN_P _mm_min_ps
-#define BI_SSE_LOAD_S _mm_load_ss
-#define BI_SSE_LOAD_P _mm_load_ps
-#define BI_SSE_LOAD1_P _mm_load1_ps
-#define BI_SSE_STORE_S _mm_store_ss
-#define BI_SSE_STORE_P _mm_store_ps
-#define BI_SSE_STORE1_P _mm_store1_ps
-#define BI_SSE_SET_S _mm_set_ss
-#define BI_SSE_SET_P _mm_set_ps
-#define BI_SSE_SET1_P _mm_set1_ps
-#define BI_SSE_SHUFFLE_P _mm_shuffle_ps
-#define BI_SSE_CVT_S _mm_cvtss_f32 // get first component
-#define BI_SSE_CMPEQ_S _mm_cmpeq_ss
-#define BI_SSE_CMPEQ_P _mm_cmpeq_ps
-#define BI_SSE_CMPLT_S _mm_cmplt_ss
-#define BI_SSE_CMPLT_P _mm_cmplt_ps
-#define BI_SSE_CMPLE_S _mm_cmple_ss
-#define BI_SSE_CMPLE_P _mm_cmple_ps
-#define BI_SSE_CMPGT_S _mm_cmpgt_ss
-#define BI_SSE_CMPGT_P _mm_cmpgt_ps
-#define BI_SSE_CMPGE_S _mm_cmpge_ss
-#define BI_SSE_CMPGE_P _mm_cmpge_ps
-#define BI_SSE_CMPNEQ_S _mm_cmpneq_ss
-#define BI_SSE_CMPNEQ_P _mm_cmpneq_ps
-#define BI_SSE_AND_P _mm_and_ps
-#define BI_SSE_ANDNOT_P _mm_andnot_ps
-#define BI_SSE_HADD_P _mm_hadd_ps
-#define BI_SSE_ROTATE_LEFT(x) BI_SSE_SHUFFLE_P(x, x, _MM_SHUFFLE(0,3,2,1))
 #endif
 #define BI_SSE_PREFETCH _mm_prefetch
 
@@ -124,10 +124,10 @@ struct sse_real {
   /**
    * 128-bit packed floating point type.
    */
-  #ifdef ENABLE_DOUBLE
-  typedef __m128d m128;
-  #else
+  #ifdef ENABLE_SINGLE
   typedef __m128 m128;
+  #else
+  typedef __m128d m128;
   #endif
 
   /**
@@ -460,10 +460,10 @@ BI_FORCE_INLINE inline sse_real sse_if(const sse_real& mask, const sse_real& o1,
  */
 BI_FORCE_INLINE inline bool sse_any(const sse_real& mask) {
   bool result = false;
-  #ifdef ENABLE_DOUBLE
-  CUDA_ALIGN(16) long x[BI_SSE_SIZE] BI_ALIGN(16);
-  #else
+  #ifdef ENABLE_SINGLE
   CUDA_ALIGN(16) int x[BI_SSE_SIZE] BI_ALIGN(16);
+  #else
+  CUDA_ALIGN(16) long x[BI_SSE_SIZE] BI_ALIGN(16);
   #endif
   mask.store((real*)x);
   for (int i = 0; i < BI_SSE_SIZE; ++i) {

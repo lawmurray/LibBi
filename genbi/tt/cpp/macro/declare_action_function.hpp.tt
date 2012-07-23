@@ -17,7 +17,7 @@
   static CUDA_FUNC_BOTH void logDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp);
   [% ELSIF function == 'maxlogdensity' %]
   template <class CX, class PX, class OX, class T1>
-  static CUDA_FUNC_BOTH void maxLogDensity(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp);
+  static CUDA_FUNC_BOTH void maxLogDensities(const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp);
   [% ELSE %]
   template <class CX, class PX, class T1>
   static CUDA_FUNC_BOTH void [% function %](const int p, const CX& cox, const PX& pax, T1& x);

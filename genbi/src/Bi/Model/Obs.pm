@@ -24,7 +24,7 @@ use strict;
 
 use Bi::Model::Var;
 
-=item B<new>(I<name>, I<dims>)
+=item B<new>(I<name>, I<dims>, I<args>, I<named_args>)
 
 Constructor.
 

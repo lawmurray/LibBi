@@ -11,19 +11,28 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/kd/kde.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ParticleFilter.hpp"
+#include "bi/method/AdaptiveNParticleFilter.hpp"
 #include "bi/method/AuxiliaryParticleFilter.hpp"
 #include "bi/method/StratifiedResampler.hpp"
 #include "bi/method/MultinomialResampler.hpp"
 #include "bi/method/MetropolisResampler.hpp"
 #include "bi/method/KernelResampler.hpp"
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
+#ifdef ENABLE_MPI
+#include "bi/mpi/method/DistributedResampler.hpp"
+#endif
 
 #include "boost/typeof/typeof.hpp"
 
@@ -32,7 +41,7 @@
 #include <string>
 #include <getopt.h>
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
 #else
 #define LOCATION ON_HOST
@@ -47,15 +56,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
   
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -83,52 +93,89 @@ int main(int argc, char* argv[]) {
 
   /* output */
   const int Y = (inObs == NULL) ? 1 : inObs->countUniqueTimes(T);
-  ParticleFilterNetCDFBuffer* out;
-  if (OUTPUT) {
-    out = new ParticleFilterNetCDFBuffer(m, P, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  } else {
-    out = NULL;
+  [% IF client.get_named_arg('filter') == 'anpf' %]
+  FlexiParticleFilterNetCDFBuffer* out = NULL;
+  if (ENABLE_OUTPUT) {
+    out = new FlexiParticleFilterNetCDFBuffer(m, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
+  [% ELSE %]
+  ParticleFilterNetCDFBuffer* out = NULL;
+  if (ENABLE_OUTPUT) {
+    out = new ParticleFilterNetCDFBuffer(m, P, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+  }
+  [% END %]
 
   /* resampler */
-  [% IF client.get_named_arg('resampler') == 'kernel' %]
-  real h;
-  if (B_ABS > 0.0) {
-    h = B_ABS;
-  } else {
-    h = B_REL*hopt(N, P);
-  }
-  StratifiedResampler base(SORT);
-  KernelResampler<model_type,StratifiedResampler> resam(m, rng, &base, h, SHRINK);
-  [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-  MetropolisResampler resam(C);
-  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler resam(SORT);
+  [% IF mpi %]
+    [% IF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler base(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler base(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler base(ENABLE_SORT);
+    [% END %]
+    DistributedResampler<BOOST_TYPEOF(base)> resam(&base);
   [% ELSE %]
-  StratifiedResampler resam(SORT);
+    [% IF client.get_named_arg('resampler') == 'kernel' %]
+    real h;
+    if (B_ABS > 0.0) {
+      h = B_ABS;
+    } else {
+      h = B_REL*hopt(m.getNetSize(R_VAR) + m.getNetSize(D_VAR), P);
+    }
+    StratifiedResampler base(ENABLE_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler resam(C);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler resam(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler resam(ENABLE_SORT);
+    [% END %]
   [% END %]
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'pf1' %]
   BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, inObs, out)));
+  [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+    /* stopper */
+    [% IF client.get_named_arg('stopper') == 'deterministic' %]
+    Stopper stopper(P);
+    [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+    SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+    MinimumESSStopper stopper(MIN_ESS_REL, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+    StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'var' %]
+    VarStopper stopper(REL_THRESHOLD, MAX_P);
+    [% END %]
+  BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory<LOCATION>::create(m, &resam, &stopper, ESS_REL, BLOCK_P, inInput, inObs, out)));
   [% ELSE %]
   BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, inObs, out)));
   [% END %]
 
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
   TicToc timer;
+  
   filter->filter(rng, T, s, inInit);
+  synchronize();
   
   /* output timing results */
-  if (TIME) {
-    synchronize();
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
   delete filter;
   delete out;
   delete inInput;
   delete inInit;
   delete inObs;
-
+  
   return 0;
 }

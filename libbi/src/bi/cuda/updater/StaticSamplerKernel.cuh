@@ -36,7 +36,7 @@ void bi::kernelStaticSampler(Random rng) {
   PX pax;
   OX x;
 
-  Rng<ON_DEVICE> rng1(rng.getDevRng()); // local copy, faster
+  RngGPU rng1(rng.getDevRng()); // local copy, faster
   Visitor::accept(rng1, pax, x);
   rng.setDevRng(rng1);
 }

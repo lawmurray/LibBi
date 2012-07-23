@@ -148,6 +148,10 @@ public:
    */
   void restore();
 
+  void top();
+
+  void pop();
+
 protected:
   /**
    * Model.

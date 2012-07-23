@@ -15,21 +15,6 @@
 
 namespace bi {
 /**
- * Initial condition handling options.
- */
-enum InitialConditionMode {
-  /**
-   * Include initial conditions in the method.
-   */
-  INCLUDE_INITIAL,
-
-  /**
-   * Exclude initial conditions from the method.
-   */
-  EXCLUDE_INITIAL
-};
-
-/**
  * Optimisation mode.
  */
 enum OptimiserMode {

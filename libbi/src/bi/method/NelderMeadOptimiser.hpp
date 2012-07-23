@@ -77,7 +77,6 @@ struct NelderMeadOptimiserParams {
   State<B,L>* s;
   F* filter;
   real T;
-  InitialConditionMode initial;
 };
 
 /**
@@ -105,15 +104,11 @@ public:
    * @param m Model.
    * @param out Output.
    * @param mode Mode of operation.
-   * @param initial Initial condition handling. Determines whether the
-   * optimisation is over parameters alone, or both parameters and initial
-   * conditions.
    *
    * @see ParticleFilter
    */
   NelderMeadOptimiser(B& m, IO1* out = NULL,
-      const OptimiserMode mode = MAXIMUM_LIKELIHOOD,
-      const InitialConditionMode initial = EXCLUDE_INITIAL);
+      const OptimiserMode mode = MAXIMUM_LIKELIHOOD);
 
   /**
    * Get output buffer.
@@ -220,20 +215,9 @@ private:
   IO1* out;
 
   /**
-   * Size of MCMC state. Will include at least all p-vars, and potentially
-   * the initial state of d-vars.
-   */
-  int M;
-
-  /**
    * Optimisation mode.
    */
   OptimiserMode mode;
-
-  /**
-   * Initial condition handling mode.
-   */
-  InitialConditionMode initial;
 
   /**
    * Current state.
@@ -277,9 +261,8 @@ struct NelderMeadOptimiserFactory {
    */
   template<class B, class IO1>
   static NelderMeadOptimiser<B,IO1,CL>* create(B& m, IO1* out = NULL,
-      const OptimiserMode mode = MAXIMUM_LIKELIHOOD,
-      const InitialConditionMode initial = EXCLUDE_INITIAL) {
-    return new NelderMeadOptimiser<B,IO1,CL>(m, out, mode, initial);
+      const OptimiserMode mode = MAXIMUM_LIKELIHOOD) {
+    return new NelderMeadOptimiser<B,IO1,CL>(m, out, mode);
   }
 };
 }
@@ -292,13 +275,11 @@ struct NelderMeadOptimiserFactory {
 
 template<class B, class IO1, bi::Location CL>
 bi::NelderMeadOptimiser<B,IO1,CL>::NelderMeadOptimiser(B& m, IO1* out,
-    const OptimiserMode mode, const InitialConditionMode initial) :
+    const OptimiserMode mode) :
     m(m),
     out(out),
-    M(NP + ((initial == INCLUDE_INITIAL) ? ND : 0)),
     mode(mode),
-    initial(initial),
-    state(M) {
+    state(NP) {
   //
 }
 
@@ -328,15 +309,12 @@ template<bi::Location L, class F, class IO2>
 void bi::NelderMeadOptimiser<B,IO1,CL>::init(Random& rng, const real T,
     State<B,L>& s, F* filter, IO2* inInit) {
   /* first run of filter to get everything initialised properly */
-  filter->reset();
+  filter->rewind();
   filter->filter(rng, 0.0, s, inInit);
 
   /* initialise state vector */
   BOOST_AUTO(x, gsl_vector_reference(state.x));
-  subrange(x, 0, NP) = vec(s.get(P_VAR));
-  if (initial == INCLUDE_INITIAL) {
-    subrange(x, NP, ND) = row(s.get(D_VAR), 0);
-  }
+  x = vec(s.get(P_VAR));
   set_elements(gsl_vector_reference(state.step), 0.01);
 
   /* parameters */
@@ -347,7 +325,6 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::init(Random& rng, const real T,
   params->s = &s;
   params->filter = filter;
   params->T = T;
-  params->initial = initial;
 
   /* function */
   gsl_multimin_function* f = new gsl_multimin_function(); ///@todo Leaks
@@ -379,9 +356,7 @@ template<bi::Location L>
 void bi::NelderMeadOptimiser<B,IO1,CL>::output(const int k, const State<B,L>& s) {
   if (out != NULL) {
     out->writeState(P_VAR, k, vec(s.get(P_VAR)));
-    if (initial == INCLUDE_INITIAL) {
-      out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
-    }
+    out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
     out->writeValue(k, -state.minimizer->fval);
     out->writeSize(k, state.size);
   }
@@ -410,7 +385,7 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::ml(const gsl_vector* x,
 
   /* evaluate */
   try {
-    p->filter->reset();
+    p->filter->rewind();
     real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
     return -ll;
   } catch (CholeskyException e) {
@@ -433,22 +408,14 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
   p->s->resize(1, true);
 
   /* initialise */
-  vec(p->s->getAlt(P_VAR)) = subrange(gsl_vector_reference(x), 0, NP);
+  vec(p->s->getAlt(P_VAR)) = gsl_vector_reference(x);
   p->m->parameterLogDensities(*p->s, lp);
   p->m->parameterPostLogDensities(*p->s, lp);
-  if (p->initial == INCLUDE_INITIAL) {
-    row(p->s->getAlt(D_VAR), 0) = subrange(gsl_vector_reference(x), NP, ND);
-    p->m->initialLogDensities(*p->s, lp);
-  }
-
   p->s->resize(P, true);
-  if (p->initial == INCLUDE_INITIAL) {
-    set_rows(p->s->get(D_VAR), subrange(gsl_vector_reference(x), NP, ND));
-  }
 
   /* evaluate */
   try {
-    p->filter->reset();
+    p->filter->rewind();
     real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
     return -(ll + lp(0));
   } catch (CholeskyException e) {

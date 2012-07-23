@@ -27,7 +27,7 @@ namespace bi {
  */
 template<Location L, class T>
 struct loc_vector {
-  #ifdef ENABLE_GPU
+  #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<L,
       gpu_vector<T>,
       host_vector<T> >::type type;

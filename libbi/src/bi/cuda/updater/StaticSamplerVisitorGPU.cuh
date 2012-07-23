@@ -29,7 +29,7 @@ public:
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(Rng<ON_DEVICE>& rng, const PX& pax,
+  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, const PX& pax,
       OX& x);
 };
 
@@ -41,7 +41,7 @@ public:
 template<class B, class PX, class OX>
 class StaticSamplerVisitorGPU<B,empty_typelist,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(Rng<ON_DEVICE>& rng, const PX& pax,
+  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, const PX& pax,
       OX& x) {
     //
   }
@@ -54,7 +54,7 @@ public:
 
 template<class B, class S, class PX, class OX>
 inline void bi::StaticSamplerVisitorGPU<B,S,PX,OX>::accept(
-    Rng<ON_DEVICE>& rng, const PX& pax, OX& x) {
+    RngGPU& rng, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;

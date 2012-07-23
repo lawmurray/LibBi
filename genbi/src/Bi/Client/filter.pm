@@ -44,6 +44,11 @@ former is not defined, the L<transition> top-level block will be used
 instead. If the latter is not defined, the L<observation> top-level block will
 be used instead.
 
+=item * C<'anpf'>
+
+Bootstrap particle filter with adaptive number of particles at each time
+step.
+
 =item * C<'ekf'>
 
 Extended Kalman filter.
@@ -98,11 +103,64 @@ resampled if ESS is below this proportion of C<P>.
 
 =back
 
+=head2 Adaptive particle filter-specific options
+
+The following additional options are available when C<--filter> is set to
+C<'anpf'>:
+
+=over 4
+
+=item * C<--stopper> (default 'miness')
+
+The stopping criterion to use; one of:
+
+=over 8
+
+=item * C<'deterministic'>
+
+fixed number of particles,
+
+=item * C<'sumofweights'>
+
+sum of weights,
+
+=item * C<'miness'>
+
+minimum ESS,
+
+=item * C<'stddev'>
+
+...
+
+=item * C<'var'>
+
+...
+
+=back
+
+=item C<--rel-threshold>
+
+...
+
+=item C<--block-P>
+
+...
+
+=item C<--min-ess-rel>
+
+...
+
+=item C<--max-P>
+
+...
+
+=back
+
 =head2 Stratified and multinomial resampler-specific options
 
 =over 4
 
-=item * C<--sort> (default 1)
+=item * C<--enable-sort> (default on)
 
 Sort weights prior to resampling.
 
@@ -119,9 +177,9 @@ unit covariance for the construction of the kernel density estimate. If
 C<--b-abs> is used they are not. A value of zero in either case will result
 in a rule-of-thumb bandwidth.
 
-=item * C<--shrink> (default 1)
+=item * C<--enable-shrink> (default on)
 
-True to apply shrink the kernel density estimate to preserve covariance
+True to shrink the kernel density estimate to preserve covariance
 (Liu & West 2001).
 
 =back
@@ -163,8 +221,8 @@ our @CLIENT_OPTIONS = (
       default => 1.0
     },
     {
-      name => 'sort',
-      type => 'int',
+      name => 'enable-sort',
+      type => 'bool',
       default => 1
     },
     {
@@ -178,14 +236,39 @@ our @CLIENT_OPTIONS = (
       default => 1.0
     },
     {
-      name => 'shrink',
-      type => 'int',
+      name => 'enable-shrink',
+      type => 'bool',
       default => 1
     },
     {
       name => 'C',
       type => 'int',
       default => 0
+    },
+    {
+      name => 'stopper',
+      type => 'string',
+      default => 'miness'
+    },
+    {
+      name => 'block-P',
+      type => 'int',
+      default => 128
+    },
+    {
+      name => 'min-ess-rel',
+      type => 'int',
+      default => 10
+    },
+    {
+      name => 'rel-threshold',
+      type => 'int',
+      default => 10
+    },
+    {
+      name => 'max-P',
+      type => 'int',
+      default => 32768
     }
 );
 
@@ -196,11 +279,6 @@ sub init {
     push(@{$self->{_params}}, @CLIENT_OPTIONS);
 }
 
-sub get_linearise {
-    my $self = shift;
-    return ($self->get_named_arg('filter') eq 'ekf');
-}
-
 sub process_args {
     my $self = shift;
 
@@ -208,6 +286,7 @@ sub process_args {
     my $filter = $self->get_named_arg('filter');
     my $binary;
     if ($filter eq 'ekf') {
+        $self->set_named_arg('transform-extended', 1);
         $binary = 'ekf';
     } else {
         $binary = 'pf';

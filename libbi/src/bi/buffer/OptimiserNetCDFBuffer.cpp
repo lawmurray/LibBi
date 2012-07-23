@@ -12,13 +12,12 @@
 using namespace bi;
 
 OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode,
-    const InitialConditionMode initial) :
+    const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
-    create(initial);
+    create();
   } else {
-    map(initial);
+    map();
   }
 }
 
@@ -26,7 +25,7 @@ OptimiserNetCDFBuffer::~OptimiserNetCDFBuffer() {
   //
 }
 
-void OptimiserNetCDFBuffer::create(const InitialConditionMode initial) {
+void OptimiserNetCDFBuffer::create() {
   int id, i;
   VarType type;
   Var* var;
@@ -53,7 +52,7 @@ void OptimiserNetCDFBuffer::create(const InitialConditionMode initial) {
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
     vars[type].resize(m.getNumVars(type), NULL);
-    if (type == P_VAR || (initial == INCLUDE_INITIAL && type == D_VAR)) {
+    if (type == P_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->getIO()) {
@@ -64,7 +63,7 @@ void OptimiserNetCDFBuffer::create(const InitialConditionMode initial) {
   }
 }
 
-void OptimiserNetCDFBuffer::map(const InitialConditionMode initial) {
+void OptimiserNetCDFBuffer::map() {
   std::string name;
   int id, i;
   VarType type;
@@ -103,7 +102,7 @@ void OptimiserNetCDFBuffer::map(const InitialConditionMode initial) {
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
-    if (type == P_VAR || (initial == INCLUDE_INITIAL && type == D_VAR)) {
+    if (type == P_VAR) {
       vars[type].resize(m.getNumVars(type), NULL);
       for (id = 0; id < m.getNumVars(type); ++id) {
         node = m.getVar(type, id);

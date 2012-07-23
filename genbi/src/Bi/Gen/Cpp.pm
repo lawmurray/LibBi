@@ -56,14 +56,15 @@ sub new {
     return $self;
 }
 
-=item B<gen>(I<model>)
+=item B<gen>(I<model>, I<client>)
 
-Generate code for model.
+Generate code for model and client.
 
 =cut
 sub gen {
     my $self = shift;
     my $model = shift;
+    my $client = shift;
     my $out;
     
     # pre-condition
@@ -87,6 +88,9 @@ sub gen {
     foreach my $block (@{$model->get_blocks}) {
         $self->process_block($model, $block);
     }
+    
+    # client
+    $self->process_client($model, $client);
 }
 
 =item B<process_dim>(I<dim>)

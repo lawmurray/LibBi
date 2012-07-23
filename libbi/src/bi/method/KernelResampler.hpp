@@ -22,7 +22,7 @@ namespace bi {
  * @ref Liu2001 "Liu \& West (2001)". Kernel centres are sampled using a base
  * resampler of type @p R.
  */
-template<class B, class R>
+template<class R>
 class KernelResampler : public Resampler {
 public:
   /**
@@ -32,7 +32,7 @@ public:
    * @param h Bandwidth.
    * @param shrink True to apply shrinkage, false otherwise.
    */
-  KernelResampler(B& m, R* base, const real h, const bool shrink = true);
+  KernelResampler(R* base, const real h, const bool shrink = true);
 
   /**
    * @name High-level interface
@@ -41,25 +41,25 @@ public:
   /**
    * @copydoc concept::Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
+  template<class V1, class V2, class B, Location L>
   void resample(Random& rng, V1 lws, V2 as, State<B,L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random& rng, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
+  template<class V1, class V2, class V3, class B, Location L>
   void resample(Random& rng, const V1 qlws, V2 lws, V3 as, State<B,L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, Location L>
+  template<class V1, class V2, class B, Location L>
   void resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, State<B,L>&)
    */
-  template<class V1, class V2, class V3, Location L>
+  template<class V1, class V2, class V3, class B, Location L>
   void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, State<B,L>& s);
   //@}
 
@@ -67,14 +67,22 @@ public:
    * @name Low-level interface
    */
   //@{
+  /**
+   * @copydoc concept::Resampler::ancestors
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * @copydoc concept::Resampler::offspring
+   */
+  template<class V1, class V2>
+  void offspring(Random& rng, const V1 lws, V2 os, const int P)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
-  /**
-   * Model.
-   */
-  B& m;
-
   /**
    * Base resampler.
    */
@@ -100,17 +108,18 @@ private:
 #include "../misc/exception.hpp"
 #include "../math/loc_temp_vector.hpp"
 #include "../math/loc_temp_matrix.hpp"
+#include "../pdf/misc.hpp"
 
-template<class B, class R>
-bi::KernelResampler<B,R>::KernelResampler(B& m, R* base, const real h,
-    const bool shrink) : m(m), base(base), h(h),
+template<class R>
+bi::KernelResampler<R>::KernelResampler(R* base, const real h,
+    const bool shrink) : base(base), h(h),
     a(std::sqrt(1.0 - std::pow(h,2))), shrink(shrink) {
   //
 }
 
-template<class B, class R>
-template<class V1, class V2, bi::Location L>
-void bi::KernelResampler<B,R>::resample(Random& rng, V1 lws, V2 as,
+template<class R>
+template<class V1, class V2, class B, bi::Location L>
+void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
     State<B,L>& s) {
   /* pre-condition */
   assert (lws.size() == s.size());
@@ -120,58 +129,37 @@ void bi::KernelResampler<B,R>::resample(Random& rng, V1 lws, V2 as,
   typedef typename loc_temp_vector<L,T3>::type V3;
 
   const int P = s.size();
-  const int ND = m.getNetSize(D_VAR);
-  const int NR = m.getNetSize(R_VAR);
-  const int N = NR + ND;
+  const int N = s.getDyn().size2();
 
-  M3 X(P,N), Sigma(N,N), U(N,N);
-  V3 mu(N), ws(P), x(N), z(N);
-
-  /* log relevant variables */
-  log_columns(s.get(D_VAR), m.getLogs(D_VAR));
-  log_columns(s.get(R_VAR), m.getLogs(R_VAR));
-
-  /* copy to one matrix */
-  columns(X, NR, ND) = s.get(D_VAR);
-  columns(X, 0, NR) = s.get(R_VAR);
+  M3 Z(P,N), Sigma(N,N), U(N,N);
+  V3 mu(N), ws(P);
 
   /* compute statistics */
   ws = lws;
-  if (!ws.on_device && lws.on_device) {
-    synchronize();
-  }
+  synchronize(!ws.on_device && lws.on_device);
   expu_elements(ws);
-  mean(X, ws, mu);
-  cov(X, ws, mu, Sigma);
+  mean(s.getDyn(), ws, mu);
+  cov(s.getDyn(), ws, mu, Sigma);
 
   try {
     /* Cholesky decomposition of covariance; this may throw exception, in
-     * which case defer to base resampler, in catch block below. */
+     * which case defer to base resampler in catch block below. */
     chol(Sigma, U, 'U');
 
     /* shrink kernel centres back toward mean to preserve covariance */
     if (shrink) {
-      matrix_scal(a, X);
+      matrix_scal(a, s.getDyn());
       scal(1.0 - a, mu);
-      add_rows(X, mu);
+      add_rows(s.getDyn(), mu);
     }
-
-    /* copy back from one matrix */
-    s.get(D_VAR) = columns(X, NR, ND);
-    s.get(R_VAR) = columns(X, 0, NR);
 
     /* sample kernel centres */
     base->resample(rng, lws, as, s);
 
     /* add kernel noise */
-    rng.gaussians(vec(X));
-    trmm(h, U, X, 'R', 'U');
-    matrix_axpy(1.0, columns(X, NR, ND), s.get(D_VAR));
-    matrix_axpy(1.0, columns(X, 0, NR), s.get(R_VAR));
-
-    /* exp relevant variables */
-    exp_columns(s.get(D_VAR), m.getLogs(D_VAR));
-    exp_columns(s.get(R_VAR), m.getLogs(R_VAR));
+    rng.gaussians(vec(Z));
+    trmm(h, U, Z, 'R', 'U');
+    matrix_axpy(1.0, Z, s.getDyn());
   } catch (CholeskyException e) {
     /* defer to base resampler */
     BI_WARN(false, "Cholesky failed for KernelResampler, reverting " <<
@@ -180,23 +168,37 @@ void bi::KernelResampler<B,R>::resample(Random& rng, V1 lws, V2 as,
   }
 }
 
-template<class B, class R>
-template<class V1, class V2, bi::Location L>
-void bi::KernelResampler<B,R>::resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s) {
+template<class R>
+template<class V1, class V2, class B, bi::Location L>
+void bi::KernelResampler<R>::resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s) {
   assert(false);
 }
 
-template<class B, class R>
-template<class V1, class V2, class V3, bi::Location L>
-void bi::KernelResampler<B,R>::resample(Random& rng, const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
+template<class R>
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::KernelResampler<R>::resample(Random& rng, const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
   assert(false);
 }
 
-template<class B, class R>
-template<class V1, class V2, class V3, bi::Location L>
-void bi::KernelResampler<B,R>::resample(Random& rng, const int a,
+template<class R>
+template<class V1, class V2, class V3, class B, bi::Location L>
+void bi::KernelResampler<R>::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
   assert(false);
+}
+
+template<class R>
+template<class V1, class V2>
+void bi::KernelResampler<R>::ancestors(Random& rng, const V1 lws, V2 as)
+    throw (ParticleFilterDegeneratedException) {
+  base->ancestors(rng, lws, as);
+}
+
+template<class R>
+template<class V1, class V2>
+void bi::KernelResampler<R>::offspring(Random& rng, const V1 lws, V2 os,
+    const int P) throw (ParticleFilterDegeneratedException) {
+  base->offspring(rng, lws, os, P);
 }
 
 #endif

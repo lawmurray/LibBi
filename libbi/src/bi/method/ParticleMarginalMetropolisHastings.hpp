@@ -15,6 +15,7 @@
 #include "../math/view.hpp"
 #include "../misc/location.hpp"
 #include "../misc/exception.hpp"
+#include "AdaptiveNParticleFilter.hpp"
 
 #ifndef __CUDACC__
 #include "boost/serialization/serialization.hpp"
@@ -37,8 +38,6 @@ enum FilterMode {
 };
 
 /**
- * @internal
- *
  * %State of ParticleMarginalMetropolisHastings.
  */
 class ParticleMarginalMetropolisHastingsState {
@@ -111,7 +110,7 @@ public:
   real lq;
 
 private:
-  #ifndef __CUDACC__
+#ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -122,7 +121,7 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
+#endif
 };
 }
 
@@ -139,9 +138,9 @@ inline bi::ParticleMarginalMetropolisHastingsState::ParticleMarginalMetropolisHa
 }
 
 inline bi::ParticleMarginalMetropolisHastingsState::ParticleMarginalMetropolisHastingsState(const ParticleMarginalMetropolisHastingsState& o) :
-    theta(o.theta.size()),
-    xd(o.xd.size1(), o.xd.size2()),
-    xr(o.xr.size1(), o.xr.size2()) {
+        theta(o.theta.size()),
+        xd(o.xd.size1(), o.xd.size2()),
+        xr(o.xr.size1(), o.xr.size2()) {
   operator=(o); // ensures deep copy
 }
 
@@ -212,12 +211,10 @@ public:
    *
    * @param m Model.
    * @param out Output.
-   * @param flag Indicates how initial conditions should be handled.
    *
    * @see ParticleFilter
    */
-  ParticleMarginalMetropolisHastings(B& m, IO1* out = NULL,
-      const InitialConditionMode initial = EXCLUDE_INITIAL);
+  ParticleMarginalMetropolisHastings(B& m, IO1* out = NULL);
 
   /**
    * Get output buffer.
@@ -262,8 +259,10 @@ public:
    */
   template<Location L, class F, class IO2>
   void sample(Random& rng, const real T, State<B,L>& s, F* filter,
-      IO2* inInit = NULL, const int C = 1);
+      IO2* inInit = NULL, const int C = 1, const FilterMode = UNCONDITIONED);
   //@}
+  template<Location L, class F, class IO2>
+  void sample_together(Random& rng, const real T, State<B,L>& s, F* filter, IO2* inInit, const int C);
 
   /**
    * @name Low-level interface.
@@ -304,6 +303,22 @@ public:
   template<Location L, class F>
   bool step(Random& rng, const real T, State<B,L>& s, F* filter,
       const FilterMode type = UNCONDITIONED);
+
+  template<Location L>
+  void propose(Random& rng, State<B,L>& s);
+  template<Location L>
+  void computePriorOnProposal(State<B,L>& s);
+  template<Location L, class F>
+  bool estimateLLOnProposal(Random& rng, const real T, State<B,L>& s, F* filter,
+      const FilterMode filtermode = UNCONDITIONED);
+  template<class F>
+  void computeAcceptReject(Random& rng, F* filter, bool cpf_fail, bool & result);
+  template<bi::Location L, class F>
+  real computeLROnProposal(Random& rng, const real T, State<B,L>& s,
+      State<B,L>& s_2, F* filter);
+  void computeAcceptReject(Random& rng, bool cpf_fail, bool & result);
+  template<bi::Location L, class F>
+  bool step_together(Random& rng, const real T, State<B,L>& s, F* filter);
 
   /**
    * Output current state.
@@ -377,12 +392,6 @@ private:
   IO1* out;
 
   /**
-   * Size of MCMC state. Will include at least all p-vars, and potentially
-   * the initial state of d- and c-vars, depending on settings.
-   */
-  int M;
-
-  /**
    * Current state.
    */
   ParticleMarginalMetropolisHastingsState x1;
@@ -391,11 +400,6 @@ private:
    * Previous or proposed state.
    */
   ParticleMarginalMetropolisHastingsState x2;
-
-  /**
-   * Initial condition handling mode.
-   */
-  InitialConditionMode initial;
 
   /**
    * Was last proposal accepted?
@@ -438,8 +442,8 @@ struct ParticleMarginalMetropolisHastingsFactory {
    */
   template<class B, class IO1>
   static ParticleMarginalMetropolisHastings<B,IO1,CL>* create(B& m,
-      IO1* out = NULL, const InitialConditionMode initial = EXCLUDE_INITIAL) {
-    return new ParticleMarginalMetropolisHastings<B,IO1,CL>(m, out, initial);
+      IO1* out = NULL) {
+    return new ParticleMarginalMetropolisHastings<B,IO1,CL>(m, out);
   }
 };
 }
@@ -448,13 +452,11 @@ struct ParticleMarginalMetropolisHastingsFactory {
 
 template<class B, class IO1, bi::Location CL>
 bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::ParticleMarginalMetropolisHastings(
-    B& m, IO1* out, const InitialConditionMode initial) :
+    B& m, IO1* out) :
     m(m),
     out(out),
-    M(NP + ((initial == INCLUDE_INITIAL) ? ND : 0)),
-    x1(m, M, (out != NULL) ? out->size2() : 0),
-    x2(m, M, (out != NULL) ? out->size2() : 0),
-    initial(initial),
+    x1(m, NP, (out != NULL) ? out->size2() : 0),
+    x2(m, NP, (out != NULL) ? out->size2() : 0),
     lastAccepted(false),
     accepted(0),
     total(0) {
@@ -479,14 +481,41 @@ bi::ParticleMarginalMetropolisHastingsState& bi::ParticleMarginalMetropolisHasti
 template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample(Random& rng,
-    const real T, State<B,L>& s, F* filter, IO2* inInit, const int C) {
+    const real T, State<B,L>& s, F* filter, IO2* inInit, const int C, const FilterMode filterMode) {
   int c;
-
+  const int P = s.size();
   init(rng, s, filter, inInit);
   for (c = 0; c < C; ++c) {
-    step(rng, T, s, filter);
+    step(rng, T, s, filter, filterMode);
+    //    if (c % 1000 == 0) {
     report(c);
+    //    }
     output(c);
+    s.setRange(0,P);
+  }
+  term();
+}
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L, class F, class IO2>
+void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample_together(Random& rng,
+    const real T, State<B,L>& s, F* filter, IO2* inInit, const int C) {
+  int c;
+  const int P = s.size();
+  init(rng, s, filter, inInit);
+
+  step(rng, T, s, filter, UNCONDITIONED);
+  report(0);
+  output(0);
+  s.setRange(0,P);
+
+  for (c = 1; c < C; ++c) {
+    step_together(rng, T, s, filter);
+//    if (c % 1000 == 0) {
+      report(c);
+//    }
+    output(c);
+    s.setRange(0,P);
   }
   term();
 }
@@ -496,83 +525,67 @@ template<bi::Location L, class F, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::init(Random& rng,
     State<B,L>& s, F* filter, IO2* inInit) {
   /* first run of filter to get everything initialised properly */
-  filter->reset();
+  filter->rewind();
   filter->filter(rng, 0.0, s, inInit);
 
   /* initialise state vector */
   subrange(x1.theta, 0, NP) = vec(s.get(P_VAR));
-  if (initial == INCLUDE_INITIAL) {
-    subrange(x1.theta, NP, ND) = row(s.get(D_VAR), 0);
-  }
 }
 
 template<class B, class IO1, bi::Location CL>
-template<bi::Location L, class F>
-bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
-    const real T, State<B,L>& s, F* filter, const FilterMode type) {
-  /* pre-conditions */
-  assert(filter->getOutput() != NULL);
-  assert(out == NULL || filter->getOutput()->size2() == out->size2());
-
+template<bi::Location L>
+void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::propose(Random& rng,
+    State<B,L>& s) {
   typename loc_temp_vector<L,real>::type lp(1);
-
   const int P = s.size();
   s.setRange(0, 1);
-
   /* proposal */
   row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
   m.proposalParameterSamples(rng, s);
   subrange(x2.theta, 0, NP) = row(s.get(P_VAR), 0);
-  if (initial == INCLUDE_INITIAL) {
-    row(s.get(D_VAR), 0) = subrange(x1.theta, NP, ND);
-    m.proposalInitialSamples(rng, s);
-    subrange(x2.theta, NP, ND) = row(s.get(D_VAR), 0);
-  }
 
   /* reverse proposal log-density */
   lp.clear();
   row(s.get(P_VAR), 0) = subrange(x2.theta, 0, NP);
   row(s.getAlt(P_VAR), 0) = subrange(x1.theta, 0, NP);
   m.proposalParameterLogDensities(s, lp);
-  if (initial == INCLUDE_INITIAL) {
-    row(s.get(D_VAR), 0) = subrange(x2.theta, NP, ND);
-    row(s.getAlt(D_VAR), 0) = subrange(x1.theta, NP, ND);
-    m.proposalInitialLogDensities(s, lp);
-  }
   x1.lq = *lp.begin();
-
-  /* prior log-density */
-  lp.clear();
-  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
-  m.parameterLogDensities(s, lp);
-  if (initial == INCLUDE_INITIAL) {
-    row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
-    m.initialLogDensities(s, lp);
-  }
-  x2.lp = *lp.begin();
 
   /* proposal log-density */
   lp.clear();
   row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
   row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
   m.proposalParameterLogDensities(s, lp);
-  if (initial == INCLUDE_INITIAL) {
-    row(s.get(D_VAR), 0) = subrange(x1.theta, NP, ND);
-    row(s.getAlt(D_VAR), 0) = subrange(x2.theta, NP, ND);
-    m.proposalInitialLogDensities(s, lp);
-  }
   x2.lq = *lp.begin();
-
-  /* prepare for filter */
   s.setRange(0, P);
-  if (initial == INCLUDE_INITIAL) {
-    set_rows(s.get(D_VAR), subrange(x2.theta, NP, ND));
-  } else {
-    m.initialSamples(rng, s);
-  }
+}
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L>
+void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computePriorOnProposal(State<B,L>& s) {
+
+  const int P = s.size();
+  s.setRange(0, 1);
+  /* prior log-density */
+  typename loc_temp_vector<L,real>::type lp(1);
+  lp.clear();
+  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  m.parameterLogDensities(s, lp);
+  x2.lp = *lp.begin();
+  s.setRange(0, P);
+}
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L, class F>
+bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::estimateLLOnProposal(Random& rng,
+    const real T, State<B,L>& s, F* filter, const FilterMode filtermode) {
+  /* prepare for filter */
+  bool cpf_fail = false;
+
+  m.initialSamples(rng, s);
 
   /* likelihood */
-  filter->reset();
+  filter->rewind();
   try {
     x2.ll = filter->filter(rng, T, x2.theta, s);
   } catch (CholeskyException e) {
@@ -581,9 +594,31 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     x2.ll = -1.0/0.0; // -inf
   }
 
+  /* check for x1.lp is 0 to avoid computation of ll at step 1
+   this is to prevent numerical instability associated with a
+   (virtual) trajectory with no weight. */
+  if (filtermode == CONDITIONED && x1.lp > 0) {
+    m.initialSamples(rng, s);
+    filter->rewind();
+    try {
+      x1.ll = filter->filter(rng, T, x1.theta, s, x1.xd, x1.xr);
+    } catch (CholeskyException e) {
+      x1.ll = 1.0/0.0; // +inf
+      cpf_fail = true;
+    } catch (ParticleFilterDegeneratedException e) {
+      x1.ll = 1.0/0.0; // +inf
+      cpf_fail = true;
+    }
+  }
+  return cpf_fail;
+}
+
+template<class B, class IO1, bi::Location CL>
+template<class F>
+void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computeAcceptReject(Random& rng,
+    F* filter, bool cpf_fail, bool & result){
   /* accept/reject */
-  bool result;
-  if (!BI_IS_FINITE(x2.ll)) {
+  if (!result || !BI_IS_FINITE(x2.ll) || cpf_fail) {
     result = false;
   } else if (!BI_IS_FINITE(x1.ll)) {
     result = true;
@@ -599,14 +634,111 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
 
     result = std::log(u) < logratio;
   }
-
   if (result) {
     accept(rng, filter);
   } else {
     reject();
   }
+}
+
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L, class F>
+bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
+    const real T, State<B,L>& s, F* filter, const FilterMode filtermode) {
+  /* pre-conditions */
+  assert(filter->getOutput() != NULL);
+  assert(out == NULL || filter->getOutput()->size2() == out->size2());
+  // propose new parameter value
+  // and compute the proposal density and its reverse
+  propose(rng, s);
+  // compute ths log prior density on the proposed
+  // parameter value
+  computePriorOnProposal(s);
+  bool result = true;
+  bool cpf_fail = false;
+  if (!BI_IS_FINITE(x2.lp)) {
+    result = false;
+    x2.ll = 0;
+  } else {
+    // estimate log likelihood on proposed parameter value
+    cpf_fail = estimateLLOnProposal(rng, T, s, filter, filtermode);
+  }
+  // compute acceptance ratio and draw uniform
+  // the result is written in result
+  computeAcceptReject(rng, filter, cpf_fail, result);
+  return result;
+}
+
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L, class F>
+bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step_together(Random& rng,
+    const real T, State<B,L>& s, F* filter) {
+  /* pre-conditions */
+  assert(out == NULL || filter->getOutput()->size2() == out->size2());
+
+  typename temp_host_vector<real>::type lp(1);
+
+  State<B,L> s_2(m,s.size());
+  s_2 = s;
+
+  real loglr = 0.0;
+
+  propose(rng, s);
+  computePriorOnProposal(s);
+
+  bool result = true;
+  if (!BI_IS_FINITE(x2.lp)) {
+    result = false;
+    x2.ll = 0;
+  } else {
+    loglr = computeLROnProposal(rng, T, s, s_2, filter);
+  }
+
+  /* accept/reject */
+  if (!result || !BI_IS_FINITE(x2.ll)) {
+    result = false;
+  } else {
+    //    real loglr = x2.ll - x1.ll;
+    real logpr = x2.lp - x1.lp;
+    real logqr = x1.lq - x2.lq;
+    if (!is_finite(x1.lq) && !is_finite(x2.lq)) {
+      logqr = 0.0;
+    }
+    real logratio = loglr + logpr + logqr;
+    real u = rng.uniform<real>();
+
+    result = std::log(u) < logratio;
+  }
+
+  if (result) {
+    accept(rng, filter);
+    s = s_2;
+  } else {
+    reject();
+  }
 
   return result;
+}
+
+template<class B, class IO1, bi::Location CL>
+template<bi::Location L, class F>
+real bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computeLROnProposal(Random& rng,
+    const real T, State<B,L>& s, State<B,L>& s_2, F* filter) {
+  /* prepare for filter */
+  m.initialSamples(rng, s);
+  m.initialSamples(rng, s_2);
+
+  /* likelihood */
+  filter->rewind();
+
+  real ll1 = 0.0, ll2 = 0.0;
+  real loglr = filter->filter(rng, T, x1.theta, s, x1.xd, x1.xr, x2.theta,
+      s_2, ll1, ll2);
+  x1.ll = ll1;
+  x2.ll = ll2;
+  return loglr;
 }
 
 template<class B, class IO1, bi::Location CL>

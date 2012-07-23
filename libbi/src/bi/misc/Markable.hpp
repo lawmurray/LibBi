@@ -44,6 +44,10 @@ protected:
    */
   void unmark();
 
+  void top(T& o);
+
+  void pop();
+
 private:
   /**
    * Saved states.
@@ -61,10 +65,12 @@ inline void bi::Markable<T>::mark(const T& o) {
 template<class T>
 inline void bi::Markable<T>::restore(T& o) {
   /* pre-condition */
-  assert (!os.empty());
-
-  o = os.top();
-  os.pop();
+//  assert (!os.empty());
+//
+//  o = os.top();
+//  os.pop();
+  top(o);
+  pop();
 }
 
 template<class T>
@@ -72,6 +78,22 @@ inline void bi::Markable<T>::unmark() {
   while (!os.empty()) {
     os.pop();
   }
+}
+
+template<class T>
+inline void bi::Markable<T>::top(T& o) {
+  /* pre-condition */
+  assert (!os.empty());
+
+  o = os.top();
+}
+
+template<class T>
+inline void bi::Markable<T>::pop() {
+  /* pre-condition */
+  assert (!os.empty());
+
+  os.pop();
 }
 
 #endif

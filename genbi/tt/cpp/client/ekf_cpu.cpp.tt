@@ -11,7 +11,6 @@
 
 #include "model/[% class_name %].hpp"
 
-#include "bi/cuda/cuda.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/method/ExtendedKalmanFilter.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
@@ -26,7 +25,7 @@
 #include <sys/time.h>
 #include <getopt.h>
 
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
 #else
 #define LOCATION ON_HOST
@@ -41,15 +40,16 @@ int main(int argc, char* argv[]) {
   /* command line arguments */
   [% read_argv(client) %]
 
-  /* bi init */
-  #ifdef __CUDACC__
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
   #endif
-  bi_omp_init(THREADS);
-  bi_ode_init();
-
-  /* NetCDF error reporting */
+  
+  /* NetCDF init */
   NcError ncErr(NcError::silent_nonfatal);
+  
+  /* bi init */
+  bi_init(THREADS);
 
   /* model */
   model_type m;
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   KalmanFilterNetCDFBuffer* out;
-  if (OUTPUT) {
+  if (ENABLE_OUTPUT) {
     out = new KalmanFilterNetCDFBuffer(m, P, 2*inObs.countUniqueTimes(T),
         OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
@@ -81,16 +81,26 @@ int main(int argc, char* argv[]) {
   }
   
   /* filter */
-  TicToc timer;
   BOOST_AUTO(filter, (ExtendedKalmanFilterFactory<LOCATION>::create(m, inInput, &inObs, out)));
+
+  /* filter */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;  
+  
   filter->filter(rng, T, s, inInit);
-  delete filter;
+  synchronize();
 
   /* output timing results */
-  if (TIME) {
+  if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
 
+  delete filter;
   delete inInput;
   delete inInit;
   delete out;

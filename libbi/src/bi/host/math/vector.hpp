@@ -16,11 +16,9 @@
 #include "../../primitive/vector_primitive.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
-//#include "boost/serialization/array.hpp"
-#endif
+#include "boost/serialization/array.hpp"
 
 #include "thrust/iterator/detail/normal_iterator.h"
 
@@ -124,6 +122,25 @@ public:
    * Increment.
    */
   size_type inc1;
+
+private:
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -193,6 +210,29 @@ inline bool bi::host_vector_handle<T>::same(const V1& o) const {
   return (equals<value_type,typename V1::value_type>::value &&
       on_device == V1::on_device && this->buf() == o.buf() &&
       this->size() == o.size() && this->inc() == o.inc());
+}
+
+template<class T>
+template<class Archive>
+void bi::host_vector_handle<T>::save(Archive& ar, const unsigned version) const {
+  size_type size = this->size(), i;
+
+  ar & size;
+  for (i = 0; i < size; ++i) {
+    ar & (*this)(i);
+  }
+}
+
+template<class T>
+template<class Archive>
+void bi::host_vector_handle<T>::load(Archive& ar, const unsigned version) {
+  size_type size, i;
+
+  ar & size;
+  assert (this->size() == size);
+  for (i = 0; i < size; ++i) {
+    ar & (*this)(i);
+  }
 }
 
 namespace bi {
@@ -316,25 +356,16 @@ public:
   void clear();
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
   template<class Archive>
-  void save(Archive& ar, const unsigned version) const;
-
-  /**
-   * Restore from serialization.
-   */
-  template<class Archive>
-  void load(Archive& ar, const unsigned version);
+  void serialize(Archive& ar, const unsigned version);
 
   /*
    * Boost.Serialization requirements.
    */
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 }
 
@@ -476,44 +507,11 @@ inline void bi::host_vector_reference<T>::clear() {
   }
 }
 
-#ifndef __CUDACC__
 template<class T>
 template<class Archive>
-void bi::host_vector_reference<T>::load(Archive& ar, const unsigned version) {
-  size_type size;
-
-  ar & size;
-  assert (size == this->size());
-  //if (this->inc() == 1) {
-    /* fast array copy */
-    //ar & boost::serialization::make_array(this->buf(), this->size());
-  //} else {
-    /* element-wise copy */
-    size_type i;
-    for (i = 0; i < this->size(); ++i) {
-      ar & (*this)[i];
-    }
-  //}
+void bi::host_vector_reference<T>::serialize(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<host_vector_handle<T> >(*this);
 }
-
-template<class T>
-template<class Archive>
-void bi::host_vector_reference<T>::save(Archive& ar, const unsigned version)
-    const {
-  ar & this->size1;
-
-  //if (false && this->inc() == 1) {
-    /* fast array copy */
-    //ar & boost::serialization::make_array(this->buf(), this->size());
-  //} else {
-    /* element-wise copy */
-    size_type i;
-    for (i = 0; i < this->size(); ++i) {
-      ar & (*this)[i];
-    }
-  //}
-}
-#endif
 
 namespace bi {
 /**
@@ -640,26 +638,16 @@ private:
    */
   bool own;
 
-private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
   template<class Archive>
-  void save(Archive& ar, const unsigned version) const;
-
-  /**
-   * Restore from serialization.
-   */
-  template<class Archive>
-  void load(Archive& ar, const unsigned version);
+  void serialize(Archive& ar, const unsigned version);
 
   /*
    * Boost.Serialization requirements.
    */
-  BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -777,22 +765,10 @@ void bi::host_vector<T,A>::swap(host_vector<T,A>& o) {
   std::swap(this->own, o.own);
 }
 
-#ifndef __CUDACC__
 template<class T, class A>
 template<class Archive>
-void bi::host_vector<T,A>::save(Archive& ar, const unsigned version) const {
-  ar & this->size1;
+void bi::host_vector<T,A>::serialize(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<host_vector_reference<T> >(*this);
 }
-
-template<class T, class A>
-template<class Archive>
-void bi::host_vector<T,A>::load(Archive& ar, const unsigned version) {
-  size_type size;
-  ar & size;
-  this->resize(size);
-  ar & boost::serialization::base_object<host_vector_reference<T> >(*this);
-}
-#endif
 
 #endif

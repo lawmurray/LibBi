@@ -76,7 +76,12 @@ public:
   void update(State<B,L>& s);
 
   /**
-   * Reset to begin reading from first time record again.
+   * Rewind to begin reading from first time record again.
+   */
+  void rewind();
+
+  /**
+   * Rewind and unmark.
    */
   void reset();
 
@@ -114,6 +119,10 @@ public:
    * @copydoc concept::Markable::restore()
    */
   void restore();
+
+  void top();
+
+  void pop();
 
 private:
   /**
@@ -172,9 +181,8 @@ inline void bi::FUpdater<B,IO,CL>::update(State<B,L>& s) {
 }
 
 template<class B, class IO, bi::Location CL>
-inline void bi::FUpdater<B,IO,CL>::reset() {
-  Markable<FUpdaterState>::unmark();
-  in.reset();
+inline void bi::FUpdater<B,IO,CL>::rewind() {
+  in.rewind();
   state.p1 = 0;
   state.p2 = 0;
 
@@ -182,6 +190,12 @@ inline void bi::FUpdater<B,IO,CL>::reset() {
   if (!timeCache.isValid(state.p1) && in.isValid()) {
     timeCache.put(state.p1, in.getTime());
   }
+}
+
+template<class B, class IO, bi::Location CL>
+inline void bi::FUpdater<B,IO,CL>::reset() {
+  rewind();
+  Markable<FUpdaterState>::unmark();
 }
 
 template<class B, class IO, bi::Location CL>
@@ -215,6 +229,18 @@ template<class B, class IO, bi::Location CL>
 inline void bi::FUpdater<B,IO,CL>::restore() {
   Markable<FUpdaterState>::restore(state);
   in.restore();
+}
+
+template<class B, class IO, bi::Location CL>
+inline void bi::FUpdater<B,IO,CL>::top() {
+  Markable<FUpdaterState>::top(state);
+  in.top();
+}
+
+template<class B, class IO, bi::Location CL>
+inline void bi::FUpdater<B,IO,CL>::pop() {
+  Markable<FUpdaterState>::pop();
+  in.pop();
 }
 
 #endif

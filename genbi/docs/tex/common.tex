@@ -2,33 +2,155 @@
 
 The options in this section are common across all client programs.
 
+Options prefixed with {\sf --enable} may be negated by replacing this with
+{\sf --disable}. Likewise, options prefixed with {\sf --with} may be negated
+by replacing this with {\sf --without}.
+
 \subsubsection{General options}
 \begin{itemize}
-\item {\sf --help} Display help.
-\item {\sf --verbose} Enable verbose reporting.
+\item {\sf --help}
+
+Display help.
+
+\item {\sf --verbose} (default off)
+
+Enable verbose reporting.
 \end{itemize}
 
 \subsubsection{Build options}
+
 \begin{itemize}
-\item {\sf --dry-build} Do not build.
-\item {\sf --warn} Enable compiler warnings.
-\item {\sf --debug} Enable assertion checking.\index{assertion checking}
-\item {\sf --profile} Enable profiling with {\sf gprof}.\index{profiling}\index{gprof}
-\item {\sf --native} Compile for native platform.
-\item {\sf --gpu} Enable CUDA device code.\index{GPU}\index{CUDA}
-\item {\sf --sse} Enable SSE host code.\index{SSE}\index{SIMD}
-\item {\sf --double} Use double-precision floating point.
-\item {\sf --force} Force all build steps to be performed, even when
-  determined not to be required. This is useful as a workaround of any faults
-  in detecting changes in dependencies, or when system headers or libraries
-  change and recompilation or relinking is required.
+\item {\sf --dry-build} (default off)
+
+Do not build.
+
+\item {\sf --warn} (default off)
+
+Enable compiler warnings.
+
+\item {\sf --native} (default off)
+
+Compile for native platform.
+
+\item {\sf --force} (default off)
+
+Force all build steps to be performed, even when determined to be not
+required. This is useful as a workaround of any faults in detecting
+changes, or when system headers or libraries change and recompilation or
+relinking is required.
+
+\item {\sf --enable-assert} (default on)
+
+Enable assertion checking (recommended for test runs, not recommended for
+production runs).
+
+\item {\sf --enable-cuda} (default off)
+
+Enable CUDA device code.
+
+\item {\sf --enable-sse} (default off)
+
+Enable SSE host code.
+
+\item {\sf --enable-mkl} (default off)
+
+Enable Intel MKL code.
+
+\item {\sf --enable-mpi} (default off)
+
+Enable MPI code.
+
+\item {\sf --enable-vampir} (default off)
+
+Enable Vampir.
+
+\item {\sf --enable-single} (default off)
+
+Use single-precision floating point.
 \end{itemize}
 
 \subsubsection{Run options}
 \begin{itemize}
-\item {\sf --dry-run} Do not run.
-\item {\sf --threads \textit{N}} Run with {\sf \textit{N}} threads\index{multithreading}.
-\item {\sf --gdb} Run within {\sf gdb}\index{gdb}.
-\item {\sf --cuda-gdb} Run within {\sf cuda-gdb}\index{cuda-gdb}.
-\item {\sf --valgrind} Run within {\sf valgrind}\index{valgrind}.
+\item {\sf --dry-run}
+
+Do not run.
+
+\item {\sf --seed} (default 0)
+
+Pseudorandom number generator seed.
+
+\item {\sf --threads \textsl{N}} (default 0)
+
+Run with {\sf \textsl{N}} threads. If zero, the number of threads used is the
+default for OpenMP on the platform.
+
+\item {\sf --enable-timing} (default off)
+
+Enable timings.
+
+\item {\sf --enable-output} (default on)
+
+Enable output.
+
+\item {\sf --with-gdb} (default off)
+
+Run within the {\sf gdb} debugger.
+
+\item {\sf --with-cuda-gdb} (default off)
+
+Run within the {\sf cuda-gdb} debugger.
+
+\item {\sf --with-valgrind} (default off)
+
+Run within {\sf valgrind}.
+
+\item {\sf --with-gperftools} (default off)
+
+Run with {\sf gperftools} profiler.
+
+\item {\sf --gperftools-file} (default '\textsl{command}.prof')
+
+Output file to use under {\sf --with-gperftools}.
+
+\item {\sf --with-mpi} (default off)
+
+Run with {\sf mpirun}.
+
+\item {\sf --mpi-np}
+
+Number of processes when running under {\sf mpirun}.
+
+\end{itemize}
+
+\subsubsection{Model transformation options}
+\begin{itemize}
+\item {\sf --transform-extended} (default off, enabled automatically when
+  required)
+
+Linearise the model and symbolically compute Jacobian expressions for use with
+the extended Kalman filter.
+
+\item {\sf --transform-param-to-state} (default off)
+
+Augment the state with parameters by interpreting {\sf param} statements as
+{\sf state}, merging the {\sf parameter} top-level block into the {\sf
+  initial} top-level block, and merging the {\sf proposal\_parameter}
+top-level block into the {\sf proposal\_initial} top-level block.
+
+This is useful for joint state and parameter estimation using filters.
+
+\item {\sf --transform-initial-to-param} (default off)
+
+Augment the parameters with the initial conditions of the state variables by
+adding a new {\sf param} for each {\sf state} variable to hold its initial
+value, merging the {\sf initial} top-level block into the {\sf parameter}
+top-level block, merging the {\sf proposal\_initial} top-level block into the
+{\sf proposal\_parameter} top-level block, and replacing both the {\sf
+  proposal\_parameter} and {\sf proposal\_initial} top-level blocks with
+$\delta$-masses.
+
+This is useful for treating the initial conditions as parameters in sampling
+schemes such as PMCMC and SMC$^2$. Note that the transformation is semantic,
+not substantial.
+
 \end{itemize}
