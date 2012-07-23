@@ -253,13 +253,13 @@ typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws) {
 
   boost::mpi::communicator world;
 
-  T1 sqsm = std::pow(sumexp_reduce(lws), 2);
+  T1 sm = sumexp_reduce(lws);
   T1 smsq = sumexpsq_reduce(lws);
 
-  sqsm = boost::mpi::all_reduce(world, sqsm, std::plus<T1>());
+  sm = boost::mpi::all_reduce(world, sm, std::plus<T1>());
   smsq = boost::mpi::all_reduce(world, smsq, std::plus<T1>());
 
-  return sqsm/smsq;
+  return (sm*sm)/smsq;
 }
 
 template<class R>
