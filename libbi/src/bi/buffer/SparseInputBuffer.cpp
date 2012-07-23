@@ -21,7 +21,7 @@ SparseInputBufferState::SparseInputBufferState(const Model& m) :
 
 SparseInputBufferState::SparseInputBufferState(
     const SparseInputBufferState& o) : starts(o.starts.size()),
-    lens(o.lens.size()), masks(NUM_VAR_TYPES) {
+    lens(o.lens.size()), masks(NUM_VAR_TYPES), times(o.times) {
   VarType type;
   int i;
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
@@ -41,6 +41,7 @@ SparseInputBufferState& SparseInputBufferState::operator=(
   }
   starts = o.starts;
   lens = o.lens;
+  times = o.times;
 
   return *this;
 }

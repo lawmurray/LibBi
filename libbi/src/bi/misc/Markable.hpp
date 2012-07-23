@@ -44,31 +44,34 @@ protected:
    */
   void unmark();
 
+  /**
+   * Get top item.
+   *
+   * @param o[out] Item.
+   */
   void top(T& o);
 
+  /**
+   * Pop top item.
+   */
   void pop();
 
 private:
   /**
    * Saved states.
    */
-  std::stack<T> os;
+  std::stack<T*> os;
 };
 
 }
 
 template<class T>
 inline void bi::Markable<T>::mark(const T& o) {
-  os.push(o);
+  os.push(new T(o));
 }
 
 template<class T>
 inline void bi::Markable<T>::restore(T& o) {
-  /* pre-condition */
-//  assert (!os.empty());
-//
-//  o = os.top();
-//  os.pop();
   top(o);
   pop();
 }
@@ -76,7 +79,7 @@ inline void bi::Markable<T>::restore(T& o) {
 template<class T>
 inline void bi::Markable<T>::unmark() {
   while (!os.empty()) {
-    os.pop();
+    pop();
   }
 }
 
@@ -85,7 +88,7 @@ inline void bi::Markable<T>::top(T& o) {
   /* pre-condition */
   assert (!os.empty());
 
-  o = os.top();
+  o = *os.top();
 }
 
 template<class T>
@@ -93,6 +96,7 @@ inline void bi::Markable<T>::pop() {
   /* pre-condition */
   assert (!os.empty());
 
+  delete os.top();
   os.pop();
 }
 

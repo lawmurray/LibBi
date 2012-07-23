@@ -148,8 +148,14 @@ public:
    */
   void restore();
 
+  /**
+   * @copydoc concept::Markable::top()
+   */
   void top();
 
+  /**
+   * @copydoc concept::Markable::pop()
+   */
   void pop();
 
 protected:
