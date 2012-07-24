@@ -224,7 +224,6 @@ if test x$cuda = xtrue; then
     AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (required with --enable-cuda)]), [])
 
     m4_foreach_w([header_file], [\
-    	auxiliary.h \
     	magma_s.h \
     	magma_d.h \
     ], [AC_CHECK_HEADER(header_file, [], \
