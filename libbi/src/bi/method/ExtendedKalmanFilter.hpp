@@ -147,6 +147,13 @@ public:
    * @copydoc #concept::Filter::getOutput()
    */
   IO3* getOutput();
+
+  /**
+   * Get time of next observation.
+   *
+   * @param T Upper bound on time.
+   */
+  real getNextObsTime(const real T) const;
   //@}
 
   /**
@@ -354,6 +361,17 @@ inline IO3* bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getOutput() {
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getNextObsTime(const real T)
+    const {
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() < to) {
+    return oyUpdater.getNextTime();
+  } else {
+    return T;
+  }
+}
+
+template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class IO4>
 real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
     const real T, State<B,L>& s, IO4* inInit) throw (CholeskyException) {
@@ -444,12 +462,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
     State<B,L>& s) {
-  real to = tnxt;
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
-      oyUpdater.getNextTime() < to) {
-    to = oyUpdater.getNextTime();
-  }
-
+  real to = getNextObsTime();
   const int P = s.size();
 
   /* zero appropriate blocks of square-root covariance */
@@ -478,11 +491,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predictFixed(const real tnxt,
     State<B,L>& s) {
-  real to = tnxt;
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
-      oyUpdater.getNextTime() < to) {
-    to = oyUpdater.getNextTime();
-  }
+  real to = getNextObsTime(tnxt);
 
   /* zero square-root covariance */
   BOOST_AUTO(S, s.getStd());

@@ -240,7 +240,6 @@ inline void bi::OYUpdater<B,IO,CL>::rewind() {
 template<class B, class IO, bi::Location CL>
 inline void bi::OYUpdater<B,IO,CL>::reset() {
   rewind();
-  Markable<OYUpdaterState>::unmark();
 }
 
 template<class B, class IO, bi::Location CL>

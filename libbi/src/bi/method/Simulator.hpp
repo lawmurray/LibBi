@@ -324,8 +324,14 @@ public:
    */
   void restore();
 
+  /**
+   * @copydoc concept::Markable::top()
+   */
   void top();
 
+  /**
+   * @copydoc concept::Markable::pop()
+   */
   void pop();
 
 private:
@@ -448,7 +454,6 @@ inline void bi::Simulator<B,IO1,IO2,CL>::rewind() {
 
 template<class B, class IO1, class IO2, bi::Location CL>
 inline void bi::Simulator<B,IO1,IO2,CL>::reset() {
-  Markable<SimulatorState>::unmark();
   state.t = 0.0;
   if (fUpdater != NULL) {
     fUpdater->reset();

@@ -195,7 +195,6 @@ inline void bi::FUpdater<B,IO,CL>::rewind() {
 template<class B, class IO, bi::Location CL>
 inline void bi::FUpdater<B,IO,CL>::reset() {
   rewind();
-  Markable<FUpdaterState>::unmark();
 }
 
 template<class B, class IO, bi::Location CL>

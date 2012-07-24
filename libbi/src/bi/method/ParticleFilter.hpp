@@ -144,15 +144,9 @@ public:
    * particle filter as described in @ref Andrieu2010
    * "Andrieu, Doucet \& Holenstein (2010)".
    */
-//  template<Location L, class M1>
-//  real filter(Random& rng, const real T, State<B,L>& s, M1 xd, M1 xr);
-
   template<bi::Location L, class V1, class M1>
   real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s,
       M1 xd, M1 xr);
-
-  template<bi::Location L, class V1, class V2>
-  int step(Random& rng, const real T, State<B,L>& s, V1 lws, V2 as, int n);
 
   /**
    * Sample single particle trajectory.
@@ -203,6 +197,13 @@ public:
    * @return The output buffer. NULL if there is no output.
    */
   IO3* getOutput();
+
+  /**
+   * Get time of next observation.
+   *
+   * @param T Upper bound on time.
+   */
+  real getNextObsTime(const real T) const;
 
   /**
    * Get log-weights of last time step.
@@ -284,6 +285,23 @@ public:
   void correct(State<B,L>& s, V1 lws);
 
   /**
+   * Resample, predict and correct.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param rng Random number generator.
+   * @param T Time to which to filter.
+   * @param[in,out] s State.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry after resampling.
+   * @param n Step number.
+   */
+  template<bi::Location L, class V1, class V2>
+  int step(Random& rng, const real T, State<B,L>& s, V1 lws, V2 as, int n);
+
+  /**
    * Resample.
    *
    * @tparam L Location.
@@ -358,8 +376,14 @@ public:
    */
   void restore();
 
+  /**
+   * @copydoc concept::Markable::top()
+   */
   void top();
 
+  /**
+   * @copydoc concept::Markable::pop()
+   */
   void pop();
 
 protected:
@@ -505,6 +529,17 @@ inline IO3* bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::getOutput() {
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::getNextObsTime(const real T)
+    const {
+  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
+      oyUpdater.getNextTime() < T) {
+    return oyUpdater.getNextTime();
+  } else {
+    return T;
+  }
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 inline typename bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::logweights_vector_type bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::getLogWeights() {
   return logWeightsCache.get(logWeightsCache.size() - 1);
 }
@@ -521,40 +556,7 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::reset() {
   state.t = 0.0;
   sim.reset();
   oyUpdater.reset();
-  Markable<ParticleFilterState>::unmark();
 }
-
-//template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
-//template<bi::Location L, class IO4>
-//real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-//    State<B,L>& s, IO4* inInit) {
-//  /* pre-conditions */
-//  assert (T >= state.t);
-//  assert (essRel >= 0.0 && essRel <= 1.0);
-//
-//  const int P = s.size();
-//  int n = 0, r = 0;
-//
-//  typename loc_temp_vector<L,real>::type lws(P);
-//  typename loc_temp_vector<L,int>::type as(P);
-//
-//  real ll = 0.0;
-//  init(rng, s, lws, as, inInit);
-//  while (state.t < T) {
-//    r = n > 0 && resample(rng, s, lws, as);
-//    predict(rng, T, s);
-//    correct(s, lws);
-//    ll += logsumexp_reduce(lws) - std::log(P);
-//    output(n, s, r, lws, as);
-//    ++n;
-//  }
-//  synchronize();
-//  term();
-//
-//  std::cerr << ll << std::endl;
-//
-//  return ll;
-//}
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class IO4>
@@ -573,9 +575,6 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   real ll = 0.0;
   init(rng, s, lws, as, inInit);
   while (state.t < T) {
-//    r = n > 0 && resample(rng, s, lws, as);
-//    predict(rng, T, s);
-//    correct(s, lws);
     r = step(rng, T, s, lws, as, n);
     ll += logsumexp_reduce(lws) - std::log(P);
     output(n, s, r, lws, as);
@@ -585,23 +584,6 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   term();
 
   return ll;
-}
-
-template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class V1, class V2>
-int bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::step(Random& rng, const real T,
-    State<B,L>& s, V1 lws, V2 as, int n) {
-  /* pre-conditions */
-  assert (T >= state.t);
-  assert (essRel >= 0.0 && essRel <= 1.0);
-
-  int r = 0;
-
-  r = n > 0 && resample(rng, s, lws, as);
-  predict(rng, T, s);
-  correct(s, lws);
-
-  return r;
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
@@ -634,14 +616,12 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   return ll;
 }
 
-// Conditional SMC
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class M1>
 real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
     const V1 theta0, State<B,L>& s, M1 xd, M1 xr) {
   /* pre-conditions */
   assert (T >= state.t);
-//  assert ((equals<R, MultinomialResampler>::value));
 
   int n = 0, r = 0, a = 0;
 
@@ -726,11 +706,7 @@ template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::predict(Random& rng,
     const real tnxt, State<B,L>& s) {
-  real to = tnxt;
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
-      oyUpdater.getNextTime() < to) {
-    to = oyUpdater.getNextTime();
-  }
+  real to = getNextObsTime(tnxt);
 
   /* simulate forward */
   while (state.t < to) {
@@ -791,6 +767,23 @@ bool bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::resample(Random& rng,
     seq_elements(as, 0);
   }
   normalise(lws);
+  return r;
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+template<bi::Location L, class V1, class V2>
+int bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::step(Random& rng, const real T,
+    State<B,L>& s, V1 lws, V2 as, int n) {
+  /* pre-conditions */
+  assert (T >= state.t);
+  assert (essRel >= 0.0 && essRel <= 1.0);
+
+  int r = 0;
+
+  r = n > 0 && resample(rng, s, lws, as);
+  predict(rng, T, s);
+  correct(s, lws);
+
   return r;
 }
 

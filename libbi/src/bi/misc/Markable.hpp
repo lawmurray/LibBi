@@ -56,7 +56,7 @@ protected:
    */
   void pop();
 
-private:
+protected:
   /**
    * Saved states.
    */

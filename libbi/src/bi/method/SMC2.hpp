@@ -26,6 +26,29 @@
 
 namespace bi {
 /**
+ * @internal
+ *
+ * State of SMC2.
+ */
+struct SMC2State {
+  /**
+   * Constructor.
+   */
+  SMC2State();
+
+  /**
+   * Current time.
+   */
+  real t;
+};
+}
+
+bi::SMC2State::SMC2State() : t(0.0) {
+  //
+}
+
+namespace bi {
+/**
  * Sequential Monte Carlo square (SMC^2)
  *
  * @ingroup method
@@ -172,6 +195,11 @@ private:
   real essRel;
 
   /**
+   * State.
+   */
+  SMC2State state;
+
+  /**
    * Resampler for the theta-particles
    */
   R* resam;
@@ -229,6 +257,10 @@ template<bi::Location L, class F, class IO2>
 void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
     F* filter, IO2* inInit, const int D, const int Nm, const real essRel,
     const int localMove, const real moveScale) {
+  /**
+   * @todo Add the possibility to output the theta particles at different
+   * time steps
+   */
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -238,28 +270,10 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   typedef typename temp_host_vector<real>::type host_logweight_vector_type;
   typedef typename temp_host_vector<int>::type host_ancestor_vector_type;
 
-  /**
-   * @todo Add the possibility to output the theta particles at different
-   * time steps
-   */
-  std::cerr << "sequential importance sampling..." << std::endl;
-  std::cerr << "# observations : " << T + 1 << std::endl;
   this->Nx = s_in.size();
-  std::cerr << "# x-particles : " << Nx << std::endl;
   this->Ntheta = D;
-  std::cerr << "# thetaparticles : " << Ntheta << std::endl;
   this->Nmoves = Nm;
-  std::cerr << "# moves per rejuvenation step: " << Nmoves << std::endl;
   this->essRel = essRel;
-  std::cerr << "# ESS threshold to trigger resample / move steps: "
-      << essRel << std::endl;
-  if (localMove) {
-    std::cerr << "# using local moves";
-    std::cerr << " with move scale = " << moveScale << std::endl;
-  } else {
-    std::cerr << "# using independent moves" << std::endl;
-  }
-
   BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory<CL>::create(m,
       out));
   std::vector<ThetaParticle<B,L>*> thetas(Ntheta); // theta-particles
@@ -272,21 +286,20 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   init(rng, thetas, filter, lws, as);
 
   /* sample */
-  std::cerr << "starting loop over time" << std::endl;
   int n = 0, r = 0;
-  while (filter->getTime() < T) {
-    std::cerr << "time " << filter->getTime() << std::endl;
-
+  while (state.t < T) {
+    std::cerr << "time " << state.t << std::endl;
     evidence = step(rng, T, thetas, lws, filter, n);
     ess = resam->ess(lws);
-    std::cerr << "ESS at time " << filter->getTime() << ": " << ess << std::endl;
+    std::cerr << "ESS at time " << state.t << ": " << ess << std::endl;
     if (ess < Ntheta*essRel) {
       /* resample-move step */
-      std::cerr << "Resampling step at time " << filter->getTime()
+      std::cerr << "Resampling step at time " << state.t
           << " (threshold: " << Ntheta*essRel << ")" << std::endl;
       adapt(thetas, lws, localMove, q);
       resample(rng, lws, as, thetas);
-      acceptanceRate = rejuvenate(rng, s_in, filter, pmmh, thetas, lws, q, localMove, moveScale);
+      acceptanceRate = rejuvenate(rng, s_in, filter, pmmh, thetas, lws, q,
+          localMove, moveScale);
     } else {
       acceptanceRate = -1.0;
     }
@@ -308,6 +321,9 @@ void bi::SMC2<B,R,IO1,CL>::init(Random& rng,
   typename loc_temp_vector<L,real>::type logPrior(1);
   int i;
 
+  /* set time */
+  state.t = 0.0;
+
   /* initialise theta-particles */
   for (i = 0; i < Ntheta; ++i) {
     thetas[i] = new ThetaParticle<B,L>(m, Nx);
@@ -324,19 +340,13 @@ void bi::SMC2<B,R,IO1,CL>::init(Random& rng,
   }
 
   /* initialise x-particles */
-  filter->reset();
-  filter->mark();
   for (i = 0; i < Ntheta; ++i) {
-    if (i != 0) {
-      filter->top();
-    }
     ThetaParticle<B,L>& theta = *thetas[i];
     State<B,L>& s = theta.getState();
 
     filter->init(rng, row(s.get(P_VAR), 0), s, theta.getLogWeights(),
         theta.getAncestors());
   }
-  filter->pop();
 
   /* initialise log-weights and ancestors */
   lws.clear();
@@ -349,17 +359,19 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
     std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, F* filter,
     const int n) {
   int i, r;
-  real evidence = 0.0;
+  real evidence = 0.0, tnxt = filter->getNextObsTime(T);
 
-  filter->mark();
   for (i = 0; i < Ntheta; i++) {
-    if (i != 0) {
+    if (i == 0) {
+      filter->mark();
+    } else {
       filter->top();
     }
     ThetaParticle<B,L>& theta = *thetas[i];
     State<B,L>& s = theta.getState();
 
-    r = filter->step(rng, T, s, theta.getLogWeights(), theta.getAncestors(), n);
+    filter->setTime(state.t, s);
+    r = filter->step(rng, tnxt, s, theta.getLogWeights(), theta.getAncestors(), n);
 
     filter->output(n, s, r, theta.getLogWeights(), theta.getAncestors());
     theta.getIncLogLikelihood() = logsumexp_reduce(theta.getLogWeights()) -
@@ -371,6 +383,7 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
     evidence += exp(lws(i))*exp(theta.getIncLogLikelihood());
   }
   filter->pop();
+  state.t = tnxt;
 
   evidence /= sumexp_reduce(lws);
 
@@ -433,15 +446,10 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
   ParticleMarginalMetropolisHastingsState& x1 = pmmh->getState();
   ParticleMarginalMetropolisHastingsState& x2 = pmmh->getOtherState();
 
-  int i;
-
-  /* copy current parameters */
-  const real t = filter->getTime();
-  filter->mark();
-
-  for (i = 0; i < Ntheta; ++i) {
+  for (int i = 0; i < Ntheta; ++i) {
     row(thetaparticles, i) = row(thetas[i]->getState().get(P_VAR), 0);
   }
+
   double meanacceptrate = 0.;
   for (int indexmove = 0; indexmove < Nmoves; indexmove++) {
     q.samples(rng, thetaproposals);
@@ -456,11 +464,7 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
     }
 
     int sumaccept = 0;
-    for (i = 0; i < Ntheta; ++i) {
-      if (indexmove != 0 && i != 0) {
-        filter->top();
-      }
-
+    for (int i = 0; i < Ntheta; ++i) {
       ThetaParticle<B,L>& theta = *thetas[i];
       State<B,L>& s = theta.getState();
 
@@ -482,7 +486,7 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
         pmmhaccept = false;
         x2.ll = -1.0/0.0;
       } else {
-        cpf_fail = pmmh->estimateLLOnProposal(rng, t, s_in, filter);
+        cpf_fail = pmmh->estimateLLOnProposal(rng, state.t, s_in, filter);
       }
       pmmh->computeAcceptReject(rng, filter, cpf_fail, pmmhaccept);
       if (pmmhaccept) {
@@ -500,7 +504,6 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
     meanacceptrate += (double)sumaccept / (double)Ntheta;
     std::cerr << "accept rate: " << (double)sumaccept / (double)Ntheta<< std::endl;
   }
-  filter->restore();
 
   return meanacceptrate / (double) Nmoves;
 }
