@@ -741,10 +741,11 @@ inline const typename bi::host_matrix<T,A>::matrix_reference_type& bi::host_matr
 template<class T, class A>
 void bi::host_matrix<T,A>::resize(const size_type rows, const size_type cols,
     const bool preserve) {
-  if (rows <= this->size1() && cols == this->size2()) {
-    /* lead doesn't change, so keep current buffer */
-    this->rows = rows;
-  } else if (rows != this->size1() || cols != this->size2()) {
+  //  if (rows <= this->size1() && cols == this->size2()) {
+  /* lead doesn't change, so keep current buffer */
+  //    this->rows = rows;
+  //  } else
+  if (rows != this->size1() || cols != this->size2()) {
     BI_ERROR(own, "Cannot resize host_matrix constructed as view of other matrix");
 
     /* allocate new buffer */
