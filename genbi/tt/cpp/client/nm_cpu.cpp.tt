@@ -136,7 +136,19 @@ int main(int argc, char* argv[]) {
     [% IF client.get_named_arg('filter') == 'pf1' %]
     BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
     [% ELSIF client.get_named_arg('filter') == 'anpf' %]
-    BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, BLOCK_P, MIN_ESS_REL, MAX_P, inInput, &inObs, outFilter)));
+    /* stopper */
+    [% IF client.get_named_arg('stopper') == 'deterministic' %]
+    Stopper stopper(P);
+    [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+    SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+    MinimumESSStopper stopper(REL_THRESHOLD, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+    StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+    [% ELSIF client.get_named_arg('stopper') == 'var' %]
+    VarStopper stopper(REL_THRESHOLD, MAX_P);
+    [% END %]
+    BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory<LOCATION>::create(m, &resam, &stopper, ESS_REL, BLOCK_P, inInput, &inObs, outFilter)));
     [% ELSE %]
     BOOST_AUTO(filter, (ParticleFilterFactory<LOCATION>::create(m, &resam, ESS_REL, inInput, &inObs, outFilter)));
     [% END %]

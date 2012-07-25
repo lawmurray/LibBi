@@ -256,11 +256,6 @@ our @CLIENT_OPTIONS = (
       default => 128
     },
     {
-      name => 'min-ess-rel',
-      type => 'int',
-      default => 10
-    },
-    {
       name => 'rel-threshold',
       type => 'int',
       default => 10

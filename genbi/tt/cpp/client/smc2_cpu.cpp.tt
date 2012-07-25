@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
       SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
       [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-      MinimumESSStopper stopper(MIN_ESS_REL, MAX_P);
+      MinimumESSStopper stopper(REL_THRESHOLD, MAX_P);
       [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
       StdDevStopper stopper(REL_THRESHOLD, MAX_P);
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
