@@ -30,6 +30,7 @@ CUDA_FUNC_GLOBAL void kernelStaticLogDensity(V1 lp);
 
 template<class B, class S, class V1>
 void bi::kernelStaticLogDensity(V1 lp) {
+  typedef typename V1::value_type T1;
   typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
   typedef Ox<ON_DEVICE,B,real,global> OX;
   typedef StaticLogDensityVisitorGPU<B,S,PX,OX> Visitor;
@@ -38,10 +39,19 @@ void bi::kernelStaticLogDensity(V1 lp) {
   const int id = blockIdx.y*blockDim.y + threadIdx.y;
   PX pax;
   OX x;
+  T1 lp1 = 0.0;
 
-  /* update */
+  /* compute local log-density */
   if (p < constP) {
-    Visitor::accept(p, id, pax, x, lp(p));
+    Visitor::accept(p, id, pax, x, lp1);
+  }
+
+  /* add to global log-density */
+  for (int i = 0; i < block_size<S>::value; ++i) {
+    __syncthreads();
+    if (id == i && p < constP) {
+      lp(p) += lp1;
+    }
   }
 }
 
