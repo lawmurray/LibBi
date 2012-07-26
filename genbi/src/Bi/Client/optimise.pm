@@ -67,10 +67,6 @@ Maximum number of steps to take.
 
 File from which to read and write intermediate filter results.
 
-=item * C<--include-initial> (default 0)
-
-Include initial conditions in optimisation?
-
 =back
 
 =cut
@@ -102,11 +98,6 @@ our @CLIENT_OPTIONS = (
     {
       name => 'filter-file',
       type => 'string'
-    },
-    {
-      name => 'include-initial',
-      type => 'int',
-      default => 0
     }
 );
 

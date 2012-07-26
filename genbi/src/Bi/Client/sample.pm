@@ -33,11 +33,6 @@ Number of parameter samples to draw.
 
 File from which to read and write intermediate filter results.
 
-=item * C<--include-initial> (default 0)
-
-Include initial conditions in outer Metropolis-Hastings loop (as opposed to
-inner filtering loop)?
-
 =item * C<--sampler> (default C<'pmmh'>)
 
 The type of sampler to use; one of:
@@ -109,11 +104,6 @@ our @CLIENT_OPTIONS = (
     {
       name => 'filter-file',
       type => 'string'
-    },
-    {
-      name => 'include-initial',
-      type => 'int',
-      default => 0
     },
     {
       name => 'conditional-pf',
