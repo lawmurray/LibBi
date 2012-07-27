@@ -237,19 +237,17 @@ sub client {
 
     $self->_report("Processing arguments...");
     $client->process_args;
-    
+
     $self->_report("Transforming model...");
+    if ($client->get_named_arg('transform-extended')) {
+        Bi::Visitor::ExtendedTransformer->evaluate($model);
+    }
+    $optimiser->optimise();    
     if ($client->get_named_arg('transform-param-to-state')) {
         Bi::Visitor::ParamToStateTransformer->evaluate($model);
     } elsif ($client->get_named_arg('transform-initial-to-param')) {
         Bi::Visitor::InitialToParamTransformer->evaluate($model);
     }
-    if ($client->get_named_arg('transform-extended')) {
-        Bi::Visitor::ExtendedTransformer->evaluate($model);
-    }
-
-    $self->_report("Optimising model...");
-    $optimiser->optimise();
 
     if ($client->is_cpp) {
         $self->_report("Generating code...");

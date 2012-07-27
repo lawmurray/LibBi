@@ -6,10 +6,12 @@ by moving into precompute block.
 =head1 SYNOPSIS
 
     use Bi::Visitor::StaticExtractor;
+    use Bi::Visitor::StaticEvaluator;
     use Bi::Visitor::StaticReplacer;
     
-    $extracts = Bi::Visitor::StaticExtractor-evaluate($model);
-    Bi::Visitor::StaticReplacer->evaluate($model, $extracts);
+    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model);
+    my $actions = Bi::Visitor::StaticEvaluator->evaluate($model, $actions);
+    Bi::Visitor::StaticReplacer->evaluate($model, $actions);
 
 =head1 INHERITS
 
@@ -27,7 +29,7 @@ use base 'Bi::Visitor';
 use warnings;
 use strict;
 
-=item B<evaluate>(I<model>, I<extracts>)
+=item B<evaluate>(I<model>, I<actions>)
 
 Evaluate.
 
@@ -37,47 +39,26 @@ Evaluate.
 
 =item I<item>
 
-=item I<extracts> List of L<Bi::Expression> subexpressions to replace.
+=item I<actions> Array ref of L<Bi::Model::Action> objects returned by
+L<Bi::Visitor::StaticEvaluator>.
 
 =back
+
+Replaces any occurrences of the right hand side of each action with the
+left hand side (target).
 
 =cut
 sub evaluate {
     my $class = shift;
     my $model = shift;
-    my $item = shift;
-    my $extracts = shift;
-
-    # create actions from extracted subexpressions
-    my @actions;
-    my $var;
-    my $target;
-    my $action;
-    foreach my $extract (@$extracts) {
-        $var = new Bi::Model::ParamAux($model->tmp_var, $extract->get_dims);
-        $model->add_var($var);
-        $target = new Bi::Expression::VarIdentifier($var);
-        
-        $action = new Bi::Model::Action($model->next_action_id, $target, '<-', $extract->clone);
-        push(@actions, $action);
-    }
-
-    # create precompute block
-    my $block_name = 'parameter_post_';
-    my $block;
-    if ($model->is_block($block_name)) {
-        $block = new Bi::Model::Block($model->next_block_id);
-        $model->get_block($block_name)->push_block($block);
-    } else {
-        $block = new Bi::Model::Block($model->next_block_id, $block_name);
-        $model->add_block($block);
-    }
-    $block->push_actions(\@actions);
+    my $actions = shift;
 
     my $self = new Bi::Visitor; 
     bless $self, $class;
 
-    $item->accept($self, \@actions);
+    foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
+	    $model->get_block($name)->accept($self, $model, $actions);
+    }
 }
 
 =item B<visit>(I<node>, I<actions>)
@@ -88,6 +69,7 @@ Visit node.
 sub visit {
     my $self = shift;
     my $node = shift;
+    my $model = shift;
     my $actions = shift;
 
     if ($node->isa('Bi::Expression')) {
@@ -98,6 +80,7 @@ sub visit {
             }
         }
     }
+    
     return $node;
 }
 

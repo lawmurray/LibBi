@@ -48,18 +48,10 @@ TYPES = {
 DYNAMIC_BLOCKS = ['transition', 'lookahead_transition'];
 
 # top-level static/instant blocks
-STATIC_BLOCKS = ['parameter', 'parameter_post_', 'initial', 'observation', 'proposal_parameter', 'proposal_initial'];
+STATIC_BLOCKS = ['parameter', 'initial', 'observation', 'proposal_parameter', 'proposal_initial'];
 
 # top-evel sparse blocks
 SPARSE_BLOCKS = ['observation', 'lookahead_observation'];
-
-# mappings for missing blocks
-MAP_BLOCKS = {
-  'lookahead_transition' => 'transition',
-  'proposal_parameter' => 'parameter',
-  'proposal_initial' => 'initial',
-  'lookahead_observation' => 'observation'
-};
 %]
 
 /**
@@ -381,8 +373,6 @@ template<class T1, bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
   Block[% model.get_block(toplevel).get_id %]::simulate(t1, t2, onDelta(t1, t2), s);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Simulate(t1, t2, s);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
@@ -392,8 +382,6 @@ template<class T1, bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel)-%]
   Block[% model.get_block(toplevel).get_id %]::samples(rng, t1, t2, onDelta(t1, t2), s);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Samples(rng, t1, t2, s);
   [% ELSE %]
   //
   [%-END %]
@@ -403,8 +391,6 @@ template<class T1, bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel)-%]
   Block[% model.get_block(toplevel).get_id %]::logDensities(t1, t2, onDelta(t1, t2), s, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]LogDensities(t1, t2, s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -414,8 +400,6 @@ template<class T1, bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel)-%]
   Block[% model.get_block(toplevel).get_id %]::maxLogDensities(t1, t2, onDelta(t1, t2), s, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(t1, t2, s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -427,8 +411,6 @@ template<bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
   Block[% model.get_block(toplevel).get_id %]::simulate(s);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Simulate(s);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
@@ -438,8 +420,6 @@ template<bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::samples(rng, s);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Samples(rng, s);
   [% ELSE %]
   //
   [%-END %]
@@ -449,8 +429,6 @@ template<bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::logDensities(s, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]LogDensities(s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -460,8 +438,6 @@ template<bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::maxLogDensities(s, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -474,8 +450,6 @@ void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class
     const bi::Mask<L>& mask) {
   [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
   Block[% model.get_block(toplevel).get_id %]::simulate(s, mask);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Simulate(s, mask);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
@@ -486,8 +460,6 @@ void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, bi
     const bi::Mask<L>& mask) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::samples(rng, s, mask);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]Samples(rng, s, mask);
   [% ELSE %]
   //
   [%-END %]
@@ -498,8 +470,6 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% c
     const bi::Mask<L>& mask, V1 lp) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::logDensities(s, mask, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]LogDensities(s, mask, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -510,8 +480,6 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[
     const bi::Mask<L>& mask, V1 lp) {
   [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::maxLogDensities(s, mask, lp);
-  [% ELSIF MAP_BLOCKS.exists(toplevel) %]
-  [% MAP_BLOCKS.${toplevel} | to_camel_case %]MaxLogDensities(s, mask, lp);
   [% ELSE %]
   //
   [%-END %]

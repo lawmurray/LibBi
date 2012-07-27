@@ -539,7 +539,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, State<B,L>& s,
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
   }
-  m.parameterPostSamples(rng, s);
 
   s.setRange(0, P);
   m.initialSamples(rng, s);
@@ -558,7 +557,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(State<B,L>& s, IO3* inInit) {
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
   }
-  m.parameterPostSimulate(s);
   m.initialSimulate(s);
   if (inInit != NULL) {
     inInit->read0(D_VAR, s.get(D_VAR));
@@ -573,7 +571,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta0,
   assert (theta0.size() == NP || theta0.size() == NP + ND);
 
   vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
-  m.parameterPostSamples(rng, s);
   if (theta0.size() == NP + ND) {
     set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
   } else {
@@ -588,7 +585,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(const V1 theta0, State<B,L>& s) {
   assert (theta0.size() == NP || theta0.size() == NP + ND);
 
   vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
-  m.parameterPostSimulate(s);
   if (theta0.size() == NP + ND) {
     set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
   } else {

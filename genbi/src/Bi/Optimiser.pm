@@ -33,6 +33,7 @@ use Bi::Visitor::Unroller;
 use Bi::Visitor::Wrapper;
 use Bi::Visitor::Resolver;
 use Bi::Visitor::StaticExtractor;
+use Bi::Visitor::StaticEvaluator;
 use Bi::Visitor::StaticReplacer;
     
 =item B<new>(I<model>)
@@ -68,9 +69,10 @@ sub optimise {
     my $self = shift;
 
     my $model = $self->{_model};
-    
-    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model->get_block('transition'));
-    Bi::Visitor::StaticReplacer->evaluate($model, $model->get_block('transition'), $extracts);
+        
+    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model);
+    my $actions = Bi::Visitor::StaticEvaluator->evaluate($model, $extracts);
+    Bi::Visitor::StaticReplacer->evaluate($model, $actions);
     
     Bi::Visitor::Unroller->evaluate($model);
     Bi::Visitor::Resolver->evaluate($model);

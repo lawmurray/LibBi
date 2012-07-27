@@ -467,24 +467,24 @@ sub unshift_blocks {
 
 =item B<pop_block>
 
-Remove sub-block from end.
+Remove sub-block from end and return.
 
 =cut
 sub pop_block {
     my $self = shift;
     
-    pop(@{$self->get_blocks});
+    return pop(@{$self->get_blocks});
 }
 
 =item B<shift_block>
 
-Remove sub-block from start.
+Remove sub-block from start and return.
 
 =cut
 sub shift_block {
     my $self = shift;
     
-    shift(@{$self->get_blocks});
+    return shift(@{$self->get_blocks});
 }
 
 =item B<sink_children>(I<model>)

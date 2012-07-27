@@ -410,7 +410,6 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
   /* initialise */
   vec(p->s->getAlt(P_VAR)) = gsl_vector_reference(x);
   p->m->parameterLogDensities(*p->s, lp);
-  p->m->parameterPostLogDensities(*p->s, lp);
   p->s->resize(P, true);
 
   /* evaluate */

@@ -39,6 +39,13 @@ use Bi::Model::Spec;
 use Bi::Model::Var;
 use Bi::Expression;
 
+our %MAP_BLOCKS = (
+	'lookahead_transition' => 'transition',
+	'lookahead_observation' => 'observation',
+	'proposal_parameter' => 'proposal',
+	'proposal_initial' => 'initial'
+);
+
 =item B<new>
 
 Empty constructor.
@@ -111,12 +118,7 @@ sub init {
     map { assert($_->isa('Bi::Model::Block')) if DEBUG } @$blocks;
     map { assert($_->isa('Bi::Model::Const')) if DEBUG } @$consts;
     map { assert($_->isa('Bi::Model::Inline')) if DEBUG } @$inlines;
-
-    # sink children in all top-level blocks
-    foreach my $block (@$blocks) {
-        $block->sink_children($self);
-    }
-    
+        
     $self->{_name} = $name;
     $self->{_args} = $args;
     $self->{_named_args} = $named_args;
@@ -124,6 +126,15 @@ sub init {
     $self->_rebuild_blocks($blocks);
     $self->_rebuild_consts($consts);
     $self->_rebuild_inlines($inlines);
+    
+    # complete top-level blocks
+    foreach my $name (keys %MAP_BLOCKS) {
+    	if (!$self->is_block($name)) {
+    		my $block = $self->get_block($MAP_BLOCKS{$name})->clone($self);
+    		$block->set_name($name);
+    		$self->add_block($block);
+    	}
+    }
 }
 
 =item B<get_name>

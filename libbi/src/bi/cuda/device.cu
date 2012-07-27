@@ -39,7 +39,7 @@ int bi::deviceIdealThreads() {
   CUDA_CHECKED_CALL(cudaGetDevice(&dev));
   CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
 
-  return prop.multiProcessorCount*deviceIdealThreadsPerBlock();
+  return 4*prop.multiProcessorCount*deviceIdealThreadsPerBlock();
 }
 
 int bi::deviceIdealThreadsPerBlock() {

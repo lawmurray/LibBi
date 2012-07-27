@@ -70,9 +70,7 @@ void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
   int id = blockIdx.x*blockDim.x + threadIdx.x;
   if (id < P) {
     T1 a = as[id];
-    if (a < P) {
-      atomicCAS(&is[a], -1, id);
-    }
+    atomicCAS(&is[a], -1, id);
   }
 }
 
@@ -85,7 +83,7 @@ void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
     int claimedBy, next;
 
     /* first try to claim same place as ancestor index */
-    next = (a < P) ? a : id;
+    next = a;
     claimedBy = atomicCAS(&is[next], -1, id);
 
     if (claimedBy != id && claimedBy >= 0) {
@@ -95,7 +93,7 @@ void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
         next = claimedBy;
         claimedBy = atomicCAS(&is[next], -1, id);
         // ...and continue following trace until free space found
-      } while (claimedBy >= 0);
+      } while (claimedBy != id && claimedBy >= 0);
     }
 
     /* write ancestor into claimed place */

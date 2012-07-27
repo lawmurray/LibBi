@@ -5,7 +5,8 @@ Bi::Visitor::StaticExtractor - visitor for extracting static subexpressions.
 =head1 SYNOPSIS
 
     use Bi::Visitor::StaticExtractor;
-    $extracts = Bi::Visitor::StaticExtractor->evaluate($block);
+    
+    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model);
 
 =head1 INHERITS
 
@@ -26,7 +27,7 @@ use List::Util qw(reduce);
 
 use Bi::Utility qw(unique);
 
-=item B<evaluate>(I<item>)
+=item B<evaluate>(I<model>)
 
 Evaluate.
 
@@ -35,15 +36,16 @@ Returns array ref of static subexpressions that can be extracted.
 =cut
 sub evaluate {
     my $class = shift;
-    my $item = shift;
+    my $model = shift;
 
     my $self = new Bi::Visitor; 
     bless $self, $class;
 
     my $statics = [];
     my $extracts = [];    
-    $item->accept($self, $statics, $extracts);
-    
+    foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
+	    $model->get_block($name)->accept($self, $statics, $extracts);
+    }    
     $extracts = unique($extracts);
     @$extracts = map { ($_->is_const || $_->isa('Bi::Expression::VarIdentifier')) ? () : $_ } @$extracts;
 
