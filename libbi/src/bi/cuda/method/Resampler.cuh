@@ -28,11 +28,9 @@ void bi::ResamplerDeviceImpl::permute(V1 as) {
   Dg.x = (P + Db.x - 1)/Db.x;
 
   kernelResamplerPrePermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
-  synchronize();
   CUDA_CHECK;
 
   kernelResamplerPermute<<<Dg,Db>>>(as.buf(), is.buf(), P);
-  synchronize();
   CUDA_CHECK;
 }
 
