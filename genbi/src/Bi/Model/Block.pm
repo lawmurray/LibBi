@@ -130,6 +130,18 @@ sub clone {
     return $clone; 
 }
 
+=item B<clear>
+
+Remove all subblocks and actions.
+
+=cut
+sub clear {
+    my $self = shift;
+    
+    $self->{_actions} = [];
+    $self->{_blocks} = [];
+}
+
 =item B<new_copy_block>(I<id>)
 
 Constructor for block of copy actions.
@@ -485,6 +497,26 @@ sub shift_block {
     my $self = shift;
     
     return shift(@{$self->get_blocks});
+}
+
+=item B<sink_actions>(I<model>)
+
+Sinks all actions into a new sub-block, which is inserted at the end of the
+list of blocks. If there are no actions, does nothing.
+
+=cut
+sub sink_actions {
+    my $self = shift;
+    my $model = shift;
+
+    assert (defined($model) && $model->isa('Bi::Model')) if DEBUG;
+    
+    if ($self->num_actions > 0) {
+        my $block = new Bi::Model::Block($model->next_block_id, undef, [], {},
+            $self->get_actions);
+        $self->set_actions([]);
+        $self->push_block($block);
+    }
 }
 
 =item B<sink_children>(I<model>)

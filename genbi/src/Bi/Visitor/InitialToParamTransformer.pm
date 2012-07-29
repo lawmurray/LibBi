@@ -26,11 +26,6 @@ use File::Spec;
 
 use Bi::Visitor::TargetReplacer;
 
-our %MERGE_BLOCKS = (
-    'initial' => 'parameter',
-    'proposal_initial' => 'proposal_parameter'
-);
-
 =head1 METHODS
 
 =over 4
@@ -51,31 +46,21 @@ No return value.
 sub evaluate {
     my $class = shift;
     my $model = shift;
+
+    my $self = {};
+    bless $self, $class;
+
+    my $initial_block = $model->get_block('initial')->clone($model);
+    $initial_block->set_name('eval');
+    $initial_block->set_commit(1);
     
-    my $block;
-    my $action;
+    my $proposal_initial_block = $model->get_block('proposal_initial')->clone($model);
+    $proposal_initial_block->set_name('eval');
+    $proposal_initial_block->set_commit(1);
+        
+    # create params to hold initial conditions
     my $state;
     my $param;
-    my $name;
-    my $from;
-    my $to;
-    
-    if ($model->is_block('proposal_parameter') !=
-        $model->is_block('proposal_initial')) {
-        # explicitly create remaining proposal blocks to ensure consistent
-        # behaviour when merging, recalling that proposal_parameter defers to
-        # parameter, and proposal_initial defers to initial, if they do not
-        # exist.
-        foreach $name ('initial', 'parameter') {
-            if (!$model->is_block("proposal_$name")) {
-                $block = $model->get_block($name)->clone($model);
-                $block->set_name("proposal_$name");
-                $model->add_block($block);        
-            }
-        }
-    }
-    
-    # create params to hold initial conditions
     foreach $state (@{$model->get_vars('state')}) {
         my @dims = @{$state->get_dims};
         my @args = @{$state->get_args};
@@ -85,49 +70,12 @@ sub evaluate {
         $param = new Bi::Model::Param($state->get_name . "_0_", \@dims,
             \@args, \%named_args);
         $model->add_var($param);
+        
+        Bi::Visitor::TargetReplacer->evaluate($initial_block, $state, $param);
+        Bi::Visitor::TargetReplacer->evaluate($proposal_initial_block, $state, $param);
     }
     
-    # merge initial blocks into parameter blocks
-    foreach $from (keys %MERGE_BLOCKS) {
-        if ($model->is_block($from)) {
-            my $from_block = $model->get_block($from);
-            
-            assert ($from_block->num_blocks == 1) if DEBUG;
-
-            # replace state variables with new parameters
-            foreach $state (@{$model->get_vars('state')}) {
-                $param = $model->get_var($state->get_name . '_0_');
-                Bi::Visitor::TargetReplacer->evaluate($from_block, $state, $param);
-            }
-
-            # merge blocks
-            my $to = $MERGE_BLOCKS{$from};
-            $to = $MERGE_BLOCKS{$from};
-            if ($model->is_block($to)) {
-                my $to_block = $model->get_block($to);
-                
-                assert ($to_block->num_blocks == 1) if DEBUG;
-                
-                my $copy_block = $from_block->get_block->clone($model);
-                $copy_block->set_commit(1);
-                
-                $from_block->pop_block;
-                $to_block->push_block($copy_block);
-                $to_block->sink_children($model);
-            } else {
-                $from_block->set_name($to);
-            }
-            
-            # replace original with delta mass block
-            foreach $state (@{$model->get_vars('state')}) {
-                $param = $model->get_var($state->get_name . '_0_');
-                $action = new Bi::Model::Action($model->next_action_id,
-                    new Bi::Expression::VarIdentifier($state), '<-',
-                    new Bi::Expression::VarIdentifier($param));
-                $from_block->push_action($action);
-            }
-        }
-    }
+    $model->accept($self, $model, $initial_block, $proposal_initial_block);
 }
 
 =item B<visit>(I<node>)
@@ -138,7 +86,36 @@ Visit node of model.
 sub visit {
     my $self = shift;
     my $node = shift;
+    my $model = shift;
+    my $initial_block = shift;
+    my $proposal_initial_block = shift;
 
+    if ($node->isa('Bi::Model::Block')) {
+        if ($node->get_name eq 'parameter') {
+            $node->sink_actions($model);
+            $node->get_block($node->num_blocks - 1)->set_commit(1);
+    		$node->push_block($initial_block);
+        } elsif ($node->get_name eq 'proposal_parameter') {
+            $node->sink_actions($model);
+            $node->get_block($node->num_blocks - 1)->set_commit(1);
+    		$node->push_block($proposal_initial_block);
+        } elsif ($node->get_name eq 'initial' || $node->get_name eq 'proposal_initial') {
+            # replace with dirac functions
+            my $state;
+            my $param;
+            my $action;
+            
+            $node->clear;            
+            foreach $state (@{$model->get_vars('state')}) {
+                $param = $model->get_var($state->get_name . '_0_');
+                $action = new Bi::Model::Action($model->next_action_id,
+                    new Bi::Expression::VarIdentifier($state), '<-',
+                    new Bi::Expression::VarIdentifier($param));
+                $node->push_action($action);
+            }
+            
+        }
+    }
     return $node;
 }
 

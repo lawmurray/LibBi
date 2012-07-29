@@ -21,13 +21,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
-use FindBin qw($Bin);
 use File::Spec;
-
-our %MERGE_BLOCKS = (
-    'parameter' => 'initial',
-    'proposal_parameter' => 'proposal_initial'
-);
 
 =head1 METHODS
 
@@ -53,51 +47,15 @@ sub evaluate {
     my $self = {};
     bless $self, $class;
 
-    my $name;
-    my $block;
+    my $parameter_block = $model->get_block('parameter')->clone($model);
+    $parameter_block->set_name('eval');
+    $parameter_block->set_commit(1);
     
-    if ($model->is_block('proposal_parameter') !=
-        $model->is_block('proposal_initial')) {
-        # explicitly create remaining proposal blocks to ensure consistent
-        # behaviour when merging, recalling that proposal_parameter defers to
-        # parameter, and proposal_initial defers to initial, if they do not
-        # exist.
-        foreach $name ('initial', 'parameter') {
-            if (!$model->is_block("proposal_$name")) {
-                $block = $model->get_block($name)->clone($model);
-                $block->set_name("proposal_$name");
-                $model->add_block($block);        
-            }
-        }
-    }
-
-    # move parameters to state
-    $model->accept($self);
+    my $proposal_parameter_block = $model->get_block('proposal_parameter')->clone($model);
+    $proposal_parameter_block->set_name('eval');
+    $proposal_parameter_block->set_commit(1);
     
-    # merge parameter blocks into initial blocks
-    foreach my $from (keys %MERGE_BLOCKS) {
-        if ($model->is_block($from)) {
-            my $from_block = $model->get_block($from);
-            
-            assert ($from_block->num_blocks == 1) if DEBUG;
-
-            my $to = $MERGE_BLOCKS{$from};
-            if ($model->is_block($to)) {
-                my $to_block = $model->get_block($to);
-                
-                assert ($to_block->num_blocks == 1) if DEBUG;
-                
-                my $copy_block = $from_block->get_block->clone($model);
-                $copy_block->set_commit(1);
-                
-                $from_block->shift_block;
-                $to_block->unshift_block($copy_block);
-                $to_block->sink_children($model);
-            } else {
-                $from_block->set_name($to);
-            }
-        }
-    }    
+    $model->accept($self, $model, $parameter_block, $proposal_parameter_block);
 }
 
 =item B<visit>(I<node>)
@@ -108,11 +66,24 @@ Visit node of model.
 sub visit {
     my $self = shift;
     my $node = shift;
+    my $model = shift;    
+    my $parameter_block = shift;
+    my $proposal_parameter_block = shift;
 
     if ($node->isa('Bi::Model::Param')) {
         # replace with state
         $node = new Bi::Model::State($node->get_name, $node->get_dims,
             $node->get_args, $node->get_named_args);
+    } elsif ($node->isa('Bi::Model::Block')) {
+        if ($node->get_name eq 'parameter' || $node->get_name eq 'proposal_parameter') {
+            $node->clear;
+        } elsif ($node->get_name eq 'initial') {
+            $node->sink_actions($model);
+            $node->unshift_block($parameter_block);
+        } elsif ($node->get_name eq 'proposal_initial') {
+            $node->sink_actions($model);
+            $node->unshift_block($proposal_parameter_block);
+        }
     }
     return $node;
 }

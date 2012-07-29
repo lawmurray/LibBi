@@ -22,6 +22,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use FindBin qw($Bin);
 use Template;
 use Template::Filters;
 use Template::Exception;
@@ -31,6 +32,7 @@ use File::Copy;
 use File::Path;
 use File::Spec;
 use File::Slurp;
+use File::Find;
 
 use Bi::Model;
 use Bi::Expression;
@@ -109,17 +111,17 @@ sub is_template {
     return 0;
 }
 
-=item B<process_template>(I<template>, I<output>, I<vars>)
+=item B<process_template>(I<template>, I<vars>, I<output>)
 
-Process template.
+Process template, preserving timestamp of output if unchanged.
 
 =over 4
 
 =item I<template> Template file name.
 
-=item I<output> Output file name, or C<undef> for no output.
-
 =item I<vars> Hash to be passed to template processor.
+
+=item I<output> Output file name, or C<undef> for no output.
 
 =back
 
@@ -163,6 +165,86 @@ sub process_template {
     } else {
         $tt->process($template, $vars, $out) || _error($tt->error());
     }
+}
+
+=item B<copy_file>(I<src>, I<dst>)
+
+Copy file, preserving timestamp of destination if unchanged.
+
+=over 4
+
+=item I<src> Source file name.
+
+=item I<dst> Destination file name.
+
+=back
+
+No return value.
+
+=cut
+sub copy_file {
+    my $self = shift;
+    my $src = shift;
+    my $dst = shift;
+    
+    my $in = File::Spec->catfile($Bin, '..', 'share', $src);
+    my $out = File::Spec->catfile($self->{_outdir}, $dst);
+    
+    # create build directory
+    mkpath($self->{_outdir});
+
+    my $str = read_file($in);
+
+    # only copy over desired output if file contents changes; keeps last
+    # modified dates, used by make, consistent with actual file changes
+    if (!-e $out || read_file($out) ne $str) {
+        my ($vol, $dir, $file) = File::Spec->splitpath($out);
+        mkpath($dir);
+        write_file($out, $str);
+    }
+    if ($dst =~ /\.sh$/) {
+        chmod(0755, $out);
+    }
+}
+
+=item B<copy_file>(I<src>, I<dst>, I<exts>)
+
+Copy file, preserving timestamp of destination if unchanged.
+
+=over 4
+
+=item I<src> Source file name.
+
+=item I<dst> Destination file name.
+
+=item I<exts> File extensions to copy.
+
+=back
+
+No return value.
+
+=cut
+sub copy_dir {
+    my $self = shift;
+    my $src = shift;
+    my $dst = shift;
+    
+    my $in = File::Spec->catdir($Bin, '..', 'share', $src);
+    
+    find({
+        no_chdir => 1,
+        wanted => sub {
+            my $from = $File::Find::name;
+            my $to = $from;
+            $to =~ s/^$src//;
+            
+            print "From: $from\nTo: $to\n";
+            
+            if (-f $from) {
+                $self->copy_file($from, $to);
+            }
+        }
+    }, $in);
 }
 
 =back

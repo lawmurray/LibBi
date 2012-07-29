@@ -92,13 +92,9 @@ sub visit {
     my $block = shift;
 
     if ($node->isa('Bi::Model::Block')) {
-    	if ($node->get_name eq 'parameter') {
-    		$node->sink_children($model);
-    		$node->get_block->set_commit(1);
-    		$node->push_block($block->clone($model));
-    	} elsif ($node->get_name eq 'proposal_parameter') {
-    		$node->sink_children($model);
-    		$node->get_block->set_commit(1);
+    	if ($node->get_name eq 'parameter' || $node->get_name eq 'proposal_parameter') {
+    		$node->sink_actions($model);
+    		$node->get_block($node->num_blocks - 1)->set_commit(1);
     		$node->push_block($block->clone($model));
     	}
     }

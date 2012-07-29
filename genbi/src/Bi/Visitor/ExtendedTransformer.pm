@@ -47,40 +47,13 @@ sub evaluate {
     my $class = shift;
     my $model = shift;
 
-    my $self = {
-        _model => $model
-    };
+    my $self = {};
     bless $self, $class;
 
-    $self->_add_sqrt_vars;
-
-    my $block;
-    if ($model->is_block('initial')) {
-        $block = $model->get_block('initial');
-        #$self->_add_zero_block($block, ['noise', 'state'], ['noise', 'state', 'obs']);
-        $block->accept($self, [], []);
+    $self->_add_sqrt_vars($model);
+    foreach my $name ('initial', 'transition', 'observation') {
+        $model->get_block($name)->accept($self, $model, [], []);
     }
-    if ($model->is_block('transition')) {
-        $block = $model->get_block('transition');
-        #$self->_add_zero_block($block, ['noise'], ['noise']);
-        #$self->_add_zero_block($block, ['state'], ['noise']);
-        $block->accept($self, [], []);
-    }
-    if ($model->is_block('observation')) {
-        $block = $model->get_block('observation');
-        #$self->_add_zero_block($block, ['obs'], ['noise', 'state', 'obs']);
-        $block->accept($self, [], []);
-    }
-}
-
-=item B<get_model>
-
-Get model.
-
-=cut
-sub get_model {
-    my $self = shift;
-    return $self->{_model};
 }
 
 =item B<visit>(I<node>)
@@ -91,10 +64,9 @@ Visit node of model.
 sub visit {
     my $self = shift;
     my $node = shift;
+    my $model = shift;
     my $new_blocks = shift;
     my $new_actions = shift;
-
-    my $model = $self->get_model;
 
     if ($node->isa('Bi::Model::Block')) {
         $node->push_blocks($new_blocks);
@@ -148,10 +120,8 @@ sub visit {
                     map { push(@{$_->get_offsets}, @extra_offsets) } @sqrt_refs;
                 }
                 
-                #$block->push_action(ref($node)->new_jacobian_action($model->next_action_id, $sqrt_target, $Js, \@sqrt_refs));
                 push(@$new_actions, ref($node)->new_jacobian_action($model->next_action_id, $sqrt_target, $Js, \@sqrt_refs));
             }
-            #push(@$new_blocks, $block)
         }
         $node = ref($node)->new_mean_action($model->next_action_id, $node->get_target, $node->mean);
     }
@@ -165,8 +135,8 @@ Add variables to hold rows of square-root of covariance matrix.
 =cut
 sub _add_sqrt_vars {
     my $self = shift;
+    my $model = shift;
     
-    my $model = $self->get_model;
     my ($var1, $var2);
     my @vars;
     my $sqrt_var;
@@ -179,7 +149,7 @@ sub _add_sqrt_vars {
     @vars = (@{$model->get_vars('noise')}, @{$model->get_vars('state')}, @{$model->get_vars('obs')});
     foreach $var1 (@vars) {
         foreach $var2 (@vars) {
-            $sqrt_var = $self->_create_sqrt_var($var1, $var2);
+            $sqrt_var = $self->_create_sqrt_var($model, $var1, $var2);
             $size += $sqrt_var->get_size;
             $model->add_var($sqrt_var);
         }
@@ -196,10 +166,10 @@ of I<var1> on I<var2> in the square-root of covariance matrix.
 =cut
 sub _create_sqrt_var {
     my $self = shift;
+    my $model = shift;
     my $var1 = shift;
     my $var2 = shift;
     
-    my $model = $self->get_model;
     my $name = 'S_' . $var1->get_name . '_' . $var2->get_name . '_';
     my $dims = [ @{$var1->get_dims}, @{$var2->get_dims} ];
     my $named_args = {
@@ -220,11 +190,11 @@ of types I<types2>.
 =cut
 sub _add_zero_block {
     my $self = shift;
+    my $model = shift;
     my $block = shift;
     my $types1 = shift;
     my $types2 = shift;
     
-    my $model = $self->get_model;
     my $zero_block = new Bi::Model::Block($model->next_block_id);
     my $zero_action;
     my $var1;
@@ -234,7 +204,7 @@ sub _add_zero_block {
     my @vars2 = map { $_->get_name !~ /^S_\w+_/ ? $_ : () } @{$model->get_vars($types2)};
     foreach $var1 (@vars1) {
         foreach $var2 (@vars2) {
-            $zero_action = $self->_create_zero_action($var1, $var2);
+            $zero_action = $self->_create_zero_action($model, $var1, $var2);
             $zero_block->push_action($zero_action);
         }
     }
@@ -259,10 +229,10 @@ I<var1> and I<var2>.
 =cut
 sub _create_zero_action {
     my $self = shift;
+    my $model = shift;
     my $var1 = shift;
     my $var2 = shift;
     
-    my $model = $self->get_model;
     my $name = 'S_' . $var1->get_name . '_' . $var2->get_name . '_';
     my $var = $model->get_var($name);
     my $target = new Bi::Expression::VarIdentifier($var);

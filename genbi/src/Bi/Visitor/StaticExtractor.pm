@@ -45,7 +45,7 @@ sub evaluate {
     my $extracts = [];    
     foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
 	    $model->get_block($name)->accept($self, $statics, $extracts);
-    }    
+    }
     $extracts = unique($extracts);
     @$extracts = map { ($_->is_const || $_->isa('Bi::Expression::VarIdentifier')) ? () : $_ } @$extracts;
 
