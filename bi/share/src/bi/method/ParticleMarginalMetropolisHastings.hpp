@@ -17,9 +17,7 @@
 #include "../misc/exception.hpp"
 #include "AdaptiveNParticleFilter.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/serialization.hpp"
-#endif
 
 namespace bi {
 /**
@@ -110,7 +108,6 @@ public:
   real lq;
 
 private:
-#ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -121,7 +118,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-#endif
 };
 }
 
@@ -170,9 +166,9 @@ inline void bi::ParticleMarginalMetropolisHastingsState::swap(ParticleMarginalMe
   std::swap(lq, o.lq);
 }
 
-#ifndef __CUDACC__
 template<class Archive>
-inline void bi::ParticleMarginalMetropolisHastingsState::serialize(Archive& ar, const unsigned version) {
+inline void bi::ParticleMarginalMetropolisHastingsState::serialize(
+    Archive& ar, const unsigned version) {
   ar & theta;
   ar & xd;
   ar & xr;
@@ -180,7 +176,6 @@ inline void bi::ParticleMarginalMetropolisHastingsState::serialize(Archive& ar, 
   ar & lp;
   ar & lq;
 }
-#endif
 
 namespace bi {
 /**

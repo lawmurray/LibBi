@@ -49,7 +49,7 @@ bi::SMC2State::SMC2State() : t(0.0) {
 
 namespace bi {
 /**
- * Sequential Monte Carlo square (SMC^2)
+ * Sequential Monte Carlo squared (SMC^2).
  *
  * @ingroup method
  *
@@ -154,11 +154,35 @@ public:
 
   /**
    * Output.
+   *
+   * @param n Step number.
+   * @param thetas Theta-particles.
+   * @param lws Log-weights of theta-particles.
+   * @param evidence Evidence.
+   * @param ess Effective sample size of theta-particles.
+   * @param acceptRate Acceptance rate of rejuvenation step
    */
   template<bi::Location L, class V1>
   void output(const int n, const std::vector<ThetaParticle<B,L>*>& thetas,
       const V1 lws, const real evidence, const real ess,
-      const real acceptanceRate);
+      const real acceptRate);
+
+  /**
+   * Report progress on stderr.
+   *
+   * @param n Step number.
+   * @param t Time.
+   * @param ess Effective sample size of theta-particles.
+   * @param r Was resampling performed?
+   * @param acceptRate Acceptance rate of rejuvenation step (if any).
+   */
+  void report(const int n, const real t, const real ess, const bool r,
+      const real acceptRate);
+
+  /**
+   * Terminate.
+   */
+  void term();
   //@}
 
 private:
@@ -255,10 +279,6 @@ template<bi::Location L, class F, class IO2>
 void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
     F* filter, IO2* inInit, const int D, const int Nm, const real essRel,
     const int localMove, const real moveScale) {
-  /**
-   * @todo Add the possibility to output the theta particles at different
-   * time steps
-   */
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -272,36 +292,34 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   this->Ntheta = D;
   this->Nmoves = Nm;
   this->essRel = essRel;
-  BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory<CL>::create(m,
-      out));
+  BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory<CL>::create(m, out));
   std::vector<ThetaParticle<B,L>*> thetas(Ntheta); // theta-particles
   host_vector_type lws(Ntheta); // log-weights of theta-particles
   host_ancestor_vector_type as(Ntheta); // ancestors
-  real evidence = 0.0, ess = 0.0, acceptanceRate = -1.0;
+  real evidence = 0.0, ess = 0.0, acceptRate = -1.0;
   GaussianPdf<host_vector_type,host_matrix_type> q(NP); // proposal distro
 
   /* init */
   init(rng, thetas, filter, lws, as);
 
   /* sample */
-  int n = 0, r = 0;
+  int n = 0;
+  bool r = false; // resampling performed?
   while (state.t < T) {
-    std::cerr << "time " << state.t << std::endl;
     evidence = step(rng, T, thetas, lws, filter, n);
     ess = resam->ess(lws);
-    std::cerr << "ESS at time " << state.t << ": " << ess << std::endl;
-    if (ess < Ntheta*essRel) {
-      /* resample-move step */
-      std::cerr << "Resampling step at time " << state.t
-          << " (threshold: " << Ntheta*essRel << ")" << std::endl;
+    r = ess < Ntheta*essRel;
+    if (r) {
+      /* resample-move */
       adapt(thetas, lws, localMove, q);
       resample(rng, lws, as, thetas);
-      acceptanceRate = rejuvenate(rng, s_in, filter, pmmh, thetas, lws, q,
+      acceptRate = rejuvenate(rng, s_in, filter, pmmh, thetas, lws, q,
           localMove, moveScale);
     } else {
-      acceptanceRate = -1.0;
+      acceptRate = 0.0;
     }
-    output(n, thetas, lws, evidence, ess, acceptanceRate);
+    report(n, state.t, ess, r, acceptRate);
+    output(n, thetas, lws, evidence, ess, acceptRate);
     ++n;
   }
 
@@ -310,6 +328,9 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   for (int i = 0; i < Ntheta; i++) {
     delete thetas[i];
   }
+
+  /* terminate */
+  term();
 }
 
 template<class B, class R, class IO1, bi::Location CL>
@@ -357,28 +378,34 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
     std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, F* filter,
     const int n) {
   int i, r;
-  real evidence = 0.0, tnxt = filter->getNextObsTime(T);
+  real evidence = 0.0, tnxt;
 
   for (i = 0; i < Ntheta; i++) {
+    BOOST_AUTO(&theta, *thetas[i]);
+    BOOST_AUTO(&thetaS, theta.getState());
+    BOOST_AUTO(thetaLws, theta.getLogWeights());
+    BOOST_AUTO(thetaAs, theta.getAncestors());
+    BOOST_AUTO(&thetaIncLl, theta.getIncLogLikelihood());
+    BOOST_AUTO(&thetaLl, theta.getLogLikelihood());
+
+    /* set up filter */
     if (i == 0) {
+      filter->setTime(state.t, thetaS); // may be inconsistent from last rejuvenate
       filter->mark();
+      tnxt = filter->getNextObsTime(T);
     } else {
       filter->top();
     }
-    ThetaParticle<B,L>& theta = *thetas[i];
-    State<B,L>& s = theta.getState();
+    r = filter->step(rng, tnxt, thetaS, thetaLws, thetaAs, n);
+    filter->output(n, thetaS, r, thetaLws, thetaAs);
 
-    filter->setTime(state.t, s);
-    r = filter->step(rng, tnxt, s, theta.getLogWeights(), theta.getAncestors(), n);
-
-    filter->output(n, s, r, theta.getLogWeights(), theta.getAncestors());
-    theta.getIncLogLikelihood() = logsumexp_reduce(theta.getLogWeights()) -
-        std::log(theta.getLogWeights().size());
-    theta.getLogLikelihood() += theta.getIncLogLikelihood();
-    lws(i) += theta.getIncLogLikelihood();
+    thetaIncLl = logsumexp_reduce(thetaLws) - std::log(thetaLws.size());
+    thetaLl += thetaIncLl;
+    lws(i) += thetaIncLl;
 
     /* compute evidence along the way */
-    evidence += exp(lws(i))*exp(theta.getIncLogLikelihood());
+    evidence += std::exp(lws(i) + thetaIncLl);
+    ///@todo Is this correct given thetaIncLl already added to lws(i) above?
   }
   filter->pop();
   state.t = tnxt;
@@ -448,8 +475,8 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
     row(thetaparticles, i) = row(thetas[i]->getState().get(P_VAR), 0);
   }
 
-  double meanacceptrate = 0.;
-  for (int indexmove = 0; indexmove < Nmoves; indexmove++) {
+  double meanAcceptRate = 0.;
+  for (int indexMove = 0; indexMove < Nmoves; indexMove++) {
     q.samples(rng, thetaproposals);
     if (!localMove) {
       q.logDensities(thetaproposals, logdensProposals, true);
@@ -499,18 +526,17 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
       }
       sumaccept += pmmhaccept;
     }
-    meanacceptrate += (double)sumaccept / (double)Ntheta;
-    std::cerr << "accept rate: " << (double)sumaccept / (double)Ntheta<< std::endl;
+    meanAcceptRate += (double)sumaccept / (double)Ntheta;
   }
 
-  return meanacceptrate / (double) Nmoves;
+  return meanAcceptRate / (double)Nmoves;
 }
 
 template<class B, class R, class IO1, bi::Location CL>
 template<bi::Location L, class V1>
 void bi::SMC2<B,R,IO1,CL>::output(const int n,
     const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
-    const real evidence, const real ess, const real acceptanceRate) {
+    const real evidence, const real ess, const real acceptRate) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -529,7 +555,22 @@ void bi::SMC2<B,R,IO1,CL>::output(const int n,
   out->writeNumberX(n, allNx);
   out->writeEvidence(n, evidence);
   out->writeEss(n, ess);
-  out->writeAcceptanceRate(n, acceptanceRate);
+  out->writeAcceptanceRate(n, acceptRate);
+}
+
+template<class B, class R, class IO1, bi::Location CL>
+void bi::SMC2<B,R,IO1,CL>::report(const int n, const real t,
+    const real ess, const bool r, const real acceptRate) {
+  std::cerr << n << ":\ttime " << t << "\tESS " << ess;
+  if (r) {
+    std::cerr << "\tresample-move with acceptance rate " << acceptRate;
+  }
+  std::cerr << std::endl;
+}
+
+template<class B, class R, class IO1, bi::Location CL>
+void bi::SMC2<B,R,IO1,CL>::term() {
+  //
 }
 
 #endif
