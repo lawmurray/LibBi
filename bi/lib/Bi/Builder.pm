@@ -167,7 +167,7 @@ sub _autogen {
         
         my $options = '';
         if (!$self->{_verbose}) {
-            $options .= ' &> autogen.log'; 
+            $options .= ' > autogen.log 2>&1'; 
         }
         
         chdir($builddir) || die("could not change to build directory '$builddir'\n");
@@ -203,7 +203,7 @@ sub _configure {
         $options .= ' --config-cache';
     }
     if (!$self->{_verbose}) {
-        $options .= ' &> configure.log'; 
+        $options .= ' > configure.log 2>&1'; 
     }
 
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
@@ -267,7 +267,7 @@ sub _make {
         $options .= ' --always-make';
     }
     if (!$self->{_verbose}) {
-        $options .= ' &> make.log'; 
+        $options .= ' > make.log 2>&1'; 
     }
     
     my $builddir = $self->get_dir;
