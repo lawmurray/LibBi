@@ -16,8 +16,9 @@
 using namespace bi;
 
 SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
-    const std::string& file, const int ns) :
-    NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns) {
+    const std::string& file, const int ns, const int np) :
+    NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns),
+    np(np) {
   map();
   mask0();
   rewind();
@@ -25,7 +26,7 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
 
 SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
     const SparseInputNetCDFBuffer& o) : NetCDFBuffer(o), SparseInputBuffer(o.m),
-    vars(NUM_VAR_TYPES), ns(o.ns) {
+    vars(NUM_VAR_TYPES), ns(o.ns), np(o.np) {
   map();
   mask0();
   rewind();
@@ -218,16 +219,26 @@ void SparseInputNetCDFBuffer::map() {
   std::pair<NcVar*,int> pair;
 
   /* dimensions */
-  nsDim = hasDim("ns") ? mapDim("ns") : NULL;
+  nsDim = NULL;
+  if (hasDim("ns")) {
+    nsDim = mapDim("ns");
+    BI_ERROR(ns < nsDim->size(), "Given index exceeds " <<
+        "length along ns dimension");
+  }
+
   for (i = 0; i < m.getNumDims(); ++i) {
     dim = m.getDim(i);
     if (hasDim(dim->getName().c_str())) {
       nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
     }
   }
-  npDim = hasDim("np") ? mapDim("np") : NULL;
-  BI_ERROR(nsDim == NULL || ns < nsDim->size(), "Given index exceeds " <<
-      "length along ns dimension");
+
+  npDim = NULL;
+  if (hasDim("np")) {
+    npDim = mapDim("np");
+    BI_ERROR(np < 0 || np < npDim->size(), "Given index exceeds " <<
+        "length along np dimension");
+  }
 
   /* record dimensions, time and coordinate variables */
   for (i = 0; i < ncFile->num_vars(); ++i) {

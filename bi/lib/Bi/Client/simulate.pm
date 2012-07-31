@@ -44,9 +44,17 @@ File to which to write output.
 
 Index along the C<ns> dimension of C<--init-file> to use.
 
+=item * C<--init-np> (default 0)
+
+Index along the C<np> dimension of C<--init-file> to use.
+
 =item * C<--input-ns> (default 0)
 
 Index along the C<ns> dimension of C<--input-file> to use.
+
+=item * C<--input-np> (default 0)
+
+Index along the C<np> dimension of C<--input-file> to use.
 
 =back
 
@@ -85,7 +93,17 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
+      name => 'init-np',
+      type => 'int',
+      default => 0
+    },
+    {
       name => 'input-ns',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'input-np',
       type => 'int',
       default => 0
     }

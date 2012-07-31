@@ -64,12 +64,12 @@ int main(int argc, char* argv[]) {
   /* inputs */
   SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
   if (!INPUT_FILE.empty()) {
-    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS);
+    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   }
   if (!INIT_FILE.empty()) {
-    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS);
+    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
   }
-  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS);
+  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS, OBS_NP);
 
   /* output */
   KalmanFilterNetCDFBuffer* out;

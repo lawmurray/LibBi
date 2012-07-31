@@ -139,6 +139,16 @@ top-level block into the {\sf proposal\_initial} top-level block.
 
 This is useful for joint state and parameter estimation using filters.
 
+\item {\sf --transform-obs-to-state} (default off)
+
+Augment the state with observations by interpreting {\sf obs} statements as
+{\sf state}, merging the {\sf observation} top-level block into the {\sf
+  transition}, {\sf initial} and {\sf proposal\_initial} top-level blocks,
+and merging the {\sf lookahead\_observation} top-level block into the
+{\sf lookahead\_transition} top-level block.
+
+This is useful for producing simulated data sets from a model.
+
 \item {\sf --transform-initial-to-param} (default off)
 
 Augment the parameters with the initial conditions of the state variables by

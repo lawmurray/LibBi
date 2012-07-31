@@ -39,9 +39,11 @@ public:
    * @param m Model.
    * @param file NetCDF file name.
    * @param ns Index along @c ns dimension to use, if it exists.
+   * @param np Index along @c np dimension to use, if it exists. -1 for whole
+   * dimension.
    */
   SparseInputNetCDFBuffer(const Model& m, const std::string& file,
-      const int ns = 0);
+      const int ns = 0, const int np = -1);
 
   /**
    * Copy constructor.
@@ -349,9 +351,14 @@ private:
   std::vector<std::vector<NcVar*> > vars;
 
   /**
-   * Index of record to read along ns dimension.
+   * Index of record to read along @c ns dimension.
    */
   int ns;
+
+  /**
+   * Index of record to read along @c np dimension.
+   */
+  int np;
 };
 }
 
@@ -477,11 +484,17 @@ void bi::SparseInputNetCDFBuffer::readDense(const VarType type, const int id,
 
   /* np dimension */
   if (j < ncVar->num_dims() && npDim != NULL && ncVar->get_dim(j) == npDim) {
-    assert (X.size1() <= npDim->size());
-    offsets[j] = 0;
-    counts[j] = X.size1();
+    if (np >= 0) {
+      assert (X.size1() == 1);
+      offsets[j] = np;
+      counts[j] = 1;
+    } else {
+      assert (X.size1() <= npDim->size());
+      offsets[j] = 0;
+      counts[j] = X.size1();
+      haveP = true;
+    }
     ++j;
-    haveP = true;
   }
 
   /* read */
@@ -546,10 +559,16 @@ void bi::SparseInputNetCDFBuffer::readSparse(const VarType type,
 
   /* np dimension */
   if (npDim != NULL && ncVar->get_dim(j) == npDim) {
-    assert (X.size1() <= npDim->size());
-    offsets[j] = 0;
-    counts[j] = X.size1();
-    size *= counts[j];
+    if (np >= 0) {
+      assert (X.size1() == 1);
+      offsets[j] = np;
+      counts[j] = 1;
+    } else {
+      assert (X.size1() <= npDim->size());
+      offsets[j] = 0;
+      counts[j] = X.size1();
+      size *= counts[j];
+    }
     ++j;
   }
 
@@ -577,9 +596,6 @@ void bi::SparseInputNetCDFBuffer::readSparse(const VarType type,
 template<class V2>
 void bi::SparseInputNetCDFBuffer::readContiguousDense(const VarType type,
     const int id, V2 x) {
-  /* pre-condition */
-  assert (x.size() == m.getVar(type, id)->getSize());
-
   typedef typename V2::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
@@ -587,7 +603,7 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const VarType type,
   NcVar* ncVar;
   NcDim* ncDim;
   host_vector<long> offsets, counts;
-  int j, k, rDim;
+  int j, k, rDim, size = 1;
   BI_UNUSED NcBool ret;
 
   var = m.getVar(type, id);
@@ -608,6 +624,7 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const VarType type,
   if (rDim != -1) {
     offsets[j] = state.starts[rDim];
     counts[j] = state.lens[rDim];
+    size *= counts[j];
     ++j;
   }
 
@@ -616,14 +633,22 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const VarType type,
     ncDim = ncVar->get_dim(j);
     offsets[j] = 0;
     counts[j] = ncDim->size();
+    size *= counts[j];
   }
 
   /* np dimension */
   if (npDim != NULL && ncVar->get_dim(j) == npDim) {
-    offsets[j] = 0;
-    counts[j] = x.size();
+    if (np >= 0) {
+      offsets[j] = np;
+      counts[j] = 1;
+    } else {
+      offsets[j] = 0;
+      counts[j] = npDim->size();
+      size *= counts[j];
+    }
     ++j;
   }
+  assert (x.size() == size);
 
   /* read */
   ret = ncVar->set_cur(offsets.buf());
@@ -677,9 +702,14 @@ void bi::SparseInputNetCDFBuffer::readContiguousSparse(const VarType type,
 
   /* np dimension */
   if (npDim != NULL && ncVar->get_dim(j) == npDim) {
-    offsets[j] = 0;
-    counts[j] = npDim->size();
-    size *= counts[j];
+    if (np >= 0) {
+      offsets[j] = np;
+      counts[j] = 1;
+    } else {
+      offsets[j] = 0;
+      counts[j] = npDim->size();
+      size *= counts[j];
+    }
     ++j;
   }
   assert(x.size() == size);

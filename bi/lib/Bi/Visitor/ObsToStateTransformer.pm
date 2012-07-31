@@ -76,12 +76,12 @@ sub visit {
     } elsif ($node->isa('Bi::Model::Block')) {
         if ($node->get_name eq 'observation' || $node->get_name eq 'lookahead_observation') {
             $node->clear;
-        } elsif ($node->get_name eq 'transition') {
+        } elsif ($node->get_name eq 'transition' || $node->get_name eq 'initial' || $node->get_name eq 'proposal_initial') {
             $node->sink_actions($model);
             if ($node->num_blocks > 0) {
                 $node->get_block($node->num_blocks - 1)->set_commit(1);
             }
-            $node->push_block($observation_block);
+            $node->push_block($observation_block->clone($model));
         } elsif ($node->get_name eq 'lookahead_transition') {
             $node->sink_actions($model);
             if ($node->num_blocks > 0) {
