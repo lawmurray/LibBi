@@ -95,6 +95,11 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
+      name => 'transform-obs-to-state',
+      type => 'bool',
+      default => 0
+    },
+    {
       name => 'transform-initial-to-param',
       type => 'bool',
       default => 0

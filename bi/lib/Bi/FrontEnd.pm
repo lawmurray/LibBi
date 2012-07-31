@@ -59,6 +59,7 @@ use Bi::Client;
 use Bi::Optimiser;
 use Bi::Visitor::ExtendedTransformer;
 use Bi::Visitor::ParamToStateTransformer;
+use Bi::Visitor::ObsToStateTransformer;
 use Bi::Visitor::InitialToParamTransformer;
 
 use Carp;
@@ -239,13 +240,16 @@ sub client {
 
     # transform
     $self->_report("Transforming model...");
-    if ($client->get_named_arg('transform-extended')) {
-        Bi::Visitor::ExtendedTransformer->evaluate($model);
-    }
     if ($client->get_named_arg('transform-param-to-state')) {
         Bi::Visitor::ParamToStateTransformer->evaluate($model);
     } elsif ($client->get_named_arg('transform-initial-to-param')) {
         Bi::Visitor::InitialToParamTransformer->evaluate($model);
+    }
+    if ($client->get_named_arg('transform-obs-to-state')) {
+        Bi::Visitor::ObsToStateTransformer->evaluate($model);
+    }
+    if ($client->get_named_arg('transform-extended')) {
+        Bi::Visitor::ExtendedTransformer->evaluate($model);
     }
 
     # optimise

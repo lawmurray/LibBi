@@ -71,12 +71,13 @@ sub evaluate {
     }
 
     # create precompute block
-    my $block = new Bi::Model::Block($model->next_block_id);
-    $block->push_actions($actions);
-    $block->set_commit(1);
-    
-    $model->accept($self, $model, $block);
-    
+    if (@$actions) {
+        my $block = new Bi::Model::Block($model->next_block_id);
+        $block->push_actions($actions);
+        $block->set_commit(1);
+        
+        $model->accept($self, $model, $block);
+    }
     return $actions;
 }
 
@@ -92,13 +93,13 @@ sub visit {
     my $block = shift;
 
     if ($node->isa('Bi::Model::Block')) {
-    	if ($node->get_name eq 'parameter' || $node->get_name eq 'proposal_parameter') {
-	    $node->sink_actions($model);
-	    if ($node->num_blocks > 0) {
-		$node->get_block($node->num_blocks - 1)->set_commit(1);
-	    }
-	    $node->push_block($block->clone($model));
-    	}
+        if ($node->get_name eq 'parameter' || $node->get_name eq 'proposal_parameter') {
+            $node->sink_actions($model);
+            if ($node->num_blocks > 0) {
+               $node->get_block($node->num_blocks - 1)->set_commit(1);
+            }
+            $node->push_block($block->clone($model));
+        }
     }
     
     return $node;

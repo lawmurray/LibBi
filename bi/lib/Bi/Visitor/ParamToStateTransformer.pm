@@ -70,7 +70,7 @@ sub visit {
     my $proposal_parameter_block = shift;
 
     if ($node->isa('Bi::Model::Param')) {
-        # replace with state
+        # replace with state variable
         $node = new Bi::Model::State($node->get_name, $node->get_dims,
             $node->get_args, $node->get_named_args);
     } elsif ($node->isa('Bi::Model::Block')) {
