@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2741 $
- * $Date: 2012-06-18 16:17:26 +0800 (Mon, 18 Jun 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP
 #define BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP

@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2763 $
- * $Date: 2012-06-22 16:11:30 +0800 (Fri, 22 Jun 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_THETAPARTICLE_HPP
 #define BI_METHOD_THETAPARTICLE_HPP

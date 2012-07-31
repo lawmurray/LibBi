@@ -4,8 +4,8 @@
  * Transformations of vectors and matrices.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1641 $
- * $Date: 2011-06-16 11:10:03 +0800 (Thu, 16 Jun 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_PRIMITIVE_MATRIXPRIMITIVE_HPP
 #define BI_PRIMITIVE_MATRIXPRIMITIVE_HPP

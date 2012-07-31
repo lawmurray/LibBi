@@ -4,8 +4,8 @@
  * Functions for manipulating state objects in shared host memory.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2279 $
- * $Date: 2011-12-13 13:09:45 +0800 (Tue, 13 Dec 2011) $
+ * $Rev$
+ * $Date$
  *
  * shared host memory is supported for an arbitrary subset of the nodes of a model.
  * A type list is used to determine which nodes can be found in shared

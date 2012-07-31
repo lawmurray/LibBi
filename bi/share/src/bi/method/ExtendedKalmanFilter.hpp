@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2297 $
- * $Date: 2011-12-19 16:16:00 +0800 (Mon, 19 Dec 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_EXTENDEDKALMANFILTER_HPP
 #define BI_METHOD_EXTENDEDKALMANFILTER_HPP

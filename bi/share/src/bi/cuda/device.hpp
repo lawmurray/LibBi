@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2489 $
- * $Date: 2012-04-25 18:42:38 +0800 (Wed, 25 Apr 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_CUDA_DEVICE_HPP
 #define BI_CUDA_DEVICE_HPP

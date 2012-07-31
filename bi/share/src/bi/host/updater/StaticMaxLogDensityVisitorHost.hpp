@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2576 $
- * $Date: 2012-05-18 19:16:32 +0800 (Fri, 18 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_HOST_UPDATER_STATICMAXLOGDENSITYVISITORHOST_HPP
 #define BI_HOST_UPDATER_STATICMAXLOGDENSITYVISITORHOST_HPP

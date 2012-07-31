@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2424 $
- * $Date: 2012-03-23 17:40:36 +0800 (Fri, 23 Mar 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_MATH_GSL_HPP
 #define BI_MATH_GSL_HPP

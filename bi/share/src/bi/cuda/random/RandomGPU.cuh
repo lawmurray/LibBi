@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2720 $
- * $Date: 2012-06-14 13:50:32 +0800 (Thu, 14 Jun 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_RANDOM_RANDOMGPU_CUH
 #define BI_RANDOM_RANDOMGPU_CUH

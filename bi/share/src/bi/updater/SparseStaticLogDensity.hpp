@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1622 $
- * $Date: 2011-06-13 22:28:52 +0800 (Mon, 13 Jun 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_UPDATER_SPARSESTATICLOGDENSITY_HPP
 #define BI_UPDATER_SPARSESTATICLOGDENSITY_HPP

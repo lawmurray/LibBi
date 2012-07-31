@@ -2,8 +2,8 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev: 2596 $
-## $Date: 2012-05-24 14:32:32 +0000 (Thu, 24 May 2012) $
+## $Rev$
+## $Date$
 %]
 
 [%-PROCESS client/misc/header.cpp.tt-%]

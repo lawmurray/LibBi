@@ -4,8 +4,8 @@
  * Macros for building type lists.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1568 $
- * $Date: 2011-05-26 13:25:27 +0800 (Thu, 26 May 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_TYPELIST_MACROTYPETREE_HPP
 #define BI_TYPELIST_MACROTYPETREE_HPP

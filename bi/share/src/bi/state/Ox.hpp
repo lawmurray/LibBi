@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2137 $
- * $Date: 2011-11-11 12:38:06 +0800 (Fri, 11 Nov 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_STATE_OX_HPP
 #define BI_STATE_OX_HPP

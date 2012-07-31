@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2524 $
- * $Date: 2012-05-02 21:46:48 +0800 (Wed, 02 May 2012) $
+ * $Rev$
+ * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/UniformPdf.hpp
  */

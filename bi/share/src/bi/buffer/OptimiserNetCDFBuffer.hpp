@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2535 $
- * $Date: 2012-05-04 16:44:05 +0800 (Fri, 04 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_OPTIMISERNETCDFBUFFER_HPP
 #define BI_BUFFER_OPTIMISERNETCDFBUFFER_HPP

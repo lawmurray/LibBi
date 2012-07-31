@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1296 $
- * $Date: 2011-02-23 12:20:47 +0800 (Wed, 23 Feb 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_TYPELIST_CONTAINS_HPP
 #define BI_TYPELIST_CONTAINS_HPP

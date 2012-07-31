@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2632 $
- * $Date: 2012-05-31 16:35:09 +0800 (Thu, 31 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_CUDA_UPDATER_STATICSAMPLERGPU_CUH
 #define BI_CUDA_UPDATER_STATICSAMPLERGPU_CUH

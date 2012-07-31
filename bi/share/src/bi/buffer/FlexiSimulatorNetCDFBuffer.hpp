@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2597 $
- * $Date: 2012-05-24 22:33:24 +0800 (Thu, 24 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_FLEXISIMULATORNETCDFBUFFER_HPP
 #define BI_BUFFER_FLEXISIMULATORNETCDFBUFFER_HPP

@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2709 $
- * $Date: 2012-06-13 14:24:04 +0800 (Wed, 13 Jun 2012) $
+ * $Rev$
+ * $Date$
  */
 #include "RandomHost.hpp"
 

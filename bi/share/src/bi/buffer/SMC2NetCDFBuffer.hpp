@@ -3,8 +3,8 @@
  *
  * @author Pierre Jacob <jacob@ceremade.dauphine.fr>
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2597 $
- * $Date: 2012-05-24 14:33:24 +0000 (Thu, 24 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_BUFFER_SMC2NETCDFBUFFER_HPP
 #define BI_BUFFER_SMC2NETCDFBUFFER_HPP

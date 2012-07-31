@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2422 $
- * $Date: 2012-03-22 14:10:45 +1100 (Thu, 22 Mar 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_MATH_LOC_TEMP_MATRIX_HPP
 #define BI_MATH_LOC_TEMP_MATRIX_HPP

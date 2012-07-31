@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2257 $
- * $Date: 2011-12-08 15:05:47 +0800 (Thu, 08 Dec 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_HOST_MATH_MULTIOPERATION_HPP
 #define BI_HOST_MATH_MULTIOPERATION_HPP

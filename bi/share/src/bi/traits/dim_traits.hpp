@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2138 $
- * $Date: 2011-11-11 14:55:42 +0800 (Fri, 11 Nov 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_TRAITS_DIM_TRAITS_HPP
 #define BI_TRAITS_DIM_TRAITS_HPP

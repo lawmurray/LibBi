@@ -4,8 +4,8 @@
  * Macros for LAPACK usage.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 1244 $
- * $Date: 2011-01-31 10:37:29 +0800 (Mon, 31 Jan 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_HOST_MATH_LAPACK_HPP
 #define BI_HOST_MATH_LAPACK_HPP

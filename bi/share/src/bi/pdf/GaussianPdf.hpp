@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2541 $
- * $Date: 2012-05-06 16:19:08 +0800 (Sun, 06 May 2012) $
+ * $Rev$
+ * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/GaussianPdf.hpp
  */

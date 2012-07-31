@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2144 $
- * $Date: 2011-11-14 15:07:50 +0800 (Mon, 14 Nov 2011) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_MODEL_COORD_HPP
 #define BI_MODEL_COORD_HPP

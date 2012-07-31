@@ -4,8 +4,8 @@
  * Easy interface for setting ODE parameters.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2589 $
- * $Date: 2012-05-23 05:15:11 +0000 (Wed, 23 May 2012) $
+ * $Rev$
+ * $Date$
  *
  */
 #ifndef BI_MATH_ODE_HPP

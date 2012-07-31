@@ -2,8 +2,8 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2639 $
- * $Date: 2012-06-01 04:52:16 +0000 (Fri, 01 Jun 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_CUDA_UPDATER_STATICMAXLOGDENSITYVISITORGPU_CUH
 #define BI_CUDA_UPDATER_STATICMAXLOGDENSITYVISITORGPU_CUH

@@ -3,14 +3,15 @@
  *
  * @author Pierre Jacob <jacob@ceremade.dauphine.fr>
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2597 $
- * $Date: 2012-05-24 14:33:24 +0000 (Thu, 24 May 2012) $
+ * $Rev$
+ * $Date$
  */
 #ifndef BI_METHOD_SMC2_HPP
 #define BI_METHOD_SMC2_HPP
 
 #include "misc.hpp"
 #include "ThetaParticle.hpp"
+#include "ParticleMarginalMetropolisHastings.hpp"
 #include "../state/State.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
@@ -22,7 +23,6 @@
 #include "../primitive/vector_primitive.hpp"
 #include "../pdf/misc.hpp"
 #include "../pdf/GaussianPdf.hpp"
-#include "ParticleMarginalMetropolisHastings.hpp"
 
 namespace bi {
 /**
@@ -239,8 +239,6 @@ struct SMC2Factory {
 #include "../math/io.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
-
-#include <netcdfcpp.h>
 
 #include "boost/typeof/typeof.hpp"
 
