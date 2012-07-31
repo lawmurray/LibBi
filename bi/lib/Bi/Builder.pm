@@ -175,11 +175,10 @@ sub _autogen {
         if ($? == -1) {
             die("./autogen.sh failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./autogen.sh died with signal %d\n", $? & 127));
+            die(sprintf("./autogen.sh died with signal %d, see $builddir/autogen.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./autogen.sh failed with return code %d\n", $ret >> 8));
+            die(sprintf("./autogen.sh failed with return code %d, see $builddir/autogen.log for details\n", $ret >> 8));
         }
-        
         chdir($cwd) || warn("could not change back to working directory '$cwd'\n");
     }
 }
@@ -236,9 +235,9 @@ sub _configure {
         if ($? == -1) {
             die("./configure failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./configure died with signal %d\n", $? & 127));
+            die(sprintf("./configure died with signal %d, see $builddir/configure.log and $builddir/config.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./configure failed with return code %d\n", $ret >> 8));
+            die(sprintf("./configure failed with return code %d, see $builddir/configure.log and $builddir/config.log for details\n", $ret >> 8));
         }        
         chdir($cwd);
     }
@@ -284,9 +283,9 @@ sub _make {
     if ($? == -1) {
         die("make failed to execute ($!)\n");
     } elsif ($? & 127) {
-        die(sprintf("make died with signal %d\n", $? & 127));
+        die(sprintf("make died with signal %d, see $builddir/make.log for details\n", $? & 127));
     } elsif ($ret != 0) {
-        die(sprintf("make failed with return code %d\n", $ret >> 8));
+        die(sprintf("make failed with return code %d, see $builddir/make.log for details\n", $ret >> 8));
     }
     symlink($target, $client);
     chdir($cwd);
