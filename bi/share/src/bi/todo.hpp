@@ -1,6 +1,4 @@
 /**
- * @todo * (L) Build system that combines genbi and libbi.
- *
  * @todo New interface for models.
  *
  * @todo * (L) Add --transform-obs-to-state command line argument, remove ns
@@ -71,4 +69,6 @@
  * @todo * (A) Get OctBi working with MATLAB?
  *
  * @todo * (P) Review RBi.
+ *
+ * @todo Use new NetCDF C++ interface.
  */
