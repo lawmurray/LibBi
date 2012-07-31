@@ -1,0 +1,46 @@
+#!/usr/bin/env perl
+
+=head1 NAME
+
+bi - frontend to bi functionality.
+
+=head1 SYNOPSIS
+
+    bi I<command> I<options...>
+
+    bi @I<options_file>
+    bi I<command> @I<options_file>
+
+=head1 METHODS
+
+=over 4
+
+=cut
+
+BEGIN {
+    use FindBin qw($Bin);
+    use File::Spec;
+
+    unshift(@INC, File::Spec->catfile($Bin, '..', 'lib'));
+}
+
+use warnings;
+use strict;
+
+use Getopt::ArgvFile;
+
+use Bi::FrontEnd;
+
+
+my $frontend = new Bi::FrontEnd;
+$frontend->do;
+
+=back
+
+=head1 AUTHOR
+
+Lawrence Murray <lawrence.murray@csiro.au>
+
+=head1 VERSION
+
+$Rev$ $Date$

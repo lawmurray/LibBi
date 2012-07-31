@@ -1,0 +1,145 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%
+# client programs
+CLIENTS = [ 'simulate', 'pf', 'ekf', 'rtss', 'nm', 'pmmh', 'smc2', 'test' ];
+%]
+
+AUTOMAKE_OPTIONS = subdir-objects
+
+# compile and link flags
+AM_CPPFLAGS = -Isrc $(OPENMP_CPPFLAGS) $(CUDA_CPPFLAGS) -DTHRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_OMP
+AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
+AM_LDFLAGS = $(OPENMP_LDFLAGS) $(CUDA_LDFLAGS)
+
+# CUDA files setup
+if ENABLE_MPI
+if ENABLE_VAMPIR
+NVCC = mpicxx-vt --vt:cxx "perl nvcc_wrapper.pl nvcc" --vt:inst manual --vt:mpi
+else
+NVCC = perl nvcc_wrapper.pl nvcc `mpicxx -showme:compile`
+endif
+else
+NVCC = perl nvcc_wrapper.pl nvcc
+endif
+
+NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+NVCC_CXXFLAGS = $(CUDA_CXXFLAGS) -w -arch sm_13 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+
+if ENABLE_INTEL
+  NVCC_CXXFLAGS += -ccbin icc -Xcompiler=-gcc
+endif
+
+# libraries
+lib_LTLIBRARIES = libbi.la
+libbi_la_SOURCES = \
+  src/bi/bi.cpp \
+  src/bi/init.cpp \
+  src/bi/model/Coord.cpp \
+  src/bi/buffer/FlexiParticleFilterNetCDFBuffer.cpp \
+  src/bi/buffer/FlexiSimulatorNetCDFBuffer.cpp \
+  src/bi/buffer/KalmanFilterNetCDFBuffer.cpp \
+  src/bi/buffer/NetCDFBuffer.cpp \
+  src/bi/buffer/OptimiserNetCDFBuffer.cpp \
+  src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \
+  src/bi/buffer/ParticleMCMCNetCDFBuffer.cpp \
+  src/bi/buffer/SMC2NetCDFBuffer.cpp \
+  src/bi/buffer/SimulatorNetCDFBuffer.cpp \
+  src/bi/buffer/SparseInputBuffer.cpp \
+  src/bi/buffer/SparseInputNetCDFBuffer.cpp \
+  src/bi/host/shared_host.cpp \
+  src/bi/host/math/cblas.cpp \
+  src/bi/host/math/lapack.cpp \
+  src/bi/host/math/qrupdate.cpp \
+  src/bi/host/ode/IntegratorConstants.cpp \
+  src/bi/host/random/RandomHost.cpp \
+  src/bi/method/MetropolisResampler.cpp \
+  src/bi/method/MultinomialResampler.cpp \
+  src/bi/method/StratifiedResampler.cpp \
+  src/bi/misc/omp.cpp \
+  src/bi/mpi/mpi.cpp \
+  src/bi/random/Random.cpp
+
+if ENABLE_SSE
+libbi_la_SOURCES += \
+  src/bi/sse/sse_shared_host.cpp
+endif
+
+if ENABLE_CUDA
+libbi_la_SOURCES += \
+  src/bi/cuda/device.cu \
+  src/bi/cuda/math/magma.cu \
+  src/bi/cuda/math/cublas.cu \
+  src/bi/cuda/random/RandomGPU.cu \
+  src/bi/cuda/random/RandomKernel.cu
+endif
+
+#if ENABLE_MPI
+#libbi_la_SOURCES += 
+#endif
+
+# programs
+bin_PROGRAMS =[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
+
+[% FOREACH client IN CLIENTS %]
+[% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.la
+[% client %]_cpu_SOURCES = src/[% client %]_cpu.cpp src/model/Model[% model.get_name %].cpp
+[% client %]_gpu_LDADD = $(DEPS_LIBS) libbi.la
+[% client %]_gpu_SOURCES = src/[% client %]_gpu.cu src/model/Model[% model.get_name %].cpp
+[% END %]
+
+# other
+dist_noinst_SCRIPTS = autogen.sh
+
+## command line options
+if ENABLE_SINGLE
+CPPFLAGS += -DENABLE_SINGLE
+endif
+
+if ENABLE_CUDA
+CPPFLAGS += -DENABLE_CUDA
+# ensure dependency files included
+[%-FOREACH client IN CLIENTS %]
+include src/$(DEPDIR)/[% client %].Po
+[% END %]
+endif
+
+if ENABLE_SSE
+CPPFLAGS += -DENABLE_SSE
+CXXFLAGS += -msse3
+endif
+
+if ENABLE_MKL
+CXXFLAGS += -DENABLE_MKL
+endif
+
+if ENABLE_MPI
+CPPFLAGS += -DENABLE_MPI
+endif
+
+if ENABLE_VAMPIR
+CPPFLAGS += -DENABLE_VAMPIR -DVTRACE
+endif
+
+# suffix rules for CUDA files
+.cu.o:
+	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \
+	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $$depbase.Tpo $< && \
+	$(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	echo -n 'src/' > $$depbase.Po && \
+	cat $$depbase.Tpo >> $$depbase.Po && \
+	rm -f $$depbase.Tpo
+
+.cu.lo:
+	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.lo$$||'` && \
+	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $$depbase.Tpo $< && \
+	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	echo -n 'src/' > $$depbase.Plo && \
+	cat $$depbase.Tpo >> $$depbase.Plo && \
+	rm -f $$depbase.Tpo
