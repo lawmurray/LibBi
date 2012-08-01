@@ -383,8 +383,8 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
   for (i = 0; i < Ntheta; i++) {
     BOOST_AUTO(&theta, *thetas[i]);
     BOOST_AUTO(&thetaS, theta.getState());
-    BOOST_AUTO(thetaLws, theta.getLogWeights());
-    BOOST_AUTO(thetaAs, theta.getAncestors());
+//    BOOST_AUTO(thetaLws, theta.getLogWeights());
+//    BOOST_AUTO(thetaAs, theta.getAncestors());
     BOOST_AUTO(&thetaIncLl, theta.getIncLogLikelihood());
     BOOST_AUTO(&thetaLl, theta.getLogLikelihood());
 
@@ -396,7 +396,10 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
     } else {
       filter->top();
     }
-    r = filter->step(rng, tnxt, thetaS, thetaLws, thetaAs, n);
+//    r = filter->step(rng, tnxt, thetaS, thetaLws, thetaAs, n);
+    r = filter->step(rng, tnxt, thetaS, theta.getLogWeights(), theta.getAncestors(), n);
+    BOOST_AUTO(thetaLws, theta.getLogWeights());
+    BOOST_AUTO(thetaAs, theta.getAncestors());
     filter->output(n, thetaS, r, thetaLws, thetaAs);
 
     thetaIncLl = logsumexp_reduce(thetaLws) - std::log(thetaLws.size());

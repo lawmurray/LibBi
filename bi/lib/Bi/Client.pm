@@ -349,11 +349,12 @@ sub exec {
     }
 
     if ($self->get_named_exec_arg('with-cuda-gdb')) {
-        unshift(@argv, "cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
+        unshift(@argv, "libtool --mode=execute cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
     } elsif ($self->get_named_exec_arg('with-gdb')) {
-        unshift(@argv, "gdb -q -ex run --args $builddir/" . $self->{_binary});
+        unshift(@argv, "libtool --mode=execute gdb -q -ex run --args $builddir/" . $self->{_binary});
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
-        unshift(@argv, "valgrind --leak-check=full $builddir/" . $self->{_binary});
+#        unshift(@argv, "valgrind --leak-check=full $builddir/" . $self->{_binary});
+        unshift(@argv, "libtool --mode=execute valgrind --leak-check=full $builddir/" . $self->{_binary});
     } elsif ($self->get_named_arg('with-mpi')) {
         my $np = '';
         if ($self->is_named_arg('mpi-np')) {

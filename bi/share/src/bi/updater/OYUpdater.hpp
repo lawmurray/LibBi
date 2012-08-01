@@ -110,6 +110,8 @@ public:
    */
   real getTime() const;
 
+  int getNumObs(real T) const;
+
   /**
    * Current mask.
    *
@@ -248,6 +250,11 @@ inline real bi::OYUpdater<B,IO,CL>::getTime() const {
   assert (state.p1 > 0);
 
   return timeCache.get(state.p1 - 1);
+}
+
+template<class B, class IO, bi::Location CL>
+inline int bi::OYUpdater<B,IO,CL>::getNumObs(real T) const {
+  return in.countUniqueTimes(T);
 }
 
 template<class B, class IO, bi::Location CL>

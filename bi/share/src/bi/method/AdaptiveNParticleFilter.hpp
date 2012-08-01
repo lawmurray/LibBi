@@ -90,17 +90,12 @@ public:
         V2& as_1_in, V1& lws_2, V2& as_2_in, int n);
 
 protected:
-//  template<class V1>
-//  bool stoppingRule(V1 lws, int T, real maxlw, int start, real& sumw, real& sumw2);
 
   template<class V1, class V2, class V3, class V4>
   bool resample(Random& rng, V1 lws, V2 as, bool sorted, V3 slws, V4 ps, V3 Ws);
 
   template<class V1, class V2, class V3, class V4>
   bool resample(Random& rng, int a, V1 lws, V2 as, bool sorted, V3 slws, V4 ps, V3 Ws);
-//
-//  template<class V1>
-//  bool stoppingRule(V1 lws_1, V1 lws_2, int T, real maxlw);
 
   /**
    * Compute maximum particle weight at current time.
@@ -115,8 +110,7 @@ protected:
   real getMaxLogWeight(State<B,L>& s);
 
   const int blockSize;
-//  const real rel_min_ess;
-//  const int maxParticles;
+
   S* stopper;
 
 private:
@@ -250,6 +244,8 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step_impl(Random& rng,
   real maxlw = -1.0 / 0.0;
   int r;
 
+  int totalObs = this->getNumObs(T);
+
   // inside loop
 
   int lastSize = s.size();
@@ -316,7 +312,7 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step_impl(Random& rng,
 
       correct(s, subrange(lws2, block * blockSize, blockSize));
 
-      if (stopper->stop(lws2,T,maxlw,blockSize)) {
+      if (stopper->stop(lws2,totalObs,maxlw,blockSize)) {
         finished = true;
         this->pop();
         if (block == 0) {
@@ -540,6 +536,8 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step(Random& rng,
   typename sim_temp_vector<V1>::type Ws_2(P);
   typename sim_temp_vector<V2>::type ps_2(P);
 
+  int totalObs = this->getNumObs(T);
+
   bool finished = false;
   if (n == 0) {
     this->mark();
@@ -598,7 +596,7 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step(Random& rng,
         maxlw = std::max(this->getMaxLogWeight(s_1),this->getMaxLogWeight(s_2));
       }
 
-      if (stopper->stop(lws2_1, lws2_2, T, maxlw, blockSize)) {
+      if (stopper->stop(lws2_1, lws2_2, totalObs, maxlw, blockSize)) {
 //      if (stoppingRule(lws2_1, lws2_2, T, maxlw)) {
         finished = true;
         this->pop();

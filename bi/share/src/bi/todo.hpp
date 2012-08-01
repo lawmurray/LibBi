@@ -3,8 +3,6 @@
  * 
  * @todo Allow to specify a minimum number of blocks.
  *
- * @todo * (A) Get PMMH to look at the actual number of observations.
- *
  * @todo * (L) Fix ESS threshold for MPI.
  *
  * @todo * (L) Fix GPU permute.

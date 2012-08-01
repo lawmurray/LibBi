@@ -180,6 +180,8 @@ public:
    */
   real getTime() const;
 
+  int getNumObs(real T) const;
+
   /**
    * @copydoc Simulator::setDelta()
    */
@@ -503,6 +505,11 @@ bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::ParticleFilter(B& m, R* resam,
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::~ParticleFilter() {
   flush();
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+inline int bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::getNumObs(real T) const {
+  return oyUpdater.getNumObs(T);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
