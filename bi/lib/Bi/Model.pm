@@ -42,7 +42,7 @@ use Bi::Expression;
 our %MAP_BLOCKS = (
 	'lookahead_transition' => 'transition',
 	'lookahead_observation' => 'observation',
-	'proposal_parameter' => 'proposal',
+	'proposal_parameter' => 'parameter',
 	'proposal_initial' => 'initial'
 );
 
