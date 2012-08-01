@@ -1,8 +1,5 @@
 /**
  * @todo New interface for models.
- *
- * @todo * (L) Add --transform-obs-to-state command line argument, remove ns
- * dimension from input files, use np dimension instead.
  * 
  * @todo Allow to specify a minimum number of blocks.
  *
