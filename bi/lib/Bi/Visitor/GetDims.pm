@@ -63,8 +63,10 @@ sub visit {
     
     my $sub_dims = [];
     if ($node->isa('Bi::Expression::VarIdentifier')) {
-        $sub_dims = $node->get_var->get_dims;
-        @$dims = @$sub_dims;
+    	if ($node->num_offsets == 0) {
+	        $sub_dims = $node->get_var->get_dims;
+    	    @$dims = @$sub_dims;
+    	}
     } elsif ($node->isa('Bi::Model::Action')) {
         $sub_dims = $node->get_dims;
         @$dims = @$sub_dims;

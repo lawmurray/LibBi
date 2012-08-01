@@ -97,10 +97,8 @@ sub new {
     GetOptions(@args) || die("could not read command line arguments\n");
     
     # error and warning handlers
-    if ($self->{_verbose}) {
-        $SIG{__DIE__} = sub { Carp::confess(@_) };
-        $SIG{__WARN__} = sub { Carp::cluck(@_) };
-    }
+  	$SIG{__DIE__} = sub { $self->_error(@_) };
+   	$SIG{__WARN__} = sub { $self->_warn(@_) };
     
     # command
     $self->{_cmd} = shift @ARGV;
@@ -135,7 +133,7 @@ sub do {
         }
     };
     if ($@) {
-        _error($@);
+        die($@);
     }
 }
 
@@ -302,6 +300,7 @@ Print I<msg> and exit.
 
 =cut
 sub _error {
+	my $self = shift;
     my $msg = shift;
             
     # tidy up message
@@ -310,7 +309,11 @@ sub _error {
         $msg = "Error: $msg";
     }
 
-    die("$msg\n");
+	if ($self->{_verbose}) {
+		Carp::confess("$msg\n");
+	} else {
+		die("$msg\n");
+	}
 }
 
 =item B<_warn>(I<msg>)
@@ -319,6 +322,7 @@ Print I<msg>.
 
 =cut
 sub _warn {
+	my $self = shift;
     my $msg = shift;
     
     # tidy up message
@@ -327,7 +331,11 @@ sub _warn {
         $msg = "Warning: $msg";
     }
     
-    warn("$msg\n");
+	if ($self->{_verbose}) {
+		Carp::cluck("$msg\n");
+	} else {
+		warn("$msg\n");
+	}
 }
 
 1;

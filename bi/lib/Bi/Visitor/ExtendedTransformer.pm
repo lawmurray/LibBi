@@ -88,7 +88,7 @@ sub visit {
         
         # Jacobian updates to square-root cross-covariances
         my ($Js, $refs) = $node->jacobian;
-        if (@$Js) {
+        if (defined($Js) && @$Js) {
             my $block = new Bi::Model::Block($model->next_block_id);
             my @vars;
             foreach my $type ('noise', 'state') {
@@ -121,7 +121,14 @@ sub visit {
                 push(@$new_actions, ref($node)->new_jacobian_action($model->next_action_id, $sqrt_target, $Js, \@sqrt_refs));
             }
         }
-        $node = ref($node)->new_mean_action($model->next_action_id, $node->get_target, $node->mean);
+        
+        # update to mean
+        my $mean = $node->mean;
+        if (defined($mean)) {
+	        $node = ref($node)->new_mean_action($model->next_action_id, $node->get_target, $mean);
+        } else {
+            undef $node;
+        }
     }
     return $node;
 }

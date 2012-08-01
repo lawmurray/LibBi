@@ -51,7 +51,7 @@ sub validate {
 
     my $const_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_const;
     my $common_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_common;
-    my $vector_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_element || $self->get_named_arg('std')->is_scalar || $self->get_named_arg('std')->is_vector;
+    my $vector_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_scalar || $self->get_named_arg('std')->is_vector;
 
     if ($const_std) {
         $self->set_parent('const_std_');

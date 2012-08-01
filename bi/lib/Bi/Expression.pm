@@ -108,7 +108,7 @@ Is this a scalar expression?
 sub is_scalar {
     my $self = shift;
     
-    return $self->num_dims == 0 && !$self->is_element;
+    return $self->num_dims == 0;
 }
 
 =item B<is_vector>

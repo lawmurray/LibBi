@@ -43,7 +43,8 @@ sub new {
     my $offsets = shift;
     
     # pre-condition
-    assert(!defined($offsets) || ref($offsets) eq 'ARRAY') if DEBUG;
+    assert(!defined($offsets) || ref($offsets) eq 'ARRAY');
+    assert(!defined($offsets) || scalar(@$offsets) == 0 || scalar(@$offsets) == $var->num_dims) if DEBUG;
     map { assert($_->isa('Bi::Expression::Offset')) if DEBUG } @$offsets;
 
     if (!defined $offsets) {
@@ -115,7 +116,6 @@ Get the dimensionality of the expression.
 =cut
 sub num_dims {
     my $self = shift;
-    
     return $self->get_var->num_dims - $self->num_offsets;
 }
 

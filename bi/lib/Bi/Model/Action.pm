@@ -668,6 +668,9 @@ Compute square-root of covariance.
 
 =cut
 sub std {
+    my $self = shift;
+    my $name = $self->get_name;
+    warn("action '$name' is missing the 'std' method\n");
     return undef;
 }
 

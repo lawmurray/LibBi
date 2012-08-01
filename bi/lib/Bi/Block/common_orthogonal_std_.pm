@@ -35,7 +35,7 @@ sub validate {
             foreach $name ('std') {
                 if ($action->is_named_arg($name)) {
                     $arg = $action->get_named_arg($name);
-                    if (!$arg->is_element && !$arg->is_scalar && !$arg->is_vector) {
+                    if (!$arg->is_scalar && !$arg->is_vector) {
                         die("a 'common_orthogonal_std_' block may only contain actions with element, scalar or vector '$name' argument\n");
                     }
                 }
