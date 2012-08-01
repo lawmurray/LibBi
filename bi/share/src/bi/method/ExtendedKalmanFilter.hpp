@@ -364,7 +364,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getNextObsTime(const real T)
     const {
   if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
-      oyUpdater.getNextTime() < to) {
+      oyUpdater.getNextTime() < T) {
     return oyUpdater.getNextTime();
   } else {
     return T;
@@ -462,7 +462,7 @@ template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
     State<B,L>& s) {
-  real to = getNextObsTime();
+  real to = getNextObsTime(tnxt);
   const int P = s.size();
 
   /* zero appropriate blocks of square-root covariance */
