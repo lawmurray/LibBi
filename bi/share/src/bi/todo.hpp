@@ -7,6 +7,8 @@
  *
  * @todo * (L) Fix ESS threshold for MPI.
  *
+ * @todo * (L) Fix GPU permute.
+ *
  * @todo * (A) Make ESS threshold clear with adaptive particle filter.
  *
  * @todo Adapting number of samples of initial conditions.
