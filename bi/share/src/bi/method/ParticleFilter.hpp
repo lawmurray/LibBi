@@ -523,6 +523,7 @@ inline void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::setTime(const real t,
     State<B,L>& s) {
   state.t = t;
   sim.setTime(t, s);
+  oyUpdater.setTime(t, s);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>

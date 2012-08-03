@@ -353,6 +353,7 @@ inline void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::setTime(
     const real t, State<B,L>& s) {
   state.t = t;
   sim.setTime(t, s);
+  oyUpdater.setTime(t, s);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>

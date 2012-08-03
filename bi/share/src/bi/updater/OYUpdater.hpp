@@ -110,7 +110,27 @@ public:
    */
   real getTime() const;
 
-  int getNumObs(real T) const;
+  /**
+   * Set time.
+   *
+   * @param t The time.
+   * @param[out] s State.
+   *
+   * Advances through the file until the given time is reached. Values are
+   * read into @p s as this progresses, ensuring that its state is valid for
+   * time @p t.
+   */
+  template<Location L>
+  void setTime(const real t, State<B,L>& s);
+
+  /**
+   * Get number of observations.
+   *
+   * @param T Time.
+   *
+   * @return Number of observations that occur up to and including time @p T.
+   */
+  int getNumObs(const real T) const;
 
   /**
    * Current mask.
@@ -150,8 +170,14 @@ public:
    */
   void restore();
 
+  /**
+   * @copydoc concept::Markable::top()
+   */
   void top();
 
+  /**
+   * @copydoc concept::Markable::pop()
+   */
   void pop();
 
 private:
@@ -246,14 +272,26 @@ inline void bi::OYUpdater<B,IO,CL>::reset() {
 
 template<class B, class IO, bi::Location CL>
 inline real bi::OYUpdater<B,IO,CL>::getTime() const {
-  /* pre-condition */
-  assert (state.p1 > 0);
-
-  return timeCache.get(state.p1 - 1);
+  if (state.p1 > 0) {
+    return timeCache.get(state.p1 - 1);
+  } else {
+    return 0.0;
+  }
 }
 
 template<class B, class IO, bi::Location CL>
-inline int bi::OYUpdater<B,IO,CL>::getNumObs(real T) const {
+template<bi::Location L>
+void bi::OYUpdater<B,IO,CL>::setTime(const real t, State<B,L>& s) {
+  if (t < getTime()) {
+    rewind();
+  }
+  while (hasNext() && getNextTime() <= t) {
+    update(s);
+  }
+}
+
+template<class B, class IO, bi::Location CL>
+inline int bi::OYUpdater<B,IO,CL>::getNumObs(const real T) const {
   return in.countUniqueTimes(T);
 }
 
@@ -282,6 +320,9 @@ inline bool bi::OYUpdater<B,IO,CL>::hasNext() const {
 
 template<class B, class IO, bi::Location CL>
 inline real bi::OYUpdater<B,IO,CL>::getNextTime() const {
+  /* pre-condition */
+  assert (hasNext());
+
   return timeCache.get(state.p1);
 }
 

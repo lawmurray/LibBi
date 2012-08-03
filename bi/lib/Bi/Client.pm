@@ -85,6 +85,10 @@ our @CLIENT_OPTIONS = (
       type => 'int',
     },
     {
+      name => 'mpi-npernode',
+      type => 'int',
+    },
+    {
       name => 'transform-extended',
       type => 'bool',
       default => 0
@@ -358,7 +362,10 @@ sub exec {
     } elsif ($self->get_named_arg('with-mpi')) {
         my $np = '';
         if ($self->is_named_arg('mpi-np')) {
-            $np = " -np " . int($self->get_named_arg('mpi-np'));
+            $np .= " -np " . int($self->get_named_arg('mpi-np'));
+        }
+        if ($self->is_named_arg('mpi-npernode')) {
+        	$np .= " -npernode " . int($self->get_named_arg('mpi-npernode'));
         }
         unshift(@argv, "mpirun$np $builddir/" . $self->{_binary});
     } else {

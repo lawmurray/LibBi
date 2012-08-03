@@ -211,9 +211,9 @@ template<class B, class IO, bi::Location CL>
 template<bi::Location L>
 void bi::FUpdater<B,IO,CL>::setTime(const real t, State<B,L>& s) {
   if (t < getTime()) {
-    reset();
+    rewind();
   }
-  while (hasNext() && getTime() < t) {
+  while (hasNext() && getTime() <= t) {
     update(s);
   }
 }
