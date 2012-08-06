@@ -202,9 +202,6 @@ sub _configure {
     if (!$self->{_force}) {
         $options .= ' --config-cache';
     }
-    if (!$self->{_verbose}) {
-        $options .= ' > configure.log 2>&1'; 
-    }
 
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
@@ -213,6 +210,10 @@ sub _configure {
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
+
+    if (!$self->{_verbose}) {
+        $options .= ' > configure.log 2>&1'; 
+    }
             
     if ($self->{_warn}) {
         $cxxflags .= " -Wall";

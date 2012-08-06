@@ -80,8 +80,8 @@ fi
 # Checks for programs.
 AC_PROG_CXX([icpc g++])
 AC_PROG_CXXCPP([icpc g++])
-AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+AC_PROG_RANLIB
 
 if test x$CXX = xicpc; then
   intel=true
@@ -104,12 +104,15 @@ if test x$mpi = xtrue; then
 	else
 	    AC_CHECK_PROG(have_mpicxx, [mpicxx], [true], [false])
 	    if test x$have_mpicxx = xfalse; then
-	       AC_MSG_ERROR([program not found (required with --enable-vampir)])
+	       AC_MSG_ERROR([program not found (required with --enable-mpi)])
 	    fi
 		CXX="mpicxx"
 		CXXCPP="mpicxx -E"
 	fi
 fi
+
+# libtool initialisation (must happen after LD set above)
+#LT_INIT
 
 # Checks for libraries
 AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required library not found])])
