@@ -73,6 +73,11 @@ sub visit {
         # replace with state variable
         $node = new Bi::Model::State($node->get_name, $node->get_dims,
             $node->get_args, $node->get_named_args);
+    } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
+    	if ($node->get_var->get_type eq 'obs') {
+    		my $name = $node->get_var->get_name;
+    		$node->set_var($model->get_var($name));
+    	} 
     } elsif ($node->isa('Bi::Model::Block')) {
         if ($node->get_name eq 'observation' || $node->get_name eq 'lookahead_observation') {
             $node->clear;

@@ -71,11 +71,6 @@ sub visit {
         my @statics = splice(@$statics, -$num_args, $num_args);
         $is_static = 0;
         $num_statics = reduce { $a + $b } 0, @statics;
-    } elsif ($node->isa('Bi::Model::Inline')) {
-        # let the inline be picked up on use instead
-        pop(@$statics);
-        pop(@$extracts);
-        $is_static = 0;
     } elsif ($node->isa('Bi::Expression::BinaryOperator')) {
         my @statics = splice(@$statics, -2);
         $is_static = reduce { $a && $b } @statics;
