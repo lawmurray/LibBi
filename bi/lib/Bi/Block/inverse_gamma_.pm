@@ -20,13 +20,10 @@ sub validate {
     if ($self->num_blocks > 0) {
         die("a 'inverse_gamma_' block may not contain sub-blocks\n");
     }
-    if ($self->num_actions != 1) {
-        die("a 'inverse_gamma_' block may only contain one action\n");
-    }
-
-    my $action = $self->get_action;
-    if ($action->get_name ne 'inverse_gamma') {
-        die("a 'inverse_gamma_' block may only contain 'inverse_gamma' actions\n");
+    foreach my $action (@{$self->get_actions}) {
+        if ($action->get_name ne 'inverse_gamma') {
+            die("a 'inverse_gamma_' block may only contain 'inverse_gamma' actions\n");
+        }
     }
 }
 

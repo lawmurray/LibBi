@@ -20,10 +20,10 @@ sub validate {
     if ($self->num_blocks > 0) {
         die("a 'gaussian_' block may not contain sub-blocks\n");
     }
-
-    my $action = $self->get_action;
-    if ($action->get_name ne 'gaussian' && $action->get_name ne 'normal' && $action->get_name ne 'log_gaussian' && $action->get_name ne 'log_normal') {
-        die("a 'gaussian_' block may only contain 'gaussian', 'normal', 'log_gaussian' and 'log_normal' actions\n");
+    foreach my $action (@{$self->get_actions}) {
+        if ($action->get_name ne 'gaussian' && $action->get_name ne 'normal' && $action->get_name ne 'log_gaussian' && $action->get_name ne 'log_normal') {
+            die("a 'gaussian_' block may only contain 'gaussian', 'normal', 'log_gaussian' and 'log_normal' actions\n");
+        }
     }
 }
 

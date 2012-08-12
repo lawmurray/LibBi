@@ -21,8 +21,8 @@ sub validate {
         die("an 'uninformative_' block may not contain sub-blocks\n");
     }
     foreach my $action (@{$self->get_actions}) {
-        if ($action->get_name ne 'uninformative_') {
-            die("an 'uninformative_' block may only contain 'uninformative_' actions\n");
+        if ($action->get_name ne 'uninformative') {
+            die("an 'uninformative_' block may only contain 'uninformative' actions\n");
         }
     }
 }
