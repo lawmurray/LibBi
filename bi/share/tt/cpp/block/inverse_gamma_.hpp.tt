@@ -45,13 +45,13 @@ public:
 
 [% sig_dynamic_function('logdensity') %] {
   if (onDelta) {
-    logDensities(s, p);
+    logDensities(s, lp);
   }
 }
 
 [% sig_dynamic_function('maxlogdensity') %] {
   if (onDelta) {
-    maxLogDensities(s, p);
+    maxLogDensities(s, lp);
   }
 }
 

@@ -97,6 +97,7 @@ sub visit {
         $is_static = 0;
     }
     
+    $is_static = $is_static && !$node->is_element;
     push(@$statics, $is_static);
     if ($is_static) {
         if ($num_statics > 0) {

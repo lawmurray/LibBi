@@ -82,7 +82,7 @@ public:
   
   [% IF shape.is_common && scale.is_common %]
   lp += (sh + BI_REAL(1.0))*BI_MATH_LOG(sh + BI_REAL(1.0)) -
-      sh - BI_REAL(1.0) - BI_MATH_LGAMMA(sh) - BI_MATH_LOG(sc) 
+      sh - BI_REAL(1.0) - BI_MATH_LGAMMA(sh) - BI_MATH_LOG(sc);
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]

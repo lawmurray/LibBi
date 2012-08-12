@@ -72,11 +72,11 @@ public:
 }
 
 [% sig_sparse_static_function('logdensity') %] {
-  bi::SparseStaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, mask, p);
+  bi::SparseStaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, mask, lp);
 }
 
 [% sig_sparse_static_function('maxlogdensity') %] {
-  bi::SparseStaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, mask, p);
+  bi::SparseStaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, mask, lp);
 }
 
 [%-PROCESS block/misc/footer.hpp.tt-%]

@@ -8,6 +8,8 @@
 #ifndef BI_MATH_MULTIOPERATION_HPP
 #define BI_MATH_MULTIOPERATION_HPP
 
+#include "operation.hpp"
+
 namespace bi {
 /**
  * @name Getters and setters

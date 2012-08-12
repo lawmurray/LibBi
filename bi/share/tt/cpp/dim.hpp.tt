@@ -37,7 +37,7 @@ public:
   /**
    * Size.
    */
-  static const int SIZE = [% dim.size %];
+  static const int SIZE = [% dim.get_size %];
 };
 
 inline [% class_name %]::[% class_name %]() : bi::Dim("[% dim.get_name %]", *this) {

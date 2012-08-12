@@ -14,6 +14,8 @@ y = block.get_action.get_target;
 
 [%-PROCESS block/misc/header.hpp.tt-%]
 
+#include "bi/math/multi_operation.hpp"
+
 /**
  * Block: gemv_.
  */
@@ -24,7 +26,7 @@ public:
   [% declare_static_function('logdensity') %]
   [% declare_static_function('maxlogdensity') %]
 
-  [% declare_static_function('simulate') %]
+  [% declare_dynamic_function('simulate') %]
   [% declare_dynamic_function('sample') %]
   [% declare_dynamic_function('logdensity') %]
   [% declare_dynamic_function('maxlogdensity') %]
@@ -33,11 +35,11 @@ public:
 #include "bi/primitive/matrix_primitive.hpp"
 
 [% sig_static_function('simulate') %] {
-  BOOST_AUTO(A, [% get_var(A) %]);
-  BOOST_AUTO(x, [% get_var(x) %]);
-  BOOST_AUTO(y, [% get_var(y) %]);
-  
-  bi::multi_gemv(A, x, y);
+  BOOST_AUTO(A, reshape([% get_var(A) %], P*rows, cols));
+  BOOST_AUTO(x, vec([% get_var(x) %]));
+  BOOST_AUTO(y, vec([% get_var(y) %]));
+      
+  bi::multi_gemv(P, 1.0, reshape(A, P*rows, cols), x, 0.0, y);
 }
 
 [% sig_static_function('sample') %] {

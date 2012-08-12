@@ -72,15 +72,16 @@ sub visit {
         my @args = splice(@$args, -$num_args, $num_args);
         $str = 'BI_MATH_' . uc($node->get_name) . '(' . join(', ', @args) . ')';
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
-        $str = $node->get_const->get_name;
+        $str = $node->get_const->get_name . '_';
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
-        $str = $node->get_inline->get_name;
+        $str = $node->get_inline->get_name . '_';
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         $str = $node->get_var->get_name;
         if ($node->num_offsets) {
             my @offsets = splice(@$args, -$node->num_offsets, $node->num_offsets);
             $str .= '_' . join('_', @offsets);
         }
+        $str .= '_';
     } elsif ($node->isa('Bi::Expression::DimAlias')) {
         $str = $node->get_alias;
     } elsif ($node->isa('Bi::Expression::Literal')) {
