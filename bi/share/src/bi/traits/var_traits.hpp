@@ -162,8 +162,6 @@ struct var_size {
  */
 template<class B, class X>
 struct var_net_start {
-  //typedef typename var_net<B,X>::type S;
-  //static const int value = var_start<S,X>::value;
   static const int value = X::START;
 };
 
@@ -298,116 +296,6 @@ struct is_p_var {
 template<class X>
 struct is_px_var {
   static const bool value = var_type<X>::value == PX_VAR;
-};
-
-/**
- * Get type list of net in model to which variable belongs.
- *
- * @ingroup model_low
- *
- * @tparam B Model type.
- * @tparam X Node type.
- */
-template<class B, class X>
-struct var_net {
-  typedef
-    typename
-    boost::mpl::if_<is_d_var<X>,
-        typename B::DTypeList,
-    typename
-    boost::mpl::if_<is_dx_var<X>,
-        typename B::DXTypeList,
-    typename
-    boost::mpl::if_<is_r_var<X>,
-        typename B::RTypeList,
-    typename
-    boost::mpl::if_<is_f_var<X>,
-        typename B::FTypeList,
-    typename
-    boost::mpl::if_<is_o_var<X>,
-        typename B::OTypeList,
-    typename
-    boost::mpl::if_<is_p_var<X>,
-        typename B::PTypeList,
-    typename
-    boost::mpl::if_<is_px_var<X>,
-        typename B::PXTypeList,
-    /*else*/
-        int
-    /*end*/
-    >::type>::type>::type>::type>::type>::type>::type type;
-};
-
-/**
- * Index of variable in type list.
- *
- * @ingroup model_low
- *
- * @tparam S Type list.
- * @tparam X Node type.
- */
-template<class S, class X>
-struct var_index {
-  static const int value = index<S,X>::value;
-};
-
-/**
- * Start of variable type in type list (cumulative sum of the sizes of all
- * preceding variables).
- *
- * @ingroup model_low
- *
- * @tparam S Type list.
- * @tparam X Node type.
- */
-template<class S, class X>
-struct var_start {
-  typedef typename front<S>::type front;
-  typedef typename pop_front<S>::type pop_front;
-
-  /**
-   * Starting index of @p X in @p S.
-   */
-  static const int value = var_size<front>::value +
-      var_start<pop_front,X>::value;
-};
-
-/**
- * @internal
- *
- * Base case of var_start.
- *
- * @ingroup model_low
- */
-template<class S>
-struct var_start<S,typename front<S>::type> {
-  static const int value = 0;
-};
-
-/**
- * @internal
- *
- * Error case of var_start.
- *
- * @ingroup model_low
- */
-template<class X>
-struct var_start<empty_typelist,X> {
-  //
-};
-
-/**
- * End of variable type in type list (cumulative sum of the sizes of self and
- * all preceding variables).
- *
- * @ingroup model_low
- *
- * @tparam S Type list.
- * @tparam X Node type.
- */
-template<class S, class X>
-struct var_end {
-  static const int value = var_start<S,X>::value + var_size<X>::value;
 };
 
 }

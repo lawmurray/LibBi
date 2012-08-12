@@ -12,14 +12,14 @@ using namespace bi;
 KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
     const Model& m, const std::string& file, const FileMode mode) :
     SimulatorNetCDFBuffer(m, file, mode), m(m),
-    M(/*m.getNetSize(D_VAR) + m.getNetSize(R_VAR)*/3) {
+    M(m.getNetSize(D_VAR) + m.getNetSize(R_VAR)) {
   map();
 }
 
 KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
     const Model& m, const int P, const int T, const std::string& file,
     const FileMode mode) : SimulatorNetCDFBuffer(m, P, T, file, mode), m(m),
-    M(/*m.getNetSize(D_VAR) + m.getNetSize(R_VAR)*/3) {
+    M(m.getNetSize(D_VAR) + m.getNetSize(R_VAR)) {
   if (mode == NEW || mode == REPLACE) {
     create(T); // set up structure of new file
   } else {

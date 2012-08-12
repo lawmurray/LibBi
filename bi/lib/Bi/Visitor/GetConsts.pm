@@ -63,7 +63,7 @@ sub visit {
     if ($node->isa('Bi::Expression::ConstIdentifier')) {
         Bi::Utility::push_unique($self->{_consts}, $node);
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
-        $node->get_inline->accept($self);
+        $node->get_inline->get_expr->accept($self);
     }
     
     return $node;

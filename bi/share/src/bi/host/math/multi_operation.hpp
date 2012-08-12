@@ -29,6 +29,26 @@ struct multi_gemv_impl<ON_HOST,T1> {
       const T1 beta, V2 y, const char transA);
 };
 
+/**
+ * @internal
+ */
+template<class T1>
+struct multi_gemm_impl<ON_HOST,T1> {
+  template<class M1, class M2, class M3>
+  static void func(const int P, const typename M1::value_type alpha,
+      const M1 A, const M2 X, const typename M3::value_type beta, M3 Y,
+      const char transA, const char transX);
+};
+
+/**
+ * @internal
+ */
+template<class T1>
+struct multi_trmm_impl<ON_HOST,T1> {
+  template<class M1, class M2>
+  static void func(const int P, const typename M1::value_type alpha, const M1 A, M2 B,
+      const char side, const char uplo, const char transA);
+};
 
 /**
  * @internal
@@ -125,6 +145,55 @@ void bi::multi_gemv_impl<bi::ON_HOST,T1>::func(const int P, const T1 alpha,
     }
   }
 }
+
+template<class T1>
+template<class M1, class M2, class M3>
+void bi::multi_gemm_impl<bi::ON_HOST,T1>::func(const int P,
+    const typename M1::value_type alpha, const M1 As, const M2 Xs,
+    const typename M3::value_type beta, M3 Ys, const char transA,
+    const char transX) {
+  #pragma omp parallel
+  {
+    typename sim_temp_matrix<M1>::type A(As.size1()/P, As.size2());
+    typename sim_temp_matrix<M2>::type X(Xs.size1()/P, Xs.size2());
+    typename sim_temp_matrix<M2>::type Y(Ys.size1()/P, Ys.size2());
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < P; ++p) {
+      multi_get_matrix(P, As, p, A);
+      multi_get_matrix(P, Xs, p, X);
+      multi_get_matrix(P, Ys, p, Y);
+
+      gemm(alpha, A, X, beta, Y, transA, transX);
+
+      multi_set_matrix(P, Ys, p, Y);
+    }
+  }
+};
+
+template<class T1>
+template<class M1, class M2>
+void bi::multi_trmm_impl<bi::ON_HOST,T1>::func(const int P,
+    const typename M1::value_type alpha, const M1 As, M2 Bs, const char side,
+    const char uplo, const char transA) {
+  #pragma omp parallel
+  {
+    typename sim_temp_matrix<M1>::type A(As.size1()/P, As.size2());
+    typename sim_temp_matrix<M2>::type B(Bs.size1()/P, Bs.size2());
+    int p;
+
+    #pragma omp for
+    for (p = 0; p < P; ++p) {
+      multi_get_matrix(P, As, p, A);
+      multi_get_matrix(P, Bs, p, B);
+
+      trmm(alpha, A, B, side, uplo, transA);
+
+      multi_set_matrix(P, Bs, p, B);
+    }
+  }
+};
 
 template<class T1>
 template<class M1, class M2>

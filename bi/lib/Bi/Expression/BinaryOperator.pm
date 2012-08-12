@@ -6,6 +6,10 @@ Bi::Expression::BinaryOperator - binary operator and operands.
 
     use Bi::Expression::BinaryOperator;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

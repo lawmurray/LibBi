@@ -149,7 +149,7 @@ sub symb2expr {
                         $expr = new Bi::Expression::Function($op, [ $expr1, $expr2 ]);
                     } else {
                         # an operator, parens ensure correct precedence
-                        $expr = new Bi::Expression::Parens(new Bi::Expression::BinaryOperator($expr1, $op, $expr2));
+                        $expr = new Bi::Expression::BinaryOperator($expr1, $op, $expr2);
                     }
                 }
             }
@@ -167,7 +167,7 @@ sub symb2expr {
             $expr = $self->_recover($symb->name);
         }
     } else {
-        die('unsupported symbolic tree node type')
+        die("unsupported expression type\n");
     }
     
     return $expr;
@@ -193,7 +193,7 @@ sub visit {
         my @symbs = splice(@$args, -$num_args, $num_args);
         my $name = $node->get_name;
         if ($name eq 'pow') {
-            # translate math pow to ^ operator
+            # convert to ^ operator
             $name = '^';
         } elsif ($name eq 'log') {
             # binary form, including argument for base
@@ -202,6 +202,10 @@ sub visit {
             # convert to ^ operator
             $name = '^';
             unshift(@symbs, 'EULER');
+        } elsif ($name eq 'sqrt') {
+            # convert to ^ operator
+            $name = '^';
+            push(@symbs, new Math::Symbolic::Constant(0.5));
         }
         $symb = new Math::Symbolic::Operator($name, @symbs);
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
@@ -209,9 +213,13 @@ sub visit {
         $self->_substitute($name, $node);
         $symb = new Math::Symbolic::Variable($name);
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
+        if ($node->is_const) {
         my $name = $node->get_inline->get_name;
         $self->_substitute($name, $node);
         $symb = new Math::Symbolic::Variable($name);
+        } else {
+            $symb = $self->expr2symb($node->get_inline->get_expr);
+        }
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         my $name = $node->get_var->get_name;
         if ($node->num_offsets) {
@@ -234,18 +242,18 @@ sub visit {
         } elsif ($offset < 0) {
             $symb .= 'm' . abs($offset);
         }
-    } elsif ($node->isa('Bi::Expression::Parens')) {
-        $symb = pop(@$args);
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         die('cannot convert ternary operator ?: to symbolic');
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
-        my @symbs = pop(@$args);
+        $symb = pop(@$args);
         my $op = $node->get_op;
         if ($op eq '-') {
             # Math::Symbolic interprets this as a binary subtract otherwise
             $op = 'neg';
-        }   
-        $symb = new Math::Symbolic::Operator($op, @symbs);
+        }
+        $symb = new Math::Symbolic::Operator($op, $symb);
+    } else {
+        die("unrecognised node in expression, type " . ref($node));
     }
     
     push(@$args, $symb);
@@ -275,8 +283,8 @@ sub _substitute {
     my $ident = shift;
     
     assert ($ident->isa('Bi::Expression::ConstIdentifier') ||
-            $ident->isa('Bi::Expression::InlineIdentifier') ||
-            $ident->isa('Bi::Expression::VarIdentifier')) if DEBUG;
+            $ident->isa('Bi::Expression::VarIdentifier') ||
+            $ident->isa('Bi::Expression::InlineIdentifier')) if DEBUG;
             
     $self->{_substitutes}->{$subst} = $ident;
 }

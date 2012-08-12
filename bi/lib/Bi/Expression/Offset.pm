@@ -1,11 +1,14 @@
 =head1 NAME
 
-Bi::Expression::Offset - dimension offset in a constant or variable
-reference.
+Bi::Expression::Offset - dimension offset in a variable reference.
 
 =head1 SYNOPSIS
 
     use Bi::Expression::Offset;
+
+=head1 INHERITS
+
+L<Bi::Expression>
 
 =head1 METHODS
 

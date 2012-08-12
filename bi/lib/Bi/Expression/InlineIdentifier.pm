@@ -6,6 +6,10 @@ Bi::Expression::InlineIdentifier - reference to inline expression.
 
     use Bi::Expression::InlineIdentifier;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

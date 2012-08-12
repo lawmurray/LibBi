@@ -6,6 +6,10 @@ Bi::Expression::ConstIdentifier - reference to constant.
 
     use Bi::Expression::ConstIdentifier
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

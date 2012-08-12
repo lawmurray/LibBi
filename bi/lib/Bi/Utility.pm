@@ -21,7 +21,7 @@ use base 'Exporter';
 use warnings;
 use strict;
 
-our @EXPORT_OK = qw(equals contains push_unique unique set_union set_intersect);
+our @EXPORT_OK = qw(equals contains find push_unique unique set_union set_intersect);
 
 use Carp::Assert;
 
@@ -76,6 +76,27 @@ sub contains {
         }
     }
     return 0;
+}
+
+=item B<find>(I<list>, I<item>)
+
+Returns the index of I<item> in I<list>, or -1 if it does not exist.
+
+=cut
+sub find {
+    my $list = shift;
+    my $item = shift;
+    
+    # pre-conditions
+    assert(defined($list) && ref($list) eq 'ARRAY') if DEBUG;    
+    assert(defined($item)) if DEBUG;    
+
+    for (my $i = 0; $i < @$list; ++$i) {
+        if ($item->equals($list->[$i])) {
+            return $i;
+        }
+    }
+    return -1;
 }
 
 =item B<push_unique>(I<list1>, I<list2/item2>)

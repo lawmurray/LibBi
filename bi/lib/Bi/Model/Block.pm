@@ -499,6 +499,17 @@ sub shift_block {
     return shift(@{$self->get_blocks});
 }
 
+=item B<can_simulate>
+
+Can block be deterministically simulated?
+
+=cut
+sub can_simulate {
+    my $self = shift;
+    
+    return Bi::Visitor::CanSimulate->evaluate($self);
+}
+
 =item B<sink_actions>(I<model>)
 
 Sinks all actions into a new sub-block, which is inserted at the end of the
@@ -537,15 +548,140 @@ sub sink_children {
     $self->set_actions([]);
 }
 
-=item B<can_simulate>
+=item B<add_mean_actions>(I<model>, I<vars>, I<mu>)
 
-Can block be deterministically simulated?
+Add actions to the block to compute mean terms.
+
+=over 8
+
+=item * I<model>
+
+The model.
+
+=item * I<vars>
+
+Variables included in the mean vector.
+
+=item * I<mu>
+
+The vector of symbolic expressions, as a L<Bi::Expression::Vector> object,
+each element either undefined (for zero) or a L<Bi::Expression> object.
+
+=back
+
+No return value.
 
 =cut
-sub can_simulate {
+sub add_mean_actions {
     my $self = shift;
+    my $model = shift;
+    my $vars = shift;
+    my $mu = shift;
     
-    return Bi::Visitor::CanSimulate->evaluate($self);
+    for (my $i = 0; $i < @$vars; ++$i) {
+        my $expr = $mu->get($i);
+        if (defined $expr) {
+            my $id = $model->next_action_id;
+            my $var = $vars->[$i];
+            my $target = new Bi::Expression::VarIdentifier($var);
+            my $action = new Bi::Model::Action($id, $target, '<-', $expr);
+            
+            $self->push_action($action);
+        }
+    }
+}
+
+=item B<add_std_actions>(I<model>, I<vars>, I<S>)
+
+Add actions to the block to compute square-root covariance terms.
+
+=over 8
+
+=item * I<model>
+
+The model.
+
+=item * I<vars>
+
+Variables included in the matrix.
+
+=item * I<S>
+
+The matrix of symbolic expressions, as a L<Bi::Expression::Matrix> object,
+each element either undefined (for zero) or a L<Bi::Expression> object.
+
+=back
+
+No return value.
+
+=cut
+sub add_std_actions {
+    my $self = shift;
+    my $model = shift;
+    my $vars = shift;
+    my $S = shift;
+    
+    for (my $i = 0; $i < @$vars; ++$i) {
+        for (my $j = 0; $j < @$vars; ++$j) {
+            my $expr = $S->get($i, $j);
+            if (defined $expr) {
+                my $id = $model->next_action_id;
+                my $var = $model->get_std_var($vars->[$i], $vars->[$j]);
+                my $target = new Bi::Expression::VarIdentifier($var);
+                my $action = new Bi::Model::Action($id, $target, '<-', $expr);
+                
+                $self->push_action($action);
+            }
+        }
+    }
+}
+
+=item B<add_jacobian_actions>(I<model>, I<vars>, I<J>)
+
+Add actions to the block to compute Jacobian terms.
+
+=over 8
+
+=item * I<model>
+
+The model.
+
+=item * I<vars>
+
+Variables included in the Jacobian matrix.
+
+=item * I<J>
+
+The matrix of symbolic Jacobian terms, as a L<Bi::Expression::Matrix> object,
+each element either undefined (for zero) or a L<Bi::Expression> object.
+
+=back
+
+No return value.
+
+=cut
+sub add_jacobian_actions {
+    my $self = shift;
+    my $model = shift;
+    my $vars = shift;
+    my $J_commit = shift;
+    my $J = shift;
+    
+    $J = $J_commit*$J;
+    
+    for (my $i = 0; $i < @$vars; ++$i) {
+        for (my $j = 0; $j < @$vars; ++$j) {
+            my $expr = $J->get($i, $j);
+            if (defined($expr)) {
+                my $id = $model->next_action_id;
+                my $var = $model->get_jacobian_var($vars->[$i], $vars->[$j]);
+                my $target = new Bi::Expression::VarIdentifier($var);
+                my $action = new Bi::Model::Action($id, $target, '<-', $expr);
+                
+                $self->push_action($action);
+            }
+        }
+    }
 }
 
 =item B<validate>

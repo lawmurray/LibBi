@@ -19,10 +19,10 @@ COMMENT_BEGIN    \/\*
 COMMENT_END      \*\/
 STRING_LITERAL   '(\\.|[^\\'])*'
 STRING_LITERAL   "(\\.|[^\\"])*"
-LITERAL          [0-9]+[Ee][+-]?[0-9]+
 LITERAL          [0-9]+\.[0-9]*([Ee][+-]?[0-9]+)?
 LITERAL          [0-9]*\.[0-9]+([Ee][+-]?[0-9]+)?
-LITERAL          [0-9]+
+INTEGER_LITERAL  [0-9]+[Ee][+-]?[0-9]+
+INTEGER_LITERAL  [0-9]+
 SET_TO           <\-
 RIGHT_OP         >>
 LEFT_OP          <<

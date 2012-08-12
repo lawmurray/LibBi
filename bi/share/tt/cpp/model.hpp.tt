@@ -55,46 +55,33 @@ SPARSE_BLOCKS = ['observation', 'lookahead_observation'];
 %]
 
 /**
- * Type list for dimensions.
- */
-BEGIN_TYPELIST([% class_name %]DimTypeList)
-[% FOREACH dim IN model.get_dims-%]
-SINGLE_TYPE(1, Dim[% dim.get_name %])
-[% END-%]
-END_TYPELIST()
-
-[%-FOREACH type IN TYPES.keys %]
-/**
- * Type list for [% type %] variables.
- */
-BEGIN_TYPETREE([% class_name %][% TYPES.$type | upper %]TypeList)
-[% model.get_vars(type).to_typetree %]
-END_TYPETREE()
-[% END %]
-
-/**
  * Model [% model.get_name %].
  */
 class [% class_name %] : public bi::Model {
 public:
-  /**
-   * Type list for dimensions.
-   */
-  typedef GET_TYPELIST([% class_name %]DimTypeList) DimTypeList;
-
-  [%-FOREACH type IN TYPES.keys %]
-  /**
-   * Type list for [% type %] variables.
-   */
-  typedef GET_TYPETREE([% class_name %][% TYPES.$type | upper %]TypeList) [% TYPES.$type | upper %]TypeList;
-  [% END-%]
-
   [%-FOREACH dim IN model.get_dims %]
   /**
    * Size of [% dim.get_name %] dimension.
    */
   static const int N[% dim.get_name | upper %] = [% dim.get_size %];
   [% END-%]
+  
+  /**
+   * Number of dimensions.
+   */
+  static const int Ndims = [% model.num_dims %];
+  
+  [%-FOREACH type IN TYPES.keys %]
+  /**
+   * Size of [% type %] net.
+   */
+  static const int N[% TYPES.$type | upper %] = [% model.get_size(type) %];
+  
+  /**
+   * Number of variables in [% type %] net.
+   */
+  static const int C[% TYPES.$type | upper %] = [% model.num_vars(type) %];
+  [% END %]
   
   /**
    * Constructor.
@@ -110,20 +97,68 @@ public:
   static real getDelta();
   [% END %]
   
-  [% IF model.is_named_arg('std_start_') && model.is_named_arg('std_size_') %]
+  [% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
   /**
-   * Get starting index of square-root covariance variables.
+   * Get starting index of transition model Jacobian variables.
    *
    * @return Starting index.
    */
-  static int getStdStart();
+  static int getFStart();
 
   /**
-   * Get size of square-root covariance variables.
+   * Get size of transition model Jacobian variables.
    *
    * @return Size.
    */
-  static int getStdSize();
+  static int getFSize();
+  [% END %]
+
+  [% IF model.is_named_arg('G_start_') && model.is_named_arg('G_size_') %]
+  /**
+   * Get starting index of observation model Jacobian variables.
+   *
+   * @return Starting index.
+   */
+  static int getGStart();
+
+  /**
+   * Get size of observation model Jacobian variables.
+   *
+   * @return Size.
+   */
+  static int getGSize();
+  [% END %]
+
+  [% IF model.is_named_arg('Q_start_') && model.is_named_arg('Q_size_') %]
+  /**
+   * Get starting index of square-root covariance of state variables.
+   *
+   * @return Starting index.
+   */
+  static int getQStart();
+
+  /**
+   * Get size of square-root covariance of state variables.
+   *
+   * @return Size.
+   */
+  static int getQSize();
+  [% END %]
+
+  [% IF model.is_named_arg('R_start_') && model.is_named_arg('R_size_') %]
+  /**
+   * Get starting index of square-root covariance of observed variables.
+   *
+   * @return Starting index.
+   */
+  static int getRStart();
+
+  /**
+   * Get size of square-root covariance of observed variables.
+   *
+   * @return Size.
+   */
+  static int getRSize();
   [% END %]
 
   [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
@@ -317,7 +352,6 @@ public:
   static void [% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask, V1 lp);
   [% END-%]
    
-private:
   [% IF model.is_block('transition') %]
   /**
    * Is current time on the delta of the transition model?
@@ -331,6 +365,7 @@ private:
   static bool onDelta(const T1 t1, const T1 t2);
   [% END %]
 
+private:
   /*
    * Dimensions
    */
@@ -358,13 +393,43 @@ inline real [% class_name %]::getDelta() {
 }
 [% END %]
 
-[% IF model.is_named_arg('std_start_') && model.is_named_arg('std_size_') %]
-inline int [% class_name %]::getStdStart() {
-  return [% model.get_named_arg('std_start_').eval_const %];
+[% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
+inline int [% class_name %]::getFStart() {
+  return [% model.get_named_arg('F_start_').eval_const %];
 }
 
-inline int [% class_name %]::getStdSize() {
-  return [% model.get_named_arg('std_size_').eval_const %];
+inline int [% class_name %]::getFSize() {
+  return [% model.get_named_arg('F_size_').eval_const %];
+}
+[% END %]
+
+[% IF model.is_named_arg('G_start_') && model.is_named_arg('G_size_') %]
+inline int [% class_name %]::getGStart() {
+  return [% model.get_named_arg('G_start_').eval_const %];
+}
+
+inline int [% class_name %]::getGSize() {
+  return [% model.get_named_arg('G_size_').eval_const %];
+}
+[% END %]
+
+[% IF model.is_named_arg('Q_start_') && model.is_named_arg('Q_size_') %]
+inline int [% class_name %]::getQStart() {
+  return [% model.get_named_arg('Q_start_').eval_const %];
+}
+
+inline int [% class_name %]::getQSize() {
+  return [% model.get_named_arg('Q_size_').eval_const %];
+}
+[% END %]
+
+[% IF model.is_named_arg('R_start_') && model.is_named_arg('R_size_') %]
+inline int [% class_name %]::getRStart() {
+  return [% model.get_named_arg('R_start_').eval_const %];
+}
+
+inline int [% class_name %]::getRSize() {
+  return [% model.get_named_arg('R_size_').eval_const %];
 }
 [% END %]
 

@@ -1,10 +1,14 @@
 =head1 NAME
 
-Bi::Expression::Parens - expression within parentheses.
+Bi::Expression::Range - dimension range in a variable reference.
 
 =head1 SYNOPSIS
 
-    use Bi::Expression::Parens;
+    use Bi::Expression::Range;
+
+=head1 INHERITS
+
+L<Bi::Expression>
 
 =head1 METHODS
 
@@ -12,7 +16,7 @@ Bi::Expression::Parens - expression within parentheses.
 
 =cut
 
-package Bi::Expression::Parens;
+package Bi::Expression::Range;
 
 use base 'Bi::Expression';
 use warnings;
@@ -20,20 +24,36 @@ use strict;
 
 use Carp::Assert;
 
-=item B<new>(I<expr>)
+=item B<new>(I<start>, I<end>)
 
 Constructor.
+
+=over 4
+
+=item I<start>
+
+Starting index.
+
+=item I<end>
+
+Ending index.
+
+=back
+
+Returns the new object.
 
 =cut
 sub new {
     my $class = shift;
-    my $expr = shift;
-
+    my $start = shift;
+    my $end = shift;
+    
     my $self = {
-        _expr => $expr
+        _start => $start,
+        _end => $end,
     };
     bless $self, $class;
-    
+
     return $self;
 }
 
@@ -45,32 +65,30 @@ Return a clone of the object.
 sub clone {
     my $self = shift;
     
-    my $clone = {
-        _expr => $self->get_expr->clone
-    };
+    my $clone = { %$self };
     bless $clone, ref($self);
     
     return $clone; 
 }
 
-=item B<get_expr>
+=item B<get_start>
 
-Get the expression, as L<Bi::Expression> object.
+Get the starting index.
 
 =cut
-sub get_expr {
+sub get_start {
     my $self = shift;
-    return $self->{_expr};
+    return $self->{_start};
 }
 
-=item B<num_dims>
+=item B<get_end>
 
-Get the dimensionality of the expression.
+Get the ending index.
 
 =cut
-sub num_dims {
+sub get_end {
     my $self = shift;
-    return $self->get_expr->num_dims;
+    return $self->{_end};
 }
 
 =item B<accept>(I<visitor>, ...)
@@ -82,8 +100,6 @@ sub accept {
     my $self = shift;
     my $visitor = shift;
     my @args = @_;
-
-    $self->{_expr} = $self->get_expr->accept($visitor, @args);
     
     return $visitor->visit($self, @args);
 }
@@ -97,7 +113,10 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    return (ref($obj) eq ref($self) && $self->get_expr->equals($obj->get_expr));
+    return (
+        ref($obj) eq ref($self) &&
+        $self->get_start == $obj->get_start &&
+        $self->get_end == $obj->get_end);
 }
 
 1;

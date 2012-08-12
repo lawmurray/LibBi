@@ -16,21 +16,28 @@ package Bi::Expression;
 
 use warnings;
 use strict;
+use overload
+  '+' => \&_op_add,
+  '-' => \&_op_sub,
+  '*' => \&_op_mul,
+  '/' => \&_op_div;
 
 use Carp::Assert;
 
 use Bi::Expression::BinaryOperator;
-use Bi::Expression::Function;
 use Bi::Expression::ConstIdentifier;
-use Bi::Expression::InlineIdentifier;
-use Bi::Expression::VarIdentifier;
-use Bi::Expression::Literal;
-use Bi::Expression::Offset;
 use Bi::Expression::DimAlias;
-use Bi::Expression::Parens;
+use Bi::Expression::Function;
+use Bi::Expression::InlineIdentifier;
+use Bi::Expression::Literal;
+use Bi::Expression::Matrix;
+use Bi::Expression::Offset;
+use Bi::Expression::Range;
 use Bi::Expression::StringLiteral;
 use Bi::Expression::TernaryOperator;
 use Bi::Expression::UnaryOperator;
+use Bi::Expression::VarIdentifier;
+use Bi::Expression::Vector;
 
 use Bi::Visitor::GetConsts;
 use Bi::Visitor::GetInlines;
@@ -51,7 +58,7 @@ to a constant value at compile time.
 =cut
 sub is_const {
     my $self = shift;
-    
+
     return Bi::Visitor::IsConst->evaluate($self);
 }
 
@@ -144,6 +151,28 @@ sub is_element {
     return Bi::Visitor::IsElement->evaluate($self);
 }
 
+=item B<is_zero>
+
+Is this a constant expression that evaluates to zero?
+
+=cut
+sub is_zero {
+    my $self = shift;
+    
+    return $self->is_const && $self->eval_const == 0.0;
+}
+
+=item B<is_one>
+
+Is this a constant expression that evaluates to one?
+
+=cut
+sub is_one {
+    my $self = shift;
+    
+    return $self->is_const && $self->eval_const == 1.0;
+}
+
 =item B<eval_const>
 
 Evaluate the expression, if it is constant, and return the result. Undefined
@@ -213,21 +242,25 @@ sub num_vars {
     return scalar(@{Bi::Visitor::GetVars->evaluate($self)});
 }
 
-=item B<get_vars>(I<type>)
+=item B<get_vars>(I<types>)
 
 Get all variables referenced in the expression, as a list of
-L<Bi::Expression::VarIdentifier> objects. If I<type> is given, returns only
-variables of that type, otherwise returns all variables.
+L<Bi::Expression::VarIdentifier> objects. If I<types> is given as a string,
+only variables of that type are returned. If I<types> is given as an array ref
+of strings, only variables of those types are returned.
 
 =cut
 sub get_vars {
     my $self = shift;
-    my $type;
+    my $types = [];
     if (@_) {
-        $type = shift;
+      $types = shift;
     }
-
-    return Bi::Visitor::GetVars->evaluate($self, $type);
+    if (ref($types) ne 'ARRAY') {
+        $types = [ $types ];
+    }
+    
+    return Bi::Visitor::GetVars->evaluate($self, $types);
 }
 
 =item B<num_dims>
@@ -288,11 +321,11 @@ sub d {
     my $symbolic = new Bi::Visitor::ToSymbolic;
     my $symb = $symbolic->expr2symb($self);
     my $resp = $symbolic->expr2symb($ident);
-    
+            
     my $d = Math::Symbolic::Operator->new('partial_derivative', $symb, $resp);
     my $dexpr = $symbolic->symb2expr($d->apply_derivatives->simplify);
-    
-    return $dexpr;
+        
+    return $dexpr->simplify;
 }
 
 =item B<simplify>
@@ -302,7 +335,62 @@ Symbolically simplify the expression.
 =cut
 sub simplify {
     my $self = shift;
-    Bi::Visitor::Simplify->evaluate($self);
+    return Bi::Visitor::Simplify->evaluate($self);
+}
+
+=item B<_op_map>
+
+Map operand for overloaded operator.
+
+=cut
+sub _op_map {
+    my $self = shift;
+    my $operand = shift;
+    
+    if ($operand->isa('Bi::Expression')) {
+        return $operand;
+    } elsif (ref($operand) eq 'STRING') {
+        return new Bi::Expression::StringLiteral($operand);
+    } else {
+        return new Bi::Expression::Literal($operand);
+    }
+}
+
+=item B<_op_binarys>
+
+Overloaded binary operator.
+
+=cut
+sub _op_binary {
+    my $self = shift;
+    my $other = shift;
+    my $swap = shift;
+    my $op = shift;
+
+    my $expr;
+    $other = $self->_op_map($other);
+    if ($swap) {
+        $expr = new Bi::Expression::BinaryOperator($other, $op, $self);
+    } else {
+        $expr = new Bi::Expression::BinaryOperator($self, $op, $other);
+    }
+    return $expr->simplify;
+}
+
+sub _op_add {
+    return _op_binary(@_, '+');
+}
+
+sub _op_sub {
+    return _op_binary(@_, '-');
+}
+
+sub _op_mul {
+    return _op_binary(@_, '*');
+}
+
+sub _op_div {
+    return _op_binary(@_, '/');
 }
 
 1;

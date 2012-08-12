@@ -57,7 +57,9 @@ sub visit {
     my $self = shift;
     my $node = shift;
     
-    if ($node->isa('Bi::Expression::BinaryOperator')) {
+    if ($node->is_const) {
+        $node = new Bi::Expression::Literal($node->eval_const);
+    } elsif ($node->isa('Bi::Expression::BinaryOperator')) {
         if ($node->get_op eq '+') {
             if ($node->get_expr1->is_const && $node->get_expr1->eval_const == 0.0) {
                 $node = $node->get_expr2;
@@ -86,13 +88,18 @@ sub visit {
             }
         }
     } elsif ($node->isa('Bi::Expression::Function')) {
-        if ($node->is_const) {
-            $node = new Bi::Expression::Literal($node->eval_const);
+        if ($node->get_name eq 'exp') {
+            my $arg = $node->get_arg(0);
+            if ($arg->isa('Bi::Expression::Function') && $arg->get_name eq 'log') {
+                $node = $arg->get_arg(0);
+            }
+        } elsif ($node->get_name eq 'log') {
+            my $arg = $node->get_arg(0);
+            if ($arg->isa('Bi::Expression::Function') && $arg->get_name eq 'exp') {
+                $node = $arg->get_arg(0);
+            }
         }
-    } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
-        $node = $node->get_inline->get_expr->accept($self);
     }
-    
     return $node;
 }
 

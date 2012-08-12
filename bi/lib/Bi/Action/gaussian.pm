@@ -91,27 +91,27 @@ sub mean {
         $mean = new Bi::Expression::Function('exp', [ $mean->clone ]);
     }
 
-    return $mean;
+    return $mean->simplify;
 }
 
 sub std {
     my $self = shift;
     
-    my $std = $self->get_named_arg('std');
+    my $std = $self->get_named_arg('std')->clone;
     my $log = $self->get_named_arg('log')->eval_const;
     if ($log) {
-        my $mean = $self->mean;
-        $std = new Bi::Expression::BinaryOperator($std->clone, '*', $mean->clone);
+        my $mean = $self->mean->clone;
+        $std = $std*$mean;
     }
     
-    return $std;
+    return $std->simplify;
 }
 
 sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = (@{$mean->get_vars('noise')}, @{$mean->get_vars('state')});
+    my @refs = @{$mean->get_vars};
     my @J = map { $mean->d($_) } @refs;
 
     return (\@J, \@refs);

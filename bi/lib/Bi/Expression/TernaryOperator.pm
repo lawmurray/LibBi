@@ -6,6 +6,10 @@ Bi::Expression::TernaryOperator - ternary operator and its operands.
 
     use Bi::Expression::TernaryOperator
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

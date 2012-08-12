@@ -15,31 +15,6 @@
 
 namespace bi {
 /**
- * Number of dimensions in type list.
- *
- * @ingroup model_low
- *
- * @tparam S Type list.
- */
-template<class S>
-struct dim_count {
-  static const int value = size<S>::value;
-};
-
-/**
- * Index of dimension in type list.
- *
- * @ingroup model_low
- *
- * @tparam S Type list.
- * @tparam X Dimension type.
- */
-template<class S, class D>
-struct dim_index {
-  static const int value = index<S,D>::value;
-};
-
-/**
  * Id of dimension.
  *
  * @ingroup model_low

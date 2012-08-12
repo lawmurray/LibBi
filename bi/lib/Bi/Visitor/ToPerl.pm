@@ -24,6 +24,8 @@ use base 'Bi::Visitor';
 use warnings;
 use strict;
 
+use Carp::Assert;
+
 use Bi::Expression;
 
 =item B<evaluate>(I<expr>)
@@ -42,6 +44,8 @@ Returns the expression as a Perl string.
 sub evaluate {
     my $class = shift;
     my $expr = shift;
+    
+    assert (defined $expr) if DEBUG;
     
     my $self = new Bi::Visitor; 
     bless $self, $class;
@@ -66,11 +70,16 @@ sub visit {
         my @exprs = splice(@$args, -2);
         my $op = $node->get_op;
         my $space = ($op eq '*' || $op eq '/') ? '' : ' ';
-        $str = "$exprs[0]$space$op$space$exprs[1]";
+        $str = "($exprs[0]$space$op$space$exprs[1])";
     } elsif ($node->isa('Bi::Expression::Function')) {
         my $num_args = $node->num_args + $node->num_named_args;
         my @args = splice(@$args, -$num_args, $num_args);
-        $str = $node->get_name . '(' . join(', ', @args) . ')';
+        my $name = $node->get_name;
+        if ($name eq 'pow') {
+            $str = $args[0] . '**' . $args[1];
+        } else {
+            $str = $node->get_name . '(' . join(', ', @args) . ')';
+        }
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
         $node->get_const->get_expr->accept($self, $args);
         my $expr = pop(@$args);
@@ -99,15 +108,14 @@ sub visit {
         } elsif ($offset < 0) {
             $str .= 'm' . abs($offset);
         }
-    } elsif ($node->isa('Bi::Expression::Parens')) {
-        my @exprs = pop(@$args);
-        $str = '(' . $exprs[0] . ')';
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
-        $str = $exprs[0] . ' ?' . $exprs[1] . ' : ' . $exprs[2];
+        $str = '(' . $exprs[0] . ' ?' . $exprs[1] . ' : ' . $exprs[2] . ')';
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
         my @exprs = pop(@$args);
         $str = $node->get_op . $exprs[0];
+    } else {
+        die("unsupported expression type\n");
     }
     
     push(@$args, $str);

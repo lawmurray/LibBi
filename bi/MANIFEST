@@ -72,12 +72,14 @@ lib/Bi/Expression/DimAlias.pm
 lib/Bi/Expression/Function.pm
 lib/Bi/Expression/InlineIdentifier.pm
 lib/Bi/Expression/Literal.pm
+lib/Bi/Expression/Matrix.pm
 lib/Bi/Expression/Offset.pm
-lib/Bi/Expression/Parens.pm
+lib/Bi/Expression/Range.pm
 lib/Bi/Expression/StringLiteral.pm
 lib/Bi/Expression/TernaryOperator.pm
 lib/Bi/Expression/UnaryOperator.pm
 lib/Bi/Expression/VarIdentifier.pm
+lib/Bi/Expression/Vector.pm
 lib/Bi/FrontEnd.pm
 lib/Bi/Gen.pm
 lib/Bi/Gen/Bi.pm
@@ -85,6 +87,7 @@ lib/Bi/Gen/Build.pm
 lib/Bi/Gen/Cpp.pm
 lib/Bi/Gen/Dot.pm
 lib/Bi/Gen/Doxyfile.pm
+lib/Bi/Jacobian.pm
 lib/Bi/Model.pm
 lib/Bi/Model/Action.pm
 lib/Bi/Model/Block.pm

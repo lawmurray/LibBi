@@ -65,18 +65,18 @@ sub mean {
     my $self = shift;
     
     # shape*(scale^2)
-    my $shape = new Bi::Expression::Parens($self->get_named_arg('shape')->clone);
-    my $scale = new Bi::Expression::Parens($self->get_named_arg('scale')->clone);
-    my $mean = new Bi::Expression::BinaryOperator($shape, '*', new Bi::Expression::Function('pow', [ $scale, new Bi::Expression::Literal(2.0) ]));    
+    my $shape = $self->get_named_arg('shape')->clone;
+    my $scale = $self->get_named_arg('scale')->clone;
+    my $mean = $shape*(new Bi::Expression::Function('pow', [ $scale, new Bi::Expression::Literal(2.0) ]));    
     
-    return $mean;
+    return $mean->simplify;
 }
 
 sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = (@{$mean->get_vars('noise')}, @{$mean->get_vars('state')});
+    my @refs = @{$mean->get_vars};
     my @J = map { $mean->d($_) } @refs;
 
     return (\@J, \@refs);

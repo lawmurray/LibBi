@@ -86,9 +86,6 @@ sub visit {
         my @statics = splice(@$statics, -$node->num_offsets, $node->num_offsets);
         $is_static = reduce { $a && $b } $node->is_static, @statics;
         $num_statics = reduce { $a + $b } 0, @statics;
-    } elsif ($node->isa('Bi::Expression::Parens')) {
-        $is_static = pop(@$statics);
-        $num_statics = $is_static;
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @statics = splice(@$statics, -3);
         $is_static = reduce { $a && $b } @statics;

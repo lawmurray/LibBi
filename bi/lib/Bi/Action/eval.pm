@@ -60,11 +60,15 @@ sub mean {
     return $self->get_named_arg('expr')->clone;
 }
 
+sub std {
+    #
+}
+
 sub jacobian {
     my $self = shift;
     
     my $expr = $self->get_named_arg('expr');
-    my @refs = (@{$expr->get_vars('noise')}, @{$expr->get_vars('state')});
+    my @refs = @{$expr->get_vars};
     my @J = map { $expr->d($_) } @refs;
 
     return (\@J, \@refs);

@@ -79,6 +79,7 @@ sub new {
     my $self = {
         _help => 0,
         _verbose => 0,
+        _dry_gen => 0,
         _dry_run => 0,
         _dry_build => 0,
         _cmd => undef,
@@ -90,6 +91,7 @@ sub new {
     my @args = (
         'help' => \$self->{_help},
         'verbose!' => \$self->{_verbose},
+        'dry-gen!' => \$self->{_dry_gen},
         'dry-run!' => \$self->{_dry_run},
         'dry-build!' => \$self->{_dry_build},
         'model-file=s' => \$self->{_model_file},
@@ -256,12 +258,13 @@ sub client {
 
     # generate code and build
     if ($client->is_cpp) {
-        $self->_report("Generating code...");
-        $cpp->gen($model, $client);
-        
-        $self->_report("Generating build system...");
-        $build->gen($model);
-
+        if (!$self->{_dry_gen}) {
+            $self->_report("Generating code...");
+            $cpp->gen($model, $client);
+            
+            $self->_report("Generating build system...");
+            $build->gen($model);
+        }
         if (!$self->{_dry_build}) {
             $self->_report("Building...");
             $builder->build($client->get_binary);

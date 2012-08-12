@@ -30,6 +30,8 @@ use base 'Bi::Model::Block';
 use warnings;
 use strict;
 
+use Bi::Jacobian;
+
 =head1 PARAMETERS
 
 =over 4
@@ -103,6 +105,54 @@ sub validate {
         die("unrecognised value '$alg' for argument 'alg' of block 'ode'\n");
     }
 }
+
+sub add_jacobian_actions {
+    my $self = shift;
+    my $model = shift;
+    my $vars = shift;
+    my $J_commit = shift;
+    my $J = shift;
+    
+    # inplace operations, so need to add all variables in new Jacobian to
+    # existing Jacobian
+    my %rows;
+    my %cols;
+    for (my $i = 0; $i < @$vars; ++$i) {
+        for (my $j = 0; $j < @$vars; ++$j) {
+            my $expr = $J->get($i, $j);
+            if (defined $expr) {
+                $rows{$i} = 1;
+                $cols{$j} = 1;
+            }
+        }
+    }
+    foreach my $i (keys %rows) {
+        foreach my $j (keys %cols) {
+	        my $J_var = $model->get_jacobian_var($vars->[$i], $vars->[$j]); 
+	        my $ref = new Bi::Expression::VarIdentifier($J_var);
+            $J_commit->set($i, $j, $ref);
+        }
+    }
+
+    $J = $J_commit*$J;
+    
+    # build actions
+    for (my $i = 0; $i < @$vars; ++$i) {
+        for (my $j = 0; $j < @$vars; ++$j) {
+            my $expr = $J->get($i, $j);            
+                        
+            if (defined $expr) {
+                my $id = $model->next_action_id;
+                my $var = $model->get_jacobian_var($vars->[$i], $vars->[$j]);
+                my $target = new Bi::Expression::VarIdentifier($var);
+                my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $expr ]));
+                
+                $self->push_action($action);
+            }
+        }
+    }
+}
+
 
 1;
 

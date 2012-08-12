@@ -58,6 +58,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* state and intermediate results */
+  P = 1; // force for Kalman filter
   State<model_type,LOCATION> s(m, P);
   P = s.size(); // may change according to implementation
 

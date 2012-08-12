@@ -73,8 +73,6 @@ sub visit {
             $num_args = 2;
         } elsif ($node->isa('Bi::Expression::Function')) {
             $num_args = $node->num_args + $node->num_named_args;
-        } elsif ($node->isa('Bi::Expression::Parens')) {
-            $num_args = 1;
         } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
             $num_args = 3;
         } elsif ($node->isa('Bi::Expression::UnaryOperator')) {

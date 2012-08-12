@@ -7,6 +7,10 @@ dimension offsets.
 
     use Bi::Expression::VarIdentifier;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4
@@ -21,16 +25,25 @@ use strict;
 
 use Carp::Assert;
 
-=item B<new>(I<var>, I<offsets>)
+=item B<new>(I<var>, I<offsets>, I<ranges>)
 
 Constructor.
 
 =over 4
 
-=item I<var> Variable referenced, as L<Bi::Model::Var> derived object.
+=item I<var>
 
-=item I<offsets> Array ref of dimension offsets into I<var>, as
-L<Bi::Expression::Offset> objects.
+Variable referenced, as L<Bi::Model::Var> derived object.
+
+=item I<offsets>
+
+Array ref of dimension offsets into I<var>, as L<Bi::Expression::Offset>
+objects.
+
+=item I<ranges>
+
+Array ref of dimension ranges into I<var>, as L<Bi::Expression::Range>
+objects.
 
 =back
 
@@ -41,19 +54,28 @@ sub new {
     my $class = shift;
     my $var = shift;
     my $offsets = shift;
+    my $ranges = shift;
     
     # pre-condition
     assert(!defined($offsets) || ref($offsets) eq 'ARRAY');
     assert(!defined($offsets) || scalar(@$offsets) == 0 || scalar(@$offsets) == $var->num_dims) if DEBUG;
     map { assert($_->isa('Bi::Expression::Offset')) if DEBUG } @$offsets;
 
+    assert(!defined($ranges) || ref($ranges) eq 'ARRAY');
+    assert(!defined($ranges) || scalar(@$ranges) == 0 || scalar(@$ranges) == $var->num_dims) if DEBUG;
+    map { assert($_->isa('Bi::Expression::Range')) if DEBUG } @$ranges;
+
     if (!defined $offsets) {
         $offsets = [];
+    }
+    if (!defined $ranges) {
+        $ranges = [];
     }
     
     my $self = {
         _var => $var,
-        _offsets => $offsets
+        _offsets => $offsets,
+        _ranges => $ranges
     };
     bless $self, $class;
    
@@ -70,7 +92,8 @@ sub clone {
     
     my $clone = {
         _var => $self->get_var,
-        _offsets => [ map { $_->clone } @{$self->get_offsets} ]
+        _offsets => [ map { $_->clone } @{$self->get_offsets} ],
+        _ranges => [ map { $_->clone } @{$self->get_ranges} ]
     };
     bless $clone, ref($self);
     
@@ -109,6 +132,17 @@ sub get_offsets {
     return $self->{_offsets};
 }
 
+=item B<get_ranges>
+
+Get the array ref of dimension ranges into I<var>, as
+L<Bi::Expression::Range> objects.
+
+=cut
+sub get_ranges {
+    my $self = shift;
+    return $self->{_ranges};
+}
+
 =item B<num_dims>
 
 Get the dimensionality of the expression.
@@ -116,6 +150,7 @@ Get the dimensionality of the expression.
 =cut
 sub num_dims {
     my $self = shift;
+
     return $self->get_var->num_dims - $self->num_offsets;
 }
 
@@ -149,6 +184,16 @@ sub no_offset {
     return $result;
 }
 
+=item B<num_ranges>
+
+The number of ranges.
+
+=cut
+sub num_ranges {
+    my $self = shift;
+    return scalar(@{$self->get_ranges});
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -160,6 +205,7 @@ sub accept {
     my @args = @_;
 
     @{$self->{_offsets}} = map { $_->accept($visitor, @args) } @{$self->get_offsets};
+    @{$self->{_ranges}} = map { $_->accept($visitor, @args) } @{$self->get_ranges};
 
     return $visitor->visit($self, @args);
 }
@@ -176,7 +222,8 @@ sub equals {
     return (
         ref($obj) eq ref($self) &&
         $self->get_var == $obj->get_var &&
-        Bi::Utility::equals($self->get_offsets, $obj->get_offsets)); 
+        Bi::Utility::equals($self->get_offsets, $obj->get_offsets) &&
+        Bi::Utility::equals($self->get_ranges, $obj->get_ranges)); 
 }
 
 1;

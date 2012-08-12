@@ -407,6 +407,7 @@ sub action {
     my $self = shift;
     my $name = shift;
     my $aliases = shift;
+    my $ranges = shift;
     my $op = shift;
     my $expr = shift;
        
@@ -433,7 +434,7 @@ sub action {
     foreach $dim (@$aliases) {
         push(@$offsets, Bi::Expression::Offset->new($dim, 0));
     }
-    my $target = Bi::Expression::VarIdentifier->new($var, $offsets);
+    my $target = Bi::Expression::VarIdentifier->new($var, $offsets, $ranges);
     
     my $action;
     eval {
@@ -503,6 +504,19 @@ sub dim_alias {
     return $name;
 }
 
+=item B<dim_range>(I<name>)
+
+Handle dimension range.
+
+=cut
+sub dim_range {
+    my $self = shift;
+    my $from = shift;
+    my $to = shift;
+    
+    return new Bi::Expression::Range($from, $to);
+}
+
 =item B<expression>(I<root>)
 
 Handle unnamed expression.
@@ -548,14 +562,15 @@ sub identifier {
     my $self = shift;
     my $name = shift;
     my $offsets = shift;
+    my $ranges = shift;
     
     if ($self->get_model->is_const($name)) {
-        if (defined($offsets)) {
+        if (defined($offsets) || defined($ranges)) {
             $self->error("constant '$name' is scalar");
         }
         return new Bi::Expression::ConstIdentifier($self->get_model->get_const($name));
     } elsif ($self->get_model->is_inline($name)) {
-        if (defined($offsets)) {
+        if (defined($offsets) || defined($ranges)) {
             $self->error("inline expression '$name' is scalar");
         }
         return new Bi::Expression::InlineIdentifier($self->get_model->get_inline($name));
@@ -568,8 +583,15 @@ sub identifier {
                 $var->num_dims . " dimension$plural1, but " . scalar(@$offsets) .
                 " offset$plural2 given");
         }
-        return new Bi::Expression::VarIdentifier($var, $offsets);
-    } elsif (defined($offsets)) {
+        if (defined($ranges) && @$ranges > 0 && @$ranges != $var->num_dims) {
+            my $plural1 = ($var->num_dims == 1) ? '' : 's';
+            my $plural2 = (@$ranges == 1) ? '' : 's'; 
+            $self->error("variable '" . $name . "' extends along " .
+                $var->num_dims . " dimension$plural1, but " . scalar(@$ranges) .
+                " range$plural2 given");
+        }
+        return new Bi::Expression::VarIdentifier($var, $offsets, $ranges);
+    } elsif (defined($offsets) || defined($ranges)) {
         $self->error("no variable, constant or inline expression named '$name'");
     } else {
         # assume at this stage that it's a dimension alias
@@ -630,7 +652,7 @@ sub parens {
     my $self = shift;
     my $expr = shift;
     
-    return Bi::Expression::Parens->new($expr);
+    return $expr;
 }
 
 =item B<unary_operator>(I<op>, I<expr>)

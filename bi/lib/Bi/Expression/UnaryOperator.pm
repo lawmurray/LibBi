@@ -6,6 +6,14 @@ Bi::Expression::UnaryOperator - unary operator and its operand.
 
     use Bi::Expression::UnaryOperator;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
+=head1 METHODS
+
+=over 4
+
 =cut
 
 package Bi::Expression::UnaryOperator;
@@ -15,10 +23,6 @@ use warnings;
 use strict;
 
 use Carp::Assert;
-
-=head1 METHODS
-
-=over 4
 
 =item B<new>(I<op>, I<expr>)
 

@@ -58,7 +58,7 @@ sub make_range {
     my $self = shift;
     my $lower = $self->get_named_arg('lower')->clone;
     my $upper = $self->get_named_arg('upper')->clone;
-    my $range = new Bi::Expression::BinaryOperator($upper, '-', $lower);
+    my $range = $upper - $lower;
     
     return $range->simplify;
 }
@@ -80,18 +80,18 @@ sub mean {
     my $self = shift;
     
     # (lower + upper)/2
-    my $lower = new Bi::Expression::Parens($self->get_named_arg('lower')->clone);
-    my $upper = new Bi::Expression::Parens($self->get_named_arg('upper')->clone);
-    my $mean = new Bi::Expression::BinaryOperator(new Bi::Expression::Literal(0.5), '*', new Bi::Expression::Parens(new Bi::Expression::BinaryOperator($lower, '+', $upper)));
+    my $lower = $self->get_named_arg('lower')->clone;
+    my $upper = $self->get_named_arg('upper')->clone;
+    my $mean = 0.5*($lower + $upper);
 
-    return $mean;
+    return $mean->simplify;
 }
 
 sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = (@{$mean->get_vars('noise')}, @{$mean->get_vars('state')});
+    my @refs = @{$mean->get_vars};
     my @J = map { $mean->d($_) } @refs;
 
     return (\@J, \@refs);

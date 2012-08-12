@@ -6,6 +6,10 @@ Bi::Expression::Literal - numeric literal.
 
     use Bi::Expression::Literal;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4
@@ -28,6 +32,8 @@ Constructor.
 sub new {
     my $class = shift;
     my $value = shift;
+
+    assert (defined $value) if DEBUG;
 
     my $self = {
         _value => $value

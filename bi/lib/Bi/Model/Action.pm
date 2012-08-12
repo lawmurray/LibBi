@@ -72,6 +72,7 @@ sub new {
 
     # pre-conditions
     assert(!defined($target) || $target->isa('Bi::Expression::VarIdentifier')) if DEBUG;
+    assert(defined $expr) if DEBUG;
     
     my $args;
     my $named_args;
@@ -147,133 +148,6 @@ sub new_copy_action {
     assert ($from->isa('Bi::Expression::VarIdentifier')) if DEBUG;
         
     return $class->new($id, $to, '<-', $from);
-}
-
-=item B<new_mean_action(I<id>, I<target>, I<mean>)
-
-Construct action to compute the mean of an action.
-
-=over 8
-
-=item I<id>
-
-Unique numerical id of the action.
-
-=item I<target>
-
-The target of the action.
-
-=item I<mean>
-
-The mean expression.
-
-=back
-
-Returns the new action.
-
-=cut
-sub new_mean_action {
-    my $class = shift;
-    my $id = shift;
-    my $target = shift;
-    my $mean = shift;
-
-    assert ($target->isa('Bi::Expression::VarIdentifier')) if DEBUG;
-    assert ($mean->isa('Bi::Expression')) if DEBUG;
-
-    return new Bi::Model::Action($id, $target, '<-', $mean);
-}
-
-=item B<new_std_action(I<id>, I<target>, I<std>)
-
-Construct action to compute the square-root covariance of an action.
-
-=over 8
-
-=item I<id>
-
-Unique numerical id of the action.
-
-=item I<target>
-
-The target of the action.
-
-=item I<std>
-
-The square-root covariance expression.
-
-=back
-
-Returns the new action.
-
-=cut
-sub new_std_action {
-    my $class = shift;
-    my $id = shift;
-    my $target = shift;
-    my $std = shift;
-
-    assert ($target->isa('Bi::Expression::VarIdentifier')) if DEBUG;
-    assert ($std->isa('Bi::Expression')) if DEBUG;
-
-    return new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('std_', [ $std ]));
-}
-
-=item B<new_jacobian_action>(I<id>, I<target>, I<J>, I<refs>)
-
-Construct action to update a portion of the square-root of covariance matrix
-using the Jacobian.
-
-=over 8
-
-=item I<id>
-
-Unique numerical id of the action.
-
-=item I<target>
-
-The target of the action.
-
-=item I<J>
-
-The Jacobian. This will be the first array ref returned by B<jacobian>, with
-elements removed where the corresponding submatrix with which they will be 
-ultiplied is known to be zero.
-
-=item I<refs>
-
-The submatrices corresponding to each nonzero element of I<J>.
-
-=back
-
-Returns the new action.
-
-=cut
-sub new_jacobian_action {
-    my $class = shift;
-    my $id = shift;
-    my $target = shift;
-    my $J = shift;
-    my $refs = shift;
-
-    assert (scalar(@$J) == scalar(@$refs)) if DEBUG;
-    assert (scalar(@$J) > 0) if DEBUG;
-    
-    my ($i, $d, $ref, $sum, $summand);
-    for ($i = 0; $i < @$J; ++$i) {
-        $d = $J->[$i];
-        $ref = $refs->[$i];
-
-        $summand = new Bi::Expression::BinaryOperator($d, '*', $ref);
-        if (!defined($sum)) {
-            $sum = $summand;
-        } else {
-            $sum = new Bi::Expression::BinaryOperator($sum, '+', $summand);
-        }
-    }
-    $sum->simplify;
-    
-    return new Bi::Model::Action($id, $target, '<-', $sum);
 }
 
 =item B<clone>(I<model>)
@@ -639,17 +513,6 @@ sub ensure_op {
     }
 }
 
-=item B<validate>
-
-Validate arguments.
-
-=cut
-sub validate {
-    my $self = shift;
-    my $name = $self->get_name;
-    warn("action '$name' is missing 'validate' method\n");
-}
-
 =item B<mean>
 
 Compute mean.
@@ -664,7 +527,7 @@ sub mean {
 
 =item B<std>
 
-Compute square-root of covariance.
+Compute intrinsic standard deviation.
 
 =cut
 sub std {
@@ -678,18 +541,23 @@ sub std {
 
 Compute partial derivatives.
 
-Returns two array refs of the same length. The first contains the nonzero
-elements of the Jacobian of partial derivatives, as L<Bi::Expression>
-objects. The second contains the variables, as
-L<Bi::Expression::VarIdentifier> objects, which these nonzero partial
-derivatives are with respect to.
-
 =cut
 sub jacobian {
     my $self = shift;
     my $name = $self->get_name;
     warn("action '$name' is missing the 'jacobian' method\n");
     return ([], []);
+}
+
+=item B<validate>
+
+Validate arguments.
+
+=cut
+sub validate {
+    my $self = shift;
+    my $name = $self->get_name;
+    warn("action '$name' is missing 'validate' method\n");
 }
 
 =item B<accept>(I<visitor>, ...)

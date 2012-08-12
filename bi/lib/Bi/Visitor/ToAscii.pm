@@ -66,7 +66,7 @@ sub visit {
         my @exprs = splice(@$args, -2);
         my $op = $node->get_op;
         my $space = ($op eq '*' || $op eq '/') ? '' : ' ';
-        $str = "$exprs[0]$space$op$space$exprs[1]";
+        $str = "($exprs[0]$space$op$space$exprs[1])";
     } elsif ($node->isa('Bi::Expression::Function')) {
         my $num_args = $node->num_args + $node->num_named_args;
         my @args = splice(@$args, -$num_args, $num_args);
@@ -95,15 +95,16 @@ sub visit {
         } elsif ($offset < 0) {
             $str .= " - " . abs($offset);
         }
-    } elsif ($node->isa('Bi::Expression::Parens')) {
-        my @exprs = pop(@$args);
-        $str = '(' . $exprs[0] . ')';
+    } elsif ($node->isa('Bi::Expression::Range')) {
+        $str = $node->get_start . ':' . $node->get_end;
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
-        $str = $exprs[0] . ' ? ' . $exprs[1] . ' : ' . $exprs[2];
+        $str = '(' . $exprs[0] . ' ? ' . $exprs[1] . ' : ' . $exprs[2] . ')';
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
         my @exprs = pop(@$args);
         $str = $node->get_op . $exprs[0];
+    } else {
+        die("unsupported expression type\n");
     }
     
     push(@$args, $str);

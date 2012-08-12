@@ -43,42 +43,6 @@ our $ACTION_ARGS = [
   }
 ];
 
-sub new_mean_action {
-    my $class = shift;
-    my $id = shift;
-    my $target = shift;
-    my $mean = shift;
-
-    return new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $mean ]));
-}
-
-sub new_jacobian_action {
-    my $class = shift;
-    my $id = shift;
-    my $target = shift;
-    my $J = shift;
-    my $refs = shift;
-
-    assert (scalar(@$J) == scalar(@$refs)) if DEBUG;
-    assert (scalar(@$J) > 0) if DEBUG;
-    
-    my ($i, $d, $ref, $sum, $summand);
-    for ($i = 0; $i < @$J; ++$i) {
-        $d = $J->[$i];
-        $ref = $refs->[$i];
-
-        $summand = new Bi::Expression::BinaryOperator($d, '*', $ref);
-        if (!defined($sum)) {
-            $sum = $summand;
-        } else {
-            $sum = new Bi::Expression::BinaryOperator($sum, '+', $summand);
-        }
-    }
-    $sum->simplify;
-    
-    return new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $sum ]));
-}
-
 sub validate {
     my $self = shift;
     
@@ -93,16 +57,22 @@ sub validate {
 
 sub mean {
     my $self = shift;
-    return $self->get_named_arg('dfdt')->clone;
+    return new Bi::Expression::Function('ode', [], {
+        'dfdt' => $self->get_named_arg('dfdt')->clone
+    });
+}
+
+sub std {
+    return undef;
 }
 
 sub jacobian {
     my $self = shift;
     
     my $expr = $self->get_named_arg('dfdt');
-    my @refs = (@{$expr->get_vars('noise')}, @{$expr->get_vars('state')});
+    my @refs = @{$expr->get_vars};
     my @J = map { $expr->d($_) } @refs;
-
+    
     return (\@J, \@refs);
 }
 

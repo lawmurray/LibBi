@@ -41,8 +41,9 @@ Returns the result of evaluating the expression.
 sub evaluate {
     my $class = shift;
     my $expr = shift;
-    
+
     my $perl = Bi::Visitor::ToPerl->evaluate($expr);
+
 
     return eval($perl);
 }

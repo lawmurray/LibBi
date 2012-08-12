@@ -6,6 +6,10 @@ Bi::Expression::DimAlias - dimension alias.
 
     use Bi::Expression::DimAlias;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

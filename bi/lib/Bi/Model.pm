@@ -189,6 +189,26 @@ sub get_inline {
     return $self->{_inline_names}->{$name};
 }
 
+=item B<lookup_inline>(I<expr>)
+
+Search for an inline that has the same expression as I<expr>. Return it if
+found, or undef if not.
+
+=cut
+sub lookup_inline {
+    my $self = shift;
+    my $expr = shift;
+    
+    assert ($expr->isa('Bi::Expression')) if DEBUG;
+
+    foreach my $inline (@{$self->get_inlines}) {
+        if ($inline->get_expr->equals($expr)) {
+            return $inline;
+        }
+    }
+    return undef;
+}
+
 =item B<get_var>(I<name>)
 
 Get variable of the given I<name> as L<Bi::Model::Var> object.
@@ -253,8 +273,8 @@ sub get_inlines {
 =item B<get_vars>(I<types>)
 
 Get ordered list of the variables of the model as L<Bi::Model::Variable>
-objects. If I<type> is given as a string, only variables of that type are
-returned. If I<type> is given as an array ref of strings, only variables of
+objects. If I<types> is given as a string, only variables of that type are
+returned. If I<types> is given as an array ref of strings, only variables of
 those types are returned.
 
 =cut
@@ -650,15 +670,34 @@ sub num_inlines {
     return scalar(@{$self->{_inlines}});
 }
 
-=item B<num_vars>
+=item B<num_vars>(I<types>)
 
-Number of vars.
+Number of variables. If I<types> is given as a string, only variables of that
+type are counted. If I<types> is given as an array ref of strings, only
+variables of those types are counted.
 
 =cut
 sub num_vars {
     my $self = shift;
+    my $types = [];
+    if (@_) {
+      $types = shift;
+    }
+    if (ref($types) ne 'ARRAY') {
+        $types = [ $types ];
+    }
     
-    return scalar(keys %{$self->{_var_names}});
+    my $count;
+    if (@$types) {
+        $count = 0;
+        foreach my $type (@$types) {
+            $count += scalar(keys %{$self->{"_${type}_names"}});
+        }
+    } else {
+        $count = scalar(keys %{$self->{_var_names}})
+    }
+    
+    return $count;
 }
 
 =item B<next_block_id>
@@ -713,6 +752,130 @@ sub tmp_var {
     } until (!exists $self->{_var_names}->{$name});
     
     return $name;
+}
+
+=item B<tmp_inline>
+
+Generate an arbitrary name for an anonymous inline.
+
+=cut
+sub tmp_inline {
+    my $self = shift;
+    my $name;
+    
+    do {
+        $name = 'inline_' . sprintf("%x", $self->{_tmp_id}++) . '_';
+    } until (!exists $self->{_inline_names}->{$name});
+    
+    return $name;
+}
+
+=item B<get_pair_var>(I<prefix>, I<var1>, I<var2>)
+
+Get the variable named "prefix_var1name_var2name_". This is used mainly
+by L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub get_pair_var {
+    my $self = shift;
+    my $prefix = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+    
+    my $name = sprintf("%s_%s_%s_", $prefix, $var1->get_name, $var2->get_name);
+    
+    return $self->get_var($name);
+}
+
+=item B<add_pair_var>(I<prefix>, I<var1>, I<var2>)
+
+Create the variable named "prefix_var1name_var2name_". This is used mainly
+by L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub add_pair_var {
+    my $self = shift;
+    my $prefix = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+    
+    my $name = sprintf('%s_%s_%s_', $prefix, $var1->get_name, $var2->get_name);
+    my $dims = [ @{$var1->get_dims}, @{$var2->get_dims} ];
+    my $named_args = {
+        'io' => new Bi::Expression::Literal(0),
+        'tmp' => $var1->get_named_arg('tmp')->clone
+    };
+    my $j_var = new Bi::Model::StateAux($name, $dims, [], $named_args);
+    
+    return $j_var;
+}
+
+=item B<get_jacobian_var>(I<var1>, I<var2>)
+
+Get the variable named "F_var1name_var2name_" or "G_var1name_var2name",
+depending on the variable types. This is used mainly by
+L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub get_jacobian_var {
+    my $self = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+
+    my $prefix = ($var2->get_type eq 'obs') ? 'G' : 'F';
+    
+    return $self->get_pair_var($prefix, $var1, $var2);
+}
+
+=item B<add_jacobian_var>(I<var1>, I<var2>)
+
+Create the variable named "F_var1name_var2name_" or "G_var1name_var2name",
+depending on the variable types. This is used mainly by
+L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub add_jacobian_var {
+    my $self = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+
+    my $prefix = ($var2->get_type eq 'obs') ? 'G' : 'F';
+    
+    return $self->add_pair_var($prefix, $var1, $var2);
+}
+
+=item B<get_std_var>(I<var1>, I<var2>)
+
+Get the variable named "Q_var1name_var2name_" or "R_var1name_var2name",
+depending on the variable types. This is used mainly by
+L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub get_std_var {
+    my $self = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+
+    my $prefix = ($var2->get_type eq 'obs') ? 'R' : 'Q';
+
+    return $self->get_pair_var($prefix, $var1, $var2);
+}
+
+=item B<add_std_var>(I<var1>, I<var2>)
+
+Create the variable named "Q_var1name_var2name_" or "R_var1name_var2name",
+depending on the variable types. This is used mainly by
+L<Bi::Visitor::ExtendedTransformer>.
+
+=cut
+sub add_std_var {
+    my $self = shift;
+    my $var1 = shift;
+    my $var2 = shift;
+
+    my $prefix = ($var2->get_type eq 'obs') ? 'R' : 'Q';
+
+    return $self->add_pair_var($prefix, $var1, $var2);
 }
 
 =item B<validate>

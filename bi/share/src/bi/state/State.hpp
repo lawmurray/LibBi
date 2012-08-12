@@ -10,7 +10,6 @@
 
 #include "../buffer/Mask.hpp"
 #include "../traits/var_traits.hpp"
-#include "../traits/net_traits.hpp"
 #include "../math/loc_vector.hpp"
 #include "../math/loc_matrix.hpp"
 #ifdef ENABLE_SSE
@@ -266,14 +265,44 @@ public:
   const matrix_reference_type getDyn() const;
 
   /**
-   * Get buffer of all square-root covariance variables.
+   * Get buffer of all transition model Jacobian variables.
    */
-  matrix_reference_type getStd();
+  matrix_reference_type getF();
 
   /**
-   * Get buffer of all square-root covariance variables.
+   * Get buffer of all transition model Jacobian variables.
    */
-  const matrix_reference_type getStd() const;
+  const matrix_reference_type getF() const;
+
+  /**
+   * Get buffer of all observation model Jacobian variables.
+   */
+  matrix_reference_type getG();
+
+  /**
+   * Get buffer of all observation model Jacobian variables.
+   */
+  const matrix_reference_type getG() const;
+
+  /**
+   * Get buffer of all state square-root covariance variables.
+   */
+  matrix_reference_type getQ();
+
+  /**
+   * Get buffer of all state square-root covariance variables.
+   */
+  const matrix_reference_type getQ() const;
+
+  /**
+   * Get buffer of all observed square-root covariance variables.
+   */
+  matrix_reference_type getR();
+
+  /**
+   * Get buffer of all observed square-root covariance variables.
+   */
+  const matrix_reference_type getR() const;
 
 private:
   /**
@@ -318,13 +347,13 @@ private:
   static int roundup(const int P);
 
   /* net sizes, for convenience */
-  static const int NR = net_size<typename B::RTypeList>::value;
-  static const int ND = net_size<typename B::DTypeList>::value;
-  static const int NP = net_size<typename B::PTypeList>::value;
-  static const int NF = net_size<typename B::FTypeList>::value;
-  static const int NO = net_size<typename B::OTypeList>::value;
-  static const int NDX = net_size<typename B::DXTypeList>::value;
-  static const int NPX = net_size<typename B::PXTypeList>::value;
+  static const int NR = B::NR;
+  static const int ND = B::ND;
+  static const int NP = B::NP;
+  static const int NF = B::NF;
+  static const int NO = B::NO;
+  static const int NDX = B::NDX;
+  static const int NPX = B::NPX;
 
   /**
    * Serialize.
@@ -613,22 +642,95 @@ const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn()
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getStd() {
-  const int start = B::getStdStart();
-  const int size = B::getStdSize();
-  const int sqrt_size = std::sqrt(size);
+typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF() {
+  const int start = B::getFStart();
+  const int size = B::getFSize();
+  const int rows = NR + ND;
+  const int cols = ND;
+  assert (size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*sqrt_size, sqrt_size);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getStd()
+const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF()
     const {
-  const int start = B::getStdStart();
-  const int size = B::getStdSize();
-  const int sqrt_size = std::sqrt(size);
+  const int start = B::getFStart();
+  const int size = B::getFSize();
+  const int rows = NR + ND;
+  const int cols = ND;
+  assert (size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*sqrt_size, sqrt_size);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG() {
+  const int start = B::getGStart();
+  const int size = B::getGSize();
+  const int rows = NR + ND;
+  const int cols = NO;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG()
+    const {
+  const int start = B::getGStart();
+  const int size = B::getGSize();
+  const int rows = NR + ND;
+  const int cols = NO;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ() {
+  const int start = B::getQStart();
+  const int size = B::getQSize();
+  const int rows = NR + ND;
+  const int cols = rows;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ()
+    const {
+  const int start = B::getQStart();
+  const int size = B::getQSize();
+  const int rows = NR + ND;
+  const int cols = rows;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR() {
+  const int start = B::getRStart();
+  const int size = B::getRSize();
+  const int rows = NO;
+  const int cols = rows;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+}
+
+template<class B, bi::Location L>
+const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR()
+    const {
+  const int start = B::getRStart();
+  const int size = B::getRSize();
+  const int rows = NO;
+  const int cols = rows;
+  assert (size == rows*cols);
+
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
 }
 
 template<class B, bi::Location L>

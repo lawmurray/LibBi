@@ -176,8 +176,8 @@ private:
   RauchTungStriebelSmootherState state;
 
   /* net sizes, for convenience */
-  static const int ND = net_size<typename B::DTypeList>::value;
-  static const int NR = net_size<typename B::RTypeList>::value;
+  static const int NR = B::NR;
+  static const int ND = B::ND;
   static const int M =  NR + ND;
 };
 

@@ -6,6 +6,10 @@ Bi::Expression::Function - function call.
 
     use Bi::Expression::Function;
 
+=head1 INHERITS
+
+L<Bi::Expression>
+
 =head1 METHODS
 
 =over 4

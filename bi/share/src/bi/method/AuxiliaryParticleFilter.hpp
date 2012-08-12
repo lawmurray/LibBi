@@ -168,9 +168,9 @@ protected:
   Cache2D<real> stage1LogWeightsCache;
 
   /* net sizes, for convenience */
-  static const int ND = net_size<typename B::DTypeList>::value;
-  static const int NR = net_size<typename B::RTypeList>::value;
-  static const int NP = net_size<typename B::PTypeList>::value;
+  static const int ND = B::ND;
+  static const int NR = B::NR;
+  static const int NP = B::NP;
 };
 
 /**

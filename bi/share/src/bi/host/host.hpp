@@ -14,7 +14,6 @@
 #include "../math/matrix.hpp"
 #include "../misc/macro.hpp"
 #include "../traits/var_traits.hpp"
-#include "../traits/net_traits.hpp"
 
 /**
  * @internal

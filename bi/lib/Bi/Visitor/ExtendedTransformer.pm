@@ -26,7 +26,8 @@ use strict;
 
 use Carp::Assert;
 
-use Bi::Visitor::ToCpp;
+use Bi::Jacobian;
+use Bi::Utility qw(find);
 
 =item B<evaluate>(I<model>)
 
@@ -34,7 +35,9 @@ Construct and evaluate.
 
 =over 4
 
-=item I<model> L<Bi::Model> object.
+=item I<model>
+
+L<Bi::Model> object.
 
 =back
 
@@ -48,202 +51,215 @@ sub evaluate {
     my $self = {};
     bless $self, $class;
 
-    $self->_add_sqrt_vars($model);
-    foreach my $name ('initial', 'transition', 'observation') {
-        $model->get_block($name)->accept($self, $model, [], []);
-    }
+    _add_F_vars($model);
+    _add_G_vars($model);
+    _add_Q_vars($model);
+    _add_R_vars($model);
+    
+    _transform($model->get_block('initial'), $model, ['noise', 'state']);
+    _transform($model->get_block('transition'), $model, ['noise', 'state']);
+    _transform($model->get_block('observation'), $model, ['state', 'obs']);
 }
 
-=item B<visit>(I<node>)
-
-Visit node of model.
-
-=cut
-sub visit {
-    my $self = shift;
-    my $node = shift;
-    my $model = shift;
-    my $new_blocks = shift;
-    my $new_actions = shift;
-
-    if ($node->isa('Bi::Model::Block')) {
-        $node->push_blocks($new_blocks);
-        $node->push_actions($new_actions);
-        @$new_blocks = ();
-        @$new_actions = ();
-    } elsif ($node->isa('Bi::Model::Action')) {
-        # update to square-root covariance
-        my $std = $node->std;
-        if (defined($std)) {
-            my $var_name = $node->get_target->get_var->get_name;
-            my $sqrt_var_name = sprintf("S_%s_%s_", $var_name, $var_name);
-            my $sqrt_var = $model->get_var($sqrt_var_name);
-            my @sqrt_offsets = map { $_->clone } @{$node->get_target->get_offsets};
-            my @extra_offsets = map { $_->clone } @{$node->get_target->get_offsets};
-            push(@sqrt_offsets, @extra_offsets);
-            my $sqrt_target = new Bi::Expression::VarIdentifier($sqrt_var, \@sqrt_offsets);
-            
-            push(@$new_actions, ref($node)->new_std_action($model->next_action_id, $sqrt_target, $std));
-        }
-        
-        # Jacobian updates to square-root cross-covariances
-        my ($Js, $refs) = $node->jacobian;
-        if (defined($Js) && @$Js) {
-            my $block = new Bi::Model::Block($model->next_block_id);
-            my @vars;
-            foreach my $type ('noise', 'state') {
-                push(@vars, @{$model->get_vars($type)});
-            }
-            
-            foreach my $var (@vars) {
-                my $sqrt_var_name = sprintf("S_%s_%s_", $node->get_target->get_var->get_name, $var->get_name);
-                my $sqrt_var = $model->get_var($sqrt_var_name);
-                my @sqrt_offsets = map { $_->clone } @{$node->get_target->get_offsets};
-
-                my @extra_offsets = ();
-                if ($var->num_dims > 0) {
-                    @extra_offsets = map { new Bi::Expression::Offset("i${_}_", 0) } (1..$var->num_dims);
-                }
-                
-                push(@sqrt_offsets, @extra_offsets);
-                my $sqrt_target = new Bi::Expression::VarIdentifier($sqrt_var, \@sqrt_offsets);
-                
-                my @sqrt_refs;
-                foreach my $ref (@$refs) {
-                    my @offsets = map { $_->clone } @{$ref->get_offsets};
-                    push(@sqrt_refs, new Bi::Expression::VarIdentifier($model->get_var(sprintf("S_%s_%s_", $ref->get_var->get_name, $var->get_name)), \@offsets));
-                }
-                
-                if (@extra_offsets) {
-                    map { push(@{$_->get_offsets}, @extra_offsets) } @sqrt_refs;
-                }
-                
-                push(@$new_actions, ref($node)->new_jacobian_action($model->next_action_id, $sqrt_target, $Js, \@sqrt_refs));
-            }
-        }
-        
-        # update to mean
-        my $mean = $node->mean;
-        if (defined($mean)) {
-	        $node = ref($node)->new_mean_action($model->next_action_id, $node->get_target, $mean);
-        } else {
-            undef $node;
-        }
-    }
-    return $node;
-}
-
-=item B<_add_sqrt_vars>
-
-Add variables to hold rows of square-root of covariance matrix.
-
-=cut
-sub _add_sqrt_vars {
-    my $self = shift;
-    my $model = shift;
-    
-    my ($var1, $var2);
-    my @vars;
-    my $sqrt_var;
-    my $start;
-    my $size;
-    
-    # dense
-    $start = $model->get_size('state_aux_');
-    $size = 0;
-    @vars = (@{$model->get_vars('noise')}, @{$model->get_vars('state')}, @{$model->get_vars('obs')});
-    foreach $var1 (@vars) {
-        foreach $var2 (@vars) {
-            $sqrt_var = $self->_create_sqrt_var($model, $var1, $var2);
-            $size += $sqrt_var->get_size;
-            $model->add_var($sqrt_var);
-        }
-    }
-    $model->set_named_arg('std_start_', new Bi::Expression::Literal($start));
-    $model->set_named_arg('std_size_', new Bi::Expression::Literal($size));
-}
-
-=item B<_create_sqrt_var>(I<var1>, I<var2>)
-
-Create the variable that will hold the block corresponding to the dependence
-of I<var1> on I<var2> in the square-root of covariance matrix.
-
-=cut
-sub _create_sqrt_var {
-    my $self = shift;
-    my $model = shift;
-    my $var1 = shift;
-    my $var2 = shift;
-    
-    my $name = 'S_' . $var1->get_name . '_' . $var2->get_name . '_';
-    my $dims = [ @{$var1->get_dims}, @{$var2->get_dims} ];
-    my $named_args = {
-        'io' => new Bi::Expression::Literal(0),
-        'tmp' => $var1->get_named_arg('tmp')->clone
-    };
-    my $sqrt_var = new Bi::Model::StateAux($name, $dims, [], $named_args);
-    
-    return $sqrt_var;
-}
-
-=item B<_add_zero_block>(I<block>, I<types1>, I<types2>)
-
-Add block to start of I<block> that will zero all square-root covariance
-variables which involve variables of types I<types1> dependent on variables
-of types I<types2>.
-
-=cut
-sub _add_zero_block {
-    my $self = shift;
-    my $model = shift;
+sub _transform {
     my $block = shift;
-    my $types1 = shift;
-    my $types2 = shift;
+    my $model = shift;
+    my $types = shift;
     
-    my $zero_block = new Bi::Model::Block($model->next_block_id);
-    my $zero_action;
-    my $var1;
-    my $var2;
+    my $vars = $model->get_vars($types);
+    my $N = $model->num_vars($types);
+    my $J_commit = new Bi::Expression::Matrix($N, $N);
+    my $J_new = new Bi::Expression::Matrix($N, $N);
+    $J_commit->ident;
+    $J_new->ident;
     
-    my @vars1 = map { $_->get_name !~ /^S_\w+_/ ? $_ : () } @{$model->get_vars($types1)};
-    my @vars2 = map { $_->get_name !~ /^S_\w+_/ ? $_ : () } @{$model->get_vars($types2)};
-    foreach $var1 (@vars1) {
-        foreach $var2 (@vars2) {
-            $zero_action = $self->_create_zero_action($model, $var1, $var2);
-            $zero_block->push_action($zero_action);
+    _augment($block, $model, $vars, $J_commit, $J_new);
+}
+
+sub _augment {
+    my $block = shift;
+    my $model = shift;
+    my $vars = shift;
+    my $J_commit = shift;
+    my $J_new = shift;
+
+    foreach my $subblock (@{$block->get_blocks}) {
+        _augment($subblock, $model, $vars, $J_commit, $J_new);
+    }
+
+    my $N = $J_commit->num_cols;
+    my $mu = new Bi::Expression::Vector($N);
+    my $S = new Bi::Expression::Matrix($N, $N);
+    my $J = new Bi::Expression::Matrix($N, $N);
+
+    # get and then clear actions, will be replaced
+    my $actions = $block->get_actions;
+    $block->set_actions([]);
+    
+    foreach my $action (@$actions) {
+        # search for index that corresponds to the target of this action
+        my $j = find($vars, $action->get_target->get_var);
+        assert ($j >= 0);
+        
+        # mean
+        my $mean = $action->mean;
+        if (defined $mean) {
+            $mu->set($j, $mean);
+        }
+
+        # square-root covariance
+        my $std = $action->std;
+        if (defined $std) {
+            $S->set($j, $j, $std);
+        }
+                
+        # Jacobian
+        my ($ds, $refs) = $action->jacobian;
+        for (my $k = 0; $k < @$ds; ++$k) {
+            my $ref = $refs->[$k];
+            my $d = $ds->[$k];
+            my $i = find($vars, $ref->get_var);
+            if ($i >= 0) {
+                $J->set($i, $j, $d);
+                $J_new->set($i, $j, $d->clone);
+            }
+        }
+    }
+    _inline($model, $J);
+    $block->add_mean_actions($model, $vars, $mu);
+    $block->add_std_actions($model, $vars, $S);
+    $block->add_jacobian_actions($model, $vars, $J_commit, $J);
+
+    if ($block->get_commit) {
+        $J_commit->swap(Bi::Jacobian::commit($model, $vars, $J_commit*$J_new));
+        $J_new->ident;
+    }
+}
+
+=item B<_add_F_vars>(I<model>)
+
+Add variables that will hold Jacobian terms for the transition model.
+
+=cut
+sub _add_F_vars {
+    my $model = shift;
+    
+    my $start = $model->get_size('state_aux_');
+    my $size = 0;
+    my $vars1 = $model->get_vars(['noise', 'state']);
+    my $vars2 = $model->get_vars('state');
+    
+    foreach my $var2 (@$vars2) {
+        foreach my $var1 (@$vars1) {
+            my $j_var = $model->add_pair_var('F', $var1, $var2);
+            $model->add_var($j_var);
+            $size += $j_var->get_size;
         }
     }
     
-    # wrap any loose actions in another block
-    if ($block->num_actions > 0) {
-        my $child = new Bi::Model::Block($model->next_block_id, 'eval', [], {}, $block->get_actions, []);
-        $block->set_actions([]);
-        $block->unshift_block($child);
-    }
-    
-    # add zero block to start
-    $zero_block->set_commit(1);
-    $block->unshift_block($zero_block);
+    $model->set_named_arg('F_start_', new Bi::Expression::Literal($start));
+    $model->set_named_arg('F_size_', new Bi::Expression::Literal($size));
 }
 
-=item B<_create_zero_action>(I<var1>, I<var2>)
+=item B<_add_G_vars>(I<model>)
 
-Create an action that zeros the square-root covariance variable between
-I<var1> and I<var2>.
+Add variables that will hold Jacobian terms for the observation model.
 
 =cut
-sub _create_zero_action {
-    my $self = shift;
+sub _add_G_vars {
     my $model = shift;
-    my $var1 = shift;
-    my $var2 = shift;
     
-    my $name = 'S_' . $var1->get_name . '_' . $var2->get_name . '_';
-    my $var = $model->get_var($name);
-    my $target = new Bi::Expression::VarIdentifier($var);
-    my $action = new Bi::Model::Action($model->next_action_id, $target, '<-', new Bi::Expression::Literal(0));
+    my $start = $model->get_size('state_aux_');
+    my $size = 0;
+    my $vars1 = $model->get_vars(['noise', 'state']);
+    my $vars2 = $model->get_vars('obs');
+    
+    foreach my $var2 (@$vars2) {
+        foreach my $var1 (@$vars1) {
+            my $j_var = $model->add_pair_var('G', $var1, $var2);
+            $model->add_var($j_var);
+            $size += $j_var->get_size;
+        }
+    }
+    
+    $model->set_named_arg('G_start_', new Bi::Expression::Literal($start));
+    $model->set_named_arg('G_size_', new Bi::Expression::Literal($size));
+}
 
-    return $action;
+=item B<_add_Q_vars>(I<model>)
+
+Add variables that will hold state square-root of covariance matrix terms.
+
+=cut
+sub _add_Q_vars {
+    my $model = shift;
+    
+    my $start = $model->get_size('state_aux_');
+    my $size = 0;
+    my $vars = $model->get_vars(['noise', 'state']);
+    
+    foreach my $var2 (@$vars) {
+        foreach my $var1 (@$vars) {
+            my $j_var = $model->add_pair_var('Q', $var1, $var2);
+            $model->add_var($j_var);
+            $size += $j_var->get_size;
+        }
+    }
+    
+    $model->set_named_arg('Q_start_', new Bi::Expression::Literal($start));
+    $model->set_named_arg('Q_size_', new Bi::Expression::Literal($size));
+    
+}
+
+=item B<_add_R_vars>(I<model>)
+
+Add variables that will hold observation square-root of covariance matrix terms.
+
+=cut
+sub _add_R_vars {
+    my $model = shift;
+    
+    my $start = $model->get_size('state_aux_');
+    my $size = 0;
+    my $vars = $model->get_vars('obs');
+    
+    foreach my $var2 (@$vars) {
+        foreach my $var1 (@$vars) {
+            my $j_var = $model->add_pair_var('R', $var1, $var2);
+            $model->add_var($j_var);
+            $size += $j_var->get_size;
+        }
+    }
+    
+    $model->set_named_arg('R_start_', new Bi::Expression::Literal($start));
+    $model->set_named_arg('R_size_', new Bi::Expression::Literal($size));
+    
+}
+
+=item B<_inline>(I<model>, I<J>)
+
+Add inlines for Jacobian terms.
+
+=cut
+sub _inline {
+    my $model = shift;
+    my $J = shift;
+    
+    for (my $j = 0; $j < $J->num_cols; ++$j) {
+        for (my $i = 0; $i < $J->num_rows; ++$i) {
+            my $expr = $J->get($i, $j);
+            if (defined $expr && !$expr->is_one) {
+                my $inline = $model->lookup_inline($expr);
+                if (!defined $inline) {
+                    $inline = new Bi::Model::Inline($model->tmp_inline, $expr);
+                    $model->add_inline($inline);
+                }
+                
+                my $ref = new Bi::Expression::InlineIdentifier($inline);
+                $J->set($i, $j, $ref);
+            }
+        }
+    }
 }
 
 1;

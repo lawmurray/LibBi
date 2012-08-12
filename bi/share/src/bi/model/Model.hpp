@@ -23,50 +23,6 @@ namespace bi {
  * Model.
  *
  * @ingroup model_high
- *
- * @section Model_compiletime Compile-time interface
- *
- * The code generator provides a compile-time interface to the particulars of
- * a model. This is the preferred means of accessing details of the model
- * for performance critical components, as it more readily facilitates loop
- * unrolling, function inlining and other compiler optimisations by
- * statically encoding information such as network sizes, array indices,
- * variable traits and the like.
- *
- * The code generator produces a class derived from Model.
- *
- * The type of each variable is determined by its traits, in particular the
- * #IS_D_VAR, #IS_R_VAR, #IS_F_VAR, #IS_O_VAR, #IS_P_VAR etc traits.
- *
- * The types of variables in all nets are enumerated via type lists. Each type
- * list should be defined using the macros #BEGIN_TYPELIST,
- * #SINGLE_TYPE, #COMPOUND_TYPE and #END_TYPELIST, e.g.:
- *
- * @code
- * BEGIN_TYPELIST(MyTypeList)
- * SINGLE_TYPE(MyFirstVariableType,1)
- * SINGLE_TYPE(MySecondVariableType,10)
- * END_TYPELIST()
- * @endcode
- *
- * Retrieve them using #GET_TYPELIST or the nested types of the derived class
- * produced by the code generator.
- *
- * Particulars of the model are accessed via operations on the model type,
- * variable types and type lists. Template metaprogramming functions are provided
- * in model.hpp for this purpose.
- *
- * @section Model_runtime Runtime interface
- *
- * Model provides a simpler object-oriented runtime interface to the
- * particulars of a model, initialised from the compile-time interface.
- * Performance is still good, but it does not readily facilitate the sort
- * of optimisations enabled by the compile-time interface, as details are
- * not necessarily available at compile time.
- *
- * The code generator calls init() to initialise the runtime interface from
- * the compile-time interface. Once initialised, it proceeds to add all
- * dimensions with addDim() and variables with addVar().
  */
 class Model {
 public:
@@ -227,7 +183,6 @@ protected:
 
 #include "../traits/dim_traits.hpp"
 #include "../traits/var_traits.hpp"
-#include "../traits/net_traits.hpp"
 #include "../typelist/size.hpp"
 #include "../typelist/runtime.hpp"
 
@@ -242,23 +197,23 @@ bi::Model::Model(B& o) {
   varsByName.resize(NUM_VAR_TYPES);
   varStarts.resize(NUM_VAR_TYPES);
 
-  netSizes[D_VAR] = net_size<typename B::DTypeList>::value;
-  netSizes[DX_VAR] = net_size<typename B::DXTypeList>::value;
-  netSizes[R_VAR] = net_size<typename B::RTypeList>::value;
-  netSizes[F_VAR] = net_size<typename B::FTypeList>::value;
-  netSizes[O_VAR] = net_size<typename B::OTypeList>::value;
-  netSizes[P_VAR] = net_size<typename B::PTypeList>::value;
-  netSizes[PX_VAR] = net_size<typename B::PXTypeList>::value;
+  netSizes[D_VAR] = B::ND;
+  netSizes[DX_VAR] = B::NDX;
+  netSizes[R_VAR] = B::NR;
+  netSizes[F_VAR] = B::NF;
+  netSizes[O_VAR] = B::NO;
+  netSizes[P_VAR] = B::NP;
+  netSizes[PX_VAR] = B::NPX;
 
-  netNumVars[D_VAR] = net_count<typename B::DTypeList>::value;
-  netNumVars[DX_VAR] = net_count<typename B::DXTypeList>::value;
-  netNumVars[R_VAR] = net_count<typename B::RTypeList>::value;
-  netNumVars[F_VAR] = net_count<typename B::FTypeList>::value;
-  netNumVars[O_VAR] = net_count<typename B::OTypeList>::value;
-  netNumVars[P_VAR] = net_count<typename B::PTypeList>::value;
-  netNumVars[PX_VAR] = net_count<typename B::PXTypeList>::value;
+  netNumVars[D_VAR] = B::CD;
+  netNumVars[DX_VAR] = B::CDX;
+  netNumVars[R_VAR] = B::CR;
+  netNumVars[F_VAR] = B::CF;
+  netNumVars[O_VAR] = B::CO;
+  netNumVars[P_VAR] = B::CP;
+  netNumVars[PX_VAR] = B::CPX;
 
-  dimsById.resize(dim_count<typename B::DimTypeList>::value);
+  dimsById.resize(B::Ndims);
 
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type1 = static_cast<VarType>(i);
