@@ -149,6 +149,19 @@ public:
    */
   template<class T1>
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
+
+  /**
+   * Generate a random number from a beta distribution with given parameters.
+   *
+   * @tparam T1 Scalar type.
+   *
+   * @param alpha Shape.
+   * @param beta Shape.
+   *
+   * @return The random number.
+   */
+  template<class T1>
+  T1 beta(const T1 alpha = 1.0, const T1 beta = 1.0);
   //@}
 
   /**
@@ -220,6 +233,21 @@ public:
    */
   template<class V1>
   void gammas(V1 x, const typename V1::value_type alpha = 1.0,
+      const typename V1::value_type beta = 1.0);
+
+  /**
+   * Fill vector with random numbers from a beta distribution with given
+   * parameters.
+   *
+   * @tparam T1 Scalar type.
+   *
+   * @param alpha Shape.
+   * @param beta Shape.
+   *
+   * @param[out] x Vector.
+   */
+  template<class V1>
+  void betas(V1 x, const typename V1::value_type alpha = 1.0,
       const typename V1::value_type beta = 1.0);
   //@}
 
@@ -304,6 +332,11 @@ inline T1 bi::Random::gamma(const T1 alpha, const T1 beta) {
   return getHostRng().gamma(alpha, beta);
 }
 
+template<class T1>
+inline T1 bi::Random::beta(const T1 alpha, const T1 beta) {
+  return getHostRng().beta(alpha, beta);
+}
+
 template<class V1>
 void bi::Random::uniforms(V1 x, const typename V1::value_type lower,
     const typename V1::value_type upper) {
@@ -335,6 +368,17 @@ void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
   typedef RandomHost impl;
   #endif
   impl::gammas(*this, x, alpha, beta);
+}
+
+template<class V1>
+void bi::Random::betas(V1 x, const typename V1::value_type alpha,
+    const typename V1::value_type beta) {
+  #ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
+  #else
+  typedef RandomHost impl;
+  #endif
+  impl::betas(*this, x, alpha, beta);
 }
 
 template<class V1, class V2>

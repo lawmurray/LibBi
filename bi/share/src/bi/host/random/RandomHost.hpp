@@ -47,6 +47,13 @@ struct RandomHost {
       1.0, const typename V1::value_type beta = 1.0);
 
   /**
+   * @copydoc Random::betas
+   */
+  template<class V1>
+  static void betas(Random& rng, V1 x, const typename V1::value_type alpha =
+      1.0, const typename V1::value_type beta = 1.0);
+
+  /**
    * @copydoc Random::multinomials
    */
   template<class V1, class V2>
@@ -65,7 +72,6 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
   assert(upper >= lower);
 
   typedef typename V1::value_type T1;
-  typedef boost::uniform_real<T1> dist_type;
 
   #pragma omp parallel
   {
@@ -86,7 +92,6 @@ void bi::RandomHost::gaussians(Random& rng, V1 x,
   assert(sigma >= 0.0);
 
   typedef typename V1::value_type T1;
-  typedef boost::normal_distribution<T1> dist_type;
 
   #pragma omp parallel
   {
@@ -107,7 +112,6 @@ void bi::RandomHost::gammas(Random& rng, V1 x,
   assert(alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
-  typedef boost::gamma_distribution<T1> dist_type;
 
   #pragma omp parallel
   {
@@ -117,6 +121,26 @@ void bi::RandomHost::gammas(Random& rng, V1 x,
     #pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
       x(j) = rng1.gamma(alpha, beta);
+    }
+  }
+}
+
+template<class V1>
+void bi::RandomHost::betas(Random& rng, V1 x,
+    const typename V1::value_type alpha, const typename V1::value_type beta) {
+  /* pre-condition */
+  assert(alpha > 0.0 && beta > 0.0);
+
+  typedef typename V1::value_type T1;
+
+  #pragma omp parallel
+  {
+    BOOST_AUTO(rng1, rng.getHostRng());
+    int j;
+
+    #pragma omp for schedule(static)
+    for (j = 0; j < x.size(); ++j) {
+      x(j) = rng1.beta(alpha, beta);
     }
   }
 }

@@ -1,0 +1,89 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev: 2867 $
+## $Date: 2012-07-31 15:38:06 +0800 (Tue, 31 Jul 2012) $
+%]
+
+[%-
+alpha = action.get_named_arg('alpha');
+beta = action.get_named_arg('beta');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+[% create_eval_var_target(action) %]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  /**
+   * Target type.
+   */
+  typedef Target[% action.get_id %] target_type;
+
+  [% declare_action_static_function('alpha') %]
+  [% declare_action_static_function('beta') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+#include "bi/math/pi.hpp"
+
+[% sig_action_static_function('alpha') %] {
+  [% alias_dims(action) %]
+  [% read_input(alpha) %]
+  
+  x = [% alpha.to_cpp %];
+}
+
+[% sig_action_static_function('beta') %] {
+  [% alias_dims(action) %]
+  [% read_input(beta) %]
+  
+  x = [% beta.to_cpp %];
+}
+
+[% sig_action_static_function('sample') %] {
+  real a, b, u;
+    
+  alpha(p, cox, pax, a);
+  beta(p, cox, pax, b);
+  u = rng.beta(a, b);
+    
+  x.template put<target_type>(p, ix, u);
+}
+
+[% sig_action_static_function('logdensity') %] {
+  real a, b, logZ, xy;
+    
+  alpha(p, cox, pax, a);
+  beta(p, cox, pax, b);
+  
+  xy = pax.template fetch_alt<target_type>(p, ix);
+
+  logZ = BI_MATH_LGAMMA(a) + BI_MATH_LGAMMA(b) - BI_MATH_LGAMMA(a + b);
+  lp += (a - BI_REAL(1.0))*BI_MATH_LGAMMA(xy) +
+      (b - BI_REAL(1.0))*BI_MATH_LGAMMA(BI_REAL(1.0) - xy) - logZ;
+
+  x.template put<target_type>(p, ix, xy);
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  real sh, sc, xy;
+    
+  alpha(p, cox, pax, sh);
+  beta(p, cox, pax, sc);
+
+  xy = pax.template fetch_alt<target_type>(p, ix);
+
+  lp = BI_REAL(1.0/0.0);
+
+  x.template put<target_type>(p, ix, xy);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

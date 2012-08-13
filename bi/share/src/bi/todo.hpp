@@ -7,6 +7,8 @@
  *
  * @todo * (L) Fix GPU permute.
  *
+ * @todo Beta action maxLogDensity().
+ *
  * @todo * (A) Make ESS threshold clear with adaptive particle filter.
  *
  * @todo Adapting number of samples of initial conditions.

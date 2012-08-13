@@ -36,75 +36,40 @@ public:
   void seed(const unsigned seed);
 
   /**
-   * Generate a random integer from a uniform distribution over a
-   * given interval.
-   *
-   * @tparam T1 Scalar type.
-   *
-   * @param lower Lower bound on the interval.
-   * @param upper Upper bound on the interval.
-   *
-   * @return The random integer, >= @p lower and <= @p upper.
+   * @copydoc Random::uniformInt
    */
   template<class T1>
   T1 uniformInt(const T1 lower = 0, const T1 upper = 1);
 
   /**
-   * Generate a random number from a multinomial distribution with given
-   * probabilities.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param ps Log-probabilities. Need not be normalised to 1.
-   *
-   * @return Random index between @c 0 and <tt>ps.size() - 1</tt>, selected
-   * according to the non-normalised probabilities given in @c ps.
+   * @copydoc Random::multinomial
    */
   template<class V1>
   typename V1::difference_type multinomial(const V1 ps);
 
   /**
-   * Generate a random number from a uniform distribution over a
-   * given interval.
-   *
-   * @tparam T1 Scalar type.
-   *
-   * @param lower Lower bound on the interval.
-   * @param upper Upper bound on the interval.
-   *
-   * @return The random number.
+   * @copydoc Random::uniform
    */
   template<class T1>
   T1 uniform(const T1 lower = 0.0, const T1 upper = 1.0);
 
   /**
-   * Generate a random number from a Gaussian distribution with a
-   * given mean and standard deviation.
-   *
-   * @tparam T1 Scalar type.
-   *
-   * @param mu Mean of the distribution.
-   * @param sigma Standard deviation of the distribution.
-   *
-   * @return The random number. If the standard deviation is zero, returns
-   * the mean.
+   * @copydoc Random::gaussian
    */
   template<class T1>
   T1 gaussian(const T1 mu = 0.0, const T1 sigma = 1.0);
 
   /**
-   * Generate a random number from a gamma distribution with a given shape
-   * and scale.
-   *
-   * @tparam T1 Scalar type.
-   *
-   * @param alpha Shape.
-   * @param beta Scale.
-   *
-   * @return The random number.
+   * @copydoc Random::gamma
    */
   template<class T1>
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
+
+  /**
+   * @copydoc Random::beta
+   */
+  template<class T1>
+  T1 beta(const T1 alpha = 1.0, const T1 beta = 1.0);
 
 private:
   /**
@@ -201,6 +166,17 @@ inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
   return beta*gen();
+}
+
+template<class T1>
+inline T1 bi::RngHost::beta(const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  assert (alpha > 0.0 && beta > 0.0);
+
+  const T1 x = gamma(alpha, 1.0);
+  const T1 y = gamma(beta, 1.0);
+
+  return x/(x + y);
 }
 
 #endif

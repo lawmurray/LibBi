@@ -47,6 +47,13 @@ struct RandomGPU {
   template<class V1>
   static void gammas(Random& rng, V1 x, const typename V1::value_type alpha =
       1.0, const typename V1::value_type beta = 1.0);
+
+  /**
+   * @copydoc Random::gammas
+   */
+  template<class V1>
+  static void betas(Random& rng, V1 x, const typename V1::value_type alpha =
+      1.0, const typename V1::value_type beta = 1.0);
 };
 }
 
