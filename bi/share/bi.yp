@@ -237,8 +237,8 @@ block_definition
 distributed_as
     : IDENTIFIER '[' dim_aliases ']' '~' expression ';' { $_[0]->action($_[1], $_[3], undef, $_[5], $_[6]) }
     | IDENTIFIER '[' dim_aliases ']' '~' expression     { $_[0]->action($_[1], $_[3], undef, $_[5], $_[6]) }
-    | IDENTIFIER '[' dim_ranges ']' '~' expression ';' { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
-    | IDENTIFIER '[' dim_ranges ']' '~' expression     { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_ranges ']' '~' expression ';'  { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_ranges ']' '~' expression      { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
     | IDENTIFIER '~' expression ';'                     { $_[0]->action($_[1], undef, undef, $_[2], $_[3]) }
     | IDENTIFIER '~' expression                         { $_[0]->action($_[1], undef, undef, $_[2], $_[3]) }
     ;
@@ -246,8 +246,8 @@ distributed_as
 set_to
     : IDENTIFIER '[' dim_aliases ']' SET_TO expression ';' { $_[0]->action($_[1], $_[3], undef, $_[5], $_[6]) }
     | IDENTIFIER '[' dim_aliases ']' SET_TO expression     { $_[0]->action($_[1], $_[3], undef, $_[5], $_[6]) }
-    | IDENTIFIER '[' dim_ranges ']' SET_TO expression ';' { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
-    | IDENTIFIER '[' dim_ranges ']' SET_TO expression     { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_ranges ']' SET_TO expression ';'  { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
+    | IDENTIFIER '[' dim_ranges ']' SET_TO expression      { $_[0]->action($_[1], undef, $_[3], $_[5], $_[6]) }
     | IDENTIFIER SET_TO expression ';'                     { $_[0]->action($_[1], undef, undef, $_[2], $_[3]) }
     | IDENTIFIER SET_TO expression                         { $_[0]->action($_[1], undef, undef, $_[2], $_[3]) }
     ;
@@ -258,13 +258,16 @@ set_to
    named argument support added */
 
 postfix_expression
-    : LITERAL                                     { $_[0]->literal($_[1]) }
-    | INTEGER_LITERAL                             { $_[0]->literal($_[1]) }
-    | STRING_LITERAL                              { $_[0]->string_literal($_[1]) }
-    | IDENTIFIER                                  { $_[0]->identifier($_[1]) }
-    | IDENTIFIER '[' offset_args ']'              { $_[0]->identifier($_[1], $_[3]) }
-    | IDENTIFIER '[' range_args ']'               { $_[0]->identifier($_[1], undef, $_[3]) }
-    | IDENTIFIER '(' positional_args ')'          { $_[0]->function($_[1], $_[3]) }
+    : LITERAL                                           { $_[0]->literal($_[1]) }
+    | INTEGER_LITERAL                                   { $_[0]->literal($_[1]) }
+    | STRING_LITERAL                                    { $_[0]->string_literal($_[1]) }
+    | IDENTIFIER                                        { $_[0]->identifier($_[1]) }
+    | IDENTIFIER '[' offset_args ']'                    { $_[0]->identifier($_[1], $_[3]) }
+    | IDENTIFIER '[' range_args ']'                     { $_[0]->identifier($_[1], undef, $_[3]) }
+    | IDENTIFIER '(' positional_args ',' named_args ')' { $_[0]->function($_[1], $_[3], $_[5]) }
+    | IDENTIFIER '(' positional_args ')'                { $_[0]->function($_[1], $_[3]) }
+    | IDENTIFIER '(' named_args ')'                     { $_[0]->function($_[1], undef, $_[3]) }
+
     | IDENTIFIER '(' ')'                          { $_[0]->function($_[1]) }
     | '(' conditional_expression ')'              { $_[0]->parens($_[2]) }
     ;
