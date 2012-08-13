@@ -67,17 +67,17 @@ public:
   xy = pax.template fetch_alt<target_type>(p, ix);
 
   logZ = BI_MATH_LGAMMA(a) + BI_MATH_LGAMMA(b) - BI_MATH_LGAMMA(a + b);
-  lp += (a - BI_REAL(1.0))*BI_MATH_LGAMMA(xy) +
-      (b - BI_REAL(1.0))*BI_MATH_LGAMMA(BI_REAL(1.0) - xy) - logZ;
+  lp += (a - BI_REAL(1.0))*BI_MATH_LOG(xy) +
+      (b - BI_REAL(1.0))*BI_MATH_LOG(BI_REAL(1.0) - xy) - logZ;
 
   x.template put<target_type>(p, ix, xy);
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  real sh, sc, xy;
+  real a, b, xy;
     
-  alpha(p, cox, pax, sh);
-  beta(p, cox, pax, sc);
+  alpha(p, cox, pax, a);
+  beta(p, cox, pax, b);
 
   xy = pax.template fetch_alt<target_type>(p, ix);
 
