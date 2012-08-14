@@ -164,7 +164,7 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 AC_HEADER_ASSERT
 
 AC_CHECK_HEADER([netcdfcpp.h], [], \
-    AC_MSG_ERROR([required NetCDF C++ interface header not found]), [])
+    AC_MSG_ERROR([required NetCDF C++ interface header not found]), [-])
 
 if test x$mkl = xtrue; then
 	AC_CHECK_HEADER([mkl_cblas.h], [], \
@@ -176,7 +176,7 @@ else
 	fi
 fi
 
-m4_foreach_w([header_file], [\
+AC_CHECK_HEADERS([\
     boost/mpl/if.hpp \
     boost/random/bernoulli_distribution.hpp \
     boost/random/gamma_distribution.hpp \
@@ -187,10 +187,9 @@ m4_foreach_w([header_file], [\
     boost/random/variate_generator.hpp \
     boost/static_assert.hpp \
     boost/typeof/typeof.hpp \
-    ], [AC_CHECK_HEADER(header_file, [], \
-    AC_MSG_ERROR([required boost header not found]), [])])
+    ], [], AC_MSG_ERROR([required boost header not found]), [-])
 
-m4_foreach_w([header_file], [\
+AC_CHECK_HEADERS([\
     thrust/adjacent_difference.h \
     thrust/binary_search.h \
     thrust/copy.h \
@@ -217,23 +216,14 @@ m4_foreach_w([header_file], [\
     thrust/transform_reduce.h \
     thrust/transform_scan.h \
     thrust/tuple.h \
-    ], [AC_CHECK_HEADER(header_file, [], \
-    AC_MSG_ERROR([required Thrust header not found]), [])])
+    ], [], AC_MSG_ERROR([required Thrust header not found]), [-])
 
-m4_foreach_w([header_file], [\
-    gsl/gsl_multimin.h \
-    ], [AC_CHECK_HEADER(header_file, [], \
-    AC_MSG_ERROR([required GSL header not found]), [])])
+AC_CHECK_HEADER([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not found]), [-])
 
 if test x$cuda = xtrue; then
-    AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (required with --enable-cuda)]), [])
-    AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (required with --enable-cuda)]), [])
-
-    m4_foreach_w([header_file], [\
-    	magma_s.h \
-    	magma_d.h \
-    ], [AC_CHECK_HEADER(header_file, [], \
-    AC_MSG_ERROR([MAGMA header not found (required with --enable-cuda)]), [#include <magmablas.h>])])
+    AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (required with --enable-cuda)]), [-])
+    AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (required with --enable-cuda)]), [-])
+    AC_CHECK_HEADERS([magma_s.h magma_d.h], [], AC_MSG_ERROR([MAGMA header not found (required with --enable-cuda)]), [-])
 fi
 
 if test x$mpi = xtrue; then
