@@ -15,7 +15,11 @@ The following (non-standard) Perl modules are required:
   * Parse::Yapp,
   * Parse::Lex,
   * File::Slurp,
+  * File::ShareDir,
   * Getopt::ArgvFile.
+
+These can be installed using the "cpan" program available on most systems.
+Simply type "install Template Math::Symbolic etc".
 
 The following packages are required:
 

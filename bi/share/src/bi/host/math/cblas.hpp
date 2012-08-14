@@ -13,8 +13,10 @@
 extern "C" {
 #ifdef ENABLE_MKL
 #include "mkl_cblas.h"
-#else
+#elif HAVE_CBLAS_H
 #include "cblas.h"
+#elif HAVE_GSL_GSL_CBLAS_H
+#include "gsl/gsl_cblas.h"
 #endif
 }
 

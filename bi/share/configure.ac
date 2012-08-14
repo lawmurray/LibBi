@@ -1,5 +1,5 @@
 AC_INIT([bi], [1.0.0], [bug-report@example.com], [bi], [http://www.example.com])
-AC_PREREQ([2.59])
+AC_PREREQ([2.62])
 AC_LANG([C++])
 AM_INIT_AUTOMAKE([1.10 no-define foreign])
 #AC_CONFIG_HEADERS([config.h])
@@ -170,8 +170,10 @@ if test x$mkl = xtrue; then
 	AC_CHECK_HEADER([mkl_cblas.h], [], \
 	    AC_MSG_ERROR([header not found (required with --enable-mkl)]), [-])
 else
-	AC_CHECK_HEADER([cblas.h], [], \
-	    AC_MSG_ERROR([required header not found]), [-])
+	AC_CHECK_HEADERS([cblas.h gsl/gsl_cblas.h], [], [], [-])
+	if test x$ac_cv_header_cblas_h = xfalse && x$ac_cv_header_gsl_gsl_cblas_h = xfalse; then
+	    AC_MSG_ERROR([required header not found])
+	fi
 fi
 
 m4_foreach_w([header_file], [\
