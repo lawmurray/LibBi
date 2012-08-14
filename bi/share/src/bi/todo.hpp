@@ -7,8 +7,6 @@
  *
  * @todo * (L) Fix GPU permute.
  *
- * @todo Beta action maxLogDensity().
- *
  * @todo * (A) Make ESS threshold clear with adaptive particle filter.
  *
  * @todo Adapting number of samples of initial conditions.
@@ -70,4 +68,11 @@
  * @todo * (P) Review RBi.
  *
  * @todo Use new NetCDF C++ interface.
+ *
+ * @todo Beta action maxLogDensity().
+ *
+ * @todo Use -K in particle filters and PMMH to allow denser output than
+ * number of observations.
+ *
+ * @todo Automatically create directories for --output-file option.
  */
