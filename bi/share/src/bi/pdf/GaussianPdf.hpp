@@ -521,7 +521,7 @@ real bi::GaussianPdf<V1, M1>::density(const V2 x) {
   sub_elements(z, mu);
   trsv(U, z, 'U');
   real p = invZ*exp(-0.5*dot(z));
-  if (isnan(p)) {
+  if (std::isnan(p)) {
     p = 0.0;
   }
 

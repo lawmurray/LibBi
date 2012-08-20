@@ -41,9 +41,9 @@ typedef double real;
 #ifdef ENABLE_SINGLE
 #define BI_MATH_FABS(x) fabsf(x)
 #define BI_MATH_LOG(x) logf(x)
-#define BI_MATH_NANLOG(x) (isnan(x) ? logf(0.0f) : logf(x))
+#define BI_MATH_NANLOG(x) (std::isnan(x) ? logf(0.0f) : logf(x))
 #define BI_MATH_EXP(x) expf(x)
-#define BI_MATH_NANEXP(x) (isnan(x) ? 0.0f : expf(x))
+#define BI_MATH_NANEXP(x) (std::isnan(x) ? 0.0f : expf(x))
 #define BI_MATH_MAX(x,y) fmaxf(x,y)
 #define BI_MATH_MIN(x,y) fminf(x,y)
 #define BI_MATH_SQRT(x) sqrtf(x)
@@ -70,9 +70,9 @@ typedef double real;
 #else
 #define BI_MATH_FABS(x) fabs(x)
 #define BI_MATH_LOG(x) log(x)
-#define BI_MATH_NANLOG(x) (isnan(x) ? log(0.0) : log(x))
+#define BI_MATH_NANLOG(x) (std::isnan(x) ? log(0.0) : log(x))
 #define BI_MATH_EXP(x) exp(x)
-#define BI_MATH_NANEXP(x) (isnan(x) ? 0.0 : exp(x))
+#define BI_MATH_NANEXP(x) (std::isnan(x) ? 0.0 : exp(x))
 #define BI_MATH_MAX(x,y) fmax(x,y)
 #define BI_MATH_MIN(x,y) fmin(x,y)
 #define BI_MATH_SQRT(x) sqrt(x)

@@ -25,9 +25,9 @@ namespace bi {
 template<typename T>
 struct nan_greater_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T &x, const T& y) const {
-    if (isnan(y)) {
-      return !isnan(x); // x > y unless isnan(x) too
-    } else if (isnan(x)) {
+    if (std::isnan(y)) {
+      return !std::isnan(x); // x > y unless isnan(x) too
+    } else if (std::isnan(x)) {
       return false;
     } else {
       return x > y;
@@ -43,9 +43,9 @@ struct nan_greater_functor : public std::unary_function<T,T> {
 template<typename T>
 struct nan_less_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T &x, const T& y) const {
-    if (isnan(x)) {
-      return !isnan(y); // x < y unless isnan(x) too
-    } else if (isnan(y)) {
+    if (std::isnan(x)) {
+      return !std::isnan(y); // x < y unless isnan(x) too
+    } else if (std::isnan(y)) {
       return false;
     } else {
       return x < y;

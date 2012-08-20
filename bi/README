@@ -24,8 +24,8 @@ Simply type "install Template Math::Symbolic etc".
 The following packages are required:
 
   * a C++ compiler,
-  * GNU Autotools: autoconf, automake and libtool <www.gnu.org/software/>,
-  * Thrust 1.6 or later <thrust.googlecode.com>,
+  * GNU Autotools: autoconf and automake <www.gnu.org/software/>,
+  * Thrust 1.6 or later <thrust.github.com>,
   * NetCDF 4.0.1 or later <www.unidata.ucar.edu/software/netcdf/>,
   * QRUpdate <qrupdate.sourceforge.net/>,
   * GNU Scientific Library <www.gnu.org/software/gsl/>,
