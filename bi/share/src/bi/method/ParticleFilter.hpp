@@ -357,6 +357,9 @@ public:
   void output(const int k, const State<B,L>& s, const int r, const V1 lws,
       const V2 as);
 
+  template<Location L>
+  void output0(const State<B,L>& s);
+
   /**
    * Flush output caches to file.
    */
@@ -582,6 +585,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
 
   real ll = 0.0;
   init(rng, s, lws, as, inInit);
+  output0(s);
   while (state.t < T) {
     r = step(rng, T, s, lws, as, n);
     ll += logsumexp_reduce(lws) - std::log(P);
@@ -610,6 +614,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
 
   real ll = 0.0;
   init(rng, theta0, s, lws, as);
+  output0(s);
   while (state.t < T) {
     r = n > 0 && resample(rng, s, lws, as);
     predict(rng, T, s);
@@ -638,6 +643,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
 
   real ll = 0.0;
   init(rng, theta0, s, lws, as);
+  output0(s);
   while (state.t < T) {
     r = n > 0 && resample(rng, s, a, lws, as);
     predict(rng, T, s);
@@ -806,6 +812,12 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::output(const int k,
     logWeightsCache.put(k, lws);
     ancestorsCache.put(k, as);
   }
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+template<bi::Location L>
+void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::output0(const State<B,L>& s) {
+  sim.output0(s);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>

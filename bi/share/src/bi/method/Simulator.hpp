@@ -792,6 +792,8 @@ void bi::Simulator<B,IO1,IO2,CL>::flush(const VarType type) {
 
 template<class B, class IO1, class IO2, bi::Location CL>
 void bi::Simulator<B,IO1,IO2,CL>::flush() {
+  /* parameter cache */
+  flush(P_VAR);
   /* state caches */
   flush(D_VAR);
   flush(R_VAR);

@@ -9,12 +9,15 @@
 #ifndef BI_BUFFER_SMC2NETCDFBUFFER_HPP
 #define BI_BUFFER_SMC2NETCDFBUFFER_HPP
 
-#include "SimulatorNetCDFBuffer.hpp"
+#include "NetCDFBuffer.hpp"
+#include "NcVarBuffer.hpp"
+#include "../state/State.hpp"
+#include "../method/misc.hpp"
 
 #include <vector>
 
 namespace bi {
-class SMC2NetCDFBuffer: public SimulatorNetCDFBuffer {
+class SMC2NetCDFBuffer: public NetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -43,6 +46,16 @@ public:
   virtual ~SMC2NetCDFBuffer();
 
   /**
+   * @copydoc concept::SimulatorBuffer::size1()
+   */
+  int size1() const;
+
+  /**
+   * @copydoc concept::SimulatorBuffer::size2()
+   */
+  int size2() const;
+
+  /**
    * @copydoc #concept::SMC2NetCDFBuffer::readSample()
    */
   template<class V1>
@@ -53,6 +66,19 @@ public:
    */
   template<class V1>
   void writeSample(const int k, const V1 theta);
+
+  /**
+   * @copydoc concept::SimulatorBuffer::readState()
+   */
+  template<class M1>
+  void readState(const VarType type, const int t, M1 X);
+
+  /**
+   * @copydoc concept::SimulatorBuffer::writeState()
+   */
+  template<class M1>
+  void writeState(const VarType type, const int t, const M1 X,
+      const int p = 0);
 
   /**
    * @copydoc #concept::SMC2NetCDFBuffer::readLogWeights()
@@ -97,18 +123,48 @@ protected:
   /**
    * Set up structure of NetCDF file.
    */
-  void create();
+  void create(const long P, const long T);
 
   /**
    * Map structure of existing NetCDF file.
    */
-  void map();
+  void map(const long P = -1, const long T = -1);
 
   /**
    * Write a given vector in the given variable of the given dimension
    */
   template<class V1>
   void writeVector(NcVar* var, NcDim* dim, const V1 vector);
+
+  /**
+   * Model.
+   */
+  const Model& m;
+
+  /**
+   * Time dimension.
+   */
+  NcDim* nrDim;
+
+  /**
+   * Model dimensions.
+   */
+  std::vector<NcDim*> nDims;
+
+  /**
+   * P-dimension (trajectories).
+   */
+  NcDim* npDim;
+
+  /**
+   * Time variable.
+   */
+  NcVar* tVar;
+
+  /**
+   * Node variables, indexed by type.
+   */
+  std::vector<std::vector<NcVarBuffer<real>*> > vars;
 
   /**
    * Log-weights variable.
@@ -137,8 +193,17 @@ protected:
 };
 }
 
-
+#include "../math/view.hpp"
 #include "../math/temp_vector.hpp"
+#include "../math/temp_matrix.hpp"
+
+inline int bi::SMC2NetCDFBuffer::size1() const {
+  return npDim->size();
+}
+
+inline int bi::SMC2NetCDFBuffer::size2() const {
+  return nrDim->size();
+}
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::readSample(const int p, V1 theta) {
@@ -254,6 +319,120 @@ void bi::SMC2NetCDFBuffer::writeVector(NcVar* var, NcDim* dim, const V1 vector){
     ret = var->put(vector.buf(), dim->size());
   }
   BI_ASSERT(ret, "Inconvertible type writing vector");
+}
+
+template<class M1>
+void bi::SMC2NetCDFBuffer::readState(const VarType type, const int t,
+    M1 X) {
+  /* pre-conditions */
+  assert (X.size1() == npDim->size());
+
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
+  BI_UNUSED NcBool ret;
+
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
+
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
+
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = 0;
+      counts[j] = X.size1();
+
+      ret = ncVar->get_var()->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+
+      if (M1::on_device || X.lead() != X.size1()) {
+        temp_matrix_type X1(X.size1(), size);
+        ret = ncVar->get_var()->get(X1.buf(), counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        columns(X, start, size) = X1;
+      } else {
+        ret = ncVar->get_var()->get(columns(X, start, size).buf(),
+            counts.buf());
+        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      }
+    }
+  }
+}
+
+template<class M1>
+void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
+    const M1 X, const int p) {
+  /* pre-conditions */
+  assert (X.size1() <= npDim->size());
+
+  typedef typename M1::value_type temp_value_type;
+  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+
+  Var* var;
+  host_vector<long> offsets, counts;
+  int start, size, id, i, j;
+  BI_UNUSED NcBool ret;
+
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = m.getVarStart(type, id);
+    size = var->getSize();
+
+    if (var->getIO()) {
+      BOOST_AUTO(ncVar, vars[type][id]);
+      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+          " does not exist in file");
+
+      j = 0;
+      offsets.resize(ncVar->num_dims(), false);
+      counts.resize(ncVar->num_dims(), false);
+
+      if (ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
+        ++j;
+      }
+      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+        offsets[j] = 0;
+        counts[j] = ncVar->get_dim(j)->size();
+      }
+      offsets[j] = p;
+      counts[j] = X.size1();
+
+      ret = ncVar->get_var()->set_cur(offsets.buf());
+      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+
+      if (M1::on_device || X.lead() != X.size1()) {
+        temp_matrix_type X1(X.size1(), size);
+        X1 = columns(X, start, size);
+        synchronize(M1::on_device);
+        ret = ncVar->get_var()->put(X1.buf(), counts.buf());
+      } else {
+        ret = ncVar->get_var()->put(columns(X, start, size).buf(),
+            counts.buf());
+      }
+      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    }
+  }
 }
 
 #endif

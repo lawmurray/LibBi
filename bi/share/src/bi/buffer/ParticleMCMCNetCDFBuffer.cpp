@@ -11,30 +11,67 @@ using namespace bi;
 
 ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, file, mode) {
+    NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
+  assert (mode == READ_ONLY || mode == WRITE);
   map();
 }
 
 ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
     const int P, const int T, const std::string& file,
-    const FileMode mode) : SimulatorNetCDFBuffer(m, P, T, file, mode) {
+    const FileMode mode) : NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
-    create();
+    create(P, T);
   } else {
-    map();
+    map(P, T);
   }
 }
 
 ParticleMCMCNetCDFBuffer::~ParticleMCMCNetCDFBuffer() {
-  //
+  unsigned i, j;
+  for (i = 0; i < vars.size(); ++i) {
+    for (j = 0; j < vars[i].size(); ++j) {
+      delete vars[i][j];
+    }
+  }
 }
 
-void ParticleMCMCNetCDFBuffer::create() {
-  int id;
+void ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
+  int id, i;
   VarType type;
   Var* var;
+  Dim* dim;
 
   ncFile->add_att("data_format", "PMCMC");
+
+  /* dimensions */
+  nrDim = createDim("nr", T);
+  for (i = 0; i < m.getNumDims(); ++i) {
+    dim = m.getDim(i);
+    nDims.push_back(createDim(dim->getName().c_str(), dim->getSize()));
+  }
+  npDim = createDim("np", P);
+
+  std::cerr << "nr = " << T << std::endl;
+  std::cerr << "np = " << P << std::endl;
+
+  /* time variable */
+  tVar = ncFile->add_var("time", netcdf_real, nrDim);
+  BI_ERROR(tVar != NULL && tVar->is_valid(), "Could not create time variable");
+
+  /* other variables */
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+    vars[type].resize(m.getNumVars(type), NULL);
+
+    if (type == D_VAR || type == R_VAR || type == P_VAR) {
+      for (id = 0; id < (int)vars[type].size(); ++id) {
+        var = m.getVar(type, id);
+        if (var->getIO()) {
+          vars[type][id] = new NcVarBuffer<real>(createVar(var));
+        }
+      }
+    }
+  }
 
   llVar = ncFile->add_var("loglikelihood", netcdf_real, npDim);
   BI_ERROR(llVar != NULL && llVar->is_valid(),
@@ -44,20 +81,48 @@ void ParticleMCMCNetCDFBuffer::create() {
   BI_ERROR(lpVar != NULL && lpVar->is_valid(),
       "Could not create logprior variable");
 
-  /* create p-vars */
-  type = static_cast<VarType>(P_VAR);
-  vars[type].resize(m.getNumVars(type));
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    var = m.getVar(type, id);
-    if (var->getIO()) {
-      vars[type][id] = new NcVarBuffer<real>(createVar(m.getVar(type, id)));
-    }
-  }
 }
 
-void ParticleMCMCNetCDFBuffer::map() {
-  int id;
+void ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
+  std::string name;
+  int id, i;
   VarType type;
+  Var* node;
+  Dim* dim;
+
+  /* dimensions */
+  BI_ERROR(hasDim("nr"), "File must have nr dimension");
+  nrDim = mapDim("nr", T);
+  for (i = 0; i < m.getNumDims(); ++i) {
+    dim = m.getDim(i);
+    BI_ERROR(hasDim(dim->getName().c_str()), "File must have " <<
+        dim->getName() << " dimension");
+    nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
+  }
+  BI_ERROR(hasDim("np"), "File must have np dimension");
+  npDim = mapDim("np", P);
+
+  /* time variable */
+  tVar = ncFile->get_var("time");
+  BI_ERROR(tVar != NULL && tVar->is_valid(),
+      "File does not contain variable time");
+  BI_ERROR(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
+      " dimensions, should have 1");
+  BI_ERROR(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time should be nr");
+
+  /* other variables */
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+    if (type == D_VAR || type == R_VAR || type == P_VAR) {
+      vars[type].resize(m.getNumVars(type), NULL);
+      for (id = 0; id < m.getNumVars(type); ++id) {
+        node = m.getVar(type, id);
+        if (hasVar(node->getName().c_str())) {
+          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
+        }
+      }
+    }
+  }
 
   llVar = ncFile->get_var("loglikelihood");
   BI_ERROR(llVar != NULL && llVar->is_valid(),
@@ -75,12 +140,6 @@ void ParticleMCMCNetCDFBuffer::map() {
   BI_ERROR(lpVar->get_dim(0) == npDim,
       "Dimension 0 of variable logprior should be np");
 
-  /* map p-vars */
-  type = static_cast<VarType>(P_VAR);
-  vars[type].resize(m.getNumVars(type));
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
-  }
 }
 
 void ParticleMCMCNetCDFBuffer::readLogLikelihood(const int k,

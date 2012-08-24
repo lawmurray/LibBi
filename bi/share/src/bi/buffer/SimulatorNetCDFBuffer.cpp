@@ -16,7 +16,6 @@ SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m,
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   /* pre-condition */
   assert (mode == READ_ONLY || mode == WRITE);
-
   map();
 }
 
@@ -63,7 +62,8 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
     vars[type].resize(m.getNumVars(type), NULL);
-    if (type == D_VAR || type == R_VAR) {
+
+    if (type == D_VAR || type == R_VAR || type == P_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->getIO()) {
@@ -104,7 +104,7 @@ void SimulatorNetCDFBuffer::map(const long P, const long T) {
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
-    if (type == D_VAR || type == R_VAR) {
+    if (type == D_VAR || type == R_VAR || type == P_VAR) {
       vars[type].resize(m.getNumVars(type), NULL);
       for (id = 0; id < m.getNumVars(type); ++id) {
         node = m.getVar(type, id);

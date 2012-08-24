@@ -77,6 +77,8 @@ else
   AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_OMP])
 fi
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
+#AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_TBB])
+#AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
 # ^ OpenMP very slow as at Thrust 1.6 due to numerous omp_get_num_threads() calls
 
 # Checks for programs.
