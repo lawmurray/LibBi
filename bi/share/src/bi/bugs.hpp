@@ -6,8 +6,11 @@
  * all variables.
  *
  * @todo smc^2 output has variables for states (e.g. alpha, P, Z) but they are
- * blank (FIXED).
+ * blank (fixed by removing D_VARS and R_VARS from SMC2 output).
  *
  * @todo ANPF filter.nc output has some garbage values (unaffected by recent
  * refactorization).
+ *
+ * @todo simulate and filter put P parameter values into the results file
+ * instead of one.
  * */
