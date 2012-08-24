@@ -45,6 +45,8 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
   Var* var;
   Dim* dim;
 
+  ncFile->add_att("data_format", "SIM");
+
   /* dimensions */
   nrDim = createDim("nr", T);
   for (i = 0; i < m.getNumDims(); ++i) {

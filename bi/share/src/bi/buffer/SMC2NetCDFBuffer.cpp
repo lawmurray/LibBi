@@ -38,6 +38,8 @@ void SMC2NetCDFBuffer::create() {
   VarType type;
   Var* var;
 
+  ncFile->add_att("data_format", "SMC2");
+
   /* create p-vars */
   type = static_cast<VarType>(P_VAR);
   vars[type].resize(m.getNumVars(type));

@@ -30,6 +30,8 @@ FlexiParticleFilterNetCDFBuffer::~FlexiParticleFilterNetCDFBuffer() {
 }
 
 void FlexiParticleFilterNetCDFBuffer::create() {
+  ncFile->add_att("data_format", "ANPF");
+
   aVar = ncFile->add_var("ancestor", ncInt, nrpDim);
   BI_ERROR(aVar != NULL && aVar->is_valid(),
       "Could not create variable ancestor");

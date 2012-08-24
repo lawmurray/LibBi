@@ -34,6 +34,8 @@ void ParticleMCMCNetCDFBuffer::create() {
   VarType type;
   Var* var;
 
+  ncFile->add_att("data_format", "PMCMC");
+
   llVar = ncFile->add_var("loglikelihood", netcdf_real, npDim);
   BI_ERROR(llVar != NULL && llVar->is_valid(),
       "Could not create loglikelihood variable");

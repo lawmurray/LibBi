@@ -30,6 +30,8 @@ ParticleFilterNetCDFBuffer::~ParticleFilterNetCDFBuffer() {
 }
 
 void ParticleFilterNetCDFBuffer::create() {
+  ncFile->add_att("data_format", "PF");
+
   aVar = ncFile->add_var("ancestor", ncInt, nrDim, npDim);
   BI_ERROR(aVar != NULL && aVar->is_valid(),
       "Could not create ancestor variable");
