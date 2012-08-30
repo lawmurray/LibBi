@@ -302,11 +302,14 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = p;
-      counts[j] = X.size1();
 
-      ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      if (ncVar->num_dims() > 0) {
+        offsets[j] = p;
+        counts[j] = X.size1();
+        
+        ret = ncVar->get_var()->set_cur(offsets.buf());
+        BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      }
 
       if (M1::on_device || X.lead() != X.size1()) {
         temp_matrix_type X1(X.size1(), size);

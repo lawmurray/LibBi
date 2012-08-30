@@ -51,9 +51,6 @@ void ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
   }
   npDim = createDim("np", P);
 
-  std::cerr << "nr = " << T << std::endl;
-  std::cerr << "np = " << P << std::endl;
-
   /* time variable */
   tVar = ncFile->add_var("time", netcdf_real, nrDim);
   BI_ERROR(tVar != NULL && tVar->is_valid(), "Could not create time variable");

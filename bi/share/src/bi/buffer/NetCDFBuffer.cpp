@@ -64,7 +64,7 @@ NcDim* NetCDFBuffer::createDim(const char* name) {
   return ncDim;
 }
 
-NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr) {
+NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np) {
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
   VarType type = var->getType();
@@ -79,7 +79,7 @@ NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr) {
   for (i = 0; i < var->getNumDims(); ++i) {
     dims.push_back(mapDim(var->getDim(i)->getName().c_str()));
   }
-  if (hasDim("np")) {
+  if (hasDim("np") && np) {
     dims.push_back(mapDim("np"));
   }
 

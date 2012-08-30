@@ -137,7 +137,7 @@ protected:
    *
    * @li if it exists, the @c ns dimension.
    */
-  NcVar* createVar(const Var* var, const bool nr = false);
+  NcVar* createVar(const Var* var, const bool nr = false, const bool np = true);
 
   /**
    * Create variable in NetCDF file using the flexible format.

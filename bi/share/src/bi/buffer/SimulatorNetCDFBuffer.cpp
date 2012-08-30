@@ -67,7 +67,12 @@ void SimulatorNetCDFBuffer::create(const long P, const long T) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->getIO()) {
-          vars[type][id] = new NcVarBuffer<real>(createVar(var));
+          if (type == P_VAR) {
+            vars[type][id] = new NcVarBuffer<real>(createVar(var,false,false));
+          } else {
+            vars[type][id] = new NcVarBuffer<real>(createVar(var));
+          }
+
         }
       }
     }
