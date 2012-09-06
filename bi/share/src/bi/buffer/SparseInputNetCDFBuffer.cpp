@@ -71,7 +71,7 @@ void bi::SparseInputNetCDFBuffer::mask() {
   if (isValid()) {
     t = getTime();
     BOOST_AUTO(iter, state.times.begin());
-    while (iter->first == t && iter != state.times.end()) {
+    while (iter != state.times.end() && iter->first == t) {
       tVar = iter->second;
       rDim = tDims[tVar];
       if (isSparse(rDim)) {

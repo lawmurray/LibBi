@@ -88,6 +88,8 @@ sub new {
         'disable-vampir' => sub { $self->{_vampir} = 0 },
         'enable-single' => sub { $self->{_single} = 1 },
         'disable-single' => sub { $self->{_single} = 0 },
+        'enable-extradebug' => sub { $self->{_extradebug} = 1 },
+        'disable-extradebug' => sub { $self->{_extradebug} = 0 },
     );
     GetOptions(@args) || die("could not read command line arguments\n");
 
@@ -100,6 +102,7 @@ sub new {
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
+    push(@builddir, 'extradebug') if $self->{_extradebug};
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
     mkpath($self->{_builddir});
@@ -210,6 +213,11 @@ sub _configure {
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
+    $options .= $self->{_extradebug} ? ' --enable-extradebug' : ' --disable-extradebug';
+    
+    if ($self->{_extradebug}) {
+    	$cxxflags = '-O0 -g3 -fno-inline -D_GLIBCXX_DEBUG';
+    }
 
     if (!$self->{_verbose}) {
         $options .= ' > configure.log 2>&1'; 

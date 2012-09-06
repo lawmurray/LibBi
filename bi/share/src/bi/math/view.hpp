@@ -9,7 +9,9 @@
 #define BI_MATH_VIEW_HPP
 
 #include "../host/math/matrix.hpp"
+#ifdef ENABLE_CUDA
 #include "../cuda/math/matrix.hpp"
+#endif
 
 #include "boost/mpl/if.hpp"
 

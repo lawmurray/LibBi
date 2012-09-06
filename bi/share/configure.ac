@@ -68,6 +68,14 @@ AC_ARG_ENABLE([vampir],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-vampir]) ;;
      esac],[vampir=false])
      
+AC_ARG_ENABLE([extradebug],
+     [  --enable-extradebug         debugging options to compiler],
+     [case "${enableval}" in
+       yes) extradebug=true ;;
+       no)  extradebug=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-extradebug]) ;;
+     esac],[extradebug=false])
+     
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
@@ -255,6 +263,7 @@ AM_CONDITIONAL([ENABLE_MKL], [test x$mkl = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])
+AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
 
 # Variables for automake
 AC_SUBST([CUDA_CPPFLAGS], $CUDA_CPPFLAGS)

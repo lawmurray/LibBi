@@ -66,7 +66,8 @@ void bi::SparseStaticMaxLogDensityHost<B,S>::maxLogDensities(
 
 #pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(mask, s, p, pax, x, lp(p));
+//      Visitor::accept(mask, s, p, pax, x, lp(p));
+      Visitor::accept(s, mask, p, pax, x, lp(p));
     }
   }
   unbind(s);

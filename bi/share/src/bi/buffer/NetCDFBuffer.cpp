@@ -81,8 +81,12 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np)
     dims.push_back(mapDim("np"));
   }
 
-  ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),
+  if (dims.size() != 0) {
+    ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),
       &dims[0]);
+  } else {
+    ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real);
+  }
   BI_ERROR(ncVar != NULL && ncVar->is_valid(), "Could not create variable " <<
       var->getName());
 
