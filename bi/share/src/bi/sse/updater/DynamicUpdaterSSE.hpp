@@ -30,30 +30,39 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../sse_const_host.hpp"
-#include "../../state/Pa.hpp"
-#include "../../host/updater/DynamicUpdaterVisitorHost.hpp"
 #include "../../host/bind.hpp"
+#include "../../host/updater/DynamicUpdaterVisitorHost.hpp"
+#include "../../host/updater/DynamicUpdaterMatrixVisitorHost.hpp"
+#include "../../state/Pa.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 
 template<class B, class S>
 template<class T1>
 void bi::DynamicUpdaterSSE<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   /* pre-condition */
-  assert (t1 <= t2);
+  BI_ASSERT(t1 <= t2);
 
-  typedef Pa<ON_HOST,B,sse_real,sse_const_host,sse_host,sse_host,sse_host> PX;
-  typedef Ox<ON_HOST,B,sse_real,sse_host> OX;
-  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
+  typedef Ou<ON_HOST,B,sse_host> OX;
+  typedef DynamicUpdaterMatrixVisitorHost<B,S,T1,PX,OX> MatrixVisitor;
+  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
-  int p;
-  PX pax;
-  OX x;
   bind(s);
 
-  #pragma omp parallel for private(p, pax)
-  for (p = 0; p < s.size(); p += BI_SSE_SIZE) {
-    Visitor::accept(t1, t2, p, pax, x);
+  #pragma omp parallel
+  {
+    int p;
+    PX pax;
+    OX x;
+
+    #pragma omp for
+    for (p = 0; p < s.size(); p += BI_SSE_SIZE) {
+      Visitor::accept(t1, t2, s, p, pax, x);
+    }
   }
   unbind(s);
 }

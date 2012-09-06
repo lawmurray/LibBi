@@ -117,7 +117,6 @@ private:
 #include "../../math/temp_vector.hpp"
 #include "../../math/temp_matrix.hpp"
 #include "../../math/view.hpp"
-#include "../../math/io.hpp"
 
 #include "boost/mpi/nonblocking.hpp"
 #include "boost/mpi/collectives.hpp"
@@ -211,8 +210,8 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
     /* determine number of offspring to transfer */
     recvn = P - Ps(recvj);  // max to receive
-    sendn = std::min(Ps(sendj) - P, O(sendi, sendr));  // max to send
-    n = std::min(recvn, sendn);  // actual to transfer
+    sendn = bi::min(Ps(sendj) - P, O(sendi, sendr));  // max to send
+    n = bi::min(recvn, sendn);  // actual to transfer
 
     /* update offspring */
     O(sendi, sendr) -= n;
@@ -221,8 +220,8 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
     /* update particle counts */
     Ps(sendj) -= n;
     Ps(recvj) += n;
-    assert(Ps(sendj) >= P);
-    assert(Ps(recvj) <= P);
+    BI_ASSERT(Ps(sendj) >= P);
+    BI_ASSERT(Ps(recvj) <= P);
 
     /* transfer particle */
     if (rank == recvr) {

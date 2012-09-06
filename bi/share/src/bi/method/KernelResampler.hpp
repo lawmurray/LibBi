@@ -122,7 +122,7 @@ template<class V1, class V2, class B, bi::Location L>
 void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
     State<B,L>& s) {
   /* pre-condition */
-  assert (lws.size() == s.size());
+  BI_ASSERT(lws.size() == s.size());
 
   typedef typename State<B,L>::value_type T3;
   typedef typename loc_temp_matrix<L,T3>::type M3;
@@ -171,20 +171,20 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
 template<class R>
 template<class V1, class V2, class B, bi::Location L>
 void bi::KernelResampler<R>::resample(Random& rng, const int a, V1 lws, V2 as, State<B,L>& s) {
-  assert(false);
+  BI_ASSERT(false);
 }
 
 template<class R>
 template<class V1, class V2, class V3, class B, bi::Location L>
 void bi::KernelResampler<R>::resample(Random& rng, const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
-  assert(false);
+  BI_ASSERT(false);
 }
 
 template<class R>
 template<class V1, class V2, class V3, class B, bi::Location L>
 void bi::KernelResampler<R>::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
-  assert(false);
+  BI_ASSERT(false);
 }
 
 template<class R>

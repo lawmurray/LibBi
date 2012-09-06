@@ -12,9 +12,7 @@
 
 #include "LogTransformPdf.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 #include <set>
 
@@ -116,7 +114,6 @@ public:
   real operator()(const V2 x1, const V3 x2);
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -134,7 +131,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -143,12 +139,9 @@ private:
 #include "../math/misc.hpp"
 #include "../math/view.hpp"
 #include "../math/sim_temp_vector.hpp"
-
-#ifndef __CUDACC__
-#include "boost/serialization/set.hpp"
-#endif
-
 #include "../misc/assert.hpp"
+
+#include "boost/serialization/set.hpp"
 
 #include <algorithm>
 
@@ -212,7 +205,7 @@ real bi::LogTransformConditionalPdf<Q1>::density(const V2 x1,
   if (!BI_IS_FINITE(p)) {
     p = 0.0;
   }
-  assert(p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -245,7 +238,7 @@ real bi::LogTransformConditionalPdf<Q1>::logDensity(const V2 x1,
   if (!BI_IS_FINITE(p)) {
     p = 0.0;
   }
-  assert(p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -265,7 +258,6 @@ real bi::LogTransformConditionalPdf<Q1>::operator()(const V2 x1,
   return density(x1, x2);
 }
 
-#ifndef __CUDACC__
 template<class Q1>
 template<class Archive>
 void bi::LogTransformConditionalPdf<Q1>::save(Archive& ar, const unsigned version) const {
@@ -277,6 +269,5 @@ template<class Archive>
 void bi::LogTransformConditionalPdf<Q1>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<LogTransformPdf<Q1> >(*this);
 }
-#endif
 
 #endif

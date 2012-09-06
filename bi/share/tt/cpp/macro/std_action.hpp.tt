@@ -1,0 +1,18 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO std_action BLOCK %]
+  /**
+   * Target type.
+   */
+  typedef Var[% action.get_target.get_var.get_name %] target_type;
+
+  /**
+   * Is this a matrix action?
+   */
+  static const bool IS_MATRIX = [% action.is_matrix %];
+[%-END-%]

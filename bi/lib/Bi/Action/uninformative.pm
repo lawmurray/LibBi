@@ -31,7 +31,7 @@ sub validate {
     $self->process_args($ACTION_ARGS);
     
     $self->ensure_op('~');
-    $self->set_parent('uninformative_');
+    $self->set_parent('pdf_');
     $self->set_can_combine(1);
 }
 

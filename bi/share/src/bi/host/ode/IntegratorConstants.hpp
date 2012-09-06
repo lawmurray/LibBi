@@ -10,7 +10,6 @@
 #ifndef BI_HOST_ODE_INTEGRATORCONSTANTS_HPP
 #define BI_HOST_ODE_INTEGRATORCONSTANTS_HPP
 
-#include "../../cuda/cuda.hpp"
 #include "../../math/scalar.hpp"
 
 /**
@@ -164,7 +163,7 @@ void h_ode_set_facr(const real facrin);
  *
  * @ingroup method_updater
  */
-void h_ode_set_nsteps(const int nsteps);
+void h_ode_set_nsteps(const int nstepsin);
 
 #ifdef __CUDACC__
 #include "../../cuda/ode/IntegratorConstants.cuh"

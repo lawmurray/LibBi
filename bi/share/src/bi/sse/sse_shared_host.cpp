@@ -7,4 +7,4 @@
  */
 #include "sse_shared_host.hpp"
 
-BI_THREAD bi::host_vector<bi::sse_real>* sseSharedHostState = NULL;
+BI_THREAD bi::host_vector_reference<bi::sse_real>* sseSharedHostState = NULL;

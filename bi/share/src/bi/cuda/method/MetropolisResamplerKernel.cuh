@@ -50,7 +50,7 @@ CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(const V1 lws,
 #include "thrust/random.h"
 
 template<class V1, class V3>
-void bi::kernelMetropolisResamplerAncestors(const V1 lws,
+CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(const V1 lws,
     const int seed, const int P, const int C, V3 as) {
   const int tid = blockIdx.x*blockDim.x + threadIdx.x; // global id
   int c, p1, p2;
@@ -70,7 +70,7 @@ void bi::kernelMetropolisResamplerAncestors(const V1 lws,
     for (c = 0; c < C; ++c) {
       p2 = (int)(P*alpha(rng));
       lw2 = lws[p2];
-      a = BI_MATH_EXP(lw2 - lw1);
+      a = bi::exp(lw2 - lw1);
       if (alpha(rng) < a) {
         p1 = p2;
         lw1 = lw2;

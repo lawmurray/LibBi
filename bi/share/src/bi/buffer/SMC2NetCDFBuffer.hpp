@@ -218,37 +218,37 @@ void bi::SMC2NetCDFBuffer::writeSample(const int p, const V1 theta) {
 template<class V1>
 void bi::SMC2NetCDFBuffer::readLogWeights(V1 lws) {
   /* pre-conditions */
-  assert (lws.size() == npDim->size());
+  BI_ASSERT(lws.size() == npDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(0l);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable logweight");
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable logweight");
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
     ret = lwVar->get(lws1.buf(), npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading variable logweight");
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable logweight");
     lws = lws1;
   } else {
     ret = lwVar->get(lws.buf(), npDim->size());
-    BI_ASSERT(ret, "Inconvertible type reading variable logweight");
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable logweight");
   }
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeLogWeights(const V1 lws) {
   /* pre-conditions */
-  assert (lws.size() == npDim->size());
+  BI_ASSERT(lws.size() == npDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(0l);
-  BI_ASSERT(ret, "Indexing out of bounds writing variable logweight");
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable logweight");
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
@@ -258,13 +258,13 @@ void bi::SMC2NetCDFBuffer::writeLogWeights(const V1 lws) {
   } else {
     ret = lwVar->put(lws.buf(), npDim->size());
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable logweight");
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable logweight");
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeLogWeights(const int timeindex, const V1 lws) {
   /* pre-conditions */
-  assert (lws.size() == npDim->size());
+  BI_ASSERT(lws.size() == npDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -279,13 +279,13 @@ void bi::SMC2NetCDFBuffer::writeLogWeights(const int timeindex, const V1 lws) {
   } else {
     ret = lwVar->put_rec(lws.buf(), timeindex);
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable logweight");
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable logweight");
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeNumberX(const int timeindex, const V1 numberx) {
   /* pre-conditions */
-  assert (numberx.size() == npDim->size());
+  BI_ASSERT(numberx.size() == npDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -300,7 +300,7 @@ void bi::SMC2NetCDFBuffer::writeNumberX(const int timeindex, const V1 numberx) {
   } else {
     ret = numberxVar->put_rec(numberx.buf(), timeindex);
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable numberx");
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable numberx");
 }
 
 template<class V1>
@@ -309,7 +309,7 @@ void bi::SMC2NetCDFBuffer::writeVector(NcVar* var, NcDim* dim, const V1 vector){
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
   BI_UNUSED NcBool ret;
   ret = var->set_cur(0l);
-  BI_ASSERT(ret, "Indexing out of bounds writing vector");
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing vector");
   if (V1::on_device || vector.inc() != 1) {
     temp_vector_type vector1(vector.size());
     vector1 = vector;
@@ -318,7 +318,7 @@ void bi::SMC2NetCDFBuffer::writeVector(NcVar* var, NcDim* dim, const V1 vector){
   } else {
     ret = var->put(vector.buf(), dim->size());
   }
-  BI_ASSERT(ret, "Inconvertible type writing vector");
+  BI_ASSERT_MSG(ret, "Inconvertible type writing vector");
 }
 
 template<class M1>
@@ -362,17 +362,17 @@ void bi::SMC2NetCDFBuffer::readState(const VarType type, const int t,
       counts[j] = X.size1();
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         ret = ncVar->get_var()->get(X1.buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
         columns(X, start, size) = X1;
       } else {
         ret = ncVar->get_var()->get(columns(X, start, size).buf(),
             counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       }
     }
   }
@@ -419,9 +419,9 @@ void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
       counts[j] = X.size1();
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         X1 = columns(X, start, size);
         synchronize(M1::on_device);
@@ -430,7 +430,7 @@ void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
         ret = ncVar->get_var()->put(columns(X, start, size).buf(),
             counts.buf());
       }
-      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     }
   }
 }

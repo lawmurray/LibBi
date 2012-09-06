@@ -100,6 +100,9 @@ sub _augment {
         # search for index that corresponds to the target of this action
         my $j = find($vars, $action->get_target->get_var);
         assert ($j >= 0);
+
+        $J_new->set($j, $j, new Bi::Expression::Literal(0));
+        $J->set($j, $j, new Bi::Expression::Literal(0));            
         
         # mean
         my $mean = $action->mean;
@@ -111,8 +114,10 @@ sub _augment {
         my $std = $action->std;
         if (defined $std) {
             $S->set($j, $j, $std);
+            $J_new->set($j, $j, new Bi::Expression::Literal(1));
+            $J->set($j, $j, undef);            
         }
-                
+
         # Jacobian
         my ($ds, $refs) = $action->jacobian;
         for (my $k = 0; $k < @$ds; ++$k) {

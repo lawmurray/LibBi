@@ -40,8 +40,8 @@ enum FilterMode {
  */
 class ParticleMarginalMetropolisHastingsState {
 public:
-  typedef host_vector<real, pinned_allocator<real> > vector_type;
-  typedef host_matrix<real, pinned_allocator<real> > matrix_type;
+  typedef host_vector<real> vector_type;
+  typedef host_matrix<real> matrix_type;
 
   /**
    * Constructor.
@@ -482,9 +482,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample(Random& rng,
   init(rng, s, filter, inInit);
   for (c = 0; c < C; ++c) {
     step(rng, T, s, filter, filterMode);
-    //    if (c % 1000 == 0) {
     report(c);
-    //    }
     output(c);
     s.setRange(0,P);
   }
@@ -542,14 +540,14 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::propose(Random& rng,
   /* reverse proposal log-density */
   lp.clear();
   row(s.get(P_VAR), 0) = subrange(x2.theta, 0, NP);
-  row(s.getAlt(P_VAR), 0) = subrange(x1.theta, 0, NP);
+  row(s.get(PY_VAR), 0) = subrange(x1.theta, 0, NP);
   m.proposalParameterLogDensities(s, lp);
   x1.lq = *lp.begin();
 
   /* proposal log-density */
   lp.clear();
   row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
-  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  row(s.get(PY_VAR), 0) = subrange(x2.theta, 0, NP);
   m.proposalParameterLogDensities(s, lp);
   x2.lq = *lp.begin();
   s.setRange(0, P);
@@ -564,7 +562,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computePriorOnProposal(St
   /* prior log-density */
   typename loc_temp_vector<L,real>::type lp(1);
   lp.clear();
-  row(s.getAlt(P_VAR), 0) = subrange(x2.theta, 0, NP);
+  row(s.get(PY_VAR), 0) = subrange(x2.theta, 0, NP);
   m.parameterLogDensities(s, lp);
   x2.lp = *lp.begin();
   s.setRange(0, P);
@@ -627,7 +625,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computeAcceptReject(Rando
     real logratio = loglr + logpr + logqr;
     real u = rng.uniform<real>();
 
-    result = std::log(u) < logratio;
+    result = bi::log(u) < logratio;
   }
   if (result) {
     accept(rng, filter);
@@ -642,8 +640,8 @@ template<bi::Location L, class F>
 bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step(Random& rng,
     const real T, State<B,L>& s, F* filter, const FilterMode filtermode) {
   /* pre-conditions */
-  assert(filter->getOutput() != NULL);
-  assert(out == NULL || filter->getOutput()->size2() == out->size2());
+  BI_ASSERT(filter->getOutput() != NULL);
+  BI_ASSERT(out == NULL || filter->getOutput()->size2() == out->size2());
   // propose new parameter value
   // and compute the proposal density and its reverse
   propose(rng, s);
@@ -671,7 +669,7 @@ template<bi::Location L, class F>
 bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step_together(Random& rng,
     const real T, State<B,L>& s, F* filter) {
   /* pre-conditions */
-  assert(out == NULL || filter->getOutput()->size2() == out->size2());
+  BI_ASSERT(out == NULL || filter->getOutput()->size2() == out->size2());
 
   typename temp_host_vector<real>::type lp(1);
 
@@ -704,7 +702,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::step_together(Random& rng
     real logratio = loglr + logpr + logqr;
     real u = rng.uniform<real>();
 
-    result = std::log(u) < logratio;
+    result = bi::log(u) < logratio;
   }
 
   if (result) {

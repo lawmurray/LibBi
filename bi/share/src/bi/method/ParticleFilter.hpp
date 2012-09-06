@@ -112,20 +112,20 @@ public:
   real filter(Random& rng, const real T, State<B,L>& s, IO4* inInit);
 
   /**
-   * %Filter forward, with fixed starting point.
+   * %Filter forward, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
    * @param T Time to which to filter.
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param[out] s State.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class V1>
-  real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s);
+  real filter(Random& rng, const real T, const V1 theta, State<B,L>& s);
 
   /**
    * Filter forward conditioned on trajectory.
@@ -145,7 +145,7 @@ public:
    * "Andrieu, Doucet \& Holenstein (2010)".
    */
   template<bi::Location L, class V1, class M1>
-  real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s,
+  real filter(Random& rng, const real T, const V1 theta, State<B,L>& s,
       M1 xd, M1 xr);
 
   /**
@@ -240,7 +240,7 @@ public:
   void init(Random& rng, State<B,L>& s, V1 lws, V2 as, IO4* inInit);
 
   /**
-   * Initialise, with fixed starting point.
+   * Initialise, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
@@ -248,14 +248,14 @@ public:
    * @tparam V3 Vector type.
    *
    * @param rng Random number generator.
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param s State.
    * @param[out] lws Log-weights.
    * @param[out] as Ancestry.
    * @param inInit Initialisation file.
    */
   template<Location L, class V1, class V2, class V3>
-  void init(Random& rng, const V1 theta0, State<B,L>& s, V2 lws, V3 as);
+  void init(Random& rng, const V1 theta, State<B,L>& s, V2 lws, V3 as);
 
   /**
    * Predict.
@@ -499,8 +499,8 @@ bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::ParticleFilter(B& m, R* resam,
     essRel(essRel),
     out(out) {
   /* pre-conditions */
-  assert (essRel >= 0.0 && essRel <= 1.0);
-  assert (obs != NULL);
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
+  BI_ASSERT(obs != NULL);
 
   reset();
 }
@@ -574,8 +574,8 @@ template<bi::Location L, class IO4>
 real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
     State<B,L>& s, IO4* inInit) {
   /* pre-conditions */
-  assert (T >= state.t);
-  assert (essRel >= 0.0 && essRel <= 1.0);
+  BI_ASSERT(T >= state.t);
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
 
   const int P = s.size();
   int n = 0, r = 0;
@@ -588,7 +588,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   output0(s);
   while (state.t < T) {
     r = step(rng, T, s, lws, as, n);
-    ll += logsumexp_reduce(lws) - std::log(P);
+    ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(P));
     output(n, s, r, lws, as);
     ++n;
   }
@@ -601,10 +601,10 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-    const V1 theta0, State<B,L>& s) {
+    const V1 theta, State<B,L>& s) {
   /* pre-conditions */
-  assert (T >= state.t);
-  assert (essRel >= 0.0 && essRel <= 1.0);
+  BI_ASSERT(T >= state.t);
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
 
   const int P = s.size();
   int n = 0, r = 0;
@@ -613,13 +613,13 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   typename loc_temp_vector<L,int>::type as(P);
 
   real ll = 0.0;
-  init(rng, theta0, s, lws, as);
+  init(rng, theta, s, lws, as);
   output0(s);
   while (state.t < T) {
     r = n > 0 && resample(rng, s, lws, as);
     predict(rng, T, s);
     correct(s, lws);
-    ll += logsumexp_reduce(lws) - std::log(P);
+    ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(P));
     output(n, s, r, lws, as);
     ++n;
   }
@@ -632,9 +632,9 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class M1>
 real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-    const V1 theta0, State<B,L>& s, M1 xd, M1 xr) {
+    const V1 theta, State<B,L>& s, M1 xd, M1 xr) {
   /* pre-conditions */
-  assert (T >= state.t);
+  BI_ASSERT(T >= state.t);
 
   int n = 0, r = 0, a = 0;
 
@@ -642,7 +642,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   typename loc_temp_vector<L,int>::type as(s.size());
 
   real ll = 0.0;
-  init(rng, theta0, s, lws, as);
+  init(rng, theta, s, lws, as);
   output0(s);
   while (state.t < T) {
     r = n > 0 && resample(rng, s, a, lws, as);
@@ -653,7 +653,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
     row(s.get(R_VAR), 0) = column(xr, n);
 
     correct(s, lws);
-    ll += logsumexp_reduce(lws) - std::log(s.size());
+    ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
     output(n, s, r, lws, as);
     ++n;
   }
@@ -697,7 +697,7 @@ template<bi::Location L, class V1, class V2, class IO4>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng, State<B,L>& s,
     V1 lws, V2 as, IO4* inInit) {
   /* pre-condition */
-  assert (lws.size() == as.size());
+  BI_ASSERT(lws.size() == as.size());
 
   sim.init(rng, s, inInit);
   lws.clear();
@@ -706,12 +706,12 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng, State<B,L>& s,
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class V2, class V3>
-void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng, const V1 theta0,
+void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::init(Random& rng, const V1 theta,
     State<B,L>& s, V2 lws, V3 as) {
   /* pre-condition */
-  assert (lws.size() == as.size());
+  BI_ASSERT(lws.size() == as.size());
 
-  sim.init(rng, theta0, s);
+  sim.init(rng, theta, s);
   lws.clear();
   seq_elements(as, 0);
 }
@@ -734,14 +734,14 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::predict(Random& rng,
   }
 
   /* post-condition */
-  assert (sim.getTime() == state.t);
+  BI_ASSERT(sim.getTime() == state.t);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::correct(State<B,L>& s, V1 lws) {
   /* pre-condition */
-  assert (s.size() == lws.size());
+  BI_ASSERT(s.size() == lws.size());
 
   /* update observations at current time */
   if (oyUpdater.getTime() == getTime()) {
@@ -754,7 +754,7 @@ template<bi::Location L, class V1, class V2>
 bool bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::resample(Random& rng,
     State<B,L>& s, V1 lws, V2 as) {
   /* pre-condition */
-  assert (s.size() == lws.size());
+  BI_ASSERT(s.size() == lws.size());
 
   bool r = resam != NULL && (essRel >= 1.0 || resam->ess(lws) <= s.size()*essRel);
   if (r) {
@@ -771,8 +771,8 @@ template<bi::Location L, class V1, class V2>
 bool bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::resample(Random& rng,
     State<B,L>& s, const int a, V1 lws, V2 as) {
   /* pre-condition */
-  assert (s.size() == lws.size());
-  assert (a == 0);
+  BI_ASSERT(s.size() == lws.size());
+  BI_ASSERT(a == 0);
 
   bool r = resam != NULL && (essRel >= 1.0 || resam->ess(lws) <= s.size()*essRel);
   if (r) {
@@ -789,12 +789,10 @@ template<bi::Location L, class V1, class V2>
 int bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::step(Random& rng, const real T,
     State<B,L>& s, V1 lws, V2 as, int n) {
   /* pre-conditions */
-  assert (T >= state.t);
-  assert (essRel >= 0.0 && essRel <= 1.0);
+  BI_ASSERT(T >= state.t);
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
 
-  int r = 0;
-
-  r = n > 0 && resample(rng, s, lws, as);
+  int r = n > 0 && resample(rng, s, lws, as);
   predict(rng, T, s);
   correct(s, lws);
 
@@ -806,7 +804,7 @@ template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::output(const int k,
     const State<B,L>& s, const int r, const V1 lws, const V2 as) {
   if (out != NULL) {
-    assert(lws.size() == as.size());
+    BI_ASSERT(lws.size() == as.size());
     sim.output(k, s);
     resamplingCache.put(k, r);
     logWeightsCache.put(k, lws);
@@ -825,7 +823,7 @@ template<class V1>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::normalise(V1 lws) {
   typedef typename V1::value_type T1;
   T1 lW = logsumexp_reduce(lws);
-  addscal_elements(lws, static_cast<T1>(log(lws.size()) - lW));
+  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
@@ -836,18 +834,18 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::flush() {
 
     sim.flush();
 
-    assert (resamplingCache.isValid());
+    BI_ASSERT(resamplingCache.isValid());
     out->writeResamples(0, resamplingCache.getPages());
     resamplingCache.clean();
 
     for (k = 0; k < logWeightsCache.size(); ++k) {
-      assert (logWeightsCache.isValid(k));
+      BI_ASSERT(logWeightsCache.isValid(k));
       out->writeLogWeights(k, logWeightsCache.get(k));
     }
     logWeightsCache.clean();
 
     for (k = 0; k < ancestorsCache.size(); ++k) {
-      assert (ancestorsCache.isValid(k));
+      BI_ASSERT(ancestorsCache.isValid(k));
       out->writeAncestors(k, ancestorsCache.get(k));
     }
     ancestorsCache.clean();

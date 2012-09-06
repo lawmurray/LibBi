@@ -12,9 +12,7 @@
 
 #include "GaussianPdf.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 #include <set>
 
@@ -140,7 +138,6 @@ public:
   real operator()(const V2 x1, const V3 x2);
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -158,7 +155,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -242,7 +238,7 @@ real bi::AdditiveGaussianPdf<V1,M1>::density(const V2 x1, const V3 x2) {
   }
 
   /* post-condition */
-  assert(p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -282,7 +278,6 @@ real bi::AdditiveGaussianPdf<V1,M1>::operator()(const V2 x1, const V3 x2) {
   return density(x1, x2);
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1>
 template<class Archive>
 void bi::AdditiveGaussianPdf<V1,M1>::save(Archive& ar,
@@ -296,6 +291,5 @@ void bi::AdditiveGaussianPdf<V1,M1>::load(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object<ExpGaussianPdf<V1,M1> >(*this);
 }
-#endif
 
 #endif

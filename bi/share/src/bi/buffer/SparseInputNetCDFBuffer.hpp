@@ -372,7 +372,7 @@ private:
 
 inline bool bi::SparseInputNetCDFBuffer::isSparse(const int rDim) {
   /* pre-condition */
-  assert (rDim >= 0 && rDim < (int)rDims.size());
+  BI_ASSERT(rDim >= 0 && rDim < (int)rDims.size());
 
   return cAssoc[rDim] != -1;
 }
@@ -402,7 +402,7 @@ template<class M1>
 void bi::SparseInputNetCDFBuffer::read(const VarType type,
     mask_type& mask, M1 X) {
   /* pre-condition */
-  assert (X.size2() == m.getNetSize(type));
+  BI_ASSERT(X.size2() == m.getNetSize(type));
 
   Var* var;
   int id, start, size;
@@ -423,7 +423,7 @@ template<class V1>
 void bi::SparseInputNetCDFBuffer::readContiguous(const VarType type,
     mask_type& mask, V1 x) {
   /* pre-condition */
-  assert (x.size() == mask.size());
+  BI_ASSERT(x.size() == mask.size());
 
   int id, start = 0, size;
   for (id = 0; id < m.getNumVars(type); ++id) {
@@ -441,7 +441,7 @@ template<class M1>
 void bi::SparseInputNetCDFBuffer::readDense(const VarType type, const int id,
     M1 X) {
   /* pre-condition */
-  assert (X.size2() == m.getVar(type, id)->getSize());
+  BI_ASSERT(X.size2() == m.getVar(type, id)->getSize());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -485,11 +485,11 @@ void bi::SparseInputNetCDFBuffer::readDense(const VarType type, const int id,
   /* np dimension */
   if (j < ncVar->num_dims() && npDim != NULL && ncVar->get_dim(j) == npDim) {
     if (np >= 0) {
-      assert (X.size1() == 1);
+      BI_ASSERT(X.size1() == 1);
       offsets[j] = np;
       counts[j] = 1;
     } else {
-      assert (X.size1() <= npDim->size());
+      BI_ASSERT(X.size1() <= npDim->size());
       offsets[j] = 0;
       counts[j] = X.size1();
       haveP = true;
@@ -499,21 +499,21 @@ void bi::SparseInputNetCDFBuffer::readDense(const VarType type, const int id,
 
   /* read */
   ret = ncVar->set_cur(offsets.buf());
-  BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
   if (!haveP && X.size1() > 1) {
     temp_vector_type x1(X.size2());
     ret = ncVar->get(x1.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     set_rows(X, x1);
-  } else if (M1::on_device || X.lead() != X.size1()) {
+  } else if (M1::on_device || !X.contiguous()) {
     temp_matrix_type X1(X.size1(), X.size2());
     ret = ncVar->get(X1.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     X = X1;
   } else {
     ret = ncVar->get(X.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
   }
 }
 
@@ -521,8 +521,8 @@ template<class V2, class M2>
 void bi::SparseInputNetCDFBuffer::readSparse(const VarType type,
     const int id, const V2 indices, M2 X) {
   /* pre-condition */
-  assert (X.size2() == m.getVar(type, id)->getSize());
-  assert (!V2::on_device);
+  BI_ASSERT(X.size2() == m.getVar(type, id)->getSize());
+  BI_ASSERT(!V2::on_device);
 
   typedef typename M2::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -560,11 +560,11 @@ void bi::SparseInputNetCDFBuffer::readSparse(const VarType type,
   /* np dimension */
   if (npDim != NULL && ncVar->get_dim(j) == npDim) {
     if (np >= 0) {
-      assert (X.size1() == 1);
+      BI_ASSERT(X.size1() == 1);
       offsets[j] = np;
       counts[j] = 1;
     } else {
-      assert (X.size1() <= npDim->size());
+      BI_ASSERT(X.size1() <= npDim->size());
       offsets[j] = 0;
       counts[j] = X.size1();
       size *= counts[j];
@@ -575,9 +575,9 @@ void bi::SparseInputNetCDFBuffer::readSparse(const VarType type,
   /* contiguous read */
   temp_vector_type buf(size);
   ret = ncVar->set_cur(offsets.buf());
-  BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
   ret = ncVar->get(buf.buf(), counts.buf());
-  BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
 
   /* copy into place using coordinates */
   if ((npDim == NULL || ncVar->get_dim(j - 1) != npDim) && X.size1() > 1) {
@@ -648,20 +648,20 @@ void bi::SparseInputNetCDFBuffer::readContiguousDense(const VarType type,
     }
     ++j;
   }
-  assert (x.size() == size);
+  BI_ASSERT(x.size() == size);
 
   /* read */
   ret = ncVar->set_cur(offsets.buf());
-  BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
   if (V2::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
     ret = ncVar->get(x1.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     x = x1;
   } else {
     ret = ncVar->get(x.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
   }
 }
 
@@ -712,17 +712,17 @@ void bi::SparseInputNetCDFBuffer::readContiguousSparse(const VarType type,
     }
     ++j;
   }
-  assert(x.size() == size);
+  BI_ASSERT(x.size() == size);
 
   /* contiguous read */
   if (V2::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
     ret = ncVar->get(x1.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     x = x1;
   } else {
     ret = ncVar->get(x.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
   }
 }
 
@@ -739,9 +739,9 @@ template<class V1>
 void bi::SparseInputNetCDFBuffer::readIndices(const int rDim, const int start,
     const int len, V1& x) {
   /* pre-condition */
-  assert (rDim >= 0 && rDim < (int)rDims.size());
-  assert (start >= 0 && len >= 0);
-  assert (isSparse(rDim));
+  BI_ASSERT(rDim >= 0 && rDim < (int)rDims.size());
+  BI_ASSERT(start >= 0 && len >= 0);
+  BI_ASSERT(isSparse(rDim));
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -780,16 +780,16 @@ void bi::SparseInputNetCDFBuffer::readIndices(const int rDim, const int start,
 
   /* read */
   ret = ncVar->set_cur(offsets.buf());
-  BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
     ret = ncVar->get(x1.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     x = x1;
   } else {
     ret = ncVar->get(x.buf(), counts.buf());
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
   }
 }
 

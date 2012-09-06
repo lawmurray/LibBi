@@ -75,4 +75,24 @@
  * number of observations.
  *
  * @todo Automatically create directories for --output-file option.
+ *
+ * @todo Review init file semantics. In particular, values from file should
+ * be written into alternative buffer, then the block simulated to ensure
+ * that variables not in the file (such as precomutes added by GenBi) are
+ * consistent.
+ *
+ * @todo Try GPU permute with atomicExch() instead of atomicCAS().
+ *
+ * @todo Eliminate Coord structs in actions when not required, see if
+ * improves GPU performance.
+ *
+ * @todo Remove predict client, replace with cleverer init-file handling that
+ * allows simulate client to pick up where it left off.
+ *
+ * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
+ *
+ * @todo Give error if non-existent config file is given on command line.
+ *
+ * @todo Fix issue where hidden directory needs to be deleted if ./autogen.sh
+ * or ./configure fails (or user hits Ctrl-C during one of these processes).
  */

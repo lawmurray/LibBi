@@ -26,12 +26,13 @@ public:
    *
    * @param t1 Start of time interval.
    * @param t2 End of time interval.
+   * @param s State.
    * @param p Trajectory id.
    * @param i Variable id.
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(const T1 t1, const T1 t2, const int p,
+  static CUDA_FUNC_DEVICE void accept(const T1 t1, const T1 t2, State<B,ON_DEVICE>& s, const int p,
       const int i, const PX& pax, OX& x);
 };
 
@@ -43,7 +44,7 @@ public:
 template<class B, class T1, class PX, class OX>
 class DynamicUpdaterVisitorGPU<B,empty_typelist,T1,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(const T1 t1, const T1 t2, const int p,
+  static CUDA_FUNC_DEVICE void accept(const T1 t1, const T1 t2, State<B,ON_DEVICE>& s, const int p,
       const int i, const PX& pax, OX& x) {
     //
   }
@@ -56,7 +57,7 @@ public:
 
 template<class B, class S, class T1, class PX, class OX>
 inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
-    const T1 t2, const int p, const int i, const PX& pax, OX& x) {
+    const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -64,11 +65,10 @@ inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
   const int size = var_size<target_type>::value;
 
   if (i < size) {
-    coord_type cox;
-    cox.setIndex(i);
-    front::f(t1, t2, p, i, cox, pax, x);
+    coord_type cox(i);
+    front::simulate(t1, t2, s, p, i, cox, pax, x);
   } else {
-    DynamicUpdaterVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, p, i - size, pax, x);
+    DynamicUpdaterVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p, i - size, pax, x);
   }
 }
 

@@ -90,7 +90,7 @@ inline int bi::Cache2D<T1>::size() const {
 template<class T1>
 inline T1 bi::Cache2D<T1>::get(const int i, const int j) const {
   /* pre-condition */
-  assert (isValid(j));
+  BI_ASSERT(isValid(j));
 
   return pages(i,j);
 }
@@ -99,7 +99,7 @@ template<class T1>
 inline const typename bi::Cache2D<T1>::matrix_type::vector_reference_type
     bi::Cache2D<T1>::get(const int p) const {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   return column(pages, p);
 }
@@ -108,7 +108,7 @@ template<class T1>
 template<class V1>
 void bi::Cache2D<T1>::put(const int p, const V1 x) {
   /* pre-condition */
-  assert (p >= 0);
+  BI_ASSERT(p >= 0);
 
   if (pages.size1() != x.size()) {
     clear();
@@ -125,7 +125,7 @@ void bi::Cache2D<T1>::put(const int p, const V1 x) {
   column(pages, p) = x;
 
   /* post-condition */
-  assert (isValid(p) && isDirty(p));
+  BI_ASSERT(isValid(p) && isDirty(p));
 }
 
 template<class T1>
@@ -135,7 +135,7 @@ inline const bi::host_matrix<T1>& bi::Cache2D<T1>::getPages() const {
 
 template<class T1>
 void bi::Cache2D<T1>::empty() {
-  BI_ASSERT(!isDirty(), "Cache being emptied with dirty page");
+  BI_ASSERT_MSG(!isDirty(), "Cache being emptied with dirty page");
 
   pages.resize(0,0);
   Cache::empty();

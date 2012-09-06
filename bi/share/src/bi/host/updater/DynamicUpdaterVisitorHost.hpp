@@ -21,17 +21,8 @@ namespace bi {
 template<class B, class S, class T1, class PX, class OX>
 class DynamicUpdaterVisitorHost {
 public:
-  /**
-   * Update d-net.
-   *
-   * @param t1 Start of time interval.
-   * @param t2 End of time interval.
-   * @param p Trajectory id.
-   * @param pax Parents.
-   * @param[out] x Output.
-   */
-  static void accept(const T1 t1, const T1 t2, const int p, const PX& pax,
-      OX& x);
+  static void accept(const T1 t1, const T1 t2, State<B,ON_HOST>& s,
+      const int p, const PX& pax, OX& x);
 };
 
 /**
@@ -42,8 +33,8 @@ public:
 template<class B, class T1, class PX, class OX>
 class DynamicUpdaterVisitorHost<B,empty_typelist,T1,PX,OX> {
 public:
-  static void accept(const T1 t1, const T1 t2, const int p, const PX& pax,
-      OX& x) {
+  static void accept(const T1 t1, const T1 t2, State<B,ON_HOST>& s,
+      const int p, const PX& pax, OX& x) {
     //
   }
 };
@@ -54,8 +45,8 @@ public:
 #include "../../traits/target_traits.hpp"
 
 template<class B, class S, class T1, class PX, class OX>
-inline void bi::DynamicUpdaterVisitorHost<B,S,T1,PX,OX>::accept(
-    const T1 t1, const T1 t2, const int p, const PX& pax, OX& x) {
+inline void bi::DynamicUpdaterVisitorHost<B,S,T1,PX,OX>::accept(const T1 t1,
+    const T1 t2, State<B,ON_HOST>& s, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -64,11 +55,12 @@ inline void bi::DynamicUpdaterVisitorHost<B,S,T1,PX,OX>::accept(
   int ix = 0;
   coord_type cox;
   while (ix < target_size<target_type>::value) {
-    front::f(t1, t2, p, ix, cox, pax, x);
+    front::simulate(t1, t2, s, p, ix, cox, pax, x);
     ++cox;
     ++ix;
   }
-  DynamicUpdaterVisitorHost<B,pop_front,T1,PX,OX>::accept(t1, t2, p, pax, x);
+  DynamicUpdaterVisitorHost<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p, pax,
+      x);
 }
 
 #endif

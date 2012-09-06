@@ -270,9 +270,9 @@ template<class T1>
 template<class M1, class M2, class M3>
 void bi::gemm_impl<bi::ON_DEVICE,T1>::func(const T1 alpha, const M1 A, const M2 X, const T1 beta, M3 Y, const char transA, const char transX) {
   host_matrix_reference<real>::size_type m = (transA == 'T') ? A.size2() : A.size1();
-  assert (m == Y.size1());
+  BI_ASSERT(m == Y.size1());
   host_matrix_reference<real>::size_type n = (transX == 'T') ? X.size1() : X.size2();
-  assert (n == Y.size2());
+  BI_ASSERT(n == Y.size2());
   host_matrix_reference<real>::size_type k = (transA == 'T') ? A.size1() : A.size2();
 
   CUBLAS_CHECKED_CALL(cublas_gemm<T1>::func(bi_omp_cublas_handle, cublas_trans(transA), cublas_trans(transX), m, n, k, &alpha, A.buf(), A.lead(), X.buf(), X.lead(), &beta, Y.buf(), Y.lead()));

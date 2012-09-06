@@ -9,7 +9,6 @@
 #define BI_BUFFER_KalmanFilterNetCDFBuffer_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
-#include "../math/scalar.hpp"
 #include "../method/misc.hpp"
 
 namespace bi {
@@ -113,7 +112,7 @@ protected:
 template<class M1>
 void bi::KalmanFilterNetCDFBuffer::readStd(const int k, M1 S) {
   /* pre-condition */
-  assert (S.size1() == M && S.size2() == M);
+  BI_ASSERT(S.size1() == M && S.size2() == M);
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -123,23 +122,23 @@ void bi::KalmanFilterNetCDFBuffer::readStd(const int k, M1 S) {
   BI_UNUSED NcBool ret;
 
   ret = SVar->set_cur(offsets);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << SVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << SVar->name());
 
-  if (M1::on_device || S.lead() != S.size1()) {
+  if (M1::on_device || !S.contiguous()) {
     temp_matrix_type S1 (S.size1(), S.size2());
     ret = SVar->get(S1.buf(), counts);
-    BI_ASSERT(ret, "Inconvertible type reading " << SVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << SVar->name());
     S = S1;
   } else {
     ret = SVar->get(S.buf(), counts);
-    BI_ASSERT(ret, "Inconvertible type reading " << SVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << SVar->name());
   }
 }
 
 template<class M1>
 void bi::KalmanFilterNetCDFBuffer::writeStd(const int k, const M1 S) {
   /* pre-conditions */
-  assert (S.size1() == M && S.size2() == S.size1());
+  BI_ASSERT(S.size1() == M && S.size2() == S.size1());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -149,8 +148,8 @@ void bi::KalmanFilterNetCDFBuffer::writeStd(const int k, const M1 S) {
   BI_UNUSED NcBool ret;
 
   ret = SVar->set_cur(offsets);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << SVar->name());
-  if (M1::on_device || S.lead() != S.size1()) {
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << SVar->name());
+  if (M1::on_device || !S.contiguous()) {
     temp_matrix_type S1(S.size1(), S.size2());
     S1 = S;
     synchronize(M1::on_device);
@@ -158,7 +157,7 @@ void bi::KalmanFilterNetCDFBuffer::writeStd(const int k, const M1 S) {
   } else {
     ret = SVar->put(S.buf(), counts);
   }
-  BI_ASSERT(ret, "Inconvertible type writing " << SVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << SVar->name());
 }
 
 #endif

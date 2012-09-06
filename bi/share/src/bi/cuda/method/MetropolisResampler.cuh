@@ -16,16 +16,16 @@ template<class V1, class V2>
 void bi::MetropolisResamplerDeviceImpl::ancestors(Random& rng, const V1 lws,
     V2 as, int C) {
   /* pre-condition */
-  assert (lws.size() == as.size());
-  assert (V1::on_device);
-  assert (V2::on_device);
+  BI_ASSERT(lws.size() == as.size());
+  BI_ASSERT(V1::on_device);
+  BI_ASSERT(V2::on_device);
 
   const int P = lws.size();
   dim3 Db, Dg;
   size_t Ns;
 
-  //Db.x = std::min(128, (P + 29) / 30); // for S1070
-  Db.x = std::min(256, (P + 13) / 14); // for S2050
+  //Db.x = bi::min(128, (P + 29) / 30); // for S1070
+  Db.x = bi::min(256, (P + 13) / 14); // for S2050
   Dg.x = (P + Db.x - 1) / Db.x;
   Ns = 0; //P*sizeof(typename V1::value_type);
 

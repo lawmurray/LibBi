@@ -84,7 +84,6 @@ private:
 };
 }
 
-#include "../../misc/location.hpp"
 #include "../../misc/omp.hpp"
 #include "../../math/sim_temp_vector.hpp"
 
@@ -103,7 +102,7 @@ inline void bi::RngHost::seed(const unsigned seed) {
 template<class T1>
 inline T1 bi::RngHost::uniformInt(const T1 lower, const T1 upper) {
   /* pre-condition */
-  assert (upper >= lower);
+  BI_ASSERT(upper >= lower);
 
   typedef boost::uniform_int<T1> dist_type;
 
@@ -116,7 +115,7 @@ inline T1 bi::RngHost::uniformInt(const T1 lower, const T1 upper) {
 template<class V1>
 inline typename V1::difference_type bi::RngHost::multinomial(const V1 ps) {
   /* pre-condition */
-  assert (ps.size() > 0);
+  BI_ASSERT(ps.size() > 0);
 
   typedef boost::uniform_real<typename V1::value_type> dist_type;
 
@@ -132,7 +131,7 @@ inline typename V1::difference_type bi::RngHost::multinomial(const V1 ps) {
 template<class T1>
 inline T1 bi::RngHost::uniform(const T1 lower, const T1 upper) {
   /* pre-condition */
-  assert (upper >= lower);
+  BI_ASSERT(upper >= lower);
 
   typedef boost::uniform_real<T1> dist_type;
 
@@ -145,7 +144,7 @@ inline T1 bi::RngHost::uniform(const T1 lower, const T1 upper) {
 template<class T1>
 inline T1 bi::RngHost::gaussian(const T1 mu, const T1 sigma) {
   /* pre-condition */
-  assert (sigma >= 0.0);
+  BI_ASSERT(sigma >= 0.0);
 
   typedef boost::normal_distribution<T1> dist_type;
 
@@ -158,7 +157,7 @@ inline T1 bi::RngHost::gaussian(const T1 mu, const T1 sigma) {
 template<class T1>
 inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
   /* pre-condition */
-  assert (alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   typedef boost::gamma_distribution<T1> dist_type;
 
@@ -171,7 +170,7 @@ inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
 template<class T1>
 inline T1 bi::RngHost::beta(const T1 alpha, const T1 beta) {
   /* pre-condition */
-  assert (alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   const T1 x = gamma(alpha, 1.0);
   const T1 y = gamma(beta, 1.0);

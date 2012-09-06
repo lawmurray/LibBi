@@ -13,10 +13,12 @@
 #include "../math/loc_vector.hpp"
 #include "../math/loc_matrix.hpp"
 #ifdef ENABLE_SSE
-#include "../sse/sse.hpp"
+#include "../sse/math/scalar.hpp"
 #endif
 
+#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
+#endif
 
 namespace bi {
 /**
@@ -36,24 +38,23 @@ template<class B, Location L>
 class State {
 public:
   typedef real value_type;
-  typedef typename loc_matrix<L,value_type>::type matrix_type;
+  typedef typename loc_matrix<L,value_type,-1,-1,-1,1>::type matrix_type;
   typedef typename matrix_type::matrix_reference_type matrix_reference_type;
-  typedef typename loc_vector<L,value_type>::type vector_type;
-  typedef typename vector_type::vector_reference_type vector_reference_type;
 
   static const bool on_device = (L == ON_DEVICE);
 
   /**
    * Constructor.
    *
-   * @param m Model.
    * @param P Number of trajectories to store.
    */
-  State(const B& m, const int P = 1);
+  CUDA_FUNC_BOTH
+  State(const int P = 0);
 
   /**
    * Shallow copy constructor.
    */
+  CUDA_FUNC_BOTH
   State(const State<B,L>& o);
 
   /**
@@ -77,16 +78,19 @@ public:
    * <tt>P == roundup(P)</tt> to ensure correct memory alignment. See
    * #roundup.
    */
+  CUDA_FUNC_BOTH
   void setRange(const int p, const int P);
 
   /**
    * Starting index of active range.
    */
+  CUDA_FUNC_BOTH
   int start() const;
 
   /**
    * Number of trajectories in active range.
    */
+  CUDA_FUNC_BOTH
   int size() const;
 
   /**
@@ -106,6 +110,7 @@ public:
    * Maximum number of trajectories that can be presently stored in the
    * state.
    */
+  CUDA_FUNC_BOTH
   int sizeMax() const;
 
   /**
@@ -134,6 +139,7 @@ public:
    *
    * @return Given buffer.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type get(const VarType type);
 
   /**
@@ -143,25 +149,18 @@ public:
    *
    * @return Given buffer.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type get(const VarType type) const;
 
   /**
-   * Get alternative buffer for net.
+   * Get buffer for variable.
    *
-   * @param type Node type.
-   *
-   * @return Given buffer.
-   */
-  matrix_reference_type getAlt(const VarType type);
-
-  /**
-   * Get alternative buffer for net.
-   *
-   * @param type Node type.
+   * @tparam X Variable type.
    *
    * @return Given buffer.
    */
-  const matrix_reference_type getAlt(const VarType type) const;
+  template<class X>
+  CUDA_FUNC_BOTH matrix_reference_type getVar();
 
   /**
    * Get buffer for variable.
@@ -171,17 +170,79 @@ public:
    * @return Given buffer.
    */
   template<class X>
-  matrix_reference_type getVar();
+  CUDA_FUNC_BOTH const matrix_reference_type getVar() const;
 
   /**
-   * Get buffer for variable.
+   * Get alternative buffer for variable.
    *
    * @tparam X Variable type.
    *
    * @return Given buffer.
    */
   template<class X>
-  const matrix_reference_type getVar() const;
+  CUDA_FUNC_BOTH matrix_reference_type getVarAlt();
+
+  /**
+   * Get alternative buffer for variable.
+   *
+   * @tparam X Variable type.
+   *
+   * @return Given buffer.
+   */
+  template<class X>
+  CUDA_FUNC_BOTH const matrix_reference_type getVarAlt() const;
+
+  /**
+   * Get variable.
+   *
+   * @tparam X Variable type.
+   *
+   * @param p Trajectory index.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
+  template<class X>
+  CUDA_FUNC_BOTH real& getVar(const int p, const int ix);
+
+  /**
+   * Get variable.
+   *
+   * @tparam X Variable type.
+   *
+   * @param p Trajectory index.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
+  template<class X>
+  CUDA_FUNC_BOTH const real& getVar(const int p, const int ix) const;
+
+  /**
+   * Get variable.
+   *
+   * @tparam X Variable type.
+   *
+   * @param p Trajectory index.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
+  template<class X>
+  CUDA_FUNC_BOTH real& getVarAlt(const int p, const int ix);
+
+  /**
+   * Get variable.
+   *
+   * @tparam X Variable type.
+   *
+   * @param p Trajectory index.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
+  template<class X>
+  CUDA_FUNC_BOTH const real& getVarAlt(const int p, const int ix) const;
 
   /**
    * Get buffer for variable.
@@ -191,6 +252,7 @@ public:
    *
    * @return Given buffer.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getVar(const VarType type, const int id);
 
   /**
@@ -201,127 +263,94 @@ public:
    *
    * @return Given buffer.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getVar(const VarType type, const int id) const;
 
   /**
-   * Get alternative buffer for variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @return Given buffer.
+   * Get buffer of param and param_aux_ variables.
    */
-  template<class X>
-  matrix_reference_type getVarAlt();
+  CUDA_FUNC_BOTH
+  matrix_reference_type getCommon();
 
   /**
-   * Get alternative buffer for variable.
-   *
-   * @tparam X Variable type.
-   *
-   * @return Given buffer.
+   * Get buffer of param and param_aux_ variables.
    */
-  template<class X>
-  const matrix_reference_type getVarAlt() const;
-
-  /**
-   * Get alternative buffer for variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   *
-   * @return Given buffer.
-   */
-  matrix_reference_type getVarAlt(const VarType type, const int id);
-
-  /**
-   * Get alternative buffer for variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   *
-   * @return Given buffer.
-   */
-  const matrix_reference_type getVarAlt(const VarType type, const int id) const;
-
-  /**
-   * Get alternative buffer for sparse variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   * @param mask Mask.
-   *
-   * @return Given buffer.
-   */
-  const matrix_reference_type getSparseVarAlt(const VarType type, const int id, const Mask<L>& mask) const;
+  CUDA_FUNC_BOTH
+  const matrix_reference_type getCommon() const;
 
   /**
    * Get buffer of state and noise variables.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getDyn();
 
   /**
    * Get buffer of state and noise variables.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getDyn() const;
 
   /**
    * Get buffer of all transition model Jacobian variables.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getF();
 
   /**
    * Get buffer of all transition model Jacobian variables.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getF() const;
 
   /**
    * Get buffer of all observation model Jacobian variables.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getG();
 
   /**
    * Get buffer of all observation model Jacobian variables.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getG() const;
 
   /**
    * Get buffer of all state square-root covariance variables.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getQ();
 
   /**
    * Get buffer of all state square-root covariance variables.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getQ() const;
 
   /**
    * Get buffer of all observed square-root covariance variables.
    */
+  CUDA_FUNC_BOTH
   matrix_reference_type getR();
 
   /**
    * Get buffer of all observed square-root covariance variables.
    */
+  CUDA_FUNC_BOTH
   const matrix_reference_type getR() const;
 
 private:
   /**
-   * Model.
-   */
-  const B& m;
-
-  /**
-   * Storage for dense non-shared variables (d- and r-).
+   * Storage for dense non-shared variables.
    */
   matrix_type Xdn;
 
   /**
-   * Storage for dense shared variables (f-, s- and p-).
+   * Storage for dense shared variables.
    */
   matrix_type Kdn;
 
   /**
-   * Index of starting trajectory in @p Xdn and @p Xsp.
+   * Index of starting trajectory in @p Xdn.
    */
   int p;
 
@@ -344,7 +373,7 @@ private:
    * @li for @p L on host with SSE enabled, @p P must be zero, one or a
    * multiple of four (single precision) or two (double precision).
    */
-  static int roundup(const int P);
+  static CUDA_FUNC_BOTH int roundup(const int P);
 
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -355,6 +384,7 @@ private:
   static const int NDX = B::NDX;
   static const int NPX = B::NPX;
 
+#ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -372,26 +402,22 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
+#endif
+
 };
 }
 
 template<class B, bi::Location L>
-bi::State<B,L>::State(const B& m, const int P) :
-    m(m),
-    Xdn(roundup(P), NR + ND + NO + NDX + NR + ND), // includes dy- and ry-vars
-    Kdn(1, 2*NP + NPX + NF + NO), // includes py- and oy-vars
-    p(0),
-    P(P) {
+bi::State<B,L>::State(const int P) :
+    Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
+    Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
+    p(0), P(P) {
   clear();
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    m(o.m),
-    Xdn(o.Xdn),
-    Kdn(o.Kdn),
-    p(o.p),
-    P(o.P) {
+    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   //
 }
 
@@ -415,8 +441,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
 template<class B, bi::Location L>
 inline void bi::State<B,L>::setRange(const int p, const int P) {
   /* pre-condition */
-  assert (p >= 0 && p == roundup(p));
-  assert (P >= 0 && P == roundup(P));
+  BI_ASSERT(p >= 0 && p == roundup(p));
+  BI_ASSERT(P >= 0 && P == roundup(P));
 
   if (p + P > sizeMax()) {
     resizeMax(p + P, true);
@@ -442,7 +468,7 @@ inline void bi::State<B,L>::resize(const int P, const bool preserve) {
 
   if (preserve && p != 0) {
     /* move active range to start of buffer, being careful of overlap */
-    int n = 0, N = std::min(this->P, P1);
+    int n = 0, N = bi::min(this->P, P1);
     while (p < N - n) {
       /* be careful of overlap */
       rows(Xdn, n, p) = rows(Xdn, p + n, p);
@@ -481,256 +507,338 @@ inline void bi::State<B,L>::clear() {
 }
 
 template<class B, bi::Location L>
-inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(const VarType type) {
-  switch (type) {
-  case R_VAR:
-    return subrange(Xdn, p, P, 0, NR);
-  case D_VAR:
-    return subrange(Xdn, p, P, NR, ND);
-  case O_VAR:
-    return subrange(Xdn, p, P, NR + ND, NO);
-  case DX_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO, NDX);
-  case RY_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO + NDX, NR);
-  case DY_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO + NDX + NR, ND);
-  case P_VAR:
-    return columns(Kdn, 0, NP);
-  case PY_VAR:
-    return columns(Kdn, NP, NP);
-  case PX_VAR:
-    return columns(Kdn, 2*NP, NPX);
-  case F_VAR:
-    return columns(Kdn, 2*NP + NPX, NF);
-  case OY_VAR:
-    return columns(Kdn, 2*NP + NPX + NF, NO);
-  default:
-    BI_ERROR(false, "Unsupported type");
-  }
-}
-
-template<class B, bi::Location L>
-inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(const VarType type) const {
-  switch (type) {
-  case R_VAR:
-    return subrange(Xdn, p, P, 0, NR);
-  case D_VAR:
-    return subrange(Xdn, p, P, NR, ND);
-  case O_VAR:
-    return subrange(Xdn, p, P, NR + ND, NO);
-  case DX_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO, NDX);
-  case RY_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO + NDX, NR);
-  case DY_VAR:
-    return subrange(Xdn, p, P, NR + ND + NO + NDX + NR, ND);
-  case P_VAR:
-    return columns(Kdn, 0, NP);
-  case PY_VAR:
-    return columns(Kdn, NP, NP);
-  case PX_VAR:
-    return columns(Kdn, 2*NP, NPX);
-  case F_VAR:
-    return columns(Kdn, 2*NP + NPX, NF);
-  case OY_VAR:
-    return columns(Kdn, 2*NP + NPX + NF, NO);
-  default:
-    BI_ERROR(false, "Unsupported type");
-  }
-}
-
-template<class B, bi::Location L>
-inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getAlt(
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     const VarType type) {
-  return get(m.getAltType(type));
+  switch (type) {
+  case R_VAR:
+    return subrange(Xdn.ref(), p, P, 0, NR);
+  case D_VAR:
+    return subrange(Xdn.ref(), p, P, NR, ND);
+  case O_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND, NO);
+  case DX_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO, NDX);
+  case RY_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX, NR);
+  case DY_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX + NR, ND);
+  case P_VAR:
+    return columns(Kdn.ref(), 0, NP);
+  case PX_VAR:
+    return columns(Kdn.ref(), NP, NPX);
+  case F_VAR:
+    return columns(Kdn.ref(), NP + NPX, NF);
+  case PY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF, NP);
+  case OY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  }
 }
 
 template<class B, bi::Location L>
-inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getAlt(
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     const VarType type) const {
-  return get(m.getAltType(type));
+  switch (type) {
+  case R_VAR:
+    return subrange(Xdn.ref(), p, P, 0, NR);
+  case D_VAR:
+    return subrange(Xdn.ref(), p, P, NR, ND);
+  case O_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND, NO);
+  case DX_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO, NDX);
+  case RY_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX, NR);
+  case DY_VAR:
+    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX + NR, ND);
+  case P_VAR:
+    return columns(Kdn.ref(), 0, NP);
+  case PX_VAR:
+    return columns(Kdn.ref(), NP, NPX);
+  case F_VAR:
+    return columns(Kdn.ref(), NP + NPX, NF);
+  case PY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF, NP);
+  case OY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  }
 }
 
 template<class B, bi::Location L>
 template<class X>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() {
-  static const VarType type = var_type<X>::value;
-  static const int start = var_net_start<B,X>::value;
-  static const int size = var_size<X>::value;
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-template<class X>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() const {
-  static const VarType type = var_type<X>::value;
-  static const int start = var_net_start<B,X>::value;
-  static const int size = var_size<X>::value;
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar(
-    const VarType type, const int id) {
-  const int start = m.getNodeStart(type, id);
-  const int size = m.getNode(type, id)->getSize();
-
-  return columns(get(type), start, size);
-}
-
-template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar(
-    const VarType type, const int id) const {
-  const int start = m.getNodeStart(type, id);
-  const int size = m.getNode(type, id)->getSize();
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() {
+  const VarType type = var_type<X>::value;
+  const int start = var_net_start<B,X>::value;
+  const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
 }
 
 template<class B, bi::Location L>
 template<class X>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() {
-  static const VarType type = alt_type<var_type<X>::value>::value;
-  static const int start = var_net_start<B,X>::value;
-  static const int size = var_size<X>::value;
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() const {
+  const VarType type = var_type<X>::value;
+  const int start = var_net_start<B,X>::value;
+  const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
 }
 
 template<class B, bi::Location L>
 template<class X>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() const {
-  static const VarType type = alt_type<var_type<X>::value>::value;
-  static const int start = var_net_start<B,X>::value;
-  static const int size = var_size<X>::value;
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() {
+  const VarType type = alt_type<var_type<X>::value>::value;
+  const int start = var_net_start<B,X>::value;
+  const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt(
-    const VarType type, const int id) {
-  const VarType alt = m.getAltType(type);
-  const int start = m.getNodeStart(alt, id);
-  const int size = m.getNode(alt, id)->getSize();
+template<class X>
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() const {
+  const VarType type = alt_type<var_type<X>::value>::value;
+  const int start = var_net_start<B,X>::value;
+  const int size = var_size<X>::value;
 
-  return columns(get(alt), start, size);
+  return columns(get(type), start, size);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt(
-    const VarType type, const int id) const {
-  const VarType alt = m.getAltType(type);
-  const int start = m.getNodeStart(alt, id);
-  const int size = m.getNode(alt, id)->getSize();
+template<class X>
+inline real& bi::State<B,L>::getVar(const int p, const int ix) {
+  const VarType type = var_type<X>::value;
+  const int start = var_net_start<B,X>::value;
 
-  return columns(get(alt), start, size);
+  switch (type) {
+  case R_VAR:
+    return Xdn(this->p + p, start + ix);
+  case D_VAR:
+    return Xdn(this->p + p, NR + start + ix);
+  case O_VAR:
+    return Xdn(this->p + p, NR + ND + start + ix);
+  case DX_VAR:
+    return Xdn(this->p + p, NR + ND + NO + start + ix);
+  case RY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+  case DY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+  case P_VAR:
+    return Kdn(0, start + ix);
+  case PX_VAR:
+    return Kdn(0, NP + start + ix);
+  case F_VAR:
+    return Kdn(0, NP + NPX + start + ix);
+  case PY_VAR:
+    return Kdn(0, NP + NPX + NF + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + start + ix);
+  }
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
-  return subrange(Xdn, p, P, 0, NR + ND);
+template<class X>
+inline const real& bi::State<B,L>::getVar(const int p, const int ix) const {
+  const VarType type = var_type<X>::value;
+  const int start = var_net_start<B,X>::value;
+
+  switch (type) {
+  case R_VAR:
+    return Xdn(this->p + p, start + ix);
+  case D_VAR:
+    return Xdn(this->p + p, NR + start + ix);
+  case O_VAR:
+    return Xdn(this->p + p, NR + ND + start + ix);
+  case DX_VAR:
+    return Xdn(this->p + p, NR + ND + NO + start + ix);
+  case RY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+  case DY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+  case P_VAR:
+    return Kdn(0, start + ix);
+  case PX_VAR:
+    return Kdn(0, NP + start + ix);
+  case F_VAR:
+    return Kdn(0, NP + NPX + start + ix);
+  case PY_VAR:
+    return Kdn(0, NP + NPX + NF + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + start + ix);
+  }
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn()
-    const {
-  return subrange(Xdn, p, P, 0, NR + ND);
+template<class X>
+inline real& bi::State<B,L>::getVarAlt(const int p, const int ix) {
+  const VarType type = alt_type<var_type<X>::value>::value;
+  const int start = var_net_start<B,X>::value;
+
+  switch (type) {
+  case R_VAR:
+    return Xdn(this->p + p, start + ix);
+  case D_VAR:
+    return Xdn(this->p + p, NR + start + ix);
+  case O_VAR:
+    return Xdn(this->p + p, NR + ND + start + ix);
+  case DX_VAR:
+    return Xdn(this->p + p, NR + ND + NO + start + ix);
+  case RY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+  case DY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+  case P_VAR:
+    return Kdn(0, start + ix);
+  case PX_VAR:
+    return Kdn(0, NP + start + ix);
+  case F_VAR:
+    return Kdn(0, NP + NPX + start + ix);
+  case PY_VAR:
+    return Kdn(0, NP + NPX + NF + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + start + ix);
+  }
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF() {
+template<class X>
+inline const real& bi::State<B,L>::getVarAlt(const int p,
+    const int ix) const {
+  const VarType type = alt_type<var_type<X>::value>::value;
+  const int start = var_net_start<B,X>::value;
+
+  switch (type) {
+  case R_VAR:
+    return Xdn(this->p + p, start + ix);
+  case D_VAR:
+    return Xdn(this->p + p, NR + start + ix);
+  case O_VAR:
+    return Xdn(this->p + p, NR + ND + start + ix);
+  case DX_VAR:
+    return Xdn(this->p + p, NR + ND + NO + start + ix);
+  case RY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+  case DY_VAR:
+    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+  case P_VAR:
+    return Kdn(0, start + ix);
+  case PX_VAR:
+    return Kdn(0, NP + start + ix);
+  case F_VAR:
+    return Kdn(0, NP + NPX + start + ix);
+  case PY_VAR:
+    return Kdn(0, NP + NPX + NF + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + start + ix);
+  }
+}
+
+template<class B, bi::Location L>
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getCommon() {
+  return Kdn.ref();
+}
+
+template<class B, bi::Location L>
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getCommon() const {
+  return Kdn.ref();
+}
+
+template<class B, bi::Location L>
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
+  return subrange(Xdn.ref(), p, P, 0, NR + ND);
+}
+
+template<class B, bi::Location L>
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() const {
+  return subrange(Xdn.ref(), p, P, 0, NR + ND);
+}
+
+template<class B, bi::Location L>
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF() {
   const int start = B::getFStart();
   const int size = B::getFSize();
   const int rows = NR + ND;
   const int cols = ND;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF()
-    const {
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF() const {
   const int start = B::getFStart();
   const int size = B::getFSize();
   const int rows = NR + ND;
   const int cols = ND;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG() {
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG() {
   const int start = B::getGStart();
   const int size = B::getGSize();
   const int rows = NR + ND;
   const int cols = NO;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG()
-    const {
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getG() const {
   const int start = B::getGStart();
   const int size = B::getGSize();
   const int rows = NR + ND;
   const int cols = NO;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ() {
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ() {
   const int start = B::getQStart();
   const int size = B::getQSize();
   const int rows = NR + ND;
   const int cols = rows;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ()
-    const {
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getQ() const {
   const int start = B::getQStart();
   const int size = B::getQSize();
   const int rows = NR + ND;
   const int cols = rows;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR() {
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR() {
   const int start = B::getRStart();
   const int size = B::getRSize();
   const int rows = NO;
   const int cols = rows;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
-const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR()
-    const {
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getR() const {
   const int start = B::getRStart();
   const int size = B::getRSize();
   const int rows = NO;
   const int cols = rows;
-  assert (size == rows*cols);
+  BI_ASSERT(size == rows*cols);
 
-  return reshape(subrange(get(DX_VAR), p, P, start, size), P*rows, cols);
+  return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
 }
 
 template<class B, bi::Location L>
@@ -739,21 +847,22 @@ int bi::State<B,L>::roundup(const int P) {
   if (L == ON_DEVICE) {
     /* either < 32 or a multiple of 32 number of trajectories required */
     if (P1 > 32) {
-      P1 = ((P1 + 31)/32)*32;
+      P1 = ((P1 + 31) / 32) * 32;
     }
   } else {
-    #ifdef ENABLE_SSE
+#ifdef ENABLE_SSE
     /* zero, one or a multiple of 4 (single precision) or 2 (double
      * precision) required */
     if (P1 > 1) {
       P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
     }
-    #endif
+#endif
   }
 
   return P1;
 }
 
+#ifndef __CUDA_ARCH__
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
@@ -774,5 +883,6 @@ void bi::State<B,L>::load(Archive& ar, const unsigned version) {
   ar & Xdn1;
   ar & Kdn;
 }
+#endif
 
 #endif

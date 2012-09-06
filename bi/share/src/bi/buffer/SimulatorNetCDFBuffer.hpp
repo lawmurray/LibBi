@@ -164,23 +164,23 @@ inline int bi::SimulatorNetCDFBuffer::size2() const {
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
   /* pre-condition */
-  assert (t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << tVar->name());
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
     ret = tVar->get(x1.buf(), T);
-    BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << tVar->name());
     x = x1;
   } else {
     ret = tVar->get(x.buf(), T);
-    BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << tVar->name());
   }
 }
 
@@ -188,14 +188,14 @@ template<class V1>
 void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T,
     const V1 x) {
   /* pre-condition */
-  assert (t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << tVar->name());
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
@@ -205,14 +205,14 @@ void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const int T,
   } else {
     ret = tVar->put(x.buf(), T);
   }
-  BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << tVar->name());
 }
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
     M1 X) {
   /* pre-conditions */
-  assert (X.size1() == npDim->size());
+  BI_ASSERT(X.size1() == npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -249,17 +249,17 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
       counts[j] = X.size1();
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         ret = ncVar->get_var()->get(X1.buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
         columns(X, start, size) = X1;
       } else {
         ret = ncVar->get_var()->get(columns(X, start, size).buf(),
             counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       }
     }
   }
@@ -269,7 +269,7 @@ template<class M1>
 void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
     const M1 X, const int p) {
   /* pre-conditions */
-  assert (X.size1() <= npDim->size());
+  BI_ASSERT(X.size1() <= npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -308,10 +308,10 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         counts[j] = X.size1();
         
         ret = ncVar->get_var()->set_cur(offsets.buf());
-        BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
       }
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         X1 = columns(X, start, size);
         synchronize(M1::on_device);
@@ -320,7 +320,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         ret = ncVar->get_var()->put(columns(X, start, size).buf(),
             counts.buf());
       }
-      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }
   }
 }

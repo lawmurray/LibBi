@@ -75,7 +75,7 @@ inline bool bi::Test::test(Random& rng) {
 
 //  std::cerr << "initial: ";
 //  for (int i = 0; i < P; i++) {
-//    std::cerr << std::exp(lws1[i]) << " ";
+//    std::cerr << bi::exp(lws1[i]) << " ";
 //  }
 //  std::cerr << std::endl;
 
@@ -86,7 +86,7 @@ inline bool bi::Test::test(Random& rng) {
 
 //  std::cerr << "sorted: ";
 //  for (int i = 0; i < P; i++) {
-//    std::cerr << std::exp(lws1[i]) << " ";
+//    std::cerr << bi::exp(lws1[i]) << " ";
 //  }
 //  std::cerr << std::endl;
 

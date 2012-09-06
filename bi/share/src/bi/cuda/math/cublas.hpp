@@ -23,28 +23,28 @@ namespace bi {
  */
 inline cublasFillMode_t cublas_uplo(const char uplo) {
   /* pre-condition */
-  assert (uplo == 'U' || uplo == 'L');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
 
   return (uplo == 'U') ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER;
 }
 
 inline cublasOperation_t cublas_trans(const char trans) {
   /* pre-condition */
-  assert (trans == 'N' || trans == 'T');
+  BI_ASSERT(trans == 'N' || trans == 'T');
 
   return (trans == 'N') ? CUBLAS_OP_N : CUBLAS_OP_T;
 }
 
 inline cublasSideMode_t cublas_side(const char side) {
   /* pre-condition */
-  assert (side == 'L' || side == 'R');
+  BI_ASSERT(side == 'L' || side == 'R');
 
   return (side == 'L') ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT;
 }
 
 inline cublasDiagType_t cublas_diag(const char diag) {
   /* pre-condition */
-  assert (diag == 'N' || diag == 'U');
+  BI_ASSERT(diag == 'N' || diag == 'U');
 
   return (diag == 'N') ? CUBLAS_DIAG_NON_UNIT : CUBLAS_DIAG_UNIT;
 }
@@ -78,7 +78,7 @@ inline void synchronize(cublasHandle_t handle) {
   { \
     cublasStatus_t cublasErr; \
     cublasErr = call; \
-    BI_ASSERT(cublasErr == CUBLAS_STATUS_SUCCESS, "CUBLAS Error " << cublasErr); \
+    BI_ASSERT_MSG(cublasErr == CUBLAS_STATUS_SUCCESS, "CUBLAS Error " << cublasErr); \
   }
 #else
 #define CUBLAS_CHECKED_CALL(call) call

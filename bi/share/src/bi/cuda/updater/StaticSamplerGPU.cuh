@@ -41,12 +41,12 @@ void bi::StaticSamplerGPU<B,S>::samples(Random& rng, State<B,ON_DEVICE>& s) {
   const int P = s.size();
   dim3 Db, Dg;
 
-  Db.x = deviceIdealThreadsPerBlock();
-  Dg.x = (std::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
+  Db.x = bi::min(P, deviceIdealThreadsPerBlock());
+  Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
   if (N > 0) {
     bind(s);
-    kernelStaticSampler<B,S><<<Dg,Db>>>(rng);
+    kernelStaticSampler<B,S><<<Dg,Db>>>(rng.devRngs, s);
     CUDA_CHECK;
     unbind(s);
   }

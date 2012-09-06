@@ -10,10 +10,7 @@
 #ifndef BI_MATH_MISC_HPP
 #define BI_MATH_MISC_HPP
 
-#include "scalar.hpp"
 #include "../cuda/cuda.hpp"
-
-#include <cmath>
 
 namespace bi {
 /**
@@ -45,6 +42,8 @@ CUDA_FUNC_BOTH bool is_finite(const T x);
 
 }
 
+#include "function.hpp"
+
 inline int bi::factorial(const int n) {
   int result = 1u, y = n;
 
@@ -64,14 +63,14 @@ inline int bi::next_power_2(const int n) {
 }
 
 inline double bi::rel_err(const double a, const double b) {
-  double diff = fabs(a - b);
-  double abs_a = fabs(a);
-  double abs_b = fabs(b);
+  double diff = bi::abs(a - b);
+  double abs_a = bi::abs(a);
+  double abs_b = bi::abs(b);
 
   if (a == b) { // absorbs a == b == 0.0 case
     return 0.0;
   } else {
-    return (abs_a > abs_b) ? diff / abs_a : diff / abs_b;
+    return (abs_a > abs_b) ? diff/abs_a : diff/abs_b;
   }
 }
 

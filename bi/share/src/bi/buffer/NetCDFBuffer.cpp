@@ -9,27 +9,25 @@
 
 #include "../misc/assert.hpp"
 
-using namespace bi;
-
 #ifdef ENABLE_SINGLE
 NcType netcdf_real = ncFloat;
 #else
 NcType netcdf_real = ncDouble;
 #endif
 
-NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
+bi::NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
     file(file) {
   switch (mode) {
   case WRITE:
     ncFile = new NcFile(file.c_str(), NcFile::Write);
     break;
   case NEW:
-    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Netcdf4);
+    ncFile = new NcFile(file.c_str(), NcFile::New, NULL, 0, NcFile::Offset64Bits);
     ncFile->set_fill(NcFile::NoFill);
     break;
   case REPLACE:
     ncFile = new NcFile(file.c_str(), NcFile::Replace, NULL, 0,
-        NcFile::Netcdf4);
+        NcFile::Offset64Bits);
     ncFile->set_fill(NcFile::NoFill);
     break;
   default:
@@ -39,16 +37,16 @@ NetCDFBuffer::NetCDFBuffer(const std::string& file, const FileMode mode) :
   BI_ERROR(ncFile->is_valid(), "Could not open " << file);
 }
 
-NetCDFBuffer::NetCDFBuffer(const NetCDFBuffer& o) : file(o.file) {
+bi::NetCDFBuffer::NetCDFBuffer(const NetCDFBuffer& o) : file(o.file) {
   ncFile = new NcFile(file.c_str(), NcFile::ReadOnly);
 }
 
-NetCDFBuffer::~NetCDFBuffer() {
+bi::NetCDFBuffer::~NetCDFBuffer() {
   sync();
   delete ncFile;
 }
 
-NcDim* NetCDFBuffer::createDim(const char* name, const long size) {
+NcDim* bi::NetCDFBuffer::createDim(const char* name, const long size) {
   NcDim* ncDim = ncFile->add_dim(name, size);
   BI_ERROR(ncDim != NULL && ncDim->is_valid(),
       "Could not create dimension " << name);
@@ -56,7 +54,7 @@ NcDim* NetCDFBuffer::createDim(const char* name, const long size) {
   return ncDim;
 }
 
-NcDim* NetCDFBuffer::createDim(const char* name) {
+NcDim* bi::NetCDFBuffer::createDim(const char* name) {
   NcDim* ncDim = ncFile->add_dim(name);
   BI_ERROR(ncDim != NULL && ncDim->is_valid(),
       "Could not create dimension " << name);
@@ -64,7 +62,7 @@ NcDim* NetCDFBuffer::createDim(const char* name) {
   return ncDim;
 }
 
-NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np) {
+NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np) {
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
   VarType type = var->getType();
@@ -91,9 +89,9 @@ NcVar* NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np) {
   return ncVar;
 }
 
-NcVar* NetCDFBuffer::createFlexiVar(const Var* var) {
+NcVar* bi::NetCDFBuffer::createFlexiVar(const Var* var) {
   /* pre-condition */
-  assert (var != NULL && (var->getType() == D_VAR ||
+  BI_ASSERT(var != NULL && (var->getType() == D_VAR ||
       var->getType() == R_VAR || var->getType() == F_VAR));
 
   NcVar* ncVar;
@@ -118,7 +116,7 @@ NcVar* NetCDFBuffer::createFlexiVar(const Var* var) {
   return ncVar;
 }
 
-NcDim* NetCDFBuffer::mapDim(const char* name, const long size) {
+NcDim* bi::NetCDFBuffer::mapDim(const char* name, const long size) {
   NcDim* ncDim = ncFile->get_dim(name);
   BI_ERROR(ncDim != NULL && ncDim->is_valid(), "File does not contain dimension "
       << name);
@@ -128,7 +126,7 @@ NcDim* NetCDFBuffer::mapDim(const char* name, const long size) {
   return ncDim;
 }
 
-NcVar* NetCDFBuffer::mapVar(const Var* var) {
+NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
   NcVar* ncVar = ncFile->get_var(var->getName().c_str());
   BI_ERROR(ncVar != NULL && ncVar->is_valid(),
       "File does not contain variable " << var->getName());

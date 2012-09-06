@@ -32,24 +32,31 @@ public:
 }
 
 #include "DynamicUpdaterVisitorHost.hpp"
+#include "DynamicUpdaterMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
+
+#include "boost/mpl/if.hpp"
 
 template<class B, class S>
 template<class T1>
 void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   /* pre-conditions */
-  assert (t1 <= t2);
+  BI_ASSERT(t1 <= t2);
 
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef DynamicUpdaterMatrixVisitorHost<B,S,T1,PX,OX> MatrixVisitor;
+  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   bind(s);
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     PX pax;
     OX x;
@@ -57,7 +64,7 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(t1, t2, p, pax, x);
+      Visitor::accept(t1, t2, s, p, pax, x);
     }
   }
   unbind(s);
@@ -68,16 +75,19 @@ template<class T1>
 void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s, const int p) {
   /* pre-conditions */
-  assert (t1 <= t2);
+  BI_ASSERT(t1 <= t2);
 
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef DynamicUpdaterMatrixVisitorHost<B,S,T1,PX,OX> MatrixVisitor;
+  typedef DynamicUpdaterVisitorHost<B,S,T1,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(t1, t2, p, pax, x);
+  Visitor::accept(t1, t2, s, p, pax, x);
   unbind(s);
 }
 

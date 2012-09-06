@@ -23,6 +23,10 @@ namespace bi {
  * @ingroup math_matvec
  *
  * @tparam VM1 Vector or matrix type.
+ * @tparam size1_value Static number of rows, -1 for dynamic.
+ * @tparam size2_value Static number of columns, -1 for dynamic.
+ * @tparam lead_value Static lead, -1 for dynamic.
+ * @tparam inc_value Static column increment, -1 for dynamic.
  *
  * sim_temp_matrix is a convenience class for creating a temporary matrix
  * that is similar to the given vector or matrix type @p VM1 in the sense
@@ -31,7 +35,8 @@ namespace bi {
  * @li it resides in the same location (host or device), and
  * @li it has the same scalar type.
  */
-template<class VM1>
+template<class VM1, int size1_value = -1, int size2_value = -1,
+    int lead_value = -1, int inc_value = -1>
 struct sim_temp_matrix {
   /**
    * @internal
@@ -40,10 +45,10 @@ struct sim_temp_matrix {
 
   #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<VM1::on_device,
-      temp_gpu_matrix<T>,
-      temp_host_matrix<T> >::type::type type;
+      temp_gpu_matrix<T,size1_value,size2_value,lead_value,inc_value>,
+      temp_host_matrix<T,size1_value,size2_value,lead_value,inc_value> >::type::type type;
   #else
-  typedef typename temp_host_matrix<T>::type type;
+  typedef typename temp_host_matrix<T,size1_value,size2_value,lead_value,inc_value>::type type;
   #endif
 };
 }

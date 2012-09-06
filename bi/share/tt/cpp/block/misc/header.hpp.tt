@@ -27,9 +27,7 @@
 #include "../action/Action[% action.get_id %].hpp"
 [%-END %]
 
-#include "bi/state/State.hpp"
 #include "bi/typelist/macro_typelist.hpp"
 #include "bi/traits/block_traits.hpp"
-#include "bi/buffer/Mask.hpp"
 
 #include "boost/typeof/typeof.hpp"

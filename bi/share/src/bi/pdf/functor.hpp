@@ -9,9 +9,8 @@
 #define BI_PDF_FUNCTOR_HPP
 
 #include "../math/scalar.hpp"
+#include "../math/function.hpp"
 #include "../math/misc.hpp"
-
-#include "thrust/tuple.h"
 
 namespace bi {
 
@@ -33,7 +32,7 @@ struct gamma_density_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T& x) const {
     const T a = 1.0;
 
-    return BI_MATH_EXP((alpha - a)*BI_MATH_LOG(x) - x/beta - logZ);
+    return bi::exp((alpha - a)*bi::log(x) - x/beta - logZ);
   }
 };
 
@@ -55,7 +54,7 @@ struct gamma_log_density_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T& x) const {
     const T a = 1.0;
 
-    return (alpha - a)*BI_MATH_LOG(x) - x/beta - logZ;
+    return (alpha - a)*bi::log(x) - x/beta - logZ;
   }
 };
 
@@ -77,7 +76,7 @@ struct inverse_gamma_density_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T& x) const {
     const T a = 1.0;
 
-    return BI_MATH_EXP((-alpha - a)*BI_MATH_LOG(x) - beta/x - logZ);
+    return bi::exp((-alpha - a)*bi::log(x) - beta/x - logZ);
   }
 };
 
@@ -99,7 +98,7 @@ struct inverse_gamma_log_density_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T& x) const {
     const T a = 1.0;
 
-    return (-alpha - a)*BI_MATH_LOG(x) - beta/x - logZ;
+    return (-alpha - a)*bi::log(x) - beta/x - logZ;
   }
 };
 
@@ -125,7 +124,7 @@ struct gaussian_density_functor {
   T1 operator()(const T1 p) {
     const T1 a = -0.5;
 
-    return BI_MATH_EXP(a*p - logZ);
+    return bi::exp(a*p - logZ);
   }
 
   /**
@@ -156,7 +155,7 @@ struct gaussian_density_update_functor {
   T1 operator()(const T1 p1, const T1 p2) {
     const T1 a = -0.5;
 
-    return p1*BI_MATH_EXP(a*p2 - logZ);
+    return p1*bi::exp(a*p2 - logZ);
   }
 
   /**

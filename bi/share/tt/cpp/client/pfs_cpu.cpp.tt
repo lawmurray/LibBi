@@ -27,9 +27,9 @@
 
 #define LOCATION ON_HOST
 
-using namespace bi;
-
 int main(int argc, char* argv[]) {
+  using namespace bi;
+
   /* model type */
   typedef [% class_name %] model_type;
 
@@ -59,8 +59,8 @@ int main(int argc, char* argv[]) {
   /* state and intermediate results */
   const int P = in.size1();
   const int T = in.size2();
-  State<model_type,LOCATION> s(m, P);
-  assert (P == s.size());
+  State<model_type,LOCATION> s(P);
+  BI_ASSERT(P == s.size());
 
   /* output */
   ParticleSmootherNetCDFBuffer* out = NULL;

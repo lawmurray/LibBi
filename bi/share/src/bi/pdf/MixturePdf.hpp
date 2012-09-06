@@ -201,7 +201,6 @@ protected:
    */
   host_vector<real> Ws;
 
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -212,7 +211,6 @@ protected:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -240,7 +238,7 @@ bi::MixturePdf<Q1>::MixturePdf(const MixturePdf<Q1>& o) : N(o.N), xs(o.xs),
 template<class Q1>
 bi::MixturePdf<Q1>& bi::MixturePdf<Q1>::operator=(const MixturePdf<Q1>& o) {
   /* pre-condition */
-  assert (N == o.N);
+  BI_ASSERT(N == o.N);
 
   xs = o.xs;
   ws.resize(o.ws.size(), false);
@@ -259,7 +257,7 @@ inline int bi::MixturePdf<Q1>::size() const {
 template<class Q1>
 void bi::MixturePdf<Q1>::add(const Q1& x, const real w) {
   /* pre-condition */
-  assert (x.size() == size());
+  BI_ASSERT(x.size() == size());
 
   /* component */
   xs.push_back(x);
@@ -273,14 +271,14 @@ void bi::MixturePdf<Q1>::add(const Q1& x, const real w) {
   Ws[Ws.size() - 1] = weight() + w;
   
   /* post-condition */
-  assert ((int)xs.size() == ws.size());
-  assert ((int)xs.size() == Ws.size());
+  BI_ASSERT((int)xs.size() == ws.size());
+  BI_ASSERT((int)xs.size() == Ws.size());
 }
 
 template<class Q1>
 inline const Q1& bi::MixturePdf<Q1>::get(const int i) const {
   /* pre-condition */
-  assert (i < count());
+  BI_ASSERT(i < count());
 
   return xs[i];
 }
@@ -288,7 +286,7 @@ inline const Q1& bi::MixturePdf<Q1>::get(const int i) const {
 template<class Q1>
 inline Q1& bi::MixturePdf<Q1>::get(const int i) {
   /* pre-condition */
-  assert (i < count());
+  BI_ASSERT(i < count());
 
   return xs[i];
 }
@@ -296,7 +294,7 @@ inline Q1& bi::MixturePdf<Q1>::get(const int i) {
 template<class Q1>
 void bi::MixturePdf<Q1>::set(const int i, const Q1& x) {
   /* pre-condition */
-  assert (i < count());
+  BI_ASSERT(i < count());
 
   xs[i] = x;
 }
@@ -304,7 +302,7 @@ void bi::MixturePdf<Q1>::set(const int i, const Q1& x) {
 template<class Q1>
 inline real bi::MixturePdf<Q1>::getWeight(const int i) const {
   /* pre-condition */
-  assert (i < count());
+  BI_ASSERT(i < count());
 
   return ws(i);
 }
@@ -312,7 +310,7 @@ inline real bi::MixturePdf<Q1>::getWeight(const int i) const {
 template<class Q1>
 void bi::MixturePdf<Q1>::setWeight(const int i, const real w) {
   /* pre-condition */
-  assert (i < count());
+  BI_ASSERT(i < count());
     
   this->ws(i) = w;
   real init = (i > 0) ? ws(i - 1) : 0.0;
@@ -328,7 +326,7 @@ template<class Q1>
 template<class V1>
 void bi::MixturePdf<Q1>::setWeights(const V1& ws) {
   /* pre-condition */
-  assert (this->ws.size() == ws.size());
+  BI_ASSERT(this->ws.size() == ws.size());
 
   this->ws = ws;
   thrust::inclusive_scan(this->ws.begin(), this->ws.end(), Ws.begin());
@@ -355,7 +353,7 @@ template<class Q1>
 template<class V1>
 void bi::MixturePdf<Q1>::sample(Random& rng, V1 x) {
   /* pre-condition */
-  assert (x.size() == size());
+  BI_ASSERT(x.size() == size());
 
   real u = rng.uniform(BI_REAL(0.0), weight());
   int i = thrust::distance(Ws.begin(),
@@ -368,7 +366,7 @@ template<class Q1>
 template<class M2>
 void bi::MixturePdf<Q1>::samples(Random& rng, M2 X) {
   /* pre-conditions */
-  assert (X.size2() == size());
+  BI_ASSERT(X.size2() == size());
 
   /**
    * @todo Do without striding and take advantage of common operations.
@@ -392,7 +390,7 @@ real bi::MixturePdf<Q1>::density(const V2 x) {
   p /= weight();
 
   /* post-condition */
-  assert (p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -401,8 +399,8 @@ template<class Q1>
 template<class M2, class V2>
 void bi::MixturePdf<Q1>::densities(const M2 X, V2 p, const bool clear = false) {
   /* pre-condition */
-  assert (X.size2() == N);
-  assert (X.size1() == p.size());
+  BI_ASSERT(X.size2() == N);
+  BI_ASSERT(X.size1() == p.size());
 
   /**
    * @todo Specialise implementation to share temp allocations, avoid striding
@@ -426,7 +424,6 @@ real bi::MixturePdf<Q1>::operator()(const V1 x) {
   return density(x);
 }
 
-#ifndef __CUDACC__
 template<class Q1>
 template<class Archive>
 void bi::MixturePdf<Q1>::serialize(Archive& ar, const unsigned version) {
@@ -434,6 +431,5 @@ void bi::MixturePdf<Q1>::serialize(Archive& ar, const unsigned version) {
   ar & ws;
   ar & Ws;
 }
-#endif
 
 #endif

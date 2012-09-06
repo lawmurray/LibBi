@@ -39,18 +39,18 @@ template<class V1>
 void bi::SparseStaticLogDensityGPU<B,S>::logDensities(State<B,ON_DEVICE>& s,
     const Mask<ON_DEVICE>& mask, V1 lp) {
   /* pre-condition */
-  assert (V1::on_device);
+  BI_ASSERT(V1::on_device);
 
   const int P = s.size();
 
   if (mask.size() > 0) {
     dim3 Dg, Db;
 
-    Db.x = std::min(deviceIdealThreadsPerBlock(), P); // over trajectories
+    Db.x = bi::min(deviceIdealThreadsPerBlock(), P); // over trajectories
     Dg.x = (P + Db.x - 1)/Db.x;
 
     bind(s);
-    kernelSparseStaticLogDensity<B,S><<<Dg,Db>>>(mask, lp);
+    kernelSparseStaticLogDensity<B,S><<<Dg,Db>>>(s, mask, lp);
     CUDA_CHECK;
     unbind(s);
   }

@@ -65,7 +65,7 @@ CUDA_FUNC_GLOBAL void kernelResamplerCopy(const T1* __restrict__ as, M1 s);
 }
 
 template<class T1, class T2>
-void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
+CUDA_FUNC_GLOBAL void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
     const int P) {
   int id = blockIdx.x*blockDim.x + threadIdx.x;
   if (id < P) {
@@ -75,7 +75,7 @@ void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
 }
 
 template<class T1, class T2>
-void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
+CUDA_FUNC_GLOBAL void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
     const int P) {
   int id = blockIdx.x*blockDim.x + threadIdx.x;
   if (id < P) {
@@ -102,7 +102,7 @@ void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
 }
 
 template<class T1, class M1>
-void bi::kernelResamplerCopy(const T1* __restrict__ as, M1 s) {
+CUDA_FUNC_GLOBAL void bi::kernelResamplerCopy(const T1* __restrict__ as, M1 s) {
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = blockIdx.y*blockDim.y + threadIdx.y;
 

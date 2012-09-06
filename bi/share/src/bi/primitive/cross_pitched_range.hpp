@@ -33,7 +33,7 @@ struct cross_pitched_range {
 
   iterator begin() const {
     difference_type d = thrust::distance(first, last);
-    assert (d % lead == 0);
+    BI_ASSERT(d % lead == 0);
     difference_type cols = d/lead;
 
     return iterator(first, cross_pitched_sequence<difference_type>(0, cols, lead).begin());
@@ -41,7 +41,7 @@ struct cross_pitched_range {
 
   iterator end() const {
     difference_type d = thrust::distance(first, last);
-    assert (d % lead == 0);
+    BI_ASSERT(d % lead == 0);
     difference_type cols = d/lead;
 
     return begin() + cols*rows;

@@ -30,9 +30,9 @@
 #define LOCATION ON_HOST
 #endif
 
-using namespace bi;
-
 int main(int argc, char* argv[]) {
+  using namespace bi;
+
   /* model type */
   typedef [% class_name %] model_type;
   

@@ -8,33 +8,33 @@
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
+[%-
+  dfdt = action.get_named_arg('dfdt')
+-%]
 
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
   /**
    * Compute time derivative of variable.
    */
-  template <class T1, class CX, class PX, class T2>
-  static CUDA_FUNC_BOTH void dfdt(const T1 t, const int p,
+  template <class T1, bi::Location L, class CX, class PX, class T2>
+  static CUDA_FUNC_BOTH void dfdt(const T1 t,
+      const bi::State<[% model_class_name %],L>& s, const int p,
       const CX& cox, const PX& pax, T2& dfdt);
 };
 
-template <class T1, class CX, class PX, class T2>
-inline void [% class_name %]::dfdt(const T1 t, const int p,
+template <class T1, bi::Location L, class CX, class PX, class T2>
+inline void [% class_name %]::dfdt(const T1 t,
+      const bi::State<[% model_class_name %],L>& s, const int p,
       const CX& cox, const PX& pax, T2& dfdt) {
   [% alias_dims(action) %]
-  [% read_input(action.get_named_arg('dfdt')) %]
-  
-  dfdt = [% action.get_named_arg('dfdt').to_cpp %];
+  [% fetch_parents(dfdt) %]
+  dfdt = [% dfdt.to_cpp %];
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

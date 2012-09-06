@@ -22,7 +22,7 @@ namespace bi {
  */
 template<class T>
 struct pop_front_spec {
-  //BOOST_STATIC_ASSERT(!empty<T>::value);
+  //BOOST_STATIC_BI_ASSERT(!empty<T>::value);
   typedef typename T::tail type;
 };
 }

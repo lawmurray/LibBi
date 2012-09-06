@@ -10,7 +10,6 @@
 
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
-#include "../math/scalar.hpp"
 #include "../misc/location.hpp"
 
 namespace bi {
@@ -93,7 +92,7 @@ struct resample_check : public std::binary_function<T,int,T> {
     T eps;
 
     if (BI_IS_FINITE(lw)) {
-      eps = BI_MATH_EXP(lw - lW) - o/P; // P of type T, not int, see note above
+      eps = bi::exp(lw - lW) - o/P; // P of type T, not int, see note above
       eps *= eps;
     } else {
       eps = 0.0;
@@ -136,7 +135,7 @@ public:
   template<class V1>
   static void permute(V1 as) {
     /* pre-condition */
-    assert (!V1::on_device);
+    BI_ASSERT(!V1::on_device);
 
     typename V1::size_type i;
     typename V1::value_type j;
@@ -157,9 +156,9 @@ public:
   template<class V1, class M1>
   static void copy(const V1 as, M1 X) {
     /* pre-condition */
-    assert (!V1::on_device);
-    assert (!M1::on_device);
-    assert (as.size() <= X.size1());
+    BI_ASSERT(!V1::on_device);
+    BI_ASSERT(!M1::on_device);
+    BI_ASSERT(as.size() <= X.size1());
 
     int p;
     for (p = 0; p < as.size(); ++p) {
@@ -353,7 +352,7 @@ public:
 template<class V1, class V2>
 void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
   /* pre-conditions */
-  assert (sum_reduce(os) == as.size());
+  BI_ASSERT(sum_reduce(os) == as.size());
 
   typename sim_temp_vector<V1>::type Os(os.size());
   thrust::exclusive_scan(os.begin(), os.end(), Os.begin());
@@ -371,7 +370,7 @@ void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
 template<class V1, class V2>
 void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
   /* pre-conditions */
-  assert (os.size() == as.size());
+  BI_ASSERT(os.size() == as.size());
 
   const int P = os.size();
   typename sim_temp_vector<V1>::type keys(2*P), values(2*P);
@@ -393,7 +392,7 @@ void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
       keys.begin(), os.begin());
 
   /* post-condition */
-  assert(thrust::reduce(os.begin(), os.end()) == P);
+  BI_ASSERT(thrust::reduce(os.begin(), os.end()) == P);
 }
 
 template<class V1>
@@ -407,7 +406,7 @@ void bi::Resampler::permute(V1 as) {
 template<class V1, class V2, class V3>
 void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
   /* pre-condition */
-  assert (qlws.size() == lws.size());
+  BI_ASSERT(qlws.size() == lws.size());
 
   typedef typename V3::value_type T3;
   const int P = as.size();
@@ -424,7 +423,7 @@ void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
 template<class V1, class M1>
 void bi::Resampler::copy(const V1 as, M1 s) {
   /* pre-condition */
-  assert (as.size() <= s.size1());
+  BI_ASSERT(as.size() <= s.size1());
 
   typedef typename boost::mpl::if_c<M1::on_device,
       ResamplerDeviceImpl,
@@ -434,7 +433,7 @@ void bi::Resampler::copy(const V1 as, M1 s) {
 
 template<class V1, class B, bi::Location L>
 void bi::Resampler::copy(const V1 as, State<B,L>& s) {
-  s.setRange(s.start(), std::max(s.size(), as.size()));
+  s.setRange(s.start(), bi::max(s.size(), as.size()));
   copy(as, s.getDyn());
   s.setRange(s.start(), as.size());
 }
@@ -442,7 +441,7 @@ void bi::Resampler::copy(const V1 as, State<B,L>& s) {
 template<class V1, class T1>
 void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
-  assert (!V1::on_device);
+  BI_ASSERT(!V1::on_device);
 
   int i;
   for (i = 0; i < as.size(); ++i) {
@@ -470,7 +469,7 @@ template<class V1, class V2>
 typename V1::value_type bi::Resampler::loglikelihood(const V1 lws,
     const V2 os) {
   /* pre-condition */
-  assert (lws.size() == os.size());
+  BI_ASSERT(lws.size() == os.size());
 
   typedef typename V1::value_type T1;
 

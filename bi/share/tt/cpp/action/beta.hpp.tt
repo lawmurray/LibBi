@@ -13,20 +13,17 @@ beta = action.get_named_arg('beta');
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
   [% declare_action_static_function('alpha') %]
   [% declare_action_static_function('beta') %]
+  
+  [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
   [% declare_action_static_function('maxlogdensity') %]
@@ -36,54 +33,52 @@ public:
 
 [% sig_action_static_function('alpha') %] {
   [% alias_dims(action) %]
-  [% read_input(alpha) %]
+  [% fetch_parents(alpha) %]
   
   x = [% alpha.to_cpp %];
 }
 
 [% sig_action_static_function('beta') %] {
   [% alias_dims(action) %]
-  [% read_input(beta) %]
+  [% fetch_parents(beta) %]
   
   x = [% beta.to_cpp %];
 }
 
+[% std_action_static_function('simulate') %]
+
 [% sig_action_static_function('sample') %] {
   real a, b, u;
     
-  alpha(p, cox, pax, a);
-  beta(p, cox, pax, b);
+  alpha(s, p, cox, pax, a);
+  beta(s, p, cox, pax, b);
   u = rng.beta(a, b);
-    
-  x.template put<target_type>(p, ix, u);
+  
+  x.template fetch<target_type>(s, p, ix) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
-  real a, b, logZ, xy;
+  T1 a, b, logZ;
     
-  alpha(p, cox, pax, a);
-  beta(p, cox, pax, b);
+  alpha(s, p, cox, pax, a);
+  beta(s, p, cox, pax, b);
   
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
-  logZ = BI_MATH_LGAMMA(a) + BI_MATH_LGAMMA(b) - BI_MATH_LGAMMA(a + b);
-  lp += (a - BI_REAL(1.0))*BI_MATH_LOG(xy) +
-      (b - BI_REAL(1.0))*BI_MATH_LOG(BI_REAL(1.0) - xy) - logZ;
+  logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
+  lp += (a - BI_REAL(1.0))*bi::log(xy) +
+      (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - xy) - logZ;
 
-  x.template put<target_type>(p, ix, xy);
-}
-
+  x.template fetch<target_type>(s, p, ix) = xy;
 [% sig_action_static_function('maxlogdensity') %] {
-  real a, b, xy;
+  T1 a, b;
     
-  alpha(p, cox, pax, a);
-  beta(p, cox, pax, b);
+  alpha(s, p, cox, pax, a);
+  beta(s, p, cox, pax, b);
 
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
   lp = BI_REAL(1.0/0.0);
 
-  x.template put<target_type>(p, ix, xy);
-}
-
+  x.template fetch<target_type>(s, p, ix) = xy;
 [%-PROCESS action/misc/footer.hpp.tt-%]

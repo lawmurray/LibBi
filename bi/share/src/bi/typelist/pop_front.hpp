@@ -33,7 +33,7 @@ struct pop_front_impl {
  */
 template<class T>
 struct pop_front {
-  //BOOST_STATIC_ASSERT(!empty<T>::value);
+  //BOOST_STATIC_BI_ASSERT(!empty<T>::value);
   typedef typename pop_front_impl<T::marker,T::reps,typename T::item,typename T::tail>::type type;
 };
 

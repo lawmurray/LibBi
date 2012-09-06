@@ -28,9 +28,8 @@
 #define LOCATION ON_DEVICE
 #endif
 
-using namespace bi;
-
 int main(int argc, char* argv[]) {
+  using namespace bi;
 
   /* model type */
   typedef [% class_name %] model_type;
@@ -56,7 +55,7 @@ int main(int argc, char* argv[]) {
   model_type m;
 
   /* state */
-  State<model_type,LOCATION> s(m, P);
+  State<model_type,LOCATION> s(P);
   P = s.size(); // may change according to implementation
   
   /* inputs */

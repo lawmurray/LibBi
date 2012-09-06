@@ -16,34 +16,32 @@
 class [% class_name %] {
 public:
   [%-create_block_typedef(block)-%]
-  
-  [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
-  [% declare_static_function('sample') %]
-  [% declare_static_function('logdensity') %]
-  [% declare_static_function('maxlogdensity') %]
+    
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
 };
 
-[% IF block.can_simulate %]
-[% sig_static_function('simulate') %] {
+[% sig_block_static_function('simulate') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::simulate(s);
   [%-END %]
 }
-[% END %]
 
-[% sig_static_function('sample') %] {
+[% sig_block_static_function('sample') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::samples(rng, s);
   [%-END %]
 }
 
-[% sig_static_function('logdensity') %] {
+[% sig_block_static_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::logDensities(s, lp);
   [%-END %]
 }
 
-[% sig_static_function('maxlogdensity') %] {
+[% sig_block_static_function('maxlogdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::maxLogDensities(s, lp);
   [%-END %]

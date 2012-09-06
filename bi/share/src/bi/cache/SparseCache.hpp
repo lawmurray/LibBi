@@ -135,7 +135,7 @@ template<bi::Location CL>
 template<class M2>
 inline void bi::SparseCache<CL>::read(const int p, M2 x) const {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   x = *pages[p];
 }
@@ -152,33 +152,33 @@ inline void bi::SparseCache<CL>::write(const int p, const M2 x) {
   valids[p] = true;
 
   /* post-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 }
 
 template<bi::Location CL>
 template<class M2>
 inline void bi::SparseCache<CL>::swapRead(const int p, M2 x) {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   x.swap(*pages[p]);
   valids[p] = false;
 
   /* post-condition */
-  assert (!isValid(p));
+  BI_ASSERT(!isValid(p));
 }
 
 template<bi::Location CL>
 template<class M2>
 inline void bi::SparseCache<CL>::swapWrite(const int p, M2 x) {
   /* pre-condition */
-  assert (p < size());
+  BI_ASSERT(p < size());
 
   pages[p]->swap(x);
   valids[p] = true;
 
   /* post-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 }
 
 template<bi::Location CL>

@@ -582,7 +582,7 @@ inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M,
 template<class V1, class M1, class M2>
 void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
   /* pre-condition */
-  assert(p.size() == X.size2());
+  BI_ASSERT(p.size() == X.size2());
 
   typename sim_temp_vector<M2>::type mu(X.size2());
 
@@ -598,7 +598,7 @@ void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
 template<class V1>
 void bi::renormalise(V1 lws) {
   thrust::replace_if(lws.begin(), lws.end(), is_not_finite_functor<real>(),
-      std::log(0.0));
+      bi::log(0.0));
   real mx = max_reduce(lws);
   if (is_finite(mx)) {
     sub_elements(lws, mx);
@@ -610,9 +610,9 @@ template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
 void bi::condition(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
     M2>& p2, const M3 C, const V3 x2, ExpGaussianPdf<V4, M4>& p3) {
   /* pre-condition */
-  assert(x2.size() == p2.size());
-  assert(p3.size() == p1.size());
-  assert(C.size1() == p1.size() && C.size2() == p2.size());
+  BI_ASSERT(x2.size() == p2.size());
+  BI_ASSERT(p3.size() == p1.size());
+  BI_ASSERT(C.size1() == p1.size() && C.size2() == p2.size());
 
   typename sim_temp_vector<V1>::type z2(p2.size());
   typename sim_temp_matrix<M1>::type K(p1.size(), p2.size());
@@ -661,9 +661,9 @@ void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1,
     const ExpGaussianPdf<V2,M2>& p2, const M3 C,
     const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5,M5>& p3) {
   /* pre-conditions */
-  assert(q2.size() == p2.size());
-  assert(p3.size() == p1.size());
-  assert(C.size1() == p1.size() && C.size2() == p2.size());
+  BI_ASSERT(q2.size() == p2.size());
+  BI_ASSERT(p3.size() == p1.size());
+  BI_ASSERT(C.size1() == p1.size() && C.size2() == p2.size());
 
   typename sim_temp_vector<V1>::type z2(p2.size());
   typename sim_temp_matrix<M1>::type K(p1.size(), p2.size());
@@ -717,10 +717,10 @@ void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1,
 template<class V1, class V2, class V3, class V4>
 void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
   /* pre-condition */
-  assert(x.size() == w.size());
-  assert(c.size() == h.size());
-  assert(!V3::on_device);
-  assert(!V4::on_device);
+  BI_ASSERT(x.size() == w.size());
+  BI_ASSERT(c.size() == h.size());
+  BI_ASSERT(!V3::on_device);
+  BI_ASSERT(!V4::on_device);
 
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -762,9 +762,9 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
 template<class M1, class M2>
 void bi::distance(const M1 X, const real h, M2 D) {
   /* pre-conditions */
-  assert(D.size1() == D.size2());
-  assert(D.size1() == X.size1());
-  assert(!M2::on_device);
+  BI_ASSERT(D.size1() == D.size2());
+  BI_ASSERT(D.size1() == X.size1());
+  BI_ASSERT(!M2::on_device);
 
   typedef typename M1::value_type T1;
 
@@ -783,7 +783,7 @@ void bi::distance(const M1 X, const real h, M2 D) {
 template<class M1, class V1>
 void bi::mean(const M1 X, V1 mu) {
   /* pre-condition */
-  assert(X.size2() == mu.size());
+  BI_ASSERT(X.size2() == mu.size());
 
   const int N = X.size1();
   typename sim_temp_vector<V1>::type w(N);
@@ -794,8 +794,8 @@ void bi::mean(const M1 X, V1 mu) {
 template<class M1, class V1, class V2>
 void bi::mean(const M1 X, const V1 w, V2 mu) {
   /* pre-conditions */
-  assert(X.size2() == mu.size());
-  assert(X.size1() == w.size());
+  BI_ASSERT(X.size2() == mu.size());
+  BI_ASSERT(X.size1() == w.size());
 
   typedef typename V1::value_type T;
 
@@ -806,7 +806,7 @@ void bi::mean(const M1 X, const V1 w, V2 mu) {
 template<class V1, class V2>
 void bi::mean(const UniformPdf<V1>& q, V2 mu) {
   /* pre-condition */
-  assert(q.size() == mu.size());
+  BI_ASSERT(q.size() == mu.size());
 
   axpy(0.5, q.lower(), mu, true);
   axpy(0.5, q.upper(), mu);
@@ -815,7 +815,7 @@ void bi::mean(const UniformPdf<V1>& q, V2 mu) {
 template<class V1, class M1, class V2>
 inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
   /* pre-condition */
-  assert(mu.size() == q.size());
+  BI_ASSERT(mu.size() == q.size());
 
   mu = q.mean();
 }
@@ -823,7 +823,7 @@ inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
 template<class V1>
 inline void bi::mean(const GammaPdf& q, V1 mu) {
   /* pre-condition */
-  assert(mu.size() == q.size());
+  BI_ASSERT(mu.size() == q.size());
 
   real alpha = q.shape();
   real beta = q.scale();
@@ -834,8 +834,8 @@ inline void bi::mean(const GammaPdf& q, V1 mu) {
 template<class V1>
 inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
   /* pre-condition */
-  assert(mu.size() == q.size());
-  assert(q.shape() > 1.0);
+  BI_ASSERT(mu.size() == q.size());
+  BI_ASSERT(q.shape() > 1.0);
 
   real alpha = q.shape();
   real beta = q.scale();
@@ -852,8 +852,8 @@ inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
 template<class M1, class V1, class M2>
 void bi::cov(const M1 X, const V1 mu, M2 Sigma) {
   /* pre-conditions */
-  assert(X.size2() == mu.size());
-  assert(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
+  BI_ASSERT(X.size2() == mu.size());
+  BI_ASSERT(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
 
   const int N = X.size1();
   typename sim_temp_matrix<M2>::type Y(X.size1(), X.size2());
@@ -865,9 +865,9 @@ void bi::cov(const M1 X, const V1 mu, M2 Sigma) {
 template<class M1, class V1, class V2, class M2>
 void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   /* pre-conditions */
-  assert(X.size2() == mu.size());
-  assert(X.size1() == w.size());
-  assert(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
+  BI_ASSERT(X.size2() == mu.size());
+  BI_ASSERT(X.size1() == w.size());
+  BI_ASSERT(Sigma.size1() == mu.size() && Sigma.size2() == mu.size());
 
   typedef typename V1::value_type T;
   typename sim_temp_matrix<M2>::type Y(X.size1(), X.size2());
@@ -887,8 +887,8 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
 template<class V1, class M1>
 void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
   /* pre-condition */
-  assert(Sigma.size1() == q.size());
-  assert(Sigma.size2() == q.size());
+  BI_ASSERT(Sigma.size1() == q.size());
+  BI_ASSERT(Sigma.size2() == q.size());
 
   temp_host_vector<real>::type diff(q.size());
   diff = q.upper();
@@ -902,8 +902,8 @@ void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
 template<class V1, class M1, class M2>
 void bi::cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma) {
   /* pre-condition */
-  assert(Sigma.size1() == q.size());
-  assert(Sigma.size2() == q.size());
+  BI_ASSERT(Sigma.size1() == q.size());
+  BI_ASSERT(Sigma.size2() == q.size());
 
   Sigma = q.cov();
 }
@@ -911,8 +911,8 @@ void bi::cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma) {
 template<class M1>
 void bi::cov(const GammaPdf& q, M1 Sigma) {
   /* pre-condition */
-  assert(Sigma.size1() == q.size());
-  assert(Sigma.size2() == q.size());
+  BI_ASSERT(Sigma.size1() == q.size());
+  BI_ASSERT(Sigma.size2() == q.size());
 
   real alpha = q.shape();
   real beta = q.scale();
@@ -925,9 +925,9 @@ void bi::cov(const GammaPdf& q, M1 Sigma) {
 template<class M1>
 void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
   /* pre-condition */
-  assert(Sigma.size1() == q.size());
-  assert(Sigma.size2() == q.size());
-  assert(q.shape() > 2.0);
+  BI_ASSERT(Sigma.size1() == q.size());
+  BI_ASSERT(Sigma.size2() == q.size());
+  BI_ASSERT(q.shape() > 2.0);
 
   real alpha = q.shape();
   real beta = q.scale();
@@ -946,8 +946,8 @@ void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
 template<class M1, class V1, class V2>
 void bi::var(const M1 X, const V1 mu, V2 sigma) {
   /* pre-conditions */
-  assert(X.size2() == mu.size());
-  assert(sigma.size() == mu.size());
+  BI_ASSERT(X.size2() == mu.size());
+  BI_ASSERT(sigma.size() == mu.size());
 
   const int N = X.size1();
   typename sim_temp_matrix<M1>::type Z(X.size2(), X.size1());
@@ -960,9 +960,9 @@ void bi::var(const M1 X, const V1 mu, V2 sigma) {
 template<class M1, class V1, class V2, class V3>
 void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
   /* pre-conditions */
-  assert(X.size2() == mu.size());
-  assert(X.size1() == w.size());
-  assert(sigma.size() == mu.size());
+  BI_ASSERT(X.size2() == mu.size());
+  BI_ASSERT(X.size1() == w.size());
+  BI_ASSERT(sigma.size() == mu.size());
 
   typedef typename V1::value_type T1;
   typename sim_temp_matrix<M1>::type Z(X.size1(), X.size2());
@@ -984,10 +984,10 @@ template<class M1, class M2, class V1, class V2, class M3>
 void bi::cross(const M1 X, const M2 Y, const V1 muX, const V2 muY,
     M3 SigmaXY) {
   /* pre-conditions */
-  assert(X.size2() == muX.size());
-  assert(Y.size2() == muY.size());
-  assert(X.size1() == Y.size1());
-  assert(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
+  BI_ASSERT(X.size2() == muX.size());
+  BI_ASSERT(Y.size2() == muY.size());
+  BI_ASSERT(X.size1() == Y.size1());
+  BI_ASSERT(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
 
   const int N = X.size1();
 
@@ -999,12 +999,12 @@ template<class M1, class M2, class V1, class V2, class V3, class M3>
 void bi::cross(const M1 X, const M2 Y, const V1 w, const V2 muX,
     const V3 muY, M3 SigmaXY) {
   /* pre-conditions */
-  assert(X.size2() == muX.size());
-  assert(Y.size2() == muY.size());
-  assert(X.size1() == Y.size1());
-  assert(X.size1() == w.size());
-  assert(Y.size1() == w.size());
-  assert(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
+  BI_ASSERT(X.size2() == muX.size());
+  BI_ASSERT(Y.size2() == muY.size());
+  BI_ASSERT(X.size1() == Y.size1());
+  BI_ASSERT(X.size1() == w.size());
+  BI_ASSERT(Y.size1() == w.size());
+  BI_ASSERT(SigmaXY.size1() == muX.size() && SigmaXY.size2() == muY.size());
 
   typedef typename V1::value_type T;
   typename sim_temp_matrix<M3>::type Z(X.size1(), X.size2());

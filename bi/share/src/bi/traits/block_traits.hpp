@@ -8,6 +8,7 @@
 #ifndef BI_TRAITS_BLOCK_TRAITS_HPP
 #define BI_TRAITS_BLOCK_TRAITS_HPP
 
+#include "action_traits.hpp"
 #include "../typelist/index.hpp"
 #include "../typelist/front.hpp"
 #include "../typelist/pop_front.hpp"
@@ -96,6 +97,29 @@ struct block_contains_target {
 template<class X>
 struct block_contains_target<empty_typelist,X> {
   static const bool value = false;
+};
+
+/**
+ * Is this a matrix block?
+ */
+template<class S>
+struct block_is_matrix {
+  typedef typename front<S>::type front;
+  typedef typename pop_front<S>::type pop_front;
+
+  static const bool value = action_is_matrix<front>::value && block_is_matrix<pop_front>::value;
+};
+
+/**
+ * @internal
+ *
+ * Base case of block_is_matrix.
+ *
+ * @ingroup model_low
+ */
+template<>
+struct block_is_matrix<empty_typelist> {
+  static const bool value = true;
 };
 
 }

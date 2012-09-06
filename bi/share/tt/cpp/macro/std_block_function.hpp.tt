@@ -1,0 +1,54 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO std_block_static_function(function) BLOCK %]
+  [% sig_block_static_function(function) %] {
+    [% IF function == 'sample' %]
+    simulate(s);
+    [% ELSIF function == 'simulate' %]
+    BI_ASSERT(false);
+    [% ELSIF function == 'logdensity' %]
+    simulate(s);
+    [% ELSIF function == 'maxlogdensity' %]
+    simulate(s);
+    [% ELSE %]
+    [% THROW 'unknown function type' %]
+    [% END %]
+  }
+[% END-%]
+[%-MACRO std_block_dynamic_function(function) BLOCK %]
+  [% sig_block_dynamic_function(function) %] {
+    if (onDelta) {
+      [% IF function == 'sample' %]
+      samples(rng, s);
+      [% ELSIF function == 'simulate' %]
+      simulate(s);
+      [% ELSIF function == 'logdensity' %]
+      logDensities(s, lp);
+      [% ELSIF function == 'maxlogdensity' %]
+      maxLogDensities(s, lp);
+      [% ELSE %]
+      [% THROW 'unknown function type' %]
+      [% END %]
+    }
+  }
+[% END-%]
+[%-MACRO std_block_sparse_static_function(function) BLOCK %]
+  [% sig_block_sparse_static_function(function) %] {
+    [% IF function == 'sample' %]
+    simulate(s, mask);
+    [% ELSIF function == 'simulate' %]
+    BI_ASSERT(false);
+    [% ELSIF function == 'logdensity' %]
+    simulate(s, mask);
+    [% ELSIF function == 'maxlogdensity' %]
+    simulate(s, mask);
+    [% ELSE %]
+    [% THROW 'unknown function type' %]
+    [% END %]
+  }
+[% END-%]

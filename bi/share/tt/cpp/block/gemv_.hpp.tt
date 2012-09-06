@@ -2,74 +2,167 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
+## $Rev: 2987 $
+## $Date: 2012-08-27 14:35:25 +0800 (Mon, 27 Aug 2012) $
 %]
-
-[%-
-A = block.get_action.get_named_arg('A');
-x = block.get_action.get_named_arg('x');
-y = block.get_action.get_target;
--%]
 
 [%-PROCESS block/misc/header.hpp.tt-%]
 
-#include "bi/math/multi_operation.hpp"
+[% create_action_typetree(block) %]
 
 /**
  * Block: gemv_.
  */
 class [% class_name %] {
 public:
-  [% declare_static_function('simulate') %]
-  [% declare_static_function('sample') %]
-  [% declare_static_function('logdensity') %]
-  [% declare_static_function('maxlogdensity') %]
+  [% create_action_typedef(block) %]
 
-  [% declare_dynamic_function('simulate') %]
-  [% declare_dynamic_function('sample') %]
-  [% declare_dynamic_function('logdensity') %]
-  [% declare_dynamic_function('maxlogdensity') %]
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
+
+  [% declare_block_sparse_static_function('simulate') %]
+  [% declare_block_sparse_static_function('sample') %]
+  [% declare_block_sparse_static_function('logdensity') %]  
+  [% declare_block_sparse_static_function('maxlogdensity') %]  
 };
 
-#include "bi/primitive/matrix_primitive.hpp"
+#include "bi/updater/DynamicUpdater.hpp"
+#include "bi/updater/StaticUpdater.hpp"
+#include "bi/updater/SparseStaticUpdater.hpp"
 
-[% sig_static_function('simulate') %] {
-  BOOST_AUTO(A, reshape([% get_var(A) %], P*rows, cols));
-  BOOST_AUTO(x, vec([% get_var(x) %]));
-  BOOST_AUTO(y, vec([% get_var(y) %]));
-      
-  bi::multi_gemv(P, 1.0, reshape(A, P*rows, cols), x, 0.0, y);
+[% sig_block_static_function('simulate') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(s);
+  [%-END %]
 }
 
-[% sig_static_function('sample') %] {
-  simulate(s);
+[% sig_block_static_function('sample') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, s);
+  [%-END %]
 }
 
-[% sig_static_function('logdensity') %] {
-  simulate(s);
+[% sig_block_static_function('logdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(s, lp);
+  [%-END %]
 }
 
-[% sig_static_function('maxlogdensity') %] {
-  simulate(s);
+[% sig_block_static_function('maxlogdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+  [% END %]
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, lp);
+  [%-END %]
 }
 
-[% sig_dynamic_function('simulate') %] {
+[% sig_block_dynamic_function('simulate') %] {
   if (onDelta) {
-    simulate(s);
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
   }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
+  [%-END %]
 }
 
-[% sig_dynamic_function('sample') %] {
-  simulate(t1, t2, onDelta, s);
+[% sig_block_dynamic_function('sample') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, t1, t2, onDelta, s);
+  [%-END %]
 }
 
-[% sig_dynamic_function('logdensity') %] {
-  simulate(t1, t2, onDelta, s);
+[% sig_block_dynamic_function('logdensity') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s, lp);
+  [%-END %]
 }
 
-[% sig_dynamic_function('maxlogdensity') %] {
-  simulate(t1, t2, onDelta, s);
+[% sig_block_dynamic_function('maxlogdensity') %] {
+  if (onDelta) {
+    [% IF block.get_actions.size > 0 %]
+    bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+    [% END %]
+  }
+  
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(t1, t2, onDelta, s, lp);
+  [%-END %]
+}
+
+[% sig_block_sparse_static_function('simulate') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::simulate(s, mask);
+  [%-END %]
+}
+
+[% sig_block_sparse_static_function('sample') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::samples(rng, s, mask);
+  [%-END %]
+}
+
+[% sig_block_sparse_static_function('logdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::logDensities(s, mask, lp);
+  [%-END %]
+}
+
+[% sig_block_sparse_static_function('maxlogdensity') %] {
+  [% IF block.get_actions.size > 0 %]
+  bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
+  [% END %]
+
+  [%-FOREACH subblock IN block.get_blocks %]
+  Block[% subblock.get_id %]::maxLogDensities(s, mask, lp);
+  [%-END %]
 }
 
 [% PROCESS 'block/misc/footer.hpp.tt' %]

@@ -28,7 +28,7 @@ public:
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(const int p, const int i,
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p, const int i,
       const PX& pax, OX& x);
 };
 
@@ -40,7 +40,7 @@ public:
 template<class B, class PX, class OX>
 class StaticUpdaterVisitorGPU<B,empty_typelist,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(const int p, const int i,
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p, const int i,
       const PX& pax, OX& x) {
     //
   }
@@ -52,7 +52,7 @@ public:
 #include "../../typelist/pop_front.hpp"
 
 template<class B, class S, class PX, class OX>
-inline void bi::StaticUpdaterVisitorGPU<B,S,PX,OX>::accept(const int p,
+inline void bi::StaticUpdaterVisitorGPU<B,S,PX,OX>::accept(State<B,ON_DEVICE>& s, const int p,
     const int i, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
@@ -63,9 +63,9 @@ inline void bi::StaticUpdaterVisitorGPU<B,S,PX,OX>::accept(const int p,
   if (i < size) {
     coord_type cox;
     cox.setIndex(i);
-    front::f(p, i, cox, pax, x);
+    front::simulate(s, p, i, cox, pax, x);
   } else {
-    StaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(p, i - size, pax, x);
+    StaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(s, p, i - size, pax, x);
   }
 }
 

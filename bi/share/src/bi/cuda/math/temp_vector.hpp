@@ -20,13 +20,15 @@ namespace bi {
  * @ingroup math_matvec
  *
  * @tparam T Scalar type.
+ * @tparam size_value Static size, -1 for dynamic.
+ * @tparam inc_value Static increment, -1 for dynamic.
  *
  * temp_gpu_vector is a convenience class for producing vectors in device
  * memory that are suitable for short-term use before destruction. It uses
  * pooled_allocator to reuse allocated buffers, as device memory allocations
  * can be slow.
  */
-template<class T>
+template<class T, int size_value = -1, int inc_value = -1>
 struct temp_gpu_vector {
   /**
    * @internal
@@ -38,7 +40,7 @@ struct temp_gpu_vector {
   /**
    * Vector type.
    */
-  typedef gpu_vector<T,allocator_type> type;
+  typedef gpu_vector<T,size_value,inc_value,allocator_type> type;
 };
 }
 

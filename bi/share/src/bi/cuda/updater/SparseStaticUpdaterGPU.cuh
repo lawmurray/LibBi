@@ -40,11 +40,11 @@ void bi::SparseStaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s,
   if (mask.size() > 0) {
     dim3 Dg, Db;
 
-    Db.x = std::min(deviceIdealThreadsPerBlock(), P); // over trajectories
+    Db.x = bi::min(deviceIdealThreadsPerBlock(), P); // over trajectories
     Dg.x = (P + Db.x - 1)/Db.x;
 
     bind(s);
-    kernelSparseStaticUpdater<B,S><<<Dg,Db>>>(mask);
+    kernelSparseStaticUpdater<B,S><<<Dg,Db>>>(s, mask);
     CUDA_CHECK;
     unbind(s);
   }

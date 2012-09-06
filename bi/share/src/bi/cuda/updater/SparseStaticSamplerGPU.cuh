@@ -25,7 +25,8 @@ namespace bi {
 template<class B, class S>
 class SparseStaticSamplerGPU {
 public:
-  static void update(Random& rng, State<B,ON_DEVICE>& s, Mask<ON_DEVICE>& mask);
+  static void update(Random& rng, State<B,ON_DEVICE>& s,
+      Mask<ON_DEVICE>& mask);
 };
 }
 
@@ -41,12 +42,11 @@ void bi::SparseStaticSamplerGPU<B,S>::update(Random& rng,
   if (mask.size() > 0) {
     dim3 Dg, Db;
 
-    Db.x = deviceIdealThreadsPerBlock();
-    Dg.x = (std::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
+    Db.x = bi::min(P, deviceIdealThreadsPerBlock());
+    Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
     bind(s);
-    Random rng1(rng);
-    kernelSparseStaticSampler<B,S><<<Dg,Db>>>(rng1, mask);
+    kernelSparseStaticSampler<B,S><<<Dg,Db>>>(rng.devRngs, s, mask);
     CUDA_CHECK;
     unbind(s);
   }

@@ -222,11 +222,11 @@ template<class B, class IO, bi::Location CL>
 template<bi::Location L>
 inline void bi::OYUpdater<B,IO,CL>::update(State<B,L>& s) {
   /* pre-condition */
-  assert(hasNext());
+  BI_ASSERT(hasNext());
 
   /* current observations and mask */
   if (cache.isValid(state.p1)) {
-    assert (maskCache.isValid(state.p1));
+    BI_ASSERT(maskCache.isValid(state.p1));
     cache.read(state.p1, s.get(OY_VAR));
     //cache.swapRead(state.p1, s.get(OY_VAR));
   } else {
@@ -234,7 +234,7 @@ inline void bi::OYUpdater<B,IO,CL>::update(State<B,L>& s) {
       in.next();
       ++state.p2;
     }
-    assert (state.p1 == state.p2);
+    BI_ASSERT(state.p1 == state.p2);
 
     in.mask();
     in.read(O_VAR, s.get(OY_VAR));
@@ -285,7 +285,7 @@ void bi::OYUpdater<B,IO,CL>::setTime(const real t, State<B,L>& s) {
   if (t < getTime()) {
     rewind();
   }
-  while (hasNext() && getNextTime() <= t) {
+  while (hasNext() && getNextTime() < t) {
     update(s);
   }
 }
@@ -299,7 +299,7 @@ template<class B, class IO, bi::Location CL>
 inline const typename bi::OYUpdater<B,IO,CL>::mask_type
     bi::OYUpdater<B,IO,CL>::getMask() const {
   /* pre-condition */
-  assert (state.p1 > 0);
+  BI_ASSERT(state.p1 > 0);
 
   return maskCache.get(state.p1 - 1);
 }
@@ -308,7 +308,7 @@ template<class B, class IO, bi::Location CL>
 inline const typename bi::OYUpdater<B,IO,CL>::host_mask_type
     bi::OYUpdater<B,IO,CL>::getHostMask() const {
   /* pre-condition */
-  assert (state.p1 > 0);
+  BI_ASSERT(state.p1 > 0);
 
   return maskHostCache.get(state.p1 - 1);
 }
@@ -321,7 +321,7 @@ inline bool bi::OYUpdater<B,IO,CL>::hasNext() const {
 template<class B, class IO, bi::Location CL>
 inline real bi::OYUpdater<B,IO,CL>::getNextTime() const {
   /* pre-condition */
-  assert (hasNext());
+  BI_ASSERT(hasNext());
 
   return timeCache.get(state.p1);
 }

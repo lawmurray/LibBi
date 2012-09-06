@@ -163,7 +163,7 @@ inline void bi::FUpdater<B,IO,CL>::update(State<B,L>& s) {
       in.next();
       ++state.p2;
     }
-    assert (state.p1 == state.p2);
+    BI_ASSERT(state.p1 == state.p2);
 
     in.mask();
     in.read(F_VAR, s.get(F_VAR));
@@ -213,7 +213,7 @@ void bi::FUpdater<B,IO,CL>::setTime(const real t, State<B,L>& s) {
   if (t < getTime()) {
     rewind();
   }
-  while (hasNext() && getTime() <= t) {
+  while (hasNext() && getTime() < t) {
     update(s);
   }
 }

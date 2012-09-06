@@ -96,18 +96,17 @@ Is the function a math function?
 sub is_math {
     my $self = shift;    
     my %MATH_FUNCTIONS = (
-      'fabs' => 1,
+      'abs' => 1,
       'log' => 1,
       'exp' => 1,
       'max' => 1,
       'min' => 1,
       'sqrt' => 1,
       'pow' => 1,
-      'fmod' => 1,
-      'modf' => 1,
+      'mod' => 1,
       'ceil' => 1,
       'floor' => 1,
-      'tgamma' => 1,
+      'gamma' => 1,
       'lgamma' => 1,
       'sin' => 1,
       'cos' => 1,

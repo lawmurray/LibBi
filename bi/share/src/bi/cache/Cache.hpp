@@ -99,7 +99,7 @@ private:
 
 inline bool bi::Cache::isValid(const int p) const {
   /* pre-condition */
-  assert (p >= 0);
+  BI_ASSERT(p >= 0);
 
   return p < (int)valids.size() && valids[p];
 }
@@ -110,14 +110,14 @@ inline bool bi::Cache::isValid() const {
 
 inline void bi::Cache::setValid(const int p, const bool valid) {
   /* pre-condition */
-  assert (p >= 0 && p < (int)valids.size());
+  BI_ASSERT(p >= 0 && p < (int)valids.size());
 
   valids[p] = valid;
 }
 
 inline bool bi::Cache::isDirty(const int p) const {
   /* pre-condition */
-  assert (p >= 0);
+  BI_ASSERT(p >= 0);
 
   return p < (int)dirties.size() && dirties[p];
 }
@@ -128,7 +128,7 @@ inline bool bi::Cache::isDirty() const {
 
 inline void bi::Cache::setDirty(const int p, const bool dirty) {
   /* pre-condition */
-  assert (p >= 0 && p < (int)dirties.size());
+  BI_ASSERT(p >= 0 && p < (int)dirties.size());
 
   dirties[p] = dirty;
 }
@@ -144,7 +144,7 @@ inline void bi::Cache::clean() {
 
 inline void bi::Cache::resize(const int size) {
   /* pre-condition */
-  assert (size >= 0);
+  BI_ASSERT(size >= 0);
 
   valids.resize(size, false);
   dirties.resize(size, false);

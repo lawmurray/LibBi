@@ -14,21 +14,18 @@ range = action.make_range;
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
   [% declare_action_static_function('lower') %]
   [% declare_action_static_function('upper') %]
   [% declare_action_static_function('range') %]
+    
+  [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
   [% declare_action_static_function('maxlogdensity') %]
@@ -38,63 +35,66 @@ public:
 
 [% sig_action_static_function('lower') %] {
   [% alias_dims(action) %]
-  [% read_input(lower) %]
+  [% fetch_parents(lower) %]
   
   x = [% lower.to_cpp %];
 }
 
 [% sig_action_static_function('upper') %] {
   [% alias_dims(action) %]
-  [% read_input(upper) %]
+  [% fetch_parents(upper) %]
   
   x = [% upper.to_cpp %];
 }
 
 [% sig_action_static_function('range') %] {
   [% alias_dims(action) %]
-  [% read_input(upper) %]
+  [% fetch_parents(upper) %]
   
   x = [% range.to_cpp %];
 }
 
+[% std_action_static_function('simulate') %]
+
 [% sig_action_static_function('sample') %] {
   real mn, mx, u;
     
-  lower(p, cox, pax, mn);
-  upper(p, cox, pax, mx);
+  lower(s, p, cox, pax, mn);
+  upper(s, p, cox, pax, mx);
   u = rng.uniform(mn, mx);
     
-  x.template put<target_type>(p, ix, u);
+  x.template fetch<target_type>(s, p, ix) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
-  real mn, mx, xy;
+  T1 mn, mx;
     
-  lower(p, cox, pax, mn);
-  upper(p, cox, pax, mx);
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  lower(s, p, cox, pax, mn);
+  upper(s, p, cox, pax, mx);
+  
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
   if (xy >= mn && xy <= mx) {
-    lp += -BI_MATH_LOG(mx - mn);
+    lp += -bi::log(mx - mn);
   } else {
     lp = BI_REAL(-1.0)/BI_REAL(0.0);
   }
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  real rn, xy;
+  T1 rn;
 
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
   
   [% IF range.is_common %]
-  range(p, cox, pax, rn);
-  lp += -BI_MATH_LOG(rn);
+  range(s, p, cox, pax, rn);
+  lp += -bi::log(rn);
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

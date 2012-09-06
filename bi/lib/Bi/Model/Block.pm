@@ -499,17 +499,6 @@ sub shift_block {
     return shift(@{$self->get_blocks});
 }
 
-=item B<can_simulate>
-
-Can block be deterministically simulated?
-
-=cut
-sub can_simulate {
-    my $self = shift;
-    
-    return Bi::Visitor::CanSimulate->evaluate($self);
-}
-
 =item B<sink_actions>(I<model>)
 
 Sinks all actions into a new sub-block, which is inserted at the end of the

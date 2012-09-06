@@ -9,9 +9,7 @@
 
 #include "../math/view.hpp"
 
-using namespace bi;
-
-OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
+bi::OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
@@ -21,11 +19,11 @@ OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
   }
 }
 
-OptimiserNetCDFBuffer::~OptimiserNetCDFBuffer() {
+bi::OptimiserNetCDFBuffer::~OptimiserNetCDFBuffer() {
   //
 }
 
-void OptimiserNetCDFBuffer::create() {
+void bi::OptimiserNetCDFBuffer::create() {
   int id, i;
   VarType type;
   Var* var;
@@ -63,7 +61,7 @@ void OptimiserNetCDFBuffer::create() {
   }
 }
 
-void OptimiserNetCDFBuffer::map() {
+void bi::OptimiserNetCDFBuffer::map() {
   std::string name;
   int id, i;
   VarType type;
@@ -114,46 +112,46 @@ void OptimiserNetCDFBuffer::map() {
   }
 }
 
-void OptimiserNetCDFBuffer::readValue(const int k, real& x) {
+void bi::OptimiserNetCDFBuffer::readValue(const int k, real& x) {
   /* pre-condition */
-  assert (k >= 0 && k < nsDim->size());
+  BI_ASSERT(k >= 0 && k < nsDim->size());
 
   BI_UNUSED NcBool ret;
   ret = valueVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << valueVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << valueVar->name());
   ret = valueVar->get(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << valueVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << valueVar->name());
 }
 
-void OptimiserNetCDFBuffer::writeValue(const int k, const real& x) {
+void bi::OptimiserNetCDFBuffer::writeValue(const int k, const real& x) {
   /* pre-condition */
-  assert (k >= 0 && k < nsDim->size());
+  BI_ASSERT(k >= 0 && k < nsDim->size());
 
   BI_UNUSED NcBool ret;
   ret = valueVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << valueVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << valueVar->name());
   ret = valueVar->put(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << valueVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << valueVar->name());
 }
 
-void OptimiserNetCDFBuffer::readSize(const int k, real& x) {
+void bi::OptimiserNetCDFBuffer::readSize(const int k, real& x) {
   /* pre-condition */
-  assert (k >= 0 && k < nsDim->size());
+  BI_ASSERT(k >= 0 && k < nsDim->size());
 
   BI_UNUSED NcBool ret;
   ret = sizeVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << sizeVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << sizeVar->name());
   ret = sizeVar->get(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << sizeVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << sizeVar->name());
 }
 
-void OptimiserNetCDFBuffer::writeSize(const int k, const real& x) {
+void bi::OptimiserNetCDFBuffer::writeSize(const int k, const real& x) {
   /* pre-condition */
-  assert (k >= 0 && k < nsDim->size());
+  BI_ASSERT(k >= 0 && k < nsDim->size());
 
   BI_UNUSED NcBool ret;
   ret = sizeVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << sizeVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << sizeVar->name());
   ret = sizeVar->put(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << sizeVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << sizeVar->name());
 }

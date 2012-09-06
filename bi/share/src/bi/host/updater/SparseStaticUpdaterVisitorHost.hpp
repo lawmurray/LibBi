@@ -32,7 +32,8 @@ public:
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static void accept(const Mask<L>& mask, const int p, const PX& pax, OX& x);
+  static void accept(State<B,ON_HOST>& s, const Mask<L>& mask, const int p,
+      const PX& pax, OX& x);
 };
 
 /**
@@ -43,7 +44,8 @@ public:
 template<class B, Location L, class PX, class OX>
 class SparseStaticUpdaterVisitorHost<B,empty_typelist,L,PX,OX> {
 public:
-  static void accept(const Mask<L>& mask, const int p, const PX& pax, OX& x) {
+  static void accept(State<B,ON_HOST>& s, const Mask<L>& mask, const int p,
+      const PX& pax, OX& x) {
     //
   }
 };
@@ -56,7 +58,8 @@ public:
 
 template<class B, class S, bi::Location L, class PX, class OX>
 inline void bi::SparseStaticUpdaterVisitorHost<B,S,L,PX,OX>::accept(
-    const Mask<L>& mask, const int p, const PX& pax, OX& x) {
+    State<B,ON_HOST>& s, const Mask<L>& mask, const int p, const PX& pax,
+    OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -68,19 +71,20 @@ inline void bi::SparseStaticUpdaterVisitorHost<B,S,L,PX,OX>::accept(
 
   if (mask.isDense(id)) {
     while (ix < mask.getSize(id)) {
-      front::f(p, ix, cox, pax, x);
+      front::simulate(s, p, ix, cox, pax, x);
       ++cox;
       ++ix;
     }
   } else if (mask.isSparse(id)) {
     while (ix < mask.getSize(id)) {
       cox.setIndex(mask.getIndex(id, ix));
-      front::f(p, ix, cox, pax, x);
+      front::simulate(s, p, ix, cox, pax, x);
       ++ix;
     }
   }
 
-  SparseStaticUpdaterVisitorHost<B,pop_front,L,PX,OX>::accept(mask, p, pax, x);
+  SparseStaticUpdaterVisitorHost<B,pop_front,L,PX,OX>::accept(s, mask, p, pax,
+      x);
 }
 
 #endif

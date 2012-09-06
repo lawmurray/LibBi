@@ -32,12 +32,17 @@ our @EXEC_OPTIONS = (
       default => 0
     },
     {
+      name => 'with-valgrind',
+      type => 'bool',
+      default => 0
+    },
+    {
       name => 'with-cuda-gdb',
       type => 'bool',
       default => 0
     },
     {
-      name => 'with-valgrind',
+      name => 'with-cuda-memcheck',
       type => 'bool',
       default => 0
     }
@@ -354,10 +359,11 @@ sub exec {
 
     if ($self->get_named_exec_arg('with-cuda-gdb')) {
         unshift(@argv, "libtool --mode=execute cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
+    } elsif ($self->get_named_exec_arg('with-cuda-memcheck')) {
+        unshift(@argv, "libtool --mode=execute cuda-memcheck $builddir/" . $self->{_binary});        
     } elsif ($self->get_named_exec_arg('with-gdb')) {
         unshift(@argv, "libtool --mode=execute gdb -q -ex run --args $builddir/" . $self->{_binary});
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
-#        unshift(@argv, "valgrind --leak-check=full $builddir/" . $self->{_binary});
         unshift(@argv, "libtool --mode=execute valgrind --leak-check=full $builddir/" . $self->{_binary});
     } elsif ($self->get_named_arg('with-mpi')) {
         my $np = '';

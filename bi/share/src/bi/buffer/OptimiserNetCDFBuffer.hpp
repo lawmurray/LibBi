@@ -133,7 +133,7 @@ template<class V1>
 void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
     V1 x) {
   /* pre-condition */
-  assert (k >= 0 && k < nsDim->size());
+  BI_ASSERT(k >= 0 && k < nsDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -157,7 +157,7 @@ void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      assert (ncVar->get_dim(j) == nsDim);
+      BI_ASSERT(ncVar->get_dim(j) == nsDim);
       offsets[j] = k;
       counts[j] = 1;
       ++j;
@@ -168,16 +168,16 @@ void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
       }
 
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
       if (V1::on_device || x.inc() != 1) {
         temp_vector_type x1(size);
         ret = ncVar->get(x1.buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
         subrange(x, start, size) = x1;
       } else {
         ret = ncVar->get(subrange(x, start, size).buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       }
     }
   }
@@ -208,7 +208,7 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      assert (ncVar->get_dim(j) == nsDim);
+      BI_ASSERT(ncVar->get_dim(j) == nsDim);
       offsets[j] = k;
       counts[j] = 1;
       ++j;
@@ -219,7 +219,7 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
       }
 
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
       if (V1::on_device || x.inc() != 1) {
         temp_vector_type x1(size);
@@ -229,7 +229,7 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
       } else {
         ret = ncVar->put(subrange(x, start, size).buf(), counts.buf());
       }
-      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
     }
   }
 }

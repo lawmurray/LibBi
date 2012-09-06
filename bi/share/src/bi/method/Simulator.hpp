@@ -191,29 +191,29 @@ public:
   void init(State<B,L>& s, IO3* inInit = NULL);
 
   /**
-   * Initialise for stochastic simulation, with fixed starting point.
+   * Initialise for stochastic simulation, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param s State.
    */
   template<Location L, class V1>
-  void init(Random& rng, const V1 theta0, State<B,L>& s);
+  void init(Random& rng, const V1 theta, State<B,L>& s);
 
   /**
-   * Initialise for deterministic simulation, with fixed starting point.
+   * Initialise for deterministic simulation, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param s State.
    */
   template<Location L, class V1>
-  void init(const V1 theta0, State<B,L>& s);
+  void init(const V1 theta, State<B,L>& s);
 
   /**
    * Advance stochastic model forward.
@@ -530,67 +530,89 @@ template<bi::Location L, class IO3>
 void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, State<B,L>& s,
     IO3* inInit) {
   const int P = s.size();
-  s.setRange(0, 1);
 
+  s.setRange(0, 1);
   if (inInput != NULL) {
     inInput->read0(F_VAR, s.get(F_VAR));
   }
-  m.parameterSamples(rng, s);
 
+  m.parameterSamples(rng, s);
   if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(P_VAR));
+    inInit->read0(P_VAR, s.get(PY_VAR));
+    m.parameterSimulate(s);
   }
 
   s.setRange(0, P);
   m.initialSamples(rng, s);
   if (inInit != NULL) {
-    inInit->read0(D_VAR, s.get(D_VAR));
+    inInit->read0(D_VAR, s.get(DY_VAR));
+    //m.initialSimulate(s);
   }
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class IO3>
 void bi::Simulator<B,IO1,IO2,CL>::init(State<B,L>& s, IO3* inInit) {
+  const int P = s.size();
+
+  s.setRange(0, 1);
   if (inInput != NULL) {
     inInput->read0(F_VAR, s.get(F_VAR));
   }
+
   m.parameterSimulate(s);
   if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(P_VAR));
+    inInit->read0(P_VAR, s.get(PY_VAR));
+    m.parameterSimulate(s);
   }
+
+  s.setRange(0, P);
   m.initialSimulate(s);
   if (inInit != NULL) {
-    inInit->read0(D_VAR, s.get(D_VAR));
+    inInit->read0(D_VAR, s.get(DY_VAR));
+    //m.initialSimulate(s);
   }
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class V1>
-void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta0,
+void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta,
     State<B,L>& s) {
   /* pre-condition */
-  assert (theta0.size() == NP || theta0.size() == NP + ND);
+  BI_ASSERT(theta.size() == NP);
 
-  vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
-  if (theta0.size() == NP + ND) {
-    set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
-  } else {
-    m.initialSamples(rng, s);
+  const int P = s.size();
+
+  s.setRange(0, 1);
+  if (inInput != NULL) {
+    inInput->read0(F_VAR, s.get(F_VAR));
   }
+
+  vec(s.get(PY_VAR)) = theta;
+  m.parameterSimulate(s);
+
+  s.setRange(0, P);
+  m.initialSamples(rng, s);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class V1>
-void bi::Simulator<B,IO1,IO2,CL>::init(const V1 theta0, State<B,L>& s) {
+void bi::Simulator<B,IO1,IO2,CL>::init(const V1 theta, State<B,L>& s) {
   /* pre-condition */
-  assert (theta0.size() == NP || theta0.size() == NP + ND);
+  BI_ASSERT(theta.size() == NP);
 
-  vec(s.get(P_VAR)) = subrange(theta0, 0, NP);
-  if (theta0.size() == NP + ND) {
-    set_rows(s.get(D_VAR), subrange(theta0, NP, ND));
-  } else {
-    m.initialSimulate(s);
+  const int P = s.size();
+
+  s.setRange(0, 1);
+  if (inInput != NULL) {
+    inInput->read0(F_VAR, s.get(F_VAR));
   }
+
+  vec(s.get(PY_VAR)) = theta;
+  m.parameterSimulate(s);
+
+  s.setRange(0, P);
+  m.initialSimulate(s);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
@@ -598,7 +620,7 @@ template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
     State<B,L>& s) {
   /* pre-condition */
-  assert (fabs(tnxt - state.t) > 0.0);
+  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
@@ -610,7 +632,7 @@ void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
 
   do { // over intermediate stopping points
     td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
     if (sgn*ti >= sgn*tf) {
       /* update forcings */
@@ -630,14 +652,14 @@ void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
   state.t = tnxt;
 
   /* post-condition */
-  assert (state.t == tnxt);
+  BI_ASSERT(state.t == tnxt);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::advance(const real tnxt, State<B,L>& s) {
   /* pre-condition */
-  assert (fabs(tnxt - state.t) > 0.0);
+  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
@@ -649,7 +671,7 @@ void bi::Simulator<B,IO1,IO2,CL>::advance(const real tnxt, State<B,L>& s) {
 
   do { // over intermediate stopping points
     td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
     if (sgn*ti >= sgn*tf) {
       /* update forcings */
@@ -669,7 +691,7 @@ void bi::Simulator<B,IO1,IO2,CL>::advance(const real tnxt, State<B,L>& s) {
   state.t = tnxt;
 
   /* post-condition */
-  assert (state.t == tnxt);
+  BI_ASSERT(state.t == tnxt);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
@@ -677,7 +699,7 @@ template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
     State<B,L>& s) {
   /* pre-condition */
-  assert (fabs(tnxt - state.t) > 0.0);
+  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
@@ -689,7 +711,7 @@ void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
 
   do { // over intermediate stopping points
     td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
     if (sgn*ti >= sgn*tf) {
       /* update forcings */
@@ -709,7 +731,7 @@ void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
   state.t = tnxt;
 
   /* post-condition */
-  assert (state.t == tnxt);
+  BI_ASSERT(state.t == tnxt);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
@@ -717,7 +739,7 @@ template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt,
     State<B,L>& s) {
   /* pre-condition */
-  assert (fabs(tnxt - state.t) > 0.0);
+  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
 
   real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, td;
@@ -729,7 +751,7 @@ void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt,
 
   do { // over intermediate stopping points
     td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*std::min(sgn*tf, std::min(sgn*td, sgn*tnxt));
+    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
     if (sgn*ti >= sgn*tf) {
       /* update forcings */
@@ -749,7 +771,7 @@ void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt,
   state.t = tnxt;
 
   /* post-condition */
-  assert (state.t == tnxt);
+  BI_ASSERT(state.t == tnxt);
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>

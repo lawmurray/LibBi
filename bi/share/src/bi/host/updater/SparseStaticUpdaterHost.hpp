@@ -31,28 +31,33 @@ public:
 }
 
 #include "SparseStaticUpdaterVisitorHost.hpp"
+#include "SparseStaticUpdaterMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 void bi::SparseStaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticUpdaterMatrixVisitorHost<B,S,ON_HOST,PX,OX> MatrixVisitor;
+  typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   bind(s);
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     PX pax;
     OX x;
     int p;
 
-    #pragma omp for
+#pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(mask, p, pax, x);
+      Visitor::accept(s, mask, p, pax, x);
     }
   }
   unbind(s);
@@ -61,14 +66,17 @@ void bi::SparseStaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s,
 template<class B, class S>
 void bi::SparseStaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask, const int p) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticUpdaterMatrixVisitorHost<B,S,ON_HOST,PX,OX> MatrixVisitor;
+  typedef SparseStaticUpdaterVisitorHost<B,S,ON_HOST,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(mask, p, pax, x);
+  Visitor::accept(s, mask, p, pax, x);
   unbind(s);
 }
 

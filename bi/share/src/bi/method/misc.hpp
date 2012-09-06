@@ -167,29 +167,25 @@ void summarise_apf(const Cache2D<T1>& lw1s, const Cache2D<T1>& lw2s, T1* ll,
 
 }
 
+#include "../math/function.hpp"
 #include "../math/temp_vector.hpp"
-#include "../math/scalar.hpp"
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
-#include "boost/typeof/typeof.hpp"
-
-#include <cmath>
-
 inline real bi::gt_step(const real t, const real delta) {
-  return delta*ceil((t + 1.0e-3*delta)/delta);
+  return delta*bi::ceil((t + 1.0e-3*delta)/delta);
 }
 
 inline real bi::ge_step(const real t, const real delta) {
-  return delta*ceil((t - 1.0e-3*delta)/delta);
+  return delta*bi::ceil((t - 1.0e-3*delta)/delta);
 }
 
 inline int bi::le_steps(const real t, const real delta) {
-  return static_cast<int>(ceil((t + 1.0e-3*delta)/delta));
+  return static_cast<int>(bi::ceil((t + 1.0e-3*delta)/delta));
 }
 
 inline int bi::lt_steps(const real t, const real delta) {
-  return static_cast<int>(ceil((t - 1.0e-3*delta)/delta));
+  return static_cast<int>(bi::ceil((t - 1.0e-3*delta)/delta));
 }
 
 inline int bi::le_steps(const real ti, const real tj, const real delta) {
@@ -236,10 +232,10 @@ void bi::summarise_pf(const Cache2D<T1>& lws, T1* ll, V2* lls, V3* ess) {
 
     bi::sort(lws1);
     logsum1 = logsumexp_reduce(lws1);
-    sum1 = exp(logsum1);
+    sum1 = bi::exp(logsum1);
     sum2 = sumexpsq_reduce(lws1);
 
-    lls1(n) = logsum1 - std::log(lws1.size());
+    lls1(n) = logsum1 - bi::log(static_cast<real>(lws1.size()));
     ess1(n) = (sum1*sum1)/sum2;
   }
 
@@ -275,17 +271,17 @@ void bi::summarise_apf(const Cache2D<T1>& lw1s, const Cache2D<T1>& lw2s,
     lw1s1 = lw1s.get(n);
     typename temp_host_vector<real>::type lw2s1(lw2s.get(n).size());
     lw2s1 = lw2s.get(n);
-    assert (lw1s1.size() == lw2s1.size());
+    BI_ASSERT(lw1s1.size() == lw2s1.size());
 
     bi::sort(lw1s1);
     bi::sort(lw2s1);
 
     logsum1 = logsumexp_reduce(lw1s1);
     logsum2 = logsumexp_reduce(lw2s1);
-    sum2 = exp(logsum2);
+    sum2 = bi::exp(logsum2);
     sum3 = sumexpsq_reduce(lw2s1);
 
-    lls1(n) = logsum1 + logsum2 - 2.0*std::log(lw1s1.size());
+    lls1(n) = logsum1 + logsum2 - 2.0*bi::log(static_cast<real>(lw1s1.size()));
     ess1(n) = (sum2*sum2)/sum3;
   }
 

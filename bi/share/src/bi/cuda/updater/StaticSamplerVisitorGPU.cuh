@@ -8,7 +8,7 @@
 #ifndef BI_CUDA_UPDATER_STATICSAMPLERVISITORGPU_CUH
 #define BI_CUDA_UPDATER_STATICSAMPLERVISITORGPU_CUH
 
-#include "../../typelist/typelist.hpp"
+#include "../random/RngGPU.cuh"
 
 namespace bi {
 /**
@@ -25,11 +25,12 @@ public:
   /**
    * Sample.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
+   * @param s State.
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, const PX& pax,
+  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, State<B,ON_DEVICE>& s, const PX& pax,
       OX& x);
 };
 
@@ -41,7 +42,7 @@ public:
 template<class B, class PX, class OX>
 class StaticSamplerVisitorGPU<B,empty_typelist,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, const PX& pax,
+  static CUDA_FUNC_DEVICE void accept(RngGPU& rng, State<B,ON_DEVICE>& s, const PX& pax,
       OX& x) {
     //
   }
@@ -54,7 +55,7 @@ public:
 
 template<class B, class S, class PX, class OX>
 inline void bi::StaticSamplerVisitorGPU<B,S,PX,OX>::accept(
-    RngGPU& rng, const PX& pax, OX& x) {
+    RngGPU& rng, State<B,ON_DEVICE>& s, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -67,12 +68,12 @@ inline void bi::StaticSamplerVisitorGPU<B,S,PX,OX>::accept(
 
   for (ix = 0; ix < size; ++ix, ++cox) {
     p = blockIdx.x*blockDim.x + threadIdx.x;
-    while (p < constP) {
-      front::samples(rng, p, ix, cox, pax, x);
+    while (p < s.size()) {
+      front::samples(rng, s, p, ix, cox, pax, x);
       p += Q;
     }
   }
-  StaticSamplerVisitorGPU<B,pop_front,PX,OX>::accept(rng, pax, x);
+  StaticSamplerVisitorGPU<B,pop_front,PX,OX>::accept(rng, s, pax, x);
 }
 
 #endif

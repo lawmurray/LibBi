@@ -37,7 +37,7 @@ template<class V1>
 void bi::StaticMaxLogDensityGPU<B,S>::maxLogDensities(State<B,ON_DEVICE>& s,
     V1 lp) {
   /* pre-condition */
-  assert (V1::on_device);
+  BI_ASSERT(V1::on_device);
 
   static const int N = block_size<S>::value;
   const int P = s.size();
@@ -45,12 +45,12 @@ void bi::StaticMaxLogDensityGPU<B,S>::maxLogDensities(State<B,ON_DEVICE>& s,
 
   Db.y = N;
   Dg.y = 1;
-  Db.x = std::min(deviceIdealThreadsPerBlock()/N, P);
+  Db.x = bi::min(deviceIdealThreadsPerBlock()/N, P);
   Dg.x = (P + Db.x - 1)/Db.x;
 
   if (N > 0) {
     bind(s);
-    kernelStaticMaxLogDensity<B,S><<<Dg,Db>>>(lp);
+    kernelStaticMaxLogDensity<B,S><<<Dg,Db>>>(s, lp);
     CUDA_CHECK;
     unbind(s);
   }

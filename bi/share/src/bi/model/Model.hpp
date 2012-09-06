@@ -248,7 +248,7 @@ inline int bi::Model::getNetSize(const VarType type) const {
 
 inline bi::Dim* bi::Model::getDim(const int id) const {
   /* pre-condition */
-  assert (id < (int)dimsById.size());
+  BI_ASSERT(id < (int)dimsById.size());
 
   return dimsById[id];
 }
@@ -257,7 +257,7 @@ inline bi::Dim* bi::Model::getDim(const std::string& name) const {
   std::map<std::string,Dim*>::const_iterator iter;
 
   iter = dimsByName.find(name);
-  BI_ASSERT(iter != dimsByName.end(), "Dimension " << name <<
+  BI_ASSERT_MSG(iter != dimsByName.end(), "Dimension " << name <<
       " does not exist");
   return iter->second;
 
@@ -274,7 +274,7 @@ inline int bi::Model::getNumVars(const VarType type) const {
 inline int bi::Model::getVarStart(const VarType type,
     const int id) const {
   /* pre-condition */
-  assert (id < netNumVars[type]);
+  BI_ASSERT(id < netNumVars[type]);
 
   return varStarts[type][id];
 }
@@ -282,7 +282,7 @@ inline int bi::Model::getVarStart(const VarType type,
 inline bi::Var* bi::Model::getVar(const VarType type,
     const int id) const {
   /* pre-condition */
-  assert(id < (int)varsById[type].size());
+  BI_ASSERT(id < (int)varsById[type].size());
 
   return varsById[type][id];
 }
@@ -292,7 +292,7 @@ inline bi::Var* bi::Model::getVar(const VarType type,
   std::map<std::string,Var*>::const_iterator iter;
 
   iter = varsByName[type].find(name);
-  BI_ASSERT(iter != varsByName[type].end(), "Variable " << name <<
+  BI_ASSERT_MSG(iter != varsByName[type].end(), "Variable " << name <<
       " does not exist");
   return iter->second;
 }

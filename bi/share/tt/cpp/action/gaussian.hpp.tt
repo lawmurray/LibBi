@@ -14,20 +14,17 @@ log = action.get_named_arg('log').eval_const;
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
   [% declare_action_static_function('mean') %]
   [% declare_action_static_function('std') %]
+  
+  [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
   [% declare_action_static_function('maxlogdensity') %]
@@ -37,64 +34,67 @@ public:
 
 [% sig_action_static_function('mean') %] {
   [% alias_dims(action) %]
-  [% read_input(mean) %]
+  [% fetch_parents(mean) %]
   
   x = [% mean.to_cpp %];
 }
 
 [% sig_action_static_function('std') %] {
   [% alias_dims(action) %]
-  [% read_input(std) %]
+  [% fetch_parents(std) %]
   
   x = [% std.to_cpp %];
 }
 
+[% std_action_static_function('simulate') %]
+
 [% sig_action_static_function('sample') %] {
   real mu, sigma, u;
     
-  mean(p, cox, pax, mu);
-  std(p, cox, pax, sigma);
+  mean(s, p, cox, pax, mu);
+  std(s, p, cox, pax, sigma);
   [% IF log %]
-  u = BI_MATH_EXP(rng.gaussian(mu, sigma));
+  u = bi::exp(rng.gaussian(mu, sigma));
   [% ELSE %]
   u = rng.gaussian(mu, sigma);
   [% END %]
     
-  x.template put<target_type>(p, ix, u);
+  x.template fetch<target_type>(s, p, ix) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
-  real mu, sigma, xy;
+  T1 mu, sigma;
 
-  mean(p, cox, pax, mu);
-  std(p, cox, pax, sigma);
+  mean(s, p, cox, pax, mu);
+  std(s, p, cox, pax, sigma);
   
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
   [% IF log %]
-  lp += BI_REAL(-0.5)*BI_MATH_POW((BI_MATH_LOG(xy) - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma*xy);
+  lp += BI_REAL(-0.5)*bi::pow((bi::log(xy) - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma*xy);
   [% ELSE %]
-  lp += BI_REAL(-0.5)*BI_MATH_POW((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
+  lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
   [% END %]
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  real sigma, xy;
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  T1 sigma;
+
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
   
   [% IF (std.is_common && action.get_target.get_var.get_type == 'obs') || (!log && std.is_common) %]
-  std(p, cox, pax, sigma);
+  std(s, p, cox, pax, sigma);
   [% IF log %]
-  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma*xy);
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma*xy);
   [% ELSE %]
-  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
   [% END %]
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]
   
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

@@ -70,7 +70,7 @@ sub visit {
     } elsif ($node->isa('Bi::Expression::Function')) {
         my $num_args = $node->num_args + $node->num_named_args;
         my @args = splice(@$args, -$num_args, $num_args);
-        $str = 'BI_MATH_' . uc($node->get_name) . '(' . join(', ', @args) . ')';
+        $str = 'bi::' . $node->get_name . '(' . join(', ', @args) . ')';
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
         $str = $node->get_const->get_name . '_';
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {

@@ -298,6 +298,58 @@ struct is_px_var {
   static const bool value = var_type<X>::value == PX_VAR;
 };
 
+/**
+ * Common variable trait.
+ */
+template<class X>
+struct is_common_var {
+  static const bool value = is_f_var<X>::value || is_p_var<X>::value || is_px_var<X>::value;
+};
+
+/**
+ * Common alternative variable trait.
+ */
+template<class X>
+struct is_common_var_alt {
+  static const bool value = is_common_var<X>::value || is_o_var<X>::value;
+};
+
+/**
+ * Select parent type according to variable type. Used by #Pa.
+ */
+template<class V1, class V2, class V3, class V4, class X>
+struct parent_type {
+  /**
+   * Parent type.
+   */
+  typedef
+    typename
+    boost::mpl::if_<is_p_var<X>,
+        V1,
+    typename
+    boost::mpl::if_<is_px_var<X>,
+        V1,
+    typename
+    boost::mpl::if_<is_f_var<X>,
+        V2,
+    typename
+    boost::mpl::if_<is_r_var<X>,
+        V3,
+    typename
+    boost::mpl::if_<is_d_var<X>,
+        V4,
+    typename
+    boost::mpl::if_<is_dx_var<X>,
+        V4,
+    typename
+    boost::mpl::if_<is_o_var<X>,
+        V4,
+    /*else*/
+        int
+    /*end*/
+    >::type>::type>::type>::type>::type>::type>::type type;
+};
+
 }
 
 #endif

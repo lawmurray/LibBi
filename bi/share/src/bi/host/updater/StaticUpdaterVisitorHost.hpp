@@ -20,14 +20,7 @@ namespace bi {
 template<class B, class S, class PX, class OX>
 class StaticUpdaterVisitorHost {
 public:
-  /**
-   * Update.
-   *
-   * @param p Trajectory id.
-   * @param pax Parents.
-   * @param[out] x Output.
-   */
-  static void accept(const int p, const PX& pax, OX& x);
+  static void accept(State<B,ON_HOST>& s, const int p, const PX& pax, OX& x);
 };
 
 /**
@@ -38,7 +31,7 @@ public:
 template<class B, class PX, class OX>
 class StaticUpdaterVisitorHost<B,empty_typelist,PX,OX> {
 public:
-  static void accept(const int p, const PX& pax, OX& x) {
+  static void accept(State<B,ON_HOST>& s, const int p, const PX& pax, OX& x) {
     //
   }
 };
@@ -49,8 +42,8 @@ public:
 #include "../../traits/target_traits.hpp"
 
 template<class B, class S, class PX, class OX>
-inline void bi::StaticUpdaterVisitorHost<B,S,PX,OX>::accept(const int p,
-    const PX& pax, OX& x) {
+inline void bi::StaticUpdaterVisitorHost<B,S,PX,OX>::accept(
+    State<B,ON_HOST>& s, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -59,11 +52,11 @@ inline void bi::StaticUpdaterVisitorHost<B,S,PX,OX>::accept(const int p,
   int ix = 0;
   coord_type cox;
   while (ix < target_size<target_type>::value) {
-    front::f(p, ix, cox, pax, x);
+    front::simulate(s, p, ix, cox, pax, x);
     ++cox;
     ++ix;
   }
-  StaticUpdaterVisitorHost<B,pop_front,PX,OX>::accept(p, pax, x);
+  StaticUpdaterVisitorHost<B,pop_front,PX,OX>::accept(s, p, pax, x);
 }
 
 #endif

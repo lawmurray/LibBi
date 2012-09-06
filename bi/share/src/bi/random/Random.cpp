@@ -11,27 +11,24 @@
 #include "../cuda/device.hpp"
 #endif
 
-using namespace bi;
-
-Random::Random() : own(true) {
+bi::Random::Random() : own(true) {
   hostRngs = new RngHost[bi_omp_max_threads];
   #ifdef ENABLE_CUDA
-  CUDA_CHECKED_CALL(cudaMalloc((void**)&devRngs,
-      deviceIdealThreads()*sizeof(RngGPU)));
+  CUDA_CHECKED_CALL(cudaMalloc(&devRngs,
+      deviceIdealThreads()*sizeof(curandState)));
   #endif
 }
 
-Random::Random(const unsigned seed) : own(true) {
+bi::Random::Random(const unsigned seed) : own(true) {
   hostRngs = new RngHost[bi_omp_max_threads];
   #ifdef ENABLE_CUDA
-  CUDA_CHECKED_CALL(cudaMalloc((void**)&devRngs,
-      deviceIdealThreads()*sizeof(RngGPU)));
+  CUDA_CHECKED_CALL(cudaMalloc(&devRngs,
+      deviceIdealThreads()*sizeof(curandState)));
   #endif
-
   this->seeds(seed);
 }
 
-Random::Random(const Random& o) {
+bi::Random::Random(const Random& o) {
   hostRngs = o.hostRngs;
   #ifdef ENABLE_CUDA
   devRngs = o.devRngs;
@@ -39,7 +36,7 @@ Random::Random(const Random& o) {
   own = false;
 }
 
-Random::~Random() {
+bi::Random::~Random() {
   if (own) {
     delete[] hostRngs;
     hostRngs = NULL;
@@ -50,7 +47,7 @@ Random::~Random() {
   }
 }
 
-void Random::seeds(const unsigned seed) {
+void bi::Random::seeds(const unsigned seed) {
   RandomHost::seeds(*this, seed);
   #ifdef ENABLE_CUDA
   RandomGPU::seeds(*this, seed);

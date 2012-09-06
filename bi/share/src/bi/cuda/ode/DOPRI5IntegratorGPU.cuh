@@ -28,8 +28,6 @@ public:
 template<class B, class S, class T1>
 void bi::DOPRI5IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     State<B,ON_DEVICE>& s) {
-  typedef Pa<ON_DEVICE,B,real,constant,global,global,shared<S> > PX;
-
   static const int N = block_size<S>::value;
   if (N > 0) {
     /* execution config */
@@ -48,11 +46,11 @@ void bi::DOPRI5IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     Db.z = 1;
 
     #ifdef ENABLE_RIPEN
-    Db.x = std::min(std::min(idealDbx, P), maxDbx);
-    Dg.x = std::min(std::min(idealThreads/(Db.x*Db.y*Db.z), (P + Db.x - 1)/Db.x), maxDgx);
+    Db.x = bi::min(bi::min(idealDbx, P), maxDbx);
+    Dg.x = bi::min(bi::min(idealThreads/(Db.x*Db.y*Db.z), (P + Db.x - 1)/Db.x), maxDgx);
     #else
-    Db.x = std::min(std::max(std::min(idealDbx, P), minDbx), maxDbx);
-    Dg.x = std::min((P + Db.x - 1)/Db.x, maxDgx);
+    Db.x = bi::min(bi::max(bi::min(idealDbx, P), minDbx), maxDbx);
+    Dg.x = bi::min((P + Db.x - 1)/Db.x, maxDgx);
     #endif
     Dg.y = 1;
     Dg.z = 1;
@@ -63,7 +61,7 @@ void bi::DOPRI5IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
 
     /* launch */
     bind(s);
-    kernelDOPRI5<B,S,T1><<<Dg,Db,Ns>>>(t1, t2);
+    kernelDOPRI5<B,S,T1><<<Dg,Db,Ns>>>(t1, t2, s);
     CUDA_CHECK;
     unbind(s);
   }

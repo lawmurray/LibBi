@@ -10,11 +10,9 @@
 #ifndef BI_MATH_FUNCTOR_HPP
 #define BI_MATH_FUNCTOR_HPP
 
-#include "../math/scalar.hpp"
+#include "../math/function.hpp"
 #include "../math/misc.hpp"
 #include "../cuda/cuda.hpp"
-
-#include "thrust/tuple.h"
 
 namespace bi {
 /**
@@ -25,9 +23,9 @@ namespace bi {
 template<typename T>
 struct nan_greater_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T &x, const T& y) const {
-    if (std::isnan(y)) {
-      return !std::isnan(x); // x > y unless isnan(x) too
-    } else if (std::isnan(x)) {
+    if (bi::isnan(y)) {
+      return !bi::isnan(x); // x > y unless isnan(x) too
+    } else if (bi::isnan(x)) {
       return false;
     } else {
       return x > y;
@@ -43,9 +41,9 @@ struct nan_greater_functor : public std::unary_function<T,T> {
 template<typename T>
 struct nan_less_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH bool operator()(const T &x, const T& y) const {
-    if (std::isnan(x)) {
-      return !std::isnan(y); // x < y unless isnan(x) too
-    } else if (std::isnan(y)) {
+    if (bi::isnan(x)) {
+      return !bi::isnan(y); // x < y unless isnan(x) too
+    } else if (bi::isnan(y)) {
       return false;
     } else {
       return x < y;
@@ -73,7 +71,7 @@ struct square_functor : public std::unary_function<T,T> {
 template<typename T>
 struct sqrt_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_SQRT(x);
+    return bi::sqrt(x);
   }
 };
 
@@ -85,7 +83,7 @@ struct sqrt_functor : public std::unary_function<T,T> {
 template<typename T>
 struct rcp_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_POW(x, -1);
+    return bi::pow(x, -1);
   }
 };
 
@@ -97,8 +95,7 @@ struct rcp_functor : public std::unary_function<T,T> {
 template<typename T>
 struct abs_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    //return BI_MATH_FABS(x); // giving "error: calling a host function from a __device__/__global__ function is not allowed" under CUDA 3.2
-    return (x < 0) ? -x : x;
+    return bi::abs(x);
   }
 };
 
@@ -126,7 +123,7 @@ struct log_factorial_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
     T n, result = 0.0;
     for (n = 2; n <= x; ++n) {
-      result += BI_MATH_LOG(n);
+      result += bi::log(static_cast<T>(n));
     }
     return result;
   }
@@ -140,7 +137,7 @@ struct log_factorial_functor : public std::unary_function<T,T> {
 template<typename T>
 struct exp_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_EXP(x);
+    return bi::exp(x);
   }
 };
 
@@ -153,7 +150,7 @@ struct exp_functor : public std::unary_function<T,T> {
 template<typename T>
 struct nan_exp_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_NANEXP(x);
+    return bi::nanexp(x);
   }
 };
 
@@ -165,7 +162,7 @@ struct nan_exp_functor : public std::unary_function<T,T> {
 template<typename T>
 struct log_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_LOG(x);
+    return bi::log(x);
   }
 };
 
@@ -177,7 +174,7 @@ struct log_functor : public std::unary_function<T,T> {
 template<typename T>
 struct nan_log_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T &x) const {
-    return BI_MATH_NANLOG(x);
+    return bi::nanlog(x);
   }
 };
 
@@ -363,7 +360,7 @@ struct pow_constant_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return BI_MATH_POW(x, k);
+    return bi::pow(x, k);
   }
 };
 
@@ -411,7 +408,7 @@ struct greater_constant_functor : public std::unary_function<T,bool> {
 template<class T>
 struct nan_exp_and_square_functor : public std::unary_function<T,T> {
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return BI_MATH_NANEXP(BI_REAL(2.0)*x);
+    return bi::nanexp(BI_REAL(2.0)*x);
   }
 };
 
@@ -430,7 +427,7 @@ struct nan_minus_and_exp_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return BI_MATH_NANEXP(x - y);
+    return bi::nanexp(x - y);
   }
 };
 
@@ -449,7 +446,7 @@ struct nan_minus_exp_and_square_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return BI_MATH_NANEXP(static_cast<T>(2.0)*(x - y));
+    return bi::nanexp(static_cast<T>(2.0)*(x - y));
   }
 };
 
@@ -469,7 +466,7 @@ struct nan_minus_exp_and_multiply_functor : public std::unary_function<T,T> {
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return z*BI_MATH_NANEXP(x - y);
+    return z*bi::nanexp(x - y);
   }
 };
 

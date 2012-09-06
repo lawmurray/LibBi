@@ -39,8 +39,8 @@ void bi::RK4IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     dim3 Db, Dg;
     size_t Ns;
 
-    Db.x = std::min(std::max(std::min(idealDbx, P), minDbx), maxDbx);
-    Dg.x = std::min((P + Db.x - 1)/Db.x, maxDgx);
+    Db.x = bi::min(bi::max(bi::min(idealDbx, P), minDbx), maxDbx);
+    Dg.x = bi::min((P + Db.x - 1)/Db.x, maxDgx);
     Db.y = N;
     Dg.y = 1;
     Ns = Db.x*Db.y*sizeof(real);
@@ -50,7 +50,7 @@ void bi::RK4IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
 
     /* launch */
     bind(s);
-    kernelRK4<B,S,T1><<<Dg,Db,Ns>>>(t1, t2);
+    kernelRK4<B,S,T1><<<Dg,Db,Ns>>>(t1, t2, s);
     CUDA_CHECK;
     unbind(s);
   }

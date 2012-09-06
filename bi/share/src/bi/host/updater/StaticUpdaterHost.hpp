@@ -29,15 +29,20 @@ public:
 }
 
 #include "StaticUpdaterVisitorHost.hpp"
+#include "StaticUpdaterMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef StaticUpdaterVisitorHost<B,S,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef StaticUpdaterMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef StaticUpdaterVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<
+      block_is_matrix<S>::value,MatrixVisitor,ElementVisitor>::type Visitor;
 
   bind(s);
 
@@ -49,7 +54,7 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
 
     #pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(p, pax, x);
+      Visitor::accept(s, p, pax, x);
     }
   }
   unbind(s);
@@ -57,14 +62,17 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
 
 template<class B, class S>
 void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s, const int p) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef StaticUpdaterVisitorHost<B,S,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef StaticUpdaterMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef StaticUpdaterVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<
+      block_is_matrix<S>::value,MatrixVisitor,ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(p, pax, x);
+  Visitor::accept(s, p, pax, x);
   unbind(s);
 }
 

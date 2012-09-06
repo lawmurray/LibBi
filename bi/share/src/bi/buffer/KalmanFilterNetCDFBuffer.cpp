@@ -7,16 +7,14 @@
  */
 #include "KalmanFilterNetCDFBuffer.hpp"
 
-using namespace bi;
-
-KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
+bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
     const Model& m, const std::string& file, const FileMode mode) :
     SimulatorNetCDFBuffer(m, file, mode), m(m),
     M(m.getNetSize(D_VAR) + m.getNetSize(R_VAR)) {
   map();
 }
 
-KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
+bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
     const Model& m, const int P, const int T, const std::string& file,
     const FileMode mode) : SimulatorNetCDFBuffer(m, P, T, file, mode), m(m),
     M(m.getNetSize(D_VAR) + m.getNetSize(R_VAR)) {
@@ -27,11 +25,11 @@ KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
   }
 }
 
-KalmanFilterNetCDFBuffer::~KalmanFilterNetCDFBuffer() {
+bi::KalmanFilterNetCDFBuffer::~KalmanFilterNetCDFBuffer() {
   //
 }
 
-void KalmanFilterNetCDFBuffer::create(const long T) {
+void bi::KalmanFilterNetCDFBuffer::create(const long T) {
   Var* node;
 
   /* dimensions */
@@ -65,7 +63,7 @@ void KalmanFilterNetCDFBuffer::create(const long T) {
   }
 }
 
-void KalmanFilterNetCDFBuffer::map(const long T) {
+void bi::KalmanFilterNetCDFBuffer::map(const long T) {
   /* dimensions */
   nxcolDim = mapDim("nxcol");
   nxrowDim = mapDim("nxrow");

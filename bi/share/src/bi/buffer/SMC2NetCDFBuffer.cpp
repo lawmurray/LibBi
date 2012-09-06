@@ -1,24 +1,21 @@
-/*
- * SMC2NetCDFBuffer.cpp
+/**
+ * @file
  *
- *  Created on: 11/06/2012
- *      Author: jac24q
+ * @author Pierre Jacob <jacob@ceremade.dauphine.fr>
+ * $Rev $
+ * $Date$
  */
-
 #include "SMC2NetCDFBuffer.hpp"
+
 #include <string>
-#include <cstdio>
 
-using namespace std;
-using namespace bi;
-
-SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const std::string& file,
+bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const std::string& file,
     const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   map();
 }
 
-SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const int P,
+bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const int P,
     const int T, const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES){
   if (mode == NEW || mode == REPLACE) {
@@ -28,11 +25,11 @@ SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const int P,
   }
 }
 
-SMC2NetCDFBuffer::~SMC2NetCDFBuffer(){
+bi::SMC2NetCDFBuffer::~SMC2NetCDFBuffer(){
   //
 }
 
-void SMC2NetCDFBuffer::create(const long P, const long T) {
+void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
   int id, i;
   VarType type;
   Var* var;
@@ -91,7 +88,7 @@ void SMC2NetCDFBuffer::create(const long P, const long T) {
   BI_ERROR(acceptanceRateVar != NULL && acceptanceRateVar->is_valid(), "Could not create acceptanceRate variable");
 }
 
-void SMC2NetCDFBuffer::map(const long P, const long T) {
+void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
   std::string name;
   int id, i;
   VarType type;
@@ -147,36 +144,36 @@ void SMC2NetCDFBuffer::map(const long P, const long T) {
   acceptanceRateVar = ncFile->get_var("acceptancerate");
 }
 
-void SMC2NetCDFBuffer::writeEvidence(const int k, const real evidence) {
+void bi::SMC2NetCDFBuffer::writeEvidence(const int k, const real evidence) {
   /* pre-conditions */
-  assert (k >= 0 && k < nrDim->size());
+  BI_ASSERT(k >= 0 && k < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = evidenceVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << evidenceVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << evidenceVar->name());
   ret = evidenceVar->put(&evidence, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << evidenceVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << evidenceVar->name());
 }
 
-void SMC2NetCDFBuffer::writeEss(const int k, const real ess) {
+void bi::SMC2NetCDFBuffer::writeEss(const int k, const real ess) {
   /* pre-conditions */
-  assert (k >= 0 && k < nrDim->size());
+  BI_ASSERT(k >= 0 && k < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = essVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << essVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << essVar->name());
   ret = essVar->put(&ess, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << essVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << essVar->name());
 }
 
-void SMC2NetCDFBuffer::writeAcceptanceRate(const int k,
+void bi::SMC2NetCDFBuffer::writeAcceptanceRate(const int k,
     const real acceptanceRate) {
   /* pre-conditions */
-  assert (k >= 0 && k < nrDim->size());
+  BI_ASSERT(k >= 0 && k < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = acceptanceRateVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << acceptanceRateVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << acceptanceRateVar->name());
   ret = acceptanceRateVar->put(&acceptanceRate, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << acceptanceRateVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << acceptanceRateVar->name());
 }

@@ -36,7 +36,7 @@ bi::MinimumESSStopper::MinimumESSStopper(int rel_min_ess, int maxParticles) :
 template<class V1>
 bool bi::MinimumESSStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
   typedef typename V1::value_type T1;
-//  assert (start == 0 ? sumw == sumw2 && sumw == 0 : true);
+//  BI_ASSERT(start == 0 ? sumw == sumw2 && sumw == 0 : true);
   int start;
   if (lws.size() == blockSize) {
     start = 0;
@@ -53,7 +53,7 @@ bool bi::MinimumESSStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
 
   real threshold = exp(maxlw)*(min_ess-1)/2;
 
-  assert (max_reduce(subrange(lws,start,blockSize)) <= maxlw );
+  BI_ASSERT(max_reduce(subrange(lws,start,blockSize)) <= maxlw );
 
   if (lws.size() >= maxParticles) {
     return true;

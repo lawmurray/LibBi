@@ -81,7 +81,7 @@ inline int bi::CacheMask<L>::size() const {
 template<bi::Location L>
 inline const bi::Mask<L>& bi::CacheMask<L>::get(const int p) const {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   return *pages[p];
 }
@@ -98,7 +98,7 @@ inline void bi::CacheMask<L>::put(const int p, const Mask<L2>& mask) {
   setValid(p);
 
   /* post-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 }
 
 template<bi::Location L>

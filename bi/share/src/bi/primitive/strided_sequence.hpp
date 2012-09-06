@@ -8,8 +8,8 @@
  * Implementation based on discussion at
  * http://groups.google.com/group/thrust-users/browse_thread/thread/a506470f5c634813
  */
-#ifndef BI_MISC_STRIDED_SEQUENCE_HPP
-#define BI_MISC_STRIDED_SEQUENCE_HPP
+#ifndef BI_MISC_STRIDEDSEQUENCE_HPP
+#define BI_MISC_STRIDEDSEQUENCE_HPP
 
 #include "../primitive/functor.hpp"
 
@@ -27,25 +27,19 @@ struct strided_functor : public std::unary_function<T,T> {
   /**
    * Stride.
    */
-  T stride;
+  T inc;
 
-  /**
-   * Does <tt>stride == 1</tt>?
-   */
-  //bool unit;
-
-  CUDA_FUNC_HOST strided_functor() : stride(1)/*, unit(true)*/ {
+  CUDA_FUNC_HOST strided_functor() : inc(1) {
     //
   }
 
-  CUDA_FUNC_HOST strided_functor(const T stride) : stride(stride)/*,
-      unit(stride == 1)*/ {
+  CUDA_FUNC_HOST strided_functor(const T inc) : inc(inc) {
     /* pre-condition */
-    assert (stride >= 1);
+    BI_ASSERT(inc >= 1);
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    return /*(unit) ? x : */stride*x;
+    return inc*x;
   }
 };
 
@@ -61,17 +55,17 @@ struct strided_sequence {
   typedef thrust::transform_iterator<StridedFunc,CountingIterator> TransformIterator;
   typedef TransformIterator iterator;
 
-  strided_sequence(const T first, const T stride) :
-      first(first), stride(stride) {
+  strided_sequence(const T first, const T inc) :
+      first(first), inc(inc) {
     //
   }
 
   iterator begin() const {
-    return TransformIterator(CountingIterator(first), StridedFunc(stride));
+    return TransformIterator(CountingIterator(first), StridedFunc(inc));
   }
 
 private:
-  T first, stride;
+  T first, inc;
 };
 
 }

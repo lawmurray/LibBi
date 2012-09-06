@@ -86,7 +86,7 @@ inline void bi::Markable<T>::unmark() {
 template<class T>
 inline void bi::Markable<T>::top(T& o) {
   /* pre-condition */
-  assert (!os.empty());
+  BI_ASSERT(!os.empty());
 
   o = *os.top();
 }
@@ -94,7 +94,7 @@ inline void bi::Markable<T>::top(T& o) {
 template<class T>
 inline void bi::Markable<T>::pop() {
   /* pre-condition */
-  assert (!os.empty());
+  BI_ASSERT(!os.empty());
 
   delete os.top();
   os.pop();

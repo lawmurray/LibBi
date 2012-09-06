@@ -16,11 +16,11 @@
 class [% class_name %] {
 public:
   [% create_action_typedef(block) %]
-  
-  [% declare_dynamic_function('simulate') %]
-  [% declare_dynamic_function('sample') %]
-  [% declare_dynamic_function('logdensity') %]
-  [% declare_dynamic_function('maxlogdensity') %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
   
 private:
   /**
@@ -38,7 +38,7 @@ private:
 #include "bi/ode/RK43Integrator.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 
-[% sig_dynamic_function('simulate') %] {
+[% sig_block_dynamic_function('simulate') %] {
   /* initialise integrator */
   static const real ATOLER = [% block.get_named_arg('atoler').eval_const %];
   static const real RTOLER = [% block.get_named_arg('rtoler').eval_const %];
@@ -55,15 +55,15 @@ private:
   [% END %]
 }
 
-[% sig_dynamic_function('sample') %] {
+[% sig_block_dynamic_function('sample') %] {
   simulate(t1, t2, onDelta, s);
 }
 
-[% sig_dynamic_function('logdensity') %] {
+[% sig_block_dynamic_function('logdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 
-[% sig_dynamic_function('maxlogdensity') %] {
+[% sig_block_dynamic_function('maxlogdensity') %] {
   simulate(t1, t2, onDelta, s);
 }
 

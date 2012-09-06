@@ -17,28 +17,27 @@ class [% class_name %] {
 public:
   [% create_action_typedef(block) %]
 
-  [% IF block.can_simulate %][% declare_static_function('simulate') %][% END %]
-  [% declare_static_function('sample') %]
-  [% declare_static_function('logdensity') %]
-  [% declare_static_function('maxlogdensity') %]
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
 
-  [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
-  [% declare_dynamic_function('sample') %]
-  [% declare_dynamic_function('logdensity') %]
-  [% declare_dynamic_function('maxlogdensity') %]
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
 
-  [% IF block.can_simulate %][% declare_sparse_static_function('simulate') %][% END %]
-  [% declare_sparse_static_function('sample') %]
-  [% declare_sparse_static_function('logdensity') %]  
-  [% declare_sparse_static_function('maxlogdensity') %]  
+  [% declare_block_sparse_static_function('simulate') %]
+  [% declare_block_sparse_static_function('sample') %]
+  [% declare_block_sparse_static_function('logdensity') %]  
+  [% declare_block_sparse_static_function('maxlogdensity') %]  
 };
 
 #include "bi/updater/DynamicUpdater.hpp"
 #include "bi/updater/StaticUpdater.hpp"
 #include "bi/updater/SparseStaticUpdater.hpp"
 
-[%-IF block.can_simulate %]
-[% sig_static_function('simulate') %] {
+[% sig_block_static_function('simulate') %] {
   [% IF block.get_actions.size > 0 %]
   bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
   [% END %]
@@ -47,9 +46,8 @@ public:
   Block[% subblock.get_id %]::simulate(s);
   [%-END %]
 }
-[% END-%]
 
-[% sig_static_function('sample') %] {
+[% sig_block_static_function('sample') %] {
   [% IF block.get_actions.size > 0 %]
   bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
   [% END %]
@@ -59,7 +57,7 @@ public:
   [%-END %]
 }
 
-[% sig_static_function('logdensity') %] {
+[% sig_block_static_function('logdensity') %] {
   [% IF block.get_actions.size > 0 %]
   bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
   [% END %]
@@ -69,7 +67,7 @@ public:
   [%-END %]
 }
 
-[% sig_static_function('maxlogdensity') %] {
+[% sig_block_static_function('maxlogdensity') %] {
   [% IF block.get_actions.size > 0 %]
   bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
   [% END %]
@@ -79,8 +77,7 @@ public:
   [%-END %]
 }
 
-[%-IF block.can_simulate %]
-[% sig_dynamic_function('simulate') %] {
+[% sig_block_dynamic_function('simulate') %] {
   if (onDelta) {
     [% IF block.get_actions.size > 0 %]
     bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
@@ -91,9 +88,8 @@ public:
   Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
   [%-END %]
 }
-[% END-%]
 
-[% sig_dynamic_function('sample') %] {
+[% sig_block_dynamic_function('sample') %] {
   if (onDelta) {
     [% IF block.get_actions.size > 0 %]
     bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
@@ -105,7 +101,7 @@ public:
   [%-END %]
 }
 
-[% sig_dynamic_function('logdensity') %] {
+[% sig_block_dynamic_function('logdensity') %] {
   if (onDelta) {
     [% IF block.get_actions.size > 0 %]
     bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
@@ -117,7 +113,7 @@ public:
   [%-END %]
 }
 
-[% sig_dynamic_function('maxlogdensity') %] {
+[% sig_block_dynamic_function('maxlogdensity') %] {
   if (onDelta) {
     [% IF block.get_actions.size > 0 %]
     bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
@@ -129,8 +125,7 @@ public:
   [%-END %]
 }
 
-[%-IF block.can_simulate %]
-[% sig_sparse_static_function('simulate') %] {
+[% sig_block_sparse_static_function('simulate') %] {
   [% IF block.get_actions.size > 0 %]
   bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
   [% END %]
@@ -139,9 +134,8 @@ public:
   Block[% subblock.get_id %]::simulate(s, mask);
   [%-END %]
 }
-[% END-%]
 
-[% sig_sparse_static_function('sample') %] {
+[% sig_block_sparse_static_function('sample') %] {
   [% IF block.get_actions.size > 0 %]
   bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
   [% END %]
@@ -151,7 +145,7 @@ public:
   [%-END %]
 }
 
-[% sig_sparse_static_function('logdensity') %] {
+[% sig_block_sparse_static_function('logdensity') %] {
   [% IF block.get_actions.size > 0 %]
   bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
   [% END %]
@@ -161,7 +155,7 @@ public:
   [%-END %]
 }
 
-[% sig_sparse_static_function('maxlogdensity') %] {
+[% sig_block_sparse_static_function('maxlogdensity') %] {
   [% IF block.get_actions.size > 0 %]
   bi::SparseStaticUpdater<[% model_class_name %],action_typelist>::update(s, mask);
   [% END %]

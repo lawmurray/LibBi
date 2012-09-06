@@ -7,6 +7,10 @@
  */
 #include "RandomKernel.cuh"
 
-void bi::kernelSeeds(Random rng, const unsigned seed) {
-  rng.getDevRng().seed(seed);
+CUDA_FUNC_GLOBAL void bi::kernelSeeds(curandState* rng, const unsigned seed) {
+  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+  RngGPU rng1;
+  rng1.r = rng[p];
+  rng1.seed(seed);
+  rng[p] = rng1.r;
 }

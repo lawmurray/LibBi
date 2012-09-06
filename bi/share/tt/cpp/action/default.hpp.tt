@@ -8,21 +8,11 @@
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 struct [% class_name %] {
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
-
-  /**
-   * Variable type.
-   */
-  typedef Var[% action.get_target.get_var.get_name %] var_type;
+  [% std_action %]
 };
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

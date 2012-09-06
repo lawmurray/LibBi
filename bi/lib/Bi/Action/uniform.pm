@@ -71,7 +71,7 @@ sub validate {
     $self->ensure_op('~');
     $self->ensure_scalar('lower');
     $self->ensure_scalar('upper');
-    $self->set_parent('uniform_');
+    $self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);
 }

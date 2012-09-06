@@ -40,14 +40,14 @@ void bi::DynamicUpdaterGPU<B,S>::update(const T1 t1, const T1 t2,
   const int P = s.size();
   dim3 Db, Dg;
 
-  Db.x = std::min(deviceIdealThreadsPerBlock(), P);
+  Db.x = bi::min(deviceIdealThreadsPerBlock(), P);
   Db.y = 1;
   Dg.x = (P + Db.x - 1)/Db.x;
   Dg.y = N;
 
   if (N > 0) {
     bind(s);
-    kernelDynamicUpdater<B,S,T1><<<Dg,Db>>>(t1, t2);
+    kernelDynamicUpdater<B,S,T1><<<Dg,Db>>>(t1, t2, s);
     CUDA_CHECK;
     unbind(s);
   }

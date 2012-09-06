@@ -18,7 +18,8 @@ namespace bi {
  * @tparam S Action type list.
  */
 template<class B, class S, class T1>
-CUDA_FUNC_GLOBAL void kernelDynamicUpdater(const T1 t1, const T1 t2);
+CUDA_FUNC_GLOBAL void kernelDynamicUpdater(const T1 t1, const T1 t2,
+    State<B,ON_DEVICE> s);
 
 }
 
@@ -28,9 +29,10 @@ CUDA_FUNC_GLOBAL void kernelDynamicUpdater(const T1 t1, const T1 t2);
 #include "../../state/Pa.hpp"
 
 template<class B, class S, class T1>
-void bi::kernelDynamicUpdater(const T1 t1, const T1 t2) {
-  typedef Pa<ON_DEVICE,B,real,constant,global,global,global> PX;
-  typedef Ox<ON_DEVICE,B,real,global> OX;
+CUDA_FUNC_GLOBAL void bi::kernelDynamicUpdater(const T1 t1, const T1 t2,
+    State<B,ON_DEVICE> s) {
+  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Ou<ON_DEVICE,B,global> OX;
   typedef DynamicUpdaterVisitorGPU<B,S,T1,PX,OX> Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
@@ -39,8 +41,8 @@ void bi::kernelDynamicUpdater(const T1 t1, const T1 t2) {
   OX x;
 
   /* update */
-  if (p < constP) {
-    Visitor::accept(t1, t2, p, i, pax, x);
+  if (p < s.size()) {
+    Visitor::accept(t1, t2, s, p, i, pax, x);
   }
 }
 

@@ -13,19 +13,21 @@ namespace bi {
  * Visitor for committing shared memory.
  *
  * @tparam B Model type.
- * @tparam S Action type list, giving variables in shared memory.
+ * @tparam S1 Action type list, giving variables in shared memory.
+ * @tparam S2 Action type list.
  */
-template<class B, class S>
+template<class B, class S1, class S2>
 class shared_commit_visitor {
 public:
   /**
-   * Initialise shared memory.
+   * Commit shared memory.
    *
+   * @param[out] s State.
    * @param p Trajectory id.
    * @param i Variable id.
    */
-  template<class PX>
-  static CUDA_FUNC_DEVICE void accept(PX& pax, const int p, const int i);
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p,
+      const int i);
 };
 
 /**
@@ -33,38 +35,36 @@ public:
  *
  * Base case of shared_commit_visitor.
  */
-template<class B>
-class shared_commit_visitor<B,empty_typelist> {
+template<class B, class S1>
+class shared_commit_visitor<B,S1,empty_typelist> {
 public:
-  template<class PX>
-  static CUDA_FUNC_DEVICE void accept(PX& pax, const int p, const int i) {
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p,
+      const int i) {
     //
   }
 };
 }
 
 #include "shared.cuh"
-#include "global.cuh"
 #include "../typelist/front.hpp"
 #include "../typelist/pop_front.hpp"
 #include "../traits/target_traits.hpp"
 
-template<class B, class S>
-template<class PX>
-inline void bi::shared_commit_visitor<B,S>::accept(PX& pax, const int p,
-    const int i) {
-  typedef typename front<S>::type front;
-  typedef typename pop_front<S>::type pop_front;
+template<class B, class S1, class S2>
+inline void bi::shared_commit_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
+    const int p, const int i) {
+  typedef typename front<S2>::type front;
+  typedef typename pop_front<S2>::type pop_front;
   typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+
   const int size = target_size<target_type>::value;
 
   if (i < size) {
-    pax.template commit<B,target_type>(p, i);
+    global::fetch<B,target_type>(s, p, i) =
+        shared<S1>::template fetch<B,target_type>(s, p, i);
   } else {
-    shared_commit_visitor<B,pop_front>::accept(pax, p, i - size);
+    shared_commit_visitor<B,S1,pop_front>::accept(s, p, i - size);
   }
 }
-
 
 #endif

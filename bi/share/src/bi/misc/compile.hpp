@@ -30,13 +30,7 @@
  *
  * @arg n Number of bytes to which to align.
  */
-#if defined(__GNUC__)
 #define BI_ALIGN(n) __attribute((aligned (n)))
-#elif defined(__ICC)
-#define BI_ALIGN(n) __attribute((aligned (n)))
-#else
-#define BI_ALIGN(n)
-#endif
 
 /**
  * @def BI_UNUSED

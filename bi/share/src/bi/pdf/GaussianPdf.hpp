@@ -15,10 +15,7 @@
 #include "../random/Random.hpp"
 #include "primitive.hpp"
 
-
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -277,7 +274,6 @@ protected:
   typename V1::value_type logZ;
 
 private:
-#ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -295,7 +291,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-#endif
 };
 
 }
@@ -307,9 +302,7 @@ private:
 #include "../math/sim_temp_matrix.hpp"
 #include "../misc/assert.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/base_object.hpp"
-#endif
 
 template<class V1, class M1>
 bi::GaussianPdf<V1, M1>::GaussianPdf() :
@@ -346,8 +339,8 @@ template<class V2, class M2>
 bi::GaussianPdf<V1, M1>::GaussianPdf(const V2 mu, const M2 U) :
   N(mu.size()), mu(N), U(N, N) {
   /* pre-condition */
-  assert(U.size1() == N);
-  assert(U.size1() == U.size2());
+  BI_ASSERT(U.size1() == N);
+  BI_ASSERT(U.size1() == U.size2());
 
   /* note cannot simply use copy constructors, as this will be shallow if
    * V1 == V2 or M1 == M2 */
@@ -362,7 +355,7 @@ template<class M2>
 bi::GaussianPdf<V1, M1>::GaussianPdf(const M2 U) :
   N(U.size1()), mu(N), U(N, N) {
   /* pre-condition */
-  assert(U.size1() == U.size2());
+  BI_ASSERT(U.size1() == U.size2());
 
   /* note cannot simply use copy constructors, as this will be shallow if
    * V1 == V2 */
@@ -389,7 +382,7 @@ template<class V1, class M1>
 bi::GaussianPdf<V1, M1>& bi::GaussianPdf<V1, M1>::operator=(const GaussianPdf<
     V1, M1>& o) {
   /* pre-condition */
-  assert(o.N == N);
+  BI_ASSERT(o.N == N);
 
   mu = o.mu;
   U = o.U;
@@ -405,7 +398,7 @@ template<class V2, class M2>
 bi::GaussianPdf<V1, M1>& bi::GaussianPdf<V1, M1>::operator=(const GaussianPdf<
     V2, M2>& o) {
   /* pre-condition */
-  assert(o.N == N);
+  BI_ASSERT(o.N == N);
 
   mu = o.mu;
   U = o.U;
@@ -460,7 +453,7 @@ template<class V1, class M1>
 template<class V2>
 inline void bi::GaussianPdf<V1, M1>::setMean(const V2 mu) {
   /* pre-condition */
-  assert(mu.size() == N);
+  BI_ASSERT(mu.size() == N);
 
   this->mu = mu;
   //init(); // not necessary
@@ -470,7 +463,7 @@ template<class V1, class M1>
 template<class M2>
 inline void bi::GaussianPdf<V1, M1>::setStd(const M2 U) {
   /* pre-condition */
-  assert(U.size1() == N);
+  BI_ASSERT(U.size1() == N);
 
   this->U = U;
   init();
@@ -492,7 +485,7 @@ template<class V1, class M1>
 template<class V2>
 inline void bi::GaussianPdf<V1, M1>::sample(Random& rng, V2 x) {
   /* pre-condition */
-  assert(x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   rng.gaussians(x);
   trmv(U, x, 'U', 'T');
@@ -503,7 +496,7 @@ template<class V1, class M1>
 template<class M2>
 void bi::GaussianPdf<V1, M1>::samples(Random& rng, M2 X) {
   /* pre-conditions */
-  assert(X.size2() == size());
+  BI_ASSERT(X.size2() == size());
 
   rng.gaussians(vec(X));
   trmm(1.0, U, X, 'R', 'U');
@@ -514,19 +507,19 @@ template<class V1, class M1>
 template<class V2>
 real bi::GaussianPdf<V1, M1>::density(const V2 x) {
   /* pre-condition */
-  assert(x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   typename sim_temp_vector<V2>::type z(N);
   z = x;
   sub_elements(z, mu);
   trsv(U, z, 'U');
   real p = invZ*exp(-0.5*dot(z));
-  if (std::isnan(p)) {
+  if (bi::isnan(p)) {
     p = 0.0;
   }
 
   /* post-condition */
-  assert(p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -535,8 +528,8 @@ template<class V1, class M1>
 template<class M2, class V2>
 void bi::GaussianPdf<V1, M1>::densities(const M2 X, V2 p, const bool clear) {
   /* pre-condition */
-  assert(X.size2() == N);
-  assert(X.size1() == p.size());
+  BI_ASSERT(X.size2() == N);
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
@@ -549,7 +542,7 @@ template<class V1, class M1>
 template<class V2>
 real bi::GaussianPdf<V1, M1>::logDensity(const V2 x) {
   /* pre-condition */
-  assert(x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   typename sim_temp_vector<V2>::type z(N);
   z = x;
@@ -563,8 +556,8 @@ template<class V1, class M1>
 template<class M2, class V2>
 void bi::GaussianPdf<V1, M1>::logDensities(const M2 X, V2 p, const bool clear) {
   /* pre-condition */
-  assert(X.size2() == N);
-  assert(X.size1() == p.size());
+  BI_ASSERT(X.size2() == N);
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
@@ -590,7 +583,6 @@ void bi::GaussianPdf<V1, M1>::init() {
   invZ = exp(-logZ);
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1>
 template<class Archive>
 void bi::GaussianPdf<V1, M1>::save(Archive& ar, const unsigned version) const {
@@ -612,6 +604,5 @@ void bi::GaussianPdf<V1, M1>::load(Archive& ar, const unsigned version) {
 
   init();
 }
-#endif
 
 #endif

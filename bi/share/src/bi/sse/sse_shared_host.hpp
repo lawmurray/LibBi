@@ -15,12 +15,9 @@
 #define BI_SSE_SSESHAREDHOST_HPP
 
 #include "sse_host.hpp"
-#include "sse.hpp"
-#include "../misc/omp.hpp"
-#include "../traits/target_traits.hpp"
-#include "../traits/block_traits.hpp"
+#include "../host/shared_host.hpp"
 
-extern BI_THREAD bi::host_vector<bi::sse_real>* sseSharedHostState;
+extern BI_THREAD bi::host_vector_reference<bi::sse_real>* sseSharedHostState;
 
 #ifdef __ICC
 #pragma omp threadprivate(sseSharedHostState)
@@ -33,96 +30,108 @@ namespace bi {
  * @tparam B Model type.
  * @tparam S Action type list describing variables in shared host memory.
  *
- * @param p Trajectory id.
+ * @param s State.
+ * @param p First trajectory id.
  *
- * Initialise shared host memory by copying the relevant variables of the
- * given trajectory from host memory.
+ * Initialise SSE shared host memory by copying the relevant variables of the
+ * given trajectories from host memory.
  */
 template<class B, class S>
-void sse_shared_host_init(const int p);
+void sse_shared_host_init(State<B,ON_HOST>& s, const int p);
 
 /**
- * Commit SSE shared host memory changes.
+ * Commit SSE shared host memory.
  *
  * @tparam B Model type.
  * @tparam S Action type list describing variables in shared host memory.
  *
- * @param p Trajectory id.
+ * @param s[out] State.
+ * @param p First trajectory id.
  *
- * Write shared host memory changes to the given output.
+ * Write SSE shared host memory changes to the given output.
  */
 template<class B, class S>
-void sse_shared_host_commit(const int p);
+void sse_shared_host_commit(State<B,ON_HOST>& s, const int p);
 
 /**
- * Fetch node value from SSE shared host memory.
+ * Facade for state in shared host memory. Shared host memory is allocated
+ * on the stack.
  *
  * @ingroup state_host
  *
- * @tparam S Action type list describing nodes in shared host memory.
- * @tparam X Target type.
- *
- * @param ix Serial coordinate.
- *
- * @return Value.
- */
-template<class S, class X>
-sse_real sse_shared_host_fetch(const int ix);
-
-/**
- * Set node value in SSE shared host memory.
- *
- * @ingroup state_host
- *
- * @tparam S Action type list describing nodes in shared host memory.
- * @tparam X Target type.
- *
- * @param ix Serial coordinate.
- * @param val Value to set.
- */
-template<class S, class X>
-void sse_shared_host_put(const int ix, const sse_real& val);
-
-/**
- * Facade for state in SSE shared host memory.
- *
- * @ingroup state_host
- *
- * @tparam S Action type list describing nodes in shared host memory.
+ * @tparam S Action type list describing variables in shared host memory.
  */
 template<class S>
-struct sse_shared_host {
+struct sse_shared_host: public sse_host {
   static const bool on_device = true;
 
+  /**
+   * Fetch variable.
+   *
+   * @ingroup state_host
+   *
+   * @tparam B Model type.
+   * @tparam X Variable type.
+   *
+   * @param s State.
+   * @param p Trajectory id.
+   *
+   * @return Variable.
+   */
   template<class B, class X>
-  static sse_real fetch(const int p, const int ix) {
-    if (block_contains_target<S,X>::value) {
-      return sse_shared_host_fetch<S,X>(ix);
-    } else {
-      return sse_host_fetch<B,X>(p, ix);
-    }
-  }
+  static vector_reference_type fetch(State<B,ON_HOST>& s, const int p);
 
+  /**
+   * Fetch variable.
+   *
+   * @ingroup state_host
+   *
+   * @tparam B Model type.
+   * @tparam X Variable type.
+   *
+   * @param s State.
+   * @param p Trajectory id.
+   *
+   * @return Variable.
+   */
   template<class B, class X>
-  static void put(const int p, const int ix, const sse_real& val) {
-    if (block_contains_target<S,X>::value) {
-      return sse_shared_host_put<S,X>(ix, val);
-    } else {
-      return sse_host_put<B,X>(p, ix, val);
-    }
-  }
+  static const vector_reference_type fetch(const State<B,ON_HOST>& s,
+      const int p);
 
+  /**
+   * Fetch variable.
+   *
+   * @ingroup state_host
+   *
+   * @tparam B Model type.
+   * @tparam X Variable type.
+   *
+   * @param s State.
+   * @param p Trajectory id.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
   template<class B, class X>
-  static void init(const int p, const int ix) {
-    assert ((block_contains_target<S,X>::value));
-    sse_shared_host_put<S,X>(ix, sse_host_fetch<B,X>(p, ix));
-  }
+  static sse_real& fetch(State<B,ON_HOST>& s, const int p, const int ix);
 
+  /**
+   * Fetch variable.
+   *
+   * @ingroup state_host
+   *
+   * @tparam B Model type.
+   * @tparam X Variable type.
+   *
+   * @param s State.
+   * @param p Trajectory id.
+   * @param ix Serial coordinate.
+   *
+   * @return Variable.
+   */
   template<class B, class X>
-  static void commit(const int p, const int ix) {
-    assert ((block_contains_target<S,X>::value));
-    sse_host_put<B,X>(p, ix, sse_shared_host_fetch<S,X>(ix));
-  }
+  static const sse_real& fetch(const State<B,ON_HOST>& s, const int p,
+      const int ix);
 };
 
 }
@@ -131,32 +140,67 @@ struct sse_shared_host {
 #include "sse_shared_host_commit_visitor.hpp"
 
 template<class B, class S>
-inline void bi::sse_shared_host_init(const int p) {
-  delete sseSharedHostState;
-  sseSharedHostState = new host_vector<sse_real>(block_size<S>::value);
-
-  sse_shared_host<S> pax;
-  sse_shared_host_init_visitor<B,S>::accept(pax, p);
+inline void bi::sse_shared_host_init(State<B,ON_HOST>& s, const int p) {
+  sse_shared_host_init_visitor<B,S,S>::accept(s, p);
 }
 
 template<class B, class S>
-inline void bi::sse_shared_host_commit(const int p) {
-  sse_shared_host<S> pax;
-  sse_shared_host_commit_visitor<B,S>::accept(pax, p);
+inline void bi::sse_shared_host_commit(State<B,ON_HOST>& s, const int p) {
+  sse_shared_host_commit_visitor<B,S,S>::accept(s, p);
 }
 
-template<class S, class X>
-inline bi::sse_real bi::sse_shared_host_fetch(const int ix) {
-  const int i = target_start<S,X>::value + ix;
+template<class S>
+template<class B, class X>
+typename bi::sse_shared_host<S>::vector_reference_type bi::sse_shared_host<S>::fetch(
+    State<B,ON_HOST>& s, const int p) {
+  if (block_contains_target<S,X>::value) {
+    static const int start = target_start<S,X>::value;
+    static const int size = target_size<X>::value;
 
-  return (*sseSharedHostState)(i);
+    return subrange(*sseSharedHostState, start, size);
+  } else {
+    return sse_host::template fetch<B,X>(s, p);
+  }
 }
 
-template<class S, class X>
-inline void bi::sse_shared_host_put(const int ix, const sse_real& val) {
-  const int i = target_start<S,X>::value + ix;
+template<class S>
+template<class B, class X>
+const typename bi::sse_shared_host<S>::vector_reference_type bi::sse_shared_host<
+    S>::fetch(const State<B,ON_HOST>& s, const int p) {
+  if (block_contains_target<S,X>::value) {
+    static const int start = target_start<S,X>::value;
+    static const int size = target_size<X>::value;
 
-  (*sseSharedHostState)(i) = val;
+    return subrange(*sseSharedHostState, start, size);
+  } else {
+    return sse_host::template fetch<B,X>(s, p);
+  }
+}
+
+template<class S>
+template<class B, class X>
+bi::sse_real& bi::sse_shared_host<S>::fetch(State<B,ON_HOST>& s,
+    const int p, const int ix) {
+  if (block_contains_target<S,X>::value) {
+    static const int start = target_start<S,X>::value;
+
+    return (*sseSharedHostState)[start + ix];
+  } else {
+    return sse_host::template fetch<B,X>(s, p, ix);
+  }
+}
+
+template<class S>
+template<class B, class X>
+const bi::sse_real& bi::sse_shared_host<S>::fetch(const State<B,ON_HOST>& s,
+    const int p, const int ix) {
+  if (block_contains_target<S,X>::value) {
+    static const int start = target_start<S,X>::value;
+
+    return (*sseSharedHostState)[start + ix];
+  } else {
+    return sse_host::template fetch<B,X>(s, p, ix);
+  }
 }
 
 #endif

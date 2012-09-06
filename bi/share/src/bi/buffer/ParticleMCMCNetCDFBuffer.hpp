@@ -217,8 +217,8 @@ template<class M1>
 void bi::ParticleMCMCNetCDFBuffer::readParticle(const int p, M1 xd,
     M1 xr) {
   /* pre-condition */
-  assert (xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
-  assert (xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
+  BI_ASSERT(xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
+  BI_ASSERT(xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
 
   readTrajectory(D_VAR, p, xd);
   readTrajectory(R_VAR, p, xr);
@@ -228,8 +228,8 @@ template<class M1>
 void bi::ParticleMCMCNetCDFBuffer::writeParticle(const int p,
     const M1 xd, const M1 xr) {
   /* pre-condition */
-  assert (xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
-  assert (xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
+  BI_ASSERT(xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
+  BI_ASSERT(xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
 
   writeTrajectory(D_VAR, p, xd);
   writeTrajectory(R_VAR, p, xr);
@@ -280,9 +280,9 @@ void bi::ParticleMCMCNetCDFBuffer::readTrajectory(const VarType type,
 
       temp_matrix_type X1(size, X.size2());
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
       ret = ncVar->get(X1.buf(), counts.buf());
-      BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       rows(X, start, size) = X1;
     }
   }
@@ -333,9 +333,9 @@ void bi::ParticleMCMCNetCDFBuffer::writeTrajectory(const VarType type,
       temp_matrix_type X1(size, X.size2());
       X1 = rows(X, start, size);
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
       ret = ncVar->put(X1.buf(), counts.buf());
-      BI_ASSERT(ret, "Inconvertible type writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }
   }
 }
@@ -383,15 +383,15 @@ void bi::ParticleMCMCNetCDFBuffer::readSingle(const VarType type, const int p,
       counts[j] = 1;
 
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
       if (V1::on_device || x.inc() != 1) {
         temp_vector_type x1(size);
         ret = ncVar->get(x1.buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
         subrange(x, start, size) = x1;
       } else {
         ret = ncVar->get(subrange(x, start, size).buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       }
     }
   }
@@ -440,7 +440,7 @@ void bi::ParticleMCMCNetCDFBuffer::writeSingle(const VarType type,
       counts[j] = 1;
 
       ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
       if (V1::on_device || x.inc() != 1) {
         temp_vector_type x1(size);
@@ -450,7 +450,7 @@ void bi::ParticleMCMCNetCDFBuffer::writeSingle(const VarType type,
       } else {
         ret = ncVar->put(subrange(x, start, size).buf(), counts.buf());
       }
-      BI_ASSERT(ret, "Inconvertible type writing " << ncVar->name());
+      BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }
   }
 }

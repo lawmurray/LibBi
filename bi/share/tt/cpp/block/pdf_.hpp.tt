@@ -1,0 +1,79 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev: 2926 $
+## $Date: 2012-08-12 23:01:59 +0800 (Sun, 12 Aug 2012) $
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+/**
+ * Block: pdf_.
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+  
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
+
+  [% declare_block_sparse_static_function('simulate') %]
+  [% declare_block_sparse_static_function('sample') %]
+  [% declare_block_sparse_static_function('logdensity') %]
+  [% declare_block_sparse_static_function('maxlogdensity') %]
+};
+
+#include "bi/updater/StaticUpdater.hpp"
+#include "bi/updater/StaticSampler.hpp"
+#include "bi/updater/StaticLogDensity.hpp"
+#include "bi/updater/StaticMaxLogDensity.hpp"
+#include "bi/updater/SparseStaticSampler.hpp"
+#include "bi/updater/SparseStaticLogDensity.hpp"
+#include "bi/updater/SparseStaticMaxLogDensity.hpp"
+
+[% sig_block_static_function('simulate') %] {
+  bi::StaticUpdater<[% model_class_name %],action_typelist>::update(s);
+}
+
+[% sig_block_static_function('sample') %] {
+  bi::StaticSampler<[% model_class_name %],action_typelist>::samples(rng, s);
+}
+
+[% sig_block_static_function('logdensity') %] {
+  bi::StaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, lp);
+}
+
+[% sig_block_static_function('maxlogdensity') %] {
+  bi::StaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, lp);
+}
+
+[% std_block_dynamic_function('simulate') %]
+[% std_block_dynamic_function('sample') %]
+[% std_block_dynamic_function('logdensity') %]
+[% std_block_dynamic_function('maxlogdensity') %]
+
+[% std_block_sparse_static_function('simulate') %]
+
+[% sig_block_sparse_static_function('sample') %] {
+  bi::SparseStaticSampler<[% model_class_name %],action_typelist>::samples(rng, mask, s);
+}
+
+[% sig_block_sparse_static_function('logdensity') %] {
+  bi::SparseStaticLogDensity<[% model_class_name %],action_typelist>::logDensities(s, mask, lp);
+}
+
+[% sig_block_sparse_static_function('maxlogdensity') %] {
+  bi::SparseStaticMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(s, mask, lp);
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

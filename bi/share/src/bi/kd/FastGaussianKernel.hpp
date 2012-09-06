@@ -97,7 +97,7 @@ inline bi::FastGaussianKernel::FastGaussianKernel(const int N,
     const real h) {
   this->h = h;
   this->ZI = 1.0/(h*BI_SQRT_TWO_PI);
-  this->logZ = log(h) + BI_HALF_LOG_TWO_PI;
+  this->logZ = bi::log(h) + BI_HALF_LOG_TWO_PI;
   this->E = -1.0/(2.0*h*h);
 }
 
@@ -113,7 +113,7 @@ inline typename V1::value_type bi::FastGaussianKernel::logDensity(const V1 x) co
 template<class V1>
 inline typename V1::value_type bi::FastGaussianKernel::density(const V1 x) const {
   typename V1::value_type d = dot(x);
-  return ZI*BI_MATH_EXP(E*d);
+  return ZI*bi::exp(E*d);
 }
 
 template<class V1>

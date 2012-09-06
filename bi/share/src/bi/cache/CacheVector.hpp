@@ -80,7 +80,7 @@ inline int bi::CacheVector<V1>::size() const {
 template<class V1>
 inline V1 bi::CacheVector<V1>::get(const int p) const {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   return *pages[p];
 }
@@ -99,7 +99,7 @@ inline void bi::CacheVector<V1>::put(const int p, const V2 x) {
   setValid(p);
 
   /* post-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 }
 
 template<class V1>

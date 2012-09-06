@@ -217,7 +217,7 @@ bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::RauchTungStriebelSmoother(B& m, IO1
     in(in),
     out(out) {
   /* pre-condition */
-  assert (in != NULL);
+  BI_ASSERT(in != NULL);
 
   reset();
 }
@@ -241,8 +241,8 @@ template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::smooth(State<B,L>& s) {
   /* pre-condition */
-  assert (in != NULL);
-  assert (in->size2() > 0);
+  BI_ASSERT(in != NULL);
+  BI_ASSERT(in->size2() > 0);
 
   int k = in->size2()/2 - 1;
   init(s);

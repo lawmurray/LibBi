@@ -7,8 +7,6 @@
  */
 #include "StratifiedResampler.hpp"
 
-using namespace bi;
-
-StratifiedResampler::StratifiedResampler(const bool sort) : sort(sort) {
+bi::StratifiedResampler::StratifiedResampler(const bool sort) : sort(sort) {
   //
 }

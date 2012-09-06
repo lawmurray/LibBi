@@ -16,7 +16,8 @@ template<class B, class S, class PX, class OX>
 class SparseStaticLogDensityVisitorHost {
 public:
   template<class T1>
-  static void accept(const Mask<ON_HOST>& mask, const int p, const PX& pax, OX& x, T1& lp);
+  static void accept(const Mask<ON_HOST>& mask, State<B,ON_HOST>& s,
+      const int p, const PX& pax, OX& x, T1& lp);
 };
 
 /**
@@ -28,7 +29,8 @@ template<class B, class PX, class OX>
 class SparseStaticLogDensityVisitorHost<B,empty_typelist,PX,OX> {
 public:
   template<class T1>
-  static void accept(const Mask<ON_HOST>& mask, const int p, const PX& pax, OX& x, T1& lp) {
+  static void accept(const Mask<ON_HOST>& mask, State<B,ON_HOST>& s,
+      const int p, const PX& pax, OX& x, T1& lp) {
     //
   }
 };
@@ -40,31 +42,34 @@ public:
 
 template<class B, class S, class PX, class OX>
 template<class T1>
-void bi::SparseStaticLogDensityVisitorHost<B,S,PX,OX>::accept(const Mask<ON_HOST>& mask, const int p, const PX& pax, OX& x, T1& lp) {
+void bi::SparseStaticLogDensityVisitorHost<B,S,PX,OX>::accept(
+    const Mask<ON_HOST>& mask, State<B,ON_HOST>& s, const int p,
+    const PX& pax, OX& x, T1& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
   typedef typename target_type::coord_type coord_type;
 
-  const int id = var_id<target_type>::value;
+  const int id = var_id < target_type > ::value;
   int ix = 0;
   coord_type cox;
 
   if (mask.isDense(id)) {
     while (ix < target_size<target_type>::value) {
-      front::logDensities(p, ix, cox, pax, x, lp);
+      front::logDensities(s, p, ix, cox, pax, x, lp);
       ++cox;
       ++ix;
     }
   } else if (mask.isSparse(id)) {
     while (ix < mask.getSize(id)) {
       cox.setIndex(mask.getIndex(id, ix));
-      front::logDensities(p, ix, cox, pax, x, lp);
+      front::logDensities(s, p, ix, cox, pax, x, lp);
       ++ix;
     }
   }
 
-  SparseStaticLogDensityVisitorHost<B,pop_front,PX,OX>::accept(mask, p, pax, x, lp);
+  SparseStaticLogDensityVisitorHost<B,pop_front,PX,OX>::accept(mask, s, p,
+      pax, x, lp);
 }
 
 #endif

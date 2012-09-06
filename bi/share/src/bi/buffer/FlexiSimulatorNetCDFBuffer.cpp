@@ -9,18 +9,16 @@
 
 #include "../math/view.hpp"
 
-using namespace bi;
-
-FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
+bi::FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   /* pre-condition */
-  assert (mode == READ_ONLY || mode == WRITE);
+  BI_ASSERT(mode == READ_ONLY || mode == WRITE);
 
   map();
 }
 
-FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
+bi::FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
     const int T, const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
@@ -30,7 +28,7 @@ FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
   }
 }
 
-FlexiSimulatorNetCDFBuffer::~FlexiSimulatorNetCDFBuffer() {
+bi::FlexiSimulatorNetCDFBuffer::~FlexiSimulatorNetCDFBuffer() {
   unsigned i, j;
   for (i = 0; i < vars.size(); ++i) {
     for (j = 0; j < vars[i].size(); ++j) {
@@ -39,7 +37,7 @@ FlexiSimulatorNetCDFBuffer::~FlexiSimulatorNetCDFBuffer() {
   }
 }
 
-void FlexiSimulatorNetCDFBuffer::create(const long T) {
+void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
   int id, i;
   VarType type;
   Var* var;
@@ -81,7 +79,7 @@ void FlexiSimulatorNetCDFBuffer::create(const long T) {
   }
 }
 
-void FlexiSimulatorNetCDFBuffer::map(const long T) {
+void bi::FlexiSimulatorNetCDFBuffer::map(const long T) {
   std::string name;
   int id, i;
   VarType type;
@@ -141,77 +139,77 @@ void FlexiSimulatorNetCDFBuffer::map(const long T) {
   }
 }
 
-real FlexiSimulatorNetCDFBuffer::readTime(const int t) {
+real bi::FlexiSimulatorNetCDFBuffer::readTime(const int t) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   real time;
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << tVar->name());
   ret = tVar->get(&time, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << tVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << tVar->name());
 
   return time;
 }
 
-void FlexiSimulatorNetCDFBuffer::writeTime(const int t, const real& x) {
+void bi::FlexiSimulatorNetCDFBuffer::writeTime(const int t, const real& x) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << tVar->name());
   ret = tVar->put(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << tVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << tVar->name());
 }
 
-int FlexiSimulatorNetCDFBuffer::readStart(const int t) {
+int bi::FlexiSimulatorNetCDFBuffer::readStart(const int t) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   int start;
   BI_UNUSED NcBool ret;
   ret = startVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << startVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << startVar->name());
   ret = startVar->get(&start, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << startVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << startVar->name());
 
   return start;
 }
 
-void FlexiSimulatorNetCDFBuffer::writeStart(const int t, const int& x) {
+void bi::FlexiSimulatorNetCDFBuffer::writeStart(const int t, const int& x) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = startVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << startVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << startVar->name());
   ret = startVar->put(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << startVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << startVar->name());
 }
 
-int FlexiSimulatorNetCDFBuffer::readLen(const int t) {
+int bi::FlexiSimulatorNetCDFBuffer::readLen(const int t) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   int len;
   BI_UNUSED NcBool ret;
   ret = lenVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << lenVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << lenVar->name());
   ret = lenVar->get(&len, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << lenVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << lenVar->name());
 
   return len;
 }
 
-void FlexiSimulatorNetCDFBuffer::writeLen(const int t, const int& x) {
+void bi::FlexiSimulatorNetCDFBuffer::writeLen(const int t, const int& x) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   BI_UNUSED NcBool ret;
   ret = lenVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << lenVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << lenVar->name());
   ret = lenVar->put(&x, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << lenVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << lenVar->name());
 }

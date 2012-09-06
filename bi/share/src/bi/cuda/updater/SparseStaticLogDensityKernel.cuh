@@ -24,7 +24,7 @@ namespace bi {
  */
 template<class B, class S, class V1>
 CUDA_FUNC_GLOBAL void kernelSparseStaticLogDensity(
-    const Mask<ON_DEVICE> mask, V1 lp);
+    State<B,ON_DEVICE> s, const Mask<ON_DEVICE> mask, V1 lp);
 
 }
 
@@ -32,12 +32,13 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticLogDensity(
 #include "../constant.cuh"
 #include "../global.cuh"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
 
 template<class B, class S, class V1>
-void bi::kernelSparseStaticLogDensity(const Mask<ON_DEVICE> mask, V1 lp) {
-  typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
-  typedef Ox<ON_DEVICE,B,real,global> OX;
+CUDA_FUNC_GLOBAL void bi::kernelSparseStaticLogDensity(State<B,ON_DEVICE> s,
+    const Mask<ON_DEVICE> mask, V1 lp) {
+  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Ou<ON_DEVICE,B,global> OX;
   typedef SparseStaticLogDensityVisitorGPU<B,S,PX,OX> Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
@@ -45,8 +46,8 @@ void bi::kernelSparseStaticLogDensity(const Mask<ON_DEVICE> mask, V1 lp) {
   OX x;
 
   /* update */
-  if (p < constP) {
-    Visitor::accept(mask, p, pax, x, lp(p));
+  if (p < s.size()) {
+    Visitor::accept(s, mask, p, pax, x, lp(p));
   }
 }
 

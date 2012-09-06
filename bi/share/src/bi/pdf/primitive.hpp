@@ -133,7 +133,7 @@ template<class M1, class T1, class V1>
 void bi::gaussian_densities(const M1 Z, const T1 logZ, V1 p,
     const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   typedef typename V1::value_type T2;
 
@@ -151,7 +151,7 @@ template<class M1, class T1, class V1>
 void bi::gaussian_log_densities(const M1 Z, const T1 logZ, V1 p,
     const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   typedef typename V1::value_type T2;
 
@@ -169,7 +169,7 @@ template<class M1, class T1, class V1>
 void bi::gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
     const T1 logZ, V1 p, const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   op_elements(vec(Z), gamma_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
@@ -185,7 +185,7 @@ template<class M1, class T1, class V1>
 void bi::gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
     const T1 logZ, V1 p, const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   op_elements(vec(Z), gamma_log_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
@@ -201,7 +201,7 @@ template<class M1, class T1, class V1>
 void bi::inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
     const T1 logZ, V1 p, const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   op_elements(vec(Z), inverse_gamma_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
@@ -217,7 +217,7 @@ template<class M1, class T1, class V1>
 void bi::inverse_gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
     const T1 logZ, V1 p, const bool clear) {
   /* pre-condition */
-  assert (Z.size1() == p.size());
+  BI_ASSERT(Z.size1() == p.size());
 
   op_elements(vec(Z), inverse_gamma_log_density_functor<T1>(alpha, beta, logZ));
   if (clear) {

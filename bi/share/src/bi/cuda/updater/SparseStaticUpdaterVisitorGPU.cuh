@@ -23,12 +23,13 @@ public:
   /**
    * Update.
    *
+   * @param s State.
    * @param mask Mask.
    * @param p Trajectory id.
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(const Mask<ON_DEVICE>& mask,
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const Mask<ON_DEVICE>& mask,
       const int p, const PX& pax, OX& x);
 };
 
@@ -40,7 +41,7 @@ public:
 template<class B, class PX, class OX>
 class SparseStaticUpdaterVisitorGPU<B,empty_typelist,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(const Mask<ON_DEVICE>& mask,
+  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const Mask<ON_DEVICE>& mask,
       const int p, const PX& pax, OX& x) {
     //
   }
@@ -53,7 +54,7 @@ public:
 
 template<class B, class S, class PX, class OX>
 inline void bi::SparseStaticUpdaterVisitorGPU<B,S,PX,OX>::accept(
-    const Mask<ON_DEVICE>& mask, const int p, const PX& pax, OX& x) {
+    State<B,ON_DEVICE>& s, const Mask<ON_DEVICE>& mask, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -67,10 +68,10 @@ inline void bi::SparseStaticUpdaterVisitorGPU<B,S,PX,OX>::accept(
   for (i = 0; i < size; ++i) {
     ix = mask.getIndex(id, i);
     cox.setIndex(ix);
-    front::f(p, ix, cox, pax, x);
+    front::simulate(s, p, ix, cox, pax, x);
   }
 
-  SparseStaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(mask, p, pax, x);
+  SparseStaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(s, mask, p, pax, x);
 }
 
 #endif

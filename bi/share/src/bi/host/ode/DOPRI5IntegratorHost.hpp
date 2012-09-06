@@ -46,41 +46,53 @@ template<class B, class S, class T1>
 void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   /* pre-condition */
-  assert (t1 < t2);
+  BI_ASSERT(t1 < t2);
 
-  typedef host_vector<real> vector_type;
-  typedef Pa<ON_HOST,B,real,const_host,host,host,shared_host<S> > PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
+  typedef host_vector_reference<real> vector_reference_type;
+  typedef Pa<ON_HOST,B,host,host,host,shared_host<S> > PX;
   typedef DOPRI5VisitorHost<B,S,S,real,PX,real> Visitor;
+
   static const int N = block_size<S>::value;
+  const int P = s.size();
 
   bind(s);
 
   #pragma omp parallel
   {
-    vector_type x0(N), x1(N), x2(N), x3(N), x4(N), x5(N), x6(N), err(N);
-    vector_type k1(N), k7(N);
+    real buf[11*N]; // use of dynamic array faster than heap allocation
+    vector_reference_type x0(buf, N);
+    vector_reference_type x1(buf + N, N);
+    vector_reference_type x2(buf + 2*N, N);
+    vector_reference_type x3(buf + 3*N, N);
+    vector_reference_type x4(buf + 4*N, N);
+    vector_reference_type x5(buf + 5*N, N);
+    vector_reference_type x6(buf + 6*N, N);
+    vector_reference_type err(buf + 7*N, N);
+    vector_reference_type k1(buf + 8*N, N);
+    vector_reference_type k7(buf + 9*N, N);
+    vector_reference_type shared(buf + 10*N, N);
+    sharedHostState = &shared;
+
     real t, h, e, e2, logfacold, logfac11, fac;
-    int n, id, p, P = s.size();
+    int n, id, p;
     bool k1in;
     PX pax;
-    OX x;
 
     #pragma omp for
     for (p = 0; p < P; ++p) {
       /* initialise shared memory from global memory */
-      shared_host_init<B,S>(p);
+      shared_host_init<B,S>(s, p);
 
       t = t1;
       h = h_h0;
-      logfacold = BI_MATH_LOG(BI_REAL(1.0e-4));
+      logfacold = bi::log(BI_REAL(1.0e-4));
       k1in = false;
       n = 0;
       x0 = *sharedHostState;
 
       /* integrate */
       while (t < t2 && n < h_nsteps) {
-        if (BI_REAL(0.1)*BI_MATH_FABS(h) <= BI_MATH_FABS(t)*h_uround) {
+        if (BI_REAL(0.1)*bi::abs(h) <= bi::abs(t)*h_uround) {
           // step size too small
         }
         if (t + BI_REAL(1.01)*h - t2 > BI_REAL(0.0)) {
@@ -92,30 +104,30 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
         }
 
         /* stages */
-        Visitor::stage1(t, h, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), k1.buf(), err.buf(), k1in);
+        Visitor::stage1(t, h, s, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), k1.buf(), err.buf(), k1in);
         k1in = true; // can reuse from previous iteration in future
         sharedHostState->swap(x1);
 
-        Visitor::stage2(t, h, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
+        Visitor::stage2(t, h, s, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
         sharedHostState->swap(x2);
 
-        Visitor::stage3(t, h, p, pax, x0.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
+        Visitor::stage3(t, h, s, p, pax, x0.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
         sharedHostState->swap(x3);
 
-        Visitor::stage4(t, h, p, pax, x0.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
+        Visitor::stage4(t, h, s, p, pax, x0.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
         sharedHostState->swap(x4);
 
-        Visitor::stage5(t, h, p, pax, x0.buf(), x5.buf(), x6.buf(), err.buf());
+        Visitor::stage5(t, h, s, p, pax, x0.buf(), x5.buf(), x6.buf(), err.buf());
         sharedHostState->swap(x5);
 
-        Visitor::stage6(t, h, p, pax, x0.buf(), x6.buf(), err.buf());
+        Visitor::stage6(t, h, s, p, pax, x0.buf(), x6.buf(), err.buf());
 
         /* compute error */
-        Visitor::stageErr(t, h, p, pax, x0.buf(), x6.buf(), k7.buf(), err.buf());
+        Visitor::stageErr(t, h, s, p, pax, x0.buf(), x6.buf(), k7.buf(), err.buf());
 
         e2 = 0.0;
         for (id = 0; id < N; ++id) {
-          e = err(id)*h/(h_atoler + h_rtoler*BI_MATH_MAX(BI_MATH_FABS(x0(id)), BI_MATH_FABS(x6(id))));
+          e = err(id)*h/(h_atoler + h_rtoler*bi::max(bi::abs(x0(id)), bi::abs(x6(id))));
           e2 += e*e;
         }
         e2 /= N;
@@ -131,16 +143,16 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
         /* compute next step size */
         if (t < t2) {
-          logfac11 = h_expo*BI_MATH_LOG(e2);
+          logfac11 = h_expo*bi::log(e2);
           if (e2 > BI_REAL(1.0)) {
             /* step was rejected */
-            h *= BI_MATH_MAX(h_facl, BI_MATH_EXP(h_logsafe - logfac11));
+            h *= bi::max(h_facl, bi::exp(h_logsafe - logfac11));
           } else {
             /* step was accepted */
-            fac = BI_MATH_EXP(h_beta*logfacold + h_logsafe - logfac11); // Lund-stabilization
-            fac = BI_MATH_MIN(h_facr, BI_MATH_MAX(h_facl, fac)); // bound
+            fac = bi::exp(h_beta*logfacold + h_logsafe - logfac11); // Lund-stabilization
+            fac = bi::min(h_facr, bi::max(h_facl, fac));  // bound
             h *= fac;
-            logfacold = BI_REAL(0.5)*BI_MATH_LOG(BI_MATH_MAX(e2, BI_REAL(1.0e-8)));
+            logfacold = BI_REAL(0.5)*bi::log(bi::max(e2, BI_REAL(1.0e-8)));
           }
         }
 
@@ -148,7 +160,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
       }
 
       /* write from shared back to global memory */
-      shared_host_commit<B,S>(p);
+      shared_host_commit<B,S>(s, p);
     }
   }
 

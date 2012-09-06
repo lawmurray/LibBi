@@ -9,7 +9,6 @@
 #define BI_RANDOM_RANDOMGPU_CUH
 
 #include "RandomKernel.cuh"
-#include "../../random/Random.hpp"
 #include "../device.hpp"
 
 template<class V1>
@@ -18,9 +17,9 @@ void bi::RandomGPU::uniforms(Random& rng, V1 x,
     const typename V1::value_type upper) {
   dim3 Db, Dg;
   Db.x = deviceIdealThreadsPerBlock();
-  Dg.x = (std::min(x.size(), deviceIdealThreads()) + Db.x - 1)/Db.x;
+  Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
 
-  kernelUniforms<<<Dg,Db>>>(Random(rng), x, lower, upper);
+  kernelUniforms<<<Dg,Db>>>(rng.devRngs, x, lower, upper);
   CUDA_CHECK;
 }
 
@@ -29,9 +28,9 @@ void bi::RandomGPU::gaussians(Random& rng, V1 x,
     const typename V1::value_type mu, const typename V1::value_type sigma) {
   dim3 Db, Dg;
   Db.x = deviceIdealThreadsPerBlock();
-  Dg.x = (std::min(x.size(), deviceIdealThreads()) + Db.x - 1)/Db.x;
+  Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
 
-  kernelGaussians<<<Dg,Db>>>(Random(rng), x, mu, sigma);
+  kernelGaussians<<<Dg,Db>>>(rng.devRngs, x, mu, sigma);
   CUDA_CHECK;
 }
 

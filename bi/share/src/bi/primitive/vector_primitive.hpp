@@ -366,25 +366,12 @@ void set_elements(V1 x, const typename V1::value_type value);
  */
 template<class V1>
 void seq_elements(V1 x, const typename V1::value_type init);
-
-/**
- * Copy elements.
- *
- * @ingroup primitive_vector
- *
- * @param[out] x1 Vector to copy to.
- * @param x2 Vector to copy from.
- */
-template<class V1, class V2>
-void copy_elements(V1 x1, const V2 x2);
-
 //@}
 
 /**
  * @name Binary transformations
  */
 //@{
-
 /**
  * Apply binary functor to the elements of a vector.
  *
@@ -633,7 +620,7 @@ inline typename V1::value_type bi::sumexp_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = exp(mx + log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>())));
+  T1 result = bi::exp(mx + bi::log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>())));
 
   return result;
 }
@@ -643,7 +630,7 @@ inline typename V1::value_type bi::logsumexp_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = mx + log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>()));
+  T1 result = mx + bi::log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>()));
 
   return result;
 }
@@ -653,7 +640,7 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = exp(2.0*mx + log(op_reduce(x,
+  T1 result = bi::exp(2.0*mx + bi::log(op_reduce(x,
       nan_minus_exp_and_square_functor<T1>(mx), 0.0, thrust::plus<T1>())));
 
   return result;
@@ -790,15 +777,6 @@ inline void bi::seq_elements(V1 x, const typename V1::value_type init) {
     thrust::sequence(x.fast_begin(), x.fast_end(), init);
   } else {
     thrust::sequence(x.begin(), x.end(), init);
-  }
-}
-
-template<class V1, class V2>
-inline void bi::copy_elements(V1 x1, const V2 x2) {
-  if (x1.inc() == 1 && x2.inc() == 1) {
-    thrust::copy(x2.fast_begin(), x2.fast_end(), x1.fast_begin());
-  } else {
-    thrust::copy(x2.begin(), x2.end(), x1.begin());
   }
 }
 

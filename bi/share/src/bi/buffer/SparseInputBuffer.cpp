@@ -7,9 +7,7 @@
  */
 #include "SparseInputBuffer.hpp"
 
-using namespace bi;
-
-SparseInputBufferState::SparseInputBufferState(const Model& m) :
+bi::SparseInputBufferState::SparseInputBufferState(const Model& m) :
     masks(NUM_VAR_TYPES) {
   VarType type;
   int i;
@@ -19,7 +17,7 @@ SparseInputBufferState::SparseInputBufferState(const Model& m) :
   }
 }
 
-SparseInputBufferState::SparseInputBufferState(
+bi::SparseInputBufferState::SparseInputBufferState(
     const SparseInputBufferState& o) : starts(o.starts.size()),
     lens(o.lens.size()), masks(NUM_VAR_TYPES), times(o.times) {
   VarType type;
@@ -31,7 +29,7 @@ SparseInputBufferState::SparseInputBufferState(
   operator=(o);
 }
 
-SparseInputBufferState& SparseInputBufferState::operator=(
+bi::SparseInputBufferState& bi::SparseInputBufferState::operator=(
     const SparseInputBufferState& o) {
   VarType type;
   int i;
@@ -46,7 +44,7 @@ SparseInputBufferState& SparseInputBufferState::operator=(
   return *this;
 }
 
-SparseInputBufferState::~SparseInputBufferState() {
+bi::SparseInputBufferState::~SparseInputBufferState() {
   VarType type;
   int i;
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
@@ -55,7 +53,7 @@ SparseInputBufferState::~SparseInputBufferState() {
   }
 }
 
-SparseInputBuffer::SparseInputBuffer(const Model& m) : m(m),
+bi::SparseInputBuffer::SparseInputBuffer(const Model& m) : m(m),
     vDims(NUM_VAR_TYPES), masks0(NUM_VAR_TYPES), state(m) {
   VarType type;
   int i;
@@ -65,18 +63,18 @@ SparseInputBuffer::SparseInputBuffer(const Model& m) : m(m),
   }
 }
 
-void SparseInputBuffer::mark() {
+void bi::SparseInputBuffer::mark() {
   Markable<SparseInputBufferState>::mark(state);
 }
 
-void SparseInputBuffer::restore() {
+void bi::SparseInputBuffer::restore() {
   Markable<SparseInputBufferState>::restore(state);
 }
 
-void SparseInputBuffer::top() {
+void bi::SparseInputBuffer::top() {
   Markable<SparseInputBufferState>::top(state);
 }
 
-void SparseInputBuffer::pop() {
+void bi::SparseInputBuffer::pop() {
   Markable<SparseInputBufferState>::pop();
 }

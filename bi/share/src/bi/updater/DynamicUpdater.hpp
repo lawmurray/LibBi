@@ -90,7 +90,11 @@ template<class T1>
 void bi::DynamicUpdater<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   #ifdef ENABLE_SSE
-  DynamicUpdaterSSE<B,S>::update(t1, t2, s);
+  if (s.size() % BI_SSE_SIZE == 0) {
+    DynamicUpdaterSSE<B,S>::update(t1, t2, s);
+  } else {
+    DynamicUpdaterHost<B,S>::update(t1, t2, s);
+  }
   #else
   DynamicUpdaterHost<B,S>::update(t1, t2, s);
   #endif
@@ -100,11 +104,7 @@ template<class B, class S>
 template<class T1>
 void bi::DynamicUpdater<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s, const int p) {
-  #ifdef ENABLE_SSE
-  DynamicUpdaterSSE<B,S>::update(t1, t2, s, p);
-  #else
   DynamicUpdaterHost<B,S>::update(t1, t2, s, p);
-  #endif
 }
 
 #ifdef __CUDACC__

@@ -81,7 +81,6 @@ public:
       const real eps = 1.0e-2);
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize or restore from serialization.
    */
@@ -92,7 +91,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -100,9 +98,7 @@ private:
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/base_object.hpp"
-#endif
 
 template<class V1, class M1>
 bi::GaussianMixturePdf<V1,M1>::GaussianMixturePdf() {
@@ -127,8 +123,8 @@ template<class M2, class V2>
 bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
     const M2& X, const V2& y, const real eps) {
   /* pre-condition */
-  assert (y.size() == X.size1());
-  assert (this->size() == X.size2());
+  BI_ASSERT(y.size() == X.size1());
+  BI_ASSERT(this->size() == X.size2());
 
   const int P = X.size1();
   real W = this->weight();
@@ -215,7 +211,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
     gdmm(1.0, *b, *U, 0.0, *T);
     #ifndef NDEBUG
     for (int i = 0; i < T->size1(); ++i) {
-      assert(relErr(sum_reduce(row(*T,i), 1.0) < 1.0e-5);
+      BI_ASSERT(relErr(sum_reduce(row(*T,i), 1.0) < 1.0e-5);
     }
     #endif
 
@@ -226,7 +222,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      */
     gemv(1.0/Y, *T, y, 0.0, this->ws, 'T');
     thrust::inclusive_scan(this->ws.begin(), this->ws.end(), this->Ws.begin());
-    assert(rel_err(this->weight(), 1.0) < 1.0e-5);
+    BI_ASSERT(rel_err(this->weight(), 1.0) < 1.0e-5);
     W = this->weight();
 
     /**
@@ -243,7 +239,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
     gdmm(1.0, *c, *U, 0.0, *T, 'R');
     #ifndef NDEBUG
     for (j = 0; j < T->size2(); ++j) {
-      assert(relErr(sum_reduce(column(*T,j)), 1.0) < 1.0e-5);
+      BI_ASSERT(relErr(sum_reduce(column(*T,j)), 1.0) < 1.0e-5);
     }
     #endif
 
@@ -296,7 +292,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
     *b = *a;
     log_elements(*b);
     l2 = dot(y, *b);
-    assert (steps == 0 || l2 > l1); // likelihood should always increase
+    BI_ASSERT(steps == 0 || l2 > l1); // likelihood should always increase
 
     /**
      * Verbose output.
@@ -335,13 +331,11 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
   return converged;
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1>
 template<class Archive>
 void bi::GaussianMixturePdf<V1,M1>::serialize(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object<MixturePdf<GaussianPdf<V1,M1> > >(*this);
 }
-#endif
 
 #endif

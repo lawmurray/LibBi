@@ -65,15 +65,15 @@ public:
 
   template<Location L, class V1>
   real filter(Random& rng, const real T,
-      const V1 theta0, State<B,L>& s);
+      const V1 theta, State<B,L>& s);
 
   template<Location L, class V1, class M1>
   real filter(Random& rng, const real T,
-      const V1 theta0, State<B,L>& s, M1 xd, M1 xr);
+      const V1 theta, State<B,L>& s, M1 xd, M1 xr);
 
   template<Location L, class V1, class M1>
-  real filter(Random& rng, const real T, const V1 theta0_1, State<B,L>& s_1,
-      M1 xd, M1 xr, const V1 theta0_2, State<B,L>& s_2, real& ll1, real& ll2);
+  real filter(Random& rng, const real T, const V1 theta_1, State<B,L>& s_1,
+      M1 xd, M1 xr, const V1 theta_2, State<B,L>& s_2, real& ll1, real& ll2);
 
   template<bi::Location L, class V1, class V2, class M1>
   int step(Random& rng,
@@ -181,8 +181,8 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
     const real T, State<B, L>& s, const bool conditional, M1* xd, M1* xr) {
   real ll;
   /* pre-conditions */
-  assert(T >= this->state.t);
-  assert(this->essRel >= 0.0 && this->essRel <= 1.0);
+  BI_ASSERT(T >= this->state.t);
+  BI_ASSERT(this->essRel >= 0.0 && this->essRel <= 1.0);
 
   const int P = s.size();
   int n = 0, r = 0;
@@ -195,11 +195,10 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
   int block;
   real maxlw = -1.0/0.0;
   while (this->getTime() < T) {
-
     r = step(rng, T, s, lws, as, n, conditional, xd, xr);
 
-    assert (lws.size() == s.size());
-    ll += logsumexp_reduce(lws) - std::log(lws.size());
+    BI_ASSERT(lws.size() == s.size());
+    ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(lws.size()));
 
     this->output(n, s, r, lws, as);
     ++n;
@@ -236,8 +235,8 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step_impl(Random& rng,
   int P = s.size();
 
   int maxParticles = stopper->getMaxParticles();
-  typename loc_temp_vector<L,int>::type as_base(std::max(maxParticles, P));
-  typename loc_temp_vector<L,real>::type lws2_base(std::max(maxParticles, P));
+  typename loc_temp_vector<L,int>::type as_base(bi::max(maxParticles, P));
+  typename loc_temp_vector<L,real>::type lws2_base(bi::max(maxParticles, P));
   int currentRange = P;
 
   int block = 0;
@@ -290,8 +289,8 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step_impl(Random& rng,
         }
       }
 
-      assert(min_reduce(as) >= 0);
-      assert(max_reduce(as) < lastSize);
+      BI_ASSERT(min_reduce(as) >= 0);
+      BI_ASSERT(max_reduce(as) < lastSize);
 
       this->resam->copy(as, s);
       if (r) {
@@ -364,13 +363,13 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter(Random& rng
 template<class B, class R, class S, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-    const V1 theta0, State<B,L>& s) {
+    const V1 theta, State<B,L>& s) {
   const int P = s.size();
 
   typename loc_temp_vector<L, real>::type lws(P);
   typename loc_temp_vector<L, int>::type as(P);
 
-  init(rng, theta0, s, lws, as);
+  init(rng, theta, s, lws, as);
 
   return filter_impl(rng, T, s, false, (host_matrix<real>*) NULL, (host_matrix<real>*) NULL);
 
@@ -380,7 +379,7 @@ real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, cons
 template<class B, class R, class S, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class M1>
 real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-    const V1 theta0, State<B,L>& s, M1 xd, M1 xr) {
+    const V1 theta, State<B,L>& s, M1 xd, M1 xr) {
 
   const int P = s.size();
 
@@ -388,7 +387,7 @@ real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, cons
   typename loc_temp_vector<L, int>::type as(P);
   typename loc_temp_vector<L, real>::type lws2(P);
 
-  init(rng, theta0, s, lws, as);
+  init(rng, theta, s, lws, as);
 
   return filter_impl(rng, T, s, true, &xd, &xr);
 }
@@ -398,7 +397,7 @@ template<class V1, class V2, class V3, class V4>
 bool bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::resample(Random& rng,
     V1 lws, V2 as, bool sorted, V3 slws, V4 ps, V3 Ws) {
   /* pre-condition */
-//  assert (s.size() == lws.size());
+//  BI_ASSERT(s.size() == lws.size());
   int blockSize = as.size();
 
   bool r = this->resam != NULL
@@ -418,7 +417,7 @@ template<class V1, class V2, class V3, class V4>
 bool bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::resample(Random& rng, int a,
     V1 lws, V2 as, bool sorted, V3 slws, V4 ps, V3 Ws) {
   /* pre-condition */
-//  assert (s.size() == lws.size());
+//  BI_ASSERT(s.size() == lws.size());
   int blockSize = as.size();
 
   bool r = this->resam != NULL
@@ -437,7 +436,7 @@ bool bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::resample(Random& r
 template<class B, class R, class S, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class M1>
 real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
-    const V1 theta0_1, State<B,L>& s_1, M1 xd, M1 xr, const V1 theta0_2, State<B,L>& s_2,
+    const V1 theta_1, State<B,L>& s_1, M1 xd, M1 xr, const V1 theta_2, State<B,L>& s_2,
     real& ll1, real& ll2) {
 
   const int P = s_1.size();
@@ -445,8 +444,8 @@ real bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::filter(Random& rng, cons
   typename loc_temp_vector<L, real>::type lws(P);
   typename loc_temp_vector<L, int>::type as(P);
 
-  init(rng, theta0_1, s_1, lws, as);
-  init(rng, theta0_2, s_2, lws, as);
+  init(rng, theta_1, s_1, lws, as);
+  init(rng, theta_2, s_2, lws, as);
 
   return filter_impl(rng, T, s_1, xd, xr, s_2, ll1, ll2);
 }
@@ -462,8 +461,8 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
   ll1 = 0;
   ll2 = 0;
   /* pre-conditions */
-  assert(T >= this->state.t);
-  assert(this->essRel >= 0.0 && this->essRel <= 1.0);
+  BI_ASSERT(T >= this->state.t);
+  BI_ASSERT(this->essRel >= 0.0 && this->essRel <= 1.0);
 
   const int P = s_1.size();
   int n = 0, r_1 = 0, r_2 = 0;
@@ -484,8 +483,8 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
 
     real ll1inc = logsumexp_reduce(lws_1);
     real ll2inc = logsumexp_reduce(lws_2);
-    ll1 += ll1inc - std::log(lws_1.size());
-    ll2 += ll2inc - std::log(lws_2.size());
+    ll1 += ll1inc - bi::log(static_cast<real>(lws_1.size()));
+    ll2 += ll2inc - bi::log(static_cast<real>(lws_2.size()));
 
     lr += ll2inc - ll1inc;
 
@@ -510,11 +509,11 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step(Random& rng,
   int r_1 = 0, r_2 = 0;
 
   int maxParticles = stopper->getMaxParticles();
-  typename loc_temp_vector<L, int>::type as_1_base(std::max(maxParticles,P));
-  typename loc_temp_vector<L, real>::type lws2_1_base(std::max(maxParticles,P));
+  typename loc_temp_vector<L, int>::type as_1_base(bi::max(maxParticles,P));
+  typename loc_temp_vector<L, real>::type lws2_1_base(bi::max(maxParticles,P));
 
-  typename loc_temp_vector<L, int>::type as_2_base(std::max(maxParticles,P));
-  typename loc_temp_vector<L, real>::type lws2_2_base(std::max(maxParticles,P));
+  typename loc_temp_vector<L, int>::type as_2_base(bi::max(maxParticles,P));
+  typename loc_temp_vector<L, real>::type lws2_2_base(bi::max(maxParticles,P));
 
   int currentRange = P;
 
@@ -593,7 +592,7 @@ int bi::AdaptiveNParticleFilter<B,R,S,IO1,IO2,IO3,CL>::step(Random& rng,
 
       if (block == 0) {
         // possibly this should be changed
-        maxlw = std::max(this->getMaxLogWeight(s_1),this->getMaxLogWeight(s_2));
+        maxlw = bi::max(this->getMaxLogWeight(s_1),this->getMaxLogWeight(s_2));
       }
 
       if (stopper->stop(lws2_1, lws2_2, totalObs, maxlw, blockSize)) {

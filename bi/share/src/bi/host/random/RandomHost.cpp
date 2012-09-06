@@ -11,9 +11,7 @@
 #include "boost/mpi/communicator.hpp"
 #endif
 
-using namespace bi;
-
-void RandomHost::seeds(Random& rng, const unsigned seed) {
+void bi::RandomHost::seeds(Random& rng, const unsigned seed) {
   #pragma omp parallel
   {
     #ifdef ENABLE_MPI

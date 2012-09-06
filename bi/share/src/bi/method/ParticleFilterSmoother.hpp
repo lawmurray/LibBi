@@ -209,8 +209,8 @@ template<bi::Location L, class IO2>
 void bi::ParticleFilterSmoother<B,IO1,CL>::smooth(
     State<B,L>& s, IO2* in) {
   /* pre-condition */
-  assert (in != NULL);
-  assert (in->size2() > 0);
+  BI_ASSERT(in != NULL);
+  BI_ASSERT(in->size2() > 0);
 
   const int P = in->size1();
   const int T = in->size2();
@@ -248,7 +248,7 @@ template<bi::Location L, class V1, class V2, class IO2>
 void bi::ParticleFilterSmoother<B,IO1,CL>::init(
     State<B,L>& s, V1 lws, V2 bs, IO2* in) {
   /* pre-condition */
-  assert (in != NULL);
+  BI_ASSERT(in != NULL);
 
   int n = in->size2() - 1;
   in->readTime(n, state.t);

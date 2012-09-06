@@ -31,10 +31,9 @@ public:
   /**
    * Constructor.
    *
-   * @param m Model.
    * @param P Number of \f$x\f$-particles.
    */
-  ThetaParticle(const B& m, const int P = 1);
+  ThetaParticle(const int P = 0);
 
   /**
    * Shallow copy constructor.
@@ -141,11 +140,11 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::ThetaParticle<B,L>::ThetaParticle(const B& m, const int P) :
+bi::ThetaParticle<B,L>::ThetaParticle(const int P) :
     logLikelihood(0.0),
     logPrior(0.0),
     incLogLikelihood(0.0),
-    s(m, P),
+    s(P),
     lws(P),
     as(P) {
   //

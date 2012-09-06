@@ -11,31 +11,181 @@
 #include "../cuda.hpp"
 #include "../../math/scalar.hpp"
 #include "../../misc/compile.hpp"
+#include "../../misc/assert.hpp"
 #include "../../primitive/device_allocator.hpp"
 #include "../../primitive/strided_range.hpp"
-#include "../../primitive/vector_primitive.hpp"
 #include "../../typelist/equals.hpp"
 
+#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 #include "boost/serialization/array.hpp"
+#endif
 
 #include "thrust/device_ptr.h"
 #include "thrust/iterator/detail/normal_iterator.h"
 
 namespace bi {
 /**
+ * Dynamic buffer.
+ */
+template<class T>
+class gpu_storage_buf {
+public:
+  /**
+   * Pointer to underlying data.
+   */
+  CUDA_FUNC_BOTH T* buf() {
+    return ptr;
+  }
+
+  /**
+   * Pointer to underlying data.
+   */
+  CUDA_FUNC_BOTH const T* buf() const {
+    return ptr;
+  }
+
+protected:
+  /**
+   * Set buffer.
+   */
+  CUDA_FUNC_BOTH void setBuf(T* ptr) {
+    this->ptr = ptr;
+  }
+
+  /**
+   * Pointer to underlying data.
+   */
+  T* ptr;
+};
+
+/**
+ * Static size.
+ */
+template<int size_value>
+class gpu_storage_size {
+public:
+  /**
+   * Get size.
+   */
+  static CUDA_FUNC_BOTH int size() {
+    return size1;
+  }
+
+protected:
+  /**
+   * Set size.
+   */
+  static CUDA_FUNC_BOTH void setSize(const int size1) {
+    //BI_ASSERT_MSG(gpu_storage_size<size_value>::size1 == size1,
+    //    "Cannot set static size");
+  }
+
+  /**
+   * Size.
+   */
+  static const int size1 = size_value;
+};
+
+/**
+ * Dynamic size.
+ */
+template<>
+class gpu_storage_size<-1> {
+public:
+  /**
+   * Size.
+   */
+  CUDA_FUNC_BOTH int size() const {
+    return size1;
+  }
+
+protected:
+  /**
+   * Set size.
+   */
+  CUDA_FUNC_BOTH void setSize(const int size1) {
+    this->size1 = size1;
+  }
+
+  /**
+   * Size.
+   */
+  int size1;
+};
+
+/**
+ * Static stride.
+ */
+template<int inc_value>
+class gpu_storage_inc {
+public:
+  /**
+   * Get increment.
+   */
+  static CUDA_FUNC_BOTH int inc() {
+    return inc1;
+  }
+
+protected:
+  /**
+   * Set increment.
+   */
+  static CUDA_FUNC_BOTH void setInc(const int inc1) {
+    //BI_ASSERT_MSG(gpu_storage_inc<inc_value>::inc1 == inc1,
+    //    "Cannot set static increment");
+  }
+
+  /**
+   * Increment.
+   */
+  static const int inc1 = inc_value;
+};
+
+/**
+ * Dynamic stride.
+ */
+template<>
+class gpu_storage_inc<-1> {
+public:
+  /**
+   * Increment.
+   */
+  CUDA_FUNC_BOTH int inc() const {
+    return inc1;
+  }
+
+protected:
+  /**
+   * Set increment.
+   */
+  CUDA_FUNC_BOTH void setInc(const int inc1) {
+    this->inc1 = inc1;
+  }
+
+  /**
+   * Increment.
+   */
+  int inc1;
+};
+
+/**
  * Lightweight view of vector on device.
  *
  * @ingroup math_matvec
  *
  * @tparam T Value type.
+ * @tparam size_value Static size, -1 for dynamic.
+ * @tparam inc_value Static increment, -1 for dynamic.
  *
  * This class has only the default constructors and destructors,
  * allowing it to be instantiated in constant memory on device.
  */
-template<class T = real>
-class CUDA_ALIGN(16) gpu_vector_handle {
+template<class T = real, int size_value = -1, int inc_value = -1>
+class gpu_vector_handle: public gpu_storage_buf<T>,
+    public gpu_storage_size<size_value>,
+    public gpu_storage_inc<inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -45,27 +195,7 @@ public:
   /**
    * Shallow copy.
    */
-  CUDA_FUNC_HOST void copy(const gpu_vector_handle<T>& o);
-
-  /**
-   * Size.
-   */
-  CUDA_FUNC_BOTH size_type size() const;
-
-  /**
-   * Increment.
-   */
-  CUDA_FUNC_BOTH size_type inc() const;
-
-  /**
-   * Pointer to underlying data on device.
-   */
-  CUDA_FUNC_BOTH T* buf();
-
-  /**
-   * Pointer to underlying data on device.
-   */
-  CUDA_FUNC_BOTH const T* buf() const;
+  CUDA_FUNC_BOTH void copy(const gpu_vector_handle<T,size_value,inc_value>& o);
 
   /**
    * Access element.
@@ -82,7 +212,8 @@ public:
   /**
    * @copydoc operator()(const size_type)
    */
-  CUDA_FUNC_BOTH const T& operator()(const size_type i) const;
+  CUDA_FUNC_BOTH
+  const T& operator()(const size_type i) const;
 
   /**
    * @copydoc operator()(const size_type)
@@ -105,92 +236,90 @@ public:
    * size and same increment, false otherwise.
    */
   template<class V1>
-  bool same(const V1& o) const;
-
-public:
-  /**
-   * Data.
-   */
-  T* ptr;
+  CUDA_FUNC_BOTH bool same(const V1& o) const;
 
   /**
-   * Size.
+   * Swap data between two vector handles.
+   *
+   * @param o Vector.
+   *
+   * Swaps the underlying data between the two vectors, updating strides and
+   * sizes as appropriate. This is a pointer swap, no data is copied.
    */
-  size_type size1;
+  CUDA_FUNC_BOTH void swap(gpu_vector_handle<T,size_value,inc_value>& o);
 
   /**
-   * Increment.
+   * Are elements of the vector stored contiguously?
    */
-  size_type inc1;
-
-} BI_ALIGN(16);
+  CUDA_FUNC_BOTH bool contiguous() const;
+};
 
 }
 
-template<class T>
-inline void bi::gpu_vector_handle<T>::copy(
-    const gpu_vector_handle<T>& o) {
-  ptr = o.ptr;
-  size1 = o.size1;
-  inc1 = o.inc1;
+template<class T, int size_value, int inc_value>
+inline void bi::gpu_vector_handle<T,size_value,inc_value>::copy(
+    const gpu_vector_handle<T,size_value,inc_value>& o) {
+  this->setBuf(const_cast<T*>(o.buf()));
+  this->setSize(o.size());
+  this->setInc(o.inc());
 }
 
-template<class T>
-inline typename bi::gpu_vector_handle<T>::size_type
-    bi::gpu_vector_handle<T>::size() const {
-  return size1;
+template<class T, int size_value, int inc_value>
+inline T& bi::gpu_vector_handle<T,size_value,inc_value>::operator()(
+    const size_type i) {
+  /* pre-condition */
+  //BI_ASSERT(i >= 0 && i < this->size());
+  return this->buf()[i * this->inc()];
 }
 
-template<class T>
-inline typename bi::gpu_vector_handle<T>::size_type
-    bi::gpu_vector_handle<T>::inc() const {
-  return inc1;
-}
-
-template<class T>
-inline T* bi::gpu_vector_handle<T>::buf() {
-  return ptr;
-}
-
-template<class T>
-inline const T* bi::gpu_vector_handle<T>::buf() const {
-  return ptr;
-}
-
-template<class T>
-inline T& bi::gpu_vector_handle<T>::operator()(const size_type i) {
-  /* pre-condition (assert not available on device) */
-  //assert (i >= 0 && i < size());
-
-  return ptr[i*inc()];
-}
-
-template<class T>
-inline const T& bi::gpu_vector_handle<T>::operator()(
+template<class T, int size_value, int inc_value>
+inline const T& bi::gpu_vector_handle<T,size_value,inc_value>::operator()(
     const size_type i) const {
-  /* pre-condition (assert not available on device) */
-  //assert (i >= 0 && i < size());
-
-  return ptr[i*inc()];
+  /* pre-condition */
+  //BI_ASSERT(i >= 0 && i < this->size());
+  return this->buf()[i * this->inc()];
 }
 
-template<class T>
-inline T& bi::gpu_vector_handle<T>::operator[](const size_type i) {
+template<class T, int size_value, int inc_value>
+inline T& bi::gpu_vector_handle<T,size_value,inc_value>::operator[](
+    const size_type i) {
   return (*this)(i);
 }
 
-template<class T>
-inline const T& bi::gpu_vector_handle<T>::operator[](
+template<class T, int size_value, int inc_value>
+inline const T& bi::gpu_vector_handle<T,size_value,inc_value>::operator[](
     const size_type i) const {
   return (*this)(i);
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class V1>
-inline bool bi::gpu_vector_handle<T>::same(const V1& o) const {
-  return (equals<value_type,typename V1::value_type>::value &&
-      on_device == V1::on_device && this->buf() == o.buf() &&
-      this->size() == o.size() && this->inc() == o.inc());
+inline bool bi::gpu_vector_handle<T,size_value,inc_value>::same(
+    const V1& o) const {
+  return (equals<value_type,typename V1::value_type>::value
+      && on_device == V1::on_device && (void*)this->buf() == (void*)o.buf()
+      && this->size() == o.size() && this->inc() == o.inc());
+}
+
+template<class T, int size_value, int inc_value>
+inline void bi::gpu_vector_handle<T,size_value,inc_value>::swap(
+    gpu_vector_handle<T,size_value,inc_value>& o) {
+  T* ptr = o.buf();
+  o.setBuf(this->buf());
+  this->setBuf(ptr);
+
+  int size1 = o.size();
+  o.setSize(this->size());
+  this->setSize(size1);
+
+  int inc1 = o.inc();
+  o.setInc(this->inc());
+  this->setInc(inc1);
+}
+
+template<class T, int size_value, int inc_value>
+inline bool bi::gpu_vector_handle<T,size_value,inc_value>::contiguous() const {
+  return this->inc() == 1;
 }
 
 namespace bi {
@@ -200,6 +329,8 @@ namespace bi {
  * @ingroup math_matvec
  *
  * @tparam T Value type.
+ * @tparam size_value Static size, -1 for dynamic.
+ * @tparam inc_value Static increment, -1 for dynamic.
  *
  * Copy and assignment semantics are as follows:
  *
@@ -207,13 +338,14 @@ namespace bi {
  *
  * @li Assignments are always deep.
  */
-template<class T = real>
-class CUDA_ALIGN(16) gpu_vector_reference : public gpu_vector_handle<T> {
+template<class T = real, int size_value = -1, int inc_value = -1>
+class gpu_vector_reference: public gpu_vector_handle<T,
+    size_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_vector_reference<T> vector_reference_type;
+  typedef gpu_vector_reference<T,size_value,inc_value> vector_reference_type;
   typedef thrust::device_ptr<T> pointer;
   typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
@@ -229,19 +361,23 @@ public:
    * @param size Size.
    * @param inc Stride between successive elements in array.
    */
-  CUDA_FUNC_HOST gpu_vector_reference(T* data, const size_type size,
+  CUDA_FUNC_BOTH gpu_vector_reference(T* data, const size_type size,
       const size_type inc = 1);
 
   /**
    * Shallow copy constructor.
+   *
+   * @note This seems required by CUDA, or matrices passed as kernel
+   * arguments are not copied correctly.
    */
-  CUDA_FUNC_HOST gpu_vector_reference(const gpu_vector_reference<T>& o);
+  CUDA_FUNC_BOTH gpu_vector_reference(
+      const gpu_vector_reference<T,size_value,inc_value>& o);
 
   /**
    * Assignment.
    */
-  CUDA_FUNC_HOST gpu_vector_reference<T>& operator=(
-      const gpu_vector_reference<T>& o);
+  CUDA_FUNC_HOST gpu_vector_reference<T,size_value,inc_value>& operator=(
+      const gpu_vector_reference<T,size_value,inc_value>& o);
 
   /**
    * Generic assignment.
@@ -249,21 +385,23 @@ public:
    * @tparam V1 Vector type.
    */
   template<class V1>
-  CUDA_FUNC_HOST gpu_vector_reference<T>& operator=(const V1& o);
+  CUDA_FUNC_HOST gpu_vector_reference<T,size_value,inc_value>& operator=(
+      const V1& o);
 
   /**
    * Retrieve as reference.
    *
    * @return Reference to same object.
    */
-  CUDA_FUNC_HOST vector_reference_type& ref();
+  CUDA_FUNC_BOTH gpu_vector_reference<T,size_value,inc_value>& ref();
 
   /**
    * Retrieve as reference.
    *
    * @return Reference to same object.
    */
-  CUDA_FUNC_HOST const vector_reference_type& ref() const;
+  CUDA_FUNC_BOTH const gpu_vector_reference<T,size_value,inc_value>& ref()
+      const;
 
   /**
    * Iterator to beginning of vector.
@@ -311,6 +449,7 @@ public:
   CUDA_FUNC_HOST void clear();
 
 private:
+  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -328,145 +467,166 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
+  #endif
 
-} BI_ALIGN(16);
+};
 
 }
 
 #include "../../host/math/temp_vector.hpp"
 
-template<class T>
-inline bi::gpu_vector_reference<T>::gpu_vector_reference(T* data,
-    const size_type size, const size_type inc) {
-  this->ptr = data;
-  this->size1 = size;
-  this->inc1 = inc;
+template<class T, int size_value, int inc_value>
+inline bi::gpu_vector_reference<T,size_value,inc_value>::gpu_vector_reference(
+    T* data, const size_type size, const size_type inc) {
+  this->setBuf(data);
+  this->setSize(size);
+  this->setInc(inc);
 }
 
-template<class T>
-inline bi::gpu_vector_reference<T>::gpu_vector_reference(
-    const gpu_vector_reference<T>& o) {
+template<class T, int size_value, int inc_value>
+inline bi::gpu_vector_reference<T,size_value,inc_value>::gpu_vector_reference(
+    const gpu_vector_reference<T,size_value,inc_value>& o) {
   this->copy(o);
 }
 
-template<class T>
-inline bi::gpu_vector_reference<T>& bi::gpu_vector_reference<T>::operator=(
-    const gpu_vector_reference<T>& o) {
+template<class T, int size_value, int inc_value>
+inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_reference<
+    T,size_value,inc_value>::operator=(
+    const gpu_vector_reference<T,size_value,inc_value>& o) {
   /* pre-condition */
-  assert(this->size() == o.size());
+  BI_ASSERT(this->size() == o.size());
 
   if (!same(o)) {
-    if (this->inc() == 1 && o.inc() == 1) {
-      /* asynchronous linear copy */
-      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-          this->size()*sizeof(T), cudaMemcpyDeviceToDevice, 0));
+    if (this->inc() == 1) {
+      if (o.inc() == 1) {
+        /* asynchronous linear copy */
+        CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+                this->size()*sizeof(T), cudaMemcpyDeviceToDevice, 0));
+      } else {
+        thrust::copy(o.begin(), o.end(), this->fast_begin());
+      }
+    } else if (o.inc() == 1) {
+      thrust::copy(o.fast_begin(), o.fast_end(), this->begin());
     } else {
-      copy_elements(*this, o);
+      thrust::copy(o.begin(), o.end(), this->begin());
     }
   }
-
   return *this;
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class V1>
-inline bi::gpu_vector_reference<T>& bi::gpu_vector_reference<T>::operator=(
-    const V1& o) {
+inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_reference<
+    T,size_value,inc_value>::operator=(const V1& o) {
   /* pre-condition */
-  assert(this->size() == o.size());
+  BI_ASSERT(this->size() == o.size());
 
   if (!this->same(o)) {
-    if (this->inc() == 1 && o.inc() == 1) {
-      /* asynchronous linear copy */
-      cudaMemcpyKind kind = (V1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
-      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-          this->size()*sizeof(T), kind, 0));
+    if (this->inc() == 1) {
+      if (o.inc() == 1) {
+        /* asynchronous linear copy */
+        cudaMemcpyKind kind = (V1::on_device) ?
+                cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
+        CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+                this->size()*sizeof(T), kind, 0));
+      } else {
+        thrust::copy(o.begin(), o.end(), this->fast_begin());
+      }
+    } else if (o.inc() == 1) {
+      thrust::copy(o.fast_begin(), o.fast_end(), this->begin());
     } else {
-      copy_elements(*this, o);
+      thrust::copy(o.begin(), o.end(), this->begin());
     }
   }
-
   return *this;
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::vector_reference_type& bi::gpu_vector_reference<T>::ref() {
-  return static_cast<vector_reference_type&>(*this);
+template<class T, int size_value, int inc_value>
+inline bi::gpu_vector_reference<T,size_value,inc_value>&
+    bi::gpu_vector_reference<T,size_value,inc_value>::ref() {
+  return *this;
 }
 
-template<class T>
-inline const typename bi::gpu_vector_reference<T>::vector_reference_type& bi::gpu_vector_reference<T>::ref() const {
-  return static_cast<const vector_reference_type&>(*this);
+template<class T, int size_value, int inc_value>
+inline const bi::gpu_vector_reference<T,size_value,inc_value>&
+    bi::gpu_vector_reference<T,size_value,inc_value>::ref() const {
+  return *this;
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::iterator bi::gpu_vector_reference<T>::begin() {
-  strided_range<pointer> range(pointer(this->buf()), pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::begin() {
+  strided_range<pointer> range(pointer(this->buf()),
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::const_iterator
-    bi::gpu_vector_reference<T>::begin() const {
-  strided_range<const_pointer> range(const_pointer(this->buf()), const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::begin() const {
+  strided_range<const_pointer> range(const_pointer(this->buf()),
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::iterator bi::gpu_vector_reference<T>::end() {
-  strided_range<pointer> range(pointer(this->buf()), pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::end() {
+  strided_range<pointer> range(pointer(this->buf()),
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::const_iterator
-    bi::gpu_vector_reference<T>::end() const {
-  strided_range<const_pointer> range(const_pointer(this->buf()), const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::end() const {
+  strided_range<const_pointer> range(const_pointer(this->buf()),
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::fast_iterator
-    bi::gpu_vector_reference<T>::fast_begin() {
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::fast_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::fast_begin() {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
-  return pointer(this->buf());
+  return fast_iterator(pointer(this->buf()));
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::const_fast_iterator
-    bi::gpu_vector_reference<T>::fast_begin() const {
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::fast_begin() const {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
-  return const_pointer(this->buf());
+  return const_fast_iterator(const_pointer(this->buf()));
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::fast_iterator
-    bi::gpu_vector_reference<T>::fast_end() {
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::fast_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::fast_end() {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
 
-template<class T>
-inline typename bi::gpu_vector_reference<T>::const_fast_iterator
-    bi::gpu_vector_reference<T>::fast_end() const {
+template<class T, int size_value, int inc_value>
+inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::gpu_vector_reference<
+    T,size_value,inc_value>::fast_end() const {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
 
-template<class T>
-inline void bi::gpu_vector_reference<T>::clear() {
+template<class T, int size_value, int inc_value>
+inline void bi::gpu_vector_reference<T,size_value,inc_value>::clear() {
   if (this->inc() == 1) {
     CUDA_CHECKED_CALL(cudaMemsetAsync(this->buf(), 0, this->size()*sizeof(T)));
   } else {
@@ -474,11 +634,12 @@ inline void bi::gpu_vector_reference<T>::clear() {
   }
 }
 
-template<class T>
+#ifndef __CUDA_ARCH__
+template<class T, int size_value, int inc_value>
 template<class Archive>
-void bi::gpu_vector_reference<T>::save(Archive& ar, const unsigned version) const {
+void bi::gpu_vector_reference<T,size_value,inc_value>::save(Archive& ar,
+    const unsigned version) const {
   size_type size = this->size(), i;
-
   typename temp_host_vector<T>::type tmp(size);
   tmp = *this;
   synchronize();
@@ -489,13 +650,13 @@ void bi::gpu_vector_reference<T>::save(Archive& ar, const unsigned version) cons
   }
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class Archive>
-void bi::gpu_vector_reference<T>::load(Archive& ar, const unsigned version) {
+void bi::gpu_vector_reference<T,size_value,inc_value>::load(Archive& ar,
+    const unsigned version) {
   size_type size, i;
-
   ar & size;
-  assert (this->size() == size);
+  BI_ASSERT(this->size() == size);
 
   typename temp_host_vector<T>::type tmp(size);
   for (i = 0; i < size; ++i) {
@@ -503,6 +664,7 @@ void bi::gpu_vector_reference<T>::load(Archive& ar, const unsigned version) {
   }
   *this = tmp;
 }
+#endif
 
 namespace bi {
 /**
@@ -522,13 +684,15 @@ namespace bi {
  *
  * @li Assignments are always deep.
  */
-template<class T = real, class A = device_allocator<T> >
-class CUDA_ALIGN(16) gpu_vector : public gpu_vector_reference<T> {
+template<class T = real, int size_value = -1, int inc_value = -1,
+    class A = device_allocator<T> >
+class gpu_vector: public gpu_vector_reference<T,
+    size_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_vector_reference<T> vector_reference_type;
+  typedef gpu_vector_reference<T,size_value,inc_value> vector_reference_type;
   typedef thrust::device_ptr<T> pointer;
   typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
@@ -548,9 +712,9 @@ public:
   CUDA_FUNC_HOST gpu_vector(const size_type size);
 
   /**
-   * Copy constructor.
+   * Shallow copy constructor.
    */
-  CUDA_FUNC_HOST gpu_vector(const gpu_vector<T,A>& o);
+  CUDA_FUNC_BOTH gpu_vector(const gpu_vector<T,size_value,inc_value,A>& o);
 
   /**
    * Generic copy constructor.
@@ -566,7 +730,8 @@ public:
   /**
    * Assignment
    */
-  CUDA_FUNC_HOST gpu_vector<T,A>& operator=(const gpu_vector<T,A>& o);
+  CUDA_FUNC_HOST gpu_vector<T,size_value,inc_value,A>& operator=(
+      const gpu_vector<T,size_value,inc_value,A>& o);
 
   /**
    * Generic assignment.
@@ -574,21 +739,7 @@ public:
    * @tparam V1 Vector type.
    */
   template<class V1>
-  CUDA_FUNC_HOST gpu_vector<T,A>& operator=(const V1& o);
-
-  /**
-   * Retrieve as reference.
-   *
-   * @return Reference to same object.
-   */
-  CUDA_FUNC_HOST vector_reference_type& ref();
-
-  /**
-   * Retrieve as reference.
-   *
-   * @return Reference to same object.
-   */
-  CUDA_FUNC_HOST const vector_reference_type& ref() const;
+  CUDA_FUNC_HOST gpu_vector<T,size_value,inc_value,A>& operator=(const V1& o);
 
   /**
    * Resize vector.
@@ -609,7 +760,7 @@ public:
    * size and ownership as appropriate. This is a pointer swap, no data is
    * copied.
    */
-  CUDA_FUNC_HOST void swap(gpu_vector<T,A>& o);
+  CUDA_FUNC_BOTH void swap(gpu_vector<T,size_value,inc_value,A>& o);
 
 private:
   /**
@@ -623,6 +774,7 @@ private:
    */
   bool own;
 
+  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -633,83 +785,79 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-
-} BI_ALIGN(16);
+  #endif
+};
 
 }
 
-template<class T, class A>
-bi::gpu_vector<T,A>::gpu_vector() : vector_reference_type(NULL, 0),
-    own(true) {
+template<class T, int size_value, int inc_value, class A>
+bi::gpu_vector<T,size_value,inc_value,A>::gpu_vector() :
+    gpu_vector_reference<T,size_value,inc_value>(NULL, 0), own(true) {
   //
 }
 
-template<class T, class A>
-bi::gpu_vector<T,A>::gpu_vector(const size_type size) :
-    vector_reference_type(NULL, size), own(true) {
+template<class T, int size_value, int inc_value, class A>
+bi::gpu_vector<T,size_value,inc_value,A>::gpu_vector(const size_type size) :
+    gpu_vector_reference<T,size_value,inc_value>(NULL, size), own(true) {
   /* pre-condition */
-  assert (size >= 0);
+  BI_ASSERT(size >= 0);
 
   if (size > 0) {
-    this->ptr = alloc.allocate(size);
+    this->setBuf(alloc.allocate(size));
   }
 }
 
-template<class T, class A>
-bi::gpu_vector<T,A>::gpu_vector(const gpu_vector<T,A>& o) :
-    vector_reference_type(o), own(false) {
+template<class T, int size_value, int inc_value, class A>
+bi::gpu_vector<T,size_value,inc_value,A>::gpu_vector(
+    const gpu_vector<T,size_value,inc_value,A>& o) :
+    gpu_vector_reference<T,size_value,inc_value>(o), own(false) {
   //
 }
 
-template<class T, class A>
+template<class T, int size_value, int inc_value, class A>
 template<class V1>
-bi::gpu_vector<T,A>::gpu_vector(const V1 o) :
-    gpu_vector_reference<T>(const_cast<V1*>(&o)->buf(), o.size(), o.inc()),
-    own(false) {
+bi::gpu_vector<T,size_value,inc_value,A>::gpu_vector(const V1 o) :
+    gpu_vector_reference<T,size_value,inc_value>(const_cast<V1*>(&o)->buf(),
+        o.size(), o.inc()), own(false) {
   /* shallow copy is now done, do deep copy if necessary */
   if (!V1::on_device) {
-    this->ptr = (this->size() > 0) ? alloc.allocate(this->size()) : NULL;
-    this->inc1 = 1;
+    T* ptr = (this->size() > 0) ? alloc.allocate(this->size()) : NULL;
+    this->setBuf(ptr);
+    this->setInc(1);
     this->own = true;
     this->operator=(o);
   }
 }
 
-template<class T, class A>
-bi::gpu_vector<T,A>::~gpu_vector() {
-  if (own && this->ptr != NULL) {
+template<class T, int size_value, int inc_value, class A>
+bi::gpu_vector<T,size_value,inc_value,A>::~gpu_vector() {
+  if (own) {
     alloc.deallocate(this->buf(), this->size());
   }
 }
 
-template<class T, class A>
-inline bi::gpu_vector<T,A>& bi::gpu_vector<T,A>::operator=(const gpu_vector<T,A>& o) {
+template<class T, int size_value, int inc_value, class A>
+inline bi::gpu_vector<T,size_value,inc_value,A>& bi::gpu_vector<T,size_value,
+    inc_value,A>::operator=(const gpu_vector<T,size_value,inc_value,A>& o) {
   vector_reference_type::operator=(o);
   return *this;
 }
 
-template<class T, class A>
+template<class T, int size_value, int inc_value, class A>
 template<class V1>
-inline bi::gpu_vector<T,A>& bi::gpu_vector<T,A>::operator=(const V1& o) {
-  vector_reference_type::operator=(o);
+inline bi::gpu_vector<T,size_value,inc_value,A>& bi::gpu_vector<T,size_value,
+    inc_value,A>::operator=(const V1& o) {
+  gpu_vector_reference<T,size_value,inc_value>::operator=(o);
   return *this;
 }
 
-template<class T, class A>
-inline typename bi::gpu_vector<T,A>::vector_reference_type& bi::gpu_vector<T,A>::ref() {
-  return static_cast<vector_reference_type&>(*this);
-}
-
-template<class T, class A>
-inline const typename bi::gpu_vector<T,A>::vector_reference_type& bi::gpu_vector<T,A>::ref() const {
-  return static_cast<const vector_reference_type&>(*this);
-}
-
-template<class T, class A>
-void bi::gpu_vector<T,A>::resize(const size_type size, const bool preserve) {
+template<class T, int size_value, int inc_value, class A>
+void bi::gpu_vector<T,size_value,inc_value,A>::resize(const size_type size,
+    const bool preserve) {
   if (size != this->size()) {
     /* pre-condition */
-    BI_ERROR(own, "Cannot resize gpu_vector constructed as view of other vector");
+    BI_ERROR(own,
+        "Cannot resize gpu_vector constructed as view of other vector");
 
     /* allocate new buffer */
     T* ptr;
@@ -722,39 +870,41 @@ void bi::gpu_vector<T,A>::resize(const size_type size, const bool preserve) {
     /* copy across contents */
     if (preserve && ptr != NULL) {
       if (this->inc() == 1) {
-        thrust::copy(this->fast_begin(), this->fast_begin() + std::min(this->size1, size), pointer(ptr));
+        thrust::copy(this->fast_begin(),
+            this->fast_begin() + bi::min(this->size(), size), pointer(ptr));
       } else {
-        thrust::copy(this->begin(), this->begin() + std::min(this->size1, size), pointer(ptr));
+        thrust::copy(this->begin(),
+            this->begin() + bi::min(this->size(), size), pointer(ptr));
       }
     }
 
     /* free old buffer */
-    if (this->ptr != NULL) {
-      alloc.deallocate(this->ptr, this->size1);
+    if (this->buf() != NULL) {
+      alloc.deallocate(this->buf(), this->size());
     }
 
     /* assign new buffer */
-    this->ptr = ptr;
-    this->size1 = size;
-    this->inc1 = 1;
+    this->setBuf(ptr);
+    this->setSize(size);
+    this->setInc(1);
   }
 }
 
-template<class T, class A>
-void bi::gpu_vector<T,A>::swap(gpu_vector<T,A>& o) {
-  /* pre-conditions */
-  //assert (this->size() == o.size());
-
-  std::swap(this->ptr, o.ptr);
-  std::swap(this->size1, o.size1);
-  std::swap(this->inc1, o.inc1);
+template<class T, int size_value, int inc_value, class A>
+void bi::gpu_vector<T,size_value,inc_value,A>::swap(
+    gpu_vector<T,size_value,inc_value,A>& o) {
+  gpu_vector_reference<T,size_value,inc_value>::swap(o);
   std::swap(this->own, o.own);
 }
 
-template<class T, class A>
+#ifndef __CUDA_ARCH__
+template<class T, int size_value, int inc_value, class A>
 template<class Archive>
-void bi::gpu_vector<T,A>::serialize(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<gpu_vector_reference<T> >(*this);
+void bi::gpu_vector<T,size_value,inc_value,A>::serialize(Archive& ar,
+    const unsigned version) {
+  ar & boost::serialization::base_object<
+      gpu_vector_reference<T,size_value,inc_value> >(*this);
 }
+#endif
 
 #endif

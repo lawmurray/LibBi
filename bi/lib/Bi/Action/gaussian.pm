@@ -77,7 +77,7 @@ sub validate {
     $self->ensure_scalar('std');
     $self->ensure_scalar('log');
     $self->ensure_const('log');
-	$self->set_parent('gaussian_');
+	$self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);
 }

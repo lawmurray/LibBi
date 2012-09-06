@@ -13,9 +13,7 @@
 #include "../math/operation.hpp"
 #include "../random/Random.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -152,7 +150,6 @@ protected:
   real logZ;
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -170,7 +167,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -180,15 +176,13 @@ private:
 #include "../math/sim_temp_matrix.hpp"
 #include "../misc/assert.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/base_object.hpp"
-#endif
 #include "boost/typeof/typeof.hpp"
 
 inline bi::GammaPdf::GammaPdf(const int N, const real alpha,
     const real beta) : N(N), alpha(alpha), beta(beta) {
   /* pre-condition */
-  assert (alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   init();
 }
@@ -204,7 +198,7 @@ inline void bi::GammaPdf::resize(const int N, const bool preserve) {
 template<class V2>
 inline void bi::GammaPdf::sample(Random& rng, V2 x) {
   /* pre-condition */
-  assert (x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   rng.gammas(x, alpha, beta);
 }
@@ -212,7 +206,7 @@ inline void bi::GammaPdf::sample(Random& rng, V2 x) {
 template<class M2>
 void bi::GammaPdf::samples(Random& rng, M2 X) {
   /* pre-conditions */
-  assert (X.size2() == N);
+  BI_ASSERT(X.size2() == N);
 
   rng.gammas(vec(X), alpha, beta);
 }
@@ -220,7 +214,7 @@ void bi::GammaPdf::samples(Random& rng, M2 X) {
 template<class V2>
 inline real bi::GammaPdf::density(const V2 x) {
   /* pre-condition */
-  assert (x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   return exp(logDensity(x));
 }
@@ -228,8 +222,8 @@ inline real bi::GammaPdf::density(const V2 x) {
 template<class M2, class V2>
 void bi::GammaPdf::densities(const M2 X, V2 p, const bool clear) {
   /* pre-condition */
-  assert (X.size2() == N);
-  assert (X.size1() == p.size());
+  BI_ASSERT(X.size2() == N);
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
@@ -239,7 +233,7 @@ void bi::GammaPdf::densities(const M2 X, V2 p, const bool clear) {
 template<class V2>
 real bi::GammaPdf::logDensity(const V2 x) {
   /* pre-condition */
-  assert (x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   typedef typename V2::value_type T2;
 
@@ -249,8 +243,8 @@ real bi::GammaPdf::logDensity(const V2 x) {
 template<class M2, class V2>
 void bi::GammaPdf::logDensities(const M2 X, V2 p, const bool clear) {
   /* pre-condition */
-  assert (X.size2() == N);
-  assert (X.size1() == p.size());
+  BI_ASSERT(X.size2() == N);
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
@@ -282,7 +276,6 @@ inline void bi::GammaPdf::init() {
   logZ = lgamma(alpha) + alpha*log(beta);
 }
 
-#ifndef __CUDACC__
 template<class Archive>
 void bi::GammaPdf::save(Archive& ar, const unsigned version) const {
   ar & N & alpha & beta & logZ;
@@ -292,6 +285,5 @@ template<class Archive>
 void bi::GammaPdf::load(Archive& ar, const unsigned version) {
   ar & N & alpha & beta & logZ;
 }
-#endif
 
 #endif

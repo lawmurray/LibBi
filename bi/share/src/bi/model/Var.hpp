@@ -155,7 +155,7 @@ inline int bi::Var::getNumDims() const {
 
 inline bi::Dim* bi::Var::getDim(const int i) const {
   /* pre-condition */
-  assert (i >= 0 && i < getNumDims());
+  BI_ASSERT(i >= 0 && i < getNumDims());
 
   return dims[i];
 }

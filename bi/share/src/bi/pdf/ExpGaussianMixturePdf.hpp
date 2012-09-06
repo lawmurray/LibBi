@@ -71,7 +71,6 @@ private:
    */
   std::set<int> logs;
 
-  #ifndef __CUDACC__
   /**
    * Serialize or restore from serialization.
    */
@@ -82,7 +81,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -90,10 +88,8 @@ private:
 #include "misc.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/base_object.hpp"
 #include "boost/serialization/set.hpp"
-#endif
 
 template<class V1, class M1>
 bi::ExpGaussianMixturePdf<V1,M1>::ExpGaussianMixturePdf() {
@@ -117,7 +113,7 @@ template<class V1, class M1>
 void bi::ExpGaussianMixturePdf<V1,M1>::add(const ExpGaussianPdf<V1,M1>& x,
     const real w) {
   /* pre-condition */
-  assert (logs.size() == x.getLogs().size() &&
+  BI_ASSERT(logs.size() == x.getLogs().size() &&
       std::equal(logs.begin(), logs.end(), x.getLogs().begin()));
 
   GaussianPdf<V1,M1> p(x.mean(), x.cov());
@@ -144,13 +140,11 @@ bool bi::ExpGaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
   return GaussianMixturePdf<V1,M1>::refit(rng, K, Z, y, eps);
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1>
 template<class Archive>
 void bi::ExpGaussianMixturePdf<V1,M1>::serialize(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object<LogTransformPdf<GaussianMixturePdf<V1,M1> > >(*this);
 }
-#endif
 
 #endif

@@ -35,7 +35,7 @@ bi::StdDevStopper::StdDevStopper(int rel_threshold, int maxParticles) :
 template<class V1>
 bool bi::StdDevStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
   typedef typename V1::value_type T1;
-//  assert (start == 0 ? sumw == sumw2 && sumw == 0 : true);
+//  BI_ASSERT(start == 0 ? sumw == sumw2 && sumw == 0 : true);
   int start;
   if (lws.size() == blockSize) {
     start = 0;
@@ -52,7 +52,7 @@ bool bi::StdDevStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
 
   real threshold = T*rel_threshold;
 
-  assert (max_reduce(subrange(lws,start,lws.size()-start)) <= maxlw );
+  BI_ASSERT(max_reduce(subrange(lws,start,lws.size()-start)) <= maxlw );
 
   if (lws.size() >= maxParticles) {
     return true;

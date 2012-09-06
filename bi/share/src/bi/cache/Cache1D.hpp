@@ -75,7 +75,7 @@ inline int bi::Cache1D<T1>::size() const {
 template<class T1>
 inline T1 bi::Cache1D<T1>::get(const int p) const {
   /* pre-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 
   return pages[p];
 }
@@ -99,12 +99,12 @@ inline void bi::Cache1D<T1>::put(const int p, const T2& x) {
   pages[p] = x;
 
   /* post-condition */
-  assert (isValid(p));
+  BI_ASSERT(isValid(p));
 }
 
 template<class T1>
 void bi::Cache1D<T1>::empty() {
-  BI_ASSERT(!isDirty(), "Cache being emptied with dirty page");
+  BI_ASSERT_MSG(!isDirty(), "Cache being emptied with dirty page");
 
   pages.resize(0);
   Cache::empty();

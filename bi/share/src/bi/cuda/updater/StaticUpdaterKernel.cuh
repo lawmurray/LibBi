@@ -18,7 +18,7 @@ namespace bi {
  * @tparam S Action type list.
  */
 template<class B, class S>
-CUDA_FUNC_GLOBAL void kernelStaticUpdater();
+CUDA_FUNC_GLOBAL void kernelStaticUpdater(State<B,ON_DEVICE> s);
 
 }
 
@@ -28,9 +28,9 @@ CUDA_FUNC_GLOBAL void kernelStaticUpdater();
 #include "../../state/Pa.hpp"
 
 template<class B, class S>
-void bi::kernelStaticUpdater() {
-  typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
-  typedef Ox<ON_DEVICE,B,real,global> OX;
+CUDA_FUNC_GLOBAL void bi::kernelStaticUpdater(State<B,ON_DEVICE> s) {
+  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Ou<ON_DEVICE,B,global> OX;
   typedef StaticUpdaterVisitorGPU<B,S,PX,OX> Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
@@ -39,8 +39,8 @@ void bi::kernelStaticUpdater() {
   OX x;
 
   /* update */
-  if (p < constP) {
-    Visitor::accept(p, id, pax, x);
+  if (p < s.size()) {
+    Visitor::accept(s, p, id, pax, x);
   }
 }
 

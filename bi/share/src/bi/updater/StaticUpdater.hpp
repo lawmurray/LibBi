@@ -55,6 +55,9 @@ public:
 }
 
 #include "../host/updater/StaticUpdaterHost.hpp"
+#ifdef ENABLE_SSE
+#include "../sse/updater/StaticUpdaterSSE.hpp"
+#endif
 #ifdef __CUDACC__
 #include "../cuda/updater/StaticUpdaterGPU.cuh"
 #endif
@@ -62,7 +65,15 @@ public:
 
 template<class B, class S>
 void bi::StaticUpdater<B,S>::update(State<B,ON_HOST>& s) {
+  #ifdef ENABLE_SSE
+  if (s.size() % BI_SSE_SIZE == 0) {
+    StaticUpdaterSSE<B,S>::update(s);
+  } else {
+    StaticUpdaterHost<B,S>::update(s);
+  }
+  #else
   StaticUpdaterHost<B,S>::update(s);
+  #endif
 }
 
 template<class B, class S>

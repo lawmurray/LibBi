@@ -37,7 +37,7 @@ struct runtime {
   template<class T>
   static bool check(const T& o, const int i) {
     /* pre-conditions */
-    assert (i < size<TS>::value);
+    BI_ASSERT(i < size<TS>::value);
 
     typedef typename front<TS>::type front;
     typedef typename pop_front<TS>::type pop_front;
@@ -59,7 +59,7 @@ template<>
 struct runtime<empty_typelist> {
   template<class T>
   static bool check(const T& o, const int i) {
-    assert(false);
+    BI_ASSERT(false);
 
     return false;
   }

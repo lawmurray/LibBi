@@ -16,9 +16,7 @@
 #include "../math/operation.hpp"
 #include "../random/Random.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -171,7 +169,6 @@ protected:
   void init();
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -189,7 +186,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 }
 
@@ -200,9 +196,7 @@ private:
 #include "../math/sim_temp_vector.hpp"
 #include "../misc/assert.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/base_object.hpp"
-#endif
 #include "boost/typeof/typeof.hpp"
 
 template<class V1, class M1, class S1, class K1>
@@ -256,7 +250,7 @@ template<class V1, class M1, class S1, class K1>
 template<class V2>
 inline void bi::KernelDensityPdf<V1,M1,S1,K1>::sample(Random& rng, V2 x) {
   /* pre-condition */
-  assert (x.size() == size());
+  BI_ASSERT(x.size() == size());
 
   int p = rng.multinomial(lw);
   rng.gaussians(x);
@@ -271,7 +265,7 @@ template<class V1, class M1, class S1, class K1>
 template<class M2>
 void bi::KernelDensityPdf<V1,M1,S1,K1>::samples(Random& rng, M2 X) {
   /* pre-condition */
-  assert (X.size2() == size());
+  BI_ASSERT(X.size2() == size());
 
   temp_host_vector<real>::type ps(X.size1());
   int i;
@@ -314,13 +308,13 @@ real bi::KernelDensityPdf<V1,M1,S1,K1>::density(const V2 x) {
       i = node->getIndex();
       d = row(X, i);
       axpy(-1.0, d, x);
-      p += BI_MATH_EXP(lw(i) + K.logDensity(d));
+      p += bi::exp(lw(i) + K.logDensity(d));
     } else if (node->isPrune()) {
       std::vector<int>& is = node->getIndices();
       for (i = 0; i < is.size(); i++) {
         d = row(X, is[i]);
         axpy(-1.0, x, d);
-        p += BI_MATH_EXP(lw(is[i]) + K.logDensity(d));
+        p += bi::exp(lw(is[i]) + K.logDensity(d));
       }
     } else {
       /* should we recurse? */
@@ -350,7 +344,7 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::densities(const M2 X, V2 p) {
 template<class V1, class M1, class S1, class K1>
 template<class V2>
 real bi::KernelDensityPdf<V1,M1,S1,K1>::logDensity(const V2 x) {
-  return std::log(density(x));
+  return bi::log(density(x));
 }
 
 template<class V1, class M1, class S1, class K1>
@@ -403,7 +397,6 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::init() {
   tree = new KDTree<V1,M1>(X, lw, S1());
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1, class S1, class K1>
 template<class Archive>
 void bi::KernelDensityPdf<V1,M1,S1,K1>::save(Archive& ar, const unsigned version) const {
@@ -421,5 +414,5 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::load(Archive& ar, const unsigned version
   ar & K;
   ar * W;
 }
-#endif
+
 #endif

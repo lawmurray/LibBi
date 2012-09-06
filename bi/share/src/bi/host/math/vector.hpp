@@ -13,7 +13,6 @@
 #include "../../misc/compile.hpp"
 #include "../../typelist/equals.hpp"
 #include "../../primitive/strided_range.hpp"
-#include "../../primitive/vector_primitive.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
 #include "boost/serialization/split_member.hpp"
@@ -21,6 +20,7 @@
 #include "boost/serialization/array.hpp"
 
 #include "thrust/iterator/detail/normal_iterator.h"
+#include "thrust/fill.h"
 
 #include <algorithm>
 #include <memory>
@@ -28,14 +28,159 @@
 
 namespace bi {
 /**
+ * Dynamic buffer.
+ */
+template<class T>
+class CUDA_ALIGN(sizeof(T)) host_storage_buf {
+public:
+  /**
+   * Pointer to underlying data.
+   */
+  T* buf() {
+    return ptr;
+  }
+
+  /**
+   * Pointer to underlying data.
+   */
+  const T* buf() const {
+    return ptr;
+  }
+
+protected:
+  /**
+   * Set buffer.
+   */
+  void setBuf(T* ptr) {
+    this->ptr = ptr;
+  }
+
+  /**
+   * Pointer to underlying data.
+   */
+  T* ptr;
+} BI_ALIGN(sizeof(T));
+
+/**
+ * Static size.
+ */
+template<int size_value>
+class host_storage_size {
+public:
+  /**
+   * Get size.
+   */
+  static int size() {
+    return size1;
+  }
+
+protected:
+  /**
+   * Set size.
+   */
+  static void setSize(const int size1) {
+    BI_ASSERT_MSG(host_storage_size<size_value>::size1 == size1, "Cannot set static size");
+  }
+
+  /**
+   * Size.
+   */
+  static const int size1 = size_value;
+};
+
+/**
+ * Dynamic size.
+ */
+template<>
+class host_storage_size<-1> {
+public:
+  /**
+   * Size.
+   */
+  int size() const {
+    return size1;
+  }
+
+protected:
+  /**
+   * Set size.
+   */
+  void setSize(const int size1) {
+    this->size1 = size1;
+  }
+
+  /**
+   * Size.
+   */
+  int size1;
+};
+
+/**
+ * Static stride.
+ */
+template<int inc_value>
+class host_storage_inc {
+public:
+  /**
+   * Get increment.
+   */
+  static int inc() {
+    return inc1;
+  }
+
+protected:
+  /**
+   * Set increment.
+   */
+  static void setInc(const int inc1) {
+    BI_ASSERT_MSG(host_storage_inc<inc_value>::inc1 == inc1, "Cannot set static increment");
+  }
+
+  /**
+   * Increment.
+   */
+  static const int inc1 = inc_value;
+};
+
+/**
+ * Dynamic stride.
+ */
+template<>
+class host_storage_inc<-1> {
+public:
+  /**
+   * Increment.
+   */
+  int inc() const {
+    return inc1;
+  }
+
+protected:
+  /**
+   * Set increment.
+   */
+  void setInc(const int inc1) {
+    this->inc1 = inc1;
+  }
+
+  /**
+   * Increment.
+   */
+  int inc1;
+};
+
+/**
  * Lightweight view of vector.
  *
  * @ingroup math_matvec
  *
  * @tparam T Value type.
+ * @tparam size_value Static size, -1 for dynamic.
+ * @tparam inc_value Static increment, -1 for dynamic.
  */
-template<class T = real>
-class host_vector_handle {
+template<class T = real, int size_value = -1, int inc_value = -1>
+class host_vector_handle : public host_storage_buf<T>, public host_storage_size<
+    size_value>, public host_storage_inc<inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -45,27 +190,7 @@ public:
   /**
    * Shallow copy.
    */
-  void copy(const host_vector_handle<T>& o);
-
-  /**
-   * Size.
-   */
-  size_type size() const;
-
-  /**
-   * Increment.
-   */
-  size_type inc() const;
-
-  /**
-   * Pointer to underlying data on device.
-   */
-  T* buf();
-
-  /**
-   * Pointer to underlying data on device.
-   */
-  const T* buf() const;
+  void copy(const host_vector_handle<T,size_value,inc_value>& o);
 
   /**
    * Access element.
@@ -107,21 +232,20 @@ public:
   template<class V1>
   bool same(const V1& o) const;
 
-public:
   /**
-   * Data.
+   * Swap data between two vector handles.
+   *
+   * @param o Vector.
+   *
+   * Swaps the underlying data between the two vectors, updating strides and
+   * sizes as appropriate. This is a pointer swap, no data is copied.
    */
-  T* ptr;
+  void swap(host_vector_handle<T,size_value,inc_value>& o);
 
   /**
-   * Size.
+   * Are elements of the vector stored contiguously?
    */
-  size_type size1;
-
-  /**
-   * Increment.
-   */
-  size_type inc1;
+  bool contiguous() const;
 
 private:
   /**
@@ -144,92 +268,94 @@ private:
 };
 }
 
-template<class T>
-inline void bi::host_vector_handle<T>::copy(
-    const host_vector_handle<T>& o) {
-  ptr = o.ptr;
-  size1 = o.size1;
-  inc1 = o.inc1;
+template<class T, int size_value, int inc_value>
+inline void bi::host_vector_handle<T,size_value,inc_value>::copy(
+    const host_vector_handle<T,size_value,inc_value>& o) {
+  this->setBuf(const_cast<T*>(o.buf()));
+  setSize(o.size());
+  setInc(o.inc1);
 }
 
-template<class T>
-inline typename bi::host_vector_handle<T>::size_type
-    bi::host_vector_handle<T>::size() const {
-  return size1;
-}
-
-template<class T>
-inline typename bi::host_vector_handle<T>::size_type
-    bi::host_vector_handle<T>::inc() const {
-  return inc1;
-}
-
-template<class T>
-inline T* bi::host_vector_handle<T>::buf() {
-  return ptr;
-}
-
-template<class T>
-inline const T* bi::host_vector_handle<T>::buf() const {
-  return ptr;
-}
-
-template<class T>
-inline T& bi::host_vector_handle<T>::operator()(const size_type i) {
+template<class T, int size_value, int inc_value>
+inline T& bi::host_vector_handle<T,size_value,inc_value>::operator()(
+    const size_type i) {
   /* pre-condition */
-  assert (i >= 0 && i < size());
-  assert (ptr != NULL);
+  BI_ASSERT(i >= 0 && i < this->size());
+  BI_ASSERT(this->buf() != NULL);
 
-  return ptr[i*inc()];
+  return this->buf()[i * this->inc()];
 }
 
-template<class T>
-inline const T& bi::host_vector_handle<T>::operator()(const size_type i)
-    const {
+template<class T, int size_value, int inc_value>
+inline const T& bi::host_vector_handle<T,size_value,inc_value>::operator()(
+    const size_type i) const {
   /* pre-condition */
-  assert (i >= 0 && i < size());
-  assert (ptr != NULL);
+  BI_ASSERT(i >= 0 && i < this->size());
+  BI_ASSERT(this->buf() != NULL);
 
-  return ptr[i*inc()];
+  return this->buf()[i * this->inc()];
 }
 
-template<class T>
-inline T& bi::host_vector_handle<T>::operator[](const size_type i) {
+template<class T, int size_value, int inc_value>
+inline T& bi::host_vector_handle<T,size_value,inc_value>::operator[](
+    const size_type i) {
   return (*this)(i);
 }
 
-template<class T>
-inline const T& bi::host_vector_handle<T>::operator[](const size_type i)
-    const {
+template<class T, int size_value, int inc_value>
+inline const T& bi::host_vector_handle<T,size_value,inc_value>::operator[](
+    const size_type i) const {
   return (*this)(i);
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class V1>
-inline bool bi::host_vector_handle<T>::same(const V1& o) const {
-  return (equals<value_type,typename V1::value_type>::value &&
-      on_device == V1::on_device && this->buf() == o.buf() &&
-      this->size() == o.size() && this->inc() == o.inc());
+inline bool bi::host_vector_handle<T,size_value,inc_value>::same(
+    const V1& o) const {
+  return (equals<value_type,typename V1::value_type>::value
+      && on_device == V1::on_device && (void*)this->buf() == (void*)o.buf()
+      && this->size() == o.size() && this->inc() == o.inc());
 }
 
-template<class T>
-template<class Archive>
-void bi::host_vector_handle<T>::save(Archive& ar, const unsigned version) const {
-  size_type size = this->size(), i;
+template<class T, int size_value, int inc_value>
+inline void bi::host_vector_handle<T,size_value,inc_value>::swap(
+    host_vector_handle<T,size_value,inc_value>& o) {
+  T* ptr = o.buf();
+  o.setBuf(this->buf());
+  this->setBuf(ptr);
 
+  int size1 = o.size();
+  o.setSize(this->size());
+  this->setSize(size1);
+
+  int inc1 = o.inc();
+  o.setInc(this->inc());
+  this->setInc(inc1);
+}
+
+template<class T, int size_value, int inc_value>
+inline bool bi::host_vector_handle<T,size_value,inc_value>::contiguous() const {
+  return this->inc() == 1;
+}
+
+template<class T, int size_value, int inc_value>
+template<class Archive>
+void bi::host_vector_handle<T,size_value,inc_value>::save(Archive& ar,
+    const unsigned version) const {
+  size_type size = this->size(), i;
   ar & size;
   for (i = 0; i < size; ++i) {
     ar & (*this)(i);
   }
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class Archive>
-void bi::host_vector_handle<T>::load(Archive& ar, const unsigned version) {
+void bi::host_vector_handle<T,size_value,inc_value>::load(Archive& ar,
+    const unsigned version) {
   size_type size, i;
-
   ar & size;
-  assert (this->size() == size);
+  BI_ASSERT(this->size() == size);
   for (i = 0; i < size; ++i) {
     ar & (*this)(i);
   }
@@ -240,6 +366,7 @@ namespace bi {
  * View of vector in %host memory.
  *
  * @tparam T Value type.
+ * @tparam inc_value Static increment size, -1 for dynamic.
  *
  * @ingroup math_matvec
  *
@@ -253,8 +380,8 @@ namespace bi {
  *
  * This class support serialization through the Boost.Serialization library.
  */
-template<class T = real>
-class host_vector_reference : public host_vector_handle<T> {
+template<class T = real, int size_value = -1, int inc_value = -1>
+class host_vector_reference: public host_vector_handle<T,size_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -276,12 +403,14 @@ public:
    * @param size Size.
    * @param inc Stride between successive elements in array.
    */
-  host_vector_reference(T* data, const size_type size, const size_type inc = 1);
+  host_vector_reference(T* data, const size_type size,
+      const size_type inc = 1);
 
   /**
    * Assignment.
    */
-  vector_reference_type& operator=(const vector_reference_type& o);
+  host_vector_reference<T,size_value,inc_value>& operator=(
+      const host_vector_reference<T,size_value,inc_value>& o);
 
   /**
    * Generic assignment.
@@ -289,26 +418,26 @@ public:
    * @tparam V1 Vector type.
    */
   template<class V1>
-  vector_reference_type& operator=(const V1& o);
+  host_vector_reference<T,size_value,inc_value>& operator=(const V1& o);
 
   /**
    * Retrieve as reference.
    *
    * @return Reference to same object.
    */
-  vector_reference_type& ref();
+  host_vector_reference<T,size_value,inc_value>& ref();
 
   /**
    * Retrieve as reference.
    *
    * @return Reference to same object.
    */
-  const_vector_reference_type& ref() const;
+  const host_vector_reference<T,size_value,inc_value>& ref() const;
 
   /**
    * Shallow copy.
    */
-  void copy(const host_vector_reference<T>& o);
+  void copy(const host_vector_reference<T,size_value,inc_value>& o);
 
   /**
    * Iterator to beginning of vector.
@@ -369,148 +498,176 @@ private:
 };
 }
 
-template<class T>
-inline bi::host_vector_reference<T>::host_vector_reference(T* data,
-    const size_type size, const size_type inc) {
-  this->ptr = data;
-  this->size1 = size;
-  this->inc1 = inc;
+template<class T, int size_value, int inc_value>
+inline bi::host_vector_reference<T,size_value,inc_value>::host_vector_reference(
+    T* data, const size_type size, const size_type inc) {
+  this->setBuf(data);
+  this->setSize(size);
+  this->setInc(inc);
 }
 
-template<class T>
-inline bi::host_vector_reference<T>& bi::host_vector_reference<T>::operator=(
-    const vector_reference_type& o) {
+template<class T, int size_value, int inc_value>
+inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_reference<
+    T,size_value,inc_value>::operator=(
+    const host_vector_reference<T,size_value,inc_value>& o) {
   /* pre-condition */
-  assert(this->size() == o.size());
+  BI_ASSERT(this->size() == o.size());
 
   if (!this->same(o)) {
-    if (this->inc() == 1 && o.inc() == 1) {
-      memcpy(this->buf(), o.buf(), this->size()*sizeof(T));
+    if (this->inc() == 1) {
+      if (o.inc() == 1) {
+        memcpy(this->buf(), o.buf(), this->size() * sizeof(T));
+      } else {
+        thrust::copy(o.begin(), o.end(), this->fast_begin());
+      }
+    } else if (o.inc() == 1) {
+      thrust::copy(o.fast_begin(), o.fast_end(), this->begin());
     } else {
-      copy_elements(*this, o);
+      thrust::copy(o.begin(), o.end(), this->begin());
     }
   }
 
   return *this;
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class V1>
-inline bi::host_vector_reference<T>& bi::host_vector_reference<T>::operator=(
-    const V1& o) {
+inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_reference<
+    T,size_value,inc_value>::operator=(const V1& o) {
   /* pre-condition */
-  assert(this->size() == o.size());
+  BI_ASSERT(this->size() == o.size());
 
   if (V1::on_device) {
-    if (this->inc() == 1 && o.inc() == 1) {
-      /* asynchronous linear copy */
-      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-          this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+    if (this->inc() == 1) {
+      if (o.inc() == 1) {
+        /* asynchronous linear copy */
+        CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+                this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+      } else {
+        thrust::copy(o.begin(), o.end(), this->fast_begin());
+      }
+    } else if (o.inc() == 1) {
+      thrust::copy(o.fast_begin(), o.fast_end(), this->begin());
     } else {
-      copy_elements(*this, o);
+      thrust::copy(o.begin(), o.end(), this->begin());
     }
   } else if (!this->same(o)) {
-    if (this->inc() == 1 && o.inc() == 1) {
-      memcpy(this->buf(), o.buf(), this->size()*sizeof(T));
+    if (this->inc() == 1) {
+      if (o.inc() == 1) {
+        memcpy(this->buf(), o.buf(), this->size() * sizeof(T));
+      } else {
+        thrust::copy(o.begin(), o.end(), this->fast_begin());
+      }
+    } else if (o.inc() == 1) {
+      thrust::copy(o.fast_begin(), o.fast_end(), this->begin());
     } else {
-      copy_elements(*this, o);
+      thrust::copy(o.begin(), o.end(), this->begin());
     }
   }
 
   return *this;
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::vector_reference_type& bi::host_vector_reference<T>::ref() {
-  return static_cast<vector_reference_type&>(*this);
+template<class T, int size_value, int inc_value>
+inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_reference<
+    T,size_value,inc_value>::ref() {
+  return *this;
 }
 
-template<class T>
-inline const typename bi::host_vector_reference<T>::vector_reference_type& bi::host_vector_reference<T>::ref() const {
-  return static_cast<const vector_reference_type&>(*this);
+template<class T, int size_value, int inc_value>
+inline const bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_reference<
+    T,size_value,inc_value>::ref() const {
+  return *this;
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::iterator
-    bi::host_vector_reference<T>::begin() {
-  strided_range<pointer> range(pointer(this->buf()), pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
+    T,size_value,inc_value>::begin() {
+  strided_range<pointer> range(pointer(this->buf()),
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::const_iterator
-    bi::host_vector_reference<T>::begin() const {
-  strided_range<const_pointer> range(const_pointer(this->buf()), const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::begin() const {
+  strided_range<const_pointer> range(const_pointer(this->buf()),
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::iterator
-    bi::host_vector_reference<T>::end() {
-  strided_range<pointer> range(pointer(this->buf()), pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
+    T,size_value,inc_value>::end() {
+  strided_range<pointer> range(pointer(this->buf()),
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::const_iterator
-    bi::host_vector_reference<T>::end() const {
-  strided_range<const_pointer> range(const_pointer(this->buf()), const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::end() const {
+  strided_range<const_pointer> range(const_pointer(this->buf()),
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::fast_iterator
-    bi::host_vector_reference<T>::fast_begin() {
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::fast_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::fast_begin() {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return pointer(this->buf());
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::const_fast_iterator
-    bi::host_vector_reference<T>::fast_begin() const {
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::fast_begin() const {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return const_pointer(this->buf());
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::fast_iterator
-    bi::host_vector_reference<T>::fast_end() {
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::fast_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::fast_end() {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
 
-template<class T>
-inline typename bi::host_vector_reference<T>::const_fast_iterator
-    bi::host_vector_reference<T>::fast_end() const {
+template<class T, int size_value, int inc_value>
+inline typename bi::host_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::host_vector_reference<
+    T,size_value,inc_value>::fast_end() const {
   /* pre-condition */
-  assert (this->inc() == 1);
+  BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
 
-template<class T>
-inline void bi::host_vector_reference<T>::clear() {
+template<class T, int size_value, int inc_value>
+inline void bi::host_vector_reference<T,size_value,inc_value>::clear() {
   if (this->inc() == 1) {
-    memset(this->buf(), 0, this->size()*sizeof(T));
+    memset(this->buf(), 0, this->size() * sizeof(T));
   } else {
     thrust::fill(this->begin(), this->end(), static_cast<T>(0));
   }
 }
 
-template<class T>
+template<class T, int size_value, int inc_value>
 template<class Archive>
-void bi::host_vector_reference<T>::serialize(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<host_vector_handle<T> >(*this);
+void bi::host_vector_reference<T,size_value,inc_value>::serialize(Archive& ar,
+    const unsigned version) {
+  ar
+      & boost::serialization::base_object<
+          host_vector_handle<T,size_value,inc_value> >(*this);
 }
 
 namespace bi {
@@ -535,14 +692,15 @@ namespace bi {
  *
  * This class support serialization through the Boost.Serialization library.
  */
-template<class T = real, class A = pipelined_allocator<std::allocator<T> > >
-class host_vector : public host_vector_reference<T> {
+template<class T = real, int size_value = -1, int inc_value = -1,
+    class A = pipelined_allocator<std::allocator<T> > >
+class host_vector: public host_vector_reference<T,size_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef host_vector_reference<T> vector_reference_type;
-  typedef const host_vector_reference<T> const_vector_reference_type;
+  typedef host_vector_reference<T,size_value,inc_value> vector_reference_type;
+  typedef const host_vector_reference<T,size_value,inc_value> const_vector_reference_type;
   typedef T* pointer;
   typedef const T* const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
@@ -564,7 +722,7 @@ public:
   /**
    * Copy constructor.
    */
-  host_vector(const host_vector<T,A>& o);
+  host_vector(const host_vector<T,size_value,inc_value,A>& o);
 
   /**
    * Generic copy constructor.
@@ -582,7 +740,8 @@ public:
   /**
    * Assignment.
    */
-  host_vector<T,A>& operator=(const host_vector<T,A>& o);
+  host_vector<T,size_value,inc_value,A>& operator=(
+      const host_vector<T,size_value,inc_value,A>& o);
 
   /**
    * Generic assignment.
@@ -590,21 +749,7 @@ public:
    * @tparam V1 Vector type.
    */
   template<class V1>
-  host_vector<T,A>& operator=(const V1& o);
-
-  /**
-   * Retrieve as reference.
-   *
-   * @return Reference to same object.
-   */
-  vector_reference_type& ref();
-
-  /**
-   * Retrieve as reference.
-   *
-   * @return Reference to same object.
-   */
-  const vector_reference_type& ref() const;
+  host_vector<T,size_value,inc_value,A>& operator=(const V1& o);
 
   /**
    * Resize vector.
@@ -624,7 +769,7 @@ public:
    * size and ownership as appropriate. This is a pointer swap, no data is
    * copied.
    */
-  void swap(host_vector<T,A>& o);
+  void swap(host_vector<T,size_value,inc_value,A>& o);
 
 private:
   /**
@@ -652,78 +797,74 @@ private:
 
 }
 
-template<class T, class A>
-bi::host_vector<T,A>::host_vector() : vector_reference_type(NULL, 0),
-    own(true) {
+template<class T, int size_value, int inc_value, class A>
+bi::host_vector<T,size_value,inc_value,A>::host_vector() :
+    host_vector_reference<T,size_value,inc_value>(NULL, 0), own(true) {
   //
 }
 
-template<class T, class A>
-bi::host_vector<T,A>::host_vector(const size_type size) :
-     vector_reference_type(NULL, size, 1), own(true) {
+template<class T, int size_value, int inc_value, class A>
+bi::host_vector<T,size_value,inc_value,A>::host_vector(const size_type size) :
+    host_vector_reference<T,size_value,inc_value>(NULL, size, 1), own(true) {
   /* pre-condition */
-  assert (size >= 0);
+  BI_ASSERT(size >= 0);
 
   if (size > 0) {
-    this->ptr = alloc.allocate(size);
+    this->setBuf(alloc.allocate(size));
   }
 }
 
-template<class T, class A>
-bi::host_vector<T,A>::host_vector(const host_vector<T,A>& o) :
-    vector_reference_type(o), own(false) {
+template<class T, int size_value, int inc_value, class A>
+bi::host_vector<T,size_value,inc_value,A>::host_vector(
+    const host_vector<T,size_value,inc_value,A>& o) :
+    host_vector_reference<T,size_value,inc_value>(o), own(false) {
   //
 }
 
-template<class T, class A>
+template<class T, int size_value, int inc_value, class A>
 template<class V1>
-bi::host_vector<T,A>::host_vector(const V1 o) :
-    host_vector_reference<T>(const_cast<V1*>(&o)->buf(), o.size(), o.inc()),
-    own(false) {
+bi::host_vector<T,size_value,inc_value,A>::host_vector(const V1 o) :
+    host_vector_reference<T,size_value,inc_value>(const_cast<V1*>(&o)->buf(),
+        o.size(), o.inc()), own(false) {
   /* shallow copy is now done, do deep copy if necessary */
   if (V1::on_device) {
-    this->ptr = (this->size() > 0) ? alloc.allocate(this->size()) : NULL;
-    this->inc1 = 1;
+    T* ptr = (this->size() > 0) ? alloc.allocate(this->size()) : NULL;
+    this->setBuf(ptr);
+    this->setInc(1);
     this->own = true;
     this->operator=(o);
   }
 }
 
-template<class T, class A>
-bi::host_vector<T,A>::~host_vector() {
+template<class T, int size_value, int inc_value, class A>
+bi::host_vector<T,size_value,inc_value,A>::~host_vector() {
   if (own) {
     alloc.deallocate(this->buf(), this->size());
   }
 }
 
-template<class T, class A>
-bi::host_vector<T,A>& bi::host_vector<T,A>::operator=(const host_vector<T,A>& o) {
-  vector_reference_type::operator=(o);
+template<class T, int size_value, int inc_value, class A>
+bi::host_vector<T,size_value,inc_value,A>& bi::host_vector<T,size_value,
+    inc_value,A>::operator=(const host_vector<T,size_value,inc_value,A>& o) {
+  host_vector_reference<T,size_value,inc_value>::operator=(o);
   return *this;
 }
 
-template<class T, class A>
+template<class T, int size_value, int inc_value, class A>
 template<class V1>
-bi::host_vector<T,A>& bi::host_vector<T,A>::operator=(const V1& o) {
-  vector_reference_type::operator=(o);
+bi::host_vector<T,size_value,inc_value,A>& bi::host_vector<T,size_value,
+    inc_value,A>::operator=(const V1& o) {
+  host_vector_reference<T,size_value,inc_value>::operator=(o);
   return *this;
 }
 
-template<class T, class A>
-inline typename bi::host_vector<T,A>::vector_reference_type& bi::host_vector<T,A>::ref() {
-  return static_cast<vector_reference_type&>(*this);
-}
-
-template<class T, class A>
-inline const typename bi::host_vector<T,A>::vector_reference_type& bi::host_vector<T,A>::ref() const {
-  return static_cast<const vector_reference_type&>(*this);
-}
-
-template<class T, class A>
-void bi::host_vector<T,A>::resize(const size_type size, const bool preserve) {
+template<class T, int size_value, int inc_value, class A>
+void bi::host_vector<T,size_value,inc_value,A>::resize(const size_type size,
+    const bool preserve) {
   if (size != this->size()) {
     /* pre-condition */
-    BI_ERROR(own, "Cannot resize host_vector constructed as view of other vector");
+    BI_ERROR(own,
+        "Cannot resize host_vector constructed as view of other vector");
 
     /* allocate new buffer */
     T* ptr;
@@ -736,39 +877,40 @@ void bi::host_vector<T,A>::resize(const size_type size, const bool preserve) {
     /* copy across contents */
     if (preserve && ptr != NULL) {
       if (this->inc() == 1) {
-        thrust::copy(this->fast_begin(), this->fast_begin() + std::min(this->size1, size), ptr);
+        thrust::copy(this->fast_begin(),
+            this->fast_begin() + bi::min(this->size(), size), ptr);
       } else {
-        thrust::copy(this->begin(), this->begin() + std::min(this->size1, size), ptr);
+        thrust::copy(this->begin(),
+            this->begin() + bi::min(this->size(), size), ptr);
       }
     }
 
     /* free old buffer */
-    if (this->ptr != NULL) {
-      alloc.deallocate(this->ptr, this->size1);
+    if (this->buf() != NULL) {
+      alloc.deallocate(this->buf(), this->size());
     }
 
     /* assign new buffer */
-    this->ptr = ptr;
-    this->size1 = size;
-    this->inc1 = 1;
+    this->setBuf(ptr);
+    this->setSize(size);
+    this->setInc(1);
   }
 }
 
-template<class T, class A>
-void bi::host_vector<T,A>::swap(host_vector<T,A>& o) {
-  /* pre-conditions */
-  //assert (this->size() == o.size());
-
-  std::swap(this->ptr, o.ptr);
-  std::swap(this->size1, o.size1);
-  std::swap(this->inc1, o.inc1);
+template<class T, int size_value, int inc_value, class A>
+void bi::host_vector<T,size_value,inc_value,A>::swap(
+    host_vector<T,size_value,inc_value,A>& o) {
+  host_vector_reference<T,size_value,inc_value>::swap(o);
   std::swap(this->own, o.own);
 }
 
-template<class T, class A>
+template<class T, int size_value, int inc_value, class A>
 template<class Archive>
-void bi::host_vector<T,A>::serialize(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<host_vector_reference<T> >(*this);
+void bi::host_vector<T,size_value,inc_value,A>::serialize(Archive& ar,
+    const unsigned version) {
+  ar
+      & boost::serialization::base_object<
+          host_vector_reference<T,size_value,inc_value> >(*this);
 }
 
 #endif

@@ -19,7 +19,7 @@ namespace bi {
  * @tparam V1 Vector type.
  */
 template<class B, class S, class V1>
-CUDA_FUNC_GLOBAL void kernelStaticLogDensity(V1 lp);
+CUDA_FUNC_GLOBAL void kernelStaticLogDensity(State<B,ON_DEVICE> s, V1 lp);
 
 }
 
@@ -29,27 +29,28 @@ CUDA_FUNC_GLOBAL void kernelStaticLogDensity(V1 lp);
 #include "../../state/Pa.hpp"
 
 template<class B, class S, class V1>
-void bi::kernelStaticLogDensity(V1 lp) {
+CUDA_FUNC_GLOBAL void bi::kernelStaticLogDensity(State<B,ON_DEVICE> s,
+    V1 lp) {
   typedef typename V1::value_type T1;
-  typedef Pa<ON_DEVICE,B,real,global,global,global,global> PX;
-  typedef Ox<ON_DEVICE,B,real,global> OX;
+  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Ou<ON_DEVICE,B,global> OX;
   typedef StaticLogDensityVisitorGPU<B,S,PX,OX> Visitor;
 
-  const int p = blockIdx.x*blockDim.x + threadIdx.x;
-  const int id = blockIdx.y*blockDim.y + threadIdx.y;
+  const int p = blockIdx.x * blockDim.x + threadIdx.x;
+  const int id = blockIdx.y * blockDim.y + threadIdx.y;
   PX pax;
   OX x;
   T1 lp1 = 0.0;
 
   /* compute local log-density */
-  if (p < constP) {
-    Visitor::accept(p, id, pax, x, lp1);
+  if (p < s.size()) {
+    Visitor::accept(s, p, id, pax, x, lp1);
   }
 
   /* add to global log-density */
-  for (int i = 0; i < block_size<S>::value; ++i) {
+  for (int i = 0; i < block_size < S > ::value; ++i) {
     __syncthreads();
-    if (id == i && p < constP) {
+    if (id == i && p < s.size()) {
       lp(p) += lp1;
     }
   }

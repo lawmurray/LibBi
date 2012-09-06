@@ -37,29 +37,34 @@ public:
 }
 
 #include "StaticMaxLogDensityVisitorHost.hpp"
+#include "StaticMaxLogDensityMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 template<class V1>
 void bi::StaticMaxLogDensityHost<B,S>::maxLogDensities(State<B,ON_HOST>& s,
     V1 lp) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef StaticMaxLogDensityVisitorHost<B,S,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef StaticMaxLogDensityMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef StaticMaxLogDensityVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   bind(s);
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     PX pax;
     OX x;
     int p;
 
-    #pragma omp for
+#pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(p, pax, x, lp(p));
+      Visitor::accept(s, p, pax, x, lp(p));
     }
   }
   unbind(s);
@@ -69,14 +74,17 @@ template<class B, class S>
 template<class V1>
 void bi::StaticMaxLogDensityHost<B,S>::maxLogDensities(State<B,ON_HOST>& s,
     const int p, V1 lp) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef StaticMaxLogDensityVisitorHost<B,S,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef StaticMaxLogDensityMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef StaticMaxLogDensityVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(p, pax, x, lp(p));
+  Visitor::accept(s, p, pax, x, lp(p));
   unbind(s);
 }
 

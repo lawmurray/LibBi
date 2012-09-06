@@ -39,7 +39,7 @@ struct pitched_functor : public std::unary_function<T,T> {
   CUDA_FUNC_HOST pitched_functor(const T m, const T M) : m(m), M(M),
       same(m == M) {
     /* pre-condition */
-    assert (M >= m);
+    BI_ASSERT(M >= m);
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {

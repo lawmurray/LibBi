@@ -126,7 +126,7 @@ template<bi::Location L>
 inline typename bi::SimulatorCache<L>::page_type bi::SimulatorCache<L>::getState(
     const int t) const {
   /* pre-condition */
-  assert (isValid(t));
+  BI_ASSERT(isValid(t));
 
   return *pages[t];
 }
@@ -135,7 +135,7 @@ template<bi::Location L>
 template<class M2>
 inline void bi::SimulatorCache<L>::readState(const int t, M2 s) const {
   /* pre-condition */
-  assert (isValid(t));
+  BI_ASSERT(isValid(t));
 
   s = *pages[t];
 }
@@ -162,36 +162,36 @@ inline void bi::SimulatorCache<L>::writeState(const int t, const M2 s) {
   setDirty(t);
 
   /* post-condition */
-  assert (isValid(t));
-  assert (isDirty(t));
+  BI_ASSERT(isValid(t));
+  BI_ASSERT(isDirty(t));
 }
 
 template<bi::Location L>
 template<class M2>
 inline void bi::SimulatorCache<L>::swapReadState(const int t, M2 s) {
   /* pre-condition */
-  assert (isValid(s));
+  BI_ASSERT(isValid(s));
 
   s.swap(*pages[t]);
   setValid(t, false);
 
   /* post-condition */
-  assert (!isValid(t));
+  BI_ASSERT(!isValid(t));
 }
 
 template<bi::Location L>
 template<class M2>
 inline void bi::SimulatorCache<L>::swapWriteState(const int t, M2 s) {
   /* pre-condition */
-  assert (t < size());
+  BI_ASSERT(t < size());
 
   pages[t]->swap(s);
   setValid(t);
   setDirty(t);
 
   /* post-condition */
-  assert (isValid(t));
-  assert (isDirty(t));
+  BI_ASSERT(isValid(t));
+  BI_ASSERT(isDirty(t));
 }
 
 template<bi::Location L>

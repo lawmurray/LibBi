@@ -20,53 +20,32 @@ target = block.get_action.get_target;
  */
 class [% class_name %] {
 public:
-  [% declare_static_function('simulate') %]
-  [% declare_static_function('sample') %]
-  [% declare_static_function('logdensity') %]
-  [% declare_static_function('maxlogdensity') %]
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
 
-  [% declare_dynamic_function('simulate') %]
-  [% declare_dynamic_function('sample') %]
-  [% declare_dynamic_function('logdensity') %]
-  [% declare_dynamic_function('maxlogdensity') %]
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
 };
 
 #include "bi/primitive/matrix_primitive.hpp"
 
-[% sig_static_function('simulate') %] {
+[% sig_block_static_function('simulate') %] {
   BOOST_AUTO(target, [% get_var(target) %]);
   int cols = [% Math.sqrt(target.get_var.get_size) %];
   matrix_set_elements(columns(target, 0, cols, cols + 1), [% std.eval_const %]);
 }
 
-[% sig_static_function('sample') %] {
-  simulate(s);
-}
+[% std_block_static_function('sample') %]
+[% std_block_static_function('logdensity') %]
+[% std_block_static_function('maxlogdensity') %]
 
-[% sig_static_function('logdensity') %] {
-  simulate(s);
-}
-
-[% sig_static_function('maxlogdensity') %] {
-  simulate(s);
-}
-
-[% sig_dynamic_function('simulate') %] {
-  if (onDelta) {
-    simulate(s);
-  }
-}
-
-[% sig_dynamic_function('sample') %] {
-  simulate(t1, t2, onDelta, s);
-}
-
-[% sig_dynamic_function('logdensity') %] {
-  simulate(t1, t2, onDelta, s);
-}
-
-[% sig_dynamic_function('maxlogdensity') %] {
-  simulate(t1, t2, onDelta, s);
-}
+[% std_block_dynamic_function('simulate') %]
+[% std_block_dynamic_function('sample') %]
+[% std_block_dynamic_function('logdensity') %]
+[% std_block_dynamic_function('maxlogdensity') %]
 
 [% PROCESS 'block/misc/footer.hpp.tt' %]

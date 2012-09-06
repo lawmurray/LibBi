@@ -436,7 +436,7 @@ inline int [% class_name %]::getRSize() {
 [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
 template<class T1, bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
-  [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
+  [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::simulate(t1, t2, onDelta(t1, t2), s);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
@@ -474,7 +474,7 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1
 [%-FOREACH toplevel IN STATIC_BLOCKS %]
 template<bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s) {
-  [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
+  [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::simulate(s);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
@@ -513,7 +513,7 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[
 template<bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s,
     const bi::Mask<L>& mask) {
-  [%-IF model.is_block(toplevel) && model.get_block(toplevel).can_simulate %]
+  [%-IF model.is_block(toplevel) %]
   Block[% model.get_block(toplevel).get_id %]::simulate(s, mask);
   [% ELSE %]
   BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
@@ -555,7 +555,7 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[
 template<class T1>
 inline bool [% class_name %]::onDelta(const T1 t1, const T1 t2) {
   T1 sgn = (t2 >= t1) ? 1.0 : -1.0;
-  T1 nextDelta = sgn*ge_step(t1, sgn*getDelta());
+  T1 nextDelta = sgn*bi::ge_step(t1, sgn*getDelta());
   return sgn*t1 >= sgn*nextDelta;
 }
 [% END %]

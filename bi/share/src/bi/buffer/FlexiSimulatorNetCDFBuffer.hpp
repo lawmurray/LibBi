@@ -182,23 +182,23 @@ inline int bi::FlexiSimulatorNetCDFBuffer::size2() const {
 template<class V1>
 void bi::FlexiSimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
   /* pre-condition */
-  assert (t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << tVar->name());
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
     ret = tVar->get(x1.buf(), T);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << tVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << tVar->name());
     x = x1;
   } else {
     ret = tVar->get(x.buf(), T);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << tVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << tVar->name());
   }
 }
 
@@ -206,14 +206,14 @@ template<class V1>
 void bi::FlexiSimulatorNetCDFBuffer::writeTimes(const int t, const int T,
     const V1 x) {
   /* pre-condition */
-  assert (t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = tVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds writing variable " << tVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable " << tVar->name());
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
@@ -223,15 +223,15 @@ void bi::FlexiSimulatorNetCDFBuffer::writeTimes(const int t, const int T,
   } else {
     ret = tVar->put(x.buf(), T);
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable " << tVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << tVar->name());
 }
 
 template<class M1>
 void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
     const int t, M1 X) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (X.size1() == readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(X.size1() == readLen(t));
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -263,19 +263,19 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
       counts[j] = readLen(t);
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds reading variable " <<
+      BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " <<
           ncVar->name());
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         ret = ncVar->get_var()->get(X1.buf(), counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading variable " <<
+        BI_ASSERT_MSG(ret, "Inconvertible type reading variable " <<
             ncVar->name());
         columns(X, start, size) = X1;
       } else {
         ret = ncVar->get_var()->get(columns(X, start, size).buf(),
             counts.buf());
-        BI_ASSERT(ret, "Inconvertible type reading variable " <<
+        BI_ASSERT_MSG(ret, "Inconvertible type reading variable " <<
             ncVar->name());
       }
     }
@@ -321,10 +321,10 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
       counts[j] = len;
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
-      BI_ASSERT(ret, "Indexing out of bounds writing variable " <<
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable " <<
           ncVar->name());
 
-      if (M1::on_device || X.lead() != X.size1()) {
+      if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         X1 = columns(X, offset, size);
         synchronize(M1::on_device);
@@ -333,7 +333,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
         ret = ncVar->get_var()->put(columns(X, offset, size).buf(),
             counts.buf());
       }
-      BI_ASSERT(ret, "Inconvertible type reading variable " <<
+      BI_ASSERT_MSG(ret, "Inconvertible type reading variable " <<
           ncVar->name());
     }
   }

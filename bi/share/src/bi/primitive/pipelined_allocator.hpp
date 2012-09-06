@@ -185,14 +185,16 @@ void bi::pipelined_allocator<A>::clean() {
 template<class A>
 void bi::pipelined_allocator<A>::add(pointer buf, size_type num) {
   #ifdef ENABLE_CUDA
-  /* record event so as to know when buffer can be deallocated */
-  cudaEvent_t evt;
-  CUDA_CHECKED_CALL(cudaEventCreateWithFlags(&evt, cudaEventDisableTiming));
-  CUDA_CHECKED_CALL(cudaEventRecord(evt));
+  if (buf != NULL) {
+    /* record event so as to know when buffer can be deallocated */
+    cudaEvent_t evt;
+    CUDA_CHECKED_CALL(cudaEventCreateWithFlags(&evt, cudaEventDisableTiming));
+    CUDA_CHECKED_CALL(cudaEventRecord(evt));
 
-  evts[bi_omp_tid].push_back(evt);
-  bufs[bi_omp_tid].push_back(buf);
-  sizes[bi_omp_tid].push_back(num);
+    evts[bi_omp_tid].push_back(evt);
+    bufs[bi_omp_tid].push_back(buf);
+    sizes[bi_omp_tid].push_back(num);
+  }
   #endif
 }
 

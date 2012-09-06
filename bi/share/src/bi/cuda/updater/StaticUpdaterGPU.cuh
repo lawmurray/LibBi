@@ -37,14 +37,14 @@ void bi::StaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s) {
   const int P = s.size();
   dim3 Db, Dg;
 
-  Db.x = std::min(deviceIdealThreadsPerBlock(), P);
+  Db.x = bi::min(deviceIdealThreadsPerBlock(), P);
   Dg.x = (P + Db.x - 1)/Db.x;
   Db.y = 1;
   Dg.y = N;
 
   if (N > 0) {
     bind(s);
-    kernelStaticUpdater<B,S><<<Dg,Db>>>();
+    kernelStaticUpdater<B,S><<<Dg,Db>>>(s);
     CUDA_CHECK;
     unbind(s);
   }

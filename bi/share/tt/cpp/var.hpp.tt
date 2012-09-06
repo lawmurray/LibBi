@@ -26,7 +26,7 @@
 #include "../dim/Dim[% dim.get_name %].hpp"
 [% END-%]
 
-[% create_eval_var_coord(var) %]
+[% create_var_coord(var) %]
 
 /**
  * Variable: [% var.get_name %].
@@ -71,7 +71,19 @@ public:
   /**
    * Number of dimensions.
    */
-  static const int NUM_DIMS = [% var.get_dims.size %];
+  static const int NUM_DIMS = [% var.num_dims %];
+  
+  [% IF var.num_dims == 2 %]
+  /**
+   * Number of rows.
+   */
+  static const int ROWS = [% var.get_dims.0.get_size %];
+  
+  /**
+   * Number of columns.
+   */
+  static const int COLS = [% var.get_dims.1.get_size %];
+  [%-END %]
   
   /**
    * Type.

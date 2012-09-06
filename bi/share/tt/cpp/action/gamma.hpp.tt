@@ -13,20 +13,17 @@ scale = action.get_named_arg('scale');
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
   [% declare_action_static_function('shape') %]
   [% declare_action_static_function('scale') %]
+  
+  [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
   [% declare_action_static_function('maxlogdensity') %]
@@ -36,58 +33,60 @@ public:
 
 [% sig_action_static_function('shape') %] {
   [% alias_dims(action) %]
-  [% read_input(shape) %]
+  [% fetch_parents(shape) %]
   
   x = [% shape.to_cpp %];
 }
 
 [% sig_action_static_function('scale') %] {
   [% alias_dims(action) %]
-  [% read_input(scale) %]
+  [% fetch_parents(scale) %]
   
   x = [% scale.to_cpp %];
 }
 
+[% std_action_static_function('simulate') %]
+
 [% sig_action_static_function('sample') %] {
   real sh, sc, u;
     
-  shape(p, cox, pax, sh);
-  scale(p, cox, pax, sc);
+  shape(s, p, cox, pax, sh);
+  scale(s, p, cox, pax, sc);
   u = rng.gamma(sh, sc);
     
-  x.template put<target_type>(p, ix, u);
+  x.template fetch<target_type>(s, p, ix) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
-  real sh, sc, logZ, xy;
+  T1 sh, sc, logZ;
     
-  shape(p, cox, pax, sh);
-  scale(p, cox, pax, sc);
+  shape(s, p, cox, pax, sh);
+  scale(s, p, cox, pax, sc);
   
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
-  logZ = BI_MATH_LGAMMA(sh) + sh*BI_MATH_LOG(sc);
-  lp += (sh - BI_REAL(1.0))*BI_MATH_LOG(xy) - xy/sc - logZ;
+  logZ = bi::lgamma(sh) + sh*bi::log(sc);
+  lp += (sh - BI_REAL(1.0))*bi::log(xy) - xy/sc - logZ;
 
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  real sh, sc, xy;
+  T1 sh, sc;
     
-  shape(p, cox, pax, sh);
-  scale(p, cox, pax, sc);
+  shape(s, p, cox, pax, sh);
+  scale(s, p, cox, pax, sc);
 
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
     
   [% IF shape.is_common && scale.is_common %]
-  lp += (sh - BI_REAL(1.0))*(BI_MATH_LOG(sh - BI_REAL(1.0)) + BI_REAL(1.0))) -
-      BI_MATH_LGAMMA(sh) - BI_MATH_LOG(sc);
+  lp += (sh - BI_REAL(1.0))*(bi::log(sh - BI_REAL(1.0)) + BI_REAL(1.0))) -
+      bi::lgamma(sh) - bi::log(sc);
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

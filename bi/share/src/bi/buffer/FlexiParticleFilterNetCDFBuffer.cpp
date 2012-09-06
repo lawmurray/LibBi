@@ -7,15 +7,13 @@
  */
 #include "FlexiParticleFilterNetCDFBuffer.hpp"
 
-using namespace bi;
-
-FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(const Model& m,
+bi::FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
     FlexiSimulatorNetCDFBuffer(m, file, mode) {
   map();
 }
 
-FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(
+bi::FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(
     const Model& m, const int T, const std::string& file,
     const FileMode mode) : FlexiSimulatorNetCDFBuffer(m, T, file, mode) {
   if (mode == NEW || mode == REPLACE) {
@@ -25,11 +23,11 @@ FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(
   }
 }
 
-FlexiParticleFilterNetCDFBuffer::~FlexiParticleFilterNetCDFBuffer() {
+bi::FlexiParticleFilterNetCDFBuffer::~FlexiParticleFilterNetCDFBuffer() {
   //
 }
 
-void FlexiParticleFilterNetCDFBuffer::create() {
+void bi::FlexiParticleFilterNetCDFBuffer::create() {
   ncFile->add_att("data_format", "ANPF");
 
   aVar = ncFile->add_var("ancestor", ncInt, nrpDim);
@@ -45,7 +43,7 @@ void FlexiParticleFilterNetCDFBuffer::create() {
       "Could not create variable resample");
 }
 
-void FlexiParticleFilterNetCDFBuffer::map() {
+void bi::FlexiParticleFilterNetCDFBuffer::map() {
   aVar = ncFile->get_var("ancestor");
   BI_ERROR(aVar != NULL && aVar->is_valid(),
       "File does not contain variable ancestor");
@@ -71,83 +69,83 @@ void FlexiParticleFilterNetCDFBuffer::map() {
       "Dimension 0 of variable resample should be nr");
 }
 
-real FlexiParticleFilterNetCDFBuffer::readLogWeight(const int t,
+real bi::FlexiParticleFilterNetCDFBuffer::readLogWeight(const int t,
     const int p) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (p >= 0 && p < readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(p >= 0 && p < readLen(t));
 
   real lw;
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(readStart(t) + p);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << lwVar->name());
   ret = lwVar->get(&lw, 1);
-  BI_ASSERT(ret, "Inconvertible type reading variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << lwVar->name());
 
   return lw;
 }
 
-void FlexiParticleFilterNetCDFBuffer::writeLogWeight(const int t,
+void bi::FlexiParticleFilterNetCDFBuffer::writeLogWeight(const int t,
     const int p, const real lw) {
   /* pre-conditions */
-  assert (t >= 0);
-  assert (p >= 0 && p < readLen(t));
+  BI_ASSERT(t >= 0);
+  BI_ASSERT(p >= 0 && p < readLen(t));
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(readStart(t) + p);
   ret = lwVar->put(&lw, 1);
-  BI_ASSERT(ret, "Inconvertible type writing variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << lwVar->name());
 }
 
-int FlexiParticleFilterNetCDFBuffer::readAncestor(const int t,
+int bi::FlexiParticleFilterNetCDFBuffer::readAncestor(const int t,
     const int p) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (p >= 0 && p < readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(p >= 0 && p < readLen(t));
 
   int a;
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(readStart(t) + p);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << aVar->name());
   ret = aVar->get(&a, 1);
-  BI_ASSERT(ret, "Inconvertible type reading variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << aVar->name());
 
   return a;
 }
 
-void FlexiParticleFilterNetCDFBuffer::writeAncestor(const int t,
+void bi::FlexiParticleFilterNetCDFBuffer::writeAncestor(const int t,
     const int p, const int a) {
   /* pre-conditions */
-  assert (t >= 0);
-  assert (p >= 0 && p < readLen(t));
+  BI_ASSERT(t >= 0);
+  BI_ASSERT(p >= 0 && p < readLen(t));
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(readStart(t) + p);
   ret = aVar->put(&a, 1);
-  BI_ASSERT(ret, "Inconvertible type writing variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << aVar->name());
 }
 
-int FlexiParticleFilterNetCDFBuffer::readResample(const int t) {
+int bi::FlexiParticleFilterNetCDFBuffer::readResample(const int t) {
   /* pre-condition */
-  assert (t >= 0 && t < nrDim->size());
+  BI_ASSERT(t >= 0 && t < nrDim->size());
 
   int r;
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable resample");
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable resample");
   ret = rVar->get(&r, 1);
-  BI_ASSERT(ret, "Inconvertible type reading variable resample");
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable resample");
 
   return r;
 }
 
-void FlexiParticleFilterNetCDFBuffer::writeResample(const int t,
+void bi::FlexiParticleFilterNetCDFBuffer::writeResample(const int t,
     const int& r) {
   /* pre-condition */
-  assert (t >= 0);
+  BI_ASSERT(t >= 0);
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
   ret = rVar->put(&r, 1);
-  BI_ASSERT(ret, "Inconvertible type reading variable resample");
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable resample");
 }

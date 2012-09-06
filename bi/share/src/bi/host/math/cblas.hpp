@@ -28,28 +28,28 @@ namespace bi {
  */
 inline CBLAS_UPLO cblas_uplo(const char uplo) {
   /* pre-condition */
-  assert (uplo == 'U' || uplo == 'L');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
 
   return (uplo == 'U') ? CblasUpper : CblasLower;
 }
 
 inline CBLAS_TRANSPOSE cblas_trans(const char trans) {
   /* pre-condition */
-  assert (trans == 'N' || trans == 'T');
+  BI_ASSERT(trans == 'N' || trans == 'T');
 
   return (trans == 'N') ? CblasNoTrans : CblasTrans;
 }
 
 inline CBLAS_SIDE cblas_side(const char side) {
   /* pre-condition */
-  assert (side == 'L' || side == 'R');
+  BI_ASSERT(side == 'L' || side == 'R');
 
   return (side == 'L') ? CblasLeft : CblasRight;
 }
 
 inline CBLAS_DIAG cblas_diag(const char diag) {
   /* pre-condition */
-  assert (diag == 'N' || diag == 'U');
+  BI_ASSERT(diag == 'N' || diag == 'U');
 
   return (diag == 'N') ? CblasNonUnit : CblasUnit;
 }

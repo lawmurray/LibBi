@@ -7,6 +7,8 @@
  */
 #include "IntegratorConstants.hpp"
 
+#include "../../math/function.hpp"
+
 real h_h0;
 real h_rtoler;
 real h_atoler;
@@ -37,23 +39,23 @@ void h_ode_set_atoler(const real atolerin) {
 
 void h_ode_set_uround(const real uroundin) {
   /* pre-condition */
-  assert (uroundin > BI_REAL(1.0e-19) && uroundin < BI_REAL(1.0));
+  BI_ASSERT(uroundin > BI_REAL(1.0e-19) && uroundin < BI_REAL(1.0));
 
   h_uround = uroundin;
 }
 
 void h_ode_set_safe(const real safein) {
   /* pre-condition */
-  assert (safein > BI_REAL(0.001) && safein < BI_REAL(1.0));
+  BI_ASSERT(safein > BI_REAL(0.001) && safein < BI_REAL(1.0));
 
   h_safe = safein;
   h_safe1 = BI_REAL(1.0) / safein;
-  h_logsafe = log(safein);
+  h_logsafe = bi::log(safein);
 }
 
 void h_ode_set_beta(const real betain) {
   /* pre-condition */
-  assert (betain >= 0.0 && betain <= BI_REAL(0.2));
+  BI_ASSERT(betain >= 0.0 && betain <= BI_REAL(0.2));
 
   h_beta = betain;
   h_expo1 = BI_REAL(0.2) - betain*BI_REAL(0.75);
@@ -83,5 +85,5 @@ void h_ode_init() {
   h_ode_set_facl(BI_REAL(0.2));
   h_ode_set_facr(BI_REAL(10.0));
   h_ode_set_beta(BI_REAL(0.04));
-  h_ode_set_nsteps(1000u);
+  h_ode_set_nsteps(1000);
 }

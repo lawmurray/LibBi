@@ -211,7 +211,7 @@ template<class M2, class V2, class S1>
 typename bi::KDTree<V1,M1>::var_type* bi::KDTree<V1,M1>::build(const M2 X,
     const V2 lw, S1 partitioner, const std::vector<int>& is, const int depth) {
   /* pre-condition */
-  assert (is.size() > 0);
+  BI_ASSERT(is.size() > 0);
 
   var_type* result;
   int i;

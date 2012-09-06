@@ -13,9 +13,7 @@
 #include <algorithm>
 #include <utility>
 
-using namespace bi;
-
-SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
+bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
     const std::string& file, const int ns, const int np) :
     NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns),
     np(np) {
@@ -24,7 +22,7 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
   rewind();
 }
 
-SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
+bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
     const SparseInputNetCDFBuffer& o) : NetCDFBuffer(o), SparseInputBuffer(o.m),
     vars(NUM_VAR_TYPES), ns(o.ns), np(o.np) {
   map();
@@ -32,13 +30,13 @@ SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
   rewind();
 }
 
-SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
+bi::SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
   //
 }
 
-void SparseInputNetCDFBuffer::next() {
+void bi::SparseInputNetCDFBuffer::next() {
   /* pre-condition */
-  assert (isValid());
+  BI_ASSERT(isValid());
 
   int tVar, rDim;
   real t = getTime(), tnxt;
@@ -60,7 +58,7 @@ void SparseInputNetCDFBuffer::next() {
   } while (getTime() == t); // may be multiple time variables on current time
 }
 
-void SparseInputNetCDFBuffer::mask() {
+void bi::SparseInputNetCDFBuffer::mask() {
   int tVar, rDim, i;
   real t;
 
@@ -86,7 +84,7 @@ void SparseInputNetCDFBuffer::mask() {
   }
 }
 
-void SparseInputNetCDFBuffer::mask0() {
+void bi::SparseInputNetCDFBuffer::mask0() {
   int i;
 
   /* clear existing masks */
@@ -98,7 +96,7 @@ void SparseInputNetCDFBuffer::mask0() {
   maskSparse0();
 }
 
-void SparseInputNetCDFBuffer::maskDense(const int rDim) {
+void bi::SparseInputNetCDFBuffer::maskDense(const int rDim) {
   VarType type;
   int i, j;
   temp_host_vector<int>::type ids;
@@ -113,7 +111,7 @@ void SparseInputNetCDFBuffer::maskDense(const int rDim) {
   }
 }
 
-void SparseInputNetCDFBuffer::maskSparse(const int rDim) {
+void bi::SparseInputNetCDFBuffer::maskSparse(const int rDim) {
   VarType type;
   int i;
   temp_host_vector<int>::type ids, indices;
@@ -126,7 +124,7 @@ void SparseInputNetCDFBuffer::maskSparse(const int rDim) {
   }
 }
 
-void SparseInputNetCDFBuffer::maskDense0() {
+void bi::SparseInputNetCDFBuffer::maskDense0() {
   int i, j, id;
   VarType type;
 
@@ -139,14 +137,14 @@ void SparseInputNetCDFBuffer::maskDense0() {
   }
 }
 
-void SparseInputNetCDFBuffer::maskSparse0() {
+void bi::SparseInputNetCDFBuffer::maskSparse0() {
   int rDim, i;
   NcDim* dim;
   temp_host_vector<int>::type ids, indices;
 
   for (rDim = 0; rDim < (int)rDims.size(); ++rDim) {
     if (tAssoc[rDim] == -1) {
-      assert (cAssoc[rDim] != -1);
+      BI_ASSERT(cAssoc[rDim] != -1);
       dim = rDims[rDim];
 
       readIndices(rDim, 0, dim->size(), indices);
@@ -161,7 +159,7 @@ void SparseInputNetCDFBuffer::maskSparse0() {
   }
 }
 
-void SparseInputNetCDFBuffer::rewind() {
+void bi::SparseInputNetCDFBuffer::rewind() {
   int tVar, rDim;
   real t;
   set_elements(state.starts, 0);
@@ -179,7 +177,7 @@ void SparseInputNetCDFBuffer::rewind() {
   mask();
 }
 
-int SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
+int bi::SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
   int size, tVar, rDim;
   NcVar* var;
   std::vector<real> ts;
@@ -210,7 +208,7 @@ int SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
   return std::distance(ts.begin(), pred);
 }
 
-void SparseInputNetCDFBuffer::map() {
+void bi::SparseInputNetCDFBuffer::map() {
   NcVar* ncVar;
   Var* var;
   Dim* dim;
@@ -307,9 +305,9 @@ void SparseInputNetCDFBuffer::map() {
   }
 }
 
-NcDim* SparseInputNetCDFBuffer::mapDim(const char* name, const long size) {
+NcDim* bi::SparseInputNetCDFBuffer::mapDim(const char* name, const long size) {
   /* pre-condition */
-  BI_ASSERT(hasDim(name), "File does not contain dimension " << name);
+  BI_ASSERT_MSG(hasDim(name), "File does not contain dimension " << name);
 
   NcDim* ncDim = ncFile->get_dim(name);
   BI_ERROR(size < 0 || ncDim->size() >= size || ncDim->size() == 1,
@@ -319,10 +317,10 @@ NcDim* SparseInputNetCDFBuffer::mapDim(const char* name, const long size) {
   return ncDim;
 }
 
-std::pair<NcVar*,int> SparseInputNetCDFBuffer::mapVar(const Var* var) {
+std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
   /* pre-condition */
-  assert (var != NULL);
-  BI_ASSERT(hasVar(var->getName().c_str()),
+  BI_ASSERT(var != NULL);
+  BI_ASSERT_MSG(hasVar(var->getName().c_str()),
       "File does not contain variable " << var->getName());
 
   const VarType type = var->getType();
@@ -343,7 +341,7 @@ std::pair<NcVar*,int> SparseInputNetCDFBuffer::mapVar(const Var* var) {
       type == P_VAR;
 
   ncVar = ncFile->get_var(var->getName().c_str());
-  assert (ncVar != NULL && ncVar->is_valid());
+  BI_ASSERT(ncVar != NULL && ncVar->is_valid());
 
   /* check for ns-dimension */
   if (nsDim != NULL && j < ncVar->num_dims() && ncVar->get_dim(j) == nsDim) {
@@ -391,7 +389,7 @@ std::pair<NcVar*,int> SparseInputNetCDFBuffer::mapVar(const Var* var) {
   return std::make_pair(ncVar, rDim);
 }
 
-NcDim* SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
+NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
   /* pre-conditions */
   BI_ERROR(var != NULL && var->is_valid(), "File does not contain time variable " <<
       var->name());
@@ -429,8 +427,8 @@ NcDim* SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
     tVar = tVars.size() - 1;
     tAssoc[rDim] = tVar;
     tDims.push_back(rDim);
-    assert (tDims.size() == tVars.size());
-    assert (tAssoc.size() == rDims.size());
+    BI_ASSERT(tDims.size() == tVars.size());
+    BI_ASSERT(tAssoc.size() == rDims.size());
   } else {
     BI_WARN(false, "Record dimension " << ncDim->name() <<
         " already associated with time variable " <<
@@ -442,7 +440,7 @@ NcDim* SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
   return ncDim;
 }
 
-NcDim* SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
+NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
   /* pre-conditions */
   BI_ERROR(var != NULL && var->is_valid(), "File does not contain coordinate variable " <<
       var->name());
@@ -479,7 +477,7 @@ NcDim* SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
     cVars.push_back(var);
     cVar = cVars.size() - 1;
     cAssoc[rDim] = cVar;
-    assert (cAssoc.size() == rDims.size());
+    BI_ASSERT(cAssoc.size() == rDims.size());
   } else {
     BI_WARN(false, "Record dimension " << ncDim->name() <<
         " already associated with coordinate variable " <<
@@ -491,10 +489,10 @@ NcDim* SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
   return ncDim;
 }
 
-bool SparseInputNetCDFBuffer::hasTime(const int tVar, const int start) {
+bool bi::SparseInputNetCDFBuffer::hasTime(const int tVar, const int start) {
   /* pre-condition */
-  assert (tVar >= 0 && tVar < (int)tVars.size());
-  assert (start >= 0);
+  BI_ASSERT(tVar >= 0 && tVar < (int)tVars.size());
+  BI_ASSERT(start >= 0);
 
   int rDim = tDims[tVar];
   NcDim* ncDim = rDims[rDim];
@@ -502,12 +500,12 @@ bool SparseInputNetCDFBuffer::hasTime(const int tVar, const int start) {
   return start < ncDim->size();
 }
 
-void SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
+void bi::SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
     int& len, real& t) {
   /* pre-condition */
-  assert (tVar >= 0 && tVar < (int)tVars.size());
-  assert (start >= 0);
-  assert (hasTime(tVar, start));
+  BI_ASSERT(tVar >= 0 && tVar < (int)tVars.size());
+  BI_ASSERT(start >= 0);
+  BI_ASSERT(hasTime(tVar, start));
 
   long offsets[2], counts[2];
   BI_UNUSED NcBool ret;
@@ -521,7 +519,7 @@ void SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
     counts[j] = 1;
     ++j;
   }
-  assert (j < ncVar->num_dims());
+  BI_ASSERT(j < ncVar->num_dims());
   offsets[j] = start;
   counts[j] = 1;
 
@@ -531,9 +529,9 @@ void SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
   tnxt = 0.0;
   while (t == tnxt && offsets[j] < rDims[tVar]->size()) {
     ret = ncVar->set_cur(offsets);
-    BI_ASSERT(ret, "Indexing out of bounds reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
     ret = ncVar->get(&tnxt, counts);
-    BI_ASSERT(ret, "Inconvertible type reading " << ncVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
 
     if (len == 0) {
       t = tnxt;

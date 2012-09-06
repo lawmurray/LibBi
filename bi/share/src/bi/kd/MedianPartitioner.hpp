@@ -53,7 +53,7 @@ private:
 template<class M1, class V1>
 bool bi::MedianPartitioner::init(const M1 X, const V1 is) {
   /* pre-condition */
-  assert (is.size() >= 2);
+  BI_ASSERT(is.size() >= 2);
 
   int i, j, longest = 0;
   real mn, mx, x, maxlen = 0.0;
@@ -64,8 +64,8 @@ bool bi::MedianPartitioner::init(const M1 X, const V1 is) {
     mx = mn;
     for (i = 1; i < (int)is.size(); ++i) {
       x = X(is[i], j);
-      mn = std::min(mn, x);
-      mx = std::max(mx, x);
+      mn = bi::min(mn, x);
+      mx = bi::max(mx, x);
     }
     if (mx - mn > maxlen) {
       maxlen = mx - mn;

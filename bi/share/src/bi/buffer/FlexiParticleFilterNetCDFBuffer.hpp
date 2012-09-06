@@ -150,8 +150,8 @@ template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::readLogWeights(const int t,
     V1 lws) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (lws.size() == readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(lws.size() == readLen(t));
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -161,16 +161,16 @@ void bi::FlexiParticleFilterNetCDFBuffer::readLogWeights(const int t,
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(start);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << lwVar->name());
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
     ret = lwVar->get(lws1.buf(), len);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << lwVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << lwVar->name());
     lws = lws1;
   } else {
     ret = lwVar->get(lws.buf(), len);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << lwVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << lwVar->name());
   }
 }
 
@@ -178,8 +178,8 @@ template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::writeLogWeights(const int t,
     const V1 lws) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (lws.size() == readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(lws.size() == readLen(t));
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -189,7 +189,7 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeLogWeights(const int t,
 
   BI_UNUSED NcBool ret;
   ret = lwVar->set_cur(start);
-  BI_ASSERT(ret, "Indexing out of bounds writing variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable " << lwVar->name());
 
   if (V1::on_device || lws.inc() != 1) {
     temp_vector_type lws1(lws.size());
@@ -199,14 +199,14 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeLogWeights(const int t,
   } else {
     ret = lwVar->put(lws.buf(), len);
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable " << lwVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << lwVar->name());
 }
 
 template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (a.size() == readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(a.size() == readLen(t));
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -216,16 +216,16 @@ void bi::FlexiParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(start);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << aVar->name());
 
   if (V1::on_device || a.inc() != 1) {
     temp_vector_type a1(a.size());
     ret = aVar->get(a1.buf(), len);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << aVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << aVar->name());
     a = a1;
   } else {
     ret = aVar->get(a.buf(), len);
-    BI_ASSERT(ret, "Inconvertible type reading variable " << aVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << aVar->name());
   }
 }
 
@@ -233,8 +233,8 @@ template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::writeAncestors(const int t,
     const V1 a) {
   /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (a.size() == readLen(t));
+  BI_ASSERT(t >= 0 && t < nrDim->size());
+  BI_ASSERT(a.size() == readLen(t));
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -244,7 +244,7 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeAncestors(const int t,
 
   BI_UNUSED NcBool ret;
   ret = aVar->set_cur(start);
-  BI_ASSERT(ret, "Indexing out of bounds writing variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable " << aVar->name());
 
   if (V1::on_device || a.inc() != 1) {
     temp_vector_type a1(a.size());
@@ -254,29 +254,29 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeAncestors(const int t,
   } else {
     ret = aVar->put(a.buf(), len);
   }
-  BI_ASSERT(ret, "Inconvertible type writing variable " << aVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << aVar->name());
 }
 
 template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
   /* pre-condition */
-  assert (t >= 0 && t + r.size() <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << rVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << rVar->name());
 
   if (V1::on_device || r.inc() != 1) {
     temp_vector_type r1(r.size());
     ret = rVar->get(r1.buf(), r1.size());
-    BI_ASSERT(ret, "Inconvertible type reading variable " << rVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
     r = r1;
   } else {
     ret = rVar->get(r.buf(), r.size());
-    BI_ASSERT(ret, "Inconvertible type reading variable " << rVar->name());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
   }
 }
 
@@ -284,14 +284,14 @@ template<class V1>
 void bi::FlexiParticleFilterNetCDFBuffer::writeResamples(const int t,
     const V1 r) {
   /* pre-condition */
-  assert (t >= 0 && t + r.size() <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT(ret, "Indexing out of bounds reading variable " << rVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << rVar->name());
 
   if (V1::on_device || r.inc() != 1) {
     temp_vector_type r1(r.size());
@@ -301,7 +301,7 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeResamples(const int t,
   } else {
     ret = rVar->put(r.buf(), r.size());
   }
-  BI_ASSERT(ret, "Inconvertible type reading variable " << rVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
 }
 
 #endif

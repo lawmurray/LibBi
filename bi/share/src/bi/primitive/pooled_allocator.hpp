@@ -122,6 +122,8 @@ private:
 
 }
 
+#include "boost/typeof/typeof.hpp"
+
 template<class A>
 std::vector<typename bi::pooled_allocator<A>::pool_type> bi::pooled_allocator<A>::available;
 
@@ -167,24 +169,27 @@ inline typename bi::pooled_allocator<A>::pointer bi::pooled_allocator<A>::alloca
   }
 
   /* check available items to reuse */
-  BOOST_AUTO(iter, available[bi_omp_tid].find(num));
-  /* ^ can use lower_bound() to get buffer of *at least* size num, but will
-   * be returned to pool as if size num, not >= num, so find() is used to get
-   * buffers only of exactly size num instead. */
-  if (iter != available[bi_omp_tid].end()) {
-    /* existing item */
-    assert (!iter->second.empty());
-    p = iter->second.back();
-    iter->second.pop_back();
-    if (iter->second.empty()) {
-      available[bi_omp_tid].erase(iter);
+  if (num > 0) {
+    BOOST_AUTO(iter, available[bi_omp_tid].find(num));
+    /* ^ can use lower_bound() to get buffer of *at least* size num, but will
+     * be returned to pool as if size num, not >= num, so find() is used to get
+     * buffers only of exactly size num instead. */
+    if (iter != available[bi_omp_tid].end()) {
+      /* existing item */
+      BI_ASSERT(!iter->second.empty());
+      p = iter->second.back();
+      iter->second.pop_back();
+      if (iter->second.empty()) {
+        available[bi_omp_tid].erase(iter);
+      }
+    } else {
+      /* new item */
+      p = alloc.allocate(num, hint);
     }
   } else {
-    /* new item */
-    p = alloc.allocate(num, hint);
+    p = NULL;
   }
 
-  assert (p != NULL);
   return p;
 }
 
@@ -200,9 +205,6 @@ inline void bi::pooled_allocator<A>::destroy(pointer p) {
 
 template<class A>
 inline void bi::pooled_allocator<A>::deallocate(pointer p, size_type num) {
-  /* pre-condition */
-  assert (p != NULL || num == 0);
-
   if (p != NULL) {
     /* return to pool for reuse; note insert won't insert if key already
      * exists, but in either case returns iterator for that key */

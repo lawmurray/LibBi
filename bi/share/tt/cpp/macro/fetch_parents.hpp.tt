@@ -1,0 +1,34 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO fetch_parents(expr) BLOCK %]
+  [%-IF expr.num_consts > 0 %]
+  /* constants */
+  [% FOREACH ref IN expr.get_consts %]
+  BOOST_AUTO([% ref.to_cpp %], [% ref.get_const.get_expr.to_cpp %]);
+  [%-END-%]
+  [%-END %]
+  
+  [%-IF expr.num_vars > 0 %]
+  /* variables */
+  [% FOREACH ref IN expr.get_vars %]
+  [% IF action.is_matrix %]
+  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p));
+  [% ELSE %]
+  Coord[% ref.get_var.get_name %] cox[% loop.index %][% IF ref.get_offsets.size > 0 %]([% FOREACH offset IN ref.get_offsets %][% offset.to_ascii %][% ',' UNLESS loop.last %][% END %])[% END %];
+  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p, cox[% loop.index %].index()));
+  [%-END-%]
+  [%-END-%]
+  [%-END %]
+
+  [%-IF expr.num_inlines > 0 %]
+  /* inlines */
+  [% FOREACH ref IN expr.get_inlines %]
+  BOOST_AUTO([% ref.to_cpp %], [% ref.get_inline.get_expr.to_cpp %]);
+  [%-END-%]
+  [%-END %]
+[%-END %]

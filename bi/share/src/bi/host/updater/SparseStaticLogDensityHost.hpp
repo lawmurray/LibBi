@@ -26,27 +26,35 @@ public:
    * @copydoc SparseStaticLogDensity::logDensities(State<B,ON_HOST>&, const Mask<ON_HOST>&, V1)
    */
   template<class V1>
-  static void logDensities(State<B,ON_HOST>& s, const Mask<ON_HOST>& mask, V1 lp);
+  static void logDensities(State<B,ON_HOST>& s, const Mask<ON_HOST>& mask,
+      V1 lp);
 
   /**
    * @copydoc SparseStaticLogDensity::logDensities(State<B,ON_HOST>&, const int, const Mask<ON_HOST>&, V1)
    */
   template<class V1>
-  static void logDensities(State<B,ON_HOST>& s, const int p, const Mask<ON_HOST>& mask, V1 lp);
+  static void logDensities(State<B,ON_HOST>& s, const int p,
+      const Mask<ON_HOST>& mask, V1 lp);
 };
 }
 
 #include "SparseStaticLogDensityVisitorHost.hpp"
+#include "SparseStaticLogDensityMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
 template<class V1>
-void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, const Mask<ON_HOST>& mask, V1 lp) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticLogDensityVisitorHost<B,S,PX,OX> Visitor;
+void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s,
+    const Mask<ON_HOST>& mask, V1 lp) {
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticLogDensityMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef SparseStaticLogDensityVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   bind(s);
 
@@ -58,7 +66,7 @@ void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, cons
 
     #pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(mask, p, pax, x, lp(p));
+      Visitor::accept(mask, s, p, pax, x, lp(p));
     }
   }
   unbind(s);
@@ -66,15 +74,19 @@ void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, cons
 
 template<class B, class S>
 template<class V1>
-void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, const int p, const Mask<ON_HOST>& mask, V1 lp) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticLogDensityVisitorHost<B,S,PX,OX> Visitor;
+void bi::SparseStaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s,
+    const int p, const Mask<ON_HOST>& mask, V1 lp) {
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticLogDensityMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef SparseStaticLogDensityVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(mask, p, pax, x, lp(p));
+  Visitor::accept(mask, s, p, pax, x, lp(p));
   unbind(s);
 }
 

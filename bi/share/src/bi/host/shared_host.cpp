@@ -7,4 +7,4 @@
  */
 #include "shared_host.hpp"
 
-BI_THREAD bi::host_vector<real>* sharedHostState = NULL;
+BI_THREAD bi::host_vector_reference<real>* sharedHostState = NULL;

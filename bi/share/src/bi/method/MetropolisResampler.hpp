@@ -119,7 +119,7 @@ private:
 template<class V1, class V2, class O1>
 void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
   /* pre-condition */
-  assert (lws.size() == as.size());
+  BI_ASSERT(lws.size() == as.size());
 
   ancestors(rng, lws, as);
   permute(as);
@@ -131,8 +131,8 @@ template<class V1, class V2, class O1>
 void bi::MetropolisResampler::resample(Random& rng, const int a, V1 lws,
     V2 as, O1& s) {
   /* pre-condition */
-  assert (lws.size() == as.size());
-  assert (a >= 0 && a < as.size());
+  BI_ASSERT(lws.size() == as.size());
+  BI_ASSERT(a >= 0 && a < as.size());
 
   ancestors(rng, lws, as);
   as[0] = a;
@@ -146,9 +146,9 @@ void bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
-  assert (qlws.size() == P);
-  assert (lws.size() == P);
-  assert (as.size() == P);
+  BI_ASSERT(qlws.size() == P);
+  BI_ASSERT(lws.size() == P);
+  BI_ASSERT(as.size() == P);
 
   ancestors(rng, qlws, as);
   permute(as);
@@ -161,10 +161,10 @@ void bi::MetropolisResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
-  assert (qlws.size() == P);
-  assert (lws.size() == P);
-  assert (as.size() == P);
-  assert (a >= 0 && a < P);
+  BI_ASSERT(qlws.size() == P);
+  BI_ASSERT(lws.size() == P);
+  BI_ASSERT(as.size() == P);
+  BI_ASSERT(a >= 0 && a < P);
 
   ancestors(rng, qlws, as);
   as[0] = a;
@@ -186,8 +186,8 @@ template<class V1, class V2>
 void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int P) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
-  assert (P >= 0);
-  assert (lws.size() == os.size());
+  BI_ASSERT(P >= 0);
+  BI_ASSERT(lws.size() == os.size());
 
   typename sim_temp_vector<V2>::type as(P);
   ancestors(rng, lws, as);
@@ -213,7 +213,7 @@ void bi::MetropolisResamplerHostImpl::ancestors(Random& rng, const V1 lws,
         lw2 = lws[p2];
         alpha = rng.uniform<real>();
 
-        if (alpha < BI_MATH_EXP(lw2 - lw1)) {
+        if (alpha < bi::exp(lw2 - lw1)) {
           /* accept */
           p1 = p2;
           lw1 = lw2;

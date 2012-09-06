@@ -68,6 +68,7 @@ sub validate {
     }
 
     $self->set_parent('gemv_');
+    $self->set_is_matrix(1);
     $self->set_can_nest(1);
 }
 

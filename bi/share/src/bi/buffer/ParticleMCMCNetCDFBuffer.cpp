@@ -7,16 +7,14 @@
  */
 #include "ParticleMCMCNetCDFBuffer.hpp"
 
-using namespace bi;
-
-ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
+bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   assert (mode == READ_ONLY || mode == WRITE);
   map();
 }
 
-ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
+bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
     const int P, const int T, const std::string& file,
     const FileMode mode) : NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
@@ -26,7 +24,7 @@ ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
   }
 }
 
-ParticleMCMCNetCDFBuffer::~ParticleMCMCNetCDFBuffer() {
+bi::ParticleMCMCNetCDFBuffer::~ParticleMCMCNetCDFBuffer() {
   unsigned i, j;
   for (i = 0; i < vars.size(); ++i) {
     for (j = 0; j < vars[i].size(); ++j) {
@@ -35,7 +33,7 @@ ParticleMCMCNetCDFBuffer::~ParticleMCMCNetCDFBuffer() {
   }
 }
 
-void ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
+void bi::ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
   int id, i;
   VarType type;
   Var* var;
@@ -80,7 +78,7 @@ void ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
 
 }
 
-void ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
+void bi::ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
   std::string name;
   int id, i;
   VarType type;
@@ -139,36 +137,36 @@ void ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
 
 }
 
-void ParticleMCMCNetCDFBuffer::readLogLikelihood(const int k,
+void bi::ParticleMCMCNetCDFBuffer::readLogLikelihood(const int k,
     real& ll) {
   BI_UNUSED NcBool ret;
   ret = llVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << llVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << llVar->name());
   ret = llVar->get(&ll, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << llVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << llVar->name());
 }
 
-void ParticleMCMCNetCDFBuffer::writeLogLikelihood(const int k,
+void bi::ParticleMCMCNetCDFBuffer::writeLogLikelihood(const int k,
     const real& ll) {
   BI_UNUSED NcBool ret;
   ret = llVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << llVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << llVar->name());
   ret = llVar->put(&ll, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << llVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << llVar->name());
 }
 
-void ParticleMCMCNetCDFBuffer::readLogPrior(const int k, real& lp) {
+void bi::ParticleMCMCNetCDFBuffer::readLogPrior(const int k, real& lp) {
   BI_UNUSED NcBool ret;
   ret = lpVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds reading " << lpVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << lpVar->name());
   ret = lpVar->get(&lp, 1);
-  BI_ASSERT(ret, "Inconvertible type reading " << lpVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << lpVar->name());
 }
 
-void ParticleMCMCNetCDFBuffer::writeLogPrior(const int k, const real& lp) {
+void bi::ParticleMCMCNetCDFBuffer::writeLogPrior(const int k, const real& lp) {
   BI_UNUSED NcBool ret;
   ret = lpVar->set_cur(k);
-  BI_ASSERT(ret, "Indexing out of bounds writing " << lpVar->name());
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << lpVar->name());
   ret = lpVar->put(&lp, 1);
-  BI_ASSERT(ret, "Inconvertible type writing " << lpVar->name());
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << lpVar->name());
 }

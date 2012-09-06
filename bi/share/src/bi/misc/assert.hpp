@@ -11,11 +11,24 @@
 #include "macro.hpp"
 
 #include <cassert>
-#include <cstdlib>
 #include <iostream>
 
 /**
  * @def BI_ASSERT(cond, msg)
+ *
+ * Checks condition, terminating if failed. Works in CUDA device code for
+ * compute capability 2.0 and later, disabled otherwise. Debugging mode only.
+ *
+ * @arg @p cond Condition.
+ */
+#ifndef NDEBUG
+#define BI_ASSERT(cond) assert(cond)
+#else
+#define BI_ASSERT(cond)
+#endif
+
+/**
+ * @def BI_ASSERT_MSG(cond, msg)
  *
  * Checks condition, terminating and printing error if failed. Debugging
  * mode only.
@@ -24,13 +37,13 @@
  * @arg @p msg Message to print if condition failed.
  */
 #ifndef NDEBUG
-#define BI_ASSERT(cond, msg) \
+#define BI_ASSERT_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Error: " << msg << std::endl; \
   } \
-  assert (cond)
+  assert(cond)
 #else
-#define BI_ASSERT(cond, msg)
+#define BI_ASSERT_MSG(cond, msg)
 #endif
 
 /**
@@ -48,7 +61,7 @@
     exit(1); \
   }
 #else
-#define BI_ERROR BI_ASSERT
+#define BI_ERROR(cond, msg) BI_ASSERT_MSG(cond, msg)
 #endif
 
 /**

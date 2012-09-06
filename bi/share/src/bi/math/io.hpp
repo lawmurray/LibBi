@@ -20,12 +20,10 @@
 /**
  * Output host vector.
  *
- * @tparam T1 Scalar type.
- *
  * @param X Host matrix.
  */
-template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1>& x) {
+template<class T1, int size_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1,size_value,inc_value>& x) {
   int i;
   for (i = 0; i < x.size(); ++i) {
     stream << x(i);
@@ -39,12 +37,10 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T
 /**
  * Output host matrix.
  *
- * @tparam T1 Scalar type.
- *
  * @param X Host matrix.
  */
-template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1>& X) {
+template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X) {
   int i, j;
   for (i = 0; i < X.size1(); ++i) {
     for (j = 0; j < X.size2(); ++j) {
@@ -63,16 +59,12 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T
 /**
  * Output device vector.
  *
- * @tparam T1 Scalar type.
- *
  * @param X Device matrix.
  */
-template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1>& x) {
-  using namespace bi;
-
-  typename temp_host_vector<T1>::type z(x);
-  synchronize();
+template<class T1, int size_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1,size_value,inc_value>& x) {
+  typename bi::temp_host_vector<T1>::type z(x);
+  bi::synchronize();
 
   int i;
   for (i = 0; i < z.size(); ++i) {
@@ -87,16 +79,12 @@ std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1
 /**
  * Output device matrix.
  *
- * @tparam T1 Scalar type.
- *
  * @param X Device matrix.
  */
-template<class T1>
-std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1>& X) {
-  using namespace bi;
-
-  typename temp_host_matrix<T1>::type Z(X);
-  synchronize();
+template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X) {
+  typename bi::temp_host_matrix<T1>::type Z(X);
+  bi::synchronize();
 
   int i, j;
   for (i = 0; i < Z.size1(); ++i) {

@@ -8,18 +8,14 @@
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-[% create_eval_var_target(action) %]
-
 /**
  * Action: [% action.get_name %].
  */
 class [% class_name %] {
 public:
-  /**
-   * Target type.
-   */
-  typedef Target[% action.get_id %] target_type;
+  [% std_action %]
 
+  [% declare_action_dynamic_function('simulate') %]
   [% declare_action_dynamic_function('sample') %]
   [% declare_action_dynamic_function('logdensity') %]
   [% declare_action_dynamic_function('maxlogdensity') %]
@@ -27,34 +23,36 @@ public:
 
 #include "bi/math/pi.hpp"
 
+[% std_action_static_function('simulate') %]
+
 [% sig_action_dynamic_function('sample') %] {
   real mu, sigma, u;
 
   mu = 0.0;
-  sigma = BI_MATH_SQRT(BI_MATH_ABS(t2 - t1));
+  sigma = bi::sqrt(bi::abs(t2 - t1));
   u = rng.gaussian(mu, sigma);
     
-  x.template put<target_type>(p, ix, u);
+  x.template fetch<target_type>(s, p, ix) = u;
 }
 
 [% sig_action_dynamic_function('logdensity') %] {
-  real sigma, xy;
+  T1 sigma;
 
-  sigma = BI_MATH_SQRT(BI_MATH_ABS(t2 - t1));  
-  xy = pax.template fetch_alt<target_type>(p, ix);
+  sigma = bi::sqrt(bi::abs(t2 - t1));  
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
-  lp += BI_REAL(-0.5)*BI_MATH_POW(xy/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
+  lp += BI_REAL(-0.5)*bi::pow(xy/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
 
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [% sig_action_dynamic_function('maxlogdensity') %] {
-  real sigma, xy;
+  T1 sigma = bi::sqrt(bi::abs(t2 - t1));
+      
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
 
-  sigma = BI_MATH_SQRT(BI_MATH_ABS(t2 - t1));    
-  xy = pax.template fetch_alt<target_type>(p, ix);
-  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - BI_MATH_LOG(sigma);
-  x.template put<target_type>(p, ix, xy);
+  x.template fetch<target_type>(s, p, ix) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

@@ -49,7 +49,7 @@ template<class T1>
 void bi::RK43Integrator<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   /* pre-conditions */
-  assert (t1 <= t2);
+  BI_ASSERT(t1 <= t2);
 
   if (fabs(t2 - t1) > 0.0) {
     #ifdef ENABLE_SSE
@@ -66,7 +66,7 @@ template<class T1>
 void bi::RK43Integrator<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_DEVICE>& s) {
   /* pre-conditions */
-  assert (t1 <= t2);
+  BI_ASSERT(t1 <= t2);
 
   if (fabs(t2 - t1) > 0.0) {
     RK43IntegratorGPU<B,S,T1>::update(t1, t2, s);

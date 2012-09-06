@@ -100,20 +100,20 @@ public:
       throw (CholeskyException);
 
   /**
-   * Filter forward, with fixed starting state.
+   * Filter forward, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
    * @param T Time to which to filter.
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param[out] s State.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class V1>
-  real filter(Random& rng, const real T, const V1 theta0, State<B,L>& s)
+  real filter(Random& rng, const real T, const V1 theta, State<B,L>& s)
       throw (CholeskyException);
 
   /**
@@ -179,19 +179,19 @@ public:
   void init(Random& rng, State<B,L>& s, M1 U, M1 S, IO4* inInit);
 
   /**
-   * Initialise, with fixed starting state.
+   * Initialise, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    * @tparam M1 Matrix type.
    *
    * @param rng Random number generator.
-   * @param theta0 Parameters.
+   * @param theta Parameters.
    * @param s State.
    * @param[out] S Square-root covariance matrix.
    */
   template<Location L, class V1, class M1>
-  void init(Random& rng, const V1 theta0, State<B,L>& s, M1 U, M1 S);
+  void init(Random& rng, const V1 theta, State<B,L>& s, M1 U, M1 S);
 
   /**
    * Predict.
@@ -391,7 +391,7 @@ template<bi::Location L, class IO4>
 real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
     const real T, State<B,L>& s, IO4* inInit) throw (CholeskyException) {
   /* pre-conditions */
-  assert (T >= state.t);
+  BI_ASSERT(T >= state.t);
 
   typedef typename loc_matrix<L,real>::type matrix_type;
 
@@ -417,10 +417,10 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1>
 real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
-    const real T, const V1 theta0, State<B,L>& s)
+    const real T, const V1 theta, State<B,L>& s)
     throw (CholeskyException) {
   /* pre-conditions */
-  assert (T >= state.t);
+  BI_ASSERT(T >= state.t);
 
   typedef typename loc_matrix<L,real>::type matrix_type;
 
@@ -428,7 +428,7 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
   int n = 0;
   state.ll = 0.0;
 
-  init(rng, theta0, s, U, S);
+  init(rng, theta, s, U, S);
   while (state.t < T) {
     predict(T, s, U, S);
     output(n, s, U, S);
@@ -471,25 +471,25 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
   const int P = s.size();
   multi_gemm(P, 1.0, s.getQ(), s.getF(), 0.0, columns(S, NR, ND));
   multi_syrk(P, 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-  multi_potrf(P, subrange(U, P*NR, P*ND, NR, ND), 'U');
+  multi_chol(P, subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
   s.getQ() = U;
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class V1, class M1>
 void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
-    const V1 theta0, State<B,L>& s, M1 U, M1 S) {
+    const V1 theta, State<B,L>& s, M1 U, M1 S) {
   rows(s.getF(), 0, NR).clear();
   ident(rows(s.getF(), NR, ND));
   U.clear();
   S.clear();
 
-  sim.init(rng, theta0, s);
+  sim.init(rng, theta, s);
 
   const int P = s.size();
   multi_gemm(P, 1.0, s.getQ(), s.getF(), 0.0, columns(S, NR, ND));
   multi_syrk(P, 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-  multi_potrf(P, subrange(U, P*NR, P*ND, NR, ND), 'U');
+  multi_chol(P, subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
   s.getQ() = U;
 }
 
@@ -509,7 +509,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
     /* drop noise terms from state square-root covariance */
     columns(S, NR, ND) = columns(U, NR, ND);
     multi_syrk(s.size(), 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-    multi_potrf(s.size(), subrange(U, P*NR, P*ND, NR, ND), 'U');
+    multi_chol(s.size(), subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
     rows(U, 0, P*NR).clear();
     s.getQ() = U;
 
@@ -520,7 +520,11 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
     columns(S, NR, ND) = s.getF();
     multi_trmm(s.size(), 1.0, s.getQ(), columns(S, NR, ND));
     multi_syrk(s.size(), 1.0, S, 0.0, U, 'U', 'T');
-    multi_potrf(s.size(), U, 'U');
+    if (state.t > 0) {
+      multi_chol(s.size(), U, U, 'U');
+    } else {
+      multi_chol(s.size(), subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
+    }
   }
 
   /* update observations */
@@ -529,7 +533,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
   }
 
   /* post-condition */
-  assert (sim.getTime() == state.t);
+  BI_ASSERT(sim.getTime() == state.t);
 }
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
@@ -548,10 +552,8 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predictFixed(const real tnxt,
   }
 
   /* post-condition */
-  assert (sim.getTime() == state.t);
+  BI_ASSERT(sim.getTime() == state.t);
 }
-
-#include "../math/io.hpp"
 
 template<class B, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L, class M1>
@@ -563,7 +565,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
 
     typename loc_temp_matrix<L,real>::type C(s.getG().size1(), s.getG().size2());
     typename loc_temp_matrix<L,real>::type U2(s.getR().size1(), s.getR().size2());
-    typename loc_temp_vector<L,real>::type z(state.W);
+    typename loc_temp_vector<L,real>::type z(NO);
 
     const int P = s.size();
     const int W = state.W;
@@ -577,7 +579,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
     U2.clear();
     multi_syrk(P, 1.0, C, 0.0, U2, 'U', 'T');
     multi_syrk(P, 1.0, s.getR(), 1.0, U2, 'U', 'T');
-    multi_potrf(P, U2, 'U');
+    multi_chol(P, U2, U2, 'U');
     multi_trmm(P, 1.0, U1, C, 'L', 'U', 'T'); // C now cross-covariance
 
     BOOST_AUTO(mu1, vec(s.getDyn()));
@@ -588,9 +590,13 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
     z = y;
     axpy(-1.0, mu2, z);
     trsv(U2, z);
-    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - BI_MATH_LOG(prod_reduce(diagonal(U2)));
+    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - bi::log(prod_reduce(diagonal(U2)));
 
-    multi_condition(P, mu1, U1, mu2, U2, C, y);
+    if (state.t > 0) {
+      multi_condition(P, mu1, U1, mu2, U2, C, y);
+    } else {
+      multi_condition(P, subrange(mu1, P*NR, P*ND), subrange(U1, P*NR, P*ND, NR, ND), mu2, U2, rows(C, P*NR, P*ND), y);
+    }
   }
 }
 
@@ -619,12 +625,12 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correctFixed(State<B,L>& s,
     BOOST_AUTO(y, vec(s.get(OY_VAR)));
 
     multi_syrk(P, 1.0, s.getG(), 0.0, U2, 'U', 'T');
-    multi_potrf(P, U2, 'U');
+    multi_chol(P, U2, U2, 'U');
 
     z = y;
     axpy(-1.0, mu2, z);
     trsv(U2, z);
-    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - BI_MATH_LOG(prod_reduce(diagonal(U2)));
+    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - bi::log(prod_reduce(diagonal(U2)));
   }
 }
 

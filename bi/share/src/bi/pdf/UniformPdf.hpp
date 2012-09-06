@@ -15,9 +15,7 @@
 #include "../math/temp_matrix.hpp"
 #include "../random/Random.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -202,7 +200,6 @@ private:
    */
   V1 length;
 
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -220,7 +217,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 }
 
@@ -254,7 +250,7 @@ template<class V2>
 bi::UniformPdf<V1>::UniformPdf(const V2 lower, const V2 upper) :
     N(lower.size()), low(N), high(N), length(N) {
   /* pre-condition */
-  assert(lower.size() == upper.size());
+  BI_ASSERT(lower.size() == upper.size());
 
   /* note cannot simply use copy constructors, as this will be shallow if
    * V1 == V2 */
@@ -278,7 +274,7 @@ template<class V1>
 template<class V2>
 bi::UniformPdf<V1>& bi::UniformPdf<V1>::operator=(const UniformPdf<V2>& o) {
   /* pre-condition */
-  assert (o.N == N);
+  BI_ASSERT(o.N == N);
 
   p = o.p;
   low = o.lower;
@@ -328,7 +324,7 @@ template<class V1>
 template<class V2>
 void bi::UniformPdf<V1>::sample(Random& rng, V2 x) {
   /* pre-condition */
-  assert (x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   typename sim_temp_vector<V2>::type z(N);
   rng.uniforms(z);
@@ -340,7 +336,7 @@ template<class V1>
 template<class M2>
 void bi::UniformPdf<V1>::samples(Random& rng, M2 X) {
   /* pre-condition */
-  assert (X.size2() == N);
+  BI_ASSERT(X.size2() == N);
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   rng.uniforms(vec(Z));
@@ -352,7 +348,7 @@ template<class V1>
 template<class V2>
 double bi::UniformPdf<V1>::density(const V2 x) {
   /* pre-condition */
-  assert (x.size() == N);
+  BI_ASSERT(x.size() == N);
 
   typedef typename V2::value_type T2;
 
@@ -370,7 +366,7 @@ template<class V1>
 template<class M3, class V3>
 void bi::UniformPdf<V1>::densities(const M3 X, V3 p, const bool clear) {
   /* pre-condition */
-  assert (X.size1() == p.size() && X.size2() == N);
+  BI_ASSERT(X.size1() == p.size() && X.size2() == N);
 
   typename V3::iterator iter = p.begin();
 
@@ -395,7 +391,7 @@ template<class V1>
 template<class M3, class V3>
 void bi::UniformPdf<V1>::logDensities(const M3 X, V3 p, const bool clear) {
   /* pre-condition */
-  assert (X.size1() == p.size() && X.size2() == N);
+  BI_ASSERT(X.size1() == p.size() && X.size2() == N);
 
   typename V3::iterator iter = p.begin();
 
@@ -423,7 +419,6 @@ void bi::UniformPdf<V1>::init() {
   p = 1.0/prod_reduce(length);
 }
 
-#ifndef __CUDACC__
 template<class V1>
 template<class Archive>
 void bi::UniformPdf<V1>::save(Archive& ar, const unsigned version) const {
@@ -441,7 +436,5 @@ void bi::UniformPdf<V1>::load(Archive& ar, const unsigned version) {
 
   init();
 }
-#endif
 
 #endif
-

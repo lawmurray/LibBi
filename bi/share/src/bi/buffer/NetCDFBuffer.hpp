@@ -193,7 +193,7 @@ protected:
 
 inline bool bi::NetCDFBuffer::hasDim(const char* name) {
   /* pre-condition */
-  assert (name != NULL);
+  BI_ASSERT(name != NULL);
 
   NcDim* dim = ncFile->get_dim(name);
 
@@ -202,7 +202,7 @@ inline bool bi::NetCDFBuffer::hasDim(const char* name) {
 
 inline bool bi::NetCDFBuffer::hasVar(const char* name) {
   /* pre-condition */
-  assert (name != NULL);
+  BI_ASSERT(name != NULL);
 
   NcVar* var = ncFile->get_var(name);
 

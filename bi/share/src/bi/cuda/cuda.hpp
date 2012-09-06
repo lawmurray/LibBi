@@ -16,12 +16,6 @@
 #include "cuda_runtime.h"
 #endif
 
-#ifdef __CUDACC__
-#include "math_functions.h"
-#else
-#include "math.h"
-#endif
-
 /*
  * CUDA keyword aliases.
  */
@@ -98,7 +92,7 @@
     cudaError_t cudaErr; \
     cudaErr = call; \
     cudaThreadSynchronize(); \
-    BI_ASSERT(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
+    BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
 #define CUDA_CHECKED_CALL(call) call
@@ -117,7 +111,7 @@
     cudaError_t cudaErr; \
     cudaThreadSynchronize(); \
     cudaErr = cudaGetLastError(); \
-    BI_ASSERT(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
+    BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
 #define CUDA_CHECK

@@ -529,7 +529,7 @@ struct multi_potrs_impl {
 template<class M1, class M2>
 void bi::multi_get_matrix(const int P, const M1 Xs, const int p, M2 X) {
   /* pre-condition */
-  assert (P*X.size1() == Xs.size1() && X.size2() == Xs.size2());
+  BI_ASSERT(P*X.size1() == Xs.size1() && X.size2() == Xs.size2());
 
   for (int j = 0; j < X.size2(); ++j) {
     column(X, j) = subrange(column(Xs, j), p, X.size1(), P);
@@ -539,7 +539,7 @@ void bi::multi_get_matrix(const int P, const M1 Xs, const int p, M2 X) {
 template<class M1, class M2>
 void bi::multi_set_matrix(const int P, M1 Xs, const int p, const M2 X) {
   /* pre-condition */
-  assert (P*X.size1() == Xs.size1() && X.size2() == Xs.size2());
+  BI_ASSERT(P*X.size1() == Xs.size1() && X.size2() == Xs.size2());
 
   for (int j = 0; j < X.size2(); ++j) {
     subrange(column(Xs, j), p, X.size1(), P) = column(X, j);
@@ -549,7 +549,7 @@ void bi::multi_set_matrix(const int P, M1 Xs, const int p, const M2 X) {
 template<class V1, class V2>
 void bi::multi_get_vector(const int P, const V1 xs, const int p, V2 x) {
   /* pre-condition */
-  assert (P*x.size() == xs.size());
+  BI_ASSERT(P*x.size() == xs.size());
 
   x = subrange(xs, p, x.size(), P);
 }
@@ -557,7 +557,7 @@ void bi::multi_get_vector(const int P, const V1 xs, const int p, V2 x) {
 template<class V1, class V2>
 void bi::multi_set_vector(const int P, V1 xs, const int p, const V2 x) {
   /* pre-condition */
-  assert (P*x.size() == xs.size());
+  BI_ASSERT(P*x.size() == xs.size());
 
   subrange(xs, p, x.size(), P) = x;
 }
@@ -565,7 +565,7 @@ void bi::multi_set_vector(const int P, V1 xs, const int p, const V2 x) {
 template<class M1, class M2>
 void bi::multi_chol(const int P, const M1 A, M2 U, char uplo,
     const CholeskyStrategy strat) throw (CholeskyException) {
-  assert (A.size1() == U.size1() && A.size2() == U.size2());
+  BI_ASSERT(A.size1() == U.size1() && A.size2() == U.size2());
 
   #pragma omp parallel
   {
@@ -589,7 +589,7 @@ template<class M1, class M2>
 void bi::multi_matrix_axpy(const int P, const typename M1::value_type a, const M1 X, M2 Y,
     const bool clear) {
   /* pre-conditions */
-  assert (X.size1() == Y.size1() && P*X.size2() == P*Y.size2());
+  BI_ASSERT(X.size1() == Y.size1() && P*X.size2() == P*Y.size2());
 
   if (X.size1() == X.lead() && Y.size1() == Y.lead()) {
     /* do as one vector axpy */
@@ -621,11 +621,11 @@ template<class V1, class M1, class V2, class M2, class M3, class V3>
 void bi::multi_condition(const int P, V1 mu1, M1 U1, const V2 mu2, const M2 U2,
     const M3 C, const V3 x2) {
   /* pre-condition */
-  assert(U1.size1() == P*U1.size2());
-  assert(U2.size1() == P*U2.size2());
-  assert(mu1.size() == U1.size1());
-  assert(mu2.size() == U2.size1());
-  assert(C.size1() == mu1.size() && P*C.size2() == mu2.size());
+  BI_ASSERT(U1.size1() == P*U1.size2());
+  BI_ASSERT(U2.size1() == P*U2.size2());
+  BI_ASSERT(mu1.size() == U1.size1());
+  BI_ASSERT(mu2.size() == U2.size1());
+  BI_ASSERT(C.size1() == mu1.size() && P*C.size2() == mu2.size());
 
   typename sim_temp_vector<V1>::type z2(mu2.size()), b(mu1.size());
   typename sim_temp_matrix<M1>::type K(C.size1(), P*C.size2());
@@ -673,11 +673,11 @@ void bi::multi_ch1up(const int P, M1 U, V1 a, V2 b) {
   typedef typename V2::value_type T3;
 
   /* pre-condition */
-  assert (U.size1() == P*U.size2());
-  assert (U.size1() == a.size());
-  assert (U.size1() == b.size());
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
+  BI_ASSERT(U.size1() == P*U.size2());
+  BI_ASSERT(U.size1() == a.size());
+  BI_ASSERT(U.size1() == b.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
 
   multi_ch1up_impl<L,T1>::func(P, U, a, b);
 }
@@ -698,11 +698,11 @@ void bi::multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyDowndateExcep
   typedef typename V2::value_type T3;
 
   /* pre-condition */
-  assert (U.size1() == P*U.size2());
-  assert (U.size1() == a.size());
-  assert (U.size1() == b.size());
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
+  BI_ASSERT(U.size1() == P*U.size2());
+  BI_ASSERT(U.size1() == a.size());
+  BI_ASSERT(U.size1() == b.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
 
   multi_ch1dn_impl<L,T1>::func(P, U, a, b);
 }
@@ -720,11 +720,11 @@ inline void bi::multi_axpy(const int P, const typename V1::value_type a, const V
   static const Location L = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
-  assert (V1::on_device == V2::on_device);
+  BI_ASSERT(V1::on_device == V2::on_device);
 
   /* pre-conditions */
-  assert (x.size() == y.size());
-  assert ((equals<T1,T2>::value));
+  BI_ASSERT(x.size() == y.size());
+  BI_ASSERT((equals<T1,T2>::value));
 
   return multi_axpy_impl<L,T2>::func(P, a, x, y, clear);
 }
@@ -735,15 +735,15 @@ void bi::multi_gemv(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
   typedef typename V2::value_type T3;
-  assert (M1::on_device == V1::on_device);
-  assert (V1::on_device == V2::on_device);
+  BI_ASSERT(M1::on_device == V1::on_device);
+  BI_ASSERT(V1::on_device == V2::on_device);
 
   /* pre-conditions */
-  assert (transA == 'N' || transA == 'T');
-  assert (transA != 'N' || (P*A.size2() == x.size() && A.size1() == y.size()));
-  assert (transA != 'T' || (A.size1() == x.size() && P*A.size2() == y.size()));
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
+  BI_ASSERT(transA == 'N' || transA == 'T');
+  BI_ASSERT(transA != 'N' || (P*A.size2() == x.size() && A.size1() == y.size()));
+  BI_ASSERT(transA != 'T' || (A.size1() == x.size() && P*A.size2() == y.size()));
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
 
   multi_gemv_impl<L,T3>::func(P, alpha, A, x, beta, y, transA);
 }
@@ -756,12 +756,12 @@ void bi::multi_symv(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename V2::value_type T3;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (P*A.size2() == x.size() && A.size1() == y.size());
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
-  assert (M1::on_device == V1::on_device);
-  assert (V1::on_device == V2::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(P*A.size2() == x.size() && A.size1() == y.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(M1::on_device == V1::on_device);
+  BI_ASSERT(V1::on_device == V2::on_device);
 
   multi_symv_impl<L,T3>::func(P, alpha, A, x, beta, y, uplo);
 }
@@ -773,12 +773,12 @@ void bi::multi_trmv(const int P, const M1 A, V1 x, const char uplo, const char t
   typedef typename V1::value_type T2;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (transA == 'N' || transA == 'T');
-  assert (transA != 'N' || P*A.size2() == x.size());
-  assert (transA != 'T' || A.size1() == x.size());
-  assert ((equals<T1,T2>::value));
-  assert (M1::on_device == V1::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(transA == 'N' || transA == 'T');
+  BI_ASSERT(transA != 'N' || P*A.size2() == x.size());
+  BI_ASSERT(transA != 'T' || A.size1() == x.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == V1::on_device);
 
   multi_trmv_impl<L,T2>::func(P, A, x, uplo, transA);
 }
@@ -791,12 +791,12 @@ void bi::multi_gdmv(const int P, const typename V1::value_type alpha, const V1 A
   typedef typename V3::value_type T3;
 
   /* pre-conditions */
-  assert (A.size() == x.size());
-  assert (x.size() == y.size());
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
-  assert (V1::on_device == V2::on_device);
-  assert (V2::on_device == V3::on_device);
+  BI_ASSERT(A.size() == x.size());
+  BI_ASSERT(x.size() == y.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(V1::on_device == V2::on_device);
+  BI_ASSERT(V2::on_device == V3::on_device);
 
   multi_gdmv_impl<L,T3>::func(P, alpha, A, x, beta, y);
 }
@@ -809,20 +809,20 @@ void bi::multi_gemm(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename M3::value_type T3;
 
   /* pre-conditions */
-  assert (transA == 'N' || transA == 'T');
-  assert (transX == 'N' || transX == 'T');
-  assert (!(transA == 'N' && transX == 'N') ||
+  BI_ASSERT(transA == 'N' || transA == 'T');
+  BI_ASSERT(transX == 'N' || transX == 'T');
+  BI_ASSERT(!(transA == 'N' && transX == 'N') ||
       (P*A.size2() == X.size1() && A.size1() == Y.size1() && P*X.size2() == P*Y.size2()));
-  assert (!(transA == 'T' && transX == 'T') ||
+  BI_ASSERT(!(transA == 'T' && transX == 'T') ||
       (A.size1() == P*X.size2() && P*A.size2() == Y.size1() && X.size1() == P*Y.size2()));
-  assert (!(transA == 'N' && transX == 'T') ||
+  BI_ASSERT(!(transA == 'N' && transX == 'T') ||
       (P*A.size2() == P*X.size2() && A.size1() == Y.size1() && X.size1() == P*Y.size2()));
-  assert (!(transA == 'T' && transX == 'N') ||
+  BI_ASSERT(!(transA == 'T' && transX == 'N') ||
       (A.size1() == X.size1() && P*A.size2() == Y.size1() && P*X.size2() == P*Y.size2()));
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
-  assert (M1::on_device == M2::on_device);
-  assert (M2::on_device == M3::on_device);
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
+  BI_ASSERT(M2::on_device == M3::on_device);
 
   multi_gemm_impl<L,T3>::func(P, alpha, A, X, beta, Y, transA, transX);
 }
@@ -835,16 +835,16 @@ void bi::multi_symm(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename M3::value_type T3;
 
   /* pre-conditions */
-  assert (side == 'L' || side == 'R');
-  assert (uplo == 'U' || uplo == 'L');
-  assert (!(side == 'L') ||
+  BI_ASSERT(side == 'L' || side == 'R');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(!(side == 'L') ||
       (P*A.size2() == X.size1() && A.size1() == Y.size1() && P*X.size2() == P*Y.size2()));
-  assert (!(side == 'R') ||
+  BI_ASSERT(!(side == 'R') ||
       (P*X.size2() == A.size1() && X.size1() == Y.size1() && P*A.size2() == P*Y.size2()));
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
-  assert (M1::on_device == M2::on_device);
-  assert (M2::on_device == M3::on_device);
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
+  BI_ASSERT(M2::on_device == M3::on_device);
 
   multi_symm_impl<L,T3>::func(P, alpha, A, X, beta, Y, side, uplo);
 }
@@ -856,15 +856,15 @@ void bi::multi_trmm(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename M2::value_type T2;
 
   /* pre-conditions */
-  assert (side == 'L' || side == 'R');
-  assert (uplo == 'U' || uplo == 'L');
-  assert (transA == 'T' || transA == 'N');
-  assert (!(transA == 'N' && side == 'L') || P*A.size2() == B.size1());
-  assert (!(transA == 'T' && side == 'L') || A.size1() == B.size1());
-  assert (!(transA == 'N' && side == 'R') || P*B.size2() == A.size1());
-  assert (!(transA == 'T' && side == 'R') || P*B.size2() == P*A.size2());
-  assert((equals<T1,T2>::value));
-  assert (M1::on_device == M2::on_device);
+  BI_ASSERT(side == 'L' || side == 'R');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(transA == 'T' || transA == 'N');
+  BI_ASSERT(!(transA == 'N' && side == 'L') || P*A.size2() == B.size1());
+  BI_ASSERT(!(transA == 'T' && side == 'L') || A.size1() == B.size1());
+  BI_ASSERT(!(transA == 'N' && side == 'R') || P*B.size2() == A.size1());
+  BI_ASSERT(!(transA == 'T' && side == 'R') || P*B.size2() == P*A.size2());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
 
   multi_trmm_impl<L,T2>::func(P, alpha, A, B, side, uplo, transA);
 }
@@ -883,12 +883,12 @@ void bi::multi_ger(const int P, const typename V1::value_type alpha, const V1 x,
   typedef typename M1::value_type T3;
 
   /* pre-conditions */
-  assert (x.size() == A.size1());
-  assert (y.size() == P*A.size2());
-  assert((equals<T1,T2>::value));
-  assert((equals<T2,T3>::value));
-  assert (V1::on_device == V2::on_device);
-  assert (V2::on_device == M1::on_device);
+  BI_ASSERT(x.size() == A.size1());
+  BI_ASSERT(y.size() == P*A.size2());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(V1::on_device == V2::on_device);
+  BI_ASSERT(V2::on_device == M1::on_device);
 
   multi_ger_impl<L,T3>::func(P, alpha, x, y, A, clear);
 }
@@ -900,11 +900,11 @@ void bi::multi_syr(const int P, const typename V1::value_type alpha, const V1 x,
   typedef typename M1::value_type T2;
 
   /* pre-condition */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (A.size1() == P*A.size2());
-  assert (x.size() == A.size1());
-  assert((equals<T1,T2>::value));
-  assert (V1::on_device == M1::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(A.size1() == P*A.size2());
+  BI_ASSERT(x.size() == A.size1());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(V1::on_device == M1::on_device);
 
   multi_syr_impl<L,T2>::func(P, alpha, x, A, uplo, clear);
 }
@@ -917,11 +917,11 @@ void bi::multi_syr2(const int P, const typename V1::value_type alpha, const V1 x
   typedef typename M1::value_type T3;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert ((equals<T1,T2>::value));
-  assert ((equals<T2,T3>::value));
-  assert (V1::on_device == V2::on_device);
-  assert (V2::on_device == M1::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT((equals<T2,T3>::value));
+  BI_ASSERT(V1::on_device == V2::on_device);
+  BI_ASSERT(V2::on_device == M1::on_device);
 
   multi_syr2_impl<L,T3>::func(P, alpha, x, y, A, uplo, clear);
 }
@@ -931,15 +931,15 @@ void bi::multi_syrk(const int P, const typename M1::value_type alpha, const M1 A
   static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
-  assert (M1::on_device == M2::on_device);
+  BI_ASSERT(M1::on_device == M2::on_device);
 
   /* pre-conditions */
-  assert (trans == 'N' || trans == 'T');
-  assert (uplo == 'U' || uplo == 'L');
-  assert (C.size1() == P*C.size2());
-  assert (trans != 'N' || A.size1() == C.size1());
-  assert (trans != 'T' || P*A.size2() == C.size1());
-  assert((equals<T1,T2>::value));
+  BI_ASSERT(trans == 'N' || trans == 'T');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(C.size1() == P*C.size2());
+  BI_ASSERT(trans != 'N' || A.size1() == C.size1());
+  BI_ASSERT(trans != 'T' || P*A.size2() == C.size1());
+  BI_ASSERT((equals<T1,T2>::value));
 
   multi_syrk_impl<L,T2>::func(P, alpha, A, beta, C, uplo, trans);
 }
@@ -950,8 +950,8 @@ void bi::multi_potrf(const int P, const M1 U, char uplo) throw (CholeskyExceptio
   typedef typename M1::value_type T1;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (U.size1() == P*U.size2());
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(U.size1() == P*U.size2());
 
   multi_potrf_impl<L,T1>::func(P, U, uplo);
 }
@@ -963,10 +963,10 @@ void bi::multi_potrs(const int P, const M1 U, M2 X, char uplo) throw (CholeskyEx
   typedef typename M2::value_type T2;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (P*U.size2() == X.size1());
-  assert ((equals<T1,T2>::value));
-  assert (M1::on_device == M2::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(P*U.size2() == X.size1());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
 
   multi_potrs_impl<L,T2>::func(P, U, X, uplo);
 }
@@ -978,13 +978,13 @@ void bi::multi_trsv(const int P, const M1 A, V1 x, const char uplo, const char t
   typedef typename V1::value_type T2;
 
   /* pre-conditions */
-  assert (uplo == 'U' || uplo == 'L');
-  assert (trans == 'N' || trans == 'T');
-  assert (diag == 'U' || diag == 'N');
-  assert (!(trans == 'T') || A.size1() == x.size());
-  assert (!(trans == 'N') || P*A.size2() == x.size());
-  assert ((equals<T1,T2>::value));
-  assert (M1::on_device == V1::on_device);
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(trans == 'N' || trans == 'T');
+  BI_ASSERT(diag == 'U' || diag == 'N');
+  BI_ASSERT(!(trans == 'T') || A.size1() == x.size());
+  BI_ASSERT(!(trans == 'N') || P*A.size2() == x.size());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == V1::on_device);
 
   multi_trsv_impl<L,T2>::func(P, A, x, uplo, trans, diag);
 }
@@ -996,16 +996,16 @@ void bi::multi_trsm(const int P, const typename M1::value_type alpha, const M1 A
   typedef typename M2::value_type T2;
 
   /* pre-conditions */
-  assert (side == 'L' || side == 'R');
-  assert (uplo == 'U' || uplo == 'L');
-  assert (trans == 'N' || trans == 'T');
-  assert (diag == 'U' || diag == 'N');
-  assert (!(trans == 'T' && side == 'L')  || A.size1() == B.size1());
-  assert (!(trans == 'N' && side == 'L')  || P*A.size2() == B.size1());
-  assert (!(trans == 'T' && side == 'R')  || P*B.size2() == P*A.size2());
-  assert (!(trans == 'N' && side == 'R')  || P*B.size2() == A.size1());
-  assert ((equals<T1,T2>::value));
-  assert (M1::on_device == M2::on_device);
+  BI_ASSERT(side == 'L' || side == 'R');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(trans == 'N' || trans == 'T');
+  BI_ASSERT(diag == 'U' || diag == 'N');
+  BI_ASSERT(!(trans == 'T' && side == 'L')  || A.size1() == B.size1());
+  BI_ASSERT(!(trans == 'N' && side == 'L')  || P*A.size2() == B.size1());
+  BI_ASSERT(!(trans == 'T' && side == 'R')  || P*B.size2() == P*A.size2());
+  BI_ASSERT(!(trans == 'N' && side == 'R')  || P*B.size2() == A.size1());
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
 
   multi_trsm_impl<L,T2>::func(P, alpha, A, B, side, uplo, trans, diag);
 }

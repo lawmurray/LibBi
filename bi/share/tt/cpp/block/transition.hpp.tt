@@ -17,10 +17,10 @@ class [% class_name %] {
 public:
   [%-create_block_typedef(block)-%]
 
-  [% IF block.can_simulate %][% declare_dynamic_function('simulate') %][% END %]
-  [% declare_dynamic_function('sample') %]
-  [% declare_dynamic_function('logdensity') %]
-  [% declare_dynamic_function('maxlogdensity') %]
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
   
   /**
    * Time step.
@@ -33,27 +33,25 @@ inline real [% class_name %]::getDelta() {
   return [% block.get_named_arg('delta').eval_const %];
 }
 
-[%-IF block.can_simulate %]
-[% sig_dynamic_function('simulate') %] {
+[% sig_block_dynamic_function('simulate') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
   [%-END %]
 }
-[% END-%]
 
-[% sig_dynamic_function('sample') %] {
+[% sig_block_dynamic_function('sample') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::samples(rng, t1, t2, onDelta, s);
   [%-END %]
 }
 
-[% sig_dynamic_function('logdensity') %] {
+[% sig_block_dynamic_function('logdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::logDensities(t1, t2, onDelta, s);
   [%-END %]
 }
 
-[% sig_dynamic_function('maxlogdensity') %] {
+[% sig_block_dynamic_function('maxlogdensity') %] {
   [%-FOREACH subblock IN block.get_blocks %]
   Block[% subblock.get_id %]::maxLogDensities(t1, t2, onDelta, s);
   [%-END %]

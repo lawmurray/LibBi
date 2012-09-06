@@ -8,8 +8,8 @@
  * Implementation based on discussion at
  * http://groups.google.com/group/thrust-users/browse_thread/thread/a506470f5c634813
  */
-#ifndef BI_MISC_STRIDED_RANGE_HPP
-#define BI_MISC_STRIDED_RANGE_HPP
+#ifndef BI_MISC_STRIDEDRANGE_HPP
+#define BI_MISC_STRIDEDRANGE_HPP
 
 #include "strided_sequence.hpp"
 
@@ -29,25 +29,24 @@ struct strided_range {
   typedef thrust::permutation_iterator<Iterator,StridedIterator> PermutationIterator;
   typedef PermutationIterator iterator;
 
-
-  strided_range(Iterator first, Iterator last, const difference_type stride) :
-      first(first), last(last), stride(stride) {
+  strided_range(Iterator first, Iterator last, const difference_type inc) :
+      first(first), last(last), inc(inc) {
     //
   }
 
   iterator begin() const {
-    return iterator(first, strided_sequence<difference_type>(0, stride).begin());
+    return iterator(first, strided_sequence<difference_type>(0, inc).begin());
   }
 
   iterator end() const {
-    difference_type len = (thrust::distance(first, last) + stride - 1)/stride;
+    difference_type len = (thrust::distance(first, last) + inc - 1)/inc;
 
-    return iterator(first, strided_sequence<difference_type>(len, stride).begin());
+    return iterator(first, strided_sequence<difference_type>(len, inc).begin());
   }
 
 private:
   Iterator first, last;
-  difference_type stride;
+  difference_type inc;
 };
 
 }

@@ -166,69 +166,69 @@ void ode_set_facr(real facrin);
  *
  * @ingroup method_updater
  */
-void ode_set_nsteps(int nsteps);
+void ode_set_nsteps(int nstepsin);
 
 inline void ode_set_h0(real h0in) {
-  CUDA_SET_CONSTANT(real, "h0", h0in);
+  CUDA_SET_CONSTANT(real, h0, h0in);
 }
 
 inline void ode_set_rtoler(real rtolerin) {
-  CUDA_SET_CONSTANT(real, "rtoler", rtolerin);
+  CUDA_SET_CONSTANT(real, rtoler, rtolerin);
 }
 
 inline void ode_set_atoler(real atolerin) {
-  CUDA_SET_CONSTANT(real, "atoler", atolerin);
+  CUDA_SET_CONSTANT(real, atoler, atolerin);
 }
 
 inline void ode_set_uround(real uroundin) {
   /* pre-condition */
-  assert (uroundin > 1.0e-19 && uroundin < 1.0);
+  BI_ASSERT(uroundin > 1.0e-19 && uroundin < 1.0);
 
-  CUDA_SET_CONSTANT(real, "uround", uroundin);
+  CUDA_SET_CONSTANT(real, uround, uroundin);
 }
 
 inline void ode_set_safe(real safein) {
   /* pre-condition */
-  assert (safein > 0.001 && safein < 1.0);
+  BI_ASSERT(safein > 0.001 && safein < 1.0);
   real val;
 
-  CUDA_SET_CONSTANT(real, "safe", safein);
+  CUDA_SET_CONSTANT(real, safe, safein);
   val = BI_REAL(1.0 / safein);
-  CUDA_SET_CONSTANT(real, "safe1", val);
+  CUDA_SET_CONSTANT(real, safe1, val);
   val = BI_REAL(log(safein));
-  CUDA_SET_CONSTANT(real, "logsafe", val);
+  CUDA_SET_CONSTANT(real, logsafe, val);
 }
 
 inline void ode_set_beta(real betain) {
   /* pre-condition */
-  assert (betain >= 0.0 && betain <= 0.2);
+  BI_ASSERT(betain >= 0.0 && betain <= 0.2);
   real val;
 
-  CUDA_SET_CONSTANT(real, "beta", betain);
+  CUDA_SET_CONSTANT(real, beta, betain);
   val = BI_REAL(0.2 - betain*0.75);
-  CUDA_SET_CONSTANT(real, "expo1", val);
+  CUDA_SET_CONSTANT(real, expo1, val);
   val = BI_REAL(0.5*(0.2 - betain*0.75));
-  CUDA_SET_CONSTANT(real, "expo", val);
+  CUDA_SET_CONSTANT(real, expo, val);
 }
 
 inline void ode_set_facl(real faclin) {
   real val;
 
-  CUDA_SET_CONSTANT(real, "facl", faclin);
+  CUDA_SET_CONSTANT(real, facl, faclin);
   val = BI_REAL(1.0 / faclin);
-  CUDA_SET_CONSTANT(real, "facc1", val);
+  CUDA_SET_CONSTANT(real, facc1, val);
 }
 
 inline void ode_set_facr(real facrin) {
   real val;
 
-  CUDA_SET_CONSTANT(real, "facr", facrin);
+  CUDA_SET_CONSTANT(real, facr, facrin);
   val = BI_REAL(1.0 / facrin);
-  CUDA_SET_CONSTANT(real, "facc2", val);
+  CUDA_SET_CONSTANT(real, facc2, val);
 }
 
-inline void ode_set_nsteps(int nsteps) {
-  CUDA_SET_CONSTANT(int, "nsteps", nsteps);
+inline void ode_set_nsteps(int nstepsin) {
+  CUDA_SET_CONSTANT(int, nsteps, nstepsin);
 }
 
 inline void ode_init() {
@@ -240,7 +240,7 @@ inline void ode_init() {
   ode_set_facl(BI_REAL(0.2));
   ode_set_facr(BI_REAL(10.0));
   ode_set_beta(BI_REAL(0.04));
-  ode_set_nsteps(1000u);
+  ode_set_nsteps(1000);
 }
 
 #endif

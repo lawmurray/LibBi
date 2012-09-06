@@ -19,12 +19,16 @@ namespace bi {
  *
  * @ingroup math_matvec
  *
+ * @tparam VM1 Vector or matrix type.
+ * @tparam size_value Static size, -1 for dynamic.
+ * @tparam inc_value Static increment, -1 for dynamic.
+ *
  * temp_host_vector is a convenience class for producing vectors in main
  * memory that are suitable for short-term use before destruction. It uses
  * pooled_allocator to reuse allocated buffers, and when GPU devices
  * are enabled, pinned_allocator for faster copying between host and device.
  */
-template<class T>
+template<class T, int size_value = -1, int inc_value = -1>
 struct temp_host_vector {
   /**
    * @internal
@@ -36,7 +40,7 @@ struct temp_host_vector {
   /**
    * Vector type.
    */
-  typedef host_vector<T,allocator_type> type;
+  typedef host_vector<T,size_value,inc_value,allocator_type> type;
 };
 }
 

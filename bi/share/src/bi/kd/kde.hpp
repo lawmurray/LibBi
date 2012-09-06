@@ -257,7 +257,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
             i = queryNode->getIndex();
             x = queryNode->getValue();
             axpy(-1.0, targetVar->getValue(), x);
-            q = BI_MATH_EXP(targetVar->getLogWeight() + K.logDensity(x));
+            q = bi::exp(targetVar->getLogWeight() + K.logDensity(x));
             P(i,tid) += q;
           } else if (queryNode->isLeaf() && targetVar->isPrune()) {
             i = queryNode->getIndex();
@@ -265,7 +265,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
             for (j = 0; j < targetVar->getCount(); ++j) {
               x = queryNode->getValue();
               axpy(-1.0, column(targetVar->getValues(), j), x);
-              q += BI_MATH_EXP(targetVar->getLogWeights()(j) + K.logDensity(x));
+              q += bi::exp(targetVar->getLogWeights()(j) + K.logDensity(x));
             }
             P(i,tid) += q;
           } else if (queryNode->isPrune() && targetVar->isLeaf()) {
@@ -273,7 +273,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
             for (i = 0; i < (int)is.size(); ++i) {
               x = column(queryNode->getValues(), i);
               axpy(-1.0, targetVar->getValue(), x);
-              q = BI_MATH_EXP(targetVar->getLogWeight() + K.logDensity(x));
+              q = bi::exp(targetVar->getLogWeight() + K.logDensity(x));
               P(is[i],tid) += q;
             }
           } else if (queryNode->isPrune() && targetVar->isPrune()) {
@@ -283,7 +283,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
               for (j = 0; j < targetVar->getCount(); ++j) {
                 x = column(queryNode->getValues(), i);
                 axpy(-1.0, column(targetVar->getValues(), j), x);
-                q += BI_MATH_EXP(targetVar->getLogWeights()(j) + K.logDensity(x));
+                q += bi::exp(targetVar->getLogWeights()(j) + K.logDensity(x));
               }
               P(is[i],tid) += q;
             }
@@ -303,7 +303,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //void bi::selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
 //    const K1& K, V2 p) {
 //  /* pre-condition */
-//  assert (lw.size() == X.size1());
+//  BI_ASSERT(lw.size() == X.size1());
 //
 //  typedef typename KDTree<V1>::var_type var_type;
 //
@@ -337,9 +337,9 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //        x = row(X, i);
 //        axpy(-1.0, row(X, j), x);
 //        d = K.logDensity(x);
-//        p(i) += BI_MATH_EXP(lw(j) + d);
+//        p(i) += bi::exp(lw(j) + d);
 //        if (doCross) {
-//          p(j) += BI_MATH_EXP(lw(i) + d);
+//          p(j) += bi::exp(lw(i) + d);
 //        }
 //      } else if (queryNode->isLeaf() && targetVar->isPrune()) {
 //        i = queryNode->getIndex();
@@ -348,9 +348,9 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //          x = row(X, i);
 //          axpy(-1.0, row(X, js[j]), x);
 //          d = K.logDensity(x);
-//          p(i) += BI_MATH_EXP(lw(js[j]) + d);
+//          p(i) += bi::exp(lw(js[j]) + d);
 //          if (doCross) {
-//            p(js[j]) += BI_MATH_EXP(lw(i) + d);
+//            p(js[j]) += bi::exp(lw(i) + d);
 //          }
 //        }
 //      } else if (queryNode->isPrune() && targetVar->isLeaf()) {
@@ -360,9 +360,9 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //          x = row(X, is[i]);
 //          axpy(-1.0, row(X, j), x);
 //          d = K.logDensity(x);
-//          p(is[i]) += BI_MATH_EXP(lw(j) + d);
+//          p(is[i]) += bi::exp(lw(j) + d);
 //          if (doCross) {
-//            p(j) += BI_MATH_EXP(lw(is[i]) + d);
+//            p(j) += bi::exp(lw(is[i]) + d);
 //          }
 //        }
 //      } else if (queryNode->isPrune() && targetVar->isPrune()) {
@@ -373,9 +373,9 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //            x = row(X, is[i]);
 //            axpy(-1.0, row(X, js[j]), x);
 //            d = K.logDensity(x);
-//            p(is[i]) += BI_MATH_EXP(lw(js[j]) + d);
+//            p(is[i]) += bi::exp(lw(js[j]) + d);
 //            if (doCross) {
-//              p(js[j]) += BI_MATH_EXP(lw(is[i]) + d);
+//              p(js[j]) += bi::exp(lw(is[i]) + d);
 //            }
 //          }
 //        }
@@ -438,11 +438,11 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //    const M1 X1, const M1 X2, const V1 lw1, const V1 lw2, const K1& K, V2 p1,
 //    V2 p2,  const bool clear) {
 //  /* pre-condition */
-//  assert (lw1.size() == X1.size1());
-//  assert (lw2.size() == X2.size1());
-//  assert (p1.size() == X1.size1());
-//  assert (p2.size() == X2.size1());
-//  assert (X1.size2() == X2.size2());
+//  BI_ASSERT(lw1.size() == X1.size1());
+//  BI_ASSERT(lw2.size() == X2.size1());
+//  BI_ASSERT(p1.size() == X1.size1());
+//  BI_ASSERT(p2.size() == X2.size1());
+//  BI_ASSERT(X1.size2() == X2.size2());
 //
 //  typedef typename KDTree<V1>::var_type var_type;
 //
@@ -475,8 +475,8 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //        x = row(X1, i);
 //        axpy(-1.0, row(X2,j), x);
 //        d = K.logDensity(x);
-//        p1(i) += BI_MATH_EXP(lw2(j) + d);
-//        p2(j) += BI_MATH_EXP(lw1(i) + d);
+//        p1(i) += bi::exp(lw2(j) + d);
+//        p2(j) += bi::exp(lw1(i) + d);
 //      } else if (node1->isLeaf() && node2->isPrune()) {
 //        i = node1->getIndex();
 //        const std::vector<int>& js = node2->getIndices();
@@ -484,8 +484,8 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //          x = row(X1, i);
 //          axpy(-1.0, row(X2, js[j]), x);
 //          d = K.logDensity(x);
-//          p1(i) += BI_MATH_EXP(lw2(js[j]) + d);
-//          p2(js[j]) += BI_MATH_EXP(lw1(i) + d);
+//          p1(i) += bi::exp(lw2(js[j]) + d);
+//          p2(js[j]) += bi::exp(lw1(i) + d);
 //        }
 //      } else if (node1->isPrune() && node2->isLeaf()) {
 //        const std::vector<int>& is = node1->getIndices();
@@ -494,8 +494,8 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //          x = row(X1, is[i]);
 //          axpy(-1.0, row(X2, j), x);
 //          d = K.logDensity(x);
-//          p1(is[i]) += BI_MATH_EXP(lw2(j) + d);
-//          p2(j) += BI_MATH_EXP(lw1(is[i]) + d);
+//          p1(is[i]) += bi::exp(lw2(j) + d);
+//          p2(j) += bi::exp(lw1(is[i]) + d);
 //        }
 //      } else if (node1->isPrune() && node2->isPrune()) {
 //        const std::vector<int>& is = node1->getIndices();
@@ -505,8 +505,8 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //            x = row(X1, is[i]);
 //            axpy(-1.0, row(X2, js[j]), x);
 //            d = K(x);
-//            p1(is[i]) += BI_MATH_EXP(lw2(js[j]) + d);
-//            p2(js[j]) += BI_MATH_EXP(lw1(is[i]) + d);
+//            p1(is[i]) += bi::exp(lw2(js[j]) + d);
+//            p2(js[j]) += bi::exp(lw1(is[i]) + d);
 //          }
 //        }
 //      } else {

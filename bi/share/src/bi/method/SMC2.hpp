@@ -15,7 +15,6 @@
 #include "../state/State.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
-#include "../math/io.hpp"
 #include "../math/view.hpp"
 #include "../math/operation.hpp"
 #include "../misc/location.hpp"
@@ -260,7 +259,6 @@ struct SMC2Factory {
 }
 
 #include "../math/misc.hpp"
-#include "../math/io.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
@@ -345,14 +343,14 @@ void bi::SMC2<B,R,IO1,CL>::init(Random& rng,
 
   /* initialise theta-particles */
   for (i = 0; i < Ntheta; ++i) {
-    thetas[i] = new ThetaParticle<B,L>(m, Nx);
+    thetas[i] = new ThetaParticle<B,L>(Nx);
     ThetaParticle<B,L>& theta = *thetas[i];
     State<B,L>& s = theta.getState();
 
     logPrior.clear();
     s.setRange(0, 1);
     m.parameterSamples(rng, s);
-    s.getAlt(P_VAR) = s.get(P_VAR);
+    s.get(PY_VAR) = s.get(P_VAR);
     m.parameterLogDensities(s, logPrior);
     theta.getLogPrior() = *logPrior.begin();
     s.setRange(0, Nx);
@@ -399,12 +397,12 @@ real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
     r = filter->step(rng, tnxt, thetaS, thetaLws, thetaAs, n);
     filter->output(n, thetaS, r, thetaLws, thetaAs);
 
-    thetaIncLl = logsumexp_reduce(thetaLws) - std::log(thetaLws.size());
+    thetaIncLl = logsumexp_reduce(thetaLws) - bi::log(static_cast<real>(thetaLws.size()));
     thetaLl += thetaIncLl;
     lws(i) += thetaIncLl;
 
     /* compute evidence along the way */
-    evidence += std::exp(lws(i) + thetaIncLl);
+    evidence += bi::exp(lws(i) + thetaIncLl);
     ///@todo Is this correct given thetaIncLl already added to lws(i) above?
   }
   filter->pop();

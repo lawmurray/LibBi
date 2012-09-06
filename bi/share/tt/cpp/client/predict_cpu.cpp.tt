@@ -28,9 +28,9 @@
 #define LOCATION ON_DEVICE
 #endif
 
-using namespace bi;
-
 int main(int argc, char* argv[]) {
+  using namespace bi;
+
   /* model type */
   typedef [% class_name %] model_type;
   
@@ -59,8 +59,8 @@ int main(int argc, char* argv[]) {
   P = inSimulate.size1();
   
   /* state */
-  State<LOCATION> s(m, P);
-  assert (P == s.size());
+  State<LOCATION> s(P);
+  BI_ASSERT(P == s.size());
 
   /* inputs */
   SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
@@ -78,16 +78,6 @@ int main(int argc, char* argv[]) {
         NetCDFBuffer::REPLACE,
         INCLUDE_PARAMETERS ? STATIC_OWN : STATIC_SHARED);
   }
-
-  /* initialise parameters */
-  if (inInput != NULL) {
-    inInput->read0(F_VAR, s.get(F_VAR));
-  }
-  m.parameterSamples(rng, s);
-  if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(P_VAR));
-  }
-  m.parameterPostSamples(rng, s);
 
   /* initialise initial conditions (from last state of simulate file) */
   real t;

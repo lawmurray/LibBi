@@ -18,9 +18,11 @@ namespace bi {
  *
  * @param t1 Current time.
  * @param t2 Time to which to integrate.
+ * @param[in,out] s State.
  */
 template<class B, class S, class T1>
-CUDA_FUNC_GLOBAL void kernelRK4(const T1 t1, const T1 t2);
+CUDA_FUNC_GLOBAL void kernelRK4(const T1 t1, const T1 t2,
+    State<B,ON_DEVICE> s);
 
 }
 
@@ -31,14 +33,15 @@ CUDA_FUNC_GLOBAL void kernelRK4(const T1 t1, const T1 t2);
 #include "../global.cuh"
 
 template<class B, class S, class T1>
-void bi::kernelRK4(const T1 t1, const T1 t2) {
-  typedef Pa<ON_DEVICE,B,real,constant,global,global,shared<S> > PX;
+CUDA_FUNC_GLOBAL void bi::kernelRK4(const T1 t1, const T1 t2,
+    State<B,ON_DEVICE> s) {
+  typedef Pa<ON_DEVICE,B,constant,constant,global,shared<S> > PX;
   typedef RK4VisitorGPU<B,S,S,real,PX,real> Visitor;
 
   /* indices */
-  const int i = threadIdx.y; // variable index
-  const int p = blockIdx.x*blockDim.x + threadIdx.x; // trajectory index
-  const int q = i*blockDim.x + threadIdx.x; // shared memory index
+  const int i = threadIdx.y;  // variable index
+  const int p = blockIdx.x * blockDim.x + threadIdx.x;  // trajectory index
+  const int q = i * blockDim.x + threadIdx.x;  // shared memory index
 
   /* shared memory */
   real* __restrict__ xs = shared_mem;
@@ -46,7 +49,7 @@ void bi::kernelRK4(const T1 t1, const T1 t2) {
   PX pax;
 
   /* initialise */
-  shared_init<B,S>(p, i);
+  shared_init<B,S>(s, p, i);
   real t = t1, h = h0, x0 = x, x1, x2, x3, x4;
   __syncthreads();
 
@@ -60,22 +63,22 @@ void bi::kernelRK4(const T1 t1, const T1 t2) {
     }
 
     /* stages */
-    Visitor::stage1(t, h, p, i, pax, x0, x1, x2, x3, x4);
+    Visitor::stage1(t, h, s, p, i, pax, x0, x1, x2, x3, x4);
     __syncthreads();
     x = x1;
     __syncthreads();
 
-    Visitor::stage2(t, h, p, i, pax, x0, x2, x3, x4);
+    Visitor::stage2(t, h, s, p, i, pax, x0, x2, x3, x4);
     __syncthreads();
     x = x2;
     __syncthreads();
 
-    Visitor::stage3(t, h, p, i, pax, x0, x3, x4);
+    Visitor::stage3(t, h, s, p, i, pax, x0, x3, x4);
     __syncthreads();
     x = x3;
     __syncthreads();
 
-    Visitor::stage4(t, h, p, i, pax, x0, x4);
+    Visitor::stage4(t, h, s, p, i, pax, x0, x4);
     __syncthreads();
     x = x4;
     __syncthreads();
@@ -85,7 +88,7 @@ void bi::kernelRK4(const T1 t1, const T1 t2) {
   }
 
   /* commit back to global memory */
-  shared_commit<B,S>(p, i);
+  shared_commit<B,S>(s, p, i);
 }
 
 #endif

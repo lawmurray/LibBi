@@ -10,9 +10,7 @@
 #ifndef BI_PDF_LOGTRANSFORMPDF_HPP
 #define BI_PDF_LOGTRANSFORMPDF_HPP
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 #include <set>
 
@@ -174,7 +172,6 @@ protected:
   std::set<int> logs;
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -192,7 +189,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -202,13 +198,10 @@ private:
 #include "../math/view.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
-
-
-#ifndef __CUDACC__
-#include "boost/serialization/set.hpp"
-#endif
-
+#include "../primitive/vector_primitive.hpp"
 #include "../misc/assert.hpp"
+
+#include "boost/serialization/set.hpp"
 
 #include <algorithm>
 
@@ -226,9 +219,9 @@ template<class Q1>
 bi::LogTransformPdf<Q1>::LogTransformPdf(const int N,
     const std::set<int>& ids) : Q1(N), logs(ids) {
   /* pre-condition */
-  assert((int)logs.size() <= this->size());
-  assert(*std::max_element(logs.begin(), logs.end()) < this->size());
-  assert(*std::min_element(logs.begin(), logs.end()) >= 0);
+  BI_ASSERT((int)logs.size() <= this->size());
+  BI_ASSERT(max_reduce(logs) < this->size());
+  BI_ASSERT(min_reduce(logs) >= 0);
 }
 
 template<class Q1>
@@ -262,7 +255,7 @@ void bi::LogTransformPdf<Q1>::setLogs(const std::set<int>& ids) {
   BOOST_AUTO(iter, ids.begin());
   BOOST_AUTO(end, ids.end());
   for (; iter != end; ++iter) {
-    assert (*iter >= 0 && *iter < this->size());
+    BI_ASSERT(*iter >= 0 && *iter < this->size());
   }
   #endif
 
@@ -272,7 +265,7 @@ void bi::LogTransformPdf<Q1>::setLogs(const std::set<int>& ids) {
 template<class Q1>
 void bi::LogTransformPdf<Q1>::addLog(const int id) {
   /* pre-condition */
-  assert (id >= 0 && id < this->size());
+  BI_ASSERT(id >= 0 && id < this->size());
 
   this->logs.insert(this->logs.end(), id);
 }
@@ -283,7 +276,7 @@ void bi::LogTransformPdf<Q1>::addLogs(const std::set<int>& ids,
   BOOST_AUTO(iter, ids.begin());
   BOOST_AUTO(end, ids.end());
   for (; iter != end; ++iter) {
-    assert (*iter >= 0 && *iter < this->size());
+    BI_ASSERT(*iter >= 0 && *iter < this->size());
     this->logs.insert(this->logs.end(), offset + *iter);
     // ^ hints to add at end, most likely usage pattern
   }
@@ -316,7 +309,7 @@ template<class Q1>
 template<class V2>
 real bi::LogTransformPdf<Q1>::density(const V2 x) {
   /* pre-condition */
-  assert(x.size() == this->size());
+  BI_ASSERT(x.size() == this->size());
 
   real detJ = det_vector(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
   typename sim_temp_vector<V2>::type z(x.size());
@@ -328,7 +321,7 @@ real bi::LogTransformPdf<Q1>::density(const V2 x) {
   if (!BI_IS_FINITE(p)) {
     p = 0.0;
   }
-  assert(p >= 0.0);
+  BI_ASSERT(p >= 0.0);
 
   return p;
 }
@@ -338,8 +331,8 @@ template<class M2, class V2>
 void bi::LogTransformPdf<Q1>::densities(const M2 X, V2 p,
     const bool clear) {
   /* pre-condition */
-  assert (X.size2() == this->size());
-  assert (X.size1() == p.size());
+  BI_ASSERT(X.size2() == this->size());
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   typename sim_temp_vector<V2>::type detJ(p.size());
@@ -355,7 +348,7 @@ template<class Q1>
 template<class V2>
 real bi::LogTransformPdf<Q1>::logDensity(const V2 x) {
   /* pre-condition */
-  assert(x.size() == this->size());
+  BI_ASSERT(x.size() == this->size());
 
   real detJ = det_vector(x, logs); // determinant of Jacobian for change of variable, x = exp(z)
   typename sim_temp_vector<V2>::type z(x.size());
@@ -370,8 +363,8 @@ template<class Q1>
 template<class M2, class V2>
 void bi::LogTransformPdf<Q1>::logDensities(const M2 X, V2 p, const bool clear) {
   /* pre-condition */
-  assert (X.size2() == this->size());
-  assert (X.size1() == p.size());
+  BI_ASSERT(X.size2() == this->size());
+  BI_ASSERT(X.size1() == p.size());
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   typename sim_temp_vector<V2>::type logdetJ(p.size());
@@ -390,7 +383,6 @@ real bi::LogTransformPdf<Q1>::operator()(const V2 x) {
   return density(x);
 }
 
-#ifndef __CUDACC__
 template<class Q1>
 template<class Archive>
 void bi::LogTransformPdf<Q1>::save(Archive& ar, const unsigned version) const {
@@ -404,6 +396,5 @@ void bi::LogTransformPdf<Q1>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<Q1>(*this);
   ar & logs;
 }
-#endif
 
 #endif

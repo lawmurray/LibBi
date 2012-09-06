@@ -9,12 +9,13 @@
 #define BI_RANDOM_RANDOM_HPP
 
 #include "../host/random/RngHost.hpp"
-#ifdef ENABLE_CUDA
-#include "../cuda/random/RngGPU.hpp"
-#endif
 #include "../misc/assert.hpp"
 #include "../misc/location.hpp"
 #include "../cuda/cuda.hpp"
+
+#ifdef ENABLE_CUDA
+#include "curand_kernel.h"
+#endif
 
 namespace bi {
 /**
@@ -262,21 +263,15 @@ public:
 
   #ifdef ENABLE_CUDA
   /**
-   * Get the current device thread's random number generator.
+   * Get a thread's random number generator.
+   *
+   * @param p Thread number.
    */
-  CUDA_FUNC_DEVICE RngGPU& getDevRng();
-
-  /**
-   * Set the current device thread's random number generator. This is
-   * typically used when the state of the random number generator is read
-   * into local memory and modified, and so must be copied back to global
-   * memory.
-   */
-  CUDA_FUNC_DEVICE void setDevRng(const RngGPU& rng);
+  CUDA_FUNC_DEVICE curandState& getDevRng(const int p);
   #endif
   //@}
 
-private:
+public:
   /**
    * Random number generators on host.
    */
@@ -286,7 +281,7 @@ private:
   /**
    * Random number generators on device.
    */
-  RngGPU* devRngs;
+  curandState* devRngs;
   #endif
 
   /**
@@ -395,8 +390,10 @@ inline bi::RngHost& bi::Random::getHostRng() {
   return hostRngs[bi_omp_tid];
 }
 
-#ifdef __CUDACC__
-#include "../cuda/random/Random.cuh"
+#ifdef ENABLE_CUDA
+inline curandState& bi::Random::getDevRng(const int p) {
+  return devRngs[p];
+}
 #endif
 
 #endif

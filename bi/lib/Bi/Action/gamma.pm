@@ -56,7 +56,7 @@ sub validate {
     $self->ensure_op('~');
     $self->ensure_scalar('shape');
     $self->ensure_scalar('scale');
-    $self->set_parent('gamma_');
+    $self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);
 }

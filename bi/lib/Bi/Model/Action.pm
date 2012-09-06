@@ -94,7 +94,8 @@ sub new {
     $self->{_dims} = (defined $target) ? $target->get_dims : undef;
     $self->{_op} = $op;
     $self->{_name} = lc($name);
-    $self->{_parent} = undef,
+    $self->{_parent} = undef;
+    $self->{_is_matrix} = 0;
     $self->{_can_combine} = 0;
     $self->{_is_inplace} = 0;
     $self->{_can_nest} = 0;
@@ -168,7 +169,8 @@ sub clone {
     $clone->{_dims} = [ @{$self->get_dims} ];
     $clone->{_op} = $self->get_op;
     $clone->{_name} = $self->get_name;
-    $clone->{_parent} = $self->get_parent,
+    $clone->{_parent} = $self->get_parent;
+    $clone->{_is_matrix} = 0;
     $clone->{_can_combine} = $self->can_combine;
     $clone->{_is_inplace} = $self->is_inplace;
     $clone->{_can_nest} = $self->can_nest;
@@ -299,6 +301,27 @@ sub set_can_combine {
     my $self = shift;
     my $on = shift;
     $self->{_can_combine} = $on;
+}
+
+=item B<is_matrix>
+
+Is the action a matrix operation?
+
+=cut
+sub is_matrix {
+    my $self = shift;
+    return $self->{_is_matrix};
+}
+
+=item B<set_is_matrix>(I<on>)
+
+Is the action a matrix operation?
+
+=cut
+sub set_is_matrix {
+    my $self = shift;
+    my $on = shift;
+    $self->{_is_matrix} = $on;
 }
 
 =item B<unroll_args>

@@ -224,7 +224,7 @@ inline void bi::matrix_set_elements(M1 X, const typename M1::value_type value) {
 template<class M1, class V1>
 inline void bi::set_columns(M1 A, const V1 x) {
   /* pre-condition */
-  assert (A.size1() == x.size());
+  BI_ASSERT(A.size1() == x.size());
 
   if (x.inc() == 1) {
     BOOST_AUTO(repeated, make_repeated_range(x.fast_begin(), x.fast_end(), A.size2()));
@@ -238,7 +238,7 @@ inline void bi::set_columns(M1 A, const V1 x) {
 template<class M1, class V1>
 inline void bi::set_rows(M1 A, const V1 x) {
   /* pre-condition */
-  assert (A.size2() == x.size());
+  BI_ASSERT(A.size2() == x.size());
 
   if (M1::on_device) {
     BOOST_AUTO(stuttered, make_stuttered_range(x.begin(), x.end(), A.size1()));
@@ -253,7 +253,7 @@ inline void bi::set_rows(M1 A, const V1 x) {
 template<class M1, class V1, class BinaryFunctor>
 inline void bi::op_columns(M1 A, const V1 x, BinaryFunctor op) {
   /* pre-condition */
-  assert (A.size1() == x.size());
+  BI_ASSERT(A.size1() == x.size());
 
   if (x.inc() == 1) {
     BOOST_AUTO(repeated, make_repeated_range(x.fast_begin(), x.fast_end(), A.size2()));
@@ -268,7 +268,7 @@ inline void bi::op_columns(M1 A, const V1 x, BinaryFunctor op) {
 template<class M1, class V1, class BinaryFunctor>
 inline void bi::op_rows(M1 A, const V1 x, BinaryFunctor op) {
   /* pre-condition */
-  assert (A.size2() == x.size());
+  BI_ASSERT(A.size2() == x.size());
 
   if (x.inc() == 1) {
     BOOST_AUTO(stuttered, make_stuttered_range(x.fast_begin(), x.fast_end(), A.size1()));
@@ -322,7 +322,7 @@ inline void bi::div_rows(M1 A, const V1 x) {
 template<class M1, class V1>
 void bi::dot_columns(const M1 X, V1 y) {
   /* pre-condition */
-  assert (X.size2() == y.size());
+  BI_ASSERT(X.size2() == y.size());
 
   using namespace thrust;
 
@@ -339,7 +339,7 @@ void bi::dot_columns(const M1 X, V1 y) {
 template<class M1, class V1>
 void bi::dot_rows(const M1 X, V1 y) {
   /* pre-condition */
-  assert (X.size1() == y.size());
+  BI_ASSERT(X.size1() == y.size());
 
   using namespace thrust;
 
@@ -360,7 +360,7 @@ void bi::dot_rows(const M1 X, V1 y) {
 template<class M1, class V1>
 void bi::sum_columns(const M1 X, V1 y) {
   /* pre-condition */
-  assert (X.size1() == y.size());
+  BI_ASSERT(X.size1() == y.size());
 
   using namespace thrust;
 
@@ -376,7 +376,7 @@ void bi::sum_columns(const M1 X, V1 y) {
 template<class M1, class V1>
 void bi::sum_rows(const M1 X, V1 y) {
   /* pre-condition */
-  assert (X.size2() == y.size());
+  BI_ASSERT(X.size2() == y.size());
 
   using namespace thrust;
 

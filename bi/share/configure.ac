@@ -11,6 +11,14 @@ USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
 # Conditionals used by make
+AC_ARG_ENABLE([assert],
+     [  --enable-assert         enable assertion checking],
+     [case "${enableval}" in
+       yes) assert=true ;;
+       no)  assert=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-assert]) ;;
+     esac],[assert=true])
+
 AC_ARG_ENABLE([single],
      [  --enable-single         use single-precision floating point],
      [case "${enableval}" in
@@ -239,6 +247,7 @@ CXXFLAGS=$USER_CXXFLAGS
 LDFLAGS=$USER_LDFLAGS
 
 # Defines
+AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])

@@ -38,46 +38,54 @@ public:
 }
 
 #include "SparseStaticSamplerVisitorHost.hpp"
+#include "SparseStaticSamplerMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
-#include "../../state/Ox.hpp"
+#include "../../state/Ou.hpp"
+#include "../../traits/block_traits.hpp"
 #include "../bind.hpp"
 
 template<class B, class S>
-void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
-    const Mask<ON_HOST>& mask) {
+void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
+    State<B,ON_HOST>& s, const Mask<ON_HOST>& mask) {
   typedef RngHost R1;
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> Visitor;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticSamplerMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   bind(s);
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     PX pax;
     OX x;
     R1& rng1 = rng.getHostRng();
     int p;
 
-    #pragma omp for
+#pragma omp for
     for (p = 0; p < s.size(); ++p) {
-      Visitor::accept(rng, mask, p, pax, x);
+      Visitor::accept(rng, s, mask, p, pax, x);
     }
   }
   unbind(s);
 }
 
 template<class B, class S>
-void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
-    const int p, const Mask<ON_HOST>& mask) {
-  typedef Pa<ON_HOST,B,real,const_host,host,host,host> PX;
-  typedef Ox<ON_HOST,B,real,host> OX;
-  typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> Visitor;
+void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
+    State<B,ON_HOST>& s, const int p, const Mask<ON_HOST>& mask) {
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
+  typedef Ou<ON_HOST,B,host> OX;
+  typedef SparseStaticSamplerMatrixVisitorHost<B,S,PX,OX> MatrixVisitor;
+  typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   PX pax;
   OX x;
   bind(s);
-  Visitor::accept(rng.getHostRng(), mask, p, pax, x);
+  Visitor::accept(rng.getHostRng(), s, mask, p, pax, x);
   unbind(s);
 }
 

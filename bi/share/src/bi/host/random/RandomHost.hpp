@@ -69,7 +69,7 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
     const typename V1::value_type lower,
     const typename V1::value_type upper) {
   /* pre-condition */
-  assert(upper >= lower);
+  BI_ASSERT(upper >= lower);
 
   typedef typename V1::value_type T1;
 
@@ -89,7 +89,7 @@ template<class V1>
 void bi::RandomHost::gaussians(Random& rng, V1 x,
     const typename V1::value_type mu, const typename V1::value_type sigma) {
   /* pre-condition */
-  assert(sigma >= 0.0);
+  BI_ASSERT(sigma >= 0.0);
 
   typedef typename V1::value_type T1;
 
@@ -109,7 +109,7 @@ template<class V1>
 void bi::RandomHost::gammas(Random& rng, V1 x,
     const typename V1::value_type alpha, const typename V1::value_type beta) {
   /* pre-condition */
-  assert(alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
 
@@ -129,7 +129,7 @@ template<class V1>
 void bi::RandomHost::betas(Random& rng, V1 x,
     const typename V1::value_type alpha, const typename V1::value_type beta) {
   /* pre-condition */
-  assert(alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
 
@@ -148,7 +148,7 @@ void bi::RandomHost::betas(Random& rng, V1 x,
 template<class V1, class V2>
 void bi::RandomHost::multinomials(Random& rng, const V1 ps, V2 xs) {
   /* pre-condition */
-  assert(ps.size() > 0);
+  BI_ASSERT(ps.size() > 0);
 
   typedef typename V1::value_type T1;
 

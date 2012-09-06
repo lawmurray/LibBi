@@ -13,9 +13,7 @@
 #include "GaussianPdf.hpp"
 #include "LogTransformPdf.hpp"
 
-#ifndef __CUDACC__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 #include <set>
 
@@ -151,7 +149,6 @@ public:
   ExpGaussianPdf<V1,M1>& operator=(const ExpGaussianPdf<V2,M2>& o);
 
 private:
-  #ifndef __CUDACC__
   /**
    * Serialize.
    */
@@ -169,7 +166,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -239,7 +235,6 @@ bi::ExpGaussianPdf<V1,M1>::ExpGaussianPdf(const M2 U) :
   this->setStd(U);
 }
 
-#ifndef __CUDACC__
 template<class V1, class M1>
 template<class Archive>
 void bi::ExpGaussianPdf<V1,M1>::save(Archive& ar, const unsigned version) const {
@@ -251,6 +246,5 @@ template<class Archive>
 void bi::ExpGaussianPdf<V1,M1>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<LogTransformPdf<GaussianPdf<V1,M1> > >(*this);
 }
-#endif
 
 #endif

@@ -330,7 +330,7 @@ bi::KDTreeNode<V1,M1>::KDTreeNode(const M2 X, const V2 lw, const std::vector<int
     const int depth) : X(X.size2(), (int)is.size() + 2), lw((int)is.size()), is(is),
     left(NULL), right(NULL), depth(depth), count(is.size()), type(PRUNE) {
   /* pre-condition */
-  assert (is.size() > 0);
+  BI_ASSERT(is.size() > 0);
 
   int i, j;
   BOOST_AUTO(lower, column(this->X, this->X.size2() - 2));
@@ -369,8 +369,8 @@ bi::KDTreeNode<V1,M1>::KDTreeNode(KDTreeNode<V1,M1>* left, KDTreeNode<V1,M1>* ri
   BOOST_AUTO(rightUpper, right->getUpper());
 
   for (i = 0; i < getSize(); ++i) {
-    lower(i) = std::min(leftLower(i), rightLower(i));
-    upper(i) = std::max(leftUpper(i), rightUpper(i));
+    lower(i) = bi::min(leftLower(i), rightLower(i));
+    upper(i) = bi::max(leftUpper(i), rightUpper(i));
   }
 }
 
@@ -477,7 +477,7 @@ inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNod
 template<class V1, class M1>
 inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getValue() const {
   /* pre-condition */
-  assert (type == LEAF);
+  BI_ASSERT(type == LEAF);
 
   return column(X, 0);
 }
@@ -485,7 +485,7 @@ inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNod
 template<class V1, class M1>
 inline const typename bi::KDTreeNode<V1,M1>::matrix_reference_type bi::KDTreeNode<V1,M1>::getValues() const {
   /* pre-condition */
-  assert (type == PRUNE);
+  BI_ASSERT(type == PRUNE);
 
   return columns(X, 0, X.size2() - 2);
 }
@@ -493,7 +493,7 @@ inline const typename bi::KDTreeNode<V1,M1>::matrix_reference_type bi::KDTreeNod
 template<class V1, class M1>
 inline typename bi::KDTreeNode<V1,M1>::vector_reference_type::value_type bi::KDTreeNode<V1,M1>::getLogWeight() const {
   /* pre-condition */
-  assert (type == LEAF);
+  BI_ASSERT(type == LEAF);
 
   return lw(0);
 }
@@ -501,7 +501,7 @@ inline typename bi::KDTreeNode<V1,M1>::vector_reference_type::value_type bi::KDT
 template<class V1, class M1>
 inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNode<V1,M1>::getLogWeights() const {
   /* pre-condition */
-  assert (type == PRUNE);
+  BI_ASSERT(type == PRUNE);
 
   return lw;
 }
@@ -509,7 +509,7 @@ inline const typename bi::KDTreeNode<V1,M1>::vector_reference_type bi::KDTreeNod
 template<class V1, class M1>
 inline int bi::KDTreeNode<V1,M1>::getIndex() const {
   /* pre-condition */
-  assert (type == LEAF);
+  BI_ASSERT(type == LEAF);
 
   return is[0];
 }
@@ -517,7 +517,7 @@ inline int bi::KDTreeNode<V1,M1>::getIndex() const {
 template<class V1, class M1>
 inline const std::vector<int>& bi::KDTreeNode<V1,M1>::getIndices() const {
   /* pre-condition */
-  assert (type == PRUNE);
+  BI_ASSERT(type == PRUNE);
 
   return is;
 }
@@ -526,8 +526,8 @@ template<class V1, class M1>
 template<class V2, class V3>
 inline void bi::KDTreeNode<V1,M1>::difference(const V2 x, V3& result) const {
   /* pre-condition */
-  assert (x.size() == X.size2());
-  assert (x.inc() == 1);
+  BI_ASSERT(x.size() == X.size2());
+  BI_ASSERT(x.inc() == 1);
 
   if (isLeaf()) {
     result = x;
@@ -560,8 +560,8 @@ template<class V2, class M2, class V3>
 inline void bi::KDTreeNode<V1,M1>::difference(const KDTreeNode<V2,M2>& node,
     V3& result) const {
   /* pre-conditions */
-  assert (node.getSize() == getSize());
-  assert (result.inc() == 1);
+  BI_ASSERT(node.getSize() == getSize());
+  BI_ASSERT(result.inc() == 1);
 
   if (isLeaf()) {
     node.difference(getLower(), result);

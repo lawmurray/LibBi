@@ -188,7 +188,7 @@ NcBool bi::NcVarBuffer<T>::set_cur(long* offsets) {
     }
 
     /* post-condition */
-    assert (k <= K);
+    BI_ASSERT(k <= K);
   } else {
     flush();
     ret = var->set_cur(offsets);
@@ -200,7 +200,7 @@ NcBool bi::NcVarBuffer<T>::set_cur(long* offsets) {
 template<class T>
 NcBool bi::NcVarBuffer<T>::put(const T* buf, const long* counts) {
   /* pre-condition */
-  assert (k <= K);
+  BI_ASSERT(k <= K);
 
   NcBool ret = true;
 
@@ -252,7 +252,7 @@ NcBool bi::NcVarBuffer<T>::get(T* buf, const long* counts) {
       x = rows(this->buf, k, counts[dim]);
     } else {
       /* don't have what we need in buffer, defer to underlying file */
-      assert (k == K);
+      BI_ASSERT(k == K);
       temp_host_vector<long>::type offsets(var->num_dims());
       offsets.clear();
       offsets(offsets.size() - 1) = offset;
@@ -284,14 +284,14 @@ void bi::NcVarBuffer<T>::flush() {
 
     int j = 0;
     write(offsets.buf(), counts.buf(), 0, j);
-    assert (j == this->buf.size2());
+    BI_ASSERT(j == this->buf.size2());
 
     k = 0;
     K = 0;
   }
 
   /* post-condition */
-  assert (k == 0 && K == 0);
+  BI_ASSERT(k == 0 && K == 0);
 }
 
 template<class T>
