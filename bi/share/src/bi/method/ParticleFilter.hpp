@@ -681,11 +681,8 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::sampleTrajectory(Random& rng,
   int a = rng.multinomial(ws);
   int n = sim.getCache(D_VAR).size() - 1;
   while (n >= 0) {
-    BOOST_AUTO(cold, column(xd, n));
-    BOOST_AUTO(colr, column(xr, n));
-
-    cold = row(sim.getCache(D_VAR).getState(n), a);
-    colr = row(sim.getCache(R_VAR).getState(n), a);
+    column(xd, n) = row(sim.getCache(D_VAR).getState(n), a);
+    column(xr, n) = row(sim.getCache(R_VAR).getState(n), a);
 
     a = *(ancestorsCache.get(n).begin() + a);
     --n;

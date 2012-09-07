@@ -242,7 +242,7 @@ inline typename M1::vector_reference_type bi::column(M1 A,
   /* pre-condition */
   BI_ASSERT(col >= 0 && col < A.size2());
 
-  return typename M1::vector_reference_type(A.buf() + col * A.lead(),
+  return typename M1::vector_reference_type(A.buf() + col*A.lead(),
       A.size1(), A.inc());
 }
 
@@ -256,8 +256,8 @@ inline typename M1::matrix_reference_type bi::columns(M1 A,
   BI_ASSERT(stride >= 1);
   BI_ASSERT(start + stride*(len - 1) < A.size2());
 
-  return typename M1::matrix_reference_type(A.buf() + start * A.lead(),
-      A.size1(), len, stride * A.lead(), A.inc());
+  return typename M1::matrix_reference_type(A.buf() + start*A.lead(),
+      A.size1(), len, stride*A.lead(), A.inc());
 }
 
 template<class M1>
@@ -345,11 +345,8 @@ typename M1::vector_reference_type bi::vec(M1 A) {
 template<class V1>
 typename bi::vector_as_matrix_type<V1>::type bi::vector_as_column_matrix(
     V1 x) {
-  const int inc = x.size() > 0 ? x.inc() : 1;
-  const int lead = x.size() * (inc - 1) + 1;
-
   return typename bi::vector_as_matrix_type<V1>::type(x.buf(), x.size(), 1,
-      lead, inc);
+      x.size()*x.inc(), x.inc());
 }
 
 template<class V1>
@@ -365,11 +362,7 @@ typename M1::matrix_reference_type bi::reshape(M1 X, const int rows,
   BI_ASSERT(X.can_vec());
   BI_ASSERT(rows*cols == X.size1()*X.size2());
 
-  int inc1 = (X.size1() == 1) ? X.lead() : X.inc();
-  int inc2 = (rows == 1) ? 1 : X.inc();
-  int lead2 = inc1 * rows;
-
-  return typename M1::matrix_reference_type(X.buf(), rows, cols, lead2, inc2);
+  return typename M1::matrix_reference_type(X.buf(), rows, cols, rows*X.inc(), X.inc());
 }
 
 #endif

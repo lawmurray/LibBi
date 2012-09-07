@@ -322,7 +322,7 @@ void bi::gpu_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>::swap
 
   int rows = o.size1();
   o.setSize1(this->size1());
-  this->setInc(rows);
+  this->setSize1(rows);
 
   int cols = o.size2();
   o.setSize2(this->size2());
@@ -341,8 +341,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 inline bool bi::gpu_matrix_handle<T,size1_value,size2_value,lead_value,
     inc_value>::can_vec() const {
-  return (this->size1() == 1
-      || this->size2() == 1 && this->lead() == this->size1() * this->inc());
+  return this->lead() == this->size1()*this->inc();
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -529,11 +528,12 @@ inline bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>:
   //BI_ASSERT(rows >= 0);
   //BI_ASSERT(cols >= 0);
   //BI_ASSERT(inc >= 1);
-  //BI_ASSERT(lead < 0 || lead >= (rows - 1)*inc + 1);
+  //BI_ASSERT(lead < 0 || lead >= rows*inc);
+
   this->setBuf(data);
   this->setSize1(rows);
   this->setSize2(cols);
-  this->setLead(bi::max(1, (lead < 0) ? (rows - 1) * inc + 1 : lead));
+  this->setLead((lead < 0) ? rows*inc : lead);
   this->setInc(inc);
 }
 
@@ -912,7 +912,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::gpu_matrix(
     const size_type rows, const size_type cols) :
     gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(NULL,
-    rows, cols), own(true) {
+    rows, cols, rows, 1), own(true) {
   /* pre-condition */
   BI_ASSERT(rows >= 0 && cols >= 0);
 

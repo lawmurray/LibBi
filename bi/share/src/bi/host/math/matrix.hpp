@@ -333,7 +333,7 @@ void bi::host_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>::swa
 
   int rows = o.size1();
   o.setSize1(this->size1());
-  this->setInc(rows);
+  this->setSize1(rows);
 
   int cols = o.size2();
   o.setSize2(this->size2());
@@ -352,8 +352,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 inline bool bi::host_matrix_handle<T,size1_value,size2_value,lead_value,
     inc_value>::can_vec() const {
-  return (this->size1() == 1 || this->size2() == 1
-      || this->lead() == this->size1() * this->inc());
+  return this->lead() == this->size1()*this->inc();
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -550,11 +549,12 @@ inline bi::host_matrix_reference<T,size1_value,size2_value,lead_value,
   BI_ASSERT(rows >= 0);
   BI_ASSERT(cols >= 0);
   BI_ASSERT(inc >= 1);
+  BI_ASSERT(lead < 0 || lead >= rows*inc);
 
   this->setBuf(data);
   this->setSize1(rows);
   this->setSize2(cols);
-  this->setLead(bi::max(1, (lead < 0) ? (rows - 1)*inc + 1 : lead));
+  this->setLead((lead < 0) ? rows*inc : lead);
   this->setInc(inc);
 }
 
@@ -909,7 +909,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::host_matrix(
     const size_type rows, const size_type cols) :
     host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-    NULL, rows, cols), own(true) {
+    NULL, rows, cols, rows, 1), own(true) {
   /* pre-condition */
   BI_ASSERT(rows >= 0 && cols >= 0);
 
@@ -989,19 +989,14 @@ void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
         "Cannot resize host_matrix constructed as view of other matrix");
 
     /* allocate new buffer */
-    T* ptr;
-    if (rows * cols > 0) {
-      ptr = alloc.allocate(rows * cols);
-    } else {
-      ptr = NULL;
-    }
+    T* ptr = (rows*cols > 0) ? alloc.allocate(rows*cols) : NULL;
 
     /* copy across contents */
     if (preserve) {
       size_type i, j;
       for (j = 0; j < bi::min(this->size2(), cols); ++j) {
         for (i = 0; i < bi::min(this->size1(), rows); ++i) {
-          ptr[j * rows + i] = (*this)(i, j);
+          ptr[j*rows + i] = (*this)(i, j);
         }
       }
     }
@@ -1024,8 +1019,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::swap(
     host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) {
-  host_matrix_reference < T, size1_value, size2_value, lead_value, inc_value
-      > ::swap(o);
+  host_matrix_reference<T,size1_value,size2_value,lead_value,
+      inc_value>::swap(o);
   std::swap(this->own, o.own);
 }
 

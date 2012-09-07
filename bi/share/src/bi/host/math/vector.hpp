@@ -501,6 +501,10 @@ private:
 template<class T, int size_value, int inc_value>
 inline bi::host_vector_reference<T,size_value,inc_value>::host_vector_reference(
     T* data, const size_type size, const size_type inc) {
+  /* pre-condition */
+  BI_ASSERT(size >= 0);
+  BI_ASSERT(inc >= 1);
+
   this->setBuf(data);
   this->setSize(size);
   this->setInc(inc);
@@ -824,7 +828,7 @@ bi::host_vector<T,size_value,inc_value,A>::host_vector(
 template<class T, int size_value, int inc_value, class A>
 template<class V1>
 bi::host_vector<T,size_value,inc_value,A>::host_vector(const V1 o) :
-    host_vector_reference<T,size_value,inc_value>(const_cast<V1*>(&o)->buf(),
+    host_vector_reference<T,size_value,inc_value>(const_cast<T*>(o.buf()),
         o.size(), o.inc()), own(false) {
   /* shallow copy is now done, do deep copy if necessary */
   if (V1::on_device) {
