@@ -236,7 +236,7 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      if (ncVar->get_dim(j) == nrDim) {
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
         offsets[j] = t;
         counts[j] = 1;
         ++j;
@@ -245,8 +245,10 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = 0;
-      counts[j] = X.size1();
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
+        offsets[j] = 0;
+        counts[j] = X.size1();
+      }
 
       ret = ncVar->get_var()->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
@@ -293,7 +295,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      if (ncVar->get_dim(j) == nrDim) {
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
         offsets[j] = t;
         counts[j] = 1;
         ++j;
@@ -302,14 +304,12 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-
-      if (ncVar->num_dims() > 0) {
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
         offsets[j] = p;
         counts[j] = X.size1();
-        
-        ret = ncVar->get_var()->set_cur(offsets.buf());
-        BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
       }
+      ret = ncVar->get_var()->set_cur(offsets.buf());
+      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
       if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);

@@ -1,0 +1,40 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO declare_action_static_matrix_function(function) BLOCK %]
+  [% IF function == 'simulate' %]
+  template <bi::Location L, class PX, class OX>
+  static CUDA_FUNC_BOTH void simulate(bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  [% ELSIF function == 'sample' %]
+  template <class R1, bi::Location L, class PX, class OX>
+  static CUDA_FUNC_BOTH void samples(R1& rng, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  [% ELSIF function == 'logdensity' %]
+  template <bi::Location L, class PX, class OX, class T1>
+  static CUDA_FUNC_BOTH void logDensities(bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x, T1& lp);
+  [% ELSIF function == 'maxlogdensity' %]
+  template <bi::Location L, class PX, class OX, class T1>
+  static CUDA_FUNC_BOTH void maxLogDensities(bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x, T1& lp);
+  [% ELSE %]
+  template <bi::Location L, class PX, class T1>
+  static CUDA_FUNC_BOTH void [% function %](bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, T1& x);
+  [% END %]
+[% END-%]
+[%-MACRO declare_action_dynamic_matrix_function(function) BLOCK %]
+  [% IF function == 'simulate' %]
+  template <class T1, bi::Location L, class PX, class OX>
+  static CUDA_FUNC_BOTH void simulate(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  [% ELSIF function == 'sample' %]
+  template <class R1, class T1, bi::Location L, class PX, class OX>
+  static CUDA_FUNC_BOTH void samples(R1& rng, const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  [% ELSIF function == 'logdensity' %]
+  template <class T1, bi::Location L, class PX, class OX, class T1>
+  static CUDA_FUNC_BOTH void logDensities(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x, T1& lp);
+  [% ELSE %]
+  template <class T1, bi::Location L, class PX, class T2>
+  static CUDA_FUNC_BOTH void [% function %](const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, T2& x);
+  [% END %]
+[% END-%]

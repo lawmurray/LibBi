@@ -588,7 +588,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
     T,size_value,inc_value>::begin() {
   strided_range<pointer> range(pointer(this->buf()),
-      pointer(this->buf() + this->inc() * this->size()), this->inc());
+      pointer(this->buf() + this->inc()*this->size()), this->inc());
 
   return range.begin();
 }
@@ -597,7 +597,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
     T,size_value,inc_value>::begin() const {
   strided_range<const_pointer> range(const_pointer(this->buf()),
-      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
+      const_pointer(this->buf() + this->inc()*this->size()), this->inc());
 
   return range.begin();
 }
@@ -606,7 +606,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
     T,size_value,inc_value>::end() {
   strided_range<pointer> range(pointer(this->buf()),
-      pointer(this->buf() + this->inc() * this->size()), this->inc());
+      pointer(this->buf() + this->inc()*this->size()), this->inc());
 
   return range.end();
 }
@@ -615,7 +615,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
     T,size_value,inc_value>::end() const {
   strided_range<const_pointer> range(const_pointer(this->buf()),
-      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
+      const_pointer(this->buf() + this->inc()*this->size()), this->inc());
 
   return range.end();
 }
@@ -871,12 +871,7 @@ void bi::host_vector<T,size_value,inc_value,A>::resize(const size_type size,
         "Cannot resize host_vector constructed as view of other vector");
 
     /* allocate new buffer */
-    T* ptr;
-    if (size > 0) {
-      ptr = alloc.allocate(size);
-    } else {
-      ptr = NULL;
-    }
+    T* ptr = (size > 0) ? alloc.allocate(size) : NULL;
 
     /* copy across contents */
     if (preserve && ptr != NULL) {

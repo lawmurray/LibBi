@@ -20,53 +20,22 @@ class [% class_name %] {
 public:
   [% std_action %]
 
-  /**
-   * Dynamic update.
-   *
-   * @tparam T1 Scalar type.
-   * @tparam L Location.
-   * @tparam PX Parents type.
-   * @tparam OX Output type.
-   *
-   * @param t1 Start of time interval.
-   * @param t2 End of time interval.
-   * @param s State.
-   * @param p Trajectory id.
-   * @param pax Parents input.
-   * @param[out] x Output.
-   */
-  template <class T1, bi::Location L, class PX, class OX>
-  static CUDA_FUNC_BOTH void simulate(const T1 t1, const T1 t2, State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
-  
-  /**
-   * Static update.
-   *
-   * @tparam PX Parents type.
-   * @tparam OX Output type.
-   *
-   * @param s State.
-   * @param p Trajectory id.
-   * @param pax Parents input.
-   * @param[out] x Output.
-   */
-  template <class PX, class OX>
-  static CUDA_FUNC_BOTH void simulate(State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  [% declare_action_static_matrix_function('simulate') %]
+  [% declare_action_dynamic_matrix_function('simulate') %]
 };
 
 #include "bi/math/view.hpp"
 
-template <class T1, bi::Location L, class PX, class OX>
-inline void [% class_name %]::simulate(const T1 t1, const T1 t2, State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x) {  
-  f(s, p, pax, x);
-}
-
-template <bi::Location L, class PX, class OX>
-inline void [% class_name %]::simulate(State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x) {
+[% sig_action_static_matrix_function('simulate') %] {
   BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_name %]>(s, p)), [% A.get_var.get_dims.0.get_size %], [% A.get_var.get_dims.1.get_size %]));
   BOOST_AUTO(b, pax.template fetch<Var[% x.get_var.get_name %]>(s, p));
   BOOST_AUTO(c, x.template fetch<target_type>(s, p));
   
   bi::gemv(A, b, c);
+}
+
+[% sig_action_dynamic_matrix_function('simulate') %] {  
+  simulate(s, p, pax, x);
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

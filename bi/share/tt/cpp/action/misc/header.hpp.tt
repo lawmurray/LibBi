@@ -18,6 +18,8 @@
 #ifndef GENBI_ACTION[% action.get_id %]_HPP
 #define GENBI_ACTION[% action.get_id %]_HPP
 
+#include "bi/state/State.hpp"
+#include "bi/buffer/Mask.hpp"
 #include "bi/cuda/cuda.hpp"
 #include "bi/math/scalar.hpp"
 #include "bi/math/function.hpp"
