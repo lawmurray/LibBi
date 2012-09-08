@@ -802,8 +802,8 @@ sub add_pair_var {
     my $name = sprintf('%s_%s_%s_', $prefix, $var1->get_name, $var2->get_name);
     my $dims = [ @{$var1->get_dims}, @{$var2->get_dims} ];
     my $named_args = {
-        'io' => new Bi::Expression::Literal(0),
-        'tmp' => $var1->get_named_arg('tmp')->clone
+        'has_input' => new Bi::Expression::IntegerLiteral(0),
+        'has_output' => new Bi::Expression::IntegerLiteral(0)
     };
     my $j_var = new Bi::Model::StateAux($name, $dims, [], $named_args);
     

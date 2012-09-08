@@ -45,18 +45,18 @@ void bi::KalmanFilterNetCDFBuffer::create(const long T) {
   std::stringstream name;
   for (id = 0; id < m.getNumVars(R_VAR); ++id) {
     node = m.getVar(R_VAR, id);
-    if (node->getIO()) {
+    if (node->hasOutput()) {
       name.str("");
-      name << "index." << node->getName();
+      name << "index." << node->getOutputName();
       ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
       size += node->getSize();
     }
   }
   for (id = 0; id < m.getNumVars(D_VAR); ++id) {
     node = m.getVar(D_VAR, id);
-    if (node->getIO()) {
+    if (node->hasOutput()) {
       name.str("");
-      name << "index." << node->getName();
+      name << "index." << node->getOutputName();
       ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
       size += node->getSize();
     }

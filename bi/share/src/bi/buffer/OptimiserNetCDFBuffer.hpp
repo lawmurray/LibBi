@@ -148,9 +148,9 @@ void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -199,9 +199,9 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;

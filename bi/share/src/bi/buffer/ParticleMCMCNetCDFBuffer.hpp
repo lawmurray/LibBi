@@ -257,9 +257,9 @@ void bi::ParticleMCMCNetCDFBuffer::readTrajectory(const VarType type,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -309,9 +309,9 @@ void bi::ParticleMCMCNetCDFBuffer::writeTrajectory(const VarType type,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -361,9 +361,9 @@ void bi::ParticleMCMCNetCDFBuffer::readSingle(const VarType type, const int p,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -418,9 +418,9 @@ void bi::ParticleMCMCNetCDFBuffer::writeSingle(const VarType type,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;

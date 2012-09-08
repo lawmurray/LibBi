@@ -259,7 +259,7 @@ set_to
 
 postfix_expression
     : LITERAL                                           { $_[0]->literal($_[1]) }
-    | INTEGER_LITERAL                                   { $_[0]->literal($_[1]) }
+    | INTEGER_LITERAL                                   { $_[0]->integer_literal($_[1]) }
     | STRING_LITERAL                                    { $_[0]->string_literal($_[1]) }
     | IDENTIFIER                                        { $_[0]->identifier($_[1]) }
     | IDENTIFIER '[' offset_args ']'                    { $_[0]->identifier($_[1], $_[3]) }

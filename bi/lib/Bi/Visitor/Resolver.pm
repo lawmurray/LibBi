@@ -147,8 +147,8 @@ sub visit {
                     $dims = $var->get_dims;
                     $tmp = ref($var)->new($name, $dims, [],
                         {
-                            'io' => new Bi::Expression::Literal(0),
-                            'tmp' => new Bi::Expression::Literal(1)
+                            'has_input' => new Bi::Expression::IntegerLiteral(0),
+                            'has_output' => new Bi::Expression::IntegerLiteral(0)
                         });
                     $self->get_model->add_var($tmp);
         

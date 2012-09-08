@@ -25,17 +25,15 @@ public:
   /**
    * Constructor.
    *
-   * @tparam X Variable type, derived from Var.
+   * @tparam X Variable type, itself derived from Var.
    *
-   * @param name Name of the variable.
-   * @param o Object of derived type. This is a dummy to allow calling of
-   * the constructor without explicit template arguments.
+   * @param o Object of derived type.
    *
-   * All other attributes of the variable are initialised from the low-level
+   * All attributes of the variable are initialised from the low-level
    * interface.
    */
   template<class X>
-  Var(const std::string& name, const X& o);
+  Var(const X& o);
 
   /**
    * Get name of the variable.
@@ -43,6 +41,20 @@ public:
    * @return Name of the variable.
    */
   const std::string& getName() const;
+
+  /**
+   * Get the name used for the variable in input files.
+   *
+   * @return Input name of the variable.
+   */
+  const std::string& getInputName() const;
+
+  /**
+   * Get the name used for the variable in output files.
+   *
+   * @return Output name of the variable.
+   */
+  const std::string& getOutputName() const;
 
   /**
    * Get id of the variable.
@@ -84,9 +96,14 @@ public:
   Dim* getDim(const int i) const;
 
   /**
-   * Should the variable be input/output?
+   * Should the variable be included in input files?
    */
-  bool getIO() const;
+  bool hasInput() const;
+
+  /**
+   * Should the variable be included in output files?
+   */
+  bool hasOutput() const;
 
 protected:
   /**
@@ -98,6 +115,16 @@ protected:
    * Name.
    */
   std::string name;
+
+  /**
+   * Name for file input.
+   */
+  std::string inputName;
+
+  /**
+   * Name for file output.
+   */
+  std::string outputName;
 
   /**
    * Type.
@@ -115,26 +142,42 @@ protected:
   int size;
 
   /**
-   * Should variable be input/output?
+   * Should variable be input?
    */
-  bool io;
+  bool input;
+
+  /**
+   * Should variable be output?
+   */
+  bool output;
 };
 }
 
 #include "../misc/assert.hpp"
 
 template<class X>
-bi::Var::Var(const std::string& name, const X& o) {
+bi::Var::Var(const X& o) {
   this->dims.resize(var_num_dims<X>::value, NULL);
-  this->name = name;
+  this->name = o.getName();
+  this->inputName = o.getInputName();
+  this->outputName = o.getOutputName();
   this->type = var_type<X>::value;
   this->id = var_id<X>::value;
   this->size = var_size<X>::value;
-  this->io = var_io<X>::value;
+  this->input = o.hasInput();
+  this->output = o.hasOutput();
 }
 
 inline const std::string& bi::Var::getName() const {
   return name;
+}
+
+inline const std::string& bi::Var::getInputName() const {
+  return inputName;
+}
+
+inline const std::string& bi::Var::getOutputName() const {
+  return outputName;
 }
 
 inline int bi::Var::getId() const {
@@ -160,8 +203,12 @@ inline bi::Dim* bi::Var::getDim(const int i) const {
   return dims[i];
 }
 
-inline bool bi::Var::getIO() const {
-  return this->io;
+inline bool bi::Var::hasInput() const {
+  return this->input;
+}
+
+inline bool bi::Var::hasOutput() const {
+  return this->output;
 }
 
 #endif

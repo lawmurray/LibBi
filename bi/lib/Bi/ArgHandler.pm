@@ -19,8 +19,7 @@ use strict;
 
 use Carp::Assert;
 use Bi::Utility;
-use Bi::Expression::Literal;
-use Bi::Expression::StringLiteral;
+use Bi::Expression;
 
 =item B<new>(I<args>, I<named_args>)
 
@@ -327,7 +326,9 @@ sub process_args {
         if (!exists $args->{$spec->{name}}) {
             if (exists $spec->{default}) {
                 my $literal;
-                if (is_number($spec->{default})) {
+                if (is_integer($spec->{default})) {
+                    $literal = new Bi::Expression::IntegerLiteral($spec->{default});
+                } elsif (is_number($spec->{default})) {
                     $literal = new Bi::Expression::Literal($spec->{default});
                 } else {
                     $literal = new Bi::Expression::StringLiteral($spec->{default});
@@ -498,6 +499,17 @@ sub is_number {
     $res = $res || $value =~ /[0-9]+/;
     
     return $res;
+}
+
+=item B<is_integer>(I<value>)
+
+Is I<value> an integer?
+
+=cut
+sub is_integer {
+    my $value = shift;
+    
+    return $value =~ /[0-9]+/;
 }
 
 1;

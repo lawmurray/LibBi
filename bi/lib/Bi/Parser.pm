@@ -541,6 +541,18 @@ sub literal {
     return Bi::Expression::Literal->new($value);
 }
 
+=item B<integer_literal>(I<value>)
+
+Handle integer literal.
+
+=cut
+sub integer_literal {
+    my $self = shift;
+    my $value = shift;
+    
+    return Bi::Expression::IntegerLiteral->new($value);
+}
+
 =item B<string_literal>(I<value>)
 
 Handle string literal.

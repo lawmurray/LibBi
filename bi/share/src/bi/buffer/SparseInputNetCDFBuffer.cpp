@@ -286,7 +286,7 @@ void bi::SparseInputNetCDFBuffer::map() {
     /* map model variables */
     for (id = 0; id < m.getNumVars(type); ++id) {
       var = m.getVar(type, id);
-      if (hasVar(var->getName().c_str())) {
+      if (var->hasInput() && hasVar(var->getInputName().c_str())) {
         pair = mapVar(var);
         ncVar = pair.first;
         rDim = pair.second;
@@ -320,8 +320,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapDim(const char* name, const long size) {
 std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
   /* pre-condition */
   BI_ASSERT(var != NULL);
-  BI_ASSERT_MSG(hasVar(var->getName().c_str()),
-      "File does not contain variable " << var->getName());
+  BI_ASSERT_MSG(hasVar(var->getInputName().c_str()),
+      "File does not contain variable " << var->getInputName());
 
   const VarType type = var->getType();
   NcVar* ncVar;
@@ -340,7 +340,7 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
       type == R_VAR ||
       type == P_VAR;
 
-  ncVar = ncFile->get_var(var->getName().c_str());
+  ncVar = ncFile->get_var(var->getInputName().c_str());
   BI_ASSERT(ncVar != NULL && ncVar->is_valid());
 
   /* check for ns-dimension */

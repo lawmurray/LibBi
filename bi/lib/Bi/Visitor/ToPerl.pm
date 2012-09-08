@@ -96,7 +96,7 @@ sub visit {
         }
     } elsif ($node->isa('Bi::Expression::DimAlias')) {
         $str = $node->get_alias;
-    } elsif ($node->isa('Bi::Expression::Literal')) {
+    } elsif ($node->isa('Bi::Expression::Literal') || $node->isa('Bi::Expression::IntegerLiteral')) {
         $str = $node->get_value;
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
         $str = $node->get_value;

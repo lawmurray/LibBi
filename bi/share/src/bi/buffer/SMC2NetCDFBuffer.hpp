@@ -340,9 +340,9 @@ void bi::SMC2NetCDFBuffer::readState(const VarType type, const int t,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -397,9 +397,9 @@ void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;

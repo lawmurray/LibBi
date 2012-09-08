@@ -60,13 +60,16 @@ sub evaluate {
     my $state;
     my $param;
     foreach $state (@{$model->get_vars('state')}) {
+        my $name = $state->get_name . "_0_";
         my @dims = @{$state->get_dims};
         my @args = @{$state->get_args};
         my %named_args = %{$state->get_named_args};
-        $named_args{'io'} = new Bi::Expression::Literal(0);
+        $named_args{'has_input'} = new Bi::Expression::IntegerLiteral(1);
+        $named_args{'has_output'} = new Bi::Expression::IntegerLiteral(0);
+        $named_args{'input_name'} = new Bi::Expression::StringLiteral($state->get_name);
+        $named_args{'output_name'} = new Bi::Expression::StringLiteral($name);
         
-        $param = new Bi::Model::Param($state->get_name . "_0_", \@dims,
-            \@args, \%named_args);
+        $param = new Bi::Model::Param($name, \@dims, \@args, \%named_args);
         $model->add_var($param);
         
         Bi::Visitor::TargetReplacer->evaluate($initial_block, $state, $param);

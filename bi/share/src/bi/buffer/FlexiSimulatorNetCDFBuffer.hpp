@@ -246,9 +246,9 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
     start = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -305,9 +305,9 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
     offset = m.getVarStart(type, id);
     size = var->getSize();
 
-    if (var->getIO()) {
+    if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getName() <<
+      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       offsets.resize(ncVar->num_dims(), false);

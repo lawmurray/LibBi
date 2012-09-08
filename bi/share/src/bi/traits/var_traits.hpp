@@ -203,18 +203,6 @@ struct var_type {
 };
 
 /**
- * Should variable be output?
- *
- * @ingroup model_low
- *
- * @tparam X Node type.
- */
-template<class X>
-struct var_io {
-  static const bool value = X::IO;
-};
-
-/**
  * State (dynamic) variable trait.
  *
  * @ingroup model_trait

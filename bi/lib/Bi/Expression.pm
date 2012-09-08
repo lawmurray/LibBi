@@ -29,6 +29,7 @@ use Bi::Expression::ConstIdentifier;
 use Bi::Expression::DimAlias;
 use Bi::Expression::Function;
 use Bi::Expression::InlineIdentifier;
+use Bi::Expression::IntegerLiteral;
 use Bi::Expression::Literal;
 use Bi::Expression::Matrix;
 use Bi::Expression::Offset;

@@ -44,6 +44,37 @@ public:
   [% class_name %]();
 
   /**
+   * Get name of the variable.
+   *
+   * @return Name of the variable.
+   */
+  static const char* getName();
+
+  /**
+   * Get the name used for the variable in input files.
+   *
+   * @return Input name of the variable.
+   */
+  static const char* getInputName();
+
+  /**
+   * Get the name used for the variable in output files.
+   *
+   * @return Output name of the variable.
+   */
+  static const char* getOutputName();
+
+  /**
+   * Should the variable be included in input files?
+   */
+  static bool hasInput();
+
+  /**
+   * Should the variable be included in output files?
+   */
+  static bool hasOutput();
+
+  /**
    * Initialise dimensions. Called by Model::addVar() after construction.
    *
    * @tparam B Model type.
@@ -104,15 +135,30 @@ public:
   [%-ELSIF var.get_type == 'param_aux_'-%]
   PX_VAR
   [%-END-%];
-  
-  /**
-   * Output?
-   */
-  static const bool IO = [% var.get_named_arg('io').eval_const %];
 };
 
-inline [% class_name %]::[% class_name %]() : bi::Var("[% var.get_name %]", *this) {
+inline [% class_name %]::[% class_name %]() : bi::Var(*this) {
   //
+}
+
+inline const char* [% class_name %]::getName() {
+  return "[% var.get_name %]";
+}
+
+inline const char* [% class_name %]::getInputName() {
+  return [% var.get_named_arg('input_name').to_cpp %];
+}
+
+inline const char* [% class_name %]::getOutputName() {
+  return [% var.get_named_arg('output_name').to_cpp %];
+}
+
+inline bool [% class_name %]::hasInput() {
+  return [% var.get_named_arg('has_input').to_cpp %];
+}
+
+inline bool [% class_name %]::hasOutput() {
+  return [% var.get_named_arg('has_output').to_cpp %];
 }
 
 template<class B>

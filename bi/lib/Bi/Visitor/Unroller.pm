@@ -172,8 +172,8 @@ sub _create_temp_var {
     
     my $name = $model->tmp_var;
     my $named_args = {
-        'io' => new Bi::Expression::Literal(0),
-        'tmp' => new Bi::Expression::Literal(1)
+        'has_input' => new Bi::Expression::IntegerLiteral(0),
+        'has_output' => new Bi::Expression::IntegerLiteral(0)
     };
     my $class;
     

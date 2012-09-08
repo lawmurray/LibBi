@@ -64,13 +64,13 @@ void bi::SimulatorNetCDFBuffer::create(const long P, const long T) {
     if (type == D_VAR || type == R_VAR || type == P_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
-        if (var->getIO()) {
+        if (var->hasOutput()) {
+          std::cerr << var->getName() << std::endl;
           if (type == P_VAR) {
             vars[type][id] = new NcVarBuffer<real>(createVar(var,false,false));
           } else {
             vars[type][id] = new NcVarBuffer<real>(createVar(var));
           }
-
         }
       }
     }
@@ -81,7 +81,7 @@ void bi::SimulatorNetCDFBuffer::map(const long P, const long T) {
   std::string name;
   int id, i;
   VarType type;
-  Var* node;
+  Var* var;
   Dim* dim;
 
   /* dimensions */
@@ -110,8 +110,8 @@ void bi::SimulatorNetCDFBuffer::map(const long P, const long T) {
     if (type == D_VAR || type == R_VAR || type == P_VAR) {
       vars[type].resize(m.getNumVars(type), NULL);
       for (id = 0; id < m.getNumVars(type); ++id) {
-        node = m.getVar(type, id);
-        if (hasVar(node->getName().c_str())) {
+        var = m.getVar(type, id);
+        if (hasVar(var->getOutputName().c_str())) {
           vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
         }
       }

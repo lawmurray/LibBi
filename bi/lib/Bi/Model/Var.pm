@@ -25,14 +25,43 @@ use strict;
 use Carp::Assert;
 use Bi::Model::Dim;
 
+=head1 PARAMETERS
+
+=over 4
+
+=item * C<has_input> (default 1)
+
+Include variable when doing input from a file?
+
+=item * C<has_output> (default 1)
+
+Include variable when doing output to a file?
+
+=item * C<input_name> (default the same as the name of the variable)
+
+Name to use for the variable in input files.
+
+=item * C<output_name> (default the same as the name of the variable)
+
+Name to use for the variable in output files.
+
+=back
+
+=cut
 our $VAR_ARGS = [
     {
-        name => 'io',
+        name => 'has_input',
         default => 1
     },
     {
-        name => 'tmp',
-        default => 0
+        name => 'has_output',
+        default => 1
+    },
+    {
+        name => 'input_name',
+    },
+    {
+        name => 'output_name',
     }
 ];
 
@@ -75,7 +104,7 @@ sub new {
     assert(!defined($dims) || ref($dims) eq 'ARRAY') if DEBUG;
     map { assert($_->isa('Bi::Model::Dim')) if DEBUG } @$dims;
 
-    my $self = new Bi::ArgHandler($args, $named_args);
+    my $self = new Bi::ArgHandler($args, $named_args);    
     $self->{_id} = -1;
     $self->{_name} = $name;
     $self->{_type} = undef; # supplied by derived class
@@ -178,6 +207,14 @@ sub validate {
     my $self = shift;
     
     $self->process_args($VAR_ARGS);
+    
+    # apply defaults that process_args can't handle
+    if (!$self->is_named_arg('input_name')) {
+        $self->set_named_arg('input_name', new Bi::Expression::StringLiteral($self->get_name));
+    }
+    if (!$self->is_named_arg('output_name')) {
+        $self->set_named_arg('output_name', new Bi::Expression::StringLiteral($self->get_name));
+    }
 }
 
 =item B<accept>(I<visitor>, ...)

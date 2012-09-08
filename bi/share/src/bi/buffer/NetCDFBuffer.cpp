@@ -82,13 +82,13 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np)
   }
 
   if (dims.size() != 0) {
-    ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),
+    ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real, dims.size(),
       &dims[0]);
   } else {
-    ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real);
+    ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real);
   }
   BI_ERROR(ncVar != NULL && ncVar->is_valid(), "Could not create variable " <<
-      var->getName());
+      var->getOutputName());
 
   return ncVar;
 }
@@ -112,10 +112,10 @@ NcVar* bi::NetCDFBuffer::createFlexiVar(const Var* var) {
     dims.push_back(mapDim("nrp"));
   }
 
-  ncVar = ncFile->add_var(var->getName().c_str(), netcdf_real, dims.size(),
+  ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real, dims.size(),
       &dims[0]);
   BI_ERROR(ncVar != NULL && ncVar->is_valid(), "Could not create variable " <<
-      var->getName());
+      var->getOutputName());
 
   return ncVar;
 }
@@ -131,9 +131,9 @@ NcDim* bi::NetCDFBuffer::mapDim(const char* name, const long size) {
 }
 
 NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
-  NcVar* ncVar = ncFile->get_var(var->getName().c_str());
+  NcVar* ncVar = ncFile->get_var(var->getOutputName().c_str());
   BI_ERROR(ncVar != NULL && ncVar->is_valid(),
-      "File does not contain variable " << var->getName());
+      "File does not contain variable " << var->getOutputName());
 
   /* check dimensions */
   VarType type = var->getType();
@@ -146,23 +146,25 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
       ++i;
     } else {
       BI_ERROR(false, "Dimension " << i << " of variable " <<
-          var->getName() << " should be nr");
+          var->getOutputName() << " should be nr");
+      // ^ we get away with using getOutputName() here only because
+      //   SparseInputNetCDFBuffer overrides and so can use getInputName()
     }
   }
   for (j = 0; j < var->getNumDims(); ++j, ++i) {
     dim = var->getDim(j);
     ncDim = ncVar->get_dim(i);
     BI_ERROR(ncDim == mapDim(dim->getName().c_str()), "Dimension " << i <<
-        " of variable " << var->getName() << " should be " <<
+        " of variable " << var->getOutputName() << " should be " <<
         dim->getName());
     ++i;
   }
   ncDim = ncVar->get_dim(i);
   BI_ERROR(ncDim == mapDim("np"), "Dimension " << i << " of variable " <<
-      var->getName() << " should be np");
+      var->getOutputName() << " should be np");
   ++i;
 
-  BI_ERROR(i <= ncVar->num_dims(), "Variable " << var->getName() << " has "
+  BI_ERROR(i <= ncVar->num_dims(), "Variable " << var->getOutputName() << " has "
       << ncVar->num_dims() << " dimensions, should have " << i);
 
   return ncVar;
