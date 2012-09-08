@@ -23,6 +23,7 @@ use strict;
 use Carp::Assert;
 
 use Bi::Visitor::TargetReplacer;
+use Bi::Visitor::VarReplacer;
 
 =head1 METHODS
 
@@ -74,6 +75,9 @@ sub evaluate {
         
         Bi::Visitor::TargetReplacer->evaluate($initial_block, $state, $param);
         Bi::Visitor::TargetReplacer->evaluate($proposal_initial_block, $state, $param);
+
+        Bi::Visitor::VarReplacer->evaluate($initial_block, $state, $param);
+        Bi::Visitor::VarReplacer->evaluate($proposal_initial_block, $state, $param);
     }
     
     $model->accept($self, $model, $initial_block, $proposal_initial_block);
