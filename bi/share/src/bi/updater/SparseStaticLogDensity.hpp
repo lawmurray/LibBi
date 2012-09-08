@@ -98,6 +98,7 @@ template<class B, class S>
 template<class V1>
 void bi::SparseStaticLogDensity<B,S>::logDensities(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask, V1 lp) {
+///@todo Fix this -- causes runtime error under particle filter
 //  #ifdef ENABLE_SSE
 //  if (s.size() % BI_SSE_SIZE == 0) {
 //    SparseStaticLogDensitySSE<B,S>::logDensities(s, mask, lp);
