@@ -98,15 +98,15 @@ template<class B, class S>
 template<class V1>
 void bi::SparseStaticLogDensity<B,S>::logDensities(State<B,ON_HOST>& s,
     const Mask<ON_HOST>& mask, V1 lp) {
-  #ifdef ENABLE_SSE
-  if (s.size() % BI_SSE_SIZE == 0) {
-    SparseStaticLogDensitySSE<B,S>::logDensities(s, mask, lp);
-  } else {
-    SparseStaticLogDensityHost<B,S>::logDensities(s, mask, lp);
-  }
-  #else
+//  #ifdef ENABLE_SSE
+//  if (s.size() % BI_SSE_SIZE == 0) {
+//    SparseStaticLogDensitySSE<B,S>::logDensities(s, mask, lp);
+//  } else {
+//    SparseStaticLogDensityHost<B,S>::logDensities(s, mask, lp);
+//  }
+//  #else
   SparseStaticLogDensityHost<B,S>::logDensities(s, mask, lp);
-  #endif
+//  #endif
 }
 
 template<class B, class S>
