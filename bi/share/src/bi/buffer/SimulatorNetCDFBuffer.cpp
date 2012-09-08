@@ -65,7 +65,6 @@ void bi::SimulatorNetCDFBuffer::create(const long P, const long T) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
-          std::cerr << var->getName() << std::endl;
           if (type == P_VAR) {
             vars[type][id] = new NcVarBuffer<real>(createVar(var,false,false));
           } else {
