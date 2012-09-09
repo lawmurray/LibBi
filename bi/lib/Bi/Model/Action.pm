@@ -170,7 +170,7 @@ sub clone {
     $clone->{_op} = $self->get_op;
     $clone->{_name} = $self->get_name;
     $clone->{_parent} = $self->get_parent;
-    $clone->{_is_matrix} = 0;
+    $clone->{_is_matrix} = $self->is_matrix;
     $clone->{_can_combine} = $self->can_combine;
     $clone->{_is_inplace} = $self->is_inplace;
     $clone->{_can_nest} = $self->can_nest;
