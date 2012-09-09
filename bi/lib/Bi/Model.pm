@@ -360,7 +360,7 @@ sub add_dim {
     assert($dim->isa('Bi::Model::Dim')) if DEBUG;
     
     if ($self->is_dim($name)) {
-        die("dimension '$name' already declared");
+        die("dimension '$name' already declared\n");
     } else {
         $dim->set_id(scalar(@{$self->{_dims}}));
         $self->{_dim_names}->{$name} = $dim;
@@ -382,11 +382,11 @@ sub add_const {
     assert($const->isa('Bi::Model::Const')) if DEBUG;
 
     if ($self->is_var($name)) {
-        die("variable '$name' already declared");
+        die("variable '$name' already declared\n");
     } elsif ($self->is_const($name)) {
-        die("constant '$name' already declared");
+        die("constant '$name' already declared\n");
     } elsif ($self->is_inline($name)) {
-        die("inline expression '$name' already declared");
+        die("inline expression '$name' already declared\n");
     } else {
         $self->{_const_names}->{$name} = $const;
         push(@{$self->{_consts}}, $const);
@@ -407,11 +407,11 @@ sub add_inline {
     assert($inline->isa('Bi::Model::Inline')) if DEBUG;
 
     if ($self->is_var($name)) {
-        die("variable '$name' already declared");
+        die("variable '$name' already declared\n");
     } elsif ($self->is_const($name)) {
-        die("constant '$name' already declared");
+        die("constant '$name' already declared\n");
     } elsif ($self->is_inline($name)) {
-        die("inline expression '$name' already declared");
+        die("inline expression '$name' already declared\n");
     } else {
         $self->{_inline_names}->{$name} = $inline;
         push(@{$self->{_inlines}}, $inline);
@@ -429,11 +429,11 @@ sub add_var {
     my $name = $var->get_name;
     
     if ($self->is_var($name)) {
-        die("variable '$name' already declared");
+        die("variable '$name' already declared\n");
     } elsif ($self->is_const($name)) {
-        die("constant '$name' already declared");
+        die("constant '$name' already declared\n");
     } elsif ($self->is_inline($name)) {
-        die("inline expression '$name' already declared");
+        die("inline expression '$name' already declared\n");
     } else {
         my $type = $var->get_type;
         assert (exists $self->{"_${type}_names"}) if DEBUG;
@@ -460,7 +460,7 @@ sub add_block {
     assert($block->isa('Bi::Model::Block')) if DEBUG;
     
     if ($self->is_block($name)) {
-        die("block '$name' already declared");
+        die("block '$name' already declared\n");
     } else {
         $self->{_named_blocks}->{$name} = $block;
         push(@{$self->{_blocks}}, $block);

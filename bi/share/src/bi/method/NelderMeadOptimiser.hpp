@@ -333,7 +333,7 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::init(Random& rng, const real T,
   } else {
     f->f = NelderMeadOptimiser<B,IO1,CL>::template ml<L,F>;
   }
-  f->n = M;
+  f->n = B::NP;
   f->params = params;
 
   gsl_multimin_fminimizer_set(state.minimizer, f, state.x, state.step);
@@ -356,7 +356,7 @@ template<bi::Location L>
 void bi::NelderMeadOptimiser<B,IO1,CL>::output(const int k, const State<B,L>& s) {
   if (out != NULL) {
     out->writeState(P_VAR, k, vec(s.get(P_VAR)));
-    out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
+    //out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
     out->writeValue(k, -state.minimizer->fval);
     out->writeSize(k, state.size);
   }

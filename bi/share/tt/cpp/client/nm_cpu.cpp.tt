@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
   if (!FILTER_FILE.empty()) {
       outFilter = new KalmanFilterNetCDFBuffer(m, P, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
   }
-  [% ELSIF %]
+  [% ELSIF client.get_named_arg('filter') == 'anpf' %]
   FlexiParticleFilterNetCDFBuffer* outFilter = NULL;
   if (!FILTER_FILE.empty()) {
     outFilter = new FlexiParticleFilterNetCDFBuffer(m, Y, FILTER_FILE, NetCDFBuffer::REPLACE);
