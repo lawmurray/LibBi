@@ -303,7 +303,7 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   /* sample */
   int n = 0;
   bool r = false; // resampling performed?
-  while (state.t < T) {
+  do {
     evidence = step(rng, T, thetas, lws, filter, n);
     ess = resam->ess(lws);
     r = ess < Ntheta*essRel;
@@ -319,7 +319,7 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
     report(n, state.t, ess, r, acceptRate);
     output(n, thetas, lws, evidence, ess, acceptRate);
     ++n;
-  }
+  } while (state.t < T);
 
   /* delete remaining stuff */
   delete pmmh;

@@ -194,7 +194,7 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
 
   int block;
   real maxlw = -1.0/0.0;
-  while (this->getTime() < T) {
+  do {
     r = step(rng, T, s, lws, as, n, conditional, xd, xr);
 
     BI_ASSERT(lws.size() == s.size());
@@ -202,7 +202,7 @@ real bi::AdaptiveNParticleFilter<B, R, S, IO1, IO2, IO3, CL>::filter_impl(Random
 
     this->output(n, s, r, lws, as);
     ++n;
-  }
+  } while (this->getTime() < T);
 
   synchronize();
   this->term();

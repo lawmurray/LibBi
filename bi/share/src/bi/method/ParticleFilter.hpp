@@ -586,12 +586,12 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   real ll = 0.0;
   init(rng, s, lws, as, inInit);
   output0(s);
-  while (state.t < T) {
+  do {
     r = step(rng, T, s, lws, as, n);
     ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(P));
     output(n, s, r, lws, as);
     ++n;
-  }
+  } while (state.t < T);
   synchronize();
   term();
 
@@ -615,14 +615,14 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   real ll = 0.0;
   init(rng, theta, s, lws, as);
   output0(s);
-  while (state.t < T) {
+  do {
     r = n > 0 && resample(rng, s, lws, as);
     predict(rng, T, s);
     correct(s, lws);
     ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(P));
     output(n, s, r, lws, as);
     ++n;
-  }
+  } while (state.t < T);
   synchronize();
   term();
 
@@ -644,7 +644,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   real ll = 0.0;
   init(rng, theta, s, lws, as);
   output0(s);
-  while (state.t < T) {
+  do {
     r = n > 0 && resample(rng, s, a, lws, as);
     predict(rng, T, s);
 
@@ -656,7 +656,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
     ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
     output(n, s, r, lws, as);
     ++n;
-  }
+  } while (state.t < T);
   synchronize();
   term();
 

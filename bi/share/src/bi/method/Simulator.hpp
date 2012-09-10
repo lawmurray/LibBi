@@ -619,37 +619,36 @@ template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
     State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
-
-  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
-  real ti = state.t, tj, tf, td;
-  if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
-    tf = fUpdater->getTime();
-  } else {
-    tf = tnxt + sgn*1.0;
-  }
-
-  do { // over intermediate stopping points
-    td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
-
-    if (sgn*ti >= sgn*tf) {
-      /* update forcings */
-      fUpdater->update(s);
-      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
-        tf = fUpdater->getTime();
-      } else {
-        tf = tnxt + sgn*1.0;
-      }
+  if (bi::abs(tnxt - state.t) > 0.0) {
+    real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+    real ti = state.t, tj, tf, td;
+    if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
+      tf = fUpdater->getTime();
+    } else {
+      tf = tnxt + sgn*1.0;
     }
 
-    /* update noise and state */
-    m.transitionSamples(rng, ti, tj, s);
+    do { // over intermediate stopping points
+      td = gt_step(ti, sgn*m.getDelta());
+      tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
-    ti = tj;
-  } while (sgn*ti < sgn*tnxt);
-  state.t = tnxt;
+      if (sgn*ti >= sgn*tf) {
+        /* update forcings */
+        fUpdater->update(s);
+        if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+          tf = fUpdater->getTime();
+        } else {
+          tf = tnxt + sgn*1.0;
+        }
+      }
+
+      /* update noise and state */
+      m.transitionSamples(rng, ti, tj, s);
+
+      ti = tj;
+    } while (sgn*ti < sgn*tnxt);
+    state.t = tnxt;
+  }
 
   /* post-condition */
   BI_ASSERT(state.t == tnxt);
@@ -658,37 +657,36 @@ void bi::Simulator<B,IO1,IO2,CL>::advance(Random& rng, const real tnxt,
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::advance(const real tnxt, State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
-
-  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
-  real ti = state.t, tj, tf, td;
-  if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
-    tf = fUpdater->getTime();
-  } else {
-    tf = tnxt + sgn*1.0;
-  }
-
-  do { // over intermediate stopping points
-    td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
-
-    if (sgn*ti >= sgn*tf) {
-      /* update forcings */
-      fUpdater->update(s);
-      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
-        tf = fUpdater->getTime();
-      } else {
-        tf = tnxt + sgn*1.0;
-      }
+  if (bi::abs(tnxt - state.t) > 0.0) {
+    real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+    real ti = state.t, tj, tf, td;
+    if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
+      tf = fUpdater->getTime();
+    } else {
+      tf = tnxt + sgn*1.0;
     }
 
-    /* update noise and state */
-    m.transitionSimulate(ti, tj, s);
+    do { // over intermediate stopping points
+      td = gt_step(ti, sgn*m.getDelta());
+      tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
-    ti = tj;
-  } while (sgn*ti < sgn*tnxt);
-  state.t = tnxt;
+      if (sgn*ti >= sgn*tf) {
+        /* update forcings */
+        fUpdater->update(s);
+        if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+          tf = fUpdater->getTime();
+        } else {
+          tf = tnxt + sgn*1.0;
+        }
+      }
+
+      /* update noise and state */
+      m.transitionSimulate(ti, tj, s);
+
+      ti = tj;
+    } while (sgn*ti < sgn*tnxt);
+    state.t = tnxt;
+  }
 
   /* post-condition */
   BI_ASSERT(state.t == tnxt);
@@ -698,37 +696,37 @@ template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
 void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
     State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
-
-  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
-  real ti = state.t, tj, tf, td;
-  if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
-    tf = fUpdater->getTime();
-  } else {
-    tf = tnxt + sgn*1.0;
-  }
-
-  do { // over intermediate stopping points
-    td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
-
-    if (sgn*ti >= sgn*tf) {
-      /* update forcings */
-      fUpdater->update(s);
-      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
-        tf = fUpdater->getTime();
-      } else {
-        tf = tnxt + sgn*1.0;
-      }
+  if (bi::abs(tnxt - state.t) >= 0.0) {
+    real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+    real ti = state.t, tj, tf, td;
+    if (fUpdater != NULL && fUpdater->hasNext() &&
+        sgn*(fUpdater->getTime() - ti) >= 0.0) {
+      tf = fUpdater->getTime();
+    } else {
+      tf = tnxt + sgn*1.0;
     }
 
-    /* update noise and state */
-    m.lookaheadTransitionSamples(rng, ti, tj, s);
+    do { // over intermediate stopping points
+      td = gt_step(ti, sgn*m.getDelta());
+      tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
-    ti = tj;
-  } while (sgn*ti < sgn*tnxt);
-  state.t = tnxt;
+      if (sgn*ti >= sgn*tf) {
+        /* update forcings */
+        fUpdater->update(s);
+        if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+          tf = fUpdater->getTime();
+        } else {
+          tf = tnxt + sgn*1.0;
+        }
+      }
+
+      /* update noise and state */
+      m.lookaheadTransitionSamples(rng, ti, tj, s);
+
+      ti = tj;
+    } while (sgn*ti < sgn*tnxt);
+    state.t = tnxt;
+  }
 
   /* post-condition */
   BI_ASSERT(state.t == tnxt);
@@ -736,39 +734,38 @@ void bi::Simulator<B,IO1,IO2,CL>::lookahead(Random& rng, const real tnxt,
 
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L>
-void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt,
-    State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(fabs(tnxt - state.t) > 0.0);
-
-  real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
-  real ti = state.t, tj, tf, td;
-  if (fUpdater != NULL && fUpdater->hasNext() && sgn*(fUpdater->getTime() - ti) >= 0.0) {
-    tf = fUpdater->getTime();
-  } else {
-    tf = tnxt + sgn*1.0;
-  }
-
-  do { // over intermediate stopping points
-    td = gt_step(ti, sgn*m.getDelta());
-    tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
-
-    if (sgn*ti >= sgn*tf) {
-      /* update forcings */
-      fUpdater->update(s);
-      if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
-        tf = fUpdater->getTime();
-      } else {
-        tf = tnxt + sgn*1.0;
-      }
+void bi::Simulator<B,IO1,IO2,CL>::lookahead(const real tnxt, State<B,L>& s) {
+  if (bi::abs(tnxt - state.t) >= 0.0) {
+    real sgn = (tnxt >= state.t) ? 1.0 : -1.0;
+    real ti = state.t, tj, tf, td;
+    if (fUpdater != NULL && fUpdater->hasNext() &&
+        sgn*(fUpdater->getTime() - ti) >= 0.0) {
+      tf = fUpdater->getTime();
+    } else {
+      tf = tnxt + sgn*1.0;
     }
 
-    /* update noise and state */
-    m.lookaheadTransitionSimulate(ti, tj, s);
+    do { // over intermediate stopping points
+      td = gt_step(ti, sgn*m.getDelta());
+      tj = sgn*bi::min(sgn*tf, bi::min(sgn*td, sgn*tnxt));
 
-    ti = tj;
-  } while (sgn*ti < sgn*tnxt);
-  state.t = tnxt;
+      if (sgn*ti >= sgn*tf) {
+        /* update forcings */
+        fUpdater->update(s);
+        if (fUpdater->hasNext() && sgn*fUpdater->getTime() > sgn*tf) {
+          tf = fUpdater->getTime();
+        } else {
+          tf = tnxt + sgn*1.0;
+        }
+      }
+
+      /* update noise and state */
+      m.lookaheadTransitionSimulate(ti, tj, s);
+
+      ti = tj;
+    } while (sgn*ti < sgn*tnxt);
+    state.t = tnxt;
+  }
 
   /* post-condition */
   BI_ASSERT(state.t == tnxt);

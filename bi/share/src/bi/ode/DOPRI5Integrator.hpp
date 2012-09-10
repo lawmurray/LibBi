@@ -51,7 +51,7 @@ void bi::DOPRI5Integrator<B,S>::update(const T1 t1, const T1 t2,
   /* pre-conditions */
   BI_ASSERT(t1 <= t2);
 
-  if (fabs(t2 - t1) > 0.0) {
+  if (bi::abs(t2 - t1) > 0.0) {
     #ifdef ENABLE_SSE
     DOPRI5IntegratorSSE<B,S,T1>::update(t1, t2, s);
     #else
@@ -68,7 +68,7 @@ void bi::DOPRI5Integrator<B,S>::update(const T1 t1, const T1 t2,
   /* pre-conditions */
   BI_ASSERT(t1 <= t2);
 
-  if (fabs(t2 - t1) > 0.0) {
+  if (bi::abs(t2 - t1) > 0.0) {
     DOPRI5IntegratorGPU<B,S,T1>::update(t1, t2, s);
   }
 }

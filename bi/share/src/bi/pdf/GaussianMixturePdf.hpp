@@ -319,7 +319,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * \f$l_2\f$ is likelihood of this iteration, and \f$l_1\f$ that of
      * previous.
      */
-    converged = steps > 0 && expm1(fabs(l2 - l1)) < eps;
+    converged = steps > 0 && expm1(bi::abs(l2 - l1)) < eps;
     l1 = l2;
     ++steps;
 

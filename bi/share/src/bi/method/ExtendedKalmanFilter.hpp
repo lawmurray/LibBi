@@ -400,14 +400,14 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
   state.ll = 0.0;
 
   init(rng, s, U, S, inInit);
-  while (state.t < T) {
+  do {
     predict(T, s, U, S);
     output(n, s, U, S);
     ++n;
     correct(s, U, S);
     output(n, s, U, S);
     ++n;
-  }
+  } while (state.t < T);
   synchronize();
   term();
 
@@ -429,14 +429,14 @@ real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
   state.ll = 0.0;
 
   init(rng, theta, s, U, S);
-  while (state.t < T) {
+  do {
     predict(T, s, U, S);
     output(n, s, U, S);
     ++n;
     correct(s, U, S);
     output(n, s, U, S);
     ++n;
-  }
+  } while (state.t < T);
   synchronize();
   term();
 
@@ -546,10 +546,10 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predictFixed(const real tnxt,
   s.getJ().clear();
 
   /* simulate forward */
-  while (state.t < to) {
+  do {
     sim.advance(to, s);
     state.t = sim.getTime();
-  }
+  } while (state.t < to);
 
   /* post-condition */
   BI_ASSERT(sim.getTime() == state.t);

@@ -228,7 +228,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
   real ll = 0.0;
   init(rng, s, lw1s, lw2s, as, inInit);
-  while (this->getTime() < T) {
+  do {
     r = resample(rng, T, s, lw1s, lw2s, as);
     predict(rng, T, s);
     correct(s, lw2s);
@@ -237,7 +237,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
     output(n, s, r, lw2s, as);
     ++n;
-  }
+  } while (this->getTime() < T);
   synchronize();
   this->term();
 
@@ -258,7 +258,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
   real ll = 0.0;
   init(rng, theta, s, lw1s, lw2s, as);
-  while (this->getTime() < T) {
+  do {
     r = resample(rng, T, s, lw1s, lw2s, as);
     predict(rng, T, s);
     correct(s, lw2s);
@@ -267,7 +267,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
     output(n, s, r, lw2s, as);
     ++n;
-  }
+  } while (this->getTime() < T);
   synchronize();
   this->term();
 
@@ -289,7 +289,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
   real ll = 0.0;
   init(rng, theta, s, lw1s, lw2s, as);
-  while (this->state.t < T) {
+  do {
     r = resample(rng, T, s, a, lw1s, lw2s, as);
     predict(rng, T, s);
 
@@ -303,7 +303,7 @@ real bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng,
 
     output(n, s, r, lw2s, as);
     ++n;
-  }
+  } while (this->state.t < T);
   synchronize();
   this->term();
 
@@ -411,10 +411,10 @@ void bi::AuxiliaryParticleFilter<B,R,IO1,IO2,IO3,CL>::lookahead(Random& rng,
       this->mark();
 
       /* auxiliary simulation */
-      while (this->state.t < to) {
+      do {
         this->sim.lookahead(rng, to, s);
         this->state.t = this->sim.getTime();
-      }
+      } while (this->state.t < to);
 
       /* stage one weights */
       //this->correct(s, lw1s);
