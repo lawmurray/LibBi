@@ -574,8 +574,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(State<B,L>& s, IO3* inInit) {
   }
 }
 
-#include "../math/io.hpp"
-
 template<class B, class IO1, class IO2, bi::Location CL>
 template<bi::Location L, class V1>
 void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta,
@@ -595,9 +593,6 @@ void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, const V1 theta,
 
   s.setRange(0, P);
   m.initialSamples(rng, s);
-
-  std::cerr << s.get(D_VAR) << std::endl;
-
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
