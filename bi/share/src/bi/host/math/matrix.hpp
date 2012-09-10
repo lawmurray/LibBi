@@ -11,6 +11,7 @@
 #include "vector.hpp"
 #include "../../primitive/strided_pitched_range.hpp"
 #include "../../primitive/cross_range.hpp"
+#include "../../primitive/aligned_allocator.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
 #include "boost/serialization/split_member.hpp"
@@ -787,7 +788,7 @@ namespace bi {
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
     int lead_value = -1, int inc_value = -1, class A = pipelined_allocator<
-    std::allocator<T> > >
+    aligned_allocator<T> > >
 class host_matrix: public host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value> {
 public:

@@ -10,6 +10,7 @@
 
 #include "vector.hpp"
 #include "../../primitive/pinned_allocator.hpp"
+#include "../../primitive/aligned_allocator.hpp"
 #include "../../primitive/pooled_allocator.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
@@ -31,11 +32,13 @@ namespace bi {
 template<class T, int size_value = -1, int inc_value = -1>
 struct temp_host_vector {
   /**
-   * @internal
-   *
    * Allocator type.
    */
+  #ifdef ENABLE_CUDA
   typedef pipelined_allocator<pooled_allocator<pinned_allocator<T> > > allocator_type;
+  #else
+  typedef pooled_allocator<aligned_allocator<T> > allocator_type;
+  #endif
 
   /**
    * Vector type.

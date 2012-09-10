@@ -513,8 +513,6 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample_together(Random& r
   term();
 }
 
-#include "../math/io.hpp"
-
 template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::init(Random& rng,
@@ -525,8 +523,6 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::init(Random& rng,
 
   /* initialise state vector */
   x1.theta = vec(s.get(P_VAR));
-
-  std::cerr << s.get(PY_VAR) << std::endl;
 }
 
 template<class B, class IO1, bi::Location CL>

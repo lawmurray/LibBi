@@ -10,6 +10,7 @@
 
 #include "matrix.hpp"
 #include "../../primitive/pinned_allocator.hpp"
+#include "../../primitive/aligned_allocator.hpp"
 #include "../../primitive/pooled_allocator.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
@@ -34,14 +35,16 @@ template<class T, int size1_value = -1, int size2_value = -1, int lead_value =
     -1, int inc_value = -1>
 struct temp_host_matrix {
   /**
-   * @internal
-   *
    * Allocator type.
    */
+  #ifdef ENABLE_CUDA
   typedef pipelined_allocator<pooled_allocator<pinned_allocator<T> > > allocator_type;
+  #else
+  typedef pooled_allocator<aligned_allocator<T> > allocator_type;
+  #endif
 
   /**
-   * matrix type.
+   * Matrix type.
    */
   typedef host_matrix<T,size1_value,size2_value,lead_value,inc_value,
       allocator_type> type;

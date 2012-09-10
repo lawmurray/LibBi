@@ -13,6 +13,7 @@
 #include "../../misc/compile.hpp"
 #include "../../typelist/equals.hpp"
 #include "../../primitive/strided_range.hpp"
+#include "../../primitive/aligned_allocator.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
 #include "boost/serialization/split_member.hpp"
@@ -697,7 +698,7 @@ namespace bi {
  * This class support serialization through the Boost.Serialization library.
  */
 template<class T = real, int size_value = -1, int inc_value = -1,
-    class A = pipelined_allocator<std::allocator<T> > >
+    class A = pipelined_allocator<aligned_allocator<T> > >
 class host_vector: public host_vector_reference<T,size_value,inc_value> {
 public:
   typedef T value_type;
