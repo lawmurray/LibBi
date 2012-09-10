@@ -542,6 +542,7 @@ void bi::Simulator<B,IO1,IO2,CL>::init(Random& rng, State<B,L>& s,
     m.parameterSimulate(s);
   }
 
+
   s.setRange(0, P);
   m.initialSamples(rng, s);
   if (inInit != NULL) {

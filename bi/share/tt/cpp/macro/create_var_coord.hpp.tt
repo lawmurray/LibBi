@@ -176,22 +176,22 @@ inline int [% class_name %]::index() const {
 }
 
 inline void [% class_name %]::setIndex(const int i) {
-  [% IF var.get_dims.size > 0 %]
+  [%-IF var.get_dims.size > 0 %]
   int j = i;
-  [% END %]
-  [% IF var.get_dims.size > 1 %]
+  [%-END-%]
+  [%-IF var.get_dims.size > 1 %]
   int rest;
-  [% END %]
+  [%-END-%]
   
-  [% FOREACH dim IN var.get_dims.reverse %]
-  [% IF loop.last %]
+  [%-FOREACH dim IN var.get_dims.reverse %]
+  [%-IF loop.last-%]
   [% dim.get_name %][% loop.index %] = j;
-  [% ELSE %]  
+  [%-ELSE-%]
   rest = j/N[% dim.get_name | upper %][% loop.index %];
-  [% dim.get_name %][% loop.index %] = j - rest;
+  [% dim.get_name %][% loop.index %] = j - rest*N[% dim.get_name | upper %][% loop.index %];
   j = rest;
-  [% END %]
-  [% END %]
+  [%-END-%]
+  [%-END %]
 }
 
 [%-END-%]

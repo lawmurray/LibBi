@@ -170,8 +170,8 @@ namespace bi {
       packed = BI_SSE_SET1_P(a);
     }
 
-    sse_real& operator=(const real o2) {
-      packed = BI_SSE_SET1_P(o2);
+    sse_real& operator=(const real a) {
+      packed = BI_SSE_SET1_P(a);
       return *this;
     }
   };
@@ -224,7 +224,7 @@ BI_FORCE_INLINE inline bi::sse_real& bi::operator/=(bi::sse_real& o1, const bi::
 }
 
 BI_FORCE_INLINE inline bi::sse_real bi::operator+(const bi::sse_real& o1, const bi::sse_real& o2) {
-  return (bi::sse_real)BI_SSE_ADD_P(o1.packed, o2.packed);
+  return BI_SSE_ADD_P(o1.packed, o2.packed);
 }
 
 BI_FORCE_INLINE inline bi::sse_real bi::operator-(const bi::sse_real& o1, const bi::sse_real& o2) {
