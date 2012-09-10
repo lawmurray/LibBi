@@ -223,7 +223,7 @@ sub visit {
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         my $name = $node->get_var->get_name;
         if ($node->num_offsets) {
-            my @offsets = splice(@$args, -$node->num_offsets, $node->num_args);
+            my @offsets = splice(@$args, -$node->num_offsets, $node->num_offsets);
             $name .= '_' . join('_', @offsets);
         }
         $self->_substitute($name, $node);
