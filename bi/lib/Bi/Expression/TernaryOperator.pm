@@ -22,6 +22,8 @@ use base 'Bi::Expression';
 use warnings;
 use strict;
 
+use Bi::Visitor::ToSymbolic;
+
 use Carp::Assert;
 
 =item B<new>(I<expr1>, I<op1>, I<expr2>, I<op2>, I<expr3>)
@@ -187,6 +189,32 @@ sub num_dims {
     my $n3 = $self->get_expr3->num_dims;
     
     return ($n2 > $n3) ? $n2 : $n3;
+}
+
+=item B<d>(I<ident>)
+
+Symbolically differentiate the expression with respect to I<ident>, and
+return the new expression. For an expression with the ternary operator at
+the top level, this applies the same condition, replacing the true and
+false clauses with their derivatives.
+
+=cut
+sub d {
+    my $self = shift;
+    my $ident = shift;
+    
+    my $symbolic = new Bi::Visitor::ToSymbolic;
+    my $symb2 = $symbolic->expr2symb($self->get_expr2);
+    my $symb3 = $symbolic->expr2symb($self->get_expr3);
+    my $resp = $symbolic->expr2symb($ident);
+            
+    my $d2 = Math::Symbolic::Operator->new('partial_derivative', $symb2, $resp);
+    my $d3 = Math::Symbolic::Operator->new('partial_derivative', $symb3, $resp);
+    my $dexpr2 = $symbolic->symb2expr($d2->apply_derivatives->simplify)->simplify;
+    my $dexpr3 = $symbolic->symb2expr($d3->apply_derivatives->simplify)->simplify;
+
+    return new Bi::Expression::TernaryOperator($self->get_expr1->clone,
+        $self->get_op1, $dexpr2, $self->get_op2, $dexpr3);
 }
 
 =item B<accept>(I<visitor>, ...)
