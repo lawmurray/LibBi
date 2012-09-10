@@ -522,7 +522,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::init(Random& rng,
   filter->filter(rng, 0.0, s, inInit);
 
   /* initialise state vector */
-  subrange(x1.theta, 0, NP) = vec(s.get(P_VAR));
+  x1.theta = vec(s.get(P_VAR));
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -533,21 +533,21 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::propose(Random& rng,
   const int P = s.size();
   s.setRange(0, 1);
   /* proposal */
-  row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
+  row(s.get(P_VAR), 0) = x1.theta;
   m.proposalParameterSamples(rng, s);
-  subrange(x2.theta, 0, NP) = row(s.get(P_VAR), 0);
+  x2.theta = row(s.get(P_VAR), 0);
 
   /* reverse proposal log-density */
   lp.clear();
-  row(s.get(P_VAR), 0) = subrange(x2.theta, 0, NP);
-  row(s.get(PY_VAR), 0) = subrange(x1.theta, 0, NP);
+  row(s.get(P_VAR), 0) = x2.theta;
+  row(s.get(PY_VAR), 0) = x1.theta;
   m.proposalParameterLogDensities(s, lp);
   x1.lq = *lp.begin();
 
   /* proposal log-density */
   lp.clear();
-  row(s.get(P_VAR), 0) = subrange(x1.theta, 0, NP);
-  row(s.get(PY_VAR), 0) = subrange(x2.theta, 0, NP);
+  row(s.get(P_VAR), 0) = x1.theta;
+  row(s.get(PY_VAR), 0) = x2.theta;
   m.proposalParameterLogDensities(s, lp);
   x2.lq = *lp.begin();
   s.setRange(0, P);
@@ -562,7 +562,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computePriorOnProposal(St
   /* prior log-density */
   typename loc_temp_vector<L,real>::type lp(1);
   lp.clear();
-  row(s.get(PY_VAR), 0) = subrange(x2.theta, 0, NP);
+  row(s.get(PY_VAR), 0) = x2.theta;
   m.parameterLogDensities(s, lp);
   x2.lp = *lp.begin();
   s.setRange(0, P);
@@ -756,7 +756,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::reject() {
 template<class B, class IO1, bi::Location CL>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::output(const int c) {
   if (out != NULL) {
-    out->writeSample(c, subrange(x1.theta, 0, NP)); // only p-var portion
+    out->writeSample(c, x1.theta); // only p-var portion
     out->writeParticle(c, x1.xd, x1.xr);
     out->writeLogLikelihood(c, x1.ll);
     out->writeLogPrior(c, x1.lp);

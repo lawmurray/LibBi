@@ -413,11 +413,15 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
   p->s->resize(P, true);
 
   /* evaluate */
-  try {
-    p->filter->rewind();
-    real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
-    return -(ll + lp(0));
-  } catch (CholeskyException e) {
+  if (bi::is_finite(lp(0))) {
+    try {
+      p->filter->rewind();
+      real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
+      return -(ll + lp(0));
+    } catch (CholeskyException e) {
+      return GSL_NAN;
+    }
+  } else {
     return GSL_NAN;
   }
 }
