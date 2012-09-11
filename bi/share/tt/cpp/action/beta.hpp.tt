@@ -70,6 +70,8 @@ public:
       (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - xy) - logZ;
 
   x.template fetch<target_type>(s, p, ix) = xy;
+}
+  
 [% sig_action_static_function('maxlogdensity') %] {
   T1 a, b;
     
@@ -81,4 +83,6 @@ public:
   lp = BI_REAL(1.0/0.0);
 
   x.template fetch<target_type>(s, p, ix) = xy;
+}
+  
 [%-PROCESS action/misc/footer.hpp.tt-%]
