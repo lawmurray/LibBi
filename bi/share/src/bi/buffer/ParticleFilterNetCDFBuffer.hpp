@@ -51,67 +51,123 @@ public:
   virtual ~ParticleFilterNetCDFBuffer();
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readLogWeights()
+   * Read particle weights.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param[out] lws Log-weights.
    */
   template<class V1>
   void readLogWeights(const int t, V1 lws);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeLogWeights()
+   * Write particle weights.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param lws Log-weights.
    */
   template<class V1>
   void writeLogWeights(const int t, const V1 lws);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readLogWeight()
+   * Read particle weight.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param p Trajectory index.
+   * @param[out] lw Log-weight.
    */
-  void readLogWeight(const int t, const int p, real& lws);
+  void readLogWeight(const int t, const int p, real& lw);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeLogWeight()
+   * Write particle weight.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param p Trajectory index.
+   * @param lws Log-weight.
    */
-  void writeLogWeight(const int t, const int p, const real lws);
+  void writeLogWeight(const int t, const int p, const real lw);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readAncestors()
+   * Read particle ancestors.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param[out] a Ancestry.
    */
   template<class V1>
   void readAncestors(const int t, V1 a);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeAncestors()
+   * Write particle ancestors.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param a Ancestry.
    */
   template<class V1>
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readAncestor()
+   * Read ancestor of particle at particular time.
+   *
+   * @param t Time index.
+   * @param p Particle index.
+   * @param[out] a Ancestor.
    */
   void readAncestor(const int t, const int p, int& a);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeAncestor()
+   * Write ancestor of particle at particular time.
+   *
+   * @param t Time index.
+   * @param p Particle index.
+   * @param a Ancestor.
    */
   void writeAncestor(const int t, const int p, const int a);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readResample()
+   * Read resample flag.
+   *
+   * @param t Time index.
+   * @param[out] r Was resampling performed at this time?
    */
   void readResample(const int t, int& r);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeResample()
+   * Write resample flag.
+   *
+   * @param t Time index.
+   * @param r Was resampling performed at this time?
    */
   void writeResample(const int t, const int r);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readResamples()
+   * Read resample flags.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param[out] r Resampling flags from this time.
    */
   template<class V1>
   void readResamples(const int t, V1 r);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::writeResamples()
+   * Write resample flags.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param r Resampling flags from this time.
    */
   template<class V1>
   void writeResamples(const int t, const V1 r);

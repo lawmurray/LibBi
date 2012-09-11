@@ -58,41 +58,76 @@ public:
   virtual ~SparseInputNetCDFBuffer();
 
   /**
-   * @copydoc #concept::SparseInputBuffer::read()
+   * Read active variables at current time into matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Variable type.
+   * @param[out] X Output. Rows index trajectories, columns index variables.
+   *
+   * Elements of @p X corresponding to active variables at the current time
+   * are updated.
    */
   template<class M1>
   void read(const VarType type, M1 X);
 
   /**
-   * @copydoc #concept::SparseInputBuffer::readContiguous()
+   * Read active variables at current time into contiguous vector.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param type Variable type.
+   * @param[out] x Output vector, of size equal to the number of active
+   * variables at the current time, see size().
    */
   template<class V1>
   void readContiguous(const VarType type, V1 x);
 
   /**
-   * @copydoc #concept::SparseInputBuffer::read0()
+   * Read active static variables into matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Variable type.
+   * @param[out] X Output. Rows index trajectories, columns index variables.
+   *
+   * Elements of @p X corresponding to active static variables are updated.
    */
   template<class M1>
   void read0(const VarType type, M1 X);
 
   /**
-   * @copydoc #concept::SparseInputBuffer::readContiguous0()
+   * Read active static variables into contiguous vector.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param type Variable type.
+   * @param[out] x Output vector, of size equal to the number of active
+   * static variables, see size0().
    */
   template<class V1>
   void readContiguous0(const VarType type, V1 x);
 
   /**
-   * @copydoc #concept::SparseInputBuffer::next()
+   * Advance to next time.
    */
   void next();
 
   /**
-   * @copydoc #concept::SparseInputBuffer::rewind()
+   * Rewind to time zero.
    */
   void rewind();
 
   /**
-   * @copydoc #concept::SparseInputBuffer::countUniqueTimes()
+   * Calculate number of unique time points in file.
+   *
+   * @param T Maximum time.
+   *
+   * @return Number of unique time points in file up to and including time
+   * @p T. @p T is itself considered one of these times.
+   *
+   * This is particularly useful for determining the number of records to
+   * reserve in output buffers, for example.
    */
   int countUniqueTimes(const real T);
 

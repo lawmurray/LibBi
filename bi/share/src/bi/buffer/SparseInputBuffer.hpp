@@ -105,36 +105,51 @@ public:
   real getTime() const;
 
   /**
-   * @copydoc concept::InputBuffer::size()
+   * The total number of active variables of a given type at the current
+   * time.
    *
-   * The total number of active variables at the current time.
+   * @param type Variable type.
+   *
+   * @return Number of active variables.
    */
   int size(const VarType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::size0()
+   * The total number of active static variables of a given type.
    *
-   * The total number of active static variables.
+   * @param type Variable type.
+   *
+   * @return Number of active variables.
    */
   int size0(const VarType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::getDenseMask()
+   * Get the mask of active variables at the current time.
+   *
+   * @param type Variable type.
+   *
+   * @return Mask.
    */
   const SparseInputBufferState::mask_type& getMask(const VarType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::getMask0()
+   * Get the mask of active static variables.
+   *
+   * @param type Variable type.
+   *
+   * @return Mask.
    */
   const SparseInputBufferState::mask_type& getMask0(const VarType type) const;
 
   /**
-   * @copydoc concept::InputBuffer::isValid()
+   * Does any data remain?
    */
   bool isValid() const;
 
   /**
    * Is time variable associated with at least one variable?
+   *
+   * @param tVar Index of time variable.
    */
   bool isAssoc(const int tVar) const;
 

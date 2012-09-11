@@ -52,16 +52,26 @@ public:
   virtual ~KalmanFilterNetCDFBuffer();
 
   /**
-   * @copydoc concept::KalmanFilterBuffer::readStd()
+   * Read Cholesky factor of covariance matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param t Time index.
+   * @param[out] S Matrix.
    */
   template<class M1>
-  void readStd(const int k, M1 S);
+  void readStd(const int t, M1 S);
 
   /**
-   * @copydoc concept::KalmanFilterBuffer::writeStd()
+   * Write Cholesky factor of covariance matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param t Time index.
+   * @param S Matrix.
    */
   template<class M1>
-  void writeStd(const int k, const M1 S);
+  void writeStd(const int t, const M1 S);
 
 protected:
   /**

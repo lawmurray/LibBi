@@ -68,69 +68,131 @@ public:
 
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::readSample()
+   * Read sample.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Index of record.
+   * @param[out] theta Parameters.
    */
   template<class V1>
   void readSample(const int k, V1 theta);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::writeSample()
+   * Write sample.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Index of record.
+   * @param theta Parameters.
    */
   template<class V1>
   void writeSample(const int k, const V1 theta);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::readLogLikelihood()
+   * Read log-likelihood.
+   *
+   * @param k Index of record.
+   * @param[out] ll Log-likelihood.
    */
   void readLogLikelihood(const int k, real& ll);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::writeLogLikelihood()
+   * Write log-likelihood.
+   *
+   * @param k Index of record.
+   * @param ll Log-likelihood.
    */
   void writeLogLikelihood(const int k, const real& ll);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::readLogPrior()
+   * Read log-prior density.
+   *
+   * @param k Index of record.
+   * @param[out] lp Log-prior density.
    */
   void readLogPrior(const int k, real& lp);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::writeLogPrior()
+   * Write log-prior density.
+   *
+   * @param k Index of record.
+   * @param lp Log-prior density.
    */
   void writeLogPrior(const int k, const real& lp);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::readParticle()
+   * Read single particle trajectory.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param p Particle index.
+   * @param[out] xd Trajectory of d-vars.
+   * @param[out] xr Trajectory of r-vars.
+   *
+   * @note This is usually a horizontal read, implying memory or hard disk
+   * striding.
    */
   template<class M1>
   void readParticle(const int p, M1 xd, M1 xr);
 
   /**
-   * @copydoc #concept::ParticleMCMCBuffer::writeParticle()
+   * Write single particle trajectory.
+   *
+   * @param p Particle index.
+   * @param xd Trajectory of d-vars.
+   * @param xr Trajectory of r-vars.
+   *
+   * @note This is usually horizontal write, implying memory or hard disk
+   * striding.
    */
   template<class M1>
   void writeParticle(const int p, const M1 xd, const M1 xr);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readTrajectory()
+   * Read trajectory.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Node type.
+   * @param p Trajectory index.
+   * @param[out] x Trajectory. Rows index variables of the given type,
+   * columns times.
    */
   template<class M1>
   void readTrajectory(const VarType type, const int p, M1 X);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeTrajectory()
+   * Write trajectory.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Node type.
+   * @param p Trajectory index.
+   * @param[out] x Trajectory. Rows index variables of the given type,
+   * columns times.
    */
   template<class M1>
   void writeTrajectory(const VarType type, const int p, const M1 X);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readSingle()
+   * Read state of particular trajectory at particular time.
+   *
+   * @param type Node type.
+   * @param p Trajectory index.
+   * @param t Time index.
+   * @param[out] x State.
    */
   template<class V1>
   void readSingle(const VarType type, const int p, const int t, V1 x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeSingle()
+   * Write state of particular trajectory at particular time.
+   *
+   * @param type Node type.
+   * @param p Trajectory index.
+   * @param t Time index.
+   * @param x State.
    */
   template<class V1>
   void writeSingle(const VarType type, const int p, const int t, const V1 x);

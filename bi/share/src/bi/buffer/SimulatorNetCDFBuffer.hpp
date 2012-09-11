@@ -55,45 +55,77 @@ public:
   virtual ~SimulatorNetCDFBuffer();
 
   /**
-   * @copydoc concept::SimulatorBuffer::size1()
+   * Number of trajectory records.
    */
   int size1() const;
 
   /**
-   * @copydoc concept::SimulatorBuffer::size2()
+   * Number of time records.
    */
   int size2() const;
 
   /**
-   * @copydoc concept::SimulatorBuffer::readTime()
+   * Read time.
+   *
+   * @param t Index of record.
+   * @param[out] x Time.
    */
   void readTime(const int t, real& x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeTime()
+   * Write time.
+   *
+   * @param t Index of record.
+   * @param x Time.
    */
   void writeTime(const int t, const real& x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readTime()
+   * Read times.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Index of first record.
+   * @param T Number of records.
+   * @param[out] x Times.
    */
   template<class V1>
   void readTimes(const int t, const int T, V1 x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeTime()
+   * Write times.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param t Index of first record.
+   * @param T Number of records.
+   * @param x Times.
    */
   template<class V1>
   void writeTimes(const int t, const int T, const V1 x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readState()
+   * Read state.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Node type.
+   * @param t Time index.
+   * @param[out] s State. Rows index trajectories, columns variables of the
+   * given type.
    */
   template<class M1>
   void readState(const VarType type, const int t, M1 X);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeState()
+   * Write state.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Node type.
+   * @param t Time index.
+   * @param s State. Rows index trajectories, columns variables of the given
+   * type.
    */
   template<class M1>
   void writeState(const VarType type, const int t, const M1 X,
