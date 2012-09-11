@@ -274,12 +274,13 @@ public:
    * @tparam IO2 #concept::SparseInputBuffer type.
    *
    * @param rng Random number generator.
+   * @param T Length of time to sample over.
    * @param s State.
    * @param filter Filter.
    * @param inInit Initialisation file.
    */
   template<Location L, class F, class IO2>
-  void init(Random& rng, State<B,L>& s, F* filter, IO2* inInit = NULL);
+  void init(Random& rng, const real T, State<B,L>& s, F* filter, IO2* inInit = NULL);
 
   /**
    * Take one step.
@@ -479,7 +480,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample(Random& rng,
     const real T, State<B,L>& s, F* filter, IO2* inInit, const int C, const FilterMode filterMode) {
   int c;
   const int P = s.size();
-  init(rng, s, filter, inInit);
+  init(rng, T, s, filter, inInit);
   for (c = 0; c < C; ++c) {
     step(rng, T, s, filter, filterMode);
     report(c);
@@ -495,7 +496,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample_together(Random& r
     const real T, State<B,L>& s, F* filter, IO2* inInit, const int C) {
   int c;
   const int P = s.size();
-  init(rng, s, filter, inInit);
+  init(rng, T, s, filter, inInit);
 
   step(rng, T, s, filter, UNCONDITIONED);
   report(0);
@@ -504,9 +505,7 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample_together(Random& r
 
   for (c = 1; c < C; ++c) {
     step_together(rng, T, s, filter);
-//    if (c % 1000 == 0) {
-      report(c);
-//    }
+    report(c);
     output(c);
     s.setRange(0,P);
   }
@@ -516,13 +515,21 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::sample_together(Random& r
 template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::init(Random& rng,
-    State<B,L>& s, F* filter, IO2* inInit) {
-  /* first run of filter to get everything initialised properly */
+    const real T, State<B,L>& s, F* filter, IO2* inInit) {
+  /* log-likelihood */
   filter->rewind();
-  filter->filter(rng, 0.0, s, inInit);
-
-  /* initialise state vector */
+  x1.ll = filter->filter(rng, T, s, inInit);
   x1.theta = vec(s.get(P_VAR));
+
+  /* prior log-density */
+  typename loc_temp_vector<L,real>::type lp(1);
+  const int P = s.size();
+  s.setRange(0, 1);
+  lp.clear();
+  row(s.get(PY_VAR), 0) = x1.theta;
+  m.parameterLogDensities(s, lp);
+  x1.lp = *lp.begin();
+  s.setRange(0, P);
 }
 
 template<class B, class IO1, bi::Location CL>
@@ -531,8 +538,9 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::propose(Random& rng,
     State<B,L>& s) {
   typename loc_temp_vector<L,real>::type lp(1);
   const int P = s.size();
-  s.setRange(0, 1);
+
   /* proposal */
+  s.setRange(0, 1);
   row(s.get(P_VAR), 0) = x1.theta;
   m.proposalParameterSamples(rng, s);
   x2.theta = row(s.get(P_VAR), 0);
@@ -556,9 +564,9 @@ void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::propose(Random& rng,
 template<class B, class IO1, bi::Location CL>
 template<bi::Location L>
 void bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computePriorOnProposal(State<B,L>& s) {
-
   const int P = s.size();
   s.setRange(0, 1);
+
   /* prior log-density */
   typename loc_temp_vector<L,real>::type lp(1);
   lp.clear();
@@ -575,8 +583,6 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::estimateLLOnProposal(Rand
   /* prepare for filter */
   bool cpf_fail = false;
 
-  m.initialSamples(rng, s);
-
   /* likelihood */
   filter->rewind();
   try {
@@ -591,7 +597,6 @@ bool bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::estimateLLOnProposal(Rand
    this is to prevent numerical instability associated with a
    (virtual) trajectory with no weight. */
   if (filtermode == CONDITIONED && x1.lp > 0) {
-    m.initialSamples(rng, s);
     filter->rewind();
     try {
       x1.ll = filter->filter(rng, T, x1.theta, s, x1.xd, x1.xr);
@@ -719,13 +724,8 @@ template<class B, class IO1, bi::Location CL>
 template<bi::Location L, class F>
 real bi::ParticleMarginalMetropolisHastings<B,IO1,CL>::computeLROnProposal(Random& rng,
     const real T, State<B,L>& s, State<B,L>& s_2, F* filter) {
-  /* prepare for filter */
-  m.initialSamples(rng, s);
-  m.initialSamples(rng, s_2);
-
   /* likelihood */
   filter->rewind();
-
   real ll1 = 0.0, ll2 = 0.0;
   real loglr = filter->filter(rng, T, x1.theta, s, x1.xd, x1.xr, x2.theta,
       s_2, ll1, ll2);

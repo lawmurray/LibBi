@@ -616,9 +616,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   init(rng, theta, s, lws, as);
   output0(s);
   do {
-    r = n > 0 && resample(rng, s, lws, as);
-    predict(rng, T, s);
-    correct(s, lws);
+    r = step(rng, T, s, lws, as, n);
     ll += logsumexp_reduce(lws) - bi::log(static_cast<real>(P));
     output(n, s, r, lws, as);
     ++n;
@@ -720,10 +718,10 @@ void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::predict(Random& rng,
   real to = getNextObsTime(tnxt);
 
   /* simulate forward */
-  while (state.t < to) {
+  do {
     sim.advance(rng, to, s);
     state.t = sim.getTime();
-  }
+  } while (state.t < to);
 
   /* update observations */
   if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
