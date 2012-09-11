@@ -21,6 +21,17 @@
  * @param X Host matrix.
  */
 template<class T1, int size_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1,size_value,inc_value>& x);
+
+/**
+ * Output host matrix.
+ *
+ * @param X Host matrix.
+ */
+template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X);
+
+template<class T1, int size_value, int inc_value>
 std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T1,size_value,inc_value>& x) {
   int i;
   for (i = 0; i < x.size(); ++i) {
@@ -32,11 +43,6 @@ std::ostream& operator<<(std::ostream& stream, const bi::host_vector_reference<T
   return stream;
 }
 
-/**
- * Output host matrix.
- *
- * @param X Host matrix.
- */
 template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
 std::ostream& operator<<(std::ostream& stream, const bi::host_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X) {
   int i, j;

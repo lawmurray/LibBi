@@ -175,7 +175,7 @@ inline bi::sse_host::vector_reference_type bi::sse_host::fetch(
 
   BOOST_AUTO(x, row(s.template getVar<X>(), p));
   return vector_reference_type(reinterpret_cast<sse_real*>(x.buf()), x.size(),
-      x.inc());
+      x.inc()/BI_SSE_SIZE);
 }
 
 template<class B, class X>
@@ -192,7 +192,7 @@ inline bi::sse_host::vector_reference_type bi::sse_host::fetch(
 
   BOOST_AUTO(x, row(s.template getVar<X>(), p));
   return vector_reference_type(reinterpret_cast<sse_real*>(x.buf()), x.size(),
-      x.inc());
+      x.inc()/BI_SSE_SIZE);
 }
 
 template<class B, class X>

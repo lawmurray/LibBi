@@ -322,10 +322,6 @@ inline T bi::min(const T x, const T y) {
   return (x < y) ? x : y;
 }
 
-#ifdef ENABLE_SSE
-#include "../sse/math/io.hpp"
-#endif
-
 template<class M1, class V1, class V2>
 inline void bi::gemv(const M1 A, const V1 x, V2 y) {
   /* pre-condition */

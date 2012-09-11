@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * IO functions for matrix and vector types.
+ * IO functions for SSE types.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev: 3055 $

@@ -12,17 +12,28 @@
 
 #include "vector.hpp"
 #include "matrix.hpp"
-#include "temp_vector.hpp"
-#include "temp_matrix.hpp"
 
 #include <iostream>
 
-#ifdef ENABLE_CUDA
 /**
  * Output device vector.
  *
  * @param X Device matrix.
  */
+template<class T1, int size_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1,size_value,inc_value>& x);
+
+/**
+ * Output device matrix.
+ *
+ * @param X Device matrix.
+ */
+template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
+std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X);
+
+#include "temp_vector.hpp"
+#include "temp_matrix.hpp"
+
 template<class T1, int size_value, int inc_value>
 std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1,size_value,inc_value>& x) {
   typename bi::temp_host_vector<T1>::type z(x);
@@ -38,11 +49,6 @@ std::ostream& operator<<(std::ostream& stream, const bi::gpu_vector_reference<T1
   return stream;
 }
 
-/**
- * Output device matrix.
- *
- * @param X Device matrix.
- */
 template<class T1, int size1_value, int size2_value, int lead_value, int inc_value>
 std::ostream& operator<<(std::ostream& stream, const bi::gpu_matrix_reference<T1,size1_value,size2_value,lead_value,inc_value>& X) {
   typename bi::temp_host_matrix<T1>::type Z(X);

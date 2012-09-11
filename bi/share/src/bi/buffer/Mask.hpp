@@ -9,9 +9,9 @@
 #define BI_BUFFER_MASK_HPP
 
 #include "../cuda/cuda.hpp"
-#include "../math/view.hpp"
 #include "../math/loc_temp_vector.hpp"
 #include "../math/loc_temp_matrix.hpp"
+#include "../math/view.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
