@@ -62,7 +62,11 @@ NcDim* bi::NetCDFBuffer::createDim(const char* name) {
   return ncDim;
 }
 
-NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np) {
+NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr,
+    const bool np) {
+  /* pre-condition */
+  BI_ASSERT(var != NULL);
+
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
   VarType type = var->getType();
@@ -71,19 +75,19 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np)
   if (hasDim("ns")) {
     dims.push_back(mapDim("ns"));
   }
-  if (hasDim("nr") && (nr || type == D_VAR || type == R_VAR || type == F_VAR)) {
+  if (nr && hasDim("nr")) {
     dims.push_back(mapDim("nr"));
   }
   for (i = 0; i < var->getNumDims(); ++i) {
     dims.push_back(mapDim(var->getDim(i)->getName().c_str()));
   }
-  if (hasDim("np") && np) {
+  if (np && hasDim("np")) {
     dims.push_back(mapDim("np"));
   }
 
-  if (dims.size() != 0) {
-    ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real, dims.size(),
-      &dims[0]);
+  if (dims.size() > 0) {
+    ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real,
+        dims.size(), &dims[0]);
   } else {
     ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real);
   }
@@ -95,8 +99,7 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr, const bool np)
 
 NcVar* bi::NetCDFBuffer::createFlexiVar(const Var* var) {
   /* pre-condition */
-  BI_ASSERT(var != NULL && (var->getType() == D_VAR ||
-      var->getType() == R_VAR || var->getType() == F_VAR));
+  BI_ASSERT(var != NULL);
 
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
@@ -112,8 +115,8 @@ NcVar* bi::NetCDFBuffer::createFlexiVar(const Var* var) {
     dims.push_back(mapDim("nrp"));
   }
 
-  ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real, dims.size(),
-      &dims[0]);
+  ncVar = ncFile->add_var(var->getOutputName().c_str(), netcdf_real,
+      dims.size(), &dims[0]);
   BI_ERROR(ncVar != NULL && ncVar->is_valid(), "Could not create variable " <<
       var->getOutputName());
 
@@ -140,17 +143,20 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
   Dim* dim;
   NcDim* ncDim;
   int i = 0, j = 0;
-  if (type == D_VAR || type == R_VAR || type == F_VAR) {
-    ncDim = ncVar->get_dim(i);
-    if (ncDim == mapDim("nr")) {
-      ++i;
-    } else {
-      BI_ERROR(false, "Dimension " << i << " of variable " <<
-          var->getOutputName() << " should be nr");
-      // ^ we get away with using getOutputName() here only because
-      //   SparseInputNetCDFBuffer overrides and so can use getInputName()
-    }
+
+  /* ns dimension */
+  ncDim = ncVar->get_dim(i);
+  if (ncDim == mapDim("ns")) {
+    ++i;
   }
+
+  /* nr dimension */
+  ncDim = ncVar->get_dim(i);
+  if (ncDim == mapDim("nr")) {
+    ++i;
+  }
+
+  /* variable dimensions */
   for (j = 0; j < var->getNumDims(); ++j, ++i) {
     dim = var->getDim(j);
     ncDim = ncVar->get_dim(i);
@@ -159,6 +165,8 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
         dim->getName());
     ++i;
   }
+
+  /* np dimension */
   ncDim = ncVar->get_dim(i);
   BI_ERROR(ncDim == mapDim("np"), "Dimension " << i << " of variable " <<
       var->getOutputName() << " should be np");

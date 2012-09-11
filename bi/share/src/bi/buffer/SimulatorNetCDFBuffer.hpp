@@ -9,7 +9,6 @@
 #define BI_BUFFER_SIMULATORNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "NcVarBuffer.hpp"
 #include "../state/State.hpp"
 #include "../method/misc.hpp"
 
@@ -178,7 +177,7 @@ protected:
   /**
    * Node variables, indexed by type.
    */
-  std::vector<std::vector<NcVarBuffer<real>*> > vars;
+  std::vector<std::vector<NcVar*> > vars;
 };
 }
 
@@ -282,16 +281,16 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
         counts[j] = X.size1();
       }
 
-      ret = ncVar->get_var()->set_cur(offsets.buf());
+      ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
 
       if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
-        ret = ncVar->get_var()->get(X1.buf(), counts.buf());
+        ret = ncVar->get(X1.buf(), counts.buf());
         BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
         columns(X, start, size) = X1;
       } else {
-        ret = ncVar->get_var()->get(columns(X, start, size).buf(),
+        ret = ncVar->get(columns(X, start, size).buf(),
             counts.buf());
         BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
       }
@@ -340,17 +339,16 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         offsets[j] = p;
         counts[j] = X.size1();
       }
-      ret = ncVar->get_var()->set_cur(offsets.buf());
+      ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
       if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         X1 = columns(X, start, size);
         synchronize(M1::on_device);
-        ret = ncVar->get_var()->put(X1.buf(), counts.buf());
+        ret = ncVar->put(X1.buf(), counts.buf());
       } else {
-        ret = ncVar->get_var()->put(columns(X, start, size).buf(),
-            counts.buf());
+        ret = ncVar->put(columns(X, start, size).buf(), counts.buf());
       }
       BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }

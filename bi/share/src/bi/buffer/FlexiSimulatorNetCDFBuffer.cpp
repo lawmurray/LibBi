@@ -29,12 +29,7 @@ bi::FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
 }
 
 bi::FlexiSimulatorNetCDFBuffer::~FlexiSimulatorNetCDFBuffer() {
-  unsigned i, j;
-  for (i = 0; i < vars.size(); ++i) {
-    for (j = 0; j < vars[i].size(); ++j) {
-      delete vars[i][j];
-    }
-  }
+  //
 }
 
 void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
@@ -72,7 +67,7 @@ void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
-          vars[type][id] = new NcVarBuffer<real>(createFlexiVar(var));
+          vars[type][id] = createFlexiVar(var);
         }
       }
     }
@@ -132,7 +127,7 @@ void bi::FlexiSimulatorNetCDFBuffer::map(const long T) {
       for (id = 0; id < m.getNumVars(type); ++id) {
         var = m.getVar(type, id);
         if (hasVar(var->getOutputName().c_str())) {
-          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
+          vars[type][id] = mapVar(m.getVar(type, id));
         }
       }
     }

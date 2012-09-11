@@ -2817,7 +2817,7 @@ sub
 		 'postfix_expression', 1,
 sub
 #line 262 "share/bi.yp"
-{ $_[0]->literal($_[1]) }
+{ $_[0]->integer_literal($_[1]) }
 	],
 	[#Rule 117
 		 'postfix_expression', 1,

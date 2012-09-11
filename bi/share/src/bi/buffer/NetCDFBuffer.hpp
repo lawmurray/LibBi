@@ -119,42 +119,46 @@ protected:
   /**
    * Create variable in NetCDF file.
    *
-   * @param var Variable in model for which to create variable in NetCDF file.
-   * @param nr Should @c nr dimension be forced, even for static variables?
+   * @param var Variable in model for which to create variable in NetCDF
+   * file.
+   * @param nr Declare the variable along the @c nr dimension?
+   * @param np Declare the variable along the @c np dimension?
    *
    * @return The variable.
    *
    * The NetCDF variable is declared along the following dimensions, from
    * innermost to outermost:
    *
-   * @li the @c np dimension,
+   * @li the @c np dimension, if desired,
    *
    * @li if the model variable has dimensions, the NetCDF dimensions that
    * correspond to these,
    *
-   * @li if the variable is dynamic (e.g. a state variable), the
-   * @c nr dimension,
+   * @li the @c nr dimension, if desired,
    *
-   * @li if it exists, the @c ns dimension.
+   * @li the @c ns dimension, if it exists.
    */
-  NcVar* createVar(const Var* var, const bool nr = false, const bool np = true);
+  NcVar* createVar(const Var* var, const bool nr, const bool np);
 
   /**
    * Create variable in NetCDF file using the flexible format.
    *
-   * @param var Dynamic variable in model for which to create variable in
-   * NetCDF file.
+   * @param var Variable in model for which to create variable in NetCDF
+   * file.
    *
    * @return The variable.
+   *
+   * The NetCDF variable is declared along the following dimensions, from
+   * innermost to outermost:
    *
    * @li the @c npr unlimited dimension,
    *
    * @li if the model variable has dimensions, the NetCDF dimensions that
    * correspond to these,
    *
-   * @li if it exists, the @c ns dimension.
+   * @li the @c ns dimension, if it exists.
    */
-  NcVar* createFlexiVar(const Var* node);
+  NcVar* createFlexiVar(const Var* var);
 
   /**
    * Map dimension in existing NetCDF file.
@@ -170,11 +174,11 @@ protected:
   /**
    * Map variable in existing NetCDF file.
    *
-   * @param node Node in model for which to map variable in NetCDF file.
+   * @param var Variable in model for which to map variable in NetCDF file.
    *
    * @return The variable.
    */
-  NcVar* mapVar(const Var* node);
+  NcVar* mapVar(const Var* var);
 
   /**
    * NetCDF file.

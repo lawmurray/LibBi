@@ -63,9 +63,9 @@ void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
           if (type == P_VAR) { // treat P_VARs specially!
-            vars[type][id] = new NcVarBuffer<real>(createVar(m.getVar(type, id), true));
+            vars[type][id] = createVar(var, true, true);
           } else {
-            vars[type][id] = new NcVarBuffer<real>(createVar(var));
+            vars[type][id] = createVar(var, true, true);
           }
         }
       }
@@ -123,7 +123,7 @@ void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
       for (id = 0; id < m.getNumVars(type); ++id) {
         var = m.getVar(type, id);
         if (hasVar(var->getOutputName().c_str())) {
-          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
+          vars[type][id] = mapVar(m.getVar(type, id));
         }
       }
     }
@@ -133,7 +133,7 @@ void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
   type = static_cast<VarType>(P_VAR);
   vars[type].resize(m.getNumVars(type));
   for (id = 0; id < m.getNumVars(type); ++id) {
-    vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
+    vars[type][id] = mapVar(m.getVar(type, id));
   }
 
   /// @todo validate these

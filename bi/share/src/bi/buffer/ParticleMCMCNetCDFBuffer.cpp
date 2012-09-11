@@ -25,12 +25,7 @@ bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
 }
 
 bi::ParticleMCMCNetCDFBuffer::~ParticleMCMCNetCDFBuffer() {
-  unsigned i, j;
-  for (i = 0; i < vars.size(); ++i) {
-    for (j = 0; j < vars[i].size(); ++j) {
-      delete vars[i][j];
-    }
-  }
+  //
 }
 
 void bi::ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
@@ -62,7 +57,11 @@ void bi::ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
-          vars[type][id] = new NcVarBuffer<real>(createVar(var));
+          if (type == P_VAR) {
+            vars[type][id] = createVar(var, true, true);
+          } else {
+            vars[type][id] = createVar(var, true, true);
+          }
         }
       }
     }
@@ -113,7 +112,7 @@ void bi::ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
       for (id = 0; id < m.getNumVars(type); ++id) {
         var = m.getVar(type, id);
         if (hasVar(var->getOutputName().c_str())) {
-          vars[type][id] = new NcVarBuffer<real>(mapVar(m.getVar(type, id)));
+          vars[type][id] = mapVar(m.getVar(type, id));
         }
       }
     }

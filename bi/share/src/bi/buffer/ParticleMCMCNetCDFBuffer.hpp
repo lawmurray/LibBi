@@ -9,7 +9,6 @@
 #define BI_BUFFER_PARTICLEMCMCNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "NcVarBuffer.hpp"
 #include "../state/State.hpp"
 #include "../method/misc.hpp"
 
@@ -239,7 +238,7 @@ protected:
   /**
    * Node variables, indexed by type.
    */
-  std::vector<std::vector<NcVarBuffer<real>*> > vars;
+  std::vector<std::vector<NcVar*> > vars;
 
   /**
    * Log-likelihoods variable.

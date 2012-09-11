@@ -54,7 +54,7 @@ void bi::OptimiserNetCDFBuffer::create() {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
-          vars[type][id] = createVar(var);
+          vars[type][id] = createVar(var, false, false);
         }
       }
     }
