@@ -100,13 +100,13 @@ public:
    *
    * @tparam V1 Vector type.
    *
-   * @param ps Log-probabilities. Need not be normalised to 1.
+   * @param lps Log-probabilities. Need not be normalised.
    *
    * @return Random index between @c 0 and <tt>ps.size() - 1</tt>, selected
-   * according to the non-normalised probabilities given in @c ps.
+   * according to the non-normalised log-probabilities given in @c ps.
    */
   template<class V1>
-  typename V1::difference_type multinomial(const V1 ps);
+  typename V1::difference_type multinomial(const V1 lps);
 
   /**
    * Generate a random number from a uniform distribution over a
@@ -186,12 +186,13 @@ public:
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    *
-   * @param ps Log-probabilities. Need not be normalised.
+   * @param lps Log-probabilities. Need not be normalised.
    * @param[out] xs Random indices between @c 0 and <tt>ps.size() - 1</tt>,
-   * selected according to the non-normalised probabilities given in @c ps.
+   * selected according to the non-normalised log-probabilities given in
+   * @c lps.
    */
   template<class V1, class V2>
-  void multinomials(const V1 ps, V2 xs);
+  void multinomials(const V1 lps, V2 xs);
 
   /**
    * Fill vector with random numbers from a uniform distribution over a
@@ -308,8 +309,8 @@ inline T1 bi::Random::uniformInt(const T1 lower, const T1 upper) {
 }
 
 template<class V1>
-inline typename V1::difference_type bi::Random::multinomial(const V1 ps) {
-  return getHostRng().multinomial(ps);
+inline typename V1::difference_type bi::Random::multinomial(const V1 lps) {
+  return getHostRng().multinomial(lps);
 }
 
 template<class T1>
@@ -377,13 +378,13 @@ void bi::Random::betas(V1 x, const typename V1::value_type alpha,
 }
 
 template<class V1, class V2>
-void bi::Random::multinomials(const V1 ps, V2 xs) {
+void bi::Random::multinomials(const V1 lps, V2 xs) {
   #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
   #else
   typedef RandomHost impl;
   #endif
-  impl::uniforms(*this, ps, xs);
+  impl::multinomials(*this, lps, xs);
 }
 
 inline bi::RngHost& bi::Random::getHostRng() {

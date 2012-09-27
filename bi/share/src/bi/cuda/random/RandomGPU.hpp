@@ -24,7 +24,7 @@ struct RandomGPU {
    * @copydoc Random::multinomials
    */
   template<class V1, class V2>
-  static void multinomials(Random& rng, const V1 ps, V2 xs);
+  static void multinomials(Random& rng, const V1 lps, V2 xs);
 
   /**
    * @copydoc Random::uniforms

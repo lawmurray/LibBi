@@ -57,7 +57,7 @@ struct RandomHost {
    * @copydoc Random::multinomials
    */
   template<class V1, class V2>
-  static void multinomials(Random& rng, const V1 ps, V2 xs);
+  static void multinomials(Random& rng, const V1 lps, V2 xs);
 
 };
 }
@@ -146,15 +146,15 @@ void bi::RandomHost::betas(Random& rng, V1 x,
 }
 
 template<class V1, class V2>
-void bi::RandomHost::multinomials(Random& rng, const V1 ps, V2 xs) {
+void bi::RandomHost::multinomials(Random& rng, const V1 lps, V2 xs) {
   /* pre-condition */
-  BI_ASSERT(ps.size() > 0);
+  BI_ASSERT(lps.size() > 0);
 
   typedef typename V1::value_type T1;
 
   BOOST_AUTO(rng1, rng.getHostRng());
-  typename sim_temp_vector<V1>::type Ps(ps.size());
-  inclusive_scan_sum_exp(ps, Ps);
+  typename sim_temp_vector<V1>::type Ps(lps.size());
+  inclusive_scan_sum_exp(lps, Ps);
 
   T1 u;
   T1 lower = 0.0;

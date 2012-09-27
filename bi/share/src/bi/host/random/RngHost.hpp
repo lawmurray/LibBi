@@ -45,7 +45,7 @@ public:
    * @copydoc Random::multinomial
    */
   template<class V1>
-  typename V1::difference_type multinomial(const V1 ps);
+  typename V1::difference_type multinomial(const V1 lps);
 
   /**
    * @copydoc Random::uniform
@@ -113,14 +113,14 @@ inline T1 bi::RngHost::uniformInt(const T1 lower, const T1 upper) {
 }
 
 template<class V1>
-inline typename V1::difference_type bi::RngHost::multinomial(const V1 ps) {
+inline typename V1::difference_type bi::RngHost::multinomial(const V1 lps) {
   /* pre-condition */
-  BI_ASSERT(ps.size() > 0);
+  BI_ASSERT(lps.size() > 0);
 
   typedef boost::uniform_real<typename V1::value_type> dist_type;
 
-  typename sim_temp_vector<V1>::type Ps(ps.size());
-  inclusive_scan_sum_expu(ps, Ps);
+  typename sim_temp_vector<V1>::type Ps(lps.size());
+  inclusive_scan_sum_expu(lps, Ps);
 
   dist_type dist(0.0, *(Ps.end() - 1));
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
