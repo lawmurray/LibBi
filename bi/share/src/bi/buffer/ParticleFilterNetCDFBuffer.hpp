@@ -172,6 +172,8 @@ public:
   template<class V1>
   void writeResamples(const int t, const V1 r);
 
+  void writeLL(const double ll);
+
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -197,6 +199,11 @@ protected:
    * Resampling variable.
    */
   NcVar* rVar;
+
+	/**
+   * Log-likelihood estimate.
+   */
+  NcVar* llVar;
 };
 }
 

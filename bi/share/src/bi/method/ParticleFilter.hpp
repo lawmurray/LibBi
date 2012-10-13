@@ -360,6 +360,8 @@ public:
   template<Location L>
   void output0(const State<B,L>& s);
 
+  void outputT(const double ll);
+
   /**
    * Flush output caches to file.
    */
@@ -594,6 +596,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   } while (state.t < T);
   synchronize();
   term();
+  outputT(ll);
 
   return ll;
 }
@@ -623,6 +626,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   } while (state.t < T);
   synchronize();
   term();
+  outputT(ll);
 
   return ll;
 }
@@ -657,6 +661,7 @@ real bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::filter(Random& rng, const real T,
   } while (state.t < T);
   synchronize();
   term();
+  outputT(ll);
 
   return ll;
 }
@@ -811,6 +816,11 @@ template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
 template<bi::Location L>
 void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::output0(const State<B,L>& s) {
   sim.output0(s);
+}
+
+template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>
+void bi::ParticleFilter<B,R,IO1,IO2,IO3,CL>::outputT(const double ll) {
+  out->writeLL(ll);
 }
 
 template<class B, class R, class IO1, class IO2, class IO3, bi::Location CL>

@@ -41,6 +41,8 @@ void bi::ParticleFilterNetCDFBuffer::create() {
   rVar = ncFile->add_var("resample", ncInt, nrDim);
   BI_ERROR(rVar != NULL && rVar->is_valid(),
       "Could not create resample variable");
+
+  llVar = ncFile->add_var("LL", netcdf_real);
 }
 
 void bi::ParticleFilterNetCDFBuffer::map() {
@@ -145,4 +147,12 @@ void bi::ParticleFilterNetCDFBuffer::writeResample(const int t, const int r) {
   BI_ASSERT_MSG(ret, "Indexing out of bounds reading resample");
   ret = rVar->put(&r, 1);
   BI_ASSERT_MSG(ret, "Inconvertible type reading resample");
+}
+
+void bi::ParticleFilterNetCDFBuffer::writeLL(const double ll) {
+  BI_UNUSED NcBool ret;
+
+  ret = llVar->put(&ll,1);
+
+  BI_ASSERT_MSG(ret, "Inconvertible type reading variable ll");
 }
