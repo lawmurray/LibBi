@@ -46,7 +46,7 @@ void bi::SparseStaticSamplerMatrixVisitorHost<B,S,PX,OX>::accept(Random& rng,
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
 
-  const int id = var_id < target_type > ::value;
+  const int id = var_id<target_type>::value;
 
   if (mask.isDense(id)) {
     front::samples(rng, s, p, pax, x);

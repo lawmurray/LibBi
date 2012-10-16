@@ -19,13 +19,9 @@ namespace bi {
  * Buffer for storing, reading and writing results of ParticleMCMC in
  * NetCDF file.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::ParticleMCMCBuffer
+ * @ingroup io_buffer
  */
-class ParticleMCMCNetCDFBuffer : public NetCDFBuffer {
+class ParticleMCMCNetCDFBuffer: public NetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -46,169 +42,156 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  ParticleMCMCNetCDFBuffer(const Model& m, const int P,
-      const int T, const std::string& file,
-      const FileMode mode = READ_ONLY);
+  ParticleMCMCNetCDFBuffer(const Model& m, const int P, const int T,
+      const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
-   * Destructor.
-   */
-  virtual ~ParticleMCMCNetCDFBuffer();
-
-  /**
-   * @copydoc concept::SimulatorBuffer::size1()
-   */
-  int size1() const;
-
-  /**
-   * @copydoc concept::SimulatorBuffer::size2()
-   */
-  int size2() const;
-
-
-  /**
-   * Read sample.
+   * Read times.
    *
    * @tparam V1 Vector type.
    *
-   * @param k Index of record.
-   * @param[out] theta Parameters.
+   * @param t Index of first record.
+   * @param[out] x Times.
    */
   template<class V1>
-  void readSample(const int k, V1 theta);
+  void readTimes(const int t, V1 x) const;
 
   /**
-   * Write sample.
+   * Write times.
    *
    * @tparam V1 Vector type.
    *
-   * @param k Index of record.
-   * @param theta Parameters.
+   * @param t Index of first record.
+   * @param x Times.
    */
   template<class V1>
-  void writeSample(const int k, const V1 theta);
+  void writeTimes(const int t, const V1 x);
 
   /**
-   * Read log-likelihood.
+   * Read log-likelihoods.
    *
-   * @param k Index of record.
-   * @param[out] ll Log-likelihood.
+   * @param p Index of first sample.
+   * @param[out] ll Log-likelihoods.
    */
-  void readLogLikelihood(const int k, real& ll);
+  template<class V1>
+  void readLogLikelihoods(const int p, V1 ll);
 
   /**
-   * Write log-likelihood.
+   * Write log-likelihoods.
    *
-   * @param k Index of record.
-   * @param ll Log-likelihood.
+   * @param p Index of first sample.
+   * @param ll Log-likelihoods.
    */
-  void writeLogLikelihood(const int k, const real& ll);
+  template<class V1>
+  void writeLogLikelihoods(const int p, const V1 ll);
 
   /**
-   * Read log-prior density.
+   * Read log-prior densities.
    *
-   * @param k Index of record.
-   * @param[out] lp Log-prior density.
+   * @param p Index of first sample.
+   * @param[out] lp Log-prior densities.
    */
-  void readLogPrior(const int k, real& lp);
+  template<class V1>
+  void readLogPriors(const int p, V1 lp);
 
   /**
-   * Write log-prior density.
+   * Write log-prior densities.
    *
-   * @param k Index of record.
-   * @param lp Log-prior density.
+   * @param p Index of first sample.
+   * @param lp Log-prior densities.
    */
-  void writeLogPrior(const int k, const real& lp);
+  template<class V1>
+  void writeLogPriors(const int p, const V1 lp);
 
   /**
-   * Read single particle trajectory.
+   * Read parameter samples.
    *
    * @tparam M1 Matrix type.
    *
-   * @param p Particle index.
-   * @param[out] xd Trajectory of d-vars.
-   * @param[out] xr Trajectory of r-vars.
-   *
-   * @note This is usually a horizontal read, implying memory or hard disk
-   * striding.
+   * @param p Index of first sample.
+   * @param[out] X Parameters. Rows index samples, columns index variables.
    */
   template<class M1>
-  void readParticle(const int p, M1 xd, M1 xr);
+  void readParameters(const int p, M1 X);
 
   /**
-   * Write single particle trajectory.
-   *
-   * @param p Particle index.
-   * @param xd Trajectory of d-vars.
-   * @param xr Trajectory of r-vars.
-   *
-   * @note This is usually horizontal write, implying memory or hard disk
-   * striding.
-   */
-  template<class M1>
-  void writeParticle(const int p, const M1 xd, const M1 xr);
-
-  /**
-   * Read trajectory.
+   * Write parameter samples.
    *
    * @tparam M1 Matrix type.
    *
-   * @param type Node type.
-   * @param p Trajectory index.
-   * @param[out] x Trajectory. Rows index variables of the given type,
-   * columns times.
+   * @param p Index of first sample.
+   * @param X Parameters. Rows index samples, columns index variables.
    */
   template<class M1>
-  void readTrajectory(const VarType type, const int p, M1 X);
+  void writeParameters(const int p, const M1 X);
 
   /**
-   * Write trajectory.
+   * Read state.
    *
    * @tparam M1 Matrix type.
    *
-   * @param type Node type.
-   * @param p Trajectory index.
-   * @param[out] x Trajectory. Rows index variables of the given type,
-   * columns times.
-   */
-  template<class M1>
-  void writeTrajectory(const VarType type, const int p, const M1 X);
-
-  /**
-   * Read state of particular trajectory at particular time.
-   *
-   * @param type Node type.
-   * @param p Trajectory index.
    * @param t Time index.
-   * @param[out] x State.
+   * @param p First sample index.
+   * @param[out] X Trajectories. Rows index samples, columns index variables,
+   * times and dimensions (outermost to innermost).
    */
-  template<class V1>
-  void readSingle(const VarType type, const int p, const int t, V1 x);
+  template<class M1>
+  void readState(const int t, const int p, M1 X);
 
   /**
-   * Write state of particular trajectory at particular time.
+   * Write state.
    *
-   * @param type Node type.
-   * @param p Trajectory index.
+   * @tparam M1 Matrix type.
+   *
    * @param t Time index.
-   * @param x State.
+   * @param p First sample index.
+   * @param X Trajectories. Rows index samples, columns index variables,
+   * times and dimensions (outermost to innermost).
    */
-  template<class V1>
-  void writeSingle(const VarType type, const int p, const int t, const V1 x);
+  template<class M1>
+  void writeState(const int t, const int p, const M1 X);
 
 protected:
   /**
-     * Set up structure of NetCDF file.
-     *
-     * @param P Number of particles.
-     * @param T Number of time points.
-     */
-    void create(const long P, const long T);
+   * Read state.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Variable type.
+   * @param t Time index.
+   * @param p First sample index.
+   * @param[out] s State. Rows index trajectories, columns variables of the
+   * given type.
+   */
+  template<class M1>
+  void readState(const VarType type, const int t, const int p, M1 X);
+
+  /**
+   * Write state.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param type Variable type.
+   * @param t Time index.
+   * @param p First sample index.
+   * @param s State. Rows index trajectories, columns variables of the given
+   * type.
+   */
+  template<class M1>
+  void writeState(const VarType type, const int t, const int p, const M1 X);
+
+  /**
+   * Set up structure of NetCDF file.
+   *
+   * @param P Number of particles.
+   * @param T Number of time points.
+   */
+  void create(const long P, const long T);
 
   /**
    * Map structure of existing NetCDF file.
    */
-    void map(const long P = -1, const long T = -1);
+  void map(const long P = -1, const long T = -1);
 
   /**
    * Model.
@@ -256,54 +239,67 @@ protected:
 #include "../math/view.hpp"
 #include "../math/temp_matrix.hpp"
 
-inline int bi::ParticleMCMCNetCDFBuffer::size1() const {
-  return npDim->size();
-}
-
-inline int bi::ParticleMCMCNetCDFBuffer::size2() const {
-  return nrDim->size();
+template<class V1>
+void bi::ParticleMCMCNetCDFBuffer::readTimes(const int t, V1 x) const {
+  read1d(tVar, t, x);
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::readSample(const int p, V1 theta) {
-  readSingle(P_VAR, p, 0, theta);
+void bi::ParticleMCMCNetCDFBuffer::writeTimes(const int t, const V1 x) {
+  write1d(tVar, t, x);
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::writeSample(const int p, const V1 theta) {
-  writeSingle(P_VAR, p, 0, theta);
+void bi::ParticleMCMCNetCDFBuffer::readLogLikelihoods(const int p, V1 ll) {
+  read1d(llVar, p, ll);
+}
+
+template<class V1>
+void bi::ParticleMCMCNetCDFBuffer::writeLogLikelihoods(const int p,
+    const V1 ll) {
+  write1d(llVar, p, ll);
+}
+
+template<class V1>
+void bi::ParticleMCMCNetCDFBuffer::readLogPriors(const int p, V1 lp) {
+  read1d(lpVar, p, lp);
+}
+
+template<class V1>
+void bi::ParticleMCMCNetCDFBuffer::writeLogPriors(const int p, const V1 lp) {
+  write1d(lpVar, p, lp);
 }
 
 template<class M1>
-void bi::ParticleMCMCNetCDFBuffer::readParticle(const int p, M1 xd,
-    M1 xr) {
-  /* pre-condition */
-  BI_ASSERT(xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
-  BI_ASSERT(xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
-
-  readTrajectory(D_VAR, p, xd);
-  readTrajectory(R_VAR, p, xr);
+void bi::ParticleMCMCNetCDFBuffer::readParameters(const int p, M1 X) {
+  readState(P_VAR, 0, p, X);
 }
 
 template<class M1>
-void bi::ParticleMCMCNetCDFBuffer::writeParticle(const int p,
-    const M1 xd, const M1 xr) {
-  /* pre-condition */
-  BI_ASSERT(xd.size2() == nrDim->size() && xd.size1() == m.getNetSize(D_VAR));
-  BI_ASSERT(xr.size2() == nrDim->size() && xr.size1() == m.getNetSize(R_VAR));
-
-  writeTrajectory(D_VAR, p, xd);
-  writeTrajectory(R_VAR, p, xr);
+void bi::ParticleMCMCNetCDFBuffer::writeParameters(const int p, const M1 X) {
+  writeState(P_VAR, 0, p, X);
 }
 
+template<class M1>
+void bi::ParticleMCMCNetCDFBuffer::readState(const int t, const int p, M1 X) {
+  readState(R_VAR, t, p, columns(X, 0, m.getNetSize(R_VAR)));
+  readState(D_VAR, t, p, columns(X, m.getNetSize(R_VAR),
+      m.getNetSize(D_VAR)));
+}
 
 template<class M1>
-void bi::ParticleMCMCNetCDFBuffer::readTrajectory(const VarType type,
+void bi::ParticleMCMCNetCDFBuffer::writeState(const int t, const int p,
+    const M1 X) {
+  writeState(R_VAR, t, p, columns(X, 0, m.getNetSize(R_VAR)));
+  writeState(D_VAR, t, p, columns(X, m.getNetSize(R_VAR),
+      m.getNetSize(D_VAR)));
+}
+
+template<class M1>
+void bi::ParticleMCMCNetCDFBuffer::readState(const VarType type, const int t,
     const int p, M1 X) {
   /* pre-conditions */
-  assert (p >= 0 && p < npDim->size());
-  assert (X.size1() == m.getNetSize(type));
-  assert (X.size2() == nrDim->size());
+  BI_ASSERT(X.size1() == npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -320,42 +316,48 @@ void bi::ParticleMCMCNetCDFBuffer::readTrajectory(const VarType type,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
+      BI_ERROR_MSG(ncVar != NULL,
+          "Variable " << var->getOutputName() << " does not exist in file");
 
       j = 0;
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      if (ncVar->get_dim(j) == nrDim) {
-        offsets[j] = 0;
-        counts[j] = nrDim->size();
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
+        offsets[j] = t;
+        counts[j] = 1;
         ++j;
       }
       for (i = 0; i < var->getNumDims(); ++i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = p;
-      counts[j] = 1;
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
+        offsets[j] = p;
+        counts[j] = X.size1();
+      }
 
-      temp_matrix_type X1(size, X.size2());
       ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
-      ret = ncVar->get(X1.buf(), counts.buf());
-      BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
-      rows(X, start, size) = X1;
+
+      if (M1::on_device || !X.contiguous()) {
+        temp_matrix_type X1(X.size1(), size);
+        ret = ncVar->get(X1.buf(), counts.buf());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+        columns(X, start, size) = X1;
+      } else {
+        ret = ncVar->get(columns(X, start, size).buf(), counts.buf());
+        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+      }
     }
   }
 }
 
 template<class M1>
-void bi::ParticleMCMCNetCDFBuffer::writeTrajectory(const VarType type,
+void bi::ParticleMCMCNetCDFBuffer::writeState(const VarType type, const int t,
     const int p, const M1 X) {
   /* pre-conditions */
-  assert (p < npDim->size());
-  assert (X.size1() == m.getNetSize(type));
-  assert (X.size2() == nrDim->size());
+  BI_ASSERT(X.size1() <= npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -372,66 +374,14 @@ void bi::ParticleMCMCNetCDFBuffer::writeTrajectory(const VarType type,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
+      BI_ERROR_MSG(ncVar != NULL,
+          "Variable " << var->getOutputName() << " does not exist in file");
 
       j = 0;
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      if (ncVar->get_dim(j) == nrDim) {
-        offsets[j] = 0;
-        counts[j] = nrDim->size();
-        ++j;
-      }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
-        offsets[j] = 0;
-        counts[j] = ncVar->get_dim(j)->size();
-      }
-      offsets[j] = p;
-      counts[j] = 1;
-
-      temp_matrix_type X1(size, X.size2());
-      X1 = rows(X, start, size);
-      ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
-      ret = ncVar->put(X1.buf(), counts.buf());
-      BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
-    }
-  }
-}
-
-template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::readSingle(const VarType type, const int p,
-    const int t, V1 x) {
-  /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (p >= 0 && p < npDim->size());
-  assert (x.size() == m.getNetSize(type));
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  Var* var;
-  host_vector<long> offsets, counts;
-  int start, id, i, j, size, dims;
-  BI_UNUSED NcBool ret;
-
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
-    size = var->getSize();
-
-    if (var->hasOutput()) {
-      BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
-
-      j = 0;
-      offsets.resize(ncVar->num_dims(), false);
-      counts.resize(ncVar->num_dims(), false);
-
-      if (ncVar->get_dim(j) == nrDim) {
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
         offsets[j] = t;
         counts[j] = 1;
         ++j;
@@ -440,76 +390,20 @@ void bi::ParticleMCMCNetCDFBuffer::readSingle(const VarType type, const int p,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = p;
-      counts[j] = 1;
-
-      ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
-      if (V1::on_device || x.inc() != 1) {
-        temp_vector_type x1(size);
-        ret = ncVar->get(x1.buf(), counts.buf());
-        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
-        subrange(x, start, size) = x1;
-      } else {
-        ret = ncVar->get(subrange(x, start, size).buf(), counts.buf());
-        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
+        offsets[j] = p;
+        counts[j] = X.size1();
       }
-    }
-  }
-}
-
-template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::writeSingle(const VarType type,
-    const int p, const int t, const V1 x) {
-  /* pre-conditions */
-  assert (t >= 0 && t < nrDim->size());
-  assert (p >= 0 && p < npDim->size());
-  assert (x.size() == m.getNetSize(type));
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  Var* var;
-  host_vector<long> offsets, counts;
-  int start, size, id, i, j;
-  BI_UNUSED NcBool ret;
-
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
-    size = var->getSize();
-
-    if (var->hasOutput()) {
-      BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
-
-      j = 0;
-      offsets.resize(ncVar->num_dims(), false);
-      counts.resize(ncVar->num_dims(), false);
-
-      if (ncVar->get_dim(j) == nrDim) {
-        offsets[j] = t;
-        counts[j] = 1;
-        ++j;
-      }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
-        offsets[j] = 0;
-        counts[j] = ncVar->get_dim(j)->size();
-      }
-      offsets[j] = p;
-      counts[j] = 1;
-
       ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
 
-      if (V1::on_device || x.inc() != 1) {
-        temp_vector_type x1(size);
-        x1 = subrange(x, start, size);
-        synchronize(V1::on_device);
-        ret = ncVar->put(x1.buf(), counts.buf());
+      if (M1::on_device || !X.contiguous()) {
+        temp_matrix_type X1(X.size1(), size);
+        X1 = columns(X, start, size);
+        synchronize(M1::on_device);
+        ret = ncVar->put(X1.buf(), counts.buf());
       } else {
-        ret = ncVar->put(subrange(x, start, size).buf(), counts.buf());
+        ret = ncVar->put(columns(X, start, size).buf(), counts.buf());
       }
       BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }

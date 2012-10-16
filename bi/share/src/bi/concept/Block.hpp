@@ -32,7 +32,7 @@ public:
    * @param[in,out] s State.
    */
   template<Location L>
-  static void simulate(State<B,L>& s);
+  static void simulates(State<B,L>& s);
 
   /**
    * Static stochastic update.
@@ -87,7 +87,7 @@ public:
    * @param[in,out] s State.
    */
   template<class T1, Location L>
-  static void simulate(const T1 t1, const T1 t2, const bool onDelta,
+  static void simulates(const T1 t1, const T1 t2, const bool onDelta,
       State<B,L>& s);
 
   /**
@@ -157,7 +157,7 @@ public:
    * @param mask Mask.
    */
   template<Location L>
-  static void simulate(State<B,L>& s, const Mask<L>& mask);
+  static void simulates(State<B,L>& s, const Mask<L>& mask);
 
   /**
    * Sparse-static stochastic update.

@@ -56,15 +56,17 @@ libbi_a_SOURCES = \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
   src/bi/buffer/SparseInputBuffer.cpp \
   src/bi/buffer/SparseInputNetCDFBuffer.cpp \
+  src/bi/cache/AncestryCache.cpp \
+  src/bi/cache/Cache.cpp \
   src/bi/host/shared_host.cpp \
   src/bi/host/math/cblas.cpp \
   src/bi/host/math/lapack.cpp \
   src/bi/host/math/qrupdate.cpp \
   src/bi/host/ode/IntegratorConstants.cpp \
   src/bi/host/random/RandomHost.cpp \
-  src/bi/method/MetropolisResampler.cpp \
-  src/bi/method/MultinomialResampler.cpp \
-  src/bi/method/StratifiedResampler.cpp \
+  src/bi/resampler/MetropolisResampler.cpp \
+  src/bi/resampler/MultinomialResampler.cpp \
+  src/bi/resampler/StratifiedResampler.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
   src/bi/random/Random.cpp

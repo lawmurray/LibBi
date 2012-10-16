@@ -19,11 +19,7 @@ namespace bi {
 /**
  * NetCDF buffer for storing and sequentially reading input in sparse format.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::Markable, #concept::SparseInputBuffer
+ * @ingroup io_buffer
  */
 class SparseInputNetCDFBuffer : public NetCDFBuffer,
     public SparseInputBuffer {
@@ -51,11 +47,6 @@ public:
    * @see NetCDFBuffer::NetCDFBuffer(const NetCDFBuffer&)
    */
   SparseInputNetCDFBuffer(const SparseInputNetCDFBuffer& o);
-
-  /**
-   * Destructor.
-   */
-  virtual ~SparseInputNetCDFBuffer();
 
   /**
    * Read active variables at current time into matrix.
@@ -119,17 +110,34 @@ public:
   void rewind();
 
   /**
-   * Calculate number of unique time points in file.
+   * Set time.
    *
-   * @param T Maximum time.
-   *
-   * @return Number of unique time points in file up to and including time
-   * @p T. @p T is itself considered one of these times.
-   *
-   * This is particularly useful for determining the number of records to
-   * reserve in output buffers, for example.
+   * @param t Time.
    */
-  int countUniqueTimes(const real T);
+  void setTime(const real T);
+
+  /**
+   * Count number of time points in interval.
+   *
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points in between.
+   *
+   * @return Number of time points computed as below.
+   *
+   * This function forms two sets. The first is the set of all unique times
+   * that appear in the file. The second is the set of times given by:
+   *
+   * @li @p t, if <tt>K > 1</tt>,
+   * @li @p T, if <tt>K > 0</tt>, and
+   * @li <tt>K - 2</tt> equispaced intermediate results between @p t and @p T,
+   * if <tt>K > 1</tt>.
+   *
+   * It returns the cardinality of the union of these two sets. This is most
+   * useful for computing output times, where one may desire dense output
+   * given by @p K, while also wanting output at each observation time.
+   */
+  int countTimes(const real t, const real T, const int K = 0);
 
   /**
    * Update masks for currently active time variables.
@@ -185,8 +193,7 @@ private:
    * @param[out] X Output.
    */
   template<class M1>
-  void read(const VarType type, mask_type& mask,
-      M1 X);
+  void read(const VarType type, mask_type& mask, M1 X);
 
   /**
    * Masked read into contiguous vector.
@@ -428,8 +435,7 @@ void bi::SparseInputNetCDFBuffer::read0(const VarType type, M1 X) {
 }
 
 template<class V1>
-void bi::SparseInputNetCDFBuffer::readContiguous0(const VarType type,
-    V1 x) {
+void bi::SparseInputNetCDFBuffer::readContiguous0(const VarType type, V1 x) {
   readContiguous(type, *masks0[type], x);
 }
 
@@ -520,15 +526,15 @@ void bi::SparseInputNetCDFBuffer::readDense(const VarType type, const int id,
   /* np dimension */
   if (j < ncVar->num_dims() && npDim != NULL && ncVar->get_dim(j) == npDim) {
     if (np >= 0) {
-      BI_ASSERT(X.size1() == 1);
+      BI_ASSERT(np + X.size1() <= npDim->size());
       offsets[j] = np;
-      counts[j] = 1;
+      counts[j] = X.size1();
     } else {
       BI_ASSERT(X.size1() <= npDim->size());
       offsets[j] = 0;
       counts[j] = X.size1();
-      haveP = true;
     }
+    haveP = true;
     ++j;
   }
 

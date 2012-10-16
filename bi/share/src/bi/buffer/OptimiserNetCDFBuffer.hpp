@@ -19,11 +19,7 @@ namespace bi {
  * NetCDF buffer for storing, reading and writing results of
  * NelderMeadOptimiser.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::OptimiserBuffer
+ * @ingroup io_buffer
  */
 class OptimiserNetCDFBuffer : public NetCDFBuffer {
 public:
@@ -36,11 +32,6 @@ public:
    */
   OptimiserNetCDFBuffer(const Model& m, const std::string& file,
       const FileMode mode = READ_ONLY);
-
-  /**
-   * Destructor.
-   */
-  virtual ~OptimiserNetCDFBuffer();
 
   /**
    * @copydoc concept::OptimiserBuffer::size()
@@ -150,7 +141,7 @@ void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -201,7 +192,7 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;

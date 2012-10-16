@@ -68,7 +68,7 @@ inline void bi::SparseStaticUpdaterVisitorGPU<B,S,PX,OX>::accept(
   for (i = 0; i < size; ++i) {
     ix = mask.getIndex(id, i);
     cox.setIndex(ix);
-    front::simulate(s, p, ix, cox, pax, x);
+    front::simulates(s, p, ix, cox, pax, x);
   }
 
   SparseStaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(s, mask, p, pax, x);

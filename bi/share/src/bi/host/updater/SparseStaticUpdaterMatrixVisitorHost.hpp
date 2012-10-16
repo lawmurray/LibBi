@@ -59,7 +59,7 @@ inline void bi::SparseStaticUpdaterMatrixVisitorHost<B,S,L,PX,OX>::accept(
   const int id = var_id<target_type>::value;
 
   if (mask.isDense(id)) {
-    front::simulate(s, p, pax, x);
+    front::simulates(s, p, pax, x);
   } else if (mask.isSparse(id)) {
     BI_ASSERT_MSG(false, "Cannot do sparse update with matrix expression");
   }

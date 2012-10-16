@@ -205,13 +205,13 @@ struct trsm_impl<ON_DEVICE,T1> {
 template<class T1>
 template<class M1, class V1, class V2>
 void bi::ch1up_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) {
-  BI_ERROR(false, "ch1up not implemented for device");
+  BI_ERROR_MSG(false, "ch1up not implemented for device");
 }
 
 template<class T1>
 template<class M1, class V1, class V2>
 void bi::ch1dn_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
-  BI_ERROR(false, "ch1dn not implemented for device");
+  BI_ERROR_MSG(false, "ch1dn not implemented for device");
 }
 
 template<class T1>

@@ -51,7 +51,7 @@ inline void bi::DynamicUpdaterMatrixVisitorHost<B,S,T1,PX,OX>::accept(
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
 
-  front::simulate(t1, t2, s, p, pax, x);
+  front::simulates(t1, t2, s, p, pax, x);
   DynamicUpdaterMatrixVisitorHost<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p,
       pax, x);
 }

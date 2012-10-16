@@ -102,6 +102,7 @@ sub is_math {
       'max' => 1,
       'min' => 1,
       'sqrt' => 1,
+      'rsqrt' => 1,
       'pow' => 1,
       'mod' => 1,
       'ceil' => 1,

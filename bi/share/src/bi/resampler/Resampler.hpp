@@ -91,7 +91,7 @@ struct resample_check : public std::binary_function<T,int,T> {
   CUDA_FUNC_BOTH T operator()(const T& lw, const int& o) {
     T eps;
 
-    if (BI_IS_FINITE(lw)) {
+    if (bi::is_finite(lw)) {
       eps = bi::exp(lw - lW) - o/P; // P of type T, not int, see note above
       eps *= eps;
     } else {

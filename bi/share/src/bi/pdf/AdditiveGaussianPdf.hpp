@@ -233,7 +233,7 @@ real bi::AdditiveGaussianPdf<V1,M1>::density(const V2 x1, const V3 x2) {
   z2 = x2;
   sub_elements(z2, x1);
   real p = GaussianPdf<V1,M1>::density(z2);
-  if (!BI_IS_FINITE(p)) {
+  if (!bi::is_finite(p)) {
     p = 0.0;
   }
 

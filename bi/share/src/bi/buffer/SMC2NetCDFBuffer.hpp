@@ -16,6 +16,11 @@
 #include <vector>
 
 namespace bi {
+/**
+ * NetCDF buffer for storing, reading and writing results of SMC2.
+ *
+ * @ingroup io_buffer
+ */
 class SMC2NetCDFBuffer: public NetCDFBuffer {
 public:
   /**
@@ -38,21 +43,6 @@ public:
    */
   SMC2NetCDFBuffer(const Model& m, const int P, const int T,
       const std::string& file, const FileMode mode = READ_ONLY);
-
-  /**
-   * Destructor.
-   */
-  virtual ~SMC2NetCDFBuffer();
-
-  /**
-   * @copydoc concept::SimulatorBuffer::size1()
-   */
-  int size1() const;
-
-  /**
-   * @copydoc concept::SimulatorBuffer::size2()
-   */
-  int size2() const;
 
   /**
    * @copydoc #concept::SMC2NetCDFBuffer::readSample()
@@ -196,14 +186,6 @@ protected:
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
 
-inline int bi::SMC2NetCDFBuffer::size1() const {
-  return npDim->size();
-}
-
-inline int bi::SMC2NetCDFBuffer::size2() const {
-  return nrDim->size();
-}
-
 template<class V1>
 void bi::SMC2NetCDFBuffer::readSample(const int p, V1 theta) {
   readSingle(P_VAR, p, 0, theta);
@@ -341,7 +323,7 @@ void bi::SMC2NetCDFBuffer::readState(const VarType type, const int t,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -398,7 +380,7 @@ void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;

@@ -21,35 +21,57 @@ namespace bi {
 class RngGPU {
 public:
   /**
-   * @copydoc RngHost::seed
+   * @copydoc Random::seed
    */
   CUDA_FUNC_DEVICE void seed(const unsigned seed);
 
   /**
-   * @copydoc RngHost::uniformInt
+   * @copydoc Random::uniformInt
    */
   template<class T1>
   CUDA_FUNC_DEVICE T1 uniformInt(const T1 lower = 0, const T1 upper = 1);
 
   /**
-   * @copydoc RngHost::uniform
+   * @copydoc Random::uniform
    */
   CUDA_FUNC_DEVICE float uniform(const float lower = 0.0f, const float upper = 1.0f);
 
   /**
-   * @copydoc RngHost::uniform
+   * @copydoc Random::uniform
    */
   CUDA_FUNC_DEVICE double uniform(const double lower = 0.0, const double upper = 1.0);
 
   /**
-   * @copydoc RngHost::gaussian
+   * @copydoc Random::gaussian
    */
   CUDA_FUNC_DEVICE float gaussian(const float mu = 0.0f, const float sigma = 1.0f);
 
   /**
-   * @copydoc RngHost::gaussian
+   * @copydoc Random::gaussian
    */
   CUDA_FUNC_DEVICE double gaussian(const double mu = 0.0, const double sigma = 1.0);
+
+  /**
+   * @copydoc Random::gamma
+   *
+   * CURAND does not currently provide an API for the generation of gamma
+   * variates. This function is implemented using the squeeze and rejection
+   * sampling method of @ref Marsaglia2000 "Marsaglia & Tsang (2000)", with
+   * boost of the case where \f$\alpha < 1\f$ to \f$\alpha > 1\f$ as
+   * described there also.
+   */
+  template<class T1>
+  CUDA_FUNC_DEVICE T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
+
+  /**
+   * @copydoc Random::beta
+   */
+  CUDA_FUNC_DEVICE float beta(const float alpha = 1.0, const float beta = 1.0);
+
+  /**
+   * @copydoc Random::beta
+   */
+  CUDA_FUNC_DEVICE double beta(const double alpha = 1.0, const double beta = 1.0);
 
   /**
    * CURAND state.
@@ -81,6 +103,54 @@ inline float bi::RngGPU::gaussian(const float mu, const float sigma) {
 
 inline double bi::RngGPU::gaussian(const double mu, const double sigma) {
   return mu + sigma*curand_normal_double(&r);
+}
+
+template<class T1>
+inline T1 bi::RngGPU::gamma(const T1 alpha, const T1 beta) {
+  const T1 zero = static_cast<T1>(0.0);
+  const T1 one = static_cast<T1>(1.0);
+
+  T1 d = alpha - static_cast<T1>(1.0/3.0);
+  T1 scale;
+  if (alpha < one) {
+    /* boost to alpha > 1 case */
+    scale = beta*bi::pow(this->uniform(zero, one), one/alpha);
+    d += one;
+  } else {
+    scale = beta;
+  }
+  T1 c = bi::rsqrt(static_cast<T1>(9.0)*d);
+  T1 x, x2, v, dv, u;
+
+  do {
+    do {
+      x = this->gaussian(zero, one);
+      v = one + c*x;
+    } while (v <= zero);
+
+    x2 = x*x;
+    v = v*v*v;
+    dv = d*v;
+    u = this->uniform(zero, one);
+
+  } while (u >= one - static_cast<T1>(0.0331)*x2*x2 &&
+      bi::log(u) >= static_cast<T1>(0.5)*x2 + d - dv + d*bi::log(v));
+
+  return scale*dv;
+}
+
+inline float bi::RngGPU::beta(const float alpha, const float beta) {
+  const float x = gamma(alpha, 1.0f);
+  const float y = gamma(beta, 1.0f);
+
+  return x/(x + y);
+}
+
+inline double bi::RngGPU::beta(const double alpha, const double beta) {
+  const double x = gamma(alpha, 1.0);
+  const double y = gamma(beta, 1.0);
+
+  return x/(x + y);
 }
 
 #endif

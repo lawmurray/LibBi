@@ -29,10 +29,6 @@ following additional options:
 
 Number of parameter samples to draw.
 
-=item * C<--filter-file>
-
-File from which to read and write intermediate filter results.
-
 =item * C<--sampler> (default C<'pmmh'>)
 
 The type of sampler to use; one of:
@@ -100,10 +96,6 @@ our @CLIENT_OPTIONS = (
       name => 'sampler',
       type => 'string',
       default => 'pmmh'
-    },
-    {
-      name => 'filter-file',
-      type => 'string'
     },
     {
       name => 'conditional-pf',

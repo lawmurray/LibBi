@@ -8,24 +8,30 @@
 #ifndef BI_CACHE_SIMULATORCACHE_HPP
 #define BI_CACHE_SIMULATORCACHE_HPP
 
-#include "Cache.hpp"
-#include "../math/loc_temp_matrix.hpp"
+#include "Cache1D.hpp"
+#include "../buffer/SimulatorNetCDFBuffer.hpp"
 
 namespace bi {
 /**
- * Cache for SimulatorNetCDFBuffer reads and writes.
+ * Cache for SimulatorNetCDFBuffer reads and writes. This caches reads and
+ * writes of times. Reads and writes of variables are assumed to be large
+ * and contiguous, such that NetCDF/HDF5's own buffering mechanisms, or even
+ * direct reads/write on disk, are efficient enough.
  *
  * @ingroup io_cache
  *
- * @tparam L Location.
+ * @tparam IO1 Buffer type.
+ * @tparam CL Location.
  */
-template<Location L = ON_HOST>
-class SimulatorCache : public Cache {
+template<class IO1 = SimulatorNetCDFBuffer, Location CL = ON_HOST>
+class SimulatorCache {
 public:
   /**
-   * Type of page.
+   * Constructor.
+   *
+   * @param out Output buffer.
    */
-  typedef typename loc_temp_matrix<L,real>::type page_type;
+  SimulatorCache(IO1* out = NULL);
 
   /**
    * Destructor.
@@ -33,176 +39,208 @@ public:
   ~SimulatorCache();
 
   /**
-   * Number of pages in cache.
+   * Get the vector of all times.
+   *
+   * @return The vector of all times.
    */
-  int size() const;
+  const typename Cache1D<real,CL>::vector_reference_type getTimes() const;
 
   /**
-   * Get state.
-   *
-   * @param t Time index.
+   * @copydoc SimulatorNetCDFBuffer::readTime()
    */
-  page_type getState(const int t) const;
+  void readTime(const int t, real& x) const;
 
   /**
-   * Read valid state.
-   *
-   * @tparam M2 Matrix type.
-   *
-   * @param t Time index.
-   * @param[out] s State.
+   * @copydoc SimulatorNetCDFBuffer::writeTime()
    */
-  template<class M2>
-  void readState(const int t, M2 s) const;
+  void writeTime(const int t, const real& x);
 
   /**
-   * Write state.
-   *
-   * @tparam M2 Matrix type.
-   *
-   * @param t Time index.
-   * @param s State.
+   * @copydoc SimulatorNetCDFBuffer::readTimes()
    */
-  template<class M2>
-  void writeState(const int t, const M2 s);
+  template<class V1>
+  void readTimes(const int t, V1 x) const;
 
   /**
-   * Swap state.
-   *
-   * @tparam M2 Matrix type.
-   *
-   * @param t Time index.
-   * @param[in,out] s State.
-   *
-   * Swaps the contents of the specified cached state and @p s, rather than
-   * copying. The result is similar to readState(), and the cached state is
-   * marked as invalid.
+   * @copydoc SimulatorNetCDFBuffer::writeTimes()
    */
-  template<class M2>
-  void swapReadState(const int t, M2 s);
+  template<class V1>
+  void writeTimes(const int t, const V1 x);
 
   /**
-   * Swap state.
-   *
-   * @tparam M2 Matrix type.
-   *
-   * @param t Time index.
-   * @param[in,out] s State.
-   *
-   * Swaps the contents of the specified cached state and @p s, rather than
-   * copying. The result is similar to writeState(), and the cached state is
-   * marked as valid.
+   * @copydoc SimulatorNetCDFBuffer::readParameters()
    */
-  template<class M2>
-  void swapWriteState(const int p, M2 s);
+  template<class B, Location L>
+  void readParameters(State<B,L>& s) const;
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeParameters()
+   */
+  template<class B, Location L>
+  void writeParameters(const State<B,L>& s);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::readState()
+   */
+  template<class B, Location L>
+  void readState(const int t, State<B,L>& s) const;
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeState()
+   */
+  template<class B, Location L>
+  void writeState(const int t, const State<B,L>& s);
+
+  /**
+   * Clear cache.
+   */
+  void clear();
 
   /**
    * Empty cache.
    */
   void empty();
 
+  /**
+   * Flush cache to output buffer.
+   */
+  void flush();
+
 private:
   /**
-   * Pages.
-   *
-   * Note page_type uses a shallow copy, so we store @em pointers in this
-   * vector, lest we end up with shallow copy hell when resizing.
+   * Time cache.
    */
-  std::vector<page_type*> pages;
+  Cache1D<real,CL> timeCache;
+
+  /**
+   * Output buffer.
+   */
+  IO1* out;
+};
+
+/**
+ * Factory for creating SimulatorCache objects.
+ *
+ * @ingroup io_cache
+ *
+ * @see Forcer
+ */
+template<Location CL = ON_HOST>
+struct SimulatorCacheFactory {
+  /**
+   * Create SimulatorCache.
+   *
+   * @return SimulatorCache object. Caller has ownership.
+   *
+   * @see SimulatorCache::SimulatorCache()
+   */
+  template<class IO1>
+  static SimulatorCache<IO1,CL>* create(IO1* out) {
+    return new SimulatorCache<IO1,CL>(out);
+  }
+
+  /**
+   * Create SimulatorCache.
+   *
+   * @return SimulatorCache object. Caller has ownership.
+   *
+   * @see SimulatorCache::SimulatorCache()
+   */
+  static SimulatorCache<SimulatorNetCDFBuffer,CL>* create() {
+    return new SimulatorCache<SimulatorNetCDFBuffer,CL>();
+  }
 };
 }
 
-template<bi::Location CL>
-bi::SimulatorCache<CL>::~SimulatorCache() {
-  empty();
+template<class IO1, bi::Location CL>
+bi::SimulatorCache<IO1,CL>::SimulatorCache(IO1* out) : out(out) {
+  //
 }
 
-template<bi::Location L>
-inline int bi::SimulatorCache<L>::size() const {
-  return (int)pages.size();
+template<class IO1, bi::Location CL>
+bi::SimulatorCache<IO1,CL>::~SimulatorCache() {
+  flush();
 }
 
-template<bi::Location L>
-inline typename bi::SimulatorCache<L>::page_type bi::SimulatorCache<L>::getState(
-    const int t) const {
-  /* pre-condition */
-  BI_ASSERT(isValid(t));
-
-  return *pages[t];
+template<class IO1, bi::Location CL>
+const typename bi::Cache1D<real,CL>::vector_reference_type bi::SimulatorCache<
+    IO1,CL>::getTimes() const {
+  return timeCache.get(0, timeCache.size());
 }
 
-template<bi::Location L>
-template<class M2>
-inline void bi::SimulatorCache<L>::readState(const int t, M2 s) const {
-  /* pre-condition */
-  BI_ASSERT(isValid(t));
-
-  s = *pages[t];
+template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::readTime(const int t, real& x) const {
+  x = timeCache.get(t);
 }
 
-template<bi::Location L>
-template<class M2>
-inline void bi::SimulatorCache<L>::writeState(const int t, const M2 s) {
-  if (size() <= t) {
-    pages.resize(t + 1);
-    pages[t] = new page_type(s.size1(), s.size2());
-    Cache::resize(t + 1);
+template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::writeTime(const int t, const real& x) {
+  timeCache.set(t, x);
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::SimulatorCache<IO1,CL>::readTimes(const int t, V1 x) const {
+  x = timeCache.get(t, x.size());
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::SimulatorCache<IO1,CL>::writeTimes(const int t, const V1 x) {
+  timeCache.set(t, x.size(), x);
+}
+
+template<class IO1, bi::Location CL>
+template<class B, bi::Location L>
+void bi::SimulatorCache<IO1,CL>::readParameters(State<B,L>& s) const {
+  /* pre-conditions */
+  BI_ASSERT(out != NULL);
+
+  out->readParameters(s);
+}
+
+template<class IO1, bi::Location CL>
+template<class B, bi::Location L>
+void bi::SimulatorCache<IO1,CL>::writeParameters(const State<B,L>& s) {
+  if (out != NULL) {
+    out->writeParameters(s);
   }
+}
 
-  int ps1 = pages[t]->size1();
-  int ps2 = pages[t]->size2();
-  int ss1 = s.size1();
-  int ss2 = s.size2();
-  if (ps1 != ss1 || ps2 != ss2) {
-    pages[t]->resize(ss1,ss2);
+template<class IO1, bi::Location CL>
+template<class B, bi::Location L>
+void bi::SimulatorCache<IO1,CL>::readState(const int t, State<B,L>& s) const {
+  /* pre-conditions */
+  BI_ASSERT(out != NULL);
+
+  out->readState(t, s);
+}
+
+template<class IO1, bi::Location CL>
+template<class B, bi::Location L>
+void bi::SimulatorCache<IO1,CL>::writeState(const int t,
+    const State<B,L>& s) {
+  if (out != NULL) {
+    out->writeState(t, s);
   }
-
-  *pages[t] = s;
-  setValid(t);
-  setDirty(t);
-
-  /* post-condition */
-  BI_ASSERT(isValid(t));
-  BI_ASSERT(isDirty(t));
 }
 
-template<bi::Location L>
-template<class M2>
-inline void bi::SimulatorCache<L>::swapReadState(const int t, M2 s) {
-  /* pre-condition */
-  BI_ASSERT(isValid(s));
-
-  s.swap(*pages[t]);
-  setValid(t, false);
-
-  /* post-condition */
-  BI_ASSERT(!isValid(t));
+template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::clear() {
+  timeCache.clear();
 }
 
-template<bi::Location L>
-template<class M2>
-inline void bi::SimulatorCache<L>::swapWriteState(const int t, M2 s) {
-  /* pre-condition */
-  BI_ASSERT(t < size());
-
-  pages[t]->swap(s);
-  setValid(t);
-  setDirty(t);
-
-  /* post-condition */
-  BI_ASSERT(isValid(t));
-  BI_ASSERT(isDirty(t));
+template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::empty() {
+  timeCache.empty();
 }
 
-template<bi::Location L>
-void bi::SimulatorCache<L>::empty() {
-  typename std::vector<page_type*>::iterator iter;
-  for (iter = pages.begin(); iter != pages.end(); ++iter) {
-    delete *iter;
+template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::flush() {
+  if (out != NULL) {
+    out->writeTimes(0, timeCache.get(0, timeCache.size()));
   }
-
-  pages.clear();
-  Cache::empty();
+  timeCache.flush();
 }
 
 #endif

@@ -202,7 +202,7 @@ real bi::LogTransformConditionalPdf<Q1>::density(const V2 x1,
   p = Q1::density(z1, z2)/detJ;
 
   /* post-condition */
-  if (!BI_IS_FINITE(p)) {
+  if (!bi::is_finite(p)) {
     p = 0.0;
   }
   BI_ASSERT(p >= 0.0);
@@ -215,7 +215,7 @@ template<class V2, class M2, class V3>
 void bi::LogTransformConditionalPdf<Q1>::densities(const V2 x1, const M2 X2,
     V3 p, const bool clear) {
   ///@todo Implement
-  BI_ERROR(false, "Not yet implemented");
+  BI_ERROR_MSG(false, "Not yet implemented");
 }
 
 template<class Q1>
@@ -235,7 +235,7 @@ real bi::LogTransformConditionalPdf<Q1>::logDensity(const V2 x1,
   p = Q1::logDensity(z1, z2) - log(detJ);
 
   /* post-condition */
-  if (!BI_IS_FINITE(p)) {
+  if (!bi::is_finite(p)) {
     p = 0.0;
   }
   BI_ASSERT(p >= 0.0);
@@ -248,7 +248,7 @@ template<class V2, class M2, class V3>
 void bi::LogTransformConditionalPdf<Q1>::logDensities(const V2 x1,
     const M2 X2, V3 p, const bool clear) {
   ///@todo Implement
-  BI_ERROR(false, "Not yet implemented");
+  BI_ERROR_MSG(false, "Not yet implemented");
 }
 
 template<class Q1>

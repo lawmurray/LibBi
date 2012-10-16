@@ -19,10 +19,6 @@ bi::OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
   }
 }
 
-bi::OptimiserNetCDFBuffer::~OptimiserNetCDFBuffer() {
-  //
-}
-
 void bi::OptimiserNetCDFBuffer::create() {
   int id, i;
   VarType type;
@@ -38,12 +34,12 @@ void bi::OptimiserNetCDFBuffer::create() {
 
   /* function value variable */
   valueVar = ncFile->add_var("optimiser.value", netcdf_real, nsDim);
-  BI_ERROR(valueVar != NULL && valueVar->is_valid(),
+  BI_ERROR_MSG(valueVar != NULL && valueVar->is_valid(),
       "Could not create optimiser.value variable");
 
   /* size variable */
   sizeVar = ncFile->add_var("optimiser.size", netcdf_real, nsDim);
-  BI_ERROR(sizeVar != NULL && sizeVar->is_valid(),
+  BI_ERROR_MSG(sizeVar != NULL && sizeVar->is_valid(),
       "Could not create optimiser.size variable");
 
   /* other variables */
@@ -69,32 +65,32 @@ void bi::OptimiserNetCDFBuffer::map() {
   Dim* dim;
 
   /* dimensions */
-  BI_ERROR(hasDim("ns"), "File must have ns dimension");
+  BI_ERROR_MSG(hasDim("ns"), "File must have ns dimension");
   nsDim = mapDim("ns");
-  BI_WARN(nsDim->is_unlimited(), "ns dimension should be unlimited");
+  BI_WARN_MSG(nsDim->is_unlimited(), "ns dimension should be unlimited");
   for (i = 0; i < m.getNumDims(); ++i) {
     dim = m.getDim(i);
-    BI_ERROR(hasDim(dim->getName().c_str()), "File must have " <<
+    BI_ERROR_MSG(hasDim(dim->getName().c_str()), "File must have " <<
         dim->getName() << " dimension");
     nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
   }
 
   /* function value variable */
   valueVar = ncFile->get_var("optimiser.value");
-  BI_ERROR(valueVar != NULL && valueVar->is_valid(),
+  BI_ERROR_MSG(valueVar != NULL && valueVar->is_valid(),
       "File does not contain variable optimiser.value");
-  BI_ERROR(valueVar->num_dims() == 1, "Variable optimiser.value has " <<
+  BI_ERROR_MSG(valueVar->num_dims() == 1, "Variable optimiser.value has " <<
       valueVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR(valueVar->get_dim(0) == nsDim,
+  BI_ERROR_MSG(valueVar->get_dim(0) == nsDim,
       "Dimension 0 of variable optimiser.value should be ns");
 
   /* size variable */
   sizeVar = ncFile->get_var("optimiser.size");
-  BI_ERROR(sizeVar != NULL && sizeVar->is_valid(),
+  BI_ERROR_MSG(sizeVar != NULL && sizeVar->is_valid(),
       "File does not contain variable optimiser.size");
-  BI_ERROR(sizeVar->num_dims() == 1, "Variable optimiser.size has " <<
+  BI_ERROR_MSG(sizeVar->num_dims() == 1, "Variable optimiser.size has " <<
       sizeVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR(sizeVar->get_dim(0) == nsDim,
+  BI_ERROR_MSG(sizeVar->get_dim(0) == nsDim,
       "Dimension 0 of variable optimiser.size should be ns");
 
   /* other variables */

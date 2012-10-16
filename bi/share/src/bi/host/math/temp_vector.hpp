@@ -33,11 +33,13 @@ template<class T, int size_value = -1, int inc_value = -1>
 struct temp_host_vector {
   /**
    * Allocator type.
+   *
+   * Note that, on host, pooled_allocator is slower than std::allocator.
    */
   #ifdef ENABLE_CUDA
-  typedef pipelined_allocator<pooled_allocator<pinned_allocator<T> > > allocator_type;
+  typedef pipelined_allocator<pinned_allocator<T> > allocator_type;
   #else
-  typedef pooled_allocator<aligned_allocator<T> > allocator_type;
+  typedef std::allocator<T> allocator_type;
   #endif
 
   /**

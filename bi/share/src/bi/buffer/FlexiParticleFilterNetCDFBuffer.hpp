@@ -16,11 +16,7 @@ namespace bi {
  * in a flexible file format that permits the number of particles at each
  * time step to change.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::ParticleFilterBuffer
+ * @ingroup io_buffer
  */
 class FlexiParticleFilterNetCDFBuffer : public FlexiSimulatorNetCDFBuffer {
 public:
@@ -46,11 +42,6 @@ public:
       const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
-   * Destructor.
-   */
-  virtual ~FlexiParticleFilterNetCDFBuffer();
-
-  /**
    * @copydoc #concept::ParticleFilterBuffer::readLogWeights()
    */
   template<class V1>
@@ -63,16 +54,6 @@ public:
   void writeLogWeights(const int t, const V1 lws);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readLogWeight()
-   */
-  real readLogWeight(const int t, const int p);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::writeLogWeight()
-   */
-  void writeLogWeight(const int t, const int p, const real lws);
-
-  /**
    * @copydoc #concept::ParticleFilterBuffer::readAncestors()
    */
   template<class V1>
@@ -83,26 +64,6 @@ public:
    */
   template<class V1>
   void writeAncestors(const int t, const V1 a);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::readAncestor()
-   */
-  int readAncestor(const int t, const int p);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::writeAncestor()
-   */
-  void writeAncestor(const int t, const int p, const int a);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::readResample()
-   */
-  int readResample(const int t);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::writeResample()
-   */
-  void writeResample(const int t, const int& r);
 
   /**
    * @copydoc #concept::ParticleFilterBuffer::readResamples()

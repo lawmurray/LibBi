@@ -15,13 +15,9 @@ namespace bi {
  * Buffer for storing, reading and writing results of ParticleFilter in
  * NetCDF buffer.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::ParticleFilterBuffer
+ * @ingroup io_buffer
  */
-class ParticleFilterNetCDFBuffer : public SimulatorNetCDFBuffer {
+class ParticleFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -46,12 +42,7 @@ public:
       const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
-   * Destructor.
-   */
-  virtual ~ParticleFilterNetCDFBuffer();
-
-  /**
-   * Read particle weights.
+   * Read particle log-weights.
    *
    * @tparam V1 Vector type.
    *
@@ -59,10 +50,10 @@ public:
    * @param[out] lws Log-weights.
    */
   template<class V1>
-  void readLogWeights(const int t, V1 lws);
+  void readLogWeights(const int t, V1 lws) const;
 
   /**
-   * Write particle weights.
+   * Write particle log-weights.
    *
    * @tparam V1 Vector type.
    *
@@ -73,28 +64,6 @@ public:
   void writeLogWeights(const int t, const V1 lws);
 
   /**
-   * Read particle weight.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param t Time index.
-   * @param p Trajectory index.
-   * @param[out] lw Log-weight.
-   */
-  void readLogWeight(const int t, const int p, real& lw);
-
-  /**
-   * Write particle weight.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param t Time index.
-   * @param p Trajectory index.
-   * @param lws Log-weight.
-   */
-  void writeLogWeight(const int t, const int p, const real lw);
-
-  /**
    * Read particle ancestors.
    *
    * @tparam V1 Vector type.
@@ -103,7 +72,7 @@ public:
    * @param[out] a Ancestry.
    */
   template<class V1>
-  void readAncestors(const int t, V1 a);
+  void readAncestors(const int t, V1 a) const;
 
   /**
    * Write particle ancestors.
@@ -117,40 +86,6 @@ public:
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * Read ancestor of particle at particular time.
-   *
-   * @param t Time index.
-   * @param p Particle index.
-   * @param[out] a Ancestor.
-   */
-  void readAncestor(const int t, const int p, int& a);
-
-  /**
-   * Write ancestor of particle at particular time.
-   *
-   * @param t Time index.
-   * @param p Particle index.
-   * @param a Ancestor.
-   */
-  void writeAncestor(const int t, const int p, const int a);
-
-  /**
-   * Read resample flag.
-   *
-   * @param t Time index.
-   * @param[out] r Was resampling performed at this time?
-   */
-  void readResample(const int t, int& r);
-
-  /**
-   * Write resample flag.
-   *
-   * @param t Time index.
-   * @param r Was resampling performed at this time?
-   */
-  void writeResample(const int t, const int r);
-
-  /**
    * Read resample flags.
    *
    * @tparam V1 Vector type.
@@ -159,7 +94,7 @@ public:
    * @param[out] r Resampling flags from this time.
    */
   template<class V1>
-  void readResamples(const int t, V1 r);
+  void readResamples(const int t, V1 r) const;
 
   /**
    * Write resample flags.
@@ -210,7 +145,8 @@ protected:
 #include "../math/temp_vector.hpp"
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t, V1 lws) {
+void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t,
+    V1 lws) const {
   /* pre-conditions */
   BI_ASSERT(lws.size() == npDim->size());
   BI_ASSERT(t >= 0 && t < nrDim->size());
@@ -259,7 +195,7 @@ void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const int t,
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
+void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) const {
   /* pre-conditions */
   BI_ASSERT(a.size() == npDim->size());
   BI_ASSERT(t >= 0 && t < nrDim->size());
@@ -283,8 +219,7 @@ void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) {
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
-    const V1 a) {
+void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t, const V1 a) {
   /* pre-conditions */
   BI_ASSERT(a.size() == npDim->size());
   BI_ASSERT(t >= 0 && t < nrDim->size());
@@ -308,7 +243,7 @@ void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
+void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) const {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
 
@@ -331,8 +266,7 @@ void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t,
-    const V1 r) {
+void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t, const V1 r) {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
 

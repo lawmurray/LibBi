@@ -57,7 +57,7 @@ public:
   pointer allocate(size_type num, const_pointer *hint = 0) {
     pointer ptr;
     int err = posix_memalign((void**)&ptr, X, num*sizeof(T));
-    BI_ERROR(err == 0, "Aligned memory allocation failed");
+    BI_ASSERT_MSG(err == 0, "Aligned memory allocation failed");
     return ptr;
   }
 

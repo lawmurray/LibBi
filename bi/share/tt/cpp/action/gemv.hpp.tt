@@ -35,7 +35,7 @@ public:
 }
 
 [% sig_action_dynamic_matrix_function('simulate') %] {  
-  simulate(s, p, pax, x);
+  simulates(s, p, pax, x);
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

@@ -15,23 +15,20 @@
 
 bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
     const std::string& file, const int ns, const int np) :
-    NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns),
-    np(np) {
+    NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns), np(
+        np) {
   map();
   mask0();
   rewind();
 }
 
 bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
-    const SparseInputNetCDFBuffer& o) : NetCDFBuffer(o), SparseInputBuffer(o.m),
-    vars(NUM_VAR_TYPES), ns(o.ns), np(o.np) {
+    const SparseInputNetCDFBuffer& o) :
+    NetCDFBuffer(o), SparseInputBuffer(o.m), vars(NUM_VAR_TYPES), ns(o.ns), np(
+        o.np) {
   map();
   mask0();
   rewind();
-}
-
-bi::SparseInputNetCDFBuffer::~SparseInputNetCDFBuffer() {
-  //
 }
 
 void bi::SparseInputNetCDFBuffer::next() {
@@ -55,7 +52,7 @@ void bi::SparseInputNetCDFBuffer::next() {
     } else {
       state.lens[tVar] = 0;
     }
-  } while (getTime() == t); // may be multiple time variables on current time
+  } while (isValid() && getTime() == t);  // may be multiple time variables on current time
 }
 
 void bi::SparseInputNetCDFBuffer::mask() {
@@ -106,7 +103,8 @@ void bi::SparseInputNetCDFBuffer::maskDense(const int rDim) {
     readIds(rDim, type, ids);
 
     for (j = 0; j < ids.size(); ++j) {
-      state.masks[type]->addDenseMask(ids[j], m.getVar(type, ids[j])->getSize());
+      state.masks[type]->addDenseMask(ids[j],
+          m.getVar(type, ids[j])->getSize());
     }
   }
 }
@@ -151,7 +149,8 @@ void bi::SparseInputNetCDFBuffer::maskSparse0() {
       for (i = 0; i < NUM_VAR_TYPES; ++i) {
         if (vAssoc[rDim][i].size() > 0) {
           ids.resize(vAssoc[rDim][i].size());
-          std::copy(vAssoc[rDim][i].begin(), vAssoc[rDim][i].end(), ids.begin());
+          std::copy(vAssoc[rDim][i].begin(), vAssoc[rDim][i].end(),
+              ids.begin());
           masks0[i]->addSparseMask(ids, indices);
         }
       }
@@ -177,12 +176,23 @@ void bi::SparseInputNetCDFBuffer::rewind() {
   mask();
 }
 
-int bi::SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
+void bi::SparseInputNetCDFBuffer::setTime(const real t) {
+  if (!isValid() || getTime() > t) {
+    rewind();
+  }
+  while (isValid() && getTime() < t) {
+    next();
+  }
+  BI_WARN_MSG(tVars.size() == 0 || (isValid() && getTime() == t), "No time " << t << " in file");
+}
+
+int bi::SparseInputNetCDFBuffer::countTimes(const real t, const real T,
+    const int K) {
   int size, tVar, rDim;
   NcVar* var;
   std::vector<real> ts;
-  ts.push_back(T);
 
+  /* times in file  */
   for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
     if (isAssoc(tVar)) {
       rDim = tDims[tVar];
@@ -201,11 +211,21 @@ int bi::SparseInputNetCDFBuffer::countUniqueTimes(const real T) {
     }
   }
 
-  std::vector<real>::iterator unique, pred;
-  unique = std::unique(ts.begin(), ts.end());
-  pred = std::upper_bound(ts.begin(), unique, T);
+  /* dense times */
+  ts.resize(ts.size() + K + 1);
+  for (int k = 0; k < K; ++k) {
+    ts[ts.size() - K - 1 + k] = t + (T - t) * k / K;
+  }
+  ts[ts.size() - 1] = T;
+  std::inplace_merge(ts.begin(), ts.end() - K - 1, ts.end());
 
-  return std::distance(ts.begin(), pred);
+  /* uniqueness */
+  std::vector<real>::iterator unique, lessThan, greaterThan;
+  unique = std::unique(ts.begin(), ts.end());
+  lessThan = std::upper_bound(ts.begin(), unique, T);  // <= T
+  greaterThan = std::lower_bound(ts.begin(), lessThan, t);    // >= t
+
+  return std::distance(greaterThan, lessThan);
 }
 
 void bi::SparseInputNetCDFBuffer::map() {
@@ -220,8 +240,8 @@ void bi::SparseInputNetCDFBuffer::map() {
   nsDim = NULL;
   if (hasDim("ns")) {
     nsDim = mapDim("ns");
-    BI_ERROR(ns < nsDim->size(), "Given index exceeds " <<
-        "length along ns dimension");
+    BI_ERROR_MSG(ns < nsDim->size(),
+        "Given index exceeds " << "length along ns dimension");
   }
 
   for (i = 0; i < m.getNumDims(); ++i) {
@@ -234,8 +254,8 @@ void bi::SparseInputNetCDFBuffer::map() {
   npDim = NULL;
   if (hasDim("np")) {
     npDim = mapDim("np");
-    BI_ERROR(np < 0 || np < npDim->size(), "Given index exceeds " <<
-        "length along np dimension");
+    BI_ERROR_MSG(np < 0 || np < npDim->size(),
+        "Given index exceeds " << "length along np dimension");
   }
 
   /* record dimensions, time and coordinate variables */
@@ -305,14 +325,14 @@ void bi::SparseInputNetCDFBuffer::map() {
   }
 }
 
-NcDim* bi::SparseInputNetCDFBuffer::mapDim(const char* name, const long size) {
+NcDim* bi::SparseInputNetCDFBuffer::mapDim(const char* name,
+    const long size) {
   /* pre-condition */
   BI_ASSERT_MSG(hasDim(name), "File does not contain dimension " << name);
 
   NcDim* ncDim = ncFile->get_dim(name);
-  BI_ERROR(size < 0 || ncDim->size() >= size || ncDim->size() == 1,
-      "Size of dimension " << name << " is " << ncDim->size() <<
-      ", but needs to be at least " << size);
+  BI_ERROR_MSG(size < 0 || ncDim->size() >= size || ncDim->size() == 1,
+      "Size of dimension " << name << " is " << ncDim->size() << ", but needs to be at least " << size);
 
   return ncDim;
 }
@@ -330,15 +350,9 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
   int i, j = 0, rDim = -1, cVar = -1;
   BI_UNUSED bool canHaveTime, canHaveP;
 
-  canHaveTime =
-      type == D_VAR ||
-      type == R_VAR ||
-      type == F_VAR ||
-      type == O_VAR;
-  canHaveP =
-      type == D_VAR ||
-      type == R_VAR ||
-      type == P_VAR;
+  canHaveTime = type == D_VAR || type == R_VAR || type == F_VAR
+      || type == O_VAR;
+  canHaveP = type == D_VAR || type == R_VAR || type == P_VAR;
 
   ncVar = ncFile->get_var(var->getInputName().c_str());
   BI_ASSERT(ncVar != NULL && ncVar->is_valid());
@@ -361,29 +375,31 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
   }
 
   /* check for np-dimension */
-  if (npDim != NULL && j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
+  if (canHaveP && npDim != NULL && j < ncVar->num_dims()
+      && ncVar->get_dim(j) == npDim) {
     ++j;
-  }
+  } else if (j < ncVar->num_dims()) {
+    /* check for model dimensions */
+    for (i = 0; i < var->getNumDims() && j < ncVar->num_dims(); ++i, ++j) {
+      dim = var->getDim(i);
+      ncDim = ncVar->get_dim(j);
 
-  /* check for model dimensions */
-  BI_ERROR(j == ncVar->num_dims() || j + var->getNumDims() == ncVar->num_dims(),
-      "Variable " << ncVar->name() << " should have either " << j << " or " <<
-      (j + var->getNumDims()) << " dimensions");
+      BI_ERROR_MSG(dim->getName().compare(ncDim->name()) == 0,
+          "Dimension " << j << " of variable " << ncVar->name() << " should be " << dim->getName());
+      BI_ERROR_MSG(cVar == -1,
+          "Variable " << ncVar->name() << " has both dense " << "sparse definitions");
+    }
+    BI_ERROR_MSG(i == var->getNumDims(),
+        "Variable " << ncVar->name() << " is missing one or more dimensions");
 
-  for (i = 0; i < var->getNumDims() && j < ncVar->num_dims(); ++i, ++j) {
-    dim = var->getDim(i);
-    ncDim = ncVar->get_dim(j);
+    /* check again for np dimension */
+    if (canHaveP && npDim != NULL && j < ncVar->num_dims()
+        && ncVar->get_dim(j) == npDim) {
+      ++j;
+    }
+    BI_ERROR_MSG(j == ncVar->num_dims(),
+        "Variable " << ncVar->name() << " has extra dimensions");
 
-    BI_ERROR(dim->getName().compare(ncDim->name()) == 0,
-        "Dimension " << j << " of variable " << ncVar->name() <<
-        " should be " << dim->getName());
-    BI_ERROR(cVar == -1, "Variable " << ncVar->name() << " has both dense " <<
-        "sparse definitions");
-  }
-
-  /* check for np dimension */
-  if (canHaveP && npDim != NULL && ncVar->get_dim(j) == npDim) {
-    ++j;
   }
 
   return std::make_pair(ncVar, rDim);
@@ -391,8 +407,8 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
 
 NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
   /* pre-conditions */
-  BI_ERROR(var != NULL && var->is_valid(), "File does not contain time variable " <<
-      var->name());
+  BI_ERROR_MSG(var != NULL && var->is_valid(),
+      "File does not contain time variable " << var->name());
 
   std::vector<NcDim*>::iterator iter;
   NcDim* ncDim;
@@ -404,9 +420,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
     ++j;
     ncDim = var->get_dim(j);
   }
-  BI_ERROR(ncDim != NULL && ncDim->is_valid(), "Time variable " <<
-      var->name() << " has invalid dimensions, must have optional ns " <<
-      "dimension followed by single arbitrary dimension");
+  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid(),
+      "Time variable " << var->name() << " has invalid dimensions, must have optional ns " << "dimension followed by single arbitrary dimension");
 
   /* add record dimension if not seen already */
   iter = std::find(rDims.begin(), rDims.end(), ncDim);
@@ -430,10 +445,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
     BI_ASSERT(tDims.size() == tVars.size());
     BI_ASSERT(tAssoc.size() == rDims.size());
   } else {
-    BI_WARN(false, "Record dimension " << ncDim->name() <<
-        " already associated with time variable " <<
-        tVars[tAssoc[rDim]]->name() << ", ignoring time variable " <<
-        var->name());
+    BI_WARN_MSG(false,
+        "Record dimension " << ncDim->name() << " already associated with time variable " << tVars[tAssoc[rDim]]->name() << ", ignoring time variable " << var->name());
     ncDim = NULL;
   }
 
@@ -442,8 +455,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
 
 NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
   /* pre-conditions */
-  BI_ERROR(var != NULL && var->is_valid(), "File does not contain coordinate variable " <<
-      var->name());
+  BI_ERROR_MSG(var != NULL && var->is_valid(),
+      "File does not contain coordinate variable " << var->name());
 
   std::vector<NcDim*>::iterator iter;
   NcDim* ncDim;
@@ -455,9 +468,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
     ++j;
     ncDim = var->get_dim(j);
   }
-  BI_ERROR(ncDim != NULL && ncDim->is_valid(), "Coordinate variable " <<
-      var->name() << " has invalid dimensions, must have optional ns " <<
-      "dimension followed by one or two arbitrary dimensions");
+  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid(),
+      "Coordinate variable " << var->name() << " has invalid dimensions, must have optional ns " << "dimension followed by one or two arbitrary dimensions");
 
   /* add record dimension if not noted already */
   iter = std::find(rDims.begin(), rDims.end(), ncDim);
@@ -479,10 +491,8 @@ NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
     cAssoc[rDim] = cVar;
     BI_ASSERT(cAssoc.size() == rDims.size());
   } else {
-    BI_WARN(false, "Record dimension " << ncDim->name() <<
-        " already associated with coordinate variable " <<
-        cVars[cAssoc[rDim]]->name() << ", ignoring coordinate variable " <<
-        var->name());
+    BI_WARN_MSG(false,
+        "Record dimension " << ncDim->name() << " already associated with coordinate variable " << cVars[cAssoc[rDim]]->name() << ", ignoring coordinate variable " << var->name());
     ncDim = NULL;
   }
 

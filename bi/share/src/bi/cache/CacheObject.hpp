@@ -49,7 +49,7 @@ public:
    * @param x Page.
    */
   template<class T2>
-  void put(const int p, const T2& x);
+  void set(const int p, const T2& x);
 
   /**
    * Empty cache.
@@ -88,7 +88,7 @@ inline T1 bi::CacheObject<T1>::get(const int p) const {
 
 template<class T1>
 template<class T2>
-inline void bi::CacheObject<T1>::put(const int p, const T2& x) {
+inline void bi::CacheObject<T1>::set(const int p, const T2& x) {
   if (size() <= p) {
     pages.resize(p + 1);
     pages[p] = new T1();

@@ -55,7 +55,7 @@ inline void bi::DynamicUpdaterVisitorHost<B,S,T1,PX,OX>::accept(const T1 t1,
   int ix = 0;
   coord_type cox;
   while (ix < target_size<target_type>::value) {
-    front::simulate(t1, t2, s, p, ix, cox, pax, x);
+    front::simulates(t1, t2, s, p, ix, cox, pax, x);
     ++cox;
     ++ix;
   }

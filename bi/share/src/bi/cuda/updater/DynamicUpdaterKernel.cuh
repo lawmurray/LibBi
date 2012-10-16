@@ -16,6 +16,11 @@ namespace bi {
  *
  * @tparam B Model type.
  * @tparam S Action type list.
+ * @tparam T1 Scalar type.
+ *
+ * @param t1 Start time.
+ * @param t2 End time.
+ * @param[in,out] s State.
  */
 template<class B, class S, class T1>
 CUDA_FUNC_GLOBAL void kernelDynamicUpdater(const T1 t1, const T1 t2,
@@ -23,17 +28,23 @@ CUDA_FUNC_GLOBAL void kernelDynamicUpdater(const T1 t1, const T1 t2,
 
 }
 
+#include "DynamicUpdaterMatrixVisitorGPU.cuh"
 #include "DynamicUpdaterVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
 #include "../../state/Pa.hpp"
+
+#include "boost/mpl/if.hpp"
 
 template<class B, class S, class T1>
 CUDA_FUNC_GLOBAL void bi::kernelDynamicUpdater(const T1 t1, const T1 t2,
     State<B,ON_DEVICE> s) {
   typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
-  typedef DynamicUpdaterVisitorGPU<B,S,T1,PX,OX> Visitor;
+  typedef DynamicUpdaterMatrixVisitorGPU<B,S,T1,PX,OX> MatrixVisitor;
+  typedef DynamicUpdaterVisitorGPU<B,S,T1,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int i = blockIdx.y*blockDim.y + threadIdx.y;

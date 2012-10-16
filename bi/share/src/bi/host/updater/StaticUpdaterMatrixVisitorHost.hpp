@@ -56,7 +56,7 @@ inline void bi::StaticUpdaterMatrixVisitorHost<B,S,PX,OX>::accept(
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
 
-  front::simulate(s, p, pax, x);
+  front::simulates(s, p, pax, x);
   StaticUpdaterMatrixVisitorHost<B,pop_front,PX,OX>::accept(s, p, pax, x);
 }
 

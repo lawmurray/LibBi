@@ -16,7 +16,7 @@ my $cmd;
 foreach $arg (@ARGV) {
     $arg =~ s/(-pthread)/-Xcompiler="$1"/g;
     $arg =~ s/-g\d+/-g/g;
-    $arg =~ s/(-f(?:instrument-functions|unroll-loops|PIC))/-Xcompiler="$1"/g;
+    $arg =~ s/(-f(?:instrument-functions|unroll-loops|no-inline|PIC))/-Xcompiler="$1"/g;
     $arg =~ s/(-D(?:PIC))/-Xcompiler="$1"/g;
 
     push(@dev_args, $arg);

@@ -23,6 +23,7 @@ CUDA_FUNC_GLOBAL void kernelStaticLogDensity(State<B,ON_DEVICE> s, V1 lp);
 
 }
 
+#include "StaticLogDensityMatrixVisitorGPU.cuh"
 #include "StaticLogDensityVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
@@ -34,7 +35,10 @@ CUDA_FUNC_GLOBAL void bi::kernelStaticLogDensity(State<B,ON_DEVICE> s,
   typedef typename V1::value_type T1;
   typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
-  typedef StaticLogDensityVisitorGPU<B,S,PX,OX> Visitor;
+  typedef StaticLogDensityMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
+  typedef StaticLogDensityVisitorGPU<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   const int p = blockIdx.x * blockDim.x + threadIdx.x;
   const int id = blockIdx.y * blockDim.y + threadIdx.y;

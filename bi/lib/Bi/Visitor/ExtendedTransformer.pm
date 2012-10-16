@@ -27,7 +27,6 @@ use strict;
 use Carp::Assert;
 
 use Bi::Jacobian;
-use Bi::Utility qw(find);
 
 =item B<evaluate>(I<model>)
 
@@ -70,7 +69,14 @@ sub _transform {
     my $N = $model->num_vars($types);
     my $J_commit = new Bi::Expression::Matrix($N, $N);
     my $J_new = new Bi::Expression::Matrix($N, $N);
-    $J_commit->ident;
+    
+    for (my $i = 0; $i < $N; ++$i) {
+    	if ($vars->[$i]->get_type ne 'obs') {
+		    $J_commit->set($i, $i, new Bi::Expression::VarIdentifier($model->get_jacobian_var($vars->[$i], $vars->[$i])));
+    	}
+    }
+    
+    #$J_commit->ident;
     $J_new->ident;
     
     _augment($block, $model, $vars, $J_commit, $J_new);
@@ -87,58 +93,7 @@ sub _augment {
         _augment($subblock, $model, $vars, $J_commit, $J_new);
     }
 
-    my $N = $J_commit->num_cols;
-    my $mu = new Bi::Expression::Vector($N);
-    my $S = new Bi::Expression::Matrix($N, $N);
-    my $J = new Bi::Expression::Matrix($N, $N);
-
-    # get and then clear actions, will be replaced
-    my $actions = $block->get_actions;
-    $block->set_actions([]);
-    
-    foreach my $action (@$actions) {
-        # search for index that corresponds to the target of this action
-        my $j = find($vars, $action->get_target->get_var);
-        assert ($j >= 0);
-
-        $J_new->set($j, $j, new Bi::Expression::Literal(0));
-        $J->set($j, $j, new Bi::Expression::Literal(0));            
-        
-        # mean
-        my $mean = $action->mean;
-        if (defined $mean) {
-            $mu->set($j, $mean);
-        }
-
-        # square-root covariance
-        my $std = $action->std;
-        if (defined $std) {
-            $S->set($j, $j, $std);
-            $J_new->set($j, $j, new Bi::Expression::Literal(1));
-            $J->set($j, $j, undef);            
-        }
-
-        # Jacobian
-        my ($ds, $refs) = $action->jacobian;
-        for (my $k = 0; $k < @$ds; ++$k) {
-            my $ref = $refs->[$k];
-            my $d = $ds->[$k];
-            my $i = find($vars, $ref->get_var);
-            if ($i >= 0) {
-                $J->set($i, $j, $d);
-                $J_new->set($i, $j, $d->clone);
-            }
-        }
-    }
-    _inline($model, $J);
-    $block->add_mean_actions($model, $vars, $mu);
-    $block->add_std_actions($model, $vars, $S);
-    $block->add_jacobian_actions($model, $vars, $J_commit, $J);
-
-    if ($block->get_commit) {
-        $J_commit->swap(Bi::Jacobian::commit($model, $vars, $J_commit*$J_new));
-        $J_new->ident;
-    }
+	$block->add_extended_actions($model, $vars, $J_commit, $J_new);
 }
 
 =item B<_add_F_vars>(I<model>)
@@ -152,7 +107,7 @@ sub _add_F_vars {
     my $start = $model->get_size('state_aux_');
     my $size = 0;
     my $vars1 = $model->get_vars(['noise', 'state']);
-    my $vars2 = $model->get_vars('state');
+    my $vars2 = $model->get_vars(['noise', 'state']);
     
     foreach my $var2 (@$vars2) {
         foreach my $var1 (@$vars1) {

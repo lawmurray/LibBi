@@ -113,7 +113,8 @@ sub symb2expr {
                 $expr = new Bi::Expression::Function($op, [ $expr1 ]);
             } else {
                 # an operator
-                $expr = new Bi::Expression::UnaryOperator($op, $expr1);
+                # error here using new Bi::Expression::UnaryOperator...
+                $expr = Bi::Expression::UnaryOperator->new($op, $expr1);
             }
         } elsif ($symb->arity == 2) {
             my $op = $Op_Types->[$symb->type]->{infix_string} ||
@@ -206,6 +207,12 @@ sub visit {
             # convert to ^ operator
             $name = '^';
             push(@symbs, new Math::Symbolic::Constant(0.5));
+        } elsif ($name eq 'abs') {
+        	# convert to square then square-root
+        	$name = '^';
+        	push(@symbs, new Math::Symbolic::Constant(2.0));
+        	@symbs = new Math::Symbolic::Operator($name, @symbs);
+        	push(@symbs, new Math::Symbolic::Constant(0.5));
         }
         $symb = new Math::Symbolic::Operator($name, @symbs);
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {

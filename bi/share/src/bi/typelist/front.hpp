@@ -11,7 +11,7 @@
 #include "typelist.hpp"
 #include "empty.hpp"
 
-#include "boost/static_assert.hpp"
+//#include "boost/static_assert.hpp"
 
 namespace bi {
 /**
@@ -33,7 +33,7 @@ struct front_impl {
  */
 template<class T>
 struct front {
-  //BOOST_STATIC_BI_ASSERT(!empty<T>::value);
+  //BOOST_STATIC_ASSERT(!empty<T>::value);
   typedef typename front_impl<T::marker,typename T::item>::type type;
 };
 

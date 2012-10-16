@@ -16,11 +16,7 @@ namespace bi {
  * Buffer for storing, reading and writing results of Kalman filters in a
  * NetCDF buffer.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::KalmanFilterBuffer
+ * @ingroup io_buffer
  */
 class KalmanFilterNetCDFBuffer : public SimulatorNetCDFBuffer {
 public:
@@ -45,11 +41,6 @@ public:
    */
   KalmanFilterNetCDFBuffer(const Model& m, const int P, const int T,
       const std::string& file, const FileMode mode = READ_ONLY);
-
-  /**
-   * Destructor.
-   */
-  virtual ~KalmanFilterNetCDFBuffer();
 
   /**
    * Read Cholesky factor of covariance matrix.

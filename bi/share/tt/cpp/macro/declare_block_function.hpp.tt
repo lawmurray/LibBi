@@ -11,7 +11,7 @@
   static void samples(bi::Random& rng, bi::State<[% model_class_name %],L>& s);
   [% ELSIF function == 'simulate' %]
   template<bi::Location L>
-  static void simulate(bi::State<[% model_class_name %],L>& s);
+  static void simulates(bi::State<[% model_class_name %],L>& s);
   [% ELSIF function == 'logdensity' %]
   template<bi::Location L, class V1>
   static void logDensities(bi::State<[% model_class_name %],L>& s, V1 lp);
@@ -28,7 +28,7 @@
   static void samples(bi::Random& rng, const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s);
   [% ELSIF function == 'simulate' %]
   template<class T1, bi::Location L>
-  static void simulate(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s);
+  static void simulates(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s);
   [% ELSIF function == 'logdensity' %]
   template<class T1, bi::Location L, class V1>
   static void logDensities(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% model_class_name %],L>& s, V1 lp);
@@ -45,7 +45,7 @@
   static void samples(bi::Random& rng, bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask);
   [% ELSIF function == 'simulate' %]
   template<bi::Location L>
-  static void simulate(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask);
+  static void simulates(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask);
   [% ELSIF function == 'logdensity' %]
   template<bi::Location L, class V1>
   static void logDensities(bi::State<[% model_class_name %],L>& s, const bi::Mask<L>& mask, V1 lp);

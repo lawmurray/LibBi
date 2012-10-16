@@ -8,13 +8,13 @@
 [%-MACRO std_block_static_function(function) BLOCK %]
   [% sig_block_static_function(function) %] {
     [% IF function == 'sample' %]
-    simulate(s);
+    simulates(s);
     [% ELSIF function == 'simulate' %]
     BI_ASSERT(false);
     [% ELSIF function == 'logdensity' %]
-    simulate(s);
+    simulates(s);
     [% ELSIF function == 'maxlogdensity' %]
-    simulate(s);
+    simulates(s);
     [% ELSE %]
     [% THROW 'unknown function type' %]
     [% END %]
@@ -26,7 +26,7 @@
       [% IF function == 'sample' %]
       samples(rng, s);
       [% ELSIF function == 'simulate' %]
-      simulate(s);
+      simulates(s);
       [% ELSIF function == 'logdensity' %]
       logDensities(s, lp);
       [% ELSIF function == 'maxlogdensity' %]
@@ -40,13 +40,13 @@
 [%-MACRO std_block_sparse_static_function(function) BLOCK %]
   [% sig_block_sparse_static_function(function) %] {
     [% IF function == 'sample' %]
-    simulate(s, mask);
+    simulates(s, mask);
     [% ELSIF function == 'simulate' %]
     BI_ASSERT(false);
     [% ELSIF function == 'logdensity' %]
-    simulate(s, mask);
+    simulates(s, mask);
     [% ELSIF function == 'maxlogdensity' %]
-    simulate(s, mask);
+    simulates(s, mask);
     [% ELSE %]
     [% THROW 'unknown function type' %]
     [% END %]

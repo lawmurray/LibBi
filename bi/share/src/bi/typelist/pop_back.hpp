@@ -10,7 +10,7 @@
 
 #include "typelist.hpp"
 
-#include "boost/static_assert.hpp"
+//#include "boost/static_assert.hpp"
 
 namespace bi {
 /**
@@ -32,7 +32,7 @@ struct pop_back_impl {
  */
 template<class T>
 struct pop_back {
-  //BOOST_STATIC_BI_ASSERT(!empty<T>::value);
+  //BOOST_STATIC_ASSERT(!empty<T>::value);
   typedef typename pop_back_impl<T::marker,T::reps,typename T::item,typename T::tail>::type type;
 };
 

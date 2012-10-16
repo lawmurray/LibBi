@@ -28,10 +28,6 @@ bi::FlexiSimulatorNetCDFBuffer::FlexiSimulatorNetCDFBuffer(const Model& m,
   }
 }
 
-bi::FlexiSimulatorNetCDFBuffer::~FlexiSimulatorNetCDFBuffer() {
-  //
-}
-
 void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
   int id, i;
   VarType type;
@@ -50,24 +46,29 @@ void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
 
   /* time variable */
   tVar = ncFile->add_var("time", netcdf_real, nrDim);
-  BI_ERROR(tVar != NULL && tVar->is_valid(), "Could not create time variable");
+  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(), "Could not create time variable");
 
   /* nrp dimension indexing variables */
   startVar = ncFile->add_var("start", ncInt, nrDim);
-  BI_ERROR(startVar != NULL && startVar->is_valid(), "Could not create start variable");
+  BI_ERROR_MSG(startVar != NULL && startVar->is_valid(), "Could not create start variable");
 
   lenVar = ncFile->add_var("len", ncInt, nrDim);
-  BI_ERROR(lenVar != NULL && lenVar->is_valid(), "Could not create len variable");
+  BI_ERROR_MSG(lenVar != NULL && lenVar->is_valid(), "Could not create len variable");
 
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
     vars[type].resize(m.getNumVars(type), NULL);
-    if (type == D_VAR || type == R_VAR) {
+    if (type == D_VAR || type == R_VAR || type == P_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
-          vars[type][id] = createFlexiVar(var);
+          if (type == P_VAR) {
+            vars[type][id] = createVar(var, false, false);
+          } else {
+            vars[type][id] = createFlexiVar(var);
+          }
+
         }
       }
     }
@@ -82,41 +83,41 @@ void bi::FlexiSimulatorNetCDFBuffer::map(const long T) {
   Dim* dim;
 
   /* dimensions */
-  BI_ERROR(hasDim("nr"), "File must have nr dimension");
+  BI_ERROR_MSG(hasDim("nr"), "File must have nr dimension");
   nrDim = mapDim("nr", T);
   for (i = 0; i < m.getNumDims(); ++i) {
     dim = m.getDim(i);
-    BI_ERROR(hasDim(dim->getName().c_str()), "File must have " <<
+    BI_ERROR_MSG(hasDim(dim->getName().c_str()), "File must have " <<
         dim->getName() << " dimension");
     nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
   }
-  BI_ERROR(hasDim("nrp"), "File must have nrp dimension");
+  BI_ERROR_MSG(hasDim("nrp"), "File must have nrp dimension");
   nrpDim = mapDim("nrp");
 
   /* time variable */
   tVar = ncFile->get_var("time");
-  BI_ERROR(tVar != NULL && tVar->is_valid(), "File does not contain" <<
+  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(), "File does not contain" <<
       " variable time");
-  BI_ERROR(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
+  BI_ERROR_MSG(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
       " dimensions, should have 1");
-  BI_ERROR(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time" <<
+  BI_ERROR_MSG(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time" <<
       " should be nr");
 
   /* nrp dimension indexing variables */
   startVar = ncFile->get_var("start");
-  BI_ERROR(startVar != NULL && startVar->is_valid(), "File does not" <<
+  BI_ERROR_MSG(startVar != NULL && startVar->is_valid(), "File does not" <<
       " contain variable start");
-  BI_ERROR(startVar->num_dims() == 1, "Variable start has " <<
+  BI_ERROR_MSG(startVar->num_dims() == 1, "Variable start has " <<
       startVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR(startVar->get_dim(0) == nrpDim, "Dimension 0 of variable" <<
+  BI_ERROR_MSG(startVar->get_dim(0) == nrpDim, "Dimension 0 of variable" <<
       " start should be nrp");
 
   lenVar = ncFile->get_var("len");
-  BI_ERROR(lenVar != NULL && lenVar->is_valid(), "File does not" <<
+  BI_ERROR_MSG(lenVar != NULL && lenVar->is_valid(), "File does not" <<
       " contain variable len");
-  BI_ERROR(lenVar->num_dims() == 1, "Variable len has " <<
+  BI_ERROR_MSG(lenVar->num_dims() == 1, "Variable len has " <<
       lenVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR(lenVar->get_dim(0) == nrpDim, "Dimension 0 of variable" <<
+  BI_ERROR_MSG(lenVar->get_dim(0) == nrpDim, "Dimension 0 of variable" <<
       " len should be nrp");
 
   /* other variables */

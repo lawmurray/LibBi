@@ -14,6 +14,10 @@ L<Bi::Client>
 
 =over 4
 
+=item * C<--start-time> (default 0.0)
+
+Start time.
+
 =item * C<-T> (default 0.0)
 
 Length of time.
@@ -22,11 +26,12 @@ Length of time.
 
 Number of trajectories.
 
-=item * C<-K> (default 1)
+=item * C<-K> (default 0)
 
-Number of times at which to output. If 1, outputs the state at the end time
-only. If greater than 1, outputs the initial state, and C<K - 1> states
-equispaced in time, up to and including the end time.
+Number of dense output times. The state is always output at time C<-T> and at
+all observation times in C<--obs-file>. This argument gives the number of
+additional, equispaced times at which to output. For each C<k> in <0,...,K-1>,
+the state will be output at time C<T*k/K>.
 
 =item * C<--init-file>
 
@@ -34,7 +39,11 @@ File from which to initialise parameters and initial conditions.
 
 =item * C<--input-file>
 
-File from which to read forcings.
+File from which to read inputs.
+
+=item * C<--obs-file> (mandatory)
+
+File from which to read observations.
 
 =item * C<--output-file>
 
@@ -56,10 +65,23 @@ Index along the C<ns> dimension of C<--input-file> to use.
 
 Index along the C<np> dimension of C<--input-file> to use.
 
+=item * C<--obs-ns> (default 0)
+
+Index along the C<ns> dimension of C<--obs-file> to use.
+
+=item * C<--obs-np> (default 0)
+
+Index along the C<np> dimension of C<--obs-file> to use.
+
 =back
 
 =cut
 our @CLIENT_OPTIONS = (
+    {
+      name => 'start-time',
+      type => 'float',
+      default => 0.0
+    },
     {
       name => 'T',
       type => 'float',
@@ -73,7 +95,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'K',
       type => 'int',
-      default => 1
+      default => 0
     },
     {
       name => 'init-file',
@@ -81,6 +103,10 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'input-file',
+      type => 'string'
+    },
+    {
+      name => 'obs-file',
       type => 'string'
     },
     {
@@ -106,6 +132,16 @@ our @CLIENT_OPTIONS = (
       name => 'input-np',
       type => 'int',
       default => 0
+    },
+    {
+      name => 'obs-ns',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'obs-np',
+      type => 'int',
+      default => -1
     }
 );
 

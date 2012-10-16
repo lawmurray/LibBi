@@ -30,7 +30,10 @@ use base 'Bi::Model::Block';
 use warnings;
 use strict;
 
+use Carp::Assert;
+
 use Bi::Jacobian;
+use Bi::Utility qw(find);
 
 =head1 PARAMETERS
 
@@ -106,53 +109,99 @@ sub validate {
     }
 }
 
-sub add_jacobian_actions {
+sub add_extended_actions {
     my $self = shift;
     my $model = shift;
     my $vars = shift;
     my $J_commit = shift;
-    my $J = shift;
+    my $J_new = shift;
+    
+    # get and then clear actions, will be replaced
+    my $actions = $self->get_actions;
+    $self->set_actions([]);
     
     # inplace operations, so need to add all variables in new Jacobian to
     # existing Jacobian
-    my %rows;
-    my %cols;
-    for (my $i = 0; $i < @$vars; ++$i) {
-        for (my $j = 0; $j < @$vars; ++$j) {
-            my $expr = $J->get($i, $j);
-            if (defined $expr) {
-                $rows{$i} = 1;
-                $cols{$j} = 1;
-            }
+    my %ids;
+    foreach my $action (@$actions) {
+        my ($ds, $refs) = $action->jacobian;
+    	my $i = find($vars, $action->get_target->get_var);
+    	$ids{$i} = 1;
+    	foreach my $ref (@$refs) {
+    		$i = find($vars, $ref->get_var);
+    		$ids{$i} = 1;
+    	}
+    }
+    foreach my $i (keys %ids) {
+        foreach my $j (keys %ids) {
+        	if ($vars->[$j]->get_type ne 'noise') {
+		        my $J_var = $model->get_jacobian_var($vars->[$i], $vars->[$j]); 
+		        my $ref = new Bi::Expression::VarIdentifier($J_var);
+	            $J_commit->set($i, $j, $ref);
+        	}
         }
     }
-    foreach my $i (keys %rows) {
-        foreach my $j (keys %cols) {
-	        my $J_var = $model->get_jacobian_var($vars->[$i], $vars->[$j]); 
-	        my $ref = new Bi::Expression::VarIdentifier($J_var);
-            $J_commit->set($i, $j, $ref);
-        }
-    }
-
-    $J = $J_commit*$J;
     
-    # build actions
-    for (my $i = 0; $i < @$vars; ++$i) {
-        for (my $j = 0; $j < @$vars; ++$j) {
-            my $expr = $J->get($i, $j);            
-                        
-            if (defined $expr) {
-                my $id = $model->next_action_id;
-                my $var = $model->get_jacobian_var($vars->[$i], $vars->[$j]);
-                my $target = new Bi::Expression::VarIdentifier($var);
-                my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $expr ]));
+    foreach my $action (@$actions) {
+        # search for index that corresponds to the target of this action
+        my $j = find($vars, $action->get_target->get_var);
+        assert ($j >= 0) if DEBUG;
+        
+        # mean
+        my $mean = $action->mean;
+        if (defined $mean) {
+            my $id = $model->next_action_id;
+            my $target = $action->get_target->clone;
+            my $action = new Bi::Model::Action($id, $target, '<-', $mean);
+            
+            $self->push_action($action);
+        }
+
+        # Jacobian
+        my ($ds, $refs) = $action->jacobian;
+
+        for (my $l = 0; $l < $J_commit->num_rows; ++$l) {
+        	my $expr;
+	        for (my $k = 0; $k < @$ds; ++$k) {
+	            my $ref = $refs->[$k];
+	            my $d = $ds->[$k];
+	            my $i = find($vars, $ref->get_var);
+	            if ($i >= 0) {
+	                $J_new->set($i, $j, $d->clone);
                 
-                $self->push_action($action);
+                	if (defined $J_commit->get($l, $i)) {
+                        my $arg = $J_commit->get($l, $i)->clone;
+		                my @offsets = map { $_->clone } (@{$vars->[$l]->gen_offsets}, @{$ref->get_offsets});
+                        $arg->set_offsets(\@offsets);
+
+						if (!defined $expr) {
+							$expr = $d->clone*$arg;
+						} else {
+	                        $expr += $d->clone*$arg;
+						}
+                	}
+                }
+            }
+            if (defined $expr) {
+            	my $id = $model->next_action_id;
+		        my $var = $model->get_jacobian_var($vars->[$l], $vars->[$j]);
+		        my @offsets = map { $_->clone } (@{$vars->[$l]->gen_offsets}, @{$action->get_target->get_offsets});
+		        my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+	            my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $expr ]));
+	            $self->push_action($action);
             }
         }
+    }
+    #_inline($model, $J);
+    #$self->add_mean_actions($model, $vars, $mu);
+    #$self->add_std_actions($model, $vars, $S);
+    #$self->add_jacobian_actions($model, $vars, $J_commit, $J);
+
+    if ($self->get_commit) {
+        $J_commit->swap(Bi::Jacobian::commit($model, $vars, $J_commit*$J_new));
+        $J_new->ident;
     }
 }
-
 
 1;
 

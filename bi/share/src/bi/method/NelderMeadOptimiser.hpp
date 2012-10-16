@@ -57,7 +57,8 @@ struct NelderMeadOptimiserState {
 inline bi::NelderMeadOptimiserState::NelderMeadOptimiserState(const int M) {
   x = gsl_vector_alloc(M);
   step = gsl_vector_alloc(M);
-  minimizer = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, M);
+  minimizer = gsl_multimin_fminimizer_alloc(
+      gsl_multimin_fminimizer_nmsimplex2, M);
 }
 
 inline bi::NelderMeadOptimiserState::~NelderMeadOptimiserState() {
@@ -76,7 +77,9 @@ struct NelderMeadOptimiserParams {
   Random* rng;
   State<B,L>* s;
   F* filter;
+  real t;
   real T;
+  int K;
 };
 
 /**
@@ -85,10 +88,10 @@ struct NelderMeadOptimiserParams {
  * @ingroup method
  *
  * @tparam B Model type
- * @tparam IO1 #concept::OptimiserBuffer type.
- * @tparam CL Cache location.
+ * @tparam F #concept::Filter type.
+ * @tparam IO1 Output type.
  */
-template<class B, class IO1, Location CL = ON_HOST>
+template<class B, class F, class IO1>
 class NelderMeadOptimiser {
 public:
   /**
@@ -102,18 +105,14 @@ public:
    * @tparam IO1 #concept::OptimiserBuffer type.
    *
    * @param m Model.
+   * @param filter Filter.
    * @param out Output.
    * @param mode Mode of operation.
    *
    * @see ParticleFilter
    */
-  NelderMeadOptimiser(B& m, IO1* out = NULL,
+  NelderMeadOptimiser(B& m, F* filter = NULL, IO1* out = NULL,
       const OptimiserMode mode = MAXIMUM_LIKELIHOOD);
-
-  /**
-   * Get output buffer.
-   */
-  IO1* getOutput();
 
   /**
    * @name High-level interface.
@@ -122,26 +121,55 @@ public:
    */
   //@{
   /**
+   * Get filter.
+   *
+   * @return Filter.
+   */
+  F* getFilter();
+
+  /**
+   * Set filter.
+   *
+   * @param filter Filter.
+   */
+  void setFilter(F* filter);
+
+  /**
+   * Get output.
+   *
+   * @return Output.
+   */
+  IO1* getOutput();
+
+  /**
+   * Set output.
+   *
+   * @param out Output buffer.
+   */
+  void setOutput(IO1* out);
+
+  /**
    * Optimise.
    *
    * @tparam L Location.
-   * @tparam F #concept::Filter type.
-   * @tparam IO2 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param rng Random number generator.
-   * @param T Length of time to optimise over.
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
    * @param[in,out] s State.
-   * @param filter Filter.
    * @param inInit Initialisation file.
+   * @param simplexSizeRel Size of simplex relative to each dimension.
    * @param stopSteps Maximum number of steps to take.
    * @param stopSize Size for stopping criterion.
    *
    * Note that @p s should be initialised with a starting state.
    */
-  template<Location L, class F, class IO2>
-  void optimise(Random& rng, const real T, State<B,L>& s, F* filter,
-      IO2* inInit = NULL, const int stopSteps = 100,
-      const real stopSize = 1.0e-4);
+  template<Location L, class IO2>
+  void optimise(Random& rng, const real t, const real T, const int K,
+      State<B,L>& s, IO2* inInit = NULL, const real simplexSizeRel = 0.1,
+      const int stopSteps = 100, const real stopSize = 1.0e-4);
   //@}
 
   /**
@@ -155,17 +183,19 @@ public:
    * Initialise.
    *
    * @tparam L Location.
-   * @tparam F #concept::Filter type.
-   * @tparam IO2 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param rng Random number generator.
-   * @param T Length of time to optimise over.
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
    * @param s State.
-   * @param filter Filter.
    * @param inInit Initialisation file.
+   * @param simplexSizeRel Size of simplex relative to each dimension.
    */
-  template<Location L, class F, class IO2>
-  void init(Random& rng, const real T, State<B,L>& s, F* filter, IO2* inInit);
+  template<Location L, class IO2>
+  void init(Random& rng, const real t, const real T, const int K,
+      State<B,L>& s, IO2* inInit, const real simplexSizeRel = 0.1);
 
   /**
    * Perform one iteration step of optimiser.
@@ -210,6 +240,11 @@ private:
   B& m;
 
   /**
+   * Filter.
+   */
+  F* filter;
+
+  /**
    * Output.
    */
   IO1* out;
@@ -227,18 +262,14 @@ private:
   /**
    * Cost function for maximum likelihood.
    */
-  template<Location L, class F>
+  template<Location L>
   static double ml(const gsl_vector* x, void* params);
 
   /**
    * Cost function for maximum a posteriori.
    */
-  template<Location L, class F>
+  template<Location L>
   static double map(const gsl_vector* x, void* params);
-
-  /* net sizes, for convenience */
-  static const int ND = B::ND;
-  static const int NP = B::NP;
 };
 
 /**
@@ -259,42 +290,54 @@ struct NelderMeadOptimiserFactory {
    *
    * @see NelderMeadOptimiser::NelderMeadOptimiser()
    */
-  template<class B, class IO1>
-  static NelderMeadOptimiser<B,IO1,CL>* create(B& m, IO1* out = NULL,
-      const OptimiserMode mode = MAXIMUM_LIKELIHOOD) {
-    return new NelderMeadOptimiser<B,IO1,CL>(m, out, mode);
+  template<class B, class F, class IO1>
+  static NelderMeadOptimiser<B,F,IO1>* create(B& m, F* filter = NULL,
+      IO1* out = NULL, const OptimiserMode mode = MAXIMUM_LIKELIHOOD) {
+    return new NelderMeadOptimiser<B,F,IO1>(m, filter, out, mode);
   }
 };
 }
 
-#include "Resampler.hpp"
+#include "../resampler/Resampler.hpp"
 #include "../math/misc.hpp"
 #include "../math/view.hpp"
 #include "../math/temp_vector.hpp"
 #include "../misc/exception.hpp"
 
-template<class B, class IO1, bi::Location CL>
-bi::NelderMeadOptimiser<B,IO1,CL>::NelderMeadOptimiser(B& m, IO1* out,
-    const OptimiserMode mode) :
-    m(m),
-    out(out),
-    mode(mode),
-    state(NP) {
+template<class B, class F, class IO1>
+bi::NelderMeadOptimiser<B,F,IO1>::NelderMeadOptimiser(B& m, F* filter,
+    IO1* out, const OptimiserMode mode) :
+    m(m), filter(filter), out(out), mode(mode), state(B::NP) {
   //
 }
 
-template<class B, class IO1, bi::Location CL>
-IO1* bi::NelderMeadOptimiser<B,IO1,CL>::getOutput() {
+template<class B, class F, class IO1>
+F* bi::NelderMeadOptimiser<B,F,IO1>::getFilter() {
+  return filter;
+}
+
+template<class B, class F, class IO1>
+void bi::NelderMeadOptimiser<B,F,IO1>::setFilter(F* filter) {
+  this->filter = filter;
+}
+
+template<class B, class F, class IO1>
+IO1* bi::NelderMeadOptimiser<B,F,IO1>::getOutput() {
   return out;
 }
 
-template<class B, class IO1, bi::Location CL>
-template<bi::Location L, class F, class IO2>
-void bi::NelderMeadOptimiser<B,IO1,CL>::optimise(Random& rng, const real T,
-    State<B,L>& s, F* filter, IO2* inInit, const int stopSteps,
-    const real stopSize) {
+template<class B, class F, class IO1>
+void bi::NelderMeadOptimiser<B,F,IO1>::setOutput(IO1* out) {
+  this->out = out;
+}
+
+template<class B, class F, class IO1>
+template<bi::Location L, class IO2>
+void bi::NelderMeadOptimiser<B,F,IO1>::optimise(Random& rng, const real t,
+    const real T, const int K, State<B,L>& s, IO2* inInit,
+    const real simplexSizeRel, const int stopSteps, const real stopSize) {
   int k = 0;
-  init(rng, T, s, filter, inInit);
+  init(rng, t, T, K, s, inInit, simplexSizeRel);
   while (k < stopSteps && !hasConverged(stopSize)) {
     step();
     report(k);
@@ -304,34 +347,37 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::optimise(Random& rng, const real T,
   term();
 }
 
-template<class B, class IO1, bi::Location CL>
-template<bi::Location L, class F, class IO2>
-void bi::NelderMeadOptimiser<B,IO1,CL>::init(Random& rng, const real T,
-    State<B,L>& s, F* filter, IO2* inInit) {
+template<class B, class F, class IO1>
+template<bi::Location L, class IO2>
+void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng, const real t,
+    const real T, const int K, State<B,L>& s, IO2* inInit,
+    const real simplexSizeRel) {
   /* first run of filter to get everything initialised properly */
-  filter->rewind();
-  filter->filter(rng, 0.0, s, inInit);
+  filter->filter(rng, t, t, 0, s, inInit);
 
   /* initialise state vector */
   BOOST_AUTO(x, gsl_vector_reference(state.x));
   x = vec(s.get(P_VAR));
-  set_elements(gsl_vector_reference(state.step), 0.01);
+  gsl_vector_reference(state.step) = x;
+  mulscal_elements(gsl_vector_reference(state.step), simplexSizeRel);
 
   /* parameters */
-  NelderMeadOptimiserParams<B,L,F>* params =
-      new NelderMeadOptimiserParams<B,L,F>(); ///@todo Leaks
+  NelderMeadOptimiserParams<B,L,F>* params = new NelderMeadOptimiserParams<B,
+      L,F>();  ///@todo Leaks
   params->m = &m;
   params->rng = &rng;
   params->s = &s;
   params->filter = filter;
+  params->t = t;
   params->T = T;
+  params->K = K;
 
   /* function */
-  gsl_multimin_function* f = new gsl_multimin_function(); ///@todo Leaks
+  gsl_multimin_function* f = new gsl_multimin_function();  ///@todo Leaks
   if (mode == MAXIMUM_A_POSTERIORI) {
-    f->f = NelderMeadOptimiser<B,IO1,CL>::template map<L,F>;
+    f->f = NelderMeadOptimiser<B,F,IO1>::template map<L>;
   } else {
-    f->f = NelderMeadOptimiser<B,IO1,CL>::template ml<L,F>;
+    f->f = NelderMeadOptimiser<B,F,IO1>::template ml<L>;
   }
   f->n = B::NP;
   f->params = params;
@@ -339,21 +385,22 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::init(Random& rng, const real T,
   gsl_multimin_fminimizer_set(state.minimizer, f, state.x, state.step);
 }
 
-template<class B, class IO1, bi::Location CL>
-void bi::NelderMeadOptimiser<B,IO1,CL>::step() {
+template<class B, class F, class IO1>
+void bi::NelderMeadOptimiser<B,F,IO1>::step() {
   int status = gsl_multimin_fminimizer_iterate(state.minimizer);
-  BI_ERROR(status == GSL_SUCCESS, "iteration failed");
+  BI_ERROR_MSG(status == GSL_SUCCESS, "iteration failed");
 }
 
-template<class B, class IO1, bi::Location CL>
-bool bi::NelderMeadOptimiser<B,IO1,CL>::hasConverged(const real stopSize) {
+template<class B, class F, class IO1>
+bool bi::NelderMeadOptimiser<B,F,IO1>::hasConverged(const real stopSize) {
   state.size = gsl_multimin_fminimizer_size(state.minimizer);
   return gsl_multimin_test_size(state.size, stopSize) == GSL_SUCCESS;
 }
 
-template<class B, class IO1, bi::Location CL>
+template<class B, class F, class IO1>
 template<bi::Location L>
-void bi::NelderMeadOptimiser<B,IO1,CL>::output(const int k, const State<B,L>& s) {
+void bi::NelderMeadOptimiser<B,F,IO1>::output(const int k,
+    const State<B,L>& s) {
   if (out != NULL) {
     out->writeState(P_VAR, k, vec(s.get(P_VAR)));
     //out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
@@ -362,8 +409,8 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::output(const int k, const State<B,L>& s)
   }
 }
 
-template<class B, class IO1, bi::Location CL>
-void bi::NelderMeadOptimiser<B,IO1,CL>::report(const int k) {
+template<class B, class F, class IO1>
+void bi::NelderMeadOptimiser<B,F,IO1>::report(const int k) {
   std::cerr << k << ":\t";
   std::cerr << "value=" << -state.minimizer->fval;
   std::cerr << '\t';
@@ -371,22 +418,22 @@ void bi::NelderMeadOptimiser<B,IO1,CL>::report(const int k) {
   std::cerr << std::endl;
 }
 
-template<class B, class IO1, bi::Location CL>
-void bi::NelderMeadOptimiser<B,IO1,CL>::term() {
+template<class B, class F, class IO1>
+void bi::NelderMeadOptimiser<B,F,IO1>::term() {
   //
 }
 
-template<class B, class IO1, bi::Location CL>
-template<bi::Location L, class F>
-double bi::NelderMeadOptimiser<B,IO1,CL>::ml(const gsl_vector* x,
+template<class B, class F, class IO1>
+template<bi::Location L>
+double bi::NelderMeadOptimiser<B,F,IO1>::ml(const gsl_vector* x,
     void* params) {
   typedef NelderMeadOptimiserParams<B,L,F> param_type;
   param_type* p = reinterpret_cast<param_type*>(params);
 
   /* evaluate */
   try {
-    p->filter->rewind();
-    real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
+    real ll = p->filter->filter(*p->rng, p->t, p->T, p->K,
+        gsl_vector_reference(x), *p->s);
     return -ll;
   } catch (CholeskyException e) {
     return GSL_NAN;
@@ -395,9 +442,9 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::ml(const gsl_vector* x,
   }
 }
 
-template<class B, class IO1, bi::Location CL>
-template<bi::Location L, class F>
-double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
+template<class B, class F, class IO1>
+template<bi::Location L>
+double bi::NelderMeadOptimiser<B,F,IO1>::map(const gsl_vector* x,
     void* params) {
   typedef NelderMeadOptimiserParams<B,L,F> param_type;
   param_type* p = reinterpret_cast<param_type*>(params);
@@ -415,8 +462,8 @@ double bi::NelderMeadOptimiser<B,IO1,CL>::map(const gsl_vector* x,
   /* evaluate */
   if (bi::is_finite(lp(0))) {
     try {
-      p->filter->rewind();
-      real ll = p->filter->filter(*p->rng, p->T, gsl_vector_reference(x), *p->s);
+      real ll = p->filter->filter(*p->rng, p->t, p->T, p->K,
+          gsl_vector_reference(x), *p->s);
       return -(ll + lp(0));
     } catch (CholeskyException e) {
       return GSL_NAN;

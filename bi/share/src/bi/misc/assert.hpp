@@ -47,7 +47,7 @@
 #endif
 
 /**
- * @def BI_ERROR(cond, msg)
+ * @def BI_ERROR_MSG(cond, msg)
  *
  * Checks condition, terminating and printing error if failed.
  *
@@ -55,24 +55,24 @@
  * @arg @p msg Message to print if condition failed.
  */
 #ifdef NDEBUG
-#define BI_ERROR(cond, msg) \
+#define BI_ERROR_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Error: " << msg << std::endl; \
     exit(1); \
   }
 #else
-#define BI_ERROR(cond, msg) BI_ASSERT_MSG(cond, msg)
+#define BI_ERROR_MSG(cond, msg) BI_ASSERT_MSG(cond, msg)
 #endif
 
 /**
- * @def BI_WARN
+ * @def BI_WARN_MSG
  *
  * Checks condition, printing warning if failed.
  *
  * @arg @p cond Condition.
  * @arg @p msg Message to print.
  */
-#define BI_WARN(cond, msg) \
+#define BI_WARN_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Warning: " << msg << std::endl; \
   }

@@ -33,7 +33,7 @@ public:
 
 template<class B, class S>
 void bi::StaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s) {
-  static const int N = block_size<S>::value;
+  const int N = (block_is_matrix<S>::value) ? block_count<S>::value : block_size<S>::value;
   const int P = s.size();
   dim3 Db, Dg;
 

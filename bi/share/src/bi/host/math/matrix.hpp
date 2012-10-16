@@ -986,7 +986,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
     const size_type rows, const size_type cols, const bool preserve) {
   if (rows != this->size1() || cols != this->size2()) {
-    BI_ERROR(own,
+    BI_ERROR_MSG(own,
         "Cannot resize host_matrix constructed as view of other matrix");
 
     /* allocate new buffer */

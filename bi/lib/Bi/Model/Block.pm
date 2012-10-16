@@ -25,6 +25,7 @@ use strict;
 use Carp::Assert;
 use Bi::Model::Action;
 use Bi::Visitor::CanSimulate;
+use Bi::Utility qw(find);
 
 =item B<new>(I<id>, I<name>, I<args>, I<named_args>, I<actions>, I<blocks>)
 
@@ -537,139 +538,119 @@ sub sink_children {
     $self->set_actions([]);
 }
 
-=item B<add_mean_actions>(I<model>, I<vars>, I<mu>)
-
-Add actions to the block to compute mean terms.
-
-=over 8
-
-=item * I<model>
-
-The model.
-
-=item * I<vars>
-
-Variables included in the mean vector.
-
-=item * I<mu>
-
-The vector of symbolic expressions, as a L<Bi::Expression::Vector> object,
-each element either undefined (for zero) or a L<Bi::Expression> object.
-
-=back
-
-No return value.
-
-=cut
-sub add_mean_actions {
-    my $self = shift;
-    my $model = shift;
+sub add_extended_actions {
+	my $self = shift;	
+	my $model = shift;
     my $vars = shift;
-    my $mu = shift;
+    my $J_commit = shift;
+    my $J_new = shift;
     
-    for (my $i = 0; $i < @$vars; ++$i) {
-        my $expr = $mu->get($i);
-        if (defined $expr) {
+    my $N = $J_commit->num_cols;
+    my $mu = new Bi::Expression::Vector($N);
+    my $S = new Bi::Expression::Matrix($N, $N);
+    my $J = new Bi::Expression::Matrix($N, $N);
+
+    # get and then clear actions, will be replaced
+    my $actions = $self->get_actions;
+    $self->set_actions([]);
+    
+    foreach my $action (@$actions) {
+        # search for index that corresponds to the target of this action
+        my $j = find($vars, $action->get_target->get_var);
+        assert ($j >= 0);
+
+        $J_new->set($j, $j, new Bi::Expression::Literal(0));
+        $J->set($j, $j, new Bi::Expression::Literal(0));            
+        
+        # mean
+        my $mean = $action->mean;
+        if (defined $mean) {
+            $mu->set($j, $mean);
+
             my $id = $model->next_action_id;
-            my $var = $vars->[$i];
-            my $target = new Bi::Expression::VarIdentifier($var);
-            my $action = new Bi::Model::Action($id, $target, '<-', $expr);
+            my $target = $action->get_target->clone;
+            my $action = new Bi::Model::Action($id, $target, '<-', $mean);
             
             $self->push_action($action);
         }
-    }
-}
 
-=item B<add_std_actions>(I<model>, I<vars>, I<S>)
+        # square-root covariance
+        my $std = $action->std;
+        if (defined $std) {
+            $S->set($j, $j, $std);
+            $J_new->set($j, $j, new Bi::Expression::Literal(1));
+            $J->set($j, $j, undef);
+            
+            my $id = $model->next_action_id;
+            my $var = $model->get_std_var($vars->[$j], $vars->[$j]);
+            my @offsets = map { $_->clone } (@{$action->get_target->get_offsets}, @{$action->get_target->get_offsets});
+            my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+            my $action = new Bi::Model::Action($id, $target, '<-', $std);
+                
+            $self->push_action($action);
+        }
 
-Add actions to the block to compute square-root covariance terms.
+        # Jacobian
+        my ($ds, $refs) = $action->jacobian;
 
-=over 8
+        for (my $l = 0; $l < $J_commit->num_rows; ++$l) {
+        	my $expr;
+	        for (my $k = 0; $k < @$ds; ++$k) {
+	            my $ref = $refs->[$k];
+	            my $d = $ds->[$k];
+	            my $i = find($vars, $ref->get_var);
+	            
+	            my $inline = $model->lookup_inline($d);
+                if (!defined $inline) {
+                    $inline = Bi::Model::Inline->new($model->tmp_inline, $d);
+                    $model->add_inline($inline);
+                }
+                $d = new Bi::Expression::InlineIdentifier($inline);
+	            
+	            if ($i >= 0) {
+	                $J_new->set($i, $j, $d->clone);
+                
+                	if (defined $J_commit->get($l, $i)) {
+                        my $arg = $J_commit->get($l, $i);
+                        my $offsets1 = [];
+                        my $offsets2 =  $ref->get_offsets;
+                        if (@$offsets2) {
+                           $offsets1 = $vars->[$l]->gen_offsets;
+                	    }
+		                my @offsets = map { $_->clone } (@{$offsets1}, @{$offsets2});
+		                $arg->set_offsets(\@offsets);
 
-=item * I<model>
-
-The model.
-
-=item * I<vars>
-
-Variables included in the matrix.
-
-=item * I<S>
-
-The matrix of symbolic expressions, as a L<Bi::Expression::Matrix> object,
-each element either undefined (for zero) or a L<Bi::Expression> object.
-
-=back
-
-No return value.
-
-=cut
-sub add_std_actions {
-    my $self = shift;
-    my $model = shift;
-    my $vars = shift;
-    my $S = shift;
-    
-    for (my $i = 0; $i < @$vars; ++$i) {
-        for (my $j = 0; $j < @$vars; ++$j) {
-            my $expr = $S->get($i, $j);
+						if (!defined $expr) {
+							$expr = $d->clone*$arg;
+						} else {
+	                        $expr += $d->clone*$arg;
+						}
+                	}
+                }
+            }
             if (defined $expr) {
-                my $id = $model->next_action_id;
-                my $var = $model->get_std_var($vars->[$i], $vars->[$j]);
-                my $target = new Bi::Expression::VarIdentifier($var);
-                my $action = new Bi::Model::Action($id, $target, '<-', $expr);
-                
-                $self->push_action($action);
+            	my $id = $model->next_action_id;
+		        my $var = $model->get_jacobian_var($vars->[$l], $vars->[$j]);
+		        my $offsets1 = [];
+		        my $offsets2 = $action->get_target->get_offsets;
+		        if (@$offsets2) {
+		            $offsets1 = $vars->[$l]->gen_offsets;
+		        }
+		        my @offsets = map { $_->clone } (@$offsets1, @$offsets2);
+		        my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+	            my $action = new Bi::Model::Action($id, $target, '<-', $expr);
+	            $self->push_action($action);
             }
         }
     }
-}
+    #_inline($model, $J);
+    #$self->add_mean_actions($model, $vars, $mu);
+    #$self->add_std_actions($model, $vars, $S);
+    #$self->add_jacobian_actions($model, $vars, $J_commit, $J);
 
-=item B<add_jacobian_actions>(I<model>, I<vars>, I<J>)
-
-Add actions to the block to compute Jacobian terms.
-
-=over 8
-
-=item * I<model>
-
-The model.
-
-=item * I<vars>
-
-Variables included in the Jacobian matrix.
-
-=item * I<J>
-
-The matrix of symbolic Jacobian terms, as a L<Bi::Expression::Matrix> object,
-each element either undefined (for zero) or a L<Bi::Expression> object.
-
-=back
-
-No return value.
-
-=cut
-sub add_jacobian_actions {
-    my $self = shift;
-    my $model = shift;
-    my $vars = shift;
-    my $J_commit = shift;
-    my $J = shift;
-    
-    $J = $J_commit*$J;
-    
-    for (my $i = 0; $i < @$vars; ++$i) {
-        for (my $j = 0; $j < @$vars; ++$j) {
-            my $expr = $J->get($i, $j);
-            if (defined($expr)) {
-                my $id = $model->next_action_id;
-                my $var = $model->get_jacobian_var($vars->[$i], $vars->[$j]);
-                my $target = new Bi::Expression::VarIdentifier($var);
-                my $action = new Bi::Model::Action($id, $target, '<-', $expr);
-                
-                $self->push_action($action);
-            }
-        }
+    if ($self->get_commit) {
+        $J_commit->swap(Bi::Jacobian::commit($model, $vars, $J_commit*$J_new));
+        $J_new->ident;
     }
 }
 

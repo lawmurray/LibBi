@@ -25,7 +25,7 @@ public:
 
 [% sig_block_static_function('simulate') %] {
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::simulate(s);
+  Block[% subblock.get_id %]::simulates(s);
   [%-END %]
 }
 

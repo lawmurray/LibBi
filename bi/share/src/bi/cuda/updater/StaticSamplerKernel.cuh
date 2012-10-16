@@ -23,6 +23,7 @@ CUDA_FUNC_GLOBAL void kernelStaticSampler(curandState* rng,
 
 }
 
+#include "StaticSamplerMatrixVisitorGPU.cuh"
 #include "StaticSamplerVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
@@ -35,7 +36,10 @@ CUDA_FUNC_GLOBAL void bi::kernelStaticSampler(curandState* rng,
     State<B,ON_DEVICE> s) {
   typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
-  typedef StaticSamplerVisitorGPU<B,S,PX,OX> Visitor;
+  typedef StaticSamplerMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
+  typedef StaticSamplerVisitorGPU<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   PX pax;

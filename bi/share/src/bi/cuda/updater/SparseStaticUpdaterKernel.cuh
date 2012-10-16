@@ -25,6 +25,7 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticUpdater(State<B,ON_DEVICE> s,
 
 }
 
+#include "SparseStaticUpdaterMatrixVisitorGPU.cuh"
 #include "SparseStaticUpdaterVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
@@ -35,7 +36,10 @@ CUDA_FUNC_GLOBAL void bi::kernelSparseStaticUpdater(State<B,ON_DEVICE> s,
     const Mask<ON_DEVICE> mask) {
   typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
-  typedef SparseStaticUpdaterVisitorGPU<B,S,PX,OX> Visitor;
+  typedef SparseStaticUpdaterMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
+  typedef SparseStaticUpdaterVisitorGPU<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   PX pax;
@@ -45,7 +49,6 @@ CUDA_FUNC_GLOBAL void bi::kernelSparseStaticUpdater(State<B,ON_DEVICE> s,
   if (p < s.size()) {
     Visitor::accept(s, mask, p, pax, x);
   }
-
 }
 
 #endif

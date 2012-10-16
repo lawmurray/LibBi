@@ -8,7 +8,7 @@
 [%-MACRO declare_action_static_matrix_function(function) BLOCK %]
   [% IF function == 'simulate' %]
   template <bi::Location L, class PX, class OX>
-  static CUDA_FUNC_BOTH void simulate(bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  static CUDA_FUNC_BOTH void simulates(bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
   [% ELSIF function == 'sample' %]
   template <class R1, bi::Location L, class PX, class OX>
   static CUDA_FUNC_BOTH void samples(R1& rng, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
@@ -26,7 +26,7 @@
 [%-MACRO declare_action_dynamic_matrix_function(function) BLOCK %]
   [% IF function == 'simulate' %]
   template <class T1, bi::Location L, class PX, class OX>
-  static CUDA_FUNC_BOTH void simulate(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
+  static CUDA_FUNC_BOTH void simulates(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);
   [% ELSIF function == 'sample' %]
   template <class R1, class T1, bi::Location L, class PX, class OX>
   static CUDA_FUNC_BOTH void samples(R1& rng, const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const PX& pax, OX& x);

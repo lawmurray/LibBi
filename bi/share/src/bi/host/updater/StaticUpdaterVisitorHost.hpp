@@ -52,7 +52,7 @@ inline void bi::StaticUpdaterVisitorHost<B,S,PX,OX>::accept(
   int ix = 0;
   coord_type cox;
   while (ix < target_size<target_type>::value) {
-    front::simulate(s, p, ix, cox, pax, x);
+    front::simulates(s, p, ix, cox, pax, x);
     ++cox;
     ++ix;
   }

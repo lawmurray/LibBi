@@ -21,7 +21,7 @@ namespace bi {
  *
  * State of SparseInputBuffer.
  *
- * @ingroup io
+ * @ingroup io_buffer
  */
 struct SparseInputBufferState {
   /**
@@ -82,7 +82,7 @@ namespace bi {
 /**
  * Buffer for storing and sequentially reading input in sparse format.
  *
- * @ingroup io
+ * @ingroup io_buffer
  */
 class SparseInputBuffer : public Markable<SparseInputBufferState> {
 public:
@@ -100,7 +100,9 @@ public:
   SparseInputBuffer(const Model& m);
 
   /**
-   * @copydoc concept::InputBuffer::getTime()
+   * Get the time for the next update.
+   *
+   * @return Time.
    */
   real getTime() const;
 
@@ -231,10 +233,16 @@ protected:
 }
 
 inline real bi::SparseInputBuffer::getTime() const {
+  /* pre-condition */
+  BI_ASSERT(isValid());
+
   return state.times.begin()->first;
 }
 
 inline int bi::SparseInputBuffer::size(const VarType type) const {
+  /* pre-condition */
+  BI_ASSERT(isValid());
+
   return state.masks[type]->size();
 }
 
@@ -244,6 +252,9 @@ inline int bi::SparseInputBuffer::size0(const VarType type) const {
 
 inline const bi::SparseInputBuffer::mask_type&
     bi::SparseInputBuffer::getMask(const VarType type) const {
+  /* pre-condition */
+  BI_ASSERT(isValid());
+
   return *state.masks[type];
 }
 

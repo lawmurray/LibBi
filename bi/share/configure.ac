@@ -203,7 +203,6 @@ AC_CHECK_HEADERS([\
     boost/random/uniform_int.hpp \
     boost/random/uniform_real.hpp \
     boost/random/variate_generator.hpp \
-    boost/static_assert.hpp \
     boost/typeof/typeof.hpp \
     ], [], AC_MSG_ERROR([required boost header not found]), [-])
 

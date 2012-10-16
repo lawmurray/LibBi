@@ -12,7 +12,10 @@
 #include "model/[% class_name %].hpp"
 
 #include "bi/random/Random.hpp"
+#include "bi/method/Forcer.hpp"
+#include "bi/method/Observer.hpp"
 #include "bi/method/Simulator.hpp"
+#include "bi/cache/SimulatorCache.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/SimulatorNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -59,23 +62,31 @@ int main(int argc, char* argv[]) {
   P = s.size(); // may change according to implementation
   
   /* inputs */
-  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
+  SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
   if (!INPUT_FILE.empty()) {
-    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+    bufInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   }
   if (!INIT_FILE.empty()) {
-    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+    bufInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+  }
+  if (!OBS_FILE.empty()) {
+    bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
   /* output */
-  SimulatorNetCDFBuffer* out = NULL;
+  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
+  
+  SimulatorNetCDFBuffer* bufOutput = NULL;
   if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
-    out = new SimulatorNetCDFBuffer(m, P, K, OUTPUT_FILE,
+    bufOutput = new SimulatorNetCDFBuffer(m, P, Y, OUTPUT_FILE,
         NetCDFBuffer::REPLACE);
   }
 
   /* simulator */
-  BOOST_AUTO(sim, (SimulatorFactory<LOCATION>::create(m, inInput, out)));
+  BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(obs, bi::ObserverFactory<LOCATION>::create(bufObs));
+  BOOST_AUTO(out, bi::SimulatorCacheFactory<LOCATION>::create(bufOutput));
+  BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs, out));
 
   /* simulate */
   [% IF gperftools %]
@@ -83,7 +94,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;
   
-  sim->simulate(rng, T, s, inInit);
+  sim->simulate(rng, START_TIME, T, K, s, bufInit);
   synchronize();
 
   /* output timing results */
@@ -96,8 +107,12 @@ int main(int argc, char* argv[]) {
 
   delete sim;
   delete out;
-  delete inInput;
-  delete inInit;
+  delete obs;
+  delete in;
+  delete bufOutput;
+  delete bufObs;
+  delete bufInit;
+  delete bufInput;
 
   return 0;
 }

@@ -373,7 +373,7 @@ public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value> matrix_reference_type;
+  typedef gpu_matrix_reference<T> matrix_reference_type;
   typedef const matrix_reference_type const_matrix_reference_type;
   typedef gpu_vector_reference<T> vector_reference_type;
   typedef const vector_reference_type const_vector_reference_type;
@@ -796,7 +796,7 @@ public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value> matrix_reference_type;
+  typedef gpu_matrix_reference<T> matrix_reference_type;
   typedef gpu_vector_reference<T> vector_reference_type;
   static const bool on_device = true;
 
@@ -985,7 +985,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
     const size_type rows, const size_type cols, const bool preserve) {
   if (rows != this->size1() || cols != this->size2()) {
-    BI_ERROR(own,
+    BI_ERROR_MSG(own,
         "Cannot resize gpu_matrix constructed as view of other matrix");
 
     /* allocate new buffer */

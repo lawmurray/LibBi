@@ -71,14 +71,14 @@ inline void bi::SparseStaticUpdaterVisitorHost<B,S,L,PX,OX>::accept(
 
   if (mask.isDense(id)) {
     while (ix < mask.getSize(id)) {
-      front::simulate(s, p, ix, cox, pax, x);
+      front::simulates(s, p, ix, cox, pax, x);
       ++cox;
       ++ix;
     }
   } else if (mask.isSparse(id)) {
     while (ix < mask.getSize(id)) {
       cox.setIndex(mask.getIndex(id, ix));
-      front::simulate(s, p, ix, cox, pax, x);
+      front::simulates(s, p, ix, cox, pax, x);
       ++ix;
     }
   }

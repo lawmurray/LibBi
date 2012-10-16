@@ -122,14 +122,10 @@ sub do {
            $self->help;
         } elsif (!defined($cmd) || $cmd eq '') {
             die("no command given\n");
-        } elsif ($cmd eq 'setup') {
-            $self->setup;
         } elsif ($cmd eq 'clean') {
             $self->clean;
         } elsif ($cmd eq 'draw') {
             $self->draw;
-        } elsif ($cmd eq 'document') {
-        	$self->document;
         } else {
             $self->client;
         }
@@ -181,32 +177,6 @@ sub draw {
     }
 }
 
-=item B<document>
-
-Write Doxygen configuration file and generate HTML documentation.
-
-=cut
-sub document {
-    my $self = shift;
-    
-    if (!defined $self->{_model_file}) {
-        die("no model specified\n");
-    } else {
-        my $fh = new IO::File;
-        $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
-        my $parser = new Bi::Parser();
-        my $model = $parser->parse($fh);
-        $fh->close;
-        
-        my $outdir = '.' . $model->get_name;   
-        my $doxyfile = new Bi::Gen::Doxyfile($outdir);
-        $doxyfile->gen($model);
-        
-        chdir($outdir);
-        exec('doxygen') || die("exec failed ($!)\n");;
-    }
-}
-
 =item B<client>
 
 Build client program (if not C<--dry-build>) and run (if not C<--dry-run>).
@@ -220,7 +190,7 @@ sub client {
         die("no model specified\n");
     }
 
-    # parse    
+    # parse
     $self->_report("Parsing...");
     my $fh = new IO::File;
     $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
@@ -255,6 +225,10 @@ sub client {
     # optimise
     my $optimiser = new Bi::Optimiser($model);
     $optimiser->optimise;
+
+    # doxygen
+    my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);
+    $doxyfile->gen($model);
 
     # generate code and build
     if ($client->is_cpp) {

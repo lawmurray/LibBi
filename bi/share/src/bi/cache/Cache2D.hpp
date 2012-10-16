@@ -60,7 +60,7 @@ public:
    * @param x Page.
    */
   template<class V1>
-  void put(const int p, const V1 x);
+  void set(const int p, const V1 x);
 
   /**
    * Get all pages.
@@ -106,7 +106,7 @@ inline const typename bi::Cache2D<T1>::matrix_type::vector_reference_type
 
 template<class T1>
 template<class V1>
-void bi::Cache2D<T1>::put(const int p, const V1 x) {
+void bi::Cache2D<T1>::set(const int p, const V1 x) {
   /* pre-condition */
   BI_ASSERT(p >= 0);
 
@@ -135,8 +135,6 @@ inline const bi::host_matrix<T1>& bi::Cache2D<T1>::getPages() const {
 
 template<class T1>
 void bi::Cache2D<T1>::empty() {
-  BI_ASSERT_MSG(!isDirty(), "Cache being emptied with dirty page");
-
   pages.resize(0,0);
   Cache::empty();
 }

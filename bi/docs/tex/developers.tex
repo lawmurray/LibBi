@@ -71,7 +71,7 @@ dialog, using the \textsf{Import...} button under \textsf{C/C++ > Code Style}.
 
 
 %%%%
-\section{Developing Bi}
+\section{Developing GenBi}
 
 Developing Bi involves adding or modifying functionality in one or more of its
 major \hyperref[hyper][Components]{components}. A typical exercise is adding
@@ -243,6 +243,42 @@ following additional recommended pertain to developers:
   matrix arguments, which might naturally be named with uppercase letters.
 \item Actions, blocks and arguments that are not meant to be used explicitly
   should be suffixed with a single underscore.
+\end{itemize}
+
+\section{Developing LibBi}
+
+\subsection{Header files}
+
+Header files are given two extensions in LibBi:
+\begin{enumerate}
+\item {\sf *.hpp} headers may be safely included in any C++ (e.g.
+{\sf *.cpp}) or CUDA ({\sf *.cu}) source files,
+\item {\sf *.cuh} headers may only be safely included in CUDA ({\sf *.cu})
+source files. They include CUDA C extensions.
+\end{enumerate}
+
+Note that not all {\sf *.hpp} headers can be safely included in {\sf *.cu}
+files either, due to CUDA compiler limitations, particularly those headers
+that further include Boost headers which make extensive use of
+templates. Efforts have been made to quarantine such incidences from the CUDA
+compiler, but mileage may vary.
+
+\subsection{Coding conventions}
+
+The following names are used for template parameters (where {\sf n}>
+is an integer):
+\begin{itemize}
+\item {\sf B} for the model type,
+\item {\sf Tn} for scalar types,
+\item {\sf Vn} for matrix types,
+\item {\sf Mn} for vector types,
+\item {\sf Qn} for pdf types,
+\item {\sf S} for type lists,
+\item {\sf L} for location (host or device),
+\item {\sf CL} for location of a cache,
+\item {\sf PX} for parents type,
+\item {\sf CX} for coordinates type,
+\item {\sf OX} for output type.
 \end{itemize}
 
 \subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}

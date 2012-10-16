@@ -63,7 +63,7 @@ inline void bi::StaticUpdaterVisitorGPU<B,S,PX,OX>::accept(State<B,ON_DEVICE>& s
   if (i < size) {
     coord_type cox;
     cox.setIndex(i);
-    front::simulate(s, p, i, cox, pax, x);
+    front::simulates(s, p, i, cox, pax, x);
   } else {
     StaticUpdaterVisitorGPU<B,pop_front,PX,OX>::accept(s, p, i - size, pax, x);
   }

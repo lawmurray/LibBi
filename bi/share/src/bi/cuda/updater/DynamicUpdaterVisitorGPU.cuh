@@ -66,7 +66,7 @@ inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
 
   if (i < size) {
     coord_type cox(i);
-    front::simulate(t1, t2, s, p, i, cox, pax, x);
+    front::simulates(t1, t2, s, p, i, cox, pax, x);
   } else {
     DynamicUpdaterVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p, i - size, pax, x);
   }

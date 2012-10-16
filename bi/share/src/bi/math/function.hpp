@@ -37,6 +37,8 @@ CUDA_FUNC_BOTH double min(const double x, const double y);
 CUDA_FUNC_BOTH float min(const float x, const float y);
 CUDA_FUNC_BOTH double sqrt(const double x);
 CUDA_FUNC_BOTH float sqrt(const float x);
+CUDA_FUNC_BOTH double rsqrt(const double x);
+CUDA_FUNC_BOTH float rsqrt(const float x);
 CUDA_FUNC_BOTH double pow(const double x, const double y);
 CUDA_FUNC_BOTH float pow(const float x, const float y);
 CUDA_FUNC_BOTH double mod(const double x, const double y);
@@ -123,11 +125,11 @@ inline float bi::exp(const float x) {
 }
 
 inline double bi::nanexp(const double x) {
-  return bi::isnan(x) ? bi::exp(0.0) : bi::exp(x);
+  return bi::isnan(x) ? 0.0 : bi::exp(x);
 }
 
 inline float bi::nanexp(const float x) {
-  return bi::isnan(x) ? bi::exp(0.0f) : bi::exp(x);
+  return bi::isnan(x) ? 0.0f : bi::exp(x);
 }
 
 inline double bi::max(const double x, const double y) {
@@ -152,6 +154,22 @@ inline double bi::sqrt(const double x) {
 
 inline float bi::sqrt(const float x) {
   return ::sqrtf(x);
+}
+
+inline double bi::rsqrt(const double x) {
+  #ifdef __CUDA_ARCH__
+  return ::rsqrt(x);
+  #else
+  return bi::pow(x, -0.5);
+  #endif
+}
+
+inline float bi::rsqrt(const float x) {
+  #ifdef __CUDA_ARCH__
+  return ::rsqrtf(x);
+  #else
+  return bi::pow(x, -0.5f);
+  #endif
 }
 
 inline double bi::pow(const double x, const double y) {

@@ -97,9 +97,9 @@ public:
   void smooth(State<B,L>& s);
 
   /**
-   * @copydoc #concept::Filter::reset()
+   * @copydoc #concept::Filter::rewind()
    */
-  void reset();
+  void rewind();
   //@}
 
   /**
@@ -219,7 +219,7 @@ bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::RauchTungStriebelSmoother(B& m, IO1
   /* pre-condition */
   BI_ASSERT(in != NULL);
 
-  reset();
+  rewind();
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
@@ -259,7 +259,7 @@ void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::smooth(State<B,L>& s) {
 }
 
 template<class B, class IO1, class IO2, bi::Location CL>
-void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::reset() {
+void bi::RauchTungStriebelSmoother<B,IO1,IO2,CL>::rewind() {
   state.t = 0.0;
 }
 

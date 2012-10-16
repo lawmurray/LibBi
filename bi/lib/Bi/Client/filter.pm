@@ -55,18 +55,6 @@ Extended Kalman filter.
 
 =back
 
-=item * C<--obs-file> (mandatory)
-
-File from which to read observations.
-
-=item * C<--obs-ns> (default 0)
-
-Index along the C<ns> dimension of C<--obs-file> to use.
-
-=item * C<--obs-np> (default 0)
-
-Index along the C<np> dimension of C<--obs-file> to use.
-
 =back
 
 =head2 Particle filter-specific options
@@ -204,20 +192,6 @@ our @CLIENT_OPTIONS = (
       name => 'filter',
       type => 'string',
       default => 'pf'
-    },
-    {
-      name => 'obs-ns',
-      type => 'int',
-      default => 0
-    },
-    {
-      name => 'obs-np',
-      type => 'int',
-      default => -1
-    },
-    {
-      name => 'obs-file',
-      type => 'string'
     },
     {
       name => 'resampler',

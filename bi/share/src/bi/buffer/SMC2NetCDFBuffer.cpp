@@ -25,10 +25,6 @@ bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const int P,
   }
 }
 
-bi::SMC2NetCDFBuffer::~SMC2NetCDFBuffer(){
-  //
-}
-
 void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
   int id, i;
   VarType type;
@@ -47,7 +43,7 @@ void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
 
   /* time variable */
   tVar = ncFile->add_var("time", netcdf_real, nrDim);
-  BI_ERROR(tVar != NULL && tVar->is_valid(), "Could not create time variable");
+  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(), "Could not create time variable");
 
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
@@ -73,19 +69,19 @@ void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
   }
 
   lwVar = ncFile->add_var("logweight", netcdf_real, nrDim, npDim);
-  BI_ERROR(lwVar != NULL && lwVar->is_valid(), "Could not create logweight variable");
+  BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(), "Could not create logweight variable");
 
   numberxVar = ncFile->add_var("numberx", ncInt, nrDim, npDim);
-  BI_ERROR(numberxVar != NULL && numberxVar->is_valid(), "Could not create numberx variable");
+  BI_ERROR_MSG(numberxVar != NULL && numberxVar->is_valid(), "Could not create numberx variable");
 
   evidenceVar = ncFile->add_var("evidence", netcdf_real, nrDim);
-  BI_ERROR(evidenceVar != NULL && evidenceVar->is_valid(), "Could not create evidence variable");
+  BI_ERROR_MSG(evidenceVar != NULL && evidenceVar->is_valid(), "Could not create evidence variable");
 
   essVar = ncFile->add_var("ess", netcdf_real, nrDim);
-  BI_ERROR(essVar != NULL && essVar->is_valid(), "Could not create ess variable");
+  BI_ERROR_MSG(essVar != NULL && essVar->is_valid(), "Could not create ess variable");
 
   acceptanceRateVar = ncFile->add_var("acceptancerate", netcdf_real, nrDim);
-  BI_ERROR(acceptanceRateVar != NULL && acceptanceRateVar->is_valid(), "Could not create acceptanceRate variable");
+  BI_ERROR_MSG(acceptanceRateVar != NULL && acceptanceRateVar->is_valid(), "Could not create acceptanceRate variable");
 }
 
 void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
@@ -96,24 +92,24 @@ void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
   Dim* dim;
 
   /* dimensions */
-  BI_ERROR(hasDim("nr"), "File must have nr dimension");
+  BI_ERROR_MSG(hasDim("nr"), "File must have nr dimension");
   nrDim = mapDim("nr", T);
   for (i = 0; i < m.getNumDims(); ++i) {
     dim = m.getDim(i);
-    BI_ERROR(hasDim(dim->getName().c_str()), "File must have " <<
+    BI_ERROR_MSG(hasDim(dim->getName().c_str()), "File must have " <<
         dim->getName() << " dimension");
     nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
   }
-  BI_ERROR(hasDim("np"), "File must have np dimension");
+  BI_ERROR_MSG(hasDim("np"), "File must have np dimension");
   npDim = mapDim("np", P);
 
   /* time variable */
   tVar = ncFile->get_var("time");
-  BI_ERROR(tVar != NULL && tVar->is_valid(),
+  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(),
       "File does not contain variable time");
-  BI_ERROR(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
+  BI_ERROR_MSG(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
       " dimensions, should have 1");
-  BI_ERROR(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time should be nr");
+  BI_ERROR_MSG(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time should be nr");
 
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {

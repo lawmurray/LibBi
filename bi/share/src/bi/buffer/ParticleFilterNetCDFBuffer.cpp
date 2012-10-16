@@ -23,23 +23,19 @@ bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
   }
 }
 
-bi::ParticleFilterNetCDFBuffer::~ParticleFilterNetCDFBuffer() {
-  //
-}
-
 void bi::ParticleFilterNetCDFBuffer::create() {
   ncFile->add_att("data_format", "PF");
 
   aVar = ncFile->add_var("ancestor", ncInt, nrDim, npDim);
-  BI_ERROR(aVar != NULL && aVar->is_valid(),
+  BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),
       "Could not create ancestor variable");
 
   lwVar = ncFile->add_var("logweight", netcdf_real, nrDim, npDim);
-  BI_ERROR(lwVar != NULL && lwVar->is_valid(),
+  BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
       "Could not create logweight variable");
 
   rVar = ncFile->add_var("resample", ncInt, nrDim);
-  BI_ERROR(rVar != NULL && rVar->is_valid(),
+  BI_ERROR_MSG(rVar != NULL && rVar->is_valid(),
       "Could not create resample variable");
 
   llVar = ncFile->add_var("LL", netcdf_real);
@@ -47,106 +43,32 @@ void bi::ParticleFilterNetCDFBuffer::create() {
 
 void bi::ParticleFilterNetCDFBuffer::map() {
   aVar = ncFile->get_var("ancestor");
-  BI_ERROR(aVar != NULL && aVar->is_valid(),
+  BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),
       "File does not contain variable ancestor");
-  BI_ERROR(aVar->num_dims() == 2, "Variable ancestor has " <<
+  BI_ERROR_MSG(aVar->num_dims() == 2, "Variable ancestor has " <<
       aVar->num_dims() << " dimensions, should have 2");
-  BI_ERROR(aVar->get_dim(0) == nrDim,
+  BI_ERROR_MSG(aVar->get_dim(0) == nrDim,
       "Dimension 0 of variable ancestor should be nr");
-  BI_ERROR(aVar->get_dim(1) == npDim,
+  BI_ERROR_MSG(aVar->get_dim(1) == npDim,
       "Dimension 1 of variable ancestor should be np");
 
   lwVar = ncFile->get_var("logweight");
-  BI_ERROR(lwVar != NULL && lwVar->is_valid(),
+  BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
       "File does not contain variable logweight");
-  BI_ERROR(lwVar->num_dims() == 2, "Variable logweight has " <<
+  BI_ERROR_MSG(lwVar->num_dims() == 2, "Variable logweight has " <<
       lwVar->num_dims() << " dimensions, should have 2");
-  BI_ERROR(lwVar->get_dim(0) == nrDim,
+  BI_ERROR_MSG(lwVar->get_dim(0) == nrDim,
       "Dimension 0 of variable logweight should be nr");
-  BI_ERROR(lwVar->get_dim(1) == npDim,
+  BI_ERROR_MSG(lwVar->get_dim(1) == npDim,
       "Dimension 1 of variable logweight should be np");
 
   rVar = ncFile->get_var("resample");
-  BI_ERROR(rVar != NULL && rVar->is_valid(),
+  BI_ERROR_MSG(rVar != NULL && rVar->is_valid(),
       "File does not contain variable resample");
-  BI_ERROR(rVar->num_dims() == 1, "Variable resample has " <<
+  BI_ERROR_MSG(rVar->num_dims() == 1, "Variable resample has " <<
       rVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR(rVar->get_dim(0) == nrDim,
+  BI_ERROR_MSG(rVar->get_dim(0) == nrDim,
       "Dimension 0 of variable resample should be nr");
-}
-
-void bi::ParticleFilterNetCDFBuffer::readLogWeight(const int t,
-    const int p, real& lw) {
-  /* pre-conditions */
-  BI_ASSERT(t < nrDim->size());
-  BI_ASSERT(p < npDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = lwVar->set_cur(t, p);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << lwVar->name());
-  ret = lwVar->get(&lw, 1, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type reading " << lwVar->name());
-}
-
-void bi::ParticleFilterNetCDFBuffer::writeLogWeight(const int t,
-    const int p, const real lw) {
-  /* pre-conditions */
-  BI_ASSERT(t < nrDim->size());
-  BI_ASSERT(p < npDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = lwVar->set_cur(t, p);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << lwVar->name());
-  ret = lwVar->put(&lw, 1, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type writing " << lwVar->name());
-}
-
-void bi::ParticleFilterNetCDFBuffer::readAncestor(const int t,
-    const int p, int& a) {
-  /* pre-conditions */
-  BI_ASSERT(t < nrDim->size());
-  BI_ASSERT(p < npDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = aVar->set_cur(t, p);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << aVar->name());
-  ret = aVar->get(&a, 1, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type reading " << aVar->name());
-}
-
-void bi::ParticleFilterNetCDFBuffer::writeAncestor(const int t,
-    const int p, const int a) {
-  /* pre-conditions */
-  BI_ASSERT(t < nrDim->size());
-  BI_ASSERT(p < npDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = aVar->set_cur(t, p);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << aVar->name());
-  ret = aVar->put(&a, 1, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type writing " << aVar->name());
-}
-
-void bi::ParticleFilterNetCDFBuffer::readResample(const int t, int& r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading resample");
-  ret = rVar->get(&r, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type reading resample");
-}
-
-void bi::ParticleFilterNetCDFBuffer::writeResample(const int t, const int r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading resample");
-  ret = rVar->put(&r, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type reading resample");
 }
 
 void bi::ParticleFilterNetCDFBuffer::writeLL(const double ll) {

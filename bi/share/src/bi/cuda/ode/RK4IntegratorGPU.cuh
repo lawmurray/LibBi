@@ -45,7 +45,7 @@ void bi::RK4IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     Dg.y = 1;
     Ns = Db.x*Db.y*sizeof(real);
 
-    BI_ERROR(P % Db.x == 0, "Number of trajectories must be multiple of " <<
+    BI_ERROR_MSG(P % Db.x == 0, "Number of trajectories must be multiple of " <<
         Db.x << " for device ODE integrator");
 
     /* launch */

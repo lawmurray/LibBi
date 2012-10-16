@@ -9,10 +9,10 @@
 #define BI_METHOD_EXTENDEDKALMANFILTER_HPP
 
 #include "Simulator.hpp"
+#include "Observer.hpp"
 #include "misc.hpp"
 #include "../misc/location.hpp"
 #include "../misc/exception.hpp"
-#include "../updater/OYUpdater.hpp"
 
 namespace bi {
 /**
@@ -21,31 +21,8 @@ namespace bi {
  * State of ExtendedKalmanFilter.
  */
 struct ExtendedKalmanFilterState {
-  /**
-   * Constructor.
-   */
-  ExtendedKalmanFilterState();
-
-  /**
-   * Current time.
-   */
-  real t;
-
-  /**
-   * Current log-likelihood.
-   */
-  real ll;
-
-  /**
-   * Observation size.
-   */
-  int W;
-};
-}
-
-bi::ExtendedKalmanFilterState::ExtendedKalmanFilterState() :
-    t(0.0), ll(0.0), W(0) {
   //
+};
 }
 
 namespace bi {
@@ -55,26 +32,24 @@ namespace bi {
  * @ingroup method
  *
  * @tparam B Model type.
- * @tparam IO1 #concept::SparseInputBuffer type.
- * @tparam IO2 #concept::SparseInputBuffer type.
- * @tparam IO3 #concept::KalmanFilterBuffer type.
- * @tparam CL Cache location.
+ * @tparam S Simulator type.
+ * @tparam IO1 Output type.
  *
  * @section Concepts
  *
  * #concept::Filter, #concept::Markable
  */
-template<class B, class IO1, class IO2, class IO3, Location CL>
-class ExtendedKalmanFilter : public Markable<ExtendedKalmanFilterState> {
+template<class B, class S, class IO1>
+class ExtendedKalmanFilter: public Markable<ExtendedKalmanFilterState> {
 public:
   /**
    * Constructor.
    *
    * @param m Model.
-   * @param fUpdater Updater for f-net.
-   * @param oyUpdater Updater for observations of o-net.
+   * @param sim Simulator.
+   * @param out Output.
    */
-  ExtendedKalmanFilter(B& m, IO1* in = NULL, IO2* obs = NULL, IO3* out = NULL);
+  ExtendedKalmanFilter(B& m, S* sim = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -83,21 +58,51 @@ public:
    */
   //@{
   /**
+   * Get simulator.
+   *
+   * @return Simulator.
+   */
+  S* getSim();
+
+  /**
+   * Set simulator.
+   *
+   * @param sim Simulator.
+   */
+  void setSim(S* sim);
+
+  /**
+   * Get output.
+   *
+   * @return Output.
+   */
+  IO1* getOutput();
+
+  /**
+   * Set output.
+   *
+   * @param out Output.
+   */
+  void setOutput(IO1* out);
+
+  /**
    * Filter forward.
    *
    * @tparam L Location.
-   * @tparam IO4 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param rng Random number generator.
-   * @param T Time to which to filter.
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
    * @param[out] s State.
    * @param inInit Initialisation file.
    *
    * @return Estimate of the marginal log-likelihood.
    */
-  template<Location L, class IO4>
-  real filter(Random& rng, const real T, State<B,L>& s, IO4* inInit)
-      throw (CholeskyException);
+  template<Location L, class IO2>
+  real filter(Random& rng, const real t, const real T, const int K,
+      State<B,L>& s, IO2* inInit) throw (CholeskyException);
 
   /**
    * Filter forward, with fixed parameters.
@@ -106,54 +111,23 @@ public:
    * @tparam V1 Vector type.
    *
    * @param rng Random number generator.
-   * @param T Time to which to filter.
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
    * @param theta Parameters.
    * @param[out] s State.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class V1>
-  real filter(Random& rng, const real T, const V1 theta, State<B,L>& s)
-      throw (CholeskyException);
-
-  /**
-   * @copydoc #concept::Filter::getLogLikelihood()
-   */
-  real getLogLikelihood();
+  real filter(Random& rng, const real t, const real T, const int K,
+      const V1 theta, State<B,L>& s) throw (CholeskyException);
 
   /**
    * @copydoc #concept::Filter::sampleTrajectory()
    */
   template<class M1>
-  void sampleTrajectory(Random& rng, M1 xd, M1 xr);
-
-  /**
-   * @copydoc #concept::Filter::reset()
-   */
-  void reset();
-
-  /**
-   * @copydoc Simulator::getTime()
-   */
-  real getTime() const;
-
-  /**
-   * @copydoc Simulator::setDelta()
-   */
-  template<Location L>
-  void setTime(const real t, State<B,L>& s);
-
-  /**
-   * @copydoc #concept::Filter::getOutput()
-   */
-  IO3* getOutput();
-
-  /**
-   * Get time of next observation.
-   *
-   * @param T Upper bound on time.
-   */
-  real getNextObsTime(const real T) const;
+  void sampleTrajectory(Random& rng, M1 X);
   //@}
 
   /**
@@ -168,15 +142,17 @@ public:
    *
    * @tparam L Location.
    * @tparam M1 Matrix type.
-   * @tparam IO4 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param rng Random number generator.
+   * @param t Start time.
    * @param s State.
    * @param[out] S Square-root covariance matrix.
    * @param inInit Initialisation file.
    */
-  template<Location L, class M1, class IO4>
-  void init(Random& rng, State<B,L>& s, M1 U, M1 S, IO4* inInit);
+  template<Location L, class M1, class IO2>
+  void init(Random& rng, const real t, State<B,L>& s, M1 U, M1 S1,
+      IO2* inInit);
 
   /**
    * Initialise, with fixed parameters.
@@ -186,12 +162,30 @@ public:
    * @tparam M1 Matrix type.
    *
    * @param rng Random number generator.
+   * @param t Start time.
    * @param theta Parameters.
    * @param s State.
    * @param[out] S Square-root covariance matrix.
    */
   template<Location L, class V1, class M1>
-  void init(Random& rng, const V1 theta, State<B,L>& s, M1 U, M1 S);
+  void init(Random& rng, const real t, const V1 theta, State<B,L>& s, M1 U,
+      M1 S1);
+
+  /**
+   * Predict and correct.
+   *
+   * @tparam L Location.
+   * @tparam M1 Matrix type.
+   *
+   * @param T Maximum time to which to advance.
+   * @param[in,out] s State.
+   * @param[in,out] U Cholesky factor of covariance matrix.
+   * @param[in,out] S Square-root covariance matrix.
+   *
+   * @return Incremental log-likelihood.
+   */
+  template<Location L, class M1>
+  real step(const real T, State<B,L>& s, M1 U, M1 S1);
 
   /**
    * Predict.
@@ -199,25 +193,16 @@ public:
    * @tparam L Location.
    * @tparam M1 Matrix type.
    *
-   * @param tnxt Maximum time to which to advance.
+   * @param T Maximum time to which to advance.
    * @param[in,out] s State.
+   * @param[in,out] U Cholesky factor of covariance matrix.
    * @param[in,out] S Square-root covariance matrix.
+   *
+   * The filter is advanced to the soonest of @p T and the time of the next
+   * observation.
    */
   template<Location L, class M1>
-  void predict(const real tnxt, State<B,L>& s, M1 U, M1 S);
-
-  /**
-   * Predict.
-   *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
-   *
-   * @param tnxt Maximum time to which to advance.
-   * @param[in,out] s State.
-   * @param[in,out] S Square-root covariance matrix.
-   */
-  template<Location L, class M1>
-  void predictFixed(const real tnxt, State<B,L>& s, M1 U, M1 S);
+  void predict(const real T, State<B,L>& s, M1 U, M1 S1);
 
   /**
    * Correct prediction with observation to produce filter density. Also
@@ -228,22 +213,21 @@ public:
    *
    * @param[in,out] s State.
    * @param[in,out] S Square-root covariance matrix.
+   *
+   * @return Incremental log-likelihood.
    */
   template<Location L, class M1>
-  void correct(State<B,L>& s, M1 U, M1 S) throw (CholeskyException);
+  real correct(State<B,L>& s, M1 U, M1 S1) throw (CholeskyException);
 
   /**
-   * Correct prediction from fixed state. As the covariance in such
-   * situations is zero, this merely updates the log-likelihood estimate.
+   * Output static variables.
    *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
+   * @param L Location.
    *
-   * @param[in,out] s State.
-   * @param[in,out] S Square-root covariance matrix.
+   * @param s State.
    */
-  template<Location L, class M1>
-  void correctFixed(State<B,L>& s, M1 U, M1 S) throw (CholeskyException);
+  template<Location L>
+  void output0(const State<B,L>& s);
 
   /**
    * Output.
@@ -255,7 +239,7 @@ public:
    * @param S Square-root covariance matrix.
    */
   template<Location L, class M1>
-  void output(const int k, const State<B,L>& s, const M1 U, M1 S);
+  void output(const int k, const State<B,L>& s, const M1 U, M1 S1);
 
   /**
    * Clean up.
@@ -273,6 +257,16 @@ public:
    */
   void restore();
 
+  /**
+   * @copydoc concept::Markable::top()
+   */
+  void top();
+
+  /**
+   * @copydoc concept::Markable::pop()
+   */
+  void pop();
+
 protected:
   /**
    * Model.
@@ -280,34 +274,25 @@ protected:
   B& m;
 
   /**
-   * Updater for oy-net.
-   */
-  OYUpdater<B,IO2,CL> oyUpdater;
-
-  /**
    * Simulator.
    */
-  Simulator<B,IO1,SimulatorNetCDFBuffer,CL> sim;
+  S* sim;
 
   /**
    * Output.
    */
-  IO3* out;
+  IO1* out;
 
   /**
    * State.
    */
   ExtendedKalmanFilterState state;
 
-  /**
-   * State size.
+  /*
+   * Sizes for convenience.
    */
-  int M;
-
-  /* net sizes, for convenience */
   static const int NR = B::NR;
   static const int ND = B::ND;
-  static const int NP = B::NP;
   static const int NO = B::NO;
 };
 
@@ -316,11 +301,8 @@ protected:
  *
  * @ingroup method
  *
- * @tparam CL Cache location.
- *
  * @see ExtendedKalmanFilter
  */
-template<Location CL = ON_HOST>
 struct ExtendedKalmanFilterFactory {
   /**
    * Create unscented Kalman filter.
@@ -329,13 +311,12 @@ struct ExtendedKalmanFilterFactory {
    *
    * @see ExtendedKalmanFilter::ExtendedKalmanFilter()
    */
-  template<class B, class IO1, class IO2, class IO3>
-  static ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>* create(B& m, IO1* in = NULL,
-      IO2* obs = NULL, IO3* out = NULL) {
-    return new ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>(m, in, obs, out);
+  template<class B, class S, class IO1>
+  static ExtendedKalmanFilter<B,S,IO1>* create(B& m, S* sim = NULL, IO1* out =
+      NULL) {
+    return new ExtendedKalmanFilter<B,S,IO1>(m, sim, out);
   }
 };
-
 }
 
 #include "../math/view.hpp"
@@ -345,233 +326,221 @@ struct ExtendedKalmanFilterFactory {
 #include "../math/loc_temp_vector.hpp"
 #include "../math/loc_temp_matrix.hpp"
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::ExtendedKalmanFilter(B& m,
-    IO1* in, IO2* obs, IO3* out) :
-    m(m),
-    oyUpdater(*obs),
-    sim(m, in, out),
-    out(out),
-    M(NR + ND) {
-  reset();
+template<class B, class S, class IO1>
+bi::ExtendedKalmanFilter<B,S,IO1>::ExtendedKalmanFilter(B& m, S* sim,
+    IO1* out) :
+    m(m), sim(sim), out(out) {
+  //
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-inline real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getTime() const {
-  return state.t;
+template<class B, class S, class IO1>
+inline S* bi::ExtendedKalmanFilter<B,S,IO1>::getSim() {
+  return sim;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L>
-inline void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::setTime(
-    const real t, State<B,L>& s) {
-  state.t = t;
-  sim.setTime(t, s);
-  oyUpdater.setTime(t, s);
+template<class B, class S, class IO1>
+inline void bi::ExtendedKalmanFilter<B,S,IO1>::setSim(S* sim) {
+  this->sim = sim;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-inline IO3* bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getOutput() {
+template<class B, class S, class IO1>
+inline IO1* bi::ExtendedKalmanFilter<B,S,IO1>::getOutput() {
   return out;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getNextObsTime(const real T)
-    const {
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() >= getTime() &&
-      oyUpdater.getNextTime() < T) {
-    return oyUpdater.getNextTime();
-  } else {
-    return T;
-  }
+template<class B, class S, class IO1>
+inline void bi::ExtendedKalmanFilter<B,S,IO1>::setOutput(IO1* out) {
+  this->out = out;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class IO4>
-real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
-    const real T, State<B,L>& s, IO4* inInit) throw (CholeskyException) {
+template<class B, class S, class IO1>
+template<bi::Location L, class IO2>
+real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng, const real t,
+    const real T, const int K, State<B,L>& s, IO2* inInit)
+        throw (CholeskyException) {
   /* pre-conditions */
-  BI_ASSERT(T >= state.t);
+  BI_ASSERT(T >= sim->getTime());
 
   typedef typename loc_matrix<L,real>::type matrix_type;
 
-  matrix_type U(s.size()*M, M), S(s.size()*M, M);
-  int n = 0;
-  state.ll = 0.0;
+  const int P = s.size();
+  const int N = m.getDynSize();
 
-  init(rng, s, U, S, inInit);
+  matrix_type U(P * N, N), S1(P * N, N);
+  int k = 0, n = 0;
+  real tk, ll = 0.0;
+
+  init(rng, t, s, U, S1, inInit);
+  output0(s);
   do {
-    predict(T, s, U, S);
-    output(n, s, U, S);
-    ++n;
-    correct(s, U, S);
-    output(n, s, U, S);
-    ++n;
-  } while (state.t < T);
-  synchronize();
+    /* time of next output */
+    tk = (k == K) ? T : t + (T - t) * k / K;
+
+    /* advance */
+    do {
+      ll += step(tk, s, U, S1);
+      output(n++, s, U, S1);
+    } while (sim->getTime() < tk);
+
+    ++k;
+  } while (k <= K);
   term();
 
-  return getLogLikelihood();
+  return ll;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class S, class IO1>
 template<bi::Location L, class V1>
-real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::filter(Random& rng,
-    const real T, const V1 theta, State<B,L>& s)
-    throw (CholeskyException) {
+real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng, const real t,
+    const real T, const int K, const V1 theta, State<B,L>& s)
+        throw (CholeskyException) {
   /* pre-conditions */
-  BI_ASSERT(T >= state.t);
+  BI_ASSERT(T >= sim->getTime());
 
   typedef typename loc_matrix<L,real>::type matrix_type;
 
-  matrix_type U(s.size()*M, M), S(s.size()*M, M);
-  int n = 0;
-  state.ll = 0.0;
+  const int P = s.size();
+  const int N = m.getDynSize();
 
-  init(rng, theta, s, U, S);
+  matrix_type U(P * N, N), S1(P * N, N);
+  int k = 0, n = 0;
+  real tk, ll = 0.0;
+
+  init(rng, t, theta, s, U, S1);
+  output0(s);
   do {
-    predict(T, s, U, S);
-    output(n, s, U, S);
-    ++n;
-    correct(s, U, S);
-    output(n, s, U, S);
-    ++n;
-  } while (state.t < T);
-  synchronize();
+    /* time of next output */
+    tk = (k == K) ? T : t + (T - t) * k / K;
+
+    /* advance */
+    do {
+      ll += step(tk, s, U, S1);
+      output(n++, s, U, S1);
+    } while (sim->getTime() < tk);
+
+    ++k;
+  } while (k <= K);
   term();
 
-  return getLogLikelihood();
+  return ll;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class S, class IO1>
 template<class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::sampleTrajectory(
-    Random& rng, M1 xd, M1 xr) {
+void bi::ExtendedKalmanFilter<B,S,IO1>::sampleTrajectory(Random& rng, M1 X) {
   ///@todo Implement.
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::reset() {
-  state.t = 0.0;
-  sim.reset();
-  oyUpdater.reset();
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class M1, class IO4>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
-    State<B,L>& s, M1 U, M1 S, IO4* inInit) {
+template<class B, class S, class IO1>
+template<bi::Location L, class M1, class IO2>
+void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng, const real t,
+    State<B,L>& s, M1 U, M1 S1, IO2* inInit) {
   rows(s.getF(), 0, NR).clear();
-  ident(rows(s.getF(), NR, ND));
+  ident(s.getF());
   U.clear();
-  S.clear();
+  S1.clear();
 
-  sim.init(rng, s, inInit);
+  sim->init(rng, t, s, inInit);
 
   const int P = s.size();
-  multi_gemm(P, 1.0, s.getQ(), s.getF(), 0.0, columns(S, NR, ND));
-  multi_syrk(P, 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-  multi_chol(P, subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
+  multi_gemm(P, 1.0, s.getQ(), columns(s.getF(), NR, ND), 0.0,
+      columns(S1, NR, ND));
+  multi_syrk(P, 1.0, columns(S1, NR, ND), 0.0,
+      subrange(U, P * NR, P * ND, NR, ND), 'U', 'T');
+  multi_chol(P, subrange(U, P * NR, P * ND, NR, ND),
+      subrange(U, P * NR, P * ND, NR, ND), 'U');
   s.getQ() = U;
+
+  if (out != NULL) {
+    //out->clear();
+  }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::init(Random& rng,
-    const V1 theta, State<B,L>& s, M1 U, M1 S) {
+void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng, const real t,
+    const V1 theta, State<B,L>& s, M1 U, M1 S1) {
   rows(s.getF(), 0, NR).clear();
-  ident(rows(s.getF(), NR, ND));
+  ident(s.getF());
   U.clear();
-  S.clear();
+  S1.clear();
 
-  sim.init(rng, theta, s);
+  sim->init(rng, t, theta, s);
 
   const int P = s.size();
-  multi_gemm(P, 1.0, s.getQ(), s.getF(), 0.0, columns(S, NR, ND));
-  multi_syrk(P, 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-  multi_chol(P, subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
+  multi_gemm(P, 1.0, s.getQ(), columns(s.getF(), NR, ND), 0.0,
+      columns(S1, NR, ND));
+  multi_syrk(P, 1.0, columns(S1, NR, ND), 0.0,
+      subrange(U, P * NR, P * ND, NR, ND), 'U', 'T');
+  multi_chol(P, subrange(U, P * NR, P * ND, NR, ND),
+      subrange(U, P * NR, P * ND, NR, ND), 'U');
   s.getQ() = U;
+
+  if (out != NULL) {
+    //out->clear();
+  }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class S, class IO1>
 template<bi::Location L, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predict(const real tnxt,
-    State<B,L>& s, M1 U, M1 S) {
-  real to = getNextObsTime(tnxt);
+real bi::ExtendedKalmanFilter<B,S,IO1>::step(const real T, State<B,L>& s,
+    M1 U, M1 S1) {
+  predict(T, s, U, S1);
+  return correct(s, U, S1);
+}
+
+template<class B, class S, class IO1>
+template<bi::Location L, class M1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const real T, State<B,L>& s,
+    M1 U, M1 S1) {
   const int P = s.size();
 
-  /* simulate forward */
-  while (state.t < to) {
-    /* clear Jacobian */
-    rows(s.getF(), 0, NR).clear();
-    ident(rows(s.getF(), NR, ND));
+  /* clear Jacobian */
+  rows(s.getF(), 0, NR).clear();
+  ident(s.getF());
 
-    /* drop noise terms from state square-root covariance */
-    columns(S, NR, ND) = columns(U, NR, ND);
-    multi_syrk(s.size(), 1.0, columns(S, NR, ND), 0.0, subrange(U, P*NR, P*ND, NR, ND), 'U', 'T');
-    multi_chol(s.size(), subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
-    rows(U, 0, P*NR).clear();
-    s.getQ() = U;
+  /* drop noise terms from state square-root covariance */
+  columns(S1, NR, ND) = columns(U, NR, ND);
+  multi_syrk(s.size(), 1.0, columns(S1, NR, ND), 0.0,
+      subrange(U, P * NR, P * ND, NR, ND), 'U', 'T');
+  multi_chol(s.size(), subrange(U, P * NR, P * ND, NR, ND),
+      subrange(U, P * NR, P * ND, NR, ND), 'U');
+  rows(U, 0, P * NR).clear();
+  s.getQ() = U;
 
-    sim.advance(to, s);
-    state.t = sim.getTime();
+  sim->advance(T, s);
 
-    subrange(S, 0, P*NR, 0, NR) = subrange(s.getQ(), 0, P*NR, 0, NR);
-    columns(S, NR, ND) = s.getF();
-    multi_trmm(s.size(), 1.0, s.getQ(), columns(S, NR, ND));
-    multi_syrk(s.size(), 1.0, S, 0.0, U, 'U', 'T');
-    if (state.t > 0) {
-      multi_chol(s.size(), U, U, 'U');
-    } else {
-      multi_chol(s.size(), subrange(U, P*NR, P*ND, NR, ND), subrange(U, P*NR, P*ND, NR, ND), 'U');
-    }
+  subrange(S1, 0, P * NR, 0, NR) = subrange(s.getQ(), 0, P * NR, 0, NR);
+  columns(S1, NR, ND) = columns(s.getF(), NR, ND);
+  multi_trmm(s.size(), 1.0, s.getQ(), columns(S1, NR, ND));
+  multi_syrk(s.size(), 1.0, S1, 0.0, U, 'U', 'T');
+  if (sim->getTime() > 0.0) {
+    multi_chol(s.size(), U, U, 'U');
+  } else {
+    multi_chol(s.size(), subrange(U, P * NR, P * ND, NR, ND),
+        subrange(U, P * NR, P * ND, NR, ND), 'U');
   }
-
-  /* update observations */
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
-    oyUpdater.update(s);
-  }
-
-  /* post-condition */
-  BI_ASSERT(sim.getTime() == state.t);
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
+template<class B, class S, class IO1>
 template<bi::Location L, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::predictFixed(const real tnxt,
-    State<B,L>& s, M1 U, M1 S) {
-  real to = getNextObsTime(tnxt);
+real bi::ExtendedKalmanFilter<B,S,IO1>::correct(State<B,L>& s, M1 U1, M1 S1)
+    throw (CholeskyException) {
+  real ll = 0.0;
 
-  /* zero Jacobian */
-  s.getJ().clear();
-
-  /* simulate forward */
-  do {
-    sim.advance(to, s);
-    state.t = sim.getTime();
-  } while (state.t < to);
-
-  /* post-condition */
-  BI_ASSERT(sim.getTime() == state.t);
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
-    M1 U1, M1 S) throw (CholeskyException) {
   /* update observations at current time */
-  if (oyUpdater.getTime() == getTime()) {
-    state.W = oyUpdater.getMask().size();
-
-    typename loc_temp_matrix<L,real>::type C(s.getG().size1(), s.getG().size2());
-    typename loc_temp_matrix<L,real>::type U2(s.getR().size1(), s.getR().size2());
-    typename loc_temp_vector<L,real>::type z(NO);
-
+  if (sim->getObs()->isValid() && sim->getObs()->getTime() == sim->getTime()) {
     const int P = s.size();
-    const int W = state.W;
+    const int W = sim->getObs()->getMask().size();
+
+    typename loc_temp_matrix<L,real>::type C(s.getG().size1(),
+        s.getG().size2());
+    typename loc_temp_matrix<L,real>::type U2(s.getR().size1(),
+        s.getR().size2());
+    typename loc_temp_vector<L,real>::type z(W);
 
     s.getG().clear();
-    sim.observe(s);
+    sim->observe(s);
 
     C = s.getG();
     multi_trmm(P, 1.0, U1, C);
@@ -580,7 +549,7 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
     multi_syrk(P, 1.0, C, 0.0, U2, 'U', 'T');
     multi_syrk(P, 1.0, s.getR(), 1.0, U2, 'U', 'T');
     multi_chol(P, U2, U2, 'U');
-    multi_trmm(P, 1.0, U1, C, 'L', 'U', 'T'); // C now cross-covariance
+    multi_trmm(P, 1.0, U1, C, 'L', 'U', 'T');  // C now cross-covariance
 
     BOOST_AUTO(mu1, vec(s.getDyn()));
     BOOST_AUTO(mu2, vec(s.get(O_VAR)));
@@ -590,87 +559,67 @@ void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correct(State<B,L>& s,
     z = y;
     axpy(-1.0, mu2, z);
     trsv(U2, z);
-    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - bi::log(prod_reduce(diagonal(U2)));
+    ll = -0.5 * dot(z) - BI_HALF_LOG_TWO_PI
+        - bi::log(prod_reduce(diagonal(U2)));
 
-    if (state.t > 0) {
+    if (sim->getTime() > 0.0) {
       multi_condition(P, mu1, U1, mu2, U2, C, y);
     } else {
-      multi_condition(P, subrange(mu1, P*NR, P*ND), subrange(U1, P*NR, P*ND, NR, ND), mu2, U2, rows(C, P*NR, P*ND), y);
+      multi_condition(P, subrange(mu1, P * NR, P * ND),
+          subrange(U1, P * NR, P * ND, NR, ND), mu2, U2,
+          rows(C, P * NR, P * ND), y);
     }
   }
+
+  return ll;
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::correctFixed(State<B,L>& s,
-    M1 U, M1 S) throw (CholeskyException) {
-  /* update observations at current time */
-  if (oyUpdater.hasNext() && oyUpdater.getNextTime() == getTime()) {
-    oyUpdater.update(s);
-    state.W = oyUpdater.getMask().size();
-
-    //BOOST_AUTO(mask, oyUpdater.getMask());
-    //BI_ERROR(W == mask.size() && W == observed.size(),
-    //    "Previous prediction step does not match current correction step");
-
-    const int P = s.size();
-    const int W = state.W;
-
-    typename loc_temp_matrix<L,real>::type U2(P*W, W);
-    typename loc_temp_vector<L,real>::type z(state.W);
-
-    sim.observe(s);
-
-    BOOST_AUTO(mu2, vec(s.get(O_VAR)));
-    BOOST_AUTO(y, vec(s.get(OY_VAR)));
-
-    multi_syrk(P, 1.0, s.getG(), 0.0, U2, 'U', 'T');
-    multi_chol(P, U2, U2, 'U');
-
-    z = y;
-    axpy(-1.0, mu2, z);
-    trsv(U2, z);
-    state.ll += -0.5*dot(z) - BI_HALF_LOG_TWO_PI - bi::log(prod_reduce(diagonal(U2)));
-  }
-}
-
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-template<bi::Location L, class M1>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::output(const int k,
-    const State<B,L>& s, const M1 U, M1 S) {
+template<class B, class S, class IO1>
+template<bi::Location L>
+void bi::ExtendedKalmanFilter<B,S,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
-    sim.output(k, s);
-
-    /* copy to contiguous buffer */
-    typename temp_host_matrix<real>::type U1(s.size()*M, M);
-    U1 = s.getQ();
-    synchronize(L == ON_DEVICE);
-    out->writeStd(k, U1);
+    out->writeParameters(s);
   }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-real bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::getLogLikelihood() {
-  return state.ll;
+template<class B, class S, class IO1>
+template<bi::Location L, class M1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::output(const int k,
+    const State<B,L>& s, const M1 U, M1 S1) {
+  if (out != NULL) {
+    out->writeTime(k, sim->getTime());
+    out->writeState(k, s);
+    out->writeStd(k, s.getQ());
+  }
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::term() {
-  sim.term();
+template<class B, class S, class IO1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::term() {
+  sim->term();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::mark() {
+template<class B, class S, class IO1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::mark() {
   Markable<ExtendedKalmanFilterState>::mark(state);
-  sim.mark();
-  oyUpdater.mark();
+  sim->mark();
 }
 
-template<class B, class IO1, class IO2, class IO3, bi::Location CL>
-void bi::ExtendedKalmanFilter<B,IO1,IO2,IO3,CL>::restore() {
+template<class B, class S, class IO1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::restore() {
   Markable<ExtendedKalmanFilterState>::restore(state);
-  sim.restore();
-  oyUpdater.restore();
+  sim->restore();
+}
+
+template<class B, class S, class IO1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::top() {
+  Markable<ExtendedKalmanFilterState>::top(state);
+  sim->top();
+}
+
+template<class B, class S, class IO1>
+void bi::ExtendedKalmanFilter<B,S,IO1>::pop() {
+  Markable<ExtendedKalmanFilterState>::pop(state);
+  sim->pop();
 }
 
 #endif

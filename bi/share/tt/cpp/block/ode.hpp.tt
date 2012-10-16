@@ -56,15 +56,15 @@ private:
 }
 
 [% sig_block_dynamic_function('sample') %] {
-  simulate(t1, t2, onDelta, s);
+  simulates(t1, t2, onDelta, s);
 }
 
 [% sig_block_dynamic_function('logdensity') %] {
-  simulate(t1, t2, onDelta, s);
+  simulates(t1, t2, onDelta, s);
 }
 
 [% sig_block_dynamic_function('maxlogdensity') %] {
-  simulate(t1, t2, onDelta, s);
+  simulates(t1, t2, onDelta, s);
 }
 
 [%-PROCESS block/misc/footer.hpp.tt-%]

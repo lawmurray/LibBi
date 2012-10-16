@@ -16,7 +16,7 @@
 /**
  * NetCDF type identifier for real.
  *
- * @ingroup io
+ * @ingroup io_buffer
  */
 extern NcType netcdf_real;
 
@@ -24,7 +24,7 @@ namespace bi {
 /**
  * Result buffer supported by NetCDF file.
  *
- * @ingroup io
+ * @ingroup io_buffer
  */
 class NetCDFBuffer {
 public:
@@ -95,7 +95,7 @@ protected:
   /**
    * Destructor.
    */
-  virtual ~NetCDFBuffer();
+  ~NetCDFBuffer();
 
   /**
    * Create dimension in NetCDF file.
@@ -181,6 +181,30 @@ protected:
   NcVar* mapVar(const Var* var);
 
   /**
+   * Read from one-dimensional variable.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param ncVar NetCDF variable.
+   * @param offset Offset into variable.
+   * @param[out] x Output.
+   */
+  template<class V1>
+  void read1d(NcVar* var, const int offset, V1 x);
+
+  /**
+   * Write into one-dimensional variable.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param ncVar NetCDF variable.
+   * @param offset Offset into variable.
+   * @param x Input.
+   */
+  template<class V1>
+  void write1d(NcVar* var, const int offset, const V1 x);
+
+  /**
    * NetCDF file.
    */
   NcFile* ncFile;
@@ -215,6 +239,54 @@ inline bool bi::NetCDFBuffer::hasVar(const char* name) {
 
 inline void bi::NetCDFBuffer::sync() {
   ncFile->sync();
+}
+
+template<class V1>
+void bi::NetCDFBuffer::read1d(NcVar* ncVar, const int offset, V1 x) {
+  /* pre-condition */
+  BI_ASSERT(ncVar->num_dims() == 1);
+  BI_ASSERT(offset >= 0 && offset + x.size() <= ncVar->get_dim(0)->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
+  BI_UNUSED NcBool ret;
+  ret = ncVar->set_cur(offset);
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
+
+  if (V1::on_device || x.inc() != 1) {
+    temp_vector_type x1(x.size());
+    ret = ncVar->get(x1.buf(), x1.size());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    x = x1;
+  } else {
+    ret = ncVar->get(x.buf(), x.size());
+    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+  }
+}
+
+template<class V1>
+void bi::NetCDFBuffer::write1d(NcVar* ncVar, const int offset, const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(ncVar->num_dims() == 1);
+  BI_ASSERT(offset >= 0 && offset + x.size() <= ncVar->get_dim(0)->size());
+
+  typedef typename V1::value_type temp_value_type;
+  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
+
+  BI_UNUSED NcBool ret;
+  ret = ncVar->set_cur(offset);
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
+
+  if (V1::on_device || x.inc() != 1) {
+    temp_vector_type x1(x.size());
+    x1 = x;
+    synchronize(V1::on_device);
+    ret = ncVar->put(x1.buf(), x1.size());
+  } else {
+    ret = ncVar->put(x.buf(), x.size());
+  }
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
 }
 
 #endif

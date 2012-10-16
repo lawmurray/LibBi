@@ -162,7 +162,7 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
     matrix_axpy(1.0, Z, s.getDyn());
   } catch (CholeskyException e) {
     /* defer to base resampler */
-    BI_WARN(false, "Cholesky failed for KernelResampler, reverting " <<
+    BI_WARN_MSG(false, "Cholesky failed for KernelResampler, reverting " <<
         "to base resampler")
     base->resample(rng, lws, as, s);
   }

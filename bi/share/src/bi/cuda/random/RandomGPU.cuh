@@ -37,12 +37,12 @@ void bi::RandomGPU::gaussians(Random& rng, V1 x,
 template<class V1>
 void bi::RandomGPU::gammas(Random& rng, V1 x,
     const typename V1::value_type alpha, const typename V1::value_type beta) {
-  BI_ERROR(false, "Not implemented on device");
+  BI_ERROR_MSG(false, "Not implemented on device");
 }
 
 template<class V1, class V2>
-void bi::RandomGPU::multinomials(Random& rng, const V1 ps, V2 xs) {
-  BI_ERROR(false, "Not implemented on device");
+void bi::RandomGPU::multinomials(Random& rng, const V1 lps, V2 xs) {
+  BI_ERROR_MSG(false, "Not implemented on device");
 }
 
 #endif

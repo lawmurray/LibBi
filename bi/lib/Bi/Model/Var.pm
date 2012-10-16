@@ -198,6 +198,38 @@ sub get_size {
     return $size;
 }
 
+=item B<gen_aliases>
+
+Generate list of aliases for this variable's dimensions.
+
+=cut
+sub gen_aliases {
+	my $self = shift;
+	
+	my @aliases;
+	my $i;
+	for ($i = 0; $i < $self->num_dims; ++$i) {
+		my $dim = $self->get_dims->[$i];
+		my $alias = $dim->get_name . $i . '_';
+		push(@aliases, $alias);
+	}
+	return \@aliases;
+}
+
+=item B<gen_offsets>
+
+Generate list of offsets for this variable, for use in action targets.
+
+=cut
+sub gen_offsets {
+	my $self = shift;
+	
+	my $aliases = $self->gen_aliases;
+	my @offsets = map { new Bi::Expression::Offset($_, 0) } @$aliases;
+	
+	return \@offsets;
+}
+
 =item B<validate>
 
 Validate variable.

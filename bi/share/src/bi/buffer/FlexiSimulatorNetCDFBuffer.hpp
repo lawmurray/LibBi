@@ -20,11 +20,7 @@ namespace bi {
  * a flexible file format that permits the number of trajectories at each
  * time step to change.
  *
- * @ingroup io
- *
- * @section Concepts
- *
- * #concept::SimulatorBuffer
+ * @ingroup io_buffer
  */
 class FlexiSimulatorNetCDFBuffer : public NetCDFBuffer {
 public:
@@ -48,11 +44,6 @@ public:
    */
   FlexiSimulatorNetCDFBuffer(const Model& m, const int T,
       const std::string& file, const FileMode mode = READ_ONLY);
-
-  /**
-   * Destructor.
-   */
-  virtual ~FlexiSimulatorNetCDFBuffer();
 
   /**
    * @copydoc concept::SimulatorBuffer::size2()
@@ -90,29 +81,40 @@ public:
   void writeLen(const int t, const int& x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readTime()
+   * @copydoc concept::SimulatorBuffer::readTimes()
    */
   template<class V1>
-  void readTimes(const int t, const int T, V1 x);
+  void readTimes(const int t, V1 x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeTime()
+   * @copydoc concept::SimulatorBuffer::writeTimes()
    */
   template<class V1>
-  void writeTimes(const int t, const int T, const V1 x);
+  void writeTimes(const int t, const V1 x);
 
   /**
-   * @copydoc concept::SimulatorBuffer::readState()
+   * @copydoc SimulatorNetCDFBuffer::readParameters(const State<B,L>&)
    */
-  template<class M1>
-  void readState(const VarType type, const int t, M1 X);
+  template<class B, Location L>
+  void readParameters(State<B,L>& s) const;
 
   /**
-   * @copydoc concept::SimulatorBuffer::writeState()
+   * @copydoc SimulatorNetCDFBuffer::writeParameters(const State<B,L>&)
    */
-  template<class M1>
-  void writeState(const VarType type, const int t, const M1 X,
-      const int p = 0);
+  template<class B, Location L>
+  void writeParameters(const State<B,L>& s);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::readState(const int, const State<B,L>&)
+   */
+  template<class B, Location L>
+  void readState(const int t, State<B,L>& s) const;
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeState(const int, const State<B,L>&)
+   */
+  template<class B, Location L>
+  void writeState(const int t, const State<B,L>& s);
 
 protected:
   /**
@@ -128,6 +130,19 @@ protected:
    * @param T Number of time points.
    */
   void map(const long T = -1);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::readState(const VarType, const int, M1)
+   */
+  template<class M1>
+  void readState(const VarType type, const int t, M1 X);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeState(const VarType, const int, M1)
+   */
+  template<class M1>
+  void writeState(const VarType type, const int t, const M1 X,
+      const int p = 0);
 
   /**
    * Model.
@@ -174,14 +189,10 @@ protected:
 #include "../math/view.hpp"
 #include "../math/temp_matrix.hpp"
 
-inline int bi::FlexiSimulatorNetCDFBuffer::size2() const {
-  return nrDim->size();
-}
-
 template<class V1>
-void bi::FlexiSimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
+void bi::FlexiSimulatorNetCDFBuffer::readTimes(const int t, V1 x) {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + x.size() <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -192,20 +203,19 @@ void bi::FlexiSimulatorNetCDFBuffer::readTimes(const int t, const int T, V1 x) {
 
   if (V1::on_device || x.inc() != 1) {
     temp_vector_type x1(x.size());
-    ret = tVar->get(x1.buf(), T);
+    ret = tVar->get(x1.buf(), x.size());
     BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << tVar->name());
     x = x1;
   } else {
-    ret = tVar->get(x.buf(), T);
+    ret = tVar->get(x.buf(), x.size());
     BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << tVar->name());
   }
 }
 
 template<class V1>
-void bi::FlexiSimulatorNetCDFBuffer::writeTimes(const int t, const int T,
-    const V1 x) {
+void bi::FlexiSimulatorNetCDFBuffer::writeTimes(const int t, const V1 x) {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t + T <= nrDim->size());
+  BI_ASSERT(t >= 0 && t + x.size() <= nrDim->size());
 
   typedef typename V1::value_type temp_value_type;
   typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
@@ -218,11 +228,34 @@ void bi::FlexiSimulatorNetCDFBuffer::writeTimes(const int t, const int T,
     temp_vector_type x1(x.size());
     x1 = x;
     synchronize(V1::on_device);
-    ret = tVar->put(x1.buf(), T);
+    ret = tVar->put(x1.buf(), x.size());
   } else {
-    ret = tVar->put(x.buf(), T);
+    ret = tVar->put(x.buf(), x.size());
   }
   BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << tVar->name());
+}
+
+template<class B, bi::Location L>
+void bi::FlexiSimulatorNetCDFBuffer::readParameters(State<B,L>& s) const {
+  readState(P_VAR, 0, s.get(P_VAR));
+}
+
+template<class B, bi::Location L>
+void bi::FlexiSimulatorNetCDFBuffer::writeParameters(const State<B,L>& s) {
+  writeState(P_VAR, 0, s.get(P_VAR));
+}
+
+template<class B, bi::Location L>
+void bi::FlexiSimulatorNetCDFBuffer::readState(const int t, State<B,L>& s) const {
+  readState(R_VAR, t, s.get(R_VAR));
+  readState(D_VAR, t, s.get(D_VAR));
+}
+
+template<class B, bi::Location L>
+void bi::FlexiSimulatorNetCDFBuffer::writeState(const int t,
+    const State<B,L>& s) {
+  writeState(R_VAR, t, s.get(R_VAR));
+  writeState(D_VAR, t, s.get(D_VAR));
 }
 
 template<class M1>
@@ -247,7 +280,7 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       j = 0;
@@ -258,8 +291,11 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = readStart(t);;
-      counts[j] = readLen(t);
+      if (j < ncVar->num_dims()) {
+        /* nrp dimension */
+        offsets[j] = readStart(t);
+        counts[j] = readLen(t);
+      }
 
       ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " <<
@@ -306,7 +342,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
 
     if (var->hasOutput()) {
       BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR (ncVar != NULL, "Variable " << var->getOutputName() <<
+      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
           " does not exist in file");
 
       offsets.resize(ncVar->num_dims(), false);
@@ -316,8 +352,11 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
-      offsets[j] = start;
-      counts[j] = len;
+      if (j < ncVar->num_dims()) {
+        /* nrp dimension */
+        offsets[j] = start;
+        counts[j] = len;
+      }
 
       ret = ncVar->set_cur(offsets.buf());
       BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable " <<
@@ -329,8 +368,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
         synchronize(M1::on_device);
         ret = ncVar->put(X1.buf(), counts.buf());
       } else {
-        ret = ncVar->put(columns(X, offset, size).buf(),
-            counts.buf());
+        ret = ncVar->put(columns(X, offset, size).buf(), counts.buf());
       }
       BI_ASSERT_MSG(ret, "Inconvertible type reading variable " <<
           ncVar->name());

@@ -5,18 +5,18 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_THETAPARTICLE_HPP
-#define BI_METHOD_THETAPARTICLE_HPP
+#ifndef BI_STATE_THETAPARTICLE_HPP
+#define BI_STATE_THETAPARTICLE_HPP
 
 #include "../math/loc_vector.hpp"
-#include "../state/State.hpp"
+#include "../state/ThetaState.hpp"
 
 namespace bi {
 /**
- * \f$\theta\f$-particle for SMC2.
+ * Single \f$\theta\f$-particle state for SMC2.
  */
 template<class B, Location L>
-class ThetaParticle {
+class ThetaParticle : public ThetaState<B,L> {
 public:
   /**
    * Vector type.
@@ -32,38 +32,24 @@ public:
    * Constructor.
    *
    * @param P Number of \f$x\f$-particles.
+   * @param T Number of time points.
    */
-  ThetaParticle(const int P = 0);
+  ThetaParticle(const int P = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
    */
-  ThetaParticle(const ThetaParticle& o);
+  ThetaParticle(const ThetaParticle<B,L>& o);
 
   /**
    * Assignment operator.
    */
-  ThetaParticle& operator=(const ThetaParticle& o);
-
-  /**
-   * Log-likelihood.
-   */
-  real& getLogLikelihood();
-
-  /**
-   * Log-prior.
-   */
-  real& getLogPrior();
+  ThetaParticle& operator=(const ThetaParticle<B,L>& o);
 
   /**
    * Incremental log-likelihood.
    */
   real& getIncLogLikelihood();
-
-  /**
-   * \f$x\f$-particle state.
-   */
-  State<B,L>& getState();
 
   /**
    * Log-weights.
@@ -76,11 +62,6 @@ public:
   int_vector_type& getAncestors();
 
   /**
-   * Size.
-   */
-  int size() const;
-
-  /**
    * Resize.
    *
    * @param P Number of \f$x\f$-particles.
@@ -90,24 +71,9 @@ public:
 
 private:
   /**
-   * Log-likelihood.
-   */
-  real logLikelihood;
-
-  /**
-   * Log-prior.
-   */
-  real logPrior;
-
-  /**
    * Incremental log-likelihood.
    */
   real incLogLikelihood;
-
-  /**
-   * \f$x\f$-particle state.
-   */
-  State<B,L> s;
 
   /**
    * Log-weights of \f$x\f$-particles.
@@ -140,11 +106,9 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::ThetaParticle<B,L>::ThetaParticle(const int P) :
-    logLikelihood(0.0),
-    logPrior(0.0),
-    incLogLikelihood(0.0),
-    s(P),
+bi::ThetaParticle<B,L>::ThetaParticle(const int P, const int T) :
+    ThetaState<B,L>(P, T),
+    incLogLikelihood(-1.0/0.0),
     lws(P),
     as(P) {
   //
@@ -152,10 +116,8 @@ bi::ThetaParticle<B,L>::ThetaParticle(const int P) :
 
 template<class B, bi::Location L>
 bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
-    logLikelihood(o.logLikelihood),
-    logPrior(o.logPrior),
+    ThetaState<B,L>(o),
     incLogLikelihood(o.incLogLikelihood),
-    s(o.s),
     lws(o.lws),
     as(o.as) {
   //
@@ -164,10 +126,8 @@ bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
 template<class B, bi::Location L>
 bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
     const ThetaParticle<B,L>& o) {
-  logLikelihood = o.logLikelihood;
-  logPrior = o.logPrior;
+  ThetaState<B,L>::operator=(o);
   incLogLikelihood = o.incLogLikelihood;
-  s = o.s;
   lws = o.lws;
   as = o.as;
 
@@ -175,23 +135,8 @@ bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
 }
 
 template<class B, bi::Location L>
-real& bi::ThetaParticle<B,L>::getLogLikelihood() {
-  return logLikelihood;
-}
-
-template<class B, bi::Location L>
-real& bi::ThetaParticle<B,L>::getLogPrior() {
-  return logPrior;
-}
-
-template<class B, bi::Location L>
 real& bi::ThetaParticle<B,L>::getIncLogLikelihood() {
   return incLogLikelihood;
-}
-
-template<class B, bi::Location L>
-bi::State<B,L>& bi::ThetaParticle<B,L>::getState() {
-  return s;
 }
 
 template<class B, bi::Location L>
@@ -207,13 +152,8 @@ typename bi::ThetaParticle<B,L>::int_vector_type&
 }
 
 template<class B, bi::Location L>
-int bi::ThetaParticle<B,L>::size() const {
-  return s.size();
-}
-
-template<class B, bi::Location L>
 void bi::ThetaParticle<B,L>::resize(const int P, const bool preserve) {
-  s.resize(P, preserve);
+  ThetaState<B,L>::resize(P, preserve);
   lws.resize(P, preserve);
   as.resize(P, preserve);
 }
@@ -221,10 +161,8 @@ void bi::ThetaParticle<B,L>::resize(const int P, const bool preserve) {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
-  ar & logLikelihood;
-  ar & logPrior;
+  ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
   ar & incLogLikelihood;
-  ar & s;
   ar & lws;
   ar & as;
 }
@@ -232,13 +170,11 @@ void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaParticle<B,L>::load(Archive& ar, const unsigned version) {
-  ar & logLikelihood;
-  ar & logPrior;
+  ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
   ar & incLogLikelihood;
-  ar & s;
 
-  lws.resize(s.size());
-  as.resize(s.size());
+  lws.resize(this->size());
+  as.resize(this->size());
 
   ar & lws;
   ar & as;

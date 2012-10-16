@@ -31,6 +31,7 @@
 #include "bi/typelist/macro_typelist.hpp"
 #include "bi/typelist/macro_typetree.hpp"
 #include "bi/buffer/Mask.hpp"
+#include "bi/math/loc_temp_vector.hpp"
 
 [%
 # mapping of verbose types to abbreviations
@@ -161,7 +162,37 @@ public:
   static int getRSize();
   [% END %]
 
+  [% IF model.is_block('transition') %]
+  /**
+   * Is current time on the delta of the transition model?
+   *
+   * @param t1 Current time.
+   * @param t2 Next time.
+   *
+   * @return True if @p t1 is on the delta of the transition model.
+   */
+  template<class T1>
+  static bool onDelta(const T1 t1, const T1 t2);
+  [% END %]
+
   [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
+  /**
+   * Deterministically simulate the @c [% toplevel %] block for one
+   * trajectory.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam L Location.
+   *
+   * @param t1 Starting time.
+   * @param t2 Ending time.
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param p Trajectory index.
+   */
+  template<class T1, bi::Location L>
+  static void [% toplevel | to_camel_case %]Simulate(const T1 t1,
+      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+      
   /**
    * Deterministically simulate the @c [% toplevel %] block.
    *
@@ -174,8 +205,26 @@ public:
    * output, contains the ending state.
    */
   template<class T1, bi::Location L>
-  static void [% toplevel | to_camel_case %]Simulate(const T1 t1,
+  static void [% toplevel | to_camel_case %]Simulates(const T1 t1,
       const T1 t2, bi::State<[% class_name %],L>& s);
+
+  /**
+   * Stochastically simulate the @c [% toplevel %] block for one trajectory.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam L Location.
+   *
+   * @param rng Random number generator.
+   * @param t1 Starting time.
+   * @param t2 Ending time.
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param p Trajectory index.
+   */
+  template<class T1, bi::Location L>
+  static void [% toplevel | to_camel_case %]Sample(bi::Random& rng,
+      const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s,
+      const int p = 0);
   
   /**
    * Stochastically simulate the @c [% toplevel %] block.
@@ -194,7 +243,27 @@ public:
       const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s);
 
   /**
-   * Compute the log-density of query point(s) under the @c [% toplevel %]
+   * Compute the log-density of a query point under the @c [% toplevel %]
+   * block.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam L Location.
+   *
+   * @param t1 Starting time.
+   * @param t2 Ending time.
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param p Trajectory index.
+   *
+   * @return Log-density.
+   */
+  template<class T1, bi::Location L>
+  static real [% toplevel | to_camel_case %]LogDensity(const T1 t1,
+      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+
+  /**
+   * Compute the log-density of query points under the @c [% toplevel %]
    * block.
    *
    * @tparam T1 Scalar type.
@@ -204,8 +273,8 @@ public:
    * @param t1 Starting time.
    * @param t2 Ending time.
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param[in,out] lp Log-density. On output, contains the updated 
    * log-density (by addition).
    */
@@ -214,7 +283,27 @@ public:
       const T1 t2, bi::State<[% class_name %],L>& s, V1 lp);
 
   /**
-   * Compute the maximum log-density of query point(s) under the
+   * Compute the maximum log-density of a query point under the
+   * @c [% toplevel %] block.
+   *
+   * @tparam T1 Scalar type.
+   * @tparam L Location.
+   *
+   * @param t1 Starting time.
+   * @param t2 Ending time.
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param p Trajectory index.
+   *
+   * @return Maximum log-density.
+   */
+  template<class T1, bi::Location L>
+  static real [% toplevel | to_camel_case %]MaxLogDensity(const T1 t1,
+      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+
+  /**
+   * Compute the maximum log-density of query points under the
    * @c [% toplevel %] block.
    *
    * @tparam T1 Scalar type.
@@ -224,8 +313,8 @@ public:
    * @param t1 Starting time.
    * @param t2 Ending time.
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param[in,out] lp Maximum log-density. On output, contains the updated
    * maximum log-density (by addition).
    */
@@ -236,6 +325,20 @@ public:
   
   [%-FOREACH toplevel IN STATIC_BLOCKS %]
   /**
+   * Deterministically simulate the @c [% toplevel %] block for one
+   * trajectory.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param p Trajectory index.
+   */
+  template<bi::Location L>
+  static void [% toplevel | to_camel_case %]Simulate(
+      bi::State<[% class_name %],L>& s, const int p = 0);
+
+  /**
    * Deterministically simulate the @c [% toplevel %] block.
    *
    * @tparam L Location.
@@ -244,7 +347,21 @@ public:
    * output, contains the ending state.
    */
   template<bi::Location L>
-  static void [% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s);
+  static void [% toplevel | to_camel_case %]Simulates(bi::State<[% class_name %],L>& s);
+
+  /**
+   * Stochastically simulate the @c [% toplevel %] block for one trajectory.
+   *
+   * @tparam L Location.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param p Trajectory index.
+   */
+  template<bi::Location L>
+  static void [% toplevel | to_camel_case %]Sample(bi::Random& rng,
+      bi::State<[% class_name %],L>& s, const int p = 0);
 
   /**
    * Stochastically simulate the @c [% toplevel %] block.
@@ -257,41 +374,93 @@ public:
    */
   template<bi::Location L>
   static void [% toplevel | to_camel_case %]Samples(bi::Random& rng, bi::State<[% class_name %],L>& s);
+
+  /**
+   * Compute the log-density of a query point under the @c [% toplevel %]
+   * block.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param p Trajectory index.
+   *
+   * @return Log-density.
+   */
+  template<bi::Location L>
+  static real [% toplevel | to_camel_case %]LogDensity(
+      bi::State<[% class_name %],L>& s, const int p = 0);
   
   /**
-   * Compute the log-density of query point(s) under the @c [% toplevel %]
+   * Compute the log-density of query points under the @c [% toplevel %]
    * block.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s)(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param[in,out] lp Log-density. On output, contains the updated 
    * log-density (by addition).
    */
   template<bi::Location L, class V1>
-  static void [% toplevel | to_camel_case %]LogDensities(bi::State<[% class_name %],L>& s, V1 lp);
+  static void [% toplevel | to_camel_case %]LogDensities(
+      bi::State<[% class_name %],L>& s, V1 lp);
 
   /**
-   * Compute the maximum log-density of query point(s) under the
+   * Compute the maximum log-density of a query point under the
+   * @c [% toplevel %] block.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param p Trajectory index.
+   *
+   * @return Log-density.
+   */
+  template<bi::Location L>
+  static real [% toplevel | to_camel_case %]MaxLogDensity(
+      bi::State<[% class_name %],L>& s, const int p = 0);
+
+  /**
+   * Compute the maximum log-density of query points under the
    * @c [% toplevel %] block.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s)(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param[in,out] lp Log-density. On output, contains the updated 
    * log-density (by addition).
    */
   template<bi::Location L, class V1>
-  static void [% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s, V1 lp);
+  static void [% toplevel | to_camel_case %]MaxLogDensities(
+      bi::State<[% class_name %],L>& s, V1 lp);
   [% END-%]
 
   [%-FOREACH toplevel IN SPARSE_BLOCKS %]
+  /**
+   * Deterministically, and sparsely, simulate the @c [% toplevel %] block
+   * for one trajectory.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param mask Sparsity mask.
+   * @param p Trajectory index.
+   */
+  template<bi::Location L>
+  static void [% toplevel | to_camel_case %]Simulate(
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask,
+      const int p = 0);
+
   /**
    * Deterministically, and sparsely, simulate the @c [% toplevel %] block.
    *
@@ -302,7 +471,25 @@ public:
    * @param mask Sparsity mask.
    */
   template<bi::Location L>
-  static void [% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask);
+  static void [% toplevel | to_camel_case %]Simulates(
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask);
+
+  /**
+   * Stochastically, and sparsely, simulate the @c [% toplevel %] block for
+   * one trajectory.
+   *
+   * @tparam L Location.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] s State. On input, contains the starting state, on
+   * output, contains the ending state.
+   * @param mask Sparsity mask.
+   * @param Trajectory index.
+   */
+  template<bi::Location L>
+  static void [% toplevel | to_camel_case %]Sample(bi::Random& rng,
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask,
+      const int p = 0);
 
   /**
    * Stochastically, and sparsely, simulate the @c [% toplevel %] block.
@@ -318,32 +505,71 @@ public:
   static void [% toplevel | to_camel_case %]Samples(bi::Random& rng, bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask);
   
   /**
-   * Sparsely compute the log-density of query point(s) under the
+   * Sparsely compute the log-density of a query point under the
+   * @c [% toplevel %] block.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param mask Sparsity mask.
+   * @param p Trajectory index.
+   *
+   * @return Log-density.
+   */
+  template<bi::Location L>
+  static real [% toplevel | to_camel_case %]LogDensity(
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask,
+      const int p = 0);
+
+  /**
+   * Sparsely compute the log-density of query points under the
    * @c [% toplevel %] block.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s)(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param mask Sparsity mask.
    * @param[in,out] lp Log-density. On output, contains the updated 
    * log-density (by addition).
    */
   template<bi::Location L, class V1>
-  static void [% toplevel | to_camel_case %]LogDensities(bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask, V1 lp);
+  static void [% toplevel | to_camel_case %]LogDensities(
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask, V1 lp);
 
   /**
-   * Sparsely compute the maximum log-density of query point(s) under the
+   * Sparsely compute the maximum log-density of a query point under the
+   * @c [% toplevel %] block.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State. On input, contains the starting state and, in
+   * the alternative buffers, the query point. On output, contains the
+   * ending state, consistent with the query point.
+   * @param mask Sparsity mask.
+   * @param p Trajectory index.
+   *
+   * @return Log-density.
+   */
+  template<bi::Location L>
+  static real [% toplevel | to_camel_case %]MaxLogDensity(
+      bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask,
+      const int p = 0);
+
+  /**
+   * Sparsely compute the maximum log-density of query points under the
    * @c [% toplevel %] block.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
    * @param[in,out] s State. On input, contains the starting state and, in
-   * the alternative buffers, the query point(s)(s). On output, contains the
-   * ending state, consistent with the query point(s).
+   * the alternative buffers, the query points. On output, contains the
+   * ending state, consistent with the query points.
    * @param mask Sparsity mask.
    * @param[in,out] lp Maximum log-density. On output, contains the updated
    * maximum log-density (by addition).
@@ -352,19 +578,6 @@ public:
   static void [% toplevel | to_camel_case %]MaxLogDensities(bi::State<[% class_name %],L>& s, const bi::Mask<L>& mask, V1 lp);
   [% END-%]
    
-  [% IF model.is_block('transition') %]
-  /**
-   * Is current time on the delta of the transition model?
-   *
-   * @param t1 Current time.
-   * @param t2 Next time.
-   *
-   * @return True if @p t1 is on the delta of the transition model.
-   */
-  template<class T1>
-  static bool onDelta(const T1 t1, const T1 t2);
-  [% END %]
-
 private:
   /*
    * Dimensions
@@ -386,12 +599,6 @@ private:
 [% END-%]
 
 #include "bi/method/misc.hpp"
-
-[% IF model.is_block('transition') %]
-inline real [% class_name %]::getDelta() {
-  return Block[% model.get_block('transition').get_id %]::getDelta();
-}
-[% END %]
 
 [% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
 inline int [% class_name %]::getFStart() {
@@ -433,14 +640,38 @@ inline int [% class_name %]::getRSize() {
 }
 [% END %]
 
+[% IF model.is_block('transition') %]
+inline real [% class_name %]::getDelta() {
+  return Block[% model.get_block('transition').get_id %]::getDelta();
+}
+[% END %]
+
 [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
 template<class T1, bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
+void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Simulates(t1, t2, s);
+  s.setRange(start, size);
+}
+
+template<class T1, bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Simulates(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) %]
-  Block[% model.get_block(toplevel).get_id %]::simulate(t1, t2, onDelta(t1, t2), s);
+  Block[% model.get_block(toplevel).get_id %]::simulates(t1, t2, onDelta(t1, t2), s);
   [% ELSE %]
-  BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
+  BI_ERROR_MSG(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
+}
+
+template<class T1, bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Sample(bi::Random& rng, const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Samples(rng, t1, t2, s);
+  s.setRange(start, size);
 }
 
 template<class T1, bi::Location L>
@@ -452,6 +683,19 @@ void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, co
   [%-END %]
 }
 
+template<class T1, bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]LogDensity(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]LogDensities(t1, t2, s, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
+}
+
 template<class T1, bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel)-%]
@@ -459,6 +703,19 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, c
   [% ELSE %]
   //
   [%-END %]
+}
+
+template<class T1, bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]MaxLogDensities(t1, t2, s, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
 }
 
 template<class T1, bi::Location L, class V1>
@@ -473,12 +730,30 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1
 
 [%-FOREACH toplevel IN STATIC_BLOCKS %]
 template<bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s) {
+void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Simulates(s);
+  s.setRange(start, size);
+}
+
+template<bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Simulates(bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) %]
-  Block[% model.get_block(toplevel).get_id %]::simulate(s);
+  Block[% model.get_block(toplevel).get_id %]::simulates(s);
   [% ELSE %]
-  BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
+  BI_ERROR_MSG(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
+}
+
+template<bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Sample(bi::Random& rng, bi::State<[% class_name %],L>& s, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Samples(rng, s);
+  s.setRange(start, size);
 }
 
 template<bi::Location L>
@@ -490,6 +765,19 @@ void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, bi
   [%-END %]
 }
 
+template<bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]LogDensity(bi::State<[% class_name %],L>& s, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]LogDensities(s, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
+}
+
 template<bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel) %]
@@ -497,6 +785,19 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% c
   [% ELSE %]
   //
   [%-END %]
+}
+
+template<bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(bi::State<[% class_name %],L>& s, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]MaxLogDensities(s, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
 }
 
 template<bi::Location L, class V1>
@@ -512,12 +813,32 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[
 [%-FOREACH toplevel IN SPARSE_BLOCKS %]
 template<bi::Location L>
 void [% class_name %]::[% toplevel | to_camel_case %]Simulate(bi::State<[% class_name %],L>& s,
+    const bi::Mask<L>& mask, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Simulates(s, mask);
+  s.setRange(start, size);
+}
+
+template<bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Simulates(bi::State<[% class_name %],L>& s,
     const bi::Mask<L>& mask) {
   [%-IF model.is_block(toplevel) %]
-  Block[% model.get_block(toplevel).get_id %]::simulate(s, mask);
+  Block[% model.get_block(toplevel).get_id %]::simulates(s, mask);
   [% ELSE %]
-  BI_ERROR(false, "Attempt to deterministically simulate stochastic model");
+  BI_ERROR_MSG(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
+}
+
+template<bi::Location L>
+void [% class_name %]::[% toplevel | to_camel_case %]Sample(bi::Random& rng, bi::State<[% class_name %],L>& s,
+    const bi::Mask<L>& mask, const int p) {
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  [% toplevel | to_camel_case %]Samples(rng, s, mask);
+  s.setRange(start, size);
 }
 
 template<bi::Location L>
@@ -530,6 +851,20 @@ void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, bi
   [%-END %]
 }
 
+template<bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]LogDensity(bi::State<[% class_name %],L>& s,
+    const bi::Mask<L>& mask, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]LogDensities(s, mask, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
+}
+
 template<bi::Location L, class V1>
 void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% class_name %],L>& s,
     const bi::Mask<L>& mask, V1 lp) {
@@ -538,6 +873,20 @@ void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(bi::State<[% c
   [% ELSE %]
   //
   [%-END %]
+}
+
+template<bi::Location L>
+real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(bi::State<[% class_name %],L>& s,
+    const bi::Mask<L>& mask, const int p) {
+  typename bi::loc_temp_vector<L,real>::type lp(1);
+  const int start = s.start();
+  const int size = s.size();
+  s.setRange(p, 1);
+  lp.clear();
+  [% toplevel | to_camel_case %]MaxLogDensity(s, mask, lp);
+  s.setRange(start, size);
+  
+  return *lp.begin();
 }
 
 template<bi::Location L, class V1>

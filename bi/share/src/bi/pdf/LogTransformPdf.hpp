@@ -318,7 +318,7 @@ real bi::LogTransformPdf<Q1>::density(const V2 x) {
   real p = Q1::density(z)/detJ;
 
   /* post-condition */
-  if (!BI_IS_FINITE(p)) {
+  if (!bi::is_finite(p)) {
     p = 0.0;
   }
   BI_ASSERT(p >= 0.0);

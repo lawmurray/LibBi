@@ -10,9 +10,8 @@
 #define BI_METHOD_SMC2_HPP
 
 #include "misc.hpp"
-#include "ThetaParticle.hpp"
 #include "ParticleMarginalMetropolisHastings.hpp"
-#include "../state/State.hpp"
+#include "../state/ThetaParticle.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
 #include "../math/view.hpp"
@@ -42,7 +41,8 @@ struct SMC2State {
 };
 }
 
-bi::SMC2State::SMC2State() : t(0.0) {
+bi::SMC2State::SMC2State() :
+    t(0.0) {
   //
 }
 
@@ -53,56 +53,98 @@ namespace bi {
  * @ingroup method
  *
  * @tparam B Model type
+ * @tparam F #concept::Filter type.
  * @tparam R #concept::Resampler type.
  * @tparam IO1 #concept::SMC2Buffer type.
- * @tparam CL Cache location.
  */
-template<class B, class R, class IO1, Location CL = ON_HOST>
+template<class B, class F, class R, class IO1>
 class SMC2 {
 public:
   /**
    * Constructor.
    *
-   * @tparam IO2 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param m Model.
+   * @param filter Filter.
    * @param resam Resampler for theta-particles.
    * @param out Output.
    *
    * @see ParticleFilter
    */
-  SMC2(B& m, R* resam = NULL, IO1* out = NULL);
-
-  /**
-   * Get output buffer.
-   */
-  IO1* getOutput();
+  SMC2(B& m, F* pmmh = NULL, R* resam = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
    */
   //@{
   /**
+   * Get filter.
+   *
+   * @return Filter.
+   */
+  F* getFilter();
+
+  /**
+   * Set filter.
+   *
+   * @param filter Filter.
+   */
+  void setFilter(F* pmmh);
+
+  /**
+   * Get resampler.
+   *
+   * @return Resampler.
+   */
+  R* getResam();
+
+  /**
+   * Set resampler.
+   *
+   * @param resam Resampler.
+   */
+  void setResam(R* resam);
+
+  /**
+   * Get output.
+   *
+   * @return Output.
+   */
+  IO1* getOutput();
+
+  /**
+   * Set output.
+   *
+   * @param out Output buffer.
+   */
+  void setOutput(IO1* out);
+
+  /**
    * Sample.
    *
    * @tparam L Location.
-   * @tparam F #concept::Filter type.
-   * @tparam IO2 #concept::SparseInputBuffer type.
+   * @tparam IO2 Input type.
    *
    * @param rng Random number generator.
-   * @param T Length of time to sample over.
-   * @param s State.
-   * @param filter Filter.
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
+   * @param s Prototype state. The set of \f$\theta\f$-particles are
+   * constructed from this.
    * @param inInit Initialisation file.
    * @param D Number of samples to draw.
-   * @param Nm
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling of theta-particles.
+   * @param localMove Is this a local proposal?
+   * @param Nmoves Number of steps per \f$\theta\f$-particle.
+   * @param moveScale Scaling factor for proposal.
+   *
    */
-  template<Location L, class F, class IO2>
-  void sample(Random& rng, const real T, State<B,L>& s, F* filter,
-      IO2* inInit = NULL, const int D = 1, const int Nm = 1,
-      const real essRel = 0.5, const int localMove = 0,
+  template<Location L, class IO2>
+  void sample(Random& rng, const real t, const real T, const int K,
+      ThetaParticle<B,L>& s, IO2* inInit = NULL, const int D = 1,
+      const real essRel = 0.5, const int localMove = 0, const int Nmoves = 1,
       const real moveScale = 0.5);
   //@}
 
@@ -112,20 +154,30 @@ public:
   //@{
   /**
    * Initialise.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param t Start time.
+   * @param s Prototype state. The set of \f$\theta\f$-particles are
+   * constructed from this.
+   * @param thetas[out] The set of \f$\theta\f$-particles.
+   * @param lws[out] Log-weights of \f$\theta\f$-particles.
+   * @param as[out] Ancestors of \f$\theta\f$-particles.
    */
-  template<Location L, class F, class V1, class V2>
-  void init(Random& rng, std::vector<ThetaParticle<B,L>*>& thetas, F* filter,
-      V1 lws, V2 as);
+  template<Location L, class V1, class V2>
+  void init(Random& rng, const real t, ThetaParticle<B,L>& s,
+      std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, V2 as);
 
   /**
    * Step all x-particles forward.
    *
    * @return Evidence.
    */
-  template<Location L, class V1, class F>
+  template<Location L, class V1>
   real step(Random& rng, const real T,
-      std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, F* filter,
-      const int n);
+      std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, const int n);
 
   /**
    * Adapt proposal distribution.
@@ -144,12 +196,29 @@ public:
   /**
    * Rejuvenate \f$\theta\f$-particles.
    *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   * @tparam M2 Matrix type.
+   *
+   * @param t Start time.
+   * @param T End time.
+   * @param K Number of dense output points.
+   * @param s Working state.
+   * @param thetas[out] The set of \f$\theta\f$-particles.
+   * @param lws[out] Log-weights of \f$\theta\f$-particles.
+   * @param q Proposal distribution.
+   * @param localMove Is this a local proposal?
+   * @param Nmoves Number of steps per \f$\theta\f$-particle.
+   * @param moveScale Scaling factor for proposal.
+   *
    * @return Acceptance rate.
    */
-  template<Location L, class F1, class F2, class V1, class V2, class M2>
-  real rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
-      F2* pmmh, const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
-      GaussianPdf<V2,M2>& q, const bool localMove, const real moveScale);
+  template<Location L, class V1, class V2, class M2>
+  real rejuvenate(Random& rng, const real t, const real T, const int K,
+      ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
+      const V1 lws, GaussianPdf<V2,M2>& q, const bool localMove,
+      const int Nmoves, const real moveScale);
 
   /**
    * Output.
@@ -191,24 +260,19 @@ private:
   B& m;
 
   /**
+   * PMCMC sampler.
+   */
+  F* pmmh;
+
+  /**
+   * Resampler for the theta-particles
+   */
+  R* resam;
+
+  /**
    * Output.
    */
   IO1* out;
-
-  /**
-   * Number of theta-particles
-   */
-  int Ntheta;
-
-  /**
-   * Number of x-particles
-   */
-  int Nx;
-
-  /**
-   * Number of PMMH moves performed at each resample-move step
-   */
-  int Nmoves;
 
   /**
    * Effective Sample Size threshold:
@@ -222,11 +286,6 @@ private:
    */
   SMC2State state;
 
-  /**
-   * Resampler for the theta-particles
-   */
-  R* resam;
-
   /* net sizes, for convenience */
   static const int NR = B::NR;
   static const int ND = B::ND;
@@ -238,11 +297,8 @@ private:
  *
  * @ingroup method
  *
- * @tparam CL Cache location.
- *
  * @see SMC2
  */
-template<Location CL = ON_HOST>
 struct SMC2Factory {
   /**
    * Create particle MCMC sampler.
@@ -251,9 +307,10 @@ struct SMC2Factory {
    *
    * @see SMC2::SMC2()
    */
-  template<class B, class R, class IO1>
-  static SMC2<B,R,IO1,CL>* create(B& m, R* resam = NULL, IO1* out = NULL) {
-    return new SMC2<B,R,IO1,CL>(m, resam, out);
+  template<class B, class F, class R, class IO1>
+  static SMC2<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
+      IO1* out = NULL) {
+    return new SMC2<B,F,R,IO1>(m, pmmh, resam, out);
   }
 };
 }
@@ -264,19 +321,18 @@ struct SMC2Factory {
 
 #include "boost/typeof/typeof.hpp"
 
-template<class B, class R, class IO1, bi::Location CL>
-bi::SMC2<B,R,IO1,CL>::SMC2(B& m, R* resam, IO1* out) :
-    m(m),
-    resam(resam),
-    out(out) {
+template<class B, class F, class R, class IO1>
+bi::SMC2<B,F,R,IO1>::SMC2(B& m, F* pmmh, R* resam, IO1* out) :
+    m(m), pmmh(pmmh), resam(resam), out(out) {
   //
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-template<bi::Location L, class F, class IO2>
-void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
-    F* filter, IO2* inInit, const int D, const int Nm, const real essRel,
-    const int localMove, const real moveScale) {
+template<class B, class F, class R, class IO1>
+template<bi::Location L, class IO2>
+void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const real t, const real T,
+    const int K, ThetaParticle<B,L>& s, IO2* inInit, const int D,
+    const real essRel, const int localMove, const int Nmoves,
+    const real moveScale) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -286,44 +342,49 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   typedef typename temp_host_vector<real>::type host_logweight_vector_type;
   typedef typename temp_host_vector<int>::type host_ancestor_vector_type;
 
-  this->Nx = s_in.size();
-  this->Ntheta = D;
-  this->Nmoves = Nm;
   this->essRel = essRel;
-  BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory<CL>::create(m, out));
-  std::vector<ThetaParticle<B,L>*> thetas(Ntheta); // theta-particles
-  host_vector_type lws(Ntheta); // log-weights of theta-particles
-  host_ancestor_vector_type as(Ntheta); // ancestors
+
+  std::vector<ThetaParticle<B,L>*> thetas(D);  // theta-particles
+  host_vector_type lws(D);  // log-weights of theta-particles
+  host_ancestor_vector_type as(D);  // ancestors
   real evidence = 0.0, ess = 0.0, acceptRate = -1.0;
-  GaussianPdf<host_vector_type,host_matrix_type> q(NP); // proposal distro
+  GaussianPdf<host_vector_type,host_matrix_type> q(NP);  // proposal distro
 
   /* init */
-  init(rng, thetas, filter, lws, as);
+  init(rng, t, s, thetas, lws, as);
 
   /* sample */
-  int n = 0;
-  bool r = false; // resampling performed?
+  int k = 0, n = 0;
+  real tk;
+  bool r = false;  // resampling performed?
   do {
-    evidence = step(rng, T, thetas, lws, filter, n);
-    ess = resam->ess(lws);
-    r = ess < Ntheta*essRel;
-    if (r) {
-      /* resample-move */
-      adapt(thetas, lws, localMove, q);
-      resample(rng, lws, as, thetas);
-      acceptRate = rejuvenate(rng, s_in, filter, pmmh, thetas, lws, q,
-          localMove, moveScale);
-    } else {
-      acceptRate = 0.0;
-    }
-    report(n, state.t, ess, r, acceptRate);
-    output(n, thetas, lws, evidence, ess, acceptRate);
-    ++n;
-  } while (state.t < T);
+    /* time of next output */
+    tk = (k == K) ? T : t + (T - t) * k / K;
+
+    /* advance */
+    do {
+      evidence = step(rng, tk, thetas, lws, n);
+      ess = resam->ess(lws);
+      r = ess < D * essRel;
+      if (r) {
+        /* resample-move */
+        adapt(thetas, lws, localMove, q);
+        resample(rng, lws, as, thetas);
+        acceptRate = rejuvenate(rng, t, state.t, k, s, thetas, lws, q,
+            localMove, Nmoves, moveScale);
+      } else {
+        acceptRate = 0.0;
+      }
+      report(n, state.t, ess, r, acceptRate);
+      output(n, thetas, lws, evidence, ess, acceptRate);
+      ++n;
+    } while (state.t < tk);
+
+    ++k;
+  } while (k <= K);
 
   /* delete remaining stuff */
-  delete pmmh;
-  for (int i = 0; i < Ntheta; i++) {
+  for (int i = 0; i < D; i++) {
     delete thetas[i];
   }
 
@@ -331,38 +392,29 @@ void bi::SMC2<B,R,IO1,CL>::sample(Random& rng, const real T, State<B,L>& s_in,
   term();
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-template<bi::Location L, class F, class V1, class V2>
-void bi::SMC2<B,R,IO1,CL>::init(Random& rng,
-    std::vector<ThetaParticle<B,L>*>& thetas, F* filter, V1 lws, V2 as) {
+template<class B, class F, class R, class IO1>
+template<bi::Location L, class V1, class V2>
+void bi::SMC2<B,F,R,IO1>::init(Random& rng, const real t,
+    ThetaParticle<B,L>& s, std::vector<ThetaParticle<B,L>*>& thetas, V1 lws,
+    V2 as) {
   typename loc_temp_vector<L,real>::type logPrior(1);
   int i;
 
   /* set time */
-  state.t = 0.0;
+  state.t = t;
 
   /* initialise theta-particles */
-  for (i = 0; i < Ntheta; ++i) {
-    thetas[i] = new ThetaParticle<B,L>(Nx);
+  for (i = 0; i < thetas.size(); ++i) {
+    thetas[i] = new ThetaParticle<B,L>(s.size(), s.getTrajectory().size2());
     ThetaParticle<B,L>& theta = *thetas[i];
-    State<B,L>& s = theta.getState();
 
-    logPrior.clear();
-    s.setRange(0, 1);
-    m.parameterSamples(rng, s);
-    s.get(PY_VAR) = s.get(P_VAR);
-    m.parameterLogDensities(s, logPrior);
-    theta.getLogPrior() = *logPrior.begin();
-    s.setRange(0, Nx);
-  }
+    m.parameterSample(rng, theta);
+    theta.get(PY_VAR) = theta.get(P_VAR);
+    theta.getLogPrior1() = m.parameterLogDensity(theta);
 
-  /* initialise x-particles */
-  for (i = 0; i < Ntheta; ++i) {
-    ThetaParticle<B,L>& theta = *thetas[i];
-    State<B,L>& s = theta.getState();
-
-    filter->init(rng, row(s.get(P_VAR), 0), s, theta.getLogWeights(),
-        theta.getAncestors());
+    /* initialise x-particles for this theta */
+    pmmh->getFilter()->init(rng, t, row(theta.get(P_VAR), 0), theta,
+        theta.getLogWeights(), theta.getAncestors());
   }
 
   /* initialise log-weights and ancestors */
@@ -370,63 +422,61 @@ void bi::SMC2<B,R,IO1,CL>::init(Random& rng,
   seq_elements(as, 0);
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-template<bi::Location L, class V1, class F>
-real bi::SMC2<B,R,IO1,CL>::step(Random& rng, const real T,
-    std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, F* filter,
-    const int n) {
+template<class B, class F, class R, class IO1>
+template<bi::Location L, class V1>
+real bi::SMC2<B,F,R,IO1>::step(Random& rng, const real T,
+    std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, const int n) {
   int i, r;
-  real evidence = 0.0, tnxt;
+  real evidence = 0.0;
 
-  for (i = 0; i < Ntheta; i++) {
-    BOOST_AUTO(&theta, *thetas[i]);
-    BOOST_AUTO(&thetaS, theta.getState());
-    BOOST_AUTO(&thetaLws, theta.getLogWeights());
-    BOOST_AUTO(&thetaAs, theta.getAncestors());
-    BOOST_AUTO(&thetaIncLl, theta.getIncLogLikelihood());
-    BOOST_AUTO(&thetaLl, theta.getLogLikelihood());
+  for (i = 0; i < thetas.size(); i++) {
+    BOOST_AUTO(&s, *thetas[i]);
+    BOOST_AUTO(&thetaLws, s.getLogWeights());
+    BOOST_AUTO(&thetaAs, s.getAncestors());
+    BOOST_AUTO(&thetaIncLl, s.getIncLogLikelihood());
+    BOOST_AUTO(&thetaLl, s.getLogLikelihood1());
 
     /* set up filter */
     if (i == 0) {
-      filter->setTime(state.t, thetaS); // may be inconsistent from last rejuvenate
-      filter->mark();
-      tnxt = filter->getNextObsTime(T);
+      pmmh->getFilter()->getSim()->setTime(state.t, s);  // may have been left inconsistent from last rejuvenate
+      pmmh->getFilter()->mark();
     } else {
-      filter->top();
+      pmmh->getFilter()->top();
     }
-    r = filter->step(rng, tnxt, thetaS, thetaLws, thetaAs, n);
-    filter->output(n, thetaS, r, thetaLws, thetaAs);
+    r = pmmh->getFilter()->step(rng, T, s, thetaLws, thetaAs, n);
+    pmmh->getFilter()->output(n, s, r, thetaLws, thetaAs);
 
-    thetaIncLl = logsumexp_reduce(thetaLws) - bi::log(static_cast<real>(thetaLws.size()));
+    thetaIncLl = logsumexp_reduce(thetaLws)
+        - bi::log(static_cast<real>(thetaLws.size()));
     thetaLl += thetaIncLl;
     lws(i) += thetaIncLl;
 
     /* compute evidence along the way */
     evidence += bi::exp(lws(i) + thetaIncLl);
-    ///@todo Is this correct given thetaIncLl already added to lws(i) above?
   }
-  filter->pop();
-  state.t = tnxt;
+  pmmh->getFilter()->pop();
+  state.t = pmmh->getFilter()->getSim()->getTime();
 
   evidence /= sumexp_reduce(lws);
 
   return evidence;
 }
 
-template<class B, class R, class IO1, bi::Location CL>
+template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2, class M2>
-void bi::SMC2<B,R,IO1,CL>::adapt(std::vector<ThetaParticle<B,L>*>& thetas,
+void bi::SMC2<B,F,R,IO1>::adapt(std::vector<ThetaParticle<B,L>*>& thetas,
     V1 lws, const bool localMove, GaussianPdf<V2,M2>& q) {
   typedef typename sim_temp_vector<V2>::type vector_type;
   typedef typename sim_temp_matrix<M2>::type matrix_type;
 
-  vector_type ws(Ntheta), mu(NP);
-  matrix_type Sigma(NP,NP), U(NP,NP), X(Ntheta, NP);
-  int i;
+  const int P = lws.size();
+  vector_type ws(P), mu(NP);
+  matrix_type Sigma(NP, NP), U(NP, NP), X(P, NP);
+  int p;
 
   /* copy parameters into matrix */
-  for (i = 0; i < Ntheta; ++i) {
-    row(X, i) = row(thetas[i]->getState().get(P_VAR), 0);
+  for (p = 0; p < P; ++p) {
+    row(X, p) = row(thetas[p]->get(P_VAR), 0);
   }
 
   /* compute weighted mean, covariance and Cholesky factor */
@@ -446,31 +496,33 @@ void bi::SMC2<B,R,IO1,CL>::adapt(std::vector<ThetaParticle<B,L>*>& thetas,
   q.init();
 }
 
-template<class B, class R, class IO1, bi::Location CL>
+template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-void bi::SMC2<B,R,IO1,CL>::resample(Random& rng, V1 lws, V2 as,
+void bi::SMC2<B,F,R,IO1>::resample(Random& rng, V1 lws, V2 as,
     std::vector<ThetaParticle<B,L>*>& thetas) {
   resam->resample(rng, lws, as, thetas);
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-template<bi::Location L, class F1, class F2, class V1, class V2, class M2>
-real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
-    F2* pmmh, const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
-    GaussianPdf<V2,M2>& q, const bool localMove, const real moveScale) {
+template<class B, class F, class R, class IO1>
+template<bi::Location L, class V1, class V2, class M2>
+real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
+    const int K, ThetaParticle<B,L>& s,
+    const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+    GaussianPdf<V2,M2>& q, const bool localMove, const int Nmoves,
+    const real moveScale) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
-  host_matrix_type thetaparticles(Ntheta, NP); // current parameters
-  host_matrix_type thetaproposals(Ntheta, NP); // proposed moves
-  host_vector_type logdensCurrent(Ntheta); // reverse proposal log-densities
-  host_vector_type logdensProposals(Ntheta); // proposal log-densities
+  const int P = thetas.size();
 
-  ParticleMarginalMetropolisHastingsState& x1 = pmmh->getState();
-  ParticleMarginalMetropolisHastingsState& x2 = pmmh->getOtherState();
+  host_matrix_type thetaparticles(P, NP);  // current parameters
+  host_matrix_type thetaproposals(P, NP);  // proposed moves
+  host_vector_type logdensCurrent(P);  // reverse proposal log-densities
+  host_vector_type logdensProposals(P);  // proposal log-densities
 
-  for (int i = 0; i < Ntheta; ++i) {
-    row(thetaparticles, i) = row(thetas[i]->getState().get(P_VAR), 0);
+  int p;
+  for (p = 0; p < P; ++p) {
+    row(thetaparticles, p) = row(thetas[p]->get(P_VAR), 0);
   }
 
   double meanAcceptRate = 0.;
@@ -482,70 +534,67 @@ real bi::SMC2<B,R,IO1,CL>::rejuvenate(Random& rng, State<B,L>& s_in, F1* filter,
     } else {
       matrix_scal(moveScale, thetaproposals);
       matrix_axpy(1.0, thetaparticles, thetaproposals, false);
-      logdensProposals.clear(); // symmetric proposal
+      logdensProposals.clear();  // symmetric proposal
       logdensCurrent.clear();
     }
 
     int sumaccept = 0;
-    for (int i = 0; i < Ntheta; ++i) {
-      ThetaParticle<B,L>& theta = *thetas[i];
-      State<B,L>& s = theta.getState();
+    for (p = 0; p < P; ++p) {
+      ThetaParticle<B,L>& theta = *thetas[p];
 
-      x1.theta = row(thetaparticles, i);
-      x1.ll = theta.getLogLikelihood();
-      x1.lp = theta.getLogPrior();
-      s_in.resize(s.size());
-      s_in = s;
+      theta.getParameters1() = row(thetaparticles, p);
+      s.resize(theta.size());
+      s = theta;
       bool pmmhaccept = true;
 
       /* instead of using PMMH->propose, we use the Gaussian density fitted
        * on the current theta particles to propose new theta particles */
-      x2.theta = row(thetaproposals, i);
-      x1.lq = logdensCurrent[i];
-      x2.lq = logdensProposals[i];
-      pmmh->computePriorOnProposal(s_in);
-      bool cpf_fail = false;
-      if (!BI_IS_FINITE(x2.lp)) {
-        pmmhaccept = false;
-        x2.ll = -1.0/0.0;
-      } else {
-        cpf_fail = pmmh->estimateLLOnProposal(rng, state.t, s_in, filter);
-      }
-      pmmh->computeAcceptReject(rng, filter, cpf_fail, pmmhaccept);
+      s.getParameters2() = row(thetaproposals, p);
+      s.getLogProposal1() = logdensCurrent[p];
+      s.getLogProposal2() = logdensProposals[p];
+      s.getLogLikelihood1() = lws(p);
+      pmmh->logPrior(s);
+      pmmh->logLikelihood(rng, t, T, K, s);
+      pmmhaccept = pmmh->computeAcceptReject(rng, s);
       if (pmmhaccept) {
+        pmmh->accept(rng, s);
+
         // NB: ancestors are not copied as they have already been copied earlier.
-        row(thetaparticles, i) = x1.theta;
-        theta.getLogLikelihood() = x1.ll;
-        theta.getLogPrior() = x1.lp;
-        theta.getLogWeights().resize(s_in.size());
-        theta.getLogWeights() = filter->getLogWeights();
-        theta.getState().resize(s_in.size());
-        theta.getState() = s_in;
+        row(thetaparticles, p) = s.getParameters1();
+        s.getLogWeights().resize(s.size());
+        s.getLogWeights() = pmmh->getFilter()->getOutput()->getLogWeights();
+
+        theta.resize(s.size());
+        theta = s;
+      } else {
+        pmmh->reject();
       }
       sumaccept += pmmhaccept;
     }
-    meanAcceptRate += (double)sumaccept / (double)Ntheta;
+    meanAcceptRate += (double)sumaccept / (double)thetas.size();
   }
-
   return meanAcceptRate / (double)Nmoves;
 }
 
-template<class B, class R, class IO1, bi::Location CL>
+template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1>
-void bi::SMC2<B,R,IO1,CL>::output(const int n,
+void bi::SMC2<B,F,R,IO1>::output(const int n,
     const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
     const real evidence, const real ess, const real acceptRate) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
-  host_vector_type allNx(Ntheta);
-  host_matrix_type X(Ntheta, NP);
-  int i;
+  const int P = thetas.size();
+
+  host_vector_type allNx(P);
+  host_matrix_type X(P, NP);
+
+  int p;
 
   /* copy parameters into matrix */
-  for (i = 0; i < Ntheta; ++i) {
-    row(X, i) = row(thetas[i]->getState().get(P_VAR), 0);
-    allNx(i) = thetas[i]->getState().size();
+  for (p = 0; p < P; ++p) {
+    row(X, p) = row(thetas[p]->get(P_VAR), 0);
+    allNx(p) = thetas[p]->size();
   }
 
   out->writeState(P_VAR, n, X);
@@ -556,9 +605,9 @@ void bi::SMC2<B,R,IO1,CL>::output(const int n,
   out->writeAcceptanceRate(n, acceptRate);
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-void bi::SMC2<B,R,IO1,CL>::report(const int n, const real t,
-    const real ess, const bool r, const real acceptRate) {
+template<class B, class F, class R, class IO1>
+void bi::SMC2<B,F,R,IO1>::report(const int n, const real t, const real ess,
+    const bool r, const real acceptRate) {
   std::cerr << n << ":\ttime " << t << "\tESS " << ess;
   if (r) {
     std::cerr << "\tresample-move with acceptance rate " << acceptRate;
@@ -566,8 +615,8 @@ void bi::SMC2<B,R,IO1,CL>::report(const int n, const real t,
   std::cerr << std::endl;
 }
 
-template<class B, class R, class IO1, bi::Location CL>
-void bi::SMC2<B,R,IO1,CL>::term() {
+template<class B, class F, class R, class IO1>
+void bi::SMC2<B,F,R,IO1>::term() {
   //
 }
 

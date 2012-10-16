@@ -1,6 +1,4 @@
 /**
- * @todo New interface for models.
- * 
  * @todo Allow to specify a minimum number of blocks.
  *
  * @todo * (L) Fix ESS threshold for MPI.
@@ -19,8 +17,6 @@
  * @todo Output diagnostics (e.g. number of particles at each time for each
  * filter run during PMMH).
  *
- * @todo * (L) Matrix actions.
- * 
  * @todo * (L) Custom block/action. Bi C++ interface for writing custom functions
  * in Bi files.
  *
@@ -71,23 +67,9 @@
  *
  * @todo Beta action maxLogDensity().
  *
- * @todo Use -K in particle filters and PMMH to allow denser output than
- * number of observations.
- *
  * @todo Automatically create directories for --output-file option.
  *
- * @todo Review init file semantics. In particular, values from file should
- * be written into alternative buffer, then the block simulated to ensure
- * that variables not in the file (such as precomutes added by GenBi) are
- * consistent.
- *
  * @todo Try GPU permute with atomicExch() instead of atomicCAS().
- *
- * @todo Eliminate Coord structs in actions when not required, see if
- * improves GPU performance.
- *
- * @todo Remove predict client, replace with cleverer init-file handling that
- * allows simulate client to pick up where it left off.
  *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
  *
@@ -95,4 +77,12 @@
  *
  * @todo Fix issue where hidden directory needs to be deleted if ./autogen.sh
  * or ./configure fails (or user hits Ctrl-C during one of these processes).
+ *
+ * @todo Need a locking system to ensure exclusive use of build directories.
+ * Having a problem on cluster where multiple jobs are trying to build
+ * simultaneously in the same directory and conflict with each other. Could,
+ * for example, put a lock file in each directory to reserve it for a
+ * particular process, then delete the file when that process is done with it.
+ * If another process wants to use it, rather than waiting, it could simply
+ * create a new directory with another name and work from there.
  */

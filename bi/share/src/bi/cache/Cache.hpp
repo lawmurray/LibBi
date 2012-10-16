@@ -19,18 +19,25 @@ namespace bi {
 class Cache {
 public:
   /**
-   * Is page valid?
+   * Constructor.
+   *
+   * @param size Number of pages in cache.
+   */
+  Cache(const int size = 0);
+
+  /**
+   * Size of cache.
+   */
+  int size() const;
+
+  /**
+   * Is a particular page valid?
    *
    * @param p Page index.
    *
    * A page is @em valid if its contents are consistent with that on disk.
    */
   bool isValid(const int p) const;
-
-  /**
-   * Are all pages valid?
-   */
-  bool isValid() const;
 
   /**
    * Set validity flag for page.
@@ -41,7 +48,24 @@ public:
   void setValid(const int p, const bool valid = true);
 
   /**
-   * Is page dirty?
+   * Is a particular range of pages valid?
+   *
+   * @param p Index of first page.
+   * @param len Number of pages.
+   */
+  bool isValid(const int p, const int len) const;
+
+  /**
+   * Set validity flag for range of pages.
+   *
+   * @param p Index of first page.
+   * @param len Number of pages.
+   * @param valid Are pages valid?
+   */
+  void setValid(const int p, const int len, const bool valid = true);
+
+  /**
+   * Is a particular page dirty?
    *
    * @param p Page index.
    *
@@ -49,11 +73,6 @@ public:
    * with that on disk (i.e. its contents are yet to be written to disk).
    */
   bool isDirty(const int p) const;
-
-  /**
-   * Is any page dirty?
-   */
-  bool isDirty() const;
 
   /**
    * Set dirty flag for page.
@@ -64,20 +83,37 @@ public:
   void setDirty(const int p, const bool dirty = true);
 
   /**
-   * Clear cache.
+   * Is a particular range of pages dirty?
+   *
+   * @param p Page index.
+   * @param len Number of pages.
    */
-  void clear();
+  bool isDirty(const int p, const int len) const;
 
   /**
-   * Clean cache. All pages are no longer dirty. Typically called after cache
-   * is written out to file.
+   * Set dirty flag for range of pages.
+   *
+   * @param p Index of first page.
+   * @param len Number of pages.
+   * @param dirty Are pages dirty?
    */
-  void clean();
+  void setDirty(const int p, const int len, const bool dirty = true);
 
   /**
    * Resize cache.
    */
   void resize(const int size);
+
+  /**
+   * Clean cache. All pages are no longer dirty. Typically called after cache
+   * is written out to file.
+   */
+  void flush();
+
+  /**
+   * Clear cache.
+   */
+  void clear();
 
   /**
    * Empty cache.
@@ -88,13 +124,17 @@ private:
   /**
    * Validity of each page.
    */
-  std::vector<bool> valids;
+  host_vector<bool> valids;
 
   /**
    * Dirtiness of pages. Same indexing as #valids applies.
    */
-  std::vector<bool> dirties;
+  host_vector<bool> dirties;
 };
+}
+
+inline int bi::Cache::size() const {
+  return valids.size();
 }
 
 inline bool bi::Cache::isValid(const int p) const {
@@ -102,10 +142,6 @@ inline bool bi::Cache::isValid(const int p) const {
   BI_ASSERT(p >= 0);
 
   return p < (int)valids.size() && valids[p];
-}
-
-inline bool bi::Cache::isValid() const {
-  return find(valids.begin(), valids.end(), false) == valids.end();
 }
 
 inline void bi::Cache::setValid(const int p, const bool valid) {
@@ -122,36 +158,11 @@ inline bool bi::Cache::isDirty(const int p) const {
   return p < (int)dirties.size() && dirties[p];
 }
 
-inline bool bi::Cache::isDirty() const {
-  return find(dirties.begin(), dirties.end(), true) != dirties.end();
-}
-
 inline void bi::Cache::setDirty(const int p, const bool dirty) {
   /* pre-condition */
   BI_ASSERT(p >= 0 && p < (int)dirties.size());
 
   dirties[p] = dirty;
-}
-
-inline void bi::Cache::clear() {
-  std::fill(valids.begin(), valids.end(), false);
-  std::fill(dirties.begin(), dirties.end(), false);
-}
-
-inline void bi::Cache::clean() {
-  std::fill(dirties.begin(), dirties.end(), false);
-}
-
-inline void bi::Cache::resize(const int size) {
-  /* pre-condition */
-  BI_ASSERT(size >= 0);
-
-  valids.resize(size, false);
-  dirties.resize(size, false);
-}
-
-inline void bi::Cache::empty() {
-  resize(0);
 }
 
 #endif

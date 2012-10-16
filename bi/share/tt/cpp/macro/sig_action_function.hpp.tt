@@ -8,7 +8,7 @@
 [%-MACRO sig_action_static_function(function) BLOCK %]
   [% IF function == 'simulate' %]
   template <bi::Location L, class CX, class PX, class OX>
-  void [% class_name %]::simulate(bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  void [% class_name %]::simulates(bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'sample' %]
   template <class R1, bi::Location L, class CX, class PX, class OX>
   void [% class_name %]::samples(R1& rng, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
@@ -26,7 +26,7 @@
 [%-MACRO sig_action_dynamic_function(function) BLOCK %]
   [% IF function == 'simulate' %]
   template <class T1, bi::Location L, class CX, class PX, class OX>
-  void [% class_name %]::simulate(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
+  void [% class_name %]::simulates(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'sample' %]
   template <class R1, class T1, bi::Location L, class CX, class PX, class OX>
   void [% class_name %]::samples(R1& rng, const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)

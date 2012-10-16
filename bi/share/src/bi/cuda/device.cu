@@ -24,7 +24,7 @@ int bi::chooseDevice(const int rank) {
       valid.push_back(dev);
     }
   }
-  BI_ERROR(valid.size() > 0, "No devices of at least compute 1.3 available");
+  BI_ERROR_MSG(valid.size() > 0, "No devices of at least compute 1.3 available");
 
   /* select device */
   CUDA_CHECKED_CALL(cudaSetDevice(valid[rank % valid.size()]));

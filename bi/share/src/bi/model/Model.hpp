@@ -92,6 +92,13 @@ public:
   int getNetSize(const VarType type) const;
 
   /**
+   * Get %size of both r- and d-nets.
+   *
+   * @return Sum of the sizes of all variables in the r- and d-nets.
+   */
+  int getDynSize() const;
+
+  /**
    * Get number of variables of given type.
    *
    * @param type Variable type.
@@ -244,6 +251,10 @@ void bi::Model::addVar(X& var) {
 
 inline int bi::Model::getNetSize(const VarType type) const {
   return netSizes[type];
+}
+
+inline int bi::Model::getDynSize() const {
+  return getNetSize(R_VAR) + getNetSize(D_VAR);
 }
 
 inline bi::Dim* bi::Model::getDim(const int id) const {

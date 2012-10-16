@@ -13,6 +13,9 @@
 
 #include "bi/random/Random.hpp"
 #include "bi/method/ExtendedKalmanFilter.hpp"
+#include "bi/method/Simulator.hpp"
+#include "bi/method/Forcer.hpp"
+#include "bi/method/Observer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -63,26 +66,34 @@ int main(int argc, char* argv[]) {
   P = s.size(); // may change according to implementation
 
   /* inputs */
-  SparseInputNetCDFBuffer *inInput = NULL, *inInit = NULL;
+  SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
   if (!INPUT_FILE.empty()) {
-    inInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+    bufInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   }
   if (!INIT_FILE.empty()) {
-    inInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+    bufInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
   }
-  SparseInputNetCDFBuffer inObs(m, OBS_FILE, OBS_NS, OBS_NP);
+  if (!OBS_FILE.empty()) {
+    bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
+  }
 
   /* output */
-  KalmanFilterNetCDFBuffer* out;
+  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
+
+  KalmanFilterNetCDFBuffer* bufOutput;
   if (ENABLE_OUTPUT) {
-    out = new KalmanFilterNetCDFBuffer(m, P, 2*inObs.countUniqueTimes(T),
-        OUTPUT_FILE, NetCDFBuffer::REPLACE);
+    bufOutput = new KalmanFilterNetCDFBuffer(m, P, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
-    out = NULL;
+    bufOutput = NULL;
   }
   
+  /* simulator */
+  BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
+  BOOST_AUTO(sim, SimulatorFactory::create(m, in, obs));
+  
   /* filter */
-  BOOST_AUTO(filter, (ExtendedKalmanFilterFactory<LOCATION>::create(m, inInput, &inObs, out)));
+  BOOST_AUTO(filter, ExtendedKalmanFilterFactory::create(m, sim, bufOutput));
 
   /* filter */
   [% IF gperftools %]
@@ -90,7 +101,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;  
   
-  filter->filter(rng, T, s, inInit);
+  filter->filter(rng, START_TIME, T, K, s, bufInit);
   synchronize();
 
   /* output timing results */
@@ -102,9 +113,14 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   delete filter;
-  delete inInput;
-  delete inInit;
-  delete out;
+  //delete out;
+  delete sim;
+  delete obs;
+  delete in;
+  delete bufOutput;
+  delete bufObs;
+  delete bufInit;
+  delete bufInput;
 
   return 0;
 }

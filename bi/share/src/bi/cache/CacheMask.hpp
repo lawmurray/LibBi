@@ -50,7 +50,7 @@ public:
    * @param x Page.
    */
   template<Location L2>
-  void put(const int p, const Mask<L2>& mask);
+  void set(const int p, const Mask<L2>& mask);
 
   /**
    * Empty cache.
@@ -88,7 +88,7 @@ inline const bi::Mask<L>& bi::CacheMask<L>::get(const int p) const {
 
 template<bi::Location L>
 template<bi::Location L2>
-inline void bi::CacheMask<L>::put(const int p, const Mask<L2>& mask) {
+inline void bi::CacheMask<L>::set(const int p, const Mask<L2>& mask) {
   if (size() <= p) {
     pages.resize(p + 1);
     pages[p] = new Mask<L>(mask.getNumVars());

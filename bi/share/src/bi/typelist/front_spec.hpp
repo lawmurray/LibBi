@@ -11,7 +11,7 @@
 #include "typelist.hpp"
 #include "empty.hpp"
 
-#include "boost/static_assert.hpp"
+//#include "boost/static_assert.hpp"
 
 namespace bi {
 /**
@@ -23,7 +23,7 @@ namespace bi {
  */
 template<class T>
 struct front_spec {
-  //BOOST_STATIC_BI_ASSERT(!empty<T>::value);
+  //BOOST_STATIC_ASSERT(!empty<T>::value);
   typedef typelist<T::marker,T::reps,typename T::item,empty_typelist> type;
 };
 

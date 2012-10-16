@@ -35,7 +35,7 @@ inline real [% class_name %]::getDelta() {
 
 [% sig_block_dynamic_function('simulate') %] {
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
+  Block[% subblock.get_id %]::simulates(t1, t2, onDelta, s);
   [%-END %]
 }
 

@@ -22,6 +22,7 @@ CUDA_FUNC_GLOBAL void kernelStaticUpdater(State<B,ON_DEVICE> s);
 
 }
 
+#include "StaticUpdaterMatrixVisitorGPU.cuh"
 #include "StaticUpdaterVisitorGPU.cuh"
 #include "../constant.cuh"
 #include "../global.cuh"
@@ -31,7 +32,10 @@ template<class B, class S>
 CUDA_FUNC_GLOBAL void bi::kernelStaticUpdater(State<B,ON_DEVICE> s) {
   typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
-  typedef StaticUpdaterVisitorGPU<B,S,PX,OX> Visitor;
+  typedef StaticUpdaterMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
+  typedef StaticUpdaterVisitorGPU<B,S,PX,OX> ElementVisitor;
+  typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
+      ElementVisitor>::type Visitor;
 
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = blockIdx.y*blockDim.y + threadIdx.y;

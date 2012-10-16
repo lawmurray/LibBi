@@ -43,7 +43,7 @@ public:
   [% END %]
   
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::simulate(s);
+  Block[% subblock.get_id %]::simulates(s);
   [%-END %]
 }
 
@@ -85,7 +85,7 @@ public:
   }
   
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::simulate(t1, t2, onDelta, s);
+  Block[% subblock.get_id %]::simulates(t1, t2, onDelta, s);
   [%-END %]
 }
 
@@ -131,7 +131,7 @@ public:
   [% END %]
 
   [%-FOREACH subblock IN block.get_blocks %]
-  Block[% subblock.get_id %]::simulate(s, mask);
+  Block[% subblock.get_id %]::simulates(s, mask);
   [%-END %]
 }
 

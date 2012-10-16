@@ -55,6 +55,10 @@ Maximum I<a posteriori> estimation.
 
 =back
 
+=item * C<--simplex-size-real> (default 0.1)
+
+Size of initial simplex relative to starting point of each variable. 
+
 =item * C<--stop-size> (default 1.0-e4)
 
 Size-based stopping criterion.
@@ -62,10 +66,6 @@ Size-based stopping criterion.
 =item * C<--stop-steps> (default 100)
 
 Maximum number of steps to take.
-
-=item * C<--filter-file>
-
-File from which to read and write intermediate filter results.
 
 =back
 
@@ -86,6 +86,11 @@ our @CLIENT_OPTIONS = (
       default => 'ml'
     },
     {
+      name => 'simplex-size-rel',
+      type => 'float',
+      default => 0.1
+    },
+    {
       name => 'stop-size',
       type => 'float',
       default => 1.0e-4
@@ -94,10 +99,6 @@ our @CLIENT_OPTIONS = (
       name => 'stop-steps',
       type => 'int',
       default => 100
-    },
-    {
-      name => 'filter-file',
-      type => 'string'
     }
 );
 

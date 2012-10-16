@@ -56,7 +56,9 @@ sub new {
     my $offsets = shift;
     my $ranges = shift;
     
-    # pre-condition
+    # pre-conditions
+    assert (defined $var && $var->isa('Bi::Model::Var')) if DEBUG;
+    
     assert(!defined($offsets) || ref($offsets) eq 'ARRAY');
     assert(!defined($offsets) || scalar(@$offsets) == 0 || scalar(@$offsets) == $var->num_dims) if DEBUG;
     map { assert($_->isa('Bi::Expression::Offset')) if DEBUG } @$offsets;
@@ -132,6 +134,24 @@ sub get_offsets {
     return $self->{_offsets};
 }
 
+=item B<set_offsets>(I<offsets>)
+
+Set the array ref of dimension offsets into I<var>, as
+L<Bi::Expression::Offset> objects.
+
+=cut
+sub set_offsets {
+    my $self = shift;
+    my $offsets = shift;
+    
+    # pre-conditions
+    assert(!defined($offsets) || ref($offsets) eq 'ARRAY');
+    assert(!defined($offsets) || scalar(@$offsets) == 0 || scalar(@$offsets) == $self->get_var->num_dims) if DEBUG;
+    map { assert($_->isa('Bi::Expression::Offset')) if DEBUG } @$offsets;   
+    
+    $self->{_offsets} = $offsets;
+}
+
 =item B<get_ranges>
 
 Get the array ref of dimension ranges into I<var>, as
@@ -141,6 +161,24 @@ L<Bi::Expression::Range> objects.
 sub get_ranges {
     my $self = shift;
     return $self->{_ranges};
+}
+
+=item B<set_ranges>
+
+Set the array ref of dimension ranges into I<var>, as
+L<Bi::Expression::Range> objects.
+
+=cut
+sub set_ranges {
+    my $self = shift;
+    my $ranges = shift;
+    
+    # pre-conditions
+    assert(!defined($ranges) || ref($ranges) eq 'ARRAY');
+    assert(!defined($ranges) || scalar(@$ranges) == 0 || scalar(@$ranges) == $self->get_var->num_dims) if DEBUG;
+    map { assert($_->isa('Bi::Expression::Range')) if DEBUG } @$ranges;
+    
+    $self->{_ranges} = $ranges;
 }
 
 =item B<num_dims>

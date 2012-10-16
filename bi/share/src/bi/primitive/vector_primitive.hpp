@@ -511,6 +511,13 @@ void inclusive_scan_sum_expu(const V1 x, V2 X);
 template<class V1, class V2, class V3>
 void gather(const V1 map, const V2 input, V3 result);
 
+/**
+ * Scatter.
+ *
+ * @ingroup primitive_vector
+ *
+ * @see thrust::scatter()
+ */
 template<class V1, class V2, class V3>
 void scatter(const V1 input, const V2 map, V3 result);
 

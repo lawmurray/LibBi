@@ -26,11 +26,4 @@ typedef double real;
  */
 #define BI_REAL(x, ...) static_cast<real>(x,##__VA_ARGS__)
 
-/**
- * @def BI_IS_FINITE
- *
- * Is value finite?
- */
-#define BI_IS_FINITE(x) ((x)*0 == 0)
-
 #endif

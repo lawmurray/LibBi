@@ -49,7 +49,7 @@ void bi::SparseStaticLogDensityMatrixVisitorHost<B,S,PX,OX>::accept(
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
 
-  const int id = var_id < target_type > ::value;
+  const int id = var_id<target_type>::value;
 
   if (mask.isDense(id)) {
     front::logDensities(s, p, pax, x, lp);

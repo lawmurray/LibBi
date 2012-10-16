@@ -735,12 +735,12 @@ inline const real& bi::State<B,L>::getVarAlt(const int p,
 
 template<class B, bi::Location L>
 inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getCommon() {
-  return Kdn.ref();
+  return columns(Kdn.ref(), 0, Kdn.size2());
 }
 
 template<class B, bi::Location L>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getCommon() const {
-  return Kdn.ref();
+  return columns(Kdn.ref(), 0, Kdn.size2());
 }
 
 template<class B, bi::Location L>
@@ -758,7 +758,7 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF() {
   const int start = B::getFStart();
   const int size = B::getFSize();
   const int rows = NR + ND;
-  const int cols = ND;
+  const int cols = NR + ND;
   BI_ASSERT(size == rows*cols);
 
   return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);
@@ -769,7 +769,7 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getF
   const int start = B::getFStart();
   const int size = B::getFSize();
   const int rows = NR + ND;
-  const int cols = ND;
+  const int cols = NR + ND;
   BI_ASSERT(size == rows*cols);
 
   return reshape(subrange(get(DX_VAR), p, P, start, size), P * rows, cols);

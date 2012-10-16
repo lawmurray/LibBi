@@ -345,7 +345,7 @@ public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_vector_reference<T,size_value,inc_value> vector_reference_type;
+  typedef gpu_vector_reference<T> vector_reference_type;
   typedef thrust::device_ptr<T> pointer;
   typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
@@ -696,7 +696,7 @@ public:
   typedef T value_type;
   typedef int size_type;
   typedef int difference_type;
-  typedef gpu_vector_reference<T,size_value,inc_value> vector_reference_type;
+  typedef gpu_vector_reference<T> vector_reference_type;
   typedef thrust::device_ptr<T> pointer;
   typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_range<pointer>::iterator iterator;
@@ -860,7 +860,7 @@ void bi::gpu_vector<T,size_value,inc_value,A>::resize(const size_type size,
     const bool preserve) {
   if (size != this->size()) {
     /* pre-condition */
-    BI_ERROR(own,
+    BI_ERROR_MSG(own,
         "Cannot resize gpu_vector constructed as view of other vector");
 
     /* allocate new buffer */
