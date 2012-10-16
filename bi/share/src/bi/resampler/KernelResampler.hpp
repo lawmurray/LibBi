@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_KERNELRESAMPLER_HPP
-#define BI_METHOD_KERNELRESAMPLER_HPP
+#ifndef BI_RESAMPLER_KERNELRESAMPLER_HPP
+#define BI_RESAMPLER_KERNELRESAMPLER_HPP
 
 #include "Resampler.hpp"
 

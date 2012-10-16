@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CUDA_METHOD_METROPOLISRESAMPLER_CUH
-#define BI_CUDA_METHOD_METROPOLISRESAMPLER_CUH
+#ifndef BI_CUDA_RESAMPLER_METROPOLISRESAMPLERGPU_CUH
+#define BI_CUDA_RESAMPLER_METROPOLISRESAMPLERGPU_CUH
 
 #include "MetropolisResamplerKernel.cuh"
 
 #include <limits>
 
 template<class V1, class V2>
-void bi::MetropolisResamplerDeviceImpl::ancestors(Random& rng, const V1 lws,
+void bi::MetropolisResamplerGPU::ancestors(Random& rng, const V1 lws,
     V2 as, int C) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());

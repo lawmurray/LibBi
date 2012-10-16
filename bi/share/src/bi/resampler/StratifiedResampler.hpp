@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_STRATIFIEDRESAMPLER_HPP
-#define BI_METHOD_STRATIFIEDRESAMPLER_HPP
+#ifndef BI_RESAMPLER_STRATIFIEDRESAMPLER_HPP
+#define BI_RESAMPLER_STRATIFIEDRESAMPLER_HPP
 
 #include "Resampler.hpp"
 #include "../cuda/cuda.hpp"

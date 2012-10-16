@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_RESAMPLER_HPP
-#define BI_METHOD_RESAMPLER_HPP
+#ifndef BI_RESAMPLER_RESAMPLER_HPP
+#define BI_RESAMPLER_RESAMPLER_HPP
 
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
@@ -99,73 +99,6 @@ struct resample_check : public std::binary_function<T,int,T> {
     }
 
     return eps;
-  }
-};
-
-/**
- * @internal
- *
- * Resampler implementation on device.
- */
-class ResamplerDeviceImpl {
-public:
-  /**
-   * @copydoc Resampler::permute()
-   */
-  template<class V1>
-  static void permute(V1 as);
-
-  /**
-   * @copydoc Resampler::copy()
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 s);
-};
-
-/**
- * @internal
- *
- * Resampler implementation on host.
- */
-class ResamplerHostImpl {
-public:
-  /**
-   * @copydoc Resampler::permute()
-   */
-  template<class V1>
-  static void permute(V1 as) {
-    /* pre-condition */
-    BI_ASSERT(!V1::on_device);
-
-    typename V1::size_type i;
-    typename V1::value_type j;
-    for (i = 0; i < as.size(); ++i) {
-      if (as[i] != i && as[i] < as.size() && as[as[i]] != as[i]) {
-        /* swap */
-        j = as[as[i]];
-        as[as[i]] = as[i];
-        as[i] = j;
-        --i; // repeat for new value
-      }
-    }
-  }
-
-  /**
-   * @copydoc Resampler::copy()
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 X) {
-    /* pre-condition */
-    BI_ASSERT(!V1::on_device);
-    BI_ASSERT(!M1::on_device);
-    BI_ASSERT(as.size() <= X.size1());
-
-    int p;
-    for (p = 0; p < as.size(); ++p) {
-      if (as[p] != p) {
-        row(X, p) = row(X, as[p]);
-      }
-    }
   }
 };
 
@@ -328,7 +261,47 @@ public:
   //@}
 };
 
+/**
+ * Resampler implementation on host.
+ */
+class ResamplerHost {
+public:
+  /**
+   * @copydoc Resampler::permute()
+   */
+  template<class V1>
+  static void permute(V1 as);
+
+  /**
+   * @copydoc Resampler::copy()
+   */
+  template<class V1, class M1>
+  static void copy(const V1 as, M1 X);
+};
+
+/**
+ * Resampler implementation on device.
+ */
+class ResamplerGPU {
+public:
+  /**
+   * @copydoc Resampler::permute()
+   */
+  template<class V1>
+  static void permute(V1 as);
+
+  /**
+   * @copydoc Resampler::copy()
+   */
+  template<class V1, class M1>
+  static void copy(const V1 as, M1 s);
+};
 }
+
+#include "../host/resampler/ResamplerHost.hpp"
+#ifdef __CUDACC__
+#include "../cuda/resampler/ResamplerGPU.cuh"
+#endif
 
 #include "../primitive/vector_primitive.hpp"
 #include "../math/temp_vector.hpp"
@@ -398,8 +371,8 @@ void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
 template<class V1>
 void bi::Resampler::permute(V1 as) {
   typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerDeviceImpl,
-      ResamplerHostImpl>::type impl;
+      ResamplerGPU,
+      ResamplerHost>::type impl;
   impl::permute(as);
 }
 
@@ -426,8 +399,8 @@ void bi::Resampler::copy(const V1 as, M1 s) {
   BI_ASSERT(as.size() <= s.size1());
 
   typedef typename boost::mpl::if_c<M1::on_device,
-      ResamplerDeviceImpl,
-      ResamplerHostImpl>::type impl;
+      ResamplerGPU,
+      ResamplerHost>::type impl;
   impl::copy(as, s);
 }
 
@@ -493,7 +466,7 @@ typename V1::value_type bi::Resampler::loglikelihood(const V1 lws,
 }
 
 #ifdef __CUDACC__
-#include "../cuda/method/Resampler.cuh"
+#include "../cuda/resampler/Resampler.cuh"
 #endif
 
 #endif

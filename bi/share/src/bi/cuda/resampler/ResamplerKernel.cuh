@@ -5,14 +5,14 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CUDA_KERNEL_RESAMPLERKERNEL_CUH
-#define BI_CUDA_KERNEL_RESAMPLERKERNEL_CUH
+#ifndef BI_CUDA_RESAMPLER_RESAMPLERKERNEL_CUH
+#define BI_CUDA_RESAMPLER_RESAMPLERKERNEL_CUH
 
 #include "../cuda.hpp"
 
 namespace bi {
 /**
- * ResamplerDeviceImpl::permute() kernel.
+ * ResamplerGPU::permute() kernel.
  *
  * @tparam T1 Integer type.
  * @tparam T2 Signed integer type.
@@ -27,7 +27,7 @@ CUDA_FUNC_GLOBAL void kernelResamplerPrePermute(T1* __restrict__ as,
     T2* __restrict__ is, const int P);
 
 /**
- * ResamplerDeviceImpl::permute() kernel.
+ * ResamplerGPU::permute() kernel.
  *
  * @tparam T1 Integer type.
  * @tparam T2 Signed integer type.
@@ -51,7 +51,7 @@ CUDA_FUNC_GLOBAL void kernelResamplerPermute(T1* __restrict__ as,
 /**
  * @internal
  *
- * ResamplerDeviceImpl::copy() kernel.
+ * ResamplerGPU::copy() kernel.
  *
  * @tparam T1 Integer type.
  * @tparam M1 Matrix type.

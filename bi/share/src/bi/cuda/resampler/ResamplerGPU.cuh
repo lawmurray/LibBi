@@ -5,17 +5,17 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CUDA_METHOD_RESAMPLER_CUH
-#define BI_CUDA_METHOD_RESAMPLER_CUH
+#ifndef BI_CUDA_RESAMPLER_RESAMPLERGPU_CUH
+#define BI_CUDA_RESAMPLER_RESAMPLERGPU_CUH
 
 #include "ResamplerKernel.cuh"
-#include "../math/temp_vector.hpp"
+#include "../../math/temp_vector.hpp"
 #include "../../misc/omp.hpp"
 
 #include "thrust/fill.h"
 
 template<class V1>
-void bi::ResamplerDeviceImpl::permute(V1 as) {
+void bi::ResamplerGPU::permute(V1 as) {
   /* pre-condition */
   BI_ASSERT(V1::on_device);
 
@@ -35,7 +35,7 @@ void bi::ResamplerDeviceImpl::permute(V1 as) {
 }
 
 template<class V1, class M1>
-void bi::ResamplerDeviceImpl::copy(const V1 as, M1 X) {
+void bi::ResamplerGPU::copy(const V1 as, M1 X) {
   /* pre-condition */
   BI_ASSERT(as.size() <= X.size1());
   BI_ASSERT(V1::on_device);

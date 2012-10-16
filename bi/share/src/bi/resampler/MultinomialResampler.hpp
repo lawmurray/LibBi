@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MULTINOMIALRESAMPLER_HPP
-#define BI_METHOD_MULTINOMIALRESAMPLER_HPP
+#ifndef BI_RESAMPLER_MULTINOMIALRESAMPLER_HPP
+#define BI_RESAMPLER_MULTINOMIALRESAMPLER_HPP
 
 #include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
