@@ -33,6 +33,7 @@
 #include "bi/cache/ParticleFilterCache.hpp"
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
+#include "bi/resampler/RejectionResampler.hpp"
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 [% END %]
@@ -130,6 +131,8 @@ int main(int argc, char* argv[]) {
     KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler<model_type> resam(m, C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler<model_type> resam(m);
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler resam(ENABLE_SORT);
     [% ELSE %]

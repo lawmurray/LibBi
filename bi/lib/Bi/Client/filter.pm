@@ -80,7 +80,11 @@ for a multinomial resampler,
 
 =item * C<'metropolis'>
 
-for a Metropolis resampler (Murray 2011), or
+for a Metropolis resampler (Murray 2011),
+
+=item * C<'rejection'>
+
+for a rejection resampler, or
 
 =item * C<'kernel'>
 

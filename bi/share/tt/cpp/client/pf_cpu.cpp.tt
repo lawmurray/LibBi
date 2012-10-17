@@ -31,6 +31,7 @@
 #include "bi/method/Observer.hpp"
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
+#include "bi/resampler/RejectionResampler.hpp"
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
@@ -118,6 +119,8 @@ int main(int argc, char* argv[]) {
   [% IF mpi %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler<model_type> base(m, C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler<model_type> base(m);
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler base(ENABLE_SORT);
     [% ELSE %]
@@ -136,6 +139,8 @@ int main(int argc, char* argv[]) {
     KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler<model_type> resam(m, C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler<model_type> resam(m);
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler resam(ENABLE_SORT);
     [% ELSE %]
