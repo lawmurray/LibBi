@@ -16,6 +16,9 @@ namespace bi {
  *
  * @tparam B Model type.
  * @tparam S Action type list.
+ *
+ * @param rng Random number generators.
+ * @param[in,out] s State.
  */
 template<class B, class S>
 CUDA_FUNC_GLOBAL void kernelStaticSampler(curandState* rng,

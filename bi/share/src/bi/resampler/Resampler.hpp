@@ -465,8 +465,4 @@ typename V1::value_type bi::Resampler::loglikelihood(const V1 lws,
   return logNum - logDen + expon;
 }
 
-#ifdef __CUDACC__
-#include "../cuda/resampler/Resampler.cuh"
-#endif
-
 #endif
