@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include "netcdfcpp.h"
+
 #ifndef ENABLE_CUDA
 #define LOCATION ON_HOST
 #else
@@ -40,20 +42,48 @@ int main(int argc, char* argv[]) {
   /* random number generator */
   Random rng(SEED);
 
+  /* set up output file */
+  NcFile* out = new NcFile("[% client.get_named_arg('resampler') %].nc", NcFile::Replace);
+	
+  NcDim* zDim = out->add_dim("z", ZS);
+  NcDim* PDim = out->add_dim("P", PS);
+  NcDim* repDim = out->add_dim("rep", REPS);
+	  
+  NcVar* rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
+  NcVar* timeVar = out->add_var("time", ncInt, zDim, PDim, repDim);
+
+  /* generate log-weight vectors */
+
   /* test */
   [% IF gperftools %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
   TicToc timer;
-  
+  int z, p, rep, time;
+  real rmse;
+  for (z = 0; z < ZS; ++z) {
+    for (p = 0; p < PS; ++p) {
+      for (rep = 0; rep < REPS; ++rep) {
+        timer.tic();
+        rmse = 0.0;
+        time = timer.toc();
 
-  /* output timing results */
-  if (ENABLE_TIMING) {
-    std::cout << timer.toc() << std::endl;
-  }
+        /* output */      
+      	rmseVar->set_cur(z, p, rep);
+      	rmseVar->put(&rmse, 1, 1, 1);
+      	timeVar->set_cur(z, p, rep);
+      	timeVar->put(&time, 1, 1, 1);
+      }
+    }
+  } 
+
   [% IF gperftools %]
   ProfilerStop();
   [% END %]
+  
+  /* clean up */
+  out->sync();
+  delete out;
 
   return 0;
 }
