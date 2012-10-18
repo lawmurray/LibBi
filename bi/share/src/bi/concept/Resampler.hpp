@@ -108,7 +108,7 @@ struct Resampler {
   /**
    * Select ancestors.
    *
-   * @tparam V1 Floating point vector type.
+   * @tparam V1 Vector type.
    * @tparam V2 Integer vector type.
    *
    * @param rng Random number generator.
@@ -122,7 +122,7 @@ struct Resampler {
   /**
    * Select offspring.
    *
-   * @tparam V1 Floating point vector type.
+   * @tparam V1 Vector type.
    * @tparam V2 Integer vector type.
    *
    * @param rng Random number generator.

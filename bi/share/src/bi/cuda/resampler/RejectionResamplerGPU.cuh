@@ -12,9 +12,8 @@
 #include "../device.hpp"
 
 template<class V1, class V2>
-void bi::RejectionResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as) {
-  BI_ASSERT_MSG(false, "Not yet implemented");
-
+void bi::RejectionResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
+    const typename V1::value_type maxLogWeight) {
   /* pre-condition */
   BI_ASSERT(V1::on_device);
   BI_ASSERT(V2::on_device);
@@ -25,7 +24,8 @@ void bi::RejectionResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as) {
   Db.x = bi::min(P, deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
-  kernelRejectionResamplerAncestors<<<Dg,Db>>>(rng.devRngs, lws, as);
+  kernelRejectionResamplerAncestors<<<Dg,Db>>>(rng.devRngs, lws, as,
+      maxLogWeight);
   CUDA_CHECK;
 }
 

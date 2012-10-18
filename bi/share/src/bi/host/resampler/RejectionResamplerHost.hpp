@@ -10,22 +10,41 @@
 
 template<class V1, class V2>
 void bi::RejectionResamplerHost::ancestors(Random& rng, const V1 lws,
-    V2 as) {
-  BI_ASSERT_MSG(false, "Not yet implemented");
+    V2 as, const typename V1::value_type maxLogWeight) {
+  typedef typename V1::value_type T1;
 
   const int P1 = lws.size(); // number of particles
   const int P2 = as.size(); // number of ancestors to draw
+  const T1 zero = 0.0;
+  const T1 maxWeight = bi::exp(maxLogWeight);
 
   #pragma omp parallel
   {
-    real alpha, lw1, lw2;
-    int p1, p2, p;
+    real alpha, lw2;
+    int p, p2;
 
     #pragma omp for
     for (p = 0; p < P2; ++p) {
+      /* first proposal */
+      if (p < P2/P1*P1) {
+        /* death jump (stratified uniform) proposal */
+        p2 = p % P1;
+      } else {
+        /* random proposal */
+        p2 = rng.uniformInt(0, P1 - 1);
+      }
+      lw2 = lws(p2);
+      alpha = bi::log(rng.uniform(zero, maxWeight));
+
+      /* rejection loop */
+      while (alpha > lw2) {
+        p2 = rng.uniformInt(0, P1 - 1);
+        lw2 = lws(p2);
+        alpha = bi::log(rng.uniform(zero, maxWeight));
+      }
 
       /* write result */
-      as(p) = p1;
+      as(p) = p2;
     }
   }
 }

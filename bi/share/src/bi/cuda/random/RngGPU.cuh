@@ -86,6 +86,10 @@ inline void bi::RngGPU::seed(const unsigned seed) {
 
 template<class T1>
 inline T1 bi::RngGPU::uniformInt(const T1 lower, const T1 upper) {
+  /**
+   * @todo Would this be faster with curand() function, which returns random
+   * bits as unsigned int?
+   */
   return static_cast<T1>(bi::floor(uniform(BI_REAL(lower), BI_REAL(upper + 1))));
 }
 

@@ -20,10 +20,19 @@ namespace bi {
 class RejectionResamplerHost {
 public:
   /**
-   * @copydoc RejectionResampler::ancestors()
+   * Select ancestors.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] as Ancestors.
+   * @param maxLogWeight Maximum log-weight.
    */
   template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as);
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
 };
 
 /**
@@ -32,14 +41,15 @@ public:
 class RejectionResamplerGPU {
 public:
   /**
-   * @copydoc RejectionResampler::ancestors()
+   * @copydoc RejectionResamplerHost::ancestors()
    */
   template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as);
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
 };
 
 /**
- * Metropolis resampler for particle filter.
+ * Rejection resampler for particle filter.
  *
  * @ingroup method
  *
@@ -49,7 +59,7 @@ public:
  * "Murray (2011)".
  */
 template<class B>
-class RejectionResampler : public Resampler {
+class RejectionResampler: public Resampler {
 public:
   /**
    * Constructor.
@@ -84,7 +94,8 @@ public:
    * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s);
+  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
+      O1& s);
   //@}
 
   /**
@@ -120,7 +131,8 @@ private:
 #endif
 
 template<class B>
-bi::RejectionResampler<B>::RejectionResampler(B& m) : m(m) {
+bi::RejectionResampler<B>::RejectionResampler(B& m) :
+    m(m) {
   //
 }
 
@@ -189,10 +201,10 @@ template<class B>
 template<class V1, class V2>
 void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      RejectionResamplerGPU,
+  typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
       RejectionResamplerHost>::type impl;
-  impl::ancestors(rng, lws, as);
+  real logMaxWeight = max_reduce(lws);
+  impl::ancestors(rng, lws, as, logMaxWeight);
 }
 
 template<class B>
