@@ -186,49 +186,54 @@ sub client {
     my $self = shift;
     my $cmd = $self->{_cmd};
     
-    if (!defined $self->{_model_file}) {
-        die("no model specified\n");
-    }
-
     # parse
-    $self->_report("Parsing...");
-    my $fh = new IO::File;
-    $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
-    my $parser = new Bi::Parser;
-    my $model = $parser->parse($fh);
-    $fh->close;
-
+    my $model = undef;
+    if (defined $self->{_model_file}) {
+        $self->_report("Parsing...");
+        my $fh = new IO::File;
+        $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
+        my $parser = new Bi::Parser;
+        $model = $parser->parse($fh);
+        $fh->close;
+    }
+    
     # generators etc
-    my $builder = new Bi::Builder($model->get_name, $self->{_verbose});
+    my $dirname = (defined $model) ? $model->get_name : 'Bi';
+    my $builder = new Bi::Builder($dirname, $self->{_verbose});
     my $cpp = new Bi::Gen::Cpp($builder->get_dir);
     my $build = new Bi::Gen::Build($builder->get_dir);
     my $client = new Bi::Client($cmd, $builder->get_dir, $self->{_verbose});    
 
     # process args
+    if (!defined $model && $client->needs_model) {
+        die("no model specified\n");
+    }
     $self->_report("Processing arguments...");
     $client->process_args;
 
     # transform
-    $self->_report("Transforming model...");
-    if ($client->get_named_arg('transform-param-to-state')) {
-        Bi::Visitor::ParamToStateTransformer->evaluate($model);
-    } elsif ($client->get_named_arg('transform-initial-to-param')) {
-        Bi::Visitor::InitialToParamTransformer->evaluate($model);
+    if (defined $model) {
+        $self->_report("Transforming model...");
+        if ($client->get_named_arg('transform-param-to-state')) {
+            Bi::Visitor::ParamToStateTransformer->evaluate($model);
+        } elsif ($client->get_named_arg('transform-initial-to-param')) {
+            Bi::Visitor::InitialToParamTransformer->evaluate($model);
+        }
+        if ($client->get_named_arg('transform-obs-to-state')) {
+            Bi::Visitor::ObsToStateTransformer->evaluate($model);
+        }
+        if ($client->get_named_arg('transform-extended')) {
+            Bi::Visitor::ExtendedTransformer->evaluate($model);
+        }
+    
+        # optimise
+        my $optimiser = new Bi::Optimiser($model);
+        $optimiser->optimise;
+    
+        # doxygen
+        my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);
+        $doxyfile->gen($model);
     }
-    if ($client->get_named_arg('transform-obs-to-state')) {
-        Bi::Visitor::ObsToStateTransformer->evaluate($model);
-    }
-    if ($client->get_named_arg('transform-extended')) {
-        Bi::Visitor::ExtendedTransformer->evaluate($model);
-    }
-
-    # optimise
-    my $optimiser = new Bi::Optimiser($model);
-    $optimiser->optimise;
-
-    # doxygen
-    my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);
-    $doxyfile->gen($model);
 
     # generate code and build
     if ($client->is_cpp) {
@@ -244,7 +249,7 @@ sub client {
             $builder->build($client->get_binary);
         }
     }
-    
+        
     if (!$self->{_dry_run}) {
         $self->_report("Running...");
         $client->exec($model);

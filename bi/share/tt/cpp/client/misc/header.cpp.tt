@@ -7,7 +7,12 @@
 %]
 
 [%-
-class_name = "Model" _ model.get_name
+IF have_model;
+class_name = "Model" _ model.get_name;
+ELSE;
+class_name = "Model";
+END;
+
 gperftools = client.get_named_arg('with-gperftools');
 mpi = client.get_named_arg('with-mpi');
 -%]

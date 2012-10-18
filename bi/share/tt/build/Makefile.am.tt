@@ -8,7 +8,17 @@
 
 [%
 # client programs
-CLIENTS = [ 'simulate', 'pf', 'ekf', 'rtss', 'nm', 'pmmh', 'smc2', 'test' ];
+CLIENTS = [
+    'ekf',
+    'nm',
+    'pf',
+    'pmmh',
+    'rtss',
+    'simulate',
+    'smc2',
+    'test',
+    'test_resampler'
+];
 %]
 
 AUTOMAKE_OPTIONS = subdir-objects
@@ -93,9 +103,9 @@ bin_PROGRAMS =[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[
 
 [% FOREACH client IN CLIENTS %]
 [% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.a
-[% client %]_cpu_SOURCES = src/[% client %]_cpu.cpp src/model/Model[% model.get_name %].cpp
+[% client %]_cpu_SOURCES = src/[% client %]_cpu.cpp[% IF have_model %] src/model/Model[% model.get_name %].cpp[% END %]
 [% client %]_gpu_LDADD = $(DEPS_LIBS) libbi.a
-[% client %]_gpu_SOURCES = src/[% client %]_gpu.cu src/model/Model[% model.get_name %].cpp
+[% client %]_gpu_SOURCES = src/[% client %]_gpu.cu[% IF have_model %]  src/model/Model[% model.get_name %].cpp[% END %]
 [% END %]
 
 # other

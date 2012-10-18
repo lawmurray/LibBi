@@ -58,9 +58,12 @@ sub gen {
     my $model = shift;
 
     # pre-condition
-    assert($model->isa('Bi::Model')) if DEBUG;
+    assert(!defined $model || $model->isa('Bi::Model')) if DEBUG;
 
-    $self->process_template('Makefile.am.tt', { 'model' => $model }, 'Makefile.am');
+    $self->process_template('Makefile.am.tt', {
+        'have_model' => defined $model,
+        'model' => $model
+    }, 'Makefile.am');
     $self->copy_file('autogen.sh', 'autogen.sh');
     $self->copy_file('configure.ac', 'configure.ac');
     $self->copy_file('nvcc_wrapper.pl', 'nvcc_wrapper.pl');

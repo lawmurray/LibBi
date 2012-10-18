@@ -68,29 +68,34 @@ sub gen {
     my $out;
     
     # pre-condition
-    assert($model->isa('Bi::Model')) if DEBUG;
+    assert(!defined $model || $model->isa('Bi::Model')) if DEBUG;
+    assert(!defined $client || $client->isa('Bi::Client')) if DEBUG;
 
-    # model    
-    $out = File::Spec->catfile('src', 'model', 'Model' . ucfirst($model->get_name));
-    $self->process_templates('model', { 'model' => $model }, $out);
+    # model
+    if (defined $model) {
+        $out = File::Spec->catfile('src', 'model', 'Model' . ucfirst($model->get_name));
+        $self->process_templates('model', { 'model' => $model }, $out);
 
-    # dimensions
-    foreach my $dim (@{$model->get_dims}) {
-        $self->process_dim($model, $dim);
-    }   
+        # dimensions
+        foreach my $dim (@{$model->get_dims}) {
+            $self->process_dim($model, $dim);
+        }   
+        
+        # variables
+        foreach my $var (@{$model->get_vars}) {
+            $self->process_var($model, $var);
+        }    
     
-    # variables
-    foreach my $var (@{$model->get_vars}) {
-        $self->process_var($model, $var);
-    }    
-
-    # blocks
-    foreach my $block (@{$model->get_blocks}) {
-        $self->process_block($model, $block);
+        # blocks
+        foreach my $block (@{$model->get_blocks}) {
+            $self->process_block($model, $block);
+        }
     }
-    
+        
     # client
-    $self->process_client($model, $client);
+    if (defined $client) {
+        $self->process_client($model, $client);
+    }
     
     # library
     $self->copy_dir('src', 'src', ['cpp', 'hpp', 'cu', 'cuh']);
@@ -217,12 +222,22 @@ sub process_client {
     my $template;
     my $out;
 
-    $template = File::Spec->catfile('client', $binary);
+    if ($binary =~ /^test/) {
+        $template = File::Spec->catfile('test', $binary);
+    } else {
+        $template = File::Spec->catfile('client', $binary);
+    }
     $out = File::Spec->catfile('src', $binary);
-    $self->process_templates("${template}_cpu",
-        { 'model' => $model, 'client' => $client }, "${out}_cpu");
-    $self->process_templates("${template}_gpu",
-        { 'model' => $model, 'client' => $client }, "${out}_gpu");
+    $self->process_templates("${template}_cpu", {
+        'have_model' => defined $model,
+        'model' => $model,
+        'client' => $client
+    }, "${out}_cpu");
+    $self->process_templates("${template}_gpu", {
+        'have_model' => defined $model,
+        'model' => $model,
+        'client' => $client
+    }, "${out}_gpu");
     
 }
 

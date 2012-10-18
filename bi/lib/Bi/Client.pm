@@ -4,8 +4,8 @@ Bi::Client - generic client program.
 
 =head1 SYNOPSIS
 
-    use Bi::Client
-    my $client = new Bi::Client($dir);
+    use Bi::Client;
+    my $client = new Bi::Client($cmd, $builddir);
     $client->process_args;
     $client->exec;  # if successful, never returns
 
@@ -125,11 +125,17 @@ Constructor.
 
 =over 4
 
-=item * I<cmd> The command.
+=item * I<cmd>
 
-=item * I<builddir> The build directory
+The command.
 
-=item * I<verbose> Is verbosity enabled?
+=item * I<builddir>
+
+The build directory
+
+=item * I<verbose>
+
+Is verbosity enabled?
 
 =back
 
@@ -143,7 +149,7 @@ sub new {
     my $cmd = shift;
     my $builddir = shift;
     my $verbose = shift;
-        
+
     $builddir = abs_path($builddir);
     my $self = {
         _builddir => $builddir,
@@ -157,8 +163,10 @@ sub new {
     
     # look up appropriate class name
     $class = "Bi::Client::$cmd";
-    eval ("require $class") || die("don't know what to do with command '$cmd'\n");
-    
+    unless (eval("require $class")) {
+        $class = "Bi::Test::$cmd";
+        eval("require $class") || die("don't know what to do with command '$cmd'\n");
+    }
     bless $self, $class;
     
     # override default gperftools output file
@@ -189,6 +197,15 @@ Is this a C++ client?
 
 =cut
 sub is_cpp {
+    return 1;
+}
+
+=item B<needs_model>
+
+Does this client need a model?
+
+=cut
+sub needs_model {
     return 1;
 }
 

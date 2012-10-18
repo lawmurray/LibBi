@@ -6,6 +6,4 @@
 ## $Date$
 %]
 
-[%-PROCESS client/misc/header.cpp.tt-%]
-
-#include "test_cpu.cpp"
+#include "test_resampler_cpu.cpp"

@@ -55,6 +55,8 @@ struct resample_offspring : public std::unary_function<T,int> {
 };
 }
 
+#include "thrust/adjacent_difference.h"
+
 inline bool bi::Test::test(Random& rng) {
   std::cerr << "Hello World!" << std::endl;
   bool sort = true;

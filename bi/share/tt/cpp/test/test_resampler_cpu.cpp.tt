@@ -1,0 +1,60 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "bi/random/Random.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include <iostream>
+#include <string>
+#include <unistd.h>
+#include <getopt.h>
+
+#ifndef ENABLE_CUDA
+#define LOCATION ON_HOST
+#else
+#define LOCATION ON_DEVICE
+#endif
+
+int main(int argc, char* argv[]) {
+  using namespace bi;
+
+  /* command line arguments */
+  [% read_argv(client) %]
+
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
+  #endif
+  
+  /* bi init */
+  bi_init(THREADS);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* test */
+  [% IF gperftools %]
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  [% END %]
+  TicToc timer;
+  
+
+  /* output timing results */
+  if (ENABLE_TIMING) {
+    std::cout << timer.toc() << std::endl;
+  }
+  [% IF gperftools %]
+  ProfilerStop();
+  [% END %]
+
+  return 0;
+}
+
