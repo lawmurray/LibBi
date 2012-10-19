@@ -30,6 +30,10 @@
  * @defgroup method Methods
  * Inference methods.
  *
+ *   @defgroup method_resampler Resamplers
+ *   @ingroup method
+ *   Resamplers for particle filters.
+ *
  *   @defgroup method_updater Updaters
  *   @ingroup method
  *   Lower level components of methods.

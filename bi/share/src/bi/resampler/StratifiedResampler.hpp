@@ -57,7 +57,7 @@ struct resample_offspring : public std::unary_function<T,int> {
 /**
  * Stratified resampler for particle filter.
  *
- * @ingroup method
+ * @ingroup method_resampler
  *
  * Determistic, stratified resampler based on the scheme of
  * @ref Kitagawa1996 "Kitagawa (1996)", without pre-sorting.

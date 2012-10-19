@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Resampler for particle filter, distributed using MPI.
  *
- * @ingroup method
+ * @ingroup method_resampler
  *
  * @tparam R Resampler type.
  */

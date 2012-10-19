@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Kernel density resampler for particle filter.
  *
- * @ingroup method
+ * @ingroup method_resampler
  *
  * @tparam R Resampler type.
  *

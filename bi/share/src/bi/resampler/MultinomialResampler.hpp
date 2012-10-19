@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Multinomial resampler for particle filter.
  *
- * @ingroup method
+ * @ingroup method_resampler
  */
 class MultinomialResampler : public Resampler {
 public:

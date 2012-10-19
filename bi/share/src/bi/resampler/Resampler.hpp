@@ -105,7 +105,7 @@ struct resample_check : public std::binary_function<T,int,T> {
 /**
  * %Resampler for particle filter.
  *
- * @ingroup method
+ * @ingroup method_resampler
  */
 class Resampler {
 public:
@@ -432,7 +432,7 @@ typename V1::value_type bi::Resampler::ess(const V1 lws) {
 
 template<class V1, class V2>
 typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
-  real lW = log_sum_exp(lws.begin(), lws.end(), BI_REAL(0.0));
+  real lW = logsumexp_reduce(lws);
 
   return thrust::inner_product(lws.begin(), lws.end(), os.begin(), BI_REAL(0.0),
       thrust::plus<real>(), resample_check<real>(lW, lws.size()));

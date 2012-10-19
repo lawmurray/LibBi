@@ -9,7 +9,15 @@
 [%-PROCESS client/misc/header.cpp.tt-%]
 [%-PROCESS macro.hpp.tt-%]
 
+#include "bi/resampler/MultinomialResampler.hpp"
+#include "bi/resampler/MetropolisResampler.hpp"
+#include "bi/resampler/RejectionResampler.hpp"
+#include "bi/resampler/KernelResampler.hpp"
+#include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/random/Random.hpp"
+#include "bi/pdf/GaussianPdf.hpp"
+#include "bi/math/loc_vector.hpp"
+#include "bi/math/loc_matrix.hpp"
 #include "bi/misc/TicToc.hpp"
 
 #include <iostream>
@@ -52,8 +60,59 @@ int main(int argc, char* argv[]) {
   NcVar* rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
   NcVar* timeVar = out->add_var("time", ncInt, zDim, PDim, repDim);
 
-  /* generate log-weight vectors */
+  /* resampler */
+  [% IF mpi %]
+    [% IF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler<model_type> base(m, C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler<model_type> base(m);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler base(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler base(ENABLE_SORT);
+    [% END %]
+    DistributedResampler<BOOST_TYPEOF(base)> resam(&base);
+  [% ELSE %]
+    [% IF client.get_named_arg('resampler') == 'kernel' %]
+    real h;
+    if (B_ABS > 0.0) {
+      h = B_ABS;
+    } else {
+      h = B_REL*hopt(m.getDynSize(), P);
+    }
+    StratifiedResampler base(ENABLE_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler<model_type> resam(m, C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler<model_type> resam(m);
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler resam(ENABLE_SORT);
+    [% ELSE %]
+    StratifiedResampler resam(ENABLE_SORT);
+    [% END %]
+  [% END %]
 
+  /* buffers for weight-sets and results */
+  typedef typename loc_vector<LOCATION,real>::type vector_type;
+  typedef typename loc_matrix<LOCATION,real>::type matrix_type;
+  typedef typename loc_vector<LOCATION,int>::type int_vector_type;
+  typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
+  
+  /* generate particles */
+  int maxP = std::pow(2, 4 + PS);
+  int actualP = 0;
+  
+  matrix_type x(maxP*REPS, 1);  // particles
+  matrix_type lW(maxP, REPS); // log-weights
+  int_matrix_type times(REPS, PS);
+  matrix_type rmses(REPS, PS);
+  int_vector_type a(maxP);
+  int_vector_type o(maxP);
+  
+  GaussianPdf<vector_type,matrix_type> f(1), g(1);
+  f.samples(rng, x);
+  
   /* test */
   [% IF gperftools %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
@@ -62,20 +121,41 @@ int main(int argc, char* argv[]) {
   int z, p, rep, time;
   real rmse;
   for (z = 0; z < ZS; ++z) {
-    for (p = 0; p < PS; ++p) {
-      for (rep = 0; rep < REPS; ++rep) {
-        timer.tic();
-        rmse = 0.0;
-        time = timer.toc();
-
-        /* output */      
-      	rmseVar->set_cur(z, p, rep);
-      	rmseVar->put(&rmse, 1, 1, 1);
-      	timeVar->set_cur(z, p, rep);
-      	timeVar->put(&time, 1, 1, 1);
-      }
+    /* generate log-weights */
+    if (z > 0) {
+      addscal_elements(vec(x), 1.0);
     }
-  } 
+    g.logDensities(x, vec(lW), true);
+  
+    /* test on weight sets */
+    for (p = 0; p < PS; ++p) {
+      actualP = std::pow(2, p + 5);
+      BOOST_AUTO(as, subrange(a, 0, actualP));
+      BOOST_AUTO(os, subrange(o, 0, actualP));
+    
+      for (rep = 0; rep < REPS; ++rep) {
+        BOOST_AUTO(lws, subrange(column(lW, rep), 0, actualP));
+        
+        synchronize(LOCATION);
+        timer.tic();
+        resam.ancestors(rng, lws, as);
+        synchronize(LOCATION);
+        time = timer.toc();
+        
+        resam.ancestorsToOffspring(as, os);
+        rmse = bi::sqrt(resam.error(lws, os));
+        
+        rmses(rep, p) = rmse;
+        times(rep, p) = time;
+      }
+      
+      /* output */      
+      rmseVar->set_cur(z, 0, 0);
+      rmseVar->put(rmses.buf(), 1, PS, REPS);
+      timeVar->set_cur(z, 0, 0);
+      timeVar->put(times.buf(), 1, PS, REPS);
+    }
+  }
 
   [% IF gperftools %]
   ProfilerStop();

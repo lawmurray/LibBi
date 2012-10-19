@@ -51,7 +51,7 @@ public:
 /**
  * Rejection resampler for particle filter.
  *
- * @ingroup method
+ * @ingroup method_resampler
  *
  * @tparam B Model type.
  *
