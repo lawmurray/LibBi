@@ -100,6 +100,13 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   /**
+   * @copydoc concept::Resampler::ancestors
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as, const int C)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
    * @copydoc concept::Resampler::offspring
    */
   template<class V1, class V2>
@@ -195,6 +202,17 @@ void bi::MetropolisResampler<B>::resample(Random& rng, const int a,
 template<class B>
 template<class V1, class V2>
 void bi::MetropolisResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
+    throw (ParticleFilterDegeneratedException) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      MetropolisResamplerGPU,
+      MetropolisResamplerHost>::type impl;
+  impl::ancestors(rng, lws, as, C);
+}
+
+template<class B>
+template<class V1, class V2>
+void bi::MetropolisResampler<B>::ancestors(Random& rng, const V1 lws, V2 as,
+    const int C)
     throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,
       MetropolisResamplerGPU,

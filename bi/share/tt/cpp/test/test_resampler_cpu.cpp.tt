@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* set up output file */
-  NcFile* out = new NcFile("[% client.get_named_arg('resampler') %].nc", NcFile::Replace);
+  NcFile* out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
 	
   NcDim* zDim = out->add_dim("z", ZS);
   NcDim* PDim = out->add_dim("P", PS);
@@ -138,11 +138,32 @@ int main(int argc, char* argv[]) {
         
         synchronize(LOCATION);
         timer.tic();
-        resam.ancestors(rng, lws, as);
+        
+        [% IF client.get_named_arg('resampler') == 'stratified' %]
+        resam.offspring(rng, lws, os, actualP);
         synchronize(LOCATION);
         time = timer.toc();
+        [% ELSE %]
+          [% IF client.get_named_arg('resampler') == 'rejection' %]
+          real maxLogWeight = -BI_HALF_LOG_TWO_PI;
+          resam.ancestors(rng, lws, as, maxLogWeight);
+          [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+          real W = sumexp_reduce(lws);
+          real wmax = bi::exp(max_reduce(lws));
+          real beta = 1.0/actualP;
+          real alpha = W/wmax;
+          real epsilon = 1.0e-3;
+          real lambda = 1.0 - alpha - beta;
+          real steps = bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda);
+          resam.ancestors(rng, lws, as, static_cast<int>(bi::floor(steps)));
+          [% ELSE %]
+          resam.ancestors(rng, lws, as);
+          [% END %]
+          synchronize(LOCATION);
+          time = timer.toc();
+          resam.ancestorsToOffspring(as, os);
+        [% END %]
         
-        resam.ancestorsToOffspring(as, os);
         rmse = bi::sqrt(resam.error(lws, os));
         
         rmses(rep, p) = rmse;

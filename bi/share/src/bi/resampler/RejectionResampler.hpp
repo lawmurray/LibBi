@@ -20,15 +20,7 @@ namespace bi {
 class RejectionResamplerHost {
 public:
   /**
-   * Select ancestors.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] as Ancestors.
-   * @param maxLogWeight Maximum log-weight.
+   * @copydoc RejectionResampler::ancestors(Random&, const V1, V2, const typename V1::value_type)
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
@@ -41,7 +33,7 @@ public:
 class RejectionResamplerGPU {
 public:
   /**
-   * @copydoc RejectionResamplerHost::ancestors()
+   * @copydoc RejectionResampler::ancestors(Random&, const V1, V2, const typename V1::value_type)
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
@@ -54,9 +46,6 @@ public:
  * @ingroup method_resampler
  *
  * @tparam B Model type.
- *
- * Implements the Metropolis resampler as described in @ref Murray2011a
- * "Murray (2011)".
  */
 template<class B>
 class RejectionResampler: public Resampler {
@@ -107,6 +96,22 @@ public:
    */
   template<class V1, class V2>
   void ancestors(Random& rng, const V1 lws, V2 as)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select ancestors.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] as Ancestors.
+   * @param maxLogWeight Maximum log-weight.
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight)
       throw (ParticleFilterDegeneratedException);
 
   /**
@@ -201,10 +206,18 @@ template<class B>
 template<class V1, class V2>
 void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
+  real maxLogWeight = max_reduce(lws);
+  ancestors(rng, lws, as, maxLogWeight);
+}
+
+template<class B>
+template<class V1, class V2>
+void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as,
+    const typename V1::value_type maxLogWeight)
+    throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
       RejectionResamplerHost>::type impl;
-  real logMaxWeight = max_reduce(lws);
-  impl::ancestors(rng, lws, as, logMaxWeight);
+  impl::ancestors(rng, lws, as, maxLogWeight);
 }
 
 template<class B>
