@@ -51,46 +51,33 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* set up output file */
-  NcFile* out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
+  NcFile* out = NULL;
+  NcVar* rmseVar = NULL;
+  NcVar* time1Var = NULL;
+  NcVar* time2Var = NULL;
+  NcVar* time3Var = NULL;
+  if (!OUTPUT_FILE.empty()) {
+    out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
 	
-  NcDim* zDim = out->add_dim("z", ZS);
-  NcDim* PDim = out->add_dim("P", PS);
-  NcDim* repDim = out->add_dim("rep", REPS);
+    NcDim* zDim = out->add_dim("z", ZS);
+    NcDim* PDim = out->add_dim("P", PS);
+    NcDim* repDim = out->add_dim("rep", REPS);
 	  
-  NcVar* rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
-  NcVar* timeVar = out->add_var("time", ncInt, zDim, PDim, repDim);
-
+    rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
+    time1Var = out->add_var("time1", ncInt, zDim, PDim, repDim);
+    time2Var = out->add_var("time2", ncInt, zDim, PDim, repDim);
+    time3Var = out->add_var("time3", ncInt, zDim, PDim, repDim);
+  }
+	
   /* resampler */
-  [% IF mpi %]
-    [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler<model_type> base(m, C);
-    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-    RejectionResampler<model_type> base(m);
-    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler base(ENABLE_SORT);
-    [% ELSE %]
-    StratifiedResampler base(ENABLE_SORT);
-    [% END %]
-    DistributedResampler<BOOST_TYPEOF(base)> resam(&base);
+  [% IF client.get_named_arg('resampler') == 'metropolis' %]
+  MetropolisResampler resam(C);
+  [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+  RejectionResampler resam;
+  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+  MultinomialResampler resam(ENABLE_SORT);
   [% ELSE %]
-    [% IF client.get_named_arg('resampler') == 'kernel' %]
-    real h;
-    if (B_ABS > 0.0) {
-      h = B_ABS;
-    } else {
-      h = B_REL*hopt(m.getDynSize(), P);
-    }
-    StratifiedResampler base(ENABLE_SORT);
-    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
-    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler<model_type> resam(m, C);
-    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-    RejectionResampler<model_type> resam(m);
-    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT);
-    [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT);
-    [% END %]
+  StratifiedResampler resam(ENABLE_SORT);
   [% END %]
 
   /* buffers for weight-sets and results */
@@ -105,7 +92,7 @@ int main(int argc, char* argv[]) {
   
   matrix_type x(maxP*REPS, 1);  // particles
   matrix_type lW(maxP, REPS); // log-weights
-  int_matrix_type times(REPS, PS);
+  int_matrix_type times1(REPS, PS), times2(REPS, PS), times3(REPS, PS);
   matrix_type rmses(REPS, PS);
   int_vector_type a(maxP);
   int_vector_type o(maxP);
@@ -118,7 +105,7 @@ int main(int argc, char* argv[]) {
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
   TicToc timer;
-  int z, p, rep, time;
+  int z, p, rep, time1, time2, time3;
   real rmse;
   for (z = 0; z < ZS; ++z) {
     /* generate log-weights */
@@ -136,45 +123,89 @@ int main(int argc, char* argv[]) {
       for (rep = 0; rep < REPS; ++rep) {
         BOOST_AUTO(lws, subrange(column(lW, rep), 0, actualP));
         
-        synchronize(LOCATION);
+        synchronize();
         timer.tic();
         
         [% IF client.get_named_arg('resampler') == 'stratified' %]
+        if (ENABLE_SORT) {
+          bi::sort(lws);
+        }
+        synchronize();
+        time1 = timer.toc();
+        
         resam.offspring(rng, lws, os, actualP);
-        synchronize(LOCATION);
-        time = timer.toc();
+        synchronize();
+        time2 = timer.toc();
+        
+        resam.offspringToAncestors(os, as);
+        resam.permute(as);
+        synchronize();
+        time3 = timer.toc();
+        [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+        synchronize();
+        time1 = timer.toc();
+        
+        real maxLogWeight = -BI_HALF_LOG_TWO_PI;
+        resam.ancestors(rng, lws, as, maxLogWeight);
+        synchronize();
+        time2 = timer.toc();
+
+        resam.permute(as);
+        resam.ancestorsToOffspring(as, os);
+        synchronize();
+        time3 = timer.toc();
+        [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+        synchronize();
+        time1 = timer.toc();
+
+        real W = sumexp_reduce(lws);
+        real wmax = bi::exp(max_reduce(lws));
+        real beta = 1.0/actualP;
+        real alpha = W/wmax;
+        real epsilon = 1.0e-3;
+        real lambda = 1.0 - alpha - beta;
+        real steps = bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda);
+        resam.ancestors(rng, lws, as, static_cast<int>(bi::floor(steps)));
+        synchronize();
+        time2 = timer.toc();
+        
+        resam.permute(as);
+        resam.ancestorsToOffspring(as, os);
+        synchronize();
+        time3 = timer.toc();
         [% ELSE %]
-          [% IF client.get_named_arg('resampler') == 'rejection' %]
-          real maxLogWeight = -BI_HALF_LOG_TWO_PI;
-          resam.ancestors(rng, lws, as, maxLogWeight);
-          [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-          real W = sumexp_reduce(lws);
-          real wmax = bi::exp(max_reduce(lws));
-          real beta = 1.0/actualP;
-          real alpha = W/wmax;
-          real epsilon = 1.0e-3;
-          real lambda = 1.0 - alpha - beta;
-          real steps = bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda);
-          resam.ancestors(rng, lws, as, static_cast<int>(bi::floor(steps)));
-          [% ELSE %]
-          resam.ancestors(rng, lws, as);
-          [% END %]
-          synchronize(LOCATION);
-          time = timer.toc();
-          resam.ancestorsToOffspring(as, os);
+        synchronize();
+        time1 = timer.toc();
+
+        resam.ancestors(rng, lws, as);
+        synchronize();
+        time2 = timer.toc();
+        
+        resam.permute(as);
+        resam.ancestorsToOffspring(as, os);
+        synchronize();
+        time3 = timer.toc();
         [% END %]
         
         rmse = bi::sqrt(resam.error(lws, os));
         
         rmses(rep, p) = rmse;
-        times(rep, p) = time;
+        times1(rep, p) = time1;
+        times2(rep, p) = time2;
+        times3(rep, p) = time3;
       }
       
-      /* output */      
-      rmseVar->set_cur(z, 0, 0);
-      rmseVar->put(rmses.buf(), 1, PS, REPS);
-      timeVar->set_cur(z, 0, 0);
-      timeVar->put(times.buf(), 1, PS, REPS);
+      /* output */
+      if (out != NULL) {
+        rmseVar->set_cur(z, 0, 0);
+        rmseVar->put(rmses.buf(), 1, PS, REPS);
+        time1Var->set_cur(z, 0, 0);
+        time1Var->put(times1.buf(), 1, PS, REPS);
+        time2Var->set_cur(z, 0, 0);
+        time2Var->put(times2.buf(), 1, PS, REPS);
+        time3Var->set_cur(z, 0, 0);
+        time3Var->put(times3.buf(), 1, PS, REPS);
+      }
     }
   }
 

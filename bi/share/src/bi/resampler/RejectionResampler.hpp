@@ -44,19 +44,9 @@ public:
  * Rejection resampler for particle filter.
  *
  * @ingroup method_resampler
- *
- * @tparam B Model type.
  */
-template<class B>
 class RejectionResampler: public Resampler {
 public:
-  /**
-   * Constructor.
-   *
-   * @param m Model.
-   */
-  RejectionResampler(B& m);
-
   /**
    * @name High-level interface
    */
@@ -121,12 +111,6 @@ public:
   void offspring(Random& rng, const V1 lws, V2 os, const int P)
       throw (ParticleFilterDegeneratedException);
   //@}
-
-private:
-  /**
-   * Model.
-   */
-  B& m;
 };
 }
 
@@ -135,15 +119,8 @@ private:
 #include "../cuda/resampler/RejectionResamplerGPU.cuh"
 #endif
 
-template<class B>
-bi::RejectionResampler<B>::RejectionResampler(B& m) :
-    m(m) {
-  //
-}
-
-template<class B>
 template<class V1, class V2, class O1>
-void bi::RejectionResampler<B>::resample(Random& rng, V1 lws, V2 as, O1& s) {
+void bi::RejectionResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
 
@@ -153,9 +130,8 @@ void bi::RejectionResampler<B>::resample(Random& rng, V1 lws, V2 as, O1& s) {
   lws.clear();
 }
 
-template<class B>
 template<class V1, class V2, class O1>
-void bi::RejectionResampler<B>::resample(Random& rng, const int a, V1 lws,
+void bi::RejectionResampler::resample(Random& rng, const int a, V1 lws,
     V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
@@ -168,9 +144,8 @@ void bi::RejectionResampler<B>::resample(Random& rng, const int a, V1 lws,
   lws.clear();
 }
 
-template<class B>
 template<class V1, class V2, class V3, class O1>
-void bi::RejectionResampler<B>::resample(Random& rng, const V1 qlws, V2 lws,
+void bi::RejectionResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -184,9 +159,8 @@ void bi::RejectionResampler<B>::resample(Random& rng, const V1 qlws, V2 lws,
   correct(as, qlws, lws);
 }
 
-template<class B>
 template<class V1, class V2, class V3, class O1>
-void bi::RejectionResampler<B>::resample(Random& rng, const int a,
+void bi::RejectionResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -202,17 +176,15 @@ void bi::RejectionResampler<B>::resample(Random& rng, const int a,
   correct(as, qlws, lws);
 }
 
-template<class B>
 template<class V1, class V2>
-void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
+void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
   real maxLogWeight = max_reduce(lws);
   ancestors(rng, lws, as, maxLogWeight);
 }
 
-template<class B>
 template<class V1, class V2>
-void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as,
+void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as,
     const typename V1::value_type maxLogWeight)
     throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
@@ -220,9 +192,8 @@ void bi::RejectionResampler<B>::ancestors(Random& rng, const V1 lws, V2 as,
   impl::ancestors(rng, lws, as, maxLogWeight);
 }
 
-template<class B>
 template<class V1, class V2>
-void bi::RejectionResampler<B>::offspring(Random& rng, const V1 lws, V2 os,
+void bi::RejectionResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int P) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(P >= 0);

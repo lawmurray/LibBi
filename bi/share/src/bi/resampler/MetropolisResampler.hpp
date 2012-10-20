@@ -43,21 +43,17 @@ public:
  *
  * @ingroup method_resampler
  *
- * @tparam B Model type.
- *
  * Implements the Metropolis resampler as described in @ref Murray2011a
  * "Murray (2011)".
  */
-template<class B>
 class MetropolisResampler : public Resampler {
 public:
   /**
    * Constructor.
    *
-   * @param m Model.
    * @param C Number of Metropolis steps to take.
    */
-  MetropolisResampler(B& m, const int C);
+  MetropolisResampler(const int C);
 
   /**
    * @name High-level interface
@@ -116,11 +112,6 @@ public:
 
 private:
   /**
-   * Model.
-   */
-  B& m;
-
-  /**
    * Number of Metropolis steps to take.
    */
   int C;
@@ -132,15 +123,12 @@ private:
 #include "../cuda/resampler/MetropolisResamplerGPU.cuh"
 #endif
 
-template<class B>
-bi::MetropolisResampler<B>::MetropolisResampler(B& m, const int C) : m(m),
-    C(C) {
+inline bi::MetropolisResampler::MetropolisResampler(const int C) : C(C) {
   //
 }
 
-template<class B>
 template<class V1, class V2, class O1>
-void bi::MetropolisResampler<B>::resample(Random& rng, V1 lws, V2 as, O1& s) {
+void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
 
@@ -150,9 +138,8 @@ void bi::MetropolisResampler<B>::resample(Random& rng, V1 lws, V2 as, O1& s) {
   lws.clear();
 }
 
-template<class B>
 template<class V1, class V2, class O1>
-void bi::MetropolisResampler<B>::resample(Random& rng, const int a, V1 lws,
+void bi::MetropolisResampler::resample(Random& rng, const int a, V1 lws,
     V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
@@ -165,9 +152,8 @@ void bi::MetropolisResampler<B>::resample(Random& rng, const int a, V1 lws,
   lws.clear();
 }
 
-template<class B>
 template<class V1, class V2, class V3, class O1>
-void bi::MetropolisResampler<B>::resample(Random& rng, const V1 qlws, V2 lws,
+void bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -181,9 +167,8 @@ void bi::MetropolisResampler<B>::resample(Random& rng, const V1 qlws, V2 lws,
   correct(as, qlws, lws);
 }
 
-template<class B>
 template<class V1, class V2, class V3, class O1>
-void bi::MetropolisResampler<B>::resample(Random& rng, const int a,
+void bi::MetropolisResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -199,9 +184,8 @@ void bi::MetropolisResampler<B>::resample(Random& rng, const int a,
   correct(as, qlws, lws);
 }
 
-template<class B>
 template<class V1, class V2>
-void bi::MetropolisResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
+void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,
       MetropolisResamplerGPU,
@@ -209,20 +193,8 @@ void bi::MetropolisResampler<B>::ancestors(Random& rng, const V1 lws, V2 as)
   impl::ancestors(rng, lws, as, C);
 }
 
-template<class B>
 template<class V1, class V2>
-void bi::MetropolisResampler<B>::ancestors(Random& rng, const V1 lws, V2 as,
-    const int C)
-    throw (ParticleFilterDegeneratedException) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      MetropolisResamplerGPU,
-      MetropolisResamplerHost>::type impl;
-  impl::ancestors(rng, lws, as, C);
-}
-
-template<class B>
-template<class V1, class V2>
-void bi::MetropolisResampler<B>::offspring(Random& rng, const V1 lws, V2 os,
+void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int P) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(P >= 0);

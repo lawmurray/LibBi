@@ -14,17 +14,37 @@ L<Bi::Client>
 
 package Bi::Test::test_resampler;
 
-use base 'Bi::Client::filter';
+use base 'Bi::Client';
 use warnings;
 use strict;
 
 =head1 OPTIONS
 
-The C<test_resampler> program inherits all options from C<filter> (largely
-for convenience, for resampling options), and permits the following
-additional options:
-
 =over 4
+
+=item * C<--resampler> (default C<'stratified'>)
+
+The type of resampler to use; one of:
+
+=over 8
+
+=item * C<'stratified'>
+
+for a stratified (systematic) resampler (Kitagawa 1996),
+
+=item * C<'multinomial'>
+
+for a multinomial resampler,
+
+=item * C<'metropolis'>
+
+for a Metropolis resampler (Murray 2011),
+
+=item * C<'rejection'>
+
+for a rejection resampler, or
+
+=back
 
 =item * C<--Zs> (default 5)
 
@@ -38,8 +58,27 @@ Number of weight vector sizes to use.
 
 Number of trials on each combination of parameters and sizes.
 
+=item * C<--enable-sort> (default on)
+
+Sort weights prior to resampling.
+
+=item * C<-C> (default 0)
+
+Number of steps to take for Metropolis resampler.
+
+=item * C<--output-file>
+
+File to which to write output.
+
+=back
+
 =cut
 our @CLIENT_OPTIONS = (
+    {
+      name => 'resampler',
+      type => 'string',
+      default => 'stratified'
+    },
     {
       name => 'Zs',
       type => 'int',
@@ -54,21 +93,28 @@ our @CLIENT_OPTIONS = (
       name => 'reps',
       type => 'int',
       default => 100
+    },
+    {
+      name => 'enable-sort',
+      type => 'bool',
+      default => 1
+    },
+    {
+      name => 'C',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'output-file',
+      type => 'string'
     }
 );
 
 sub init {
     my $self = shift;
 
-    Bi::Client::filter::init($self);
-    push(@{$self->{_params}}, @CLIENT_OPTIONS);
-}
-
-sub process_args {
-	my $self = shift;
-	
-	$self->Bi::Client::filter::process_args(@_);
 	$self->{_binary} = 'test_resampler';
+    push(@{$self->{_params}}, @CLIENT_OPTIONS);
 }
 
 sub needs_model {

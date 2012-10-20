@@ -133,9 +133,9 @@ int main(int argc, char* argv[]) {
     MultinomialResampler base(ENABLE_SORT);
     KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler<model_type> resam(m, C);
+    MetropolisResampler resam(C);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-    RejectionResampler<model_type> resam(m);
+    RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler resam(ENABLE_SORT);
     [% ELSE %]
