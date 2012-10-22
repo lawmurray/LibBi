@@ -68,8 +68,6 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(curandState* rng,
 
     /* write result */
     as(p) = p2;
-
-    p += Q;
   }
 
   rng[q] = rng1.r;

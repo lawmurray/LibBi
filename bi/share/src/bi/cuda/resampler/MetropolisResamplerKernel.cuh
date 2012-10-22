@@ -57,7 +57,6 @@ CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandState* rng,
 
     /* write result */
     as(p) = p1;
-    p += Q;
   }
 
   rng[q] = rng1.r;
