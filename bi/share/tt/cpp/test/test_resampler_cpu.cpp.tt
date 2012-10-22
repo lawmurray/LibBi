@@ -51,24 +51,19 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* set up output file */
-  NcFile* out = NULL;
-  NcVar* rmseVar = NULL;
-  NcVar* time1Var = NULL;
-  NcVar* time2Var = NULL;
-  NcVar* time3Var = NULL;
-  if (!OUTPUT_FILE.empty()) {
-    out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
+  NcFile* out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
 	
-    NcDim* zDim = out->add_dim("z", ZS);
-    NcDim* PDim = out->add_dim("P", PS);
-    NcDim* repDim = out->add_dim("rep", REPS);
+  NcDim* zDim = out->add_dim("z", ZS);
+  NcDim* PDim = out->add_dim("P", PS);
+  NcDim* repDim = out->add_dim("rep", REPS);
 	  
-    rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
-    time1Var = out->add_var("time1", ncInt, zDim, PDim, repDim);
-    time2Var = out->add_var("time2", ncInt, zDim, PDim, repDim);
-    time3Var = out->add_var("time3", ncInt, zDim, PDim, repDim);
-  }
-	
+  NcVar* rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
+  NcVar* time1Var = out->add_var("time1", ncInt, zDim, PDim, repDim);
+  NcVar* time2Var = out->add_var("time2", ncInt, zDim, PDim, repDim);
+  NcVar* time3Var = out->add_var("time3", ncInt, zDim, PDim, repDim);
+  NcVar* PVar = out->add_var("P", ncInt, PDim);
+  NcVar* zVar = out->add_var("z", ncDouble, zDim);
+  
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
   MetropolisResampler resam(C);
@@ -87,7 +82,7 @@ int main(int argc, char* argv[]) {
   typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
   
   /* generate particles */
-  int maxP = std::pow(2, 4 + PS);
+  int maxP = std::pow(2, PS);
   int actualP = 0;
   
   matrix_type x(maxP*REPS, 1);  // particles
@@ -96,6 +91,8 @@ int main(int argc, char* argv[]) {
   matrix_type rmses(REPS, PS);
   int_vector_type a(maxP);
   int_vector_type o(maxP);
+  int_vector_type actualPs(PS);
+  vector_type zs(ZS);
   
   GaussianPdf<vector_type,matrix_type> f(1), g(1);
   f.samples(rng, x);
@@ -113,10 +110,12 @@ int main(int argc, char* argv[]) {
       addscal_elements(vec(x), 1.0);
     }
     g.logDensities(x, vec(lW), true);
+    zs(z) = z;
   
     /* test on weight sets */
     for (p = 0; p < PS; ++p) {
-      actualP = std::pow(2, p + 5);
+      actualP = std::pow(2, p);
+      actualPs(p) = actualP;
       BOOST_AUTO(as, subrange(a, 0, actualP));
       BOOST_AUTO(os, subrange(o, 0, actualP));
     
@@ -208,6 +207,9 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+  
+  PVar->put(actualPs.buf(), PS);
+  zVar->put(zs.buf(), ZS);
 
   [% IF gperftools %]
   ProfilerStop();

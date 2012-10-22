@@ -194,6 +194,15 @@ void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
 }
 
 template<class V1, class V2>
+void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    const int C) throw (ParticleFilterDegeneratedException) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      MetropolisResamplerGPU,
+      MetropolisResamplerHost>::type impl;
+  impl::ancestors(rng, lws, as, C);
+}
+
+template<class V1, class V2>
 void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int P) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */

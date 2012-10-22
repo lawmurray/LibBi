@@ -41,7 +41,7 @@ File from which to initialise parameters and initial conditions.
 
 File from which to read inputs.
 
-=item * C<--obs-file> (mandatory)
+=item * C<--obs-file>
 
 File from which to read observations.
 

@@ -66,7 +66,7 @@ Sort weights prior to resampling.
 
 Number of steps to take for Metropolis resampler.
 
-=item * C<--output-file>
+=item * C<--output-file> (mandatory)
 
 File to which to write output.
 
