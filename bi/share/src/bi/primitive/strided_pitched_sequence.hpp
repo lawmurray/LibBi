@@ -20,22 +20,17 @@ namespace bi {
 template<class T>
 struct strided_pitched_functor : public std::unary_function<T,T> {
   CUDA_FUNC_HOST strided_pitched_functor(const T rows, const T lead,
-      const T inc) : rows(rows), lead(lead), inc(inc),
-      fast(lead == rows && inc == 1) {
+      const T inc) : rows(rows), lead(lead), inc(inc) {
     /* pre-condition */
     BI_ASSERT(lead >= (rows - 1)*inc + 1);
     BI_ASSERT(inc >= 1);
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    if (fast) {
-      return x;
-    } else {
-      T col = x/rows;
-      T row = x - col*rows;
+    T col = x/rows;
+    T row = x - col*rows;
 
-      return col*lead + row*inc;
-    }
+    return col*lead + row*inc;
   }
 
 private:
@@ -53,11 +48,6 @@ private:
    * Increment.
    */
   T inc;
-
-  /**
-   * Use fast implementation: <tt>inc == 1 && lead == rows</tt>.
-   */
-  bool fast;
 };
 
 /**

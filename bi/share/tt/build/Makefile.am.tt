@@ -41,6 +41,7 @@ endif
 
 NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 NVCC_CXXFLAGS = $(CUDA_CXXFLAGS) -w -arch sm_13 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+LINK = $(CXXLINK) # force C++ linker for CUDA files
 
 # too slow for some compiles
 #if ENABLE_ASSERT
@@ -111,7 +112,7 @@ bin_PROGRAMS =[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[
 # other
 dist_noinst_SCRIPTS = autogen.sh
 
-## command line options
+# command line options
 if ENABLE_SINGLE
 CPPFLAGS += -DENABLE_SINGLE
 endif

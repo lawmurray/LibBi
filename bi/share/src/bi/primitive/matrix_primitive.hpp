@@ -23,7 +23,6 @@ namespace bi {
 template<class M1>
 void matrix_set_elements(M1 X, const typename M1::value_type value);
 
-
 /**
  * Set the columns of a matrix.
  *
@@ -340,6 +339,12 @@ template<class M1, class V1>
 void bi::dot_rows(const M1 X, V1 y) {
   /* pre-condition */
   BI_ASSERT(X.size1() == y.size());
+  BI_ASSERT(y.inc() == 1);
+  /**
+   * @bug Above required only so that y.fast_begin() can be used, otherwise
+   * we overflow on formal parameter space for kernel call embedded within
+   * thrust::reduce_by_key().
+   */
 
   using namespace thrust;
 
@@ -350,11 +355,7 @@ void bi::dot_rows(const M1 X, V1 y) {
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size1(), X.size2()));
   BOOST_AUTO(transform, make_transform_iterator(X.row_begin(), square_functor<T1>()));
 
-  if (y.inc() == 1) {
-    reduce_by_key(keys.begin(), keys.end(), transform, discard, y.fast_begin());
-  } else {
-    reduce_by_key(keys.begin(), keys.end(), transform, discard, y.begin());
-  }
+  reduce_by_key(keys.begin(), keys.end(), transform, discard, y.fast_begin());
 }
 
 template<class M1, class V1>

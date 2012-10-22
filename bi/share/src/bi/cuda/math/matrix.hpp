@@ -378,7 +378,7 @@ public:
   typedef gpu_vector_reference<T> vector_reference_type;
   typedef const vector_reference_type const_vector_reference_type;
   typedef thrust::device_ptr<T> pointer;
-  typedef const pointer const_pointer;
+  typedef thrust::device_ptr<const T> const_pointer;
   typedef typename strided_pitched_range<pointer>::iterator iterator;
   typedef typename strided_pitched_range<const_pointer>::iterator const_iterator;
   typedef typename cross_range<iterator>::iterator row_iterator;

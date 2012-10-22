@@ -31,25 +31,15 @@ struct pitched_functor : public std::unary_function<T,T> {
    */
   T M;
 
-  /**
-   * Does <tt>m == M</tt>?
-   */
-  bool same;
-
-  CUDA_FUNC_HOST pitched_functor(const T m, const T M) : m(m), M(M),
-      same(m == M) {
+  CUDA_FUNC_HOST pitched_functor(const T m, const T M) : m(m), M(M) {
     /* pre-condition */
     BI_ASSERT(M >= m);
   }
 
   CUDA_FUNC_BOTH T operator()(const T& x) const {
-    if (same) {
-      return x;
-    } else {
-      T div = x/m;
-      T rem = x - div*m;
-      return div*M + rem;
-    }
+    T div = x/m;
+    T rem = x - div*m;
+    return div*M + rem;
   }
 };
 

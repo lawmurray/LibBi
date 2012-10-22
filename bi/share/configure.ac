@@ -99,7 +99,7 @@ fi
 
 # Checks for programs.
 AC_PROG_CXX([icpc g++])
-AC_PROG_CXXCPP([icpc g++])
+AC_PROG_CXXCPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
@@ -131,7 +131,7 @@ if test x$mpi = xtrue; then
 	fi
 fi
 
-# libtool initialisation (must happen after LD set above)
+# libtool initialisation
 #LT_INIT
 
 # Checks for libraries
