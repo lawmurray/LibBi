@@ -23,6 +23,7 @@ void bi::MetropolisResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
 
   Db.x = bi::min(P, deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
+  //deviceBalance1d(Db, Dg);
 
   kernelMetropolisResamplerAncestors<<<Dg,Db>>>(rng.devRngs, lws, as, C);
   CUDA_CHECK;

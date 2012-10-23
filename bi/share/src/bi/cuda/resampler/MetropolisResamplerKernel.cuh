@@ -29,6 +29,8 @@ CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(curandState* rng, const
 
 }
 
+#include "../shared.cuh"
+
 template<class V1, class V2>
 CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandState* rng,
     const V1 lws, V2 as, const int C) {

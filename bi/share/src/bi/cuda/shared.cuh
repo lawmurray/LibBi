@@ -139,6 +139,7 @@ struct shared: public global {
 
 #include "shared_init_visitor.cuh"
 #include "shared_commit_visitor.cuh"
+#include "../traits/block_traits.hpp"
 
 template<class B, class S>
 inline void bi::shared_init(State<B,ON_DEVICE>& s, const int p, const int i) {

@@ -18,11 +18,12 @@ void bi::RejectionResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
   BI_ASSERT(V1::on_device);
   BI_ASSERT(V2::on_device);
 
-  const int P = lws.size();
+  const int P = as.size();
   dim3 Db, Dg;
 
   Db.x = bi::min(P, deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
+  //deviceBalance1d(Db, Dg);
 
   kernelRejectionResamplerAncestors<<<Dg,Db>>>(rng.devRngs, lws, as,
       maxLogWeight);

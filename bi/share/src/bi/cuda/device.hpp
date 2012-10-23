@@ -17,6 +17,7 @@ namespace bi {
  * @return Id of device.
  */
 int chooseDevice(const int rank);
+
 /**
  * Compute the ideal number of threads on the device. This is heuristic,
  * currently twice the ideal number of threads per block
@@ -31,6 +32,45 @@ int deviceIdealThreads();
  */
 int deviceIdealThreadsPerBlock();
 
+/**
+ * Return the number of multiprocessors on the device.
+ */
+int deviceMultiprocessors();
+
+/**
+ * Return the preferred overloading factor of the device.
+ */
+int deviceOverloading();
+
+/**
+ * Return the warp size of the device.
+ */
+int deviceWarpSize();
+
+#ifdef ENABLE_CUDA
+/**
+ * Balance 1d kernel execution configuration.
+ */
+void deviceBalance1d(dim3& Db, dim3& Dg);
+#endif
+
 }
+
+inline int bi::deviceOverloading() {
+  return 4;
+}
+
+inline int bi::deviceWarpSize() {
+  return 32;
+}
+
+#ifdef ENABLE_CUDA
+inline void bi::deviceBalance1d(dim3& Db, dim3& Dg) {
+  while (Db.x > deviceWarpSize() && Dg.x < deviceMultiprocessors()) {
+    Db.x /= 2;
+    Dg.x *= 2;
+  }
+}
+#endif
 
 #endif

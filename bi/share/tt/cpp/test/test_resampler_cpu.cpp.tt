@@ -81,20 +81,22 @@ int main(int argc, char* argv[]) {
   typedef typename loc_vector<LOCATION,int>::type int_vector_type;
   typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
   
-  /* generate particles */
-  int maxP = std::pow(2, PS);
+  /* generate particles (all on host so weight sets match on host and device) */
+  int maxP = std::pow(2, PS + 4);
   int actualP = 0;
   
-  matrix_type x(maxP*REPS, 1);  // particles
-  matrix_type lW(maxP, REPS); // log-weights
-  int_matrix_type times1(REPS, PS), times2(REPS, PS), times3(REPS, PS);
-  matrix_type rmses(REPS, PS);
+  host_matrix<real> x(maxP*REPS, 1);  // particles
+  host_matrix<real> lW(maxP, REPS); // log-weights
+  host_matrix<int> times1(REPS, PS), times2(REPS, PS), times3(REPS, PS);
+  host_matrix<real> rmses(REPS, PS);
+  host_vector<int> actualPs(PS);
+  host_vector<int> zs(ZS);
+
+  vector_type lw(maxP);
   int_vector_type a(maxP);
   int_vector_type o(maxP);
-  int_vector_type actualPs(PS);
-  vector_type zs(ZS);
   
-  GaussianPdf<vector_type,matrix_type> f(1), g(1);
+  GaussianPdf<> f(1), g(1);
   f.samples(rng, x);
   
   /* test */
@@ -111,17 +113,29 @@ int main(int argc, char* argv[]) {
     }
     g.logDensities(x, vec(lW), true);
     zs(z) = z;
+    std::cerr << "z=" << z << ":";
   
     /* test on weight sets */
     for (p = 0; p < PS; ++p) {
-      actualP = std::pow(2, p);
+      actualP = std::pow(2, p + 4);
+      std::cerr << " " << actualP;
       actualPs(p) = actualP;
+      BOOST_AUTO(lws, subrange(lw, 0, actualP));
       BOOST_AUTO(as, subrange(a, 0, actualP));
       BOOST_AUTO(os, subrange(o, 0, actualP));
     
+      [% IF client.get_named_arg('resampler') == 'metropolis' %]
+      real W = actualP*bi::exp(-0.25*z*z)/(2.0*BI_SQRT_TWO_PI);
+      real wmax = (1.0/BI_SQRT_TWO_PI)/W;
+      real beta = 1.0/actualP;
+      real alpha = (1.0 - wmax)/(actualP*wmax);
+      real epsilon = 1.0e-3;
+      real lambda = 1.0 - alpha - beta;
+      int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
+      [% END %]
+    
       for (rep = 0; rep < REPS; ++rep) {
-        BOOST_AUTO(lws, subrange(column(lW, rep), 0, actualP));
-        
+        lws = subrange(column(lW, rep), 0, actualP);
         synchronize();
         timer.tic();
         
@@ -136,8 +150,8 @@ int main(int argc, char* argv[]) {
         synchronize();
         time2 = timer.toc();
         
-        resam.offspringToAncestors(os, as);
-        resam.permute(as);
+        //resam.offspringToAncestors(os, as);
+        //resam.permute(as);
         synchronize();
         time3 = timer.toc();
         [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
@@ -149,27 +163,20 @@ int main(int argc, char* argv[]) {
         synchronize();
         time2 = timer.toc();
 
-        resam.permute(as);
-        resam.ancestorsToOffspring(as, os);
+        //resam.permute(as);
+        //resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
         synchronize();
         time1 = timer.toc();
 
-        real W = sumexp_reduce(lws);
-        real wmax = bi::exp(max_reduce(lws));
-        real beta = 1.0/actualP;
-        real alpha = W/wmax;
-        real epsilon = 1.0e-3;
-        real lambda = 1.0 - alpha - beta;
-        real steps = bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda);
-        resam.ancestors(rng, lws, as, static_cast<int>(bi::floor(steps)));
+        resam.ancestors(rng, lws, as, B);
         synchronize();
         time2 = timer.toc();
         
-        resam.permute(as);
-        resam.ancestorsToOffspring(as, os);
+        //resam.permute(as);
+        //resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% ELSE %]
@@ -180,32 +187,33 @@ int main(int argc, char* argv[]) {
         synchronize();
         time2 = timer.toc();
         
-        resam.permute(as);
-        resam.ancestorsToOffspring(as, os);
+        //resam.permute(as);
+        //resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% END %]
         
-        rmse = bi::sqrt(resam.error(lws, os));
+        //rmse = bi::sqrt(resam.error(lws, os));
         
         rmses(rep, p) = rmse;
         times1(rep, p) = time1;
         times2(rep, p) = time2;
         times3(rep, p) = time3;
       }
-      
-      /* output */
-      if (out != NULL) {
-        rmseVar->set_cur(z, 0, 0);
-        rmseVar->put(rmses.buf(), 1, PS, REPS);
-        time1Var->set_cur(z, 0, 0);
-        time1Var->put(times1.buf(), 1, PS, REPS);
-        time2Var->set_cur(z, 0, 0);
-        time2Var->put(times2.buf(), 1, PS, REPS);
-        time3Var->set_cur(z, 0, 0);
-        time3Var->put(times3.buf(), 1, PS, REPS);
-      }
     }
+    
+    /* output */
+    if (out != NULL) {
+      rmseVar->set_cur(z, 0, 0);
+      rmseVar->put(rmses.buf(), 1, PS, REPS);
+      time1Var->set_cur(z, 0, 0);
+      time1Var->put(times1.buf(), 1, PS, REPS);
+      time2Var->set_cur(z, 0, 0);
+      time2Var->put(times2.buf(), 1, PS, REPS);
+      time3Var->set_cur(z, 0, 0);
+      time3Var->put(times3.buf(), 1, PS, REPS);
+    }
+    std::cerr << std::endl;
   }
   
   PVar->put(actualPs.buf(), PS);
