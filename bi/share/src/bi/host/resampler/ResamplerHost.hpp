@@ -8,6 +8,12 @@
 #ifndef BI_HOST_RESAMPLER_RESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_RESAMPLERHOST_HPP
 
+#include "../../primitive/vector_primitive.hpp"
+
+#include "thrust/sequence.h"
+#include "thrust/sort.h"
+#include "thrust/fill.h"
+
 template<class V1>
 void bi::ResamplerHost::permute(V1 as) {
   /* pre-condition */
@@ -39,6 +45,21 @@ void bi::ResamplerHost::copy(const V1 as, M1 X) {
       row(X, p) = row(X, as[p]);
     }
   }
+}
+
+template<class V1, class V2>
+void bi::ResamplerHost::ancestorsToOffspring(const V1 as, V2 os) {
+  const int P = as.size();
+  os.clear();
+
+  #pragma omp parallel for
+  for (int i = 0; i < P; ++i) {
+    #pragma omp atomic
+    ++os(as(i));
+  }
+
+  /* post-condition */
+  BI_ASSERT(thrust::reduce(os.begin(), os.end()) == P);
 }
 
 #endif

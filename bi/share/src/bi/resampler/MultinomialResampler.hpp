@@ -15,6 +15,34 @@
 
 namespace bi {
 /**
+ * MultinomialResampler implementation on host.
+ */
+class MultinomialResamplerHost {
+public:
+  /**
+   * Select ancestors, sorted in ascending order by construction. The basis
+   * of this implementation is the generation of sorted random variates
+   * using the method of @ref Bentley1979 "Bentley & Saxe (1979)".
+   */
+  template<class V1, class V2, class V3, class V4>
+  static void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sort, bool sorted,
+      V3 slws, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
+};
+
+/**
+ * MultinomialResampler implementation on device.
+ */
+class MultinomialResamplerGPU {
+public:
+  /**
+   * @copydoc MultinomialResampler::ancestors()
+   */
+  template<class V1, class V2, class V3, class V4>
+  static void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sort, bool sorted,
+      V3 slws, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
+};
+
+/**
  * Multinomial resampler for particle filter.
  *
  * @ingroup method_resampler
@@ -73,13 +101,13 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sorted,
-      V3 slws, V4 ps, V3 Ws)
+  void ancestors(Random& rng, const V1 lws, V2 as,
+      int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
       throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void ancestors(Random& rng, const V1 lws, V2 as,
-      int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
+  void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sorted,
+      V3 slws, V4 ps, V3 Ws)
       throw (ParticleFilterDegeneratedException);
 
   /**
@@ -98,6 +126,11 @@ protected:
 };
 
 }
+
+#include "../host/resampler/MultinomialResamplerHost.hpp"
+#ifdef ENABLE_GPU
+#include "../cuda/resampler/MultinomialResamplerGPU.hpp"
+#endif
 
 #include "../math/temp_vector.hpp"
 #include "../math/sim_temp_vector.hpp"
@@ -185,175 +218,34 @@ void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
 
-  typedef typename V1::value_type T1;
   const int P = lws.size();
+  typename sim_temp_vector<V1>::type lws1(P), Ws(P);
+  typename sim_temp_vector<V2>::type ps(P);
 
-  typename sim_temp_vector<V1>::type lws1(P), Ws(P), alphas(P);
-  typename sim_temp_vector<V2>::type as1(P), ps(P);
-  T1 W;
-
-  /* weights */
-  if (sort) {
-    lws1 = lws;
-    seq_elements(ps, 0);
-    bi::sort_by_key(lws1, ps);
-    bi::inclusive_scan_sum_expu(lws1, Ws);
-  } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
-  }
-  W = *(Ws.end() - 1); // sum of weights
-  if (W > 0) {
-    /* random numbers */
-    rng.uniforms(alphas, 0.0, W);
-
-    /* sample */
-    if (sort) {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
-      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
-    } else {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
-    }
-  } else {
-    throw ParticleFilterDegeneratedException();
-  }
-
-  /* post-condition */
-  BI_ASSERT(max_reduce(as) < lws.size());
-}
-
-//template<class V1, class V2, class V3, class V4>
-//void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-//    int P, bool sorted, V3 slws, V4 fakeps, V3 fakeWs)
-//    throw (ParticleFilterDegeneratedException) {
-//  /* pre-condition */
-//  BI_ASSERT(as.size() == P);
-//
-//  typedef typename V1::value_type T1;
-//  const int lwsSize = lws.size();
-//
-//  typename sim_temp_vector<V1>::type lws1(lwsSize), Ws(lwsSize), alphas(P);
-//  typename sim_temp_vector<V2>::type as1(P), ps(lwsSize);
-//  T1 W;
-//
-//  /* weights */
-//  if (sort) {
-//    lws1 = lws;
-//    seq_elements(ps, 0);
-//    bi::sort_by_key(lws1, ps);
-//    bi::inclusive_scan_sum_expu(lws1, Ws);
-//  } else {
-//    bi::inclusive_scan_sum_expu(lws, Ws);
-//  }
-//  W = *(Ws.end() - 1); // sum of weights
-//  if (W > 0) {
-//    /* random numbers */
-//    rng.uniforms(alphas, 0.0, W);
-//
-//    /* sample */
-//    if (sort) {
-//      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
-//      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
-//    } else {
-//      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
-//    }
-//  } else {
-//    throw ParticleFilterDegeneratedException();
-//  }
-//
-//  /* post-condition */
-//  BI_ASSERT(max_reduce(as) < lws.size());
-//}
-
-template<class V1, class V2, class V3, class V4>
-void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    int P, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(as.size() == P);
-
-  typedef typename V1::value_type T1;
-  const int lwsSize = lws.size();
-
-  typename sim_temp_vector<V1>::type alphas(P);
-  typename sim_temp_vector<V2>::type as1(P);
-  T1 W;
-
-  /* weights */
-  if (sort) {
-    if (!sorted) {
-      lws1 = lws;
-      seq_elements(ps, 0);
-      bi::sort_by_key(lws1, ps);
-      bi::inclusive_scan_sum_expu(lws1, Ws);
-    }
-  } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
-  }
-  W = *(Ws.end() - 1); // sum of weights
-  if (W > 0) {
-    /* random numbers */
-    rng.uniforms(alphas, 0.0, W);
-
-    /* sample */
-    if (sort) {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
-      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
-    } else {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
-    }
-  } else {
-    throw ParticleFilterDegeneratedException();
-  }
-
-  /* post-condition */
-  BI_ASSERT(max_reduce(as) < lws.size());
+  ancestors(rng, lws, as, P, false, lws1, ps, Ws);
 }
 
 template<class V1, class V2, class V3, class V4>
 void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
     int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
     throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(as.size() == P);
-
-  typedef typename V1::value_type T1;
-  const int lwsSize = lws.size();
-
-  typename sim_temp_vector<V1>::type alphas(P);
-  typename sim_temp_vector<V2>::type as1(P);
-  T1 W;
-
-  /* weights */
-  if (sort) {
-    if (!sorted) {
-      lws1 = lws;
-      seq_elements(ps, 0);
-      bi::sort_by_key(lws1, ps);
-      bi::inclusive_scan_sum_expu(lws1, Ws);
-    }
-  } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
-  }
-  W = *(Ws.end() - 1); // sum of weights
-  if (W > 0) {
-    /* random numbers */
-    rng.uniforms(alphas, 0.0, W);
-
-    /* sample */
-    if (sort) {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as1.begin());
-      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
-    } else {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(), as.begin());
-    }
-  } else {
-    throw ParticleFilterDegeneratedException();
-  }
-
+  ancestors(rng, lws, as, P, sorted, lws1, ps, Ws);
   set_elements(subrange(as, k, 1), ka);
+}
 
-  /* post-condition */
-  BI_ASSERT(max_reduce(as) < lws.size());
+template<class V1, class V2, class V3, class V4>
+void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    int P, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    throw (ParticleFilterDegeneratedException) {
+  /* pre-conditions */
+  assert (V1::on_device == V2::on_device);
+  assert (V1::on_device == V3::on_device);
+  assert (V1::on_device == V4::on_device);
+
+  typedef typename boost::mpl::if_c<V1::on_device,
+      MultinomialResamplerGPU,
+      MultinomialResamplerHost>::type impl;
+  impl::ancestors(rng, lws, as, P, sort, sorted, lws1, ps, Ws);
 }
 
 template<class V1, class V2>

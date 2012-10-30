@@ -18,6 +18,10 @@
  * methods. <i>Journal of the Royal Statistical Society Series B</i>,
  * <b>2010</b>, 72, 269-302.
  *
+ * @anchor Bentley1979
+ * Bentley, J. L. & Saxe, J. B. Generating sorted lists of random numbers.
+ * <i>Carnegie Mellon University</i>, <b>1979</b>.
+ *
  * @anchor Gray2001
  * Gray, A. G. & Moore, A. W. `N-Body' Problems in Statistical
  * Learning. <i>Advances in Neural Information Processing Systems</i>,

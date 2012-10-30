@@ -277,6 +277,12 @@ public:
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 X);
+
+  /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
 };
 
 /**
@@ -295,6 +301,13 @@ public:
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 s);
+
+  /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
 };
 }
 
@@ -342,30 +355,10 @@ void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
 
 template<class V1, class V2>
 void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
-  /* pre-conditions */
-  BI_ASSERT(os.size() == as.size());
-
-  const int P = os.size();
-  typename sim_temp_vector<V1>::type keys(2*P), values(2*P);
-
-  /* keys will consist of ancestry in [0..P-1], and 0..P-1 in [P..2P-1],
-   * ensuring that all particle indices are represented */
-  thrust::copy(as.begin(), as.end(), keys.begin());
-  thrust::sequence(keys.begin() + P, keys.end());
-
-  /* values are 1 for indices originally from the ancestry, 0 for others */
-  thrust::fill(values.begin(), values.begin() + P, 1);
-  thrust::fill(values.begin() + P, values.end(), 0);
-
-  /* sort all that by key */
-  bi::sort_by_key(keys, values);
-
-  /* reduce by key to get final offspring counts */
-  thrust::reduce_by_key(keys.begin(), keys.end(), values.begin(),
-      keys.begin(), os.begin());
-
-  /* post-condition */
-  BI_ASSERT(thrust::reduce(os.begin(), os.end()) == P);
+  typedef typename boost::mpl::if_c<V1::on_device,
+      ResamplerGPU,
+      ResamplerHost>::type impl;
+  impl::ancestorsToOffspring(as, os);
 }
 
 template<class V1>

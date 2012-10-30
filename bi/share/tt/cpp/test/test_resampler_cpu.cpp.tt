@@ -44,6 +44,9 @@ int main(int argc, char* argv[]) {
   boost::mpi::environment env(argc, argv);
   #endif
   
+  /* NetCDF init */
+  NcError ncErr(NcError::verbose_fatal);
+  
   /* bi init */
   bi_init(THREADS);
 
@@ -57,7 +60,7 @@ int main(int argc, char* argv[]) {
   NcDim* PDim = out->add_dim("P", PS);
   NcDim* repDim = out->add_dim("rep", REPS);
 	  
-  NcVar* rmseVar = out->add_var("rmse", ncDouble, zDim, PDim, repDim);
+  NcVar* sqerrVar = out->add_var("sqerr", ncDouble, zDim, PDim, repDim);
   NcVar* time1Var = out->add_var("time1", ncInt, zDim, PDim, repDim);
   NcVar* time2Var = out->add_var("time2", ncInt, zDim, PDim, repDim);
   NcVar* time3Var = out->add_var("time3", ncInt, zDim, PDim, repDim);
@@ -76,9 +79,9 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   /* buffers for weight-sets and results */
-  typedef typename loc_vector<LOCATION,real>::type vector_type;
+  typedef typename loc_vector<LOCATION,real,-1,1>::type vector_type;
   typedef typename loc_matrix<LOCATION,real>::type matrix_type;
-  typedef typename loc_vector<LOCATION,int>::type int_vector_type;
+  typedef typename loc_vector<LOCATION,int,-1,1>::type int_vector_type;
   typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
   
   /* generate particles (all on host so weight sets match on host and device) */
@@ -88,7 +91,7 @@ int main(int argc, char* argv[]) {
   host_matrix<real> x(maxP*REPS, 1);  // particles
   host_matrix<real> lW(maxP, REPS); // log-weights
   host_matrix<int> times1(REPS, PS), times2(REPS, PS), times3(REPS, PS);
-  host_matrix<real> rmses(REPS, PS);
+  host_matrix<real> sqerrs(REPS, PS);
   host_vector<int> actualPs(PS);
   host_vector<int> zs(ZS);
 
@@ -105,7 +108,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;
   int z, p, rep, time1, time2, time3;
-  real rmse;
+  real sqerr;
   for (z = 0; z < ZS; ++z) {
     /* generate log-weights */
     if (z > 0) {
@@ -164,7 +167,7 @@ int main(int argc, char* argv[]) {
         time2 = timer.toc();
 
         //resam.permute(as);
-        //resam.ancestorsToOffspring(as, os);
+        resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
@@ -176,7 +179,7 @@ int main(int argc, char* argv[]) {
         time2 = timer.toc();
         
         //resam.permute(as);
-        //resam.ancestorsToOffspring(as, os);
+        resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% ELSE %]
@@ -188,14 +191,14 @@ int main(int argc, char* argv[]) {
         time2 = timer.toc();
         
         //resam.permute(as);
-        //resam.ancestorsToOffspring(as, os);
+        resam.ancestorsToOffspring(as, os);
         synchronize();
         time3 = timer.toc();
         [% END %]
         
-        //rmse = bi::sqrt(resam.error(lws, os));
+        sqerr = bi::sqrt(resam.error(lws, os));
         
-        rmses(rep, p) = rmse;
+        sqerrs(rep, p) = sqerr;
         times1(rep, p) = time1;
         times2(rep, p) = time2;
         times3(rep, p) = time3;
@@ -204,8 +207,8 @@ int main(int argc, char* argv[]) {
     
     /* output */
     if (out != NULL) {
-      rmseVar->set_cur(z, 0, 0);
-      rmseVar->put(rmses.buf(), 1, PS, REPS);
+      sqerrVar->set_cur(z, 0, 0);
+      sqerrVar->put(sqerrs.buf(), 1, PS, REPS);
       time1Var->set_cur(z, 0, 0);
       time1Var->put(times1.buf(), 1, PS, REPS);
       time2Var->set_cur(z, 0, 0);

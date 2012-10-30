@@ -238,10 +238,13 @@ void exp_elements(V1 x);
  *
  * @ingroup primitive_vector
  *
+ * @return The maximum element, the exponential of which is the normalising
+ * constant.
+ *
  * @see op_elements
  */
 template<class V1>
-void expu_elements(V1 x);
+typename V1::value_type expu_elements(V1 x);
 
 /**
  * Log all elements.
@@ -472,6 +475,9 @@ void sort_by_key(V1 keys, V2 values);
  * @param x The vector.
  * @param[out] X Result.
  *
+ * @return The maximum element, the exponential of which is the normalising
+ * constant.
+ *
  * On return, each element \f$y_i\f$, \f$i > 0\f$, of the output sequence
  * %equals \f$\sum_{j=0}^{i-1} \exp\left(x_i - \alpha\right)\f$, where
  * \f$\alpha = \max_k x_k\f$, and \f$y_0 = 0\f$.
@@ -479,7 +485,7 @@ void sort_by_key(V1 keys, V2 values);
  * NaN values do not contribute to the sum.
  */
 template<class V1, class V2>
-void exclusive_scan_sum_expu(const V1 x, V2 X);
+typename V1::value_type exclusive_scan_sum_expu(const V1 x, V2 X);
 
 /**
  * Sum-exp inclusive scan, unnormalised.
@@ -492,6 +498,9 @@ void exclusive_scan_sum_expu(const V1 x, V2 X);
  * @param x The vector.
  * @param[out] X Result.
  *
+ * @return The maximum element, the exponential of which is the normalising
+ * constant.
+ *
  * On return, each element \f$y_i\f$ of the output sequence %equals
  * \f$\sum_{j=0}^{i} \exp\left(x_i - \alpha\right)\f$, where
  * \f$\alpha = \max_k x_k\f$.
@@ -499,7 +508,7 @@ void exclusive_scan_sum_expu(const V1 x, V2 X);
  * NaN values do not contribute to the sum.
  */
 template<class V1, class V2>
-void inclusive_scan_sum_expu(const V1 x, V2 X);
+typename V1::value_type inclusive_scan_sum_expu(const V1 x, V2 X);
 
 /**
  * Gather.
@@ -725,11 +734,13 @@ inline void bi::exp_elements(V1 x) {
 }
 
 template<class V1>
-inline void bi::expu_elements(V1 x) {
+inline typename V1::value_type bi::expu_elements(V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
   op_elements(x, nan_minus_and_exp_functor<T1>(mx));
+
+  return mx;
 }
 
 template<class V1>
@@ -807,7 +818,7 @@ inline void bi::sort_by_key(V1 keys, V2 values) {
 }
 
 template<class V1, class V2>
-inline void bi::exclusive_scan_sum_expu(const V1 x, V2 X) {
+inline typename V1::value_type bi::exclusive_scan_sum_expu(const V1 x, V2 X) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
@@ -819,10 +830,11 @@ inline void bi::exclusive_scan_sum_expu(const V1 x, V2 X) {
     thrust::transform_exclusive_scan(x.begin(), x.end(), X.begin(),
         nan_minus_and_exp_functor<T1>(mx), 0, thrust::plus<T1>());
   }
+  return mx;
 }
 
 template<class V1, class V2>
-inline void bi::inclusive_scan_sum_expu(const V1 x, V2 X) {
+inline typename V1::value_type bi::inclusive_scan_sum_expu(const V1 x, V2 X) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
@@ -834,6 +846,7 @@ inline void bi::inclusive_scan_sum_expu(const V1 x, V2 X) {
     thrust::transform_inclusive_scan(x.begin(), x.end(), X.begin(),
         nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
   }
+  return mx;
 }
 
 template<class V1, class V2, class V3>
