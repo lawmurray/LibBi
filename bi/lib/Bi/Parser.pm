@@ -430,7 +430,9 @@ sub action {
         $self->error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
     }
     
-    # check dimension aliases on right
+    # check dimension aliases on right, noting that C<identifier> assumes
+    # that a symbol is a dimension alias if it can't recognise it as anything
+    # else
     my $alias;
     my $right_alias;
     my $right_aliases = $expr->get_aliases;
@@ -438,7 +440,7 @@ sub action {
         foreach $alias (@$aliases) {
             next RIGHT_ALIAS if ($alias eq $right_alias);
         }
-        $self->error("dimension alias '$right_alias' on the right has not been declared on the left");
+        $self->error("unrecognised name '$right_alias'");
     }
     
     my $offsets = [];
@@ -617,7 +619,8 @@ sub identifier {
     } elsif (defined($offsets) || defined($ranges)) {
         $self->error("no variable, constant or inline expression named '$name'");
     } else {
-        # assume at this stage that it's a dimension alias
+        # assume at this stage that it's a dimension alias, B<action> fixes
+        # later
         return new Bi::Expression::DimAlias($name)
     }
 }

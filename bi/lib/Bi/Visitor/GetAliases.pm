@@ -63,6 +63,8 @@ sub visit {
     
     if ($node->isa('Bi::Expression::Offset')) {
         Bi::Utility::push_unique($aliases, $node->get_alias);
+    } elsif ($node->isa('Bi::Expression::DimAlias')) {
+        Bi::Utility::push_unique($aliases, $node->get_alias);
     }
     
     return $node;
