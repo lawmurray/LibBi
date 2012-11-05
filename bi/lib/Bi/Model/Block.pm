@@ -84,7 +84,7 @@ sub new {
     map { assert($_->isa('Bi::Model::Action')) if DEBUG } @$actions;
     map { assert($_->isa('Bi::Model::Block')) if DEBUG } @$blocks;
 
-    $name = 'eval' unless defined($name); 
+    $name = 'eval_' unless defined($name); 
     $args = [] unless defined($args);
     $named_args = {} unless defined($named_args);
     $actions = [] unless defined($actions);
@@ -152,7 +152,7 @@ sub new_copy_block {
     my $class = shift;
     my $id = shift;
     
-    return $class->new($id, 'eval');
+    return $class->new($id, 'eval_');
 }
 
 =item B<get_id>

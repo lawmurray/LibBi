@@ -47,11 +47,11 @@ sub evaluate {
     bless $self, $class;
 
     my $observation_block = $model->get_block('observation')->clone($model);
-    $observation_block->set_name('eval');
+    $observation_block->set_name('eval_');
     $observation_block->set_commit(1);
     
     my $lookahead_observation_block = $model->get_block('lookahead_observation')->clone($model);
-    $lookahead_observation_block->set_name('eval');
+    $lookahead_observation_block->set_name('eval_');
     $lookahead_observation_block->set_commit(1);
     
     $model->accept($self, $model, $observation_block, $lookahead_observation_block);

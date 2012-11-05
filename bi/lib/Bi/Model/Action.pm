@@ -83,7 +83,7 @@ sub new {
         $args = $expr->get_args;
         $named_args = $expr->get_named_args;
     } else {
-        $name = 'eval';
+        $name = 'eval_';
         $args = [ $expr ];
         $named_args = {};
     }

@@ -152,7 +152,7 @@ sub process_block {
             die("don't know what to do with block '" . $block->get_name . "'\n");
         }
     } else {
-        $template = File::Spec->catfile('block', 'eval');
+        $template = File::Spec->catfile('block', 'eval_');
     }
     
     # block     
@@ -186,7 +186,7 @@ sub process_action {
     if (defined($action->get_name)) {
         $template = File::Spec->catfile('action',  lc($action->get_name));
     } else {
-        $template = File::Spec->catfile('action', 'eval');
+        $template = File::Spec->catfile('action', 'eval_');
     }
 
     $out = File::Spec->catfile('src', 'model', 'action', 'Action' . $action->get_id);

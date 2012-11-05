@@ -48,7 +48,7 @@ sub validate {
     my $x = $self->get_named_arg('x');
     $self->set_dims([ $x->get_dims->[0] ]);
 
-    $self->set_parent('eval');
+    $self->set_parent('matrix_');
     $self->set_is_matrix(1);
     $self->set_can_nest(1);
 }

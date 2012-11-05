@@ -47,11 +47,11 @@ sub evaluate {
     bless $self, $class;
 
     my $parameter_block = $model->get_block('parameter')->clone($model);
-    $parameter_block->set_name('eval');
+    $parameter_block->set_name('eval_');
     $parameter_block->set_commit(1);
     
     my $proposal_parameter_block = $model->get_block('proposal_parameter')->clone($model);
-    $proposal_parameter_block->set_name('eval');
+    $proposal_parameter_block->set_name('eval_');
     $proposal_parameter_block->set_commit(1);
     
     $model->accept($self, $model, $parameter_block, $proposal_parameter_block);

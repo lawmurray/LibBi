@@ -11,7 +11,7 @@
 [% create_action_typetree(block) %]
 
 /**
- * Block: eval.
+ * Block: [% block.get_name %].
  */
 class [% class_name %] {
 public:

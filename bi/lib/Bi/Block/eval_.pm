@@ -1,10 +1,10 @@
 =head1 NAME
 
-eval - generic block.
+eval- - scalar expression block.
 
 =cut
 
-package Bi::Block::eval;
+package Bi::Block::eval_;
 
 use base 'Bi::Model::Block';
 use warnings;

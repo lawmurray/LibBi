@@ -1,22 +1,20 @@
 =head1 NAME
 
-eval - generic update action.
+eval_ - generic update action.
 
 =head1 SYNOPSIS
 
     x <- some_expression
-    x <- eval(some_expression)
-    x <- eval(expr = some_expression)
 
 =head1 DESCRIPTION
 
-An C<eval> action sets a variable using an expression. It need not be used
+An C<eval_> action sets a variable using an expression. It need not be used
 explicitly: any expression not explicitly enclosed by a named action is
-evaluated using C<eval>.
+evaluated using C<eval_>.
 
 =cut
 
-package Bi::Action::eval;
+package Bi::Action::eval_;
 
 use base 'Bi::Model::Action';
 use warnings;
@@ -48,7 +46,7 @@ sub validate {
     
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('<-');
-    $self->set_parent('eval');
+    $self->set_parent('eval_');
     $self->set_can_combine(1);
     $self->set_can_nest(1);
     $self->set_unroll_args(0);

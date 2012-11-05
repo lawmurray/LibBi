@@ -50,11 +50,11 @@ sub evaluate {
     bless $self, $class;
 
     my $initial_block = $model->get_block('initial')->clone($model);
-    $initial_block->set_name('eval');
+    $initial_block->set_name('eval_');
     $initial_block->set_commit(1);
     
     my $proposal_initial_block = $model->get_block('proposal_initial')->clone($model);
-    $proposal_initial_block->set_name('eval');
+    $proposal_initial_block->set_name('eval_');
     $proposal_initial_block->set_commit(1);
         
     # create params to hold initial conditions
