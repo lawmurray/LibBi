@@ -1,0 +1,39 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-
+x = action.get_named_arg('x');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_matrix_function('simulate') %]
+  [% declare_action_dynamic_matrix_function('simulate') %]
+};
+
+#include "bi/math/view.hpp"
+
+[% sig_action_static_matrix_function('simulate') %] {
+  BOOST_AUTO(a, pax.template fetch<Var[% x.get_var.get_name %]>(s, p));
+  BOOST_AUTO(b, x.template fetch<target_type>(s, p));
+  
+  bi::inclusive_scan(a, b);
+}
+
+[% sig_action_dynamic_matrix_function('simulate') %] {  
+  simulates(s, p, pax, x);
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

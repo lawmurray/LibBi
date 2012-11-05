@@ -67,7 +67,7 @@ sub validate {
         $self->set_dims([ $A->get_dims->[0] ]);
     }
 
-    $self->set_parent('gemv_');
+    $self->set_parent('eval');
     $self->set_is_matrix(1);
     $self->set_can_nest(1);
 }

@@ -90,6 +90,12 @@ CUDA_FUNC_BOTH T min(const T x, const T y);
 template<class M1, class V1, class V2>
 CUDA_FUNC_BOTH void gemv(const M1 A, const V1 x, V2 y);
 
+template<class V1, class V2>
+CUDA_FUNC_BOTH void inclusive_scan(const V1 x, V2 y);
+
+template<class V1, class V2>
+CUDA_FUNC_BOTH void exclusive_scan(const V1 x, V2 y);
+
 }
 
 inline double bi::abs(const double x) {
@@ -356,6 +362,41 @@ inline void bi::gemv(const M1 A, const V1 x, V2 y) {
     for (j = 0; j < A.size2(); ++j) {
       val += A(i,j)*x(j);
     }
+    y(i) = val;
+  }
+}
+
+template<class V1, class V2>
+inline void bi::inclusive_scan(const V1 x, V2 y) {
+  /* pre-condition */
+  BI_ASSERT(x.size() == y.size());
+
+  typedef typename V2::value_type T2;
+
+  ///@todo Improve numerically upon naive implementation
+  int i;
+  T2 val = static_cast<T2>(0.0);
+
+  for (i = 0; i < y.size(); ++i) {
+    val += x(i);
+    y(i) = val;
+  }
+}
+
+template<class V1, class V2>
+inline void bi::exclusive_scan(const V1 x, V2 y) {
+  /* pre-condition */
+  BI_ASSERT(x.size() == y.size());
+
+  typedef typename V2::value_type T2;
+
+  ///@todo Improve numerically upon naive implementation
+  int i;
+  T2 val = static_cast<T2>(0.0);
+
+  y(0) = val;
+  for (i = 1; i < y.size(); ++i) {
+    val += x(i - 1);
     y(i) = val;
   }
 }
