@@ -422,6 +422,7 @@ sub action {
         $self->error("no such variable '$name'");
     }
     
+    # check dimension aliases on left
     my $num_aliases = scalar(@$aliases);
     my $num_dims = $var->num_dims;
     if ($num_aliases > $num_dims) {
@@ -429,10 +430,20 @@ sub action {
         $self->error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
     }
     
-    my $dim;
+    # check dimension aliases on right
+    my $alias;
+    my $right_alias;
+    my $right_aliases = $expr->get_aliases;
+    RIGHT_ALIAS: foreach $right_alias (@$right_aliases) {
+        foreach $alias (@$aliases) {
+            next RIGHT_ALIAS if ($alias eq $right_alias);
+        }
+        $self->error("dimension alias '$right_alias' on the right has not been declared on the left");
+    }
+    
     my $offsets = [];
-    foreach $dim (@$aliases) {
-        push(@$offsets, Bi::Expression::Offset->new($dim, 0));
+    foreach $alias (@$aliases) {
+        push(@$offsets, Bi::Expression::Offset->new($alias, 0));
     }
     my $target = Bi::Expression::VarIdentifier->new($var, $offsets, $ranges);
     

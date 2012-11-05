@@ -49,7 +49,7 @@ sub equals {
         
         my $i = 0;
         while ($equal && $i < $n1) {
-            $equal = $$list1[$i]->equals($$list2[$i]);
+            $equal = _equals($$list1[$i], $$list2[$i]);
             ++$i;
         }
     }
@@ -71,7 +71,7 @@ sub contains {
 
     my $item1;
     foreach $item1 (@$list) {
-        if ($item->equals($item1)) {
+        if (_equals($item, $item1)) {
             return 1;
         }
     }
@@ -92,7 +92,7 @@ sub find {
     assert(defined($item)) if DEBUG;    
 
     for (my $i = 0; $i < @$list; ++$i) {
-        if ($item->equals($list->[$i])) {
+        if (_equals($item, $list->[$i])) {
             return $i;
         }
     }
@@ -184,6 +184,22 @@ sub set_intersect {
     }
     
     return $result;
+}
+
+=item B<_equals>(I<o1>, I<o2>)
+
+Are I<o1> and I<o2> equal?
+
+=cut
+sub _equals {
+    my $o1 = shift;
+    my $o2 = shift;
+    
+    if (ref($o1) && ref($o2)) {
+        return $o1->equals($o2);
+    } else {
+        return $o1 eq $o2;
+    }
 }
 
 1;

@@ -33,7 +33,7 @@ The vector over which to scan.
 our $ACTION_ARGS = [
   {
     name => 'x',
-    positional => 0,
+    positional => 1,
     mandatory => 1
   }  
 ];

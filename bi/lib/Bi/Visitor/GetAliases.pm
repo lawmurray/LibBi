@@ -43,12 +43,12 @@ sub evaluate {
     my $expr = shift;
     
     my $self = new Bi::Visitor; 
-    $self->{_aliases} = [];
     bless $self, $class;
     
-    $expr->accept($self);
+    my $aliases = [];
+    $expr->accept($self, $aliases);
     
-    return $self->{_aliases};
+    return $aliases;
 }
 
 =item B<visit>(I<node>)
@@ -59,9 +59,10 @@ Visit node.
 sub visit {
     my $self = shift;
     my $node = shift;
+    my $aliases = shift;
     
     if ($node->isa('Bi::Expression::Offset')) {
-        Bi::Utility::push_unique($self->{_aliases}, $node->get_alias);
+        Bi::Utility::push_unique($aliases, $node->get_alias);
     }
     
     return $node;

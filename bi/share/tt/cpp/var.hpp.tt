@@ -16,8 +16,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef GENBI_[% class_name | upper %]_HPP
-#define GENBI_[% class_name | upper %]_HPP
+#ifndef GENBI_[% class_name %]_HPP [%# don't upper class_name here, as causes clash when variable names differ by case only %]
+#define GENBI_[% class_name %]_HPP
 
 #include "bi/model/Var.hpp"
 #include "bi/cuda/cuda.hpp"
