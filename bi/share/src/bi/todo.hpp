@@ -85,4 +85,7 @@
  * particular process, then delete the file when that process is done with it.
  * If another process wants to use it, rather than waiting, it could simply
  * create a new directory with another name and work from there.
+ *
+ * @todo Allowing arbitrary indexing expressions on the right, not just
+ * expressions of type k, k + n and k - n.
  */
