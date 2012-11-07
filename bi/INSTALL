@@ -1,5 +1,10 @@
-Bi INSTALL file
+Bi Installation Guide
 ------------------------------------------------------------------------------
+
+* Requirements
+* Installation on Ubuntu Linux
+* Installation on Mac OS X
+
 
 Requirements
 ------------------------------------------------------------------------------
@@ -50,7 +55,39 @@ models:
   * pdflatex.
 
 
-Installation on Mac
+Installation on Ubuntu Linux
+------------------------------------------------------------------------------
+
+Install required packages:
+
+sudo apt-get install liblapack-dev libblas-dev libgsl0-dev gsl-bin \
+    octave-gsl octave-statistics libqrupdate-dev libboost-all-dev \
+    libnetcdf-dev ncview netcdf-bin octave-octcdf doxygen graphviz dot2tex \
+    latex2html libtool libgsl0-dbg
+
+Download Thrust from thrust.github.com, unzip and move the thrust/ directory
+to /usr/local/include/thrust.
+
+Install Perl modules:
+
+    sudo cpan
+
+then within cpan:
+
+    install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
+       Parse::Slurp File::ShareDir Getopt::ArgvFile
+
+Bi can then be run with:
+
+    /path/to/bi/script/bi ...
+
+You can add /path/to/bi/script to your PATH variable in ~/.bashrf also, in
+which case in future you can just use the following from any directory:
+
+    bi sample @sample.conf
+
+
+Installation on Mac OS X
 ------------------------------------------------------------------------------
 
 Firstly fire up Xcode and use Xcode Preferences and install "Command Line
@@ -61,33 +98,37 @@ Install MacPorts from macports.org.
 The following seems necessary on Mountain Lion or some MacPorts packages don't
 install:
 
-sudo xcodebuild -license
+    sudo xcodebuild -license
 
 Apparently it might be Mountain Lion specific, but probably won't hurt on
 Lion.
 
 Now install required packages from MacPorts:
 
-sudo port install autoconf automake netcdf netcdf-cxx qrupdate atlas boost gsl
+    sudo port install autoconf automake netcdf netcdf-cxx qrupdate atlas \
+        boost gsl
 
 This can take over an hour!
 
 To ensure that Bi can find the gfortran libraries, symlink them into the
 /opt/local/lib directory as follows:
 
-sudo ln -s /opt/local/lib/gcc45/libgfortran.a /opt/local/lib/.
-sudo ln -s /opt/local/lib/gcc45/libgfortran.dylib /opt/local/lib/.
+    sudo ln -s /opt/local/lib/gcc45/libgfortran.a /opt/local/lib/.
+    sudo ln -s /opt/local/lib/gcc45/libgfortran.dylib /opt/local/lib/.
 
 Download Thrust from thrust.github.com, unzip and move the thrust/ directory
 to /opt/local/include/:
 
-sudo mv thrust /opt/local/include/.
+    sudo mv thrust /opt/local/include/.
 
 Now install the required Perl modules:
 
-sudo cpan
-install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
-    Parse::Slurp File::ShareDir Getopt::ArgvFile
+    sudo cpan
+
+then within cpan:
+
+    install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
+       Parse::Slurp File::ShareDir Getopt::ArgvFile
 
 It is important that you do this *after* installing the MacPorts dependencies
 above, otherwise the modules will be installed to the system default perl, not
@@ -96,15 +137,15 @@ MacPorts' perl.
 Now, set up the environment for Bi to compile its client programs. Firstly,
 add the following to ~/.profile
 
-export LDFLAGS='-L/opt/local/lib'
-export CPPFLAGS='-I/opt/local/include'
-export LD_LIBRARY_PATH=/opt/local/lib
-export LD_INCLUDE_PATH=/opt/local/include
+    export LDFLAGS='-L/opt/local/lib'
+    export CPPFLAGS='-I/opt/local/include'
+    export LD_LIBRARY_PATH=/opt/local/lib
+    export LD_INCLUDE_PATH=/opt/local/include
 
 Bi needs to use the MacPorts g++ compiler in /opt/local/bin, not the system
 default g++ in /usr/bin. To do this, set the following environment variable:
 
-export CXX=/opt/local/bin/g++-mp-*
+    export CXX=/opt/local/bin/g++-mp-*
 
 You can put this in ~/.profile, although keep in mind that *any* configure
 scripts that you run will then use this g++, not just Bi. This mightn't be a
@@ -116,9 +157,9 @@ are set.
 
 Bi can then be run with:
 
-/path/to/bi/script/bi ...
+    /path/to/bi/script/bi ...
 
 You can add /path/to/bi/script to your PATH variable in ~/.profile also, in
 which case in future you can just use the following from any directory:
 
-bi sample @sample.conf
+    bi sample @sample.conf
