@@ -73,6 +73,7 @@ sub visit {
             # create new action from subexpression
             $action = new Bi::Model::Action($model->next_action_id,
                     undef, undef, $node);
+                    
             if (!$action->can_nest) {
                 die("action '" . $action->get_name . "' cannot be nested\n");
             }
@@ -101,9 +102,9 @@ sub visit {
         $block->set_commit(1);
         
         $node->sink_actions($model);
-        $node->unshift_block($block);
-        
         @$actions = ();
+        $block->accept($self, $model, $actions);
+        $node->unshift_block($block);
     } elsif ($node->isa('Bi::Model::Action')) {
         if ($node->unroll_args) {
             # write arguments to intermediate variables first
