@@ -392,12 +392,12 @@ inline void bi::exclusive_scan(const V1 x, V2 y) {
 
   ///@todo Improve numerically upon naive implementation
   int i;
-  T2 val = static_cast<T2>(0.0);
+  T2 val = static_cast<T2>(0.0), next;
 
-  y(0) = val;
-  for (i = 1; i < y.size(); ++i) {
-    val += x(i - 1);
+  for (i = 0; i < y.size(); ++i) {
+    next = x(i); // written this way in case x and y are same vector
     y(i) = val;
+    val += next;
   }
 }
 

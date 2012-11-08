@@ -1,0 +1,71 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+[%-
+A = block.get_action.get_named_arg('A');
+x = block.get_action.get_named_arg('x');
+target = block.get_action.get_target;
+%]
+
+/**
+ * Block: [% block.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
+
+  [% declare_block_sparse_static_function('simulate') %]
+  [% declare_block_sparse_static_function('sample') %]
+  [% declare_block_sparse_static_function('logdensity') %]  
+  [% declare_block_sparse_static_function('maxlogdensity') %]  
+};
+
+#include "bi/math/operation.hpp"
+
+[% sig_block_static_function('simulate') %] {
+  BOOST_AUTO(A, reshape([% get_var(A) %], [% A.get_dims.0.get_size %], [% A.get_dims.1.get_size %]));
+  BOOST_AUTO(X, [% get_var(x) %]);
+  BOOST_AUTO(Y, [% get_var(target) %]);
+
+  [% IF x.is_common && !y.is_common %]
+  bi::gemv(1.0, A, vec(X), 0.0, row(Y, 0));
+  set_rows(rows(1, Y.size1() - 1), row(Y, 0));
+  [% ELSE %]
+  bi::gemm(1.0, X, A, 0.0, Y, 'N', 'T');
+  [% END %]
+}
+
+[% std_block_static_function('sample') %]
+[% std_block_static_function('logdensity') %]
+[% std_block_static_function('maxlogdensity') %]
+
+[% std_block_dynamic_function('simulate') %]
+[% std_block_dynamic_function('sample') %]
+[% std_block_dynamic_function('logdensity') %]
+[% std_block_dynamic_function('maxlogdensity') %]
+
+[% std_block_sparse_static_function('simulate') %]
+[% std_block_sparse_static_function('sample') %]
+[% std_block_sparse_static_function('logdensity') %]
+[% std_block_sparse_static_function('maxlogdensity') %]
+
+[% PROCESS 'block/misc/footer.hpp.tt' %]

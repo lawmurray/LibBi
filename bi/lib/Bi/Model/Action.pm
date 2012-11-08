@@ -100,6 +100,7 @@ sub new {
     $self->{_is_inplace} = 0;
     $self->{_can_nest} = 0;
     $self->{_unroll_args} = 1;
+    $self->{_unroll_target} = 0;
     $self->{_read_vars} = [];
     $self->{_write_vars} = [];
     $self->{_inplace_vars} = [];
@@ -174,6 +175,7 @@ sub clone {
     $clone->{_can_combine} = $self->can_combine;
     $clone->{_is_inplace} = $self->is_inplace;
     $clone->{_can_nest} = $self->can_nest;
+    $clone->{_unroll_target} = $self->unroll_target;
     $clone->{_unroll_args} = $self->unroll_args;
     $clone->{_read_vars} = [ @{$self->get_read_vars} ];
     $clone->{_write_vars} = [ @{$self->get_write_vars} ];
@@ -322,6 +324,27 @@ sub set_is_matrix {
     my $self = shift;
     my $on = shift;
     $self->{_is_matrix} = $on;
+}
+
+=item B<unroll_target>
+
+Should the target of the action be unrolled?
+
+=cut
+sub unroll_target {
+    my $self = shift;
+    return $self->{_unroll_target};
+}
+
+=item B<set_unroll_target>(I<on>)
+
+Should the target of the action be unrolled?
+
+=cut
+sub set_unroll_target {
+    my $self = shift;
+    my $on = shift;
+    $self->{_unroll_target} = $on;
 }
 
 =item B<unroll_args>

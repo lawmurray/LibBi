@@ -67,9 +67,16 @@ sub validate {
         $self->set_dims([ $A->get_dims->[0] ]);
     }
 
-    $self->set_parent('matrix_');
+    if ($A->is_common) {
+        $self->set_parent('common_gemv_');
+        $self->set_can_combine(0);
+    } else {
+        $self->set_parent('matrix_');
+        $self->set_can_combine(1);
+    }
     $self->set_is_matrix(1);
     $self->set_can_nest(1);
+    $self->set_unroll_target(1);
 }
 
 1;

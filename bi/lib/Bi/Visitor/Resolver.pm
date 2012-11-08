@@ -102,13 +102,18 @@ sub visit {
             
             # an action only conflicts with itself if it is not an inplace
             # action, and reads from the same variable to which it writes,
-            # with nonzero offsets along the dimensions of that variable
+            # with nonzero offsets along the dimensions of that variable...
             foreach $ref (@{$node->get_vars}) {
                 if ($ref->get_var->equals($node->get_target->get_var) &&
                         !$ref->no_offset) {
                     push_unique($sub_conflicts, $node->get_var);
                     last;
                 }
+            }
+            
+            # ...or if it marks itself as such
+            if ($node->unroll_target) {
+                push_unique($sub_conflicts, $node->get_target->get_var);
             }
         }
 

@@ -14,7 +14,7 @@ target = block.get_action.get_target;
 [%-PROCESS block/misc/header.hpp.tt-%]
 
 /**
- * Block: std_.
+ * Block: [% block.get_name %].
  */
 class [% class_name %] {
 public:
