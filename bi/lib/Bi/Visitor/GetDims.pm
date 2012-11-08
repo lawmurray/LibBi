@@ -67,6 +67,8 @@ sub visit {
 	        $sub_dims = $node->get_var->get_dims;
     	    @$dims = @$sub_dims;
     	}
+    } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
+        $node->get_inline->accept($self, $dims);
     } elsif ($node->isa('Bi::Model::Action')) {
         $sub_dims = $node->get_dims;
         @$dims = @$sub_dims;

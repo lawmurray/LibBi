@@ -74,15 +74,6 @@ sub get_inline {
     return $self->{_inline};
 }
 
-=item B<num_dims>
-
-Get the dimensionality of the expression.
-
-=cut
-sub num_dims {
-    return 0;
-}
-
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
