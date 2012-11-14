@@ -272,10 +272,14 @@ inline void bi::Forcer<IO1,CL>::update(State<B,L>& s) {
 
     in->mask();
     in->read(F_VAR, s.get(F_VAR));
+
+    cache.write(state.p1, s.get(F_VAR));
+
     if (in->isValid()) {
       in->next();
+      ++state.p2;
     }
-    cache.write(state.p1, s.get(F_VAR));
+
   }
   ++state.p1;
 

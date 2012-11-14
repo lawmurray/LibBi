@@ -332,6 +332,7 @@ inline void bi::Observer<IO1,CL>::update(State<B,L>& s) {
     cache.write(state.p1, s.get(OY_VAR));
     maskCache.set(state.p1, in->getMask(O_VAR));
     maskHostCache.set(state.p1, in->getMask(O_VAR));
+
     if (in->isValid()) {
       in->next();
       ++state.p2;
