@@ -28,7 +28,7 @@ namespace bi {
  * pooled_allocator to reuse allocated buffers, as device memory allocations
  * can be slow.
  */
-template<class T, int size_value = -1, int inc_value = -1>
+template<class T, int size_value = -1, int inc_value = 1>
 struct temp_gpu_vector {
   /**
    * @internal

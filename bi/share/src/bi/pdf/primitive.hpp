@@ -139,11 +139,11 @@ void bi::gaussian_densities(const M1 Z, const T1 logZ, V1 p,
 
   if (clear) {
     dot_rows(Z, p);
-    op_elements(p, gaussian_density_functor<T2>(logZ));
+    op_elements(p, gaussian_density_functor<T2>(logZ), p);
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     dot_rows(Z, p1);
-    op_elements(p1, p, gaussian_density_update_functor<T2>(logZ));
+    op_elements(p1, p, p, gaussian_density_update_functor<T2>(logZ));
   }
 }
 
@@ -157,11 +157,11 @@ void bi::gaussian_log_densities(const M1 Z, const T1 logZ, V1 p,
 
   if (clear) {
     dot_rows(Z, p);
-    op_elements(p, gaussian_log_density_functor<T2>(logZ));
+    op_elements(p, p, gaussian_log_density_functor<T2>(logZ));
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     dot_rows(Z, p1);
-    op_elements(p1, p, gaussian_log_density_update_functor<T2>(logZ));
+    op_elements(p1, p, p, gaussian_log_density_update_functor<T2>(logZ));
   }
 }
 
@@ -171,13 +171,13 @@ void bi::gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), gamma_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), gamma_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
     prod_columns(Z, p);
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     prod_columns(Z, p1);
-    mul_elements(p, p1);
+    mul_elements(p, p1, p);
   }
 }
 
@@ -187,13 +187,13 @@ void bi::gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), gamma_log_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), gamma_log_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
     sum_columns(Z, p);
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     sum_columns(Z, p1);
-    add_elements(p, p1);
+    add_elements(p, p1, p);
   }
 }
 
@@ -203,13 +203,13 @@ void bi::inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), inverse_gamma_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), inverse_gamma_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
     prod_columns(Z, p);
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     prod_columns(Z, p1);
-    mul_elements(p, p1);
+    mul_elements(p, p1, p);
   }
 }
 
@@ -219,13 +219,13 @@ void bi::inverse_gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), inverse_gamma_log_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), inverse_gamma_log_density_functor<T1>(alpha, beta, logZ));
   if (clear) {
     sum_columns(Z, p);
   } else {
     typename sim_temp_vector<V1>::type p1(p.size());
     sum_columns(Z, p1);
-    add_elements(p, p1);
+    add_elements(p, p1, p);
   }
 }
 

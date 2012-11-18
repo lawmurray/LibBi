@@ -49,4 +49,11 @@ void bi::RejectionResamplerHost::ancestors(Random& rng, const V1 lws,
   }
 }
 
+template<class V1, class V2>
+void bi::RejectionResamplerHost::ancestorsPermute(Random& rng, const V1 lws,
+    V2 as, const typename V1::value_type maxLogWeight) {
+  ancestors(rng, lws, as, maxLogWeight);
+  permute(as);
+}
+
 #endif

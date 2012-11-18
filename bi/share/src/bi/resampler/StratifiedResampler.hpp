@@ -22,20 +22,22 @@ namespace bi {
  * Determine number of offspring for each particle for StratifiedResampler.
  */
 template<class T>
-struct resample_offspring : public std::unary_function<T,int> {
-  const T a, W;
-  const int n;
+struct resample_cumulative_offspring : public std::unary_function<T,int> {
+  const T a, W, n;
 
   /**
    * Constructor.
    *
-   * @param a Offset into strata.
+   * @param a Relative offset into strata (between 0 and 1).
    * @param W Sum of weights.
    * @param n Number of samples to draw.
    */
-  CUDA_FUNC_HOST resample_offspring(const T a, const T W, const int n) :
-      a(a), W(W), n(n) {
-    //
+  CUDA_FUNC_HOST resample_cumulative_offspring(const T a, const T W,
+      const int n) : a(a), W(W), n(n) {
+    /* pre-condition */
+    BI_ASSERT(a >= 0.0 && a <= 1.0);
+    BI_ASSERT(W > 0.0);
+    BI_ASSERT(n > 0);
   }
 
   /**
@@ -43,14 +45,10 @@ struct resample_offspring : public std::unary_function<T,int> {
    *
    * @param Ws Inclusive prefix sum of weights for this index.
    *
-   * @return Number of offspring for particle at this index.
+   * @return Cumulative offspring for particle this index.
    */
   CUDA_FUNC_BOTH int operator()(const T Ws) {
-    if (W > BI_REAL(0.0) && Ws > BI_REAL(0.0)) {
-      return static_cast<int>(Ws/W*n - a + BI_REAL(1.0));
-    } else {
-      return 0;
-    }
+    return bi::min(n, static_cast<int>(Ws/W*n - a + static_cast<T>(1.0)));
   }
 };
 
@@ -126,6 +124,23 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   /**
+   * @copydoc concept::Resampler::cumulativeoOffspring
+   */
+  template<class V1, class V2>
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int P)
+      throw (ParticleFilterDegeneratedException);
+
+  template<class V1, class V2, class V3, class V4>
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
+      int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
+      throw (ParticleFilterDegeneratedException);
+
+  template<class V1, class V2, class V3, class V4>
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
+      bool sorted, V3 lws1, V4 ps, V3 Ws)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
    * @copydoc concept::Resampler::ancestors
    */
   template<class V1, class V2>
@@ -165,7 +180,6 @@ protected:
 #include "thrust/scan.h"
 #include "thrust/transform_scan.h"
 #include "thrust/for_each.h"
-#include "thrust/adjacent_difference.h"
 
 template<class V1, class V2, class O1>
 void bi::StratifiedResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
@@ -174,11 +188,10 @@ void bi::StratifiedResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
   BI_ASSERT(lws.size() == as.size());
 
   const int P = lws.size();
-  typename sim_temp_vector<V2>::type os(P);
+  typename sim_temp_vector<V2>::type Os(P);
 
-  offspring(rng, lws, os, P);
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, lws, Os, P);
+  cumulativeOffspringToAncestorsPermute(Os, as);
   lws.clear();
   copy(as, s);
 }
@@ -194,7 +207,7 @@ void bi::StratifiedResampler::cond_resample(Random& rng, const int ka,
   BI_ASSERT(k == 0 && ka == 0);
 
   const int P = lws.size();
-  typename sim_temp_vector<V2>::type os(P);
+  typename sim_temp_vector<V2>::type Os(P);
 
   int P2;
   if (!sort) {
@@ -206,10 +219,8 @@ void bi::StratifiedResampler::cond_resample(Random& rng, const int ka,
   typename sim_temp_vector<V1>::type lws1(P2), Ws(P2);
   typename sim_temp_vector<V2>::type ps(P2);
 
-  offspring(rng, lws, os, P, ka, false, lws1, ps, Ws);
-  offspringToAncestors(os, as);
-  permute(as);
-
+  cumulativeOffspring(rng, lws, Os, P, ka, false, lws1, ps, Ws);
+  cumulativeOffspringToAncestorsPermute(Os, as);
   BI_ASSERT(*(as.begin() + k) == ka);
   copy(as, s);
   lws.clear();
@@ -223,11 +234,10 @@ void bi::StratifiedResampler::resample(Random& rng, const V1 qlws, V2 lws,
 
   /* typically faster on host, so copy to there */
   const int P = lws.size();
-  typename sim_temp_vector<V3>::type os(P);
+  typename sim_temp_vector<V3>::type Os(P);
 
-  offspring(rng, qlws, os, P);
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, qlws, Os, P);
+  cumulativeOffspringToAncestorsPermute(Os, as);
   correct(as, qlws, lws);
   copy(as, s);
 }
@@ -241,12 +251,11 @@ void bi::StratifiedResampler::resample(Random& rng, const int a,
 
   /* typically faster on host, so copy to there */
   const int P = lws.size();
-  typename sim_temp_vector<V3>::type os(P);
+  typename sim_temp_vector<V3>::type Os(P);
 
-  offspring(rng, qlws, os, P - 1);
-  ++os[a];
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, qlws, Os, P - 1);
+  addscal_elements(subrange(Os, a, Os.size() - a), 1);
+  cumulativeOffspringToAncestorsPermute(Os, as);
   correct(as, qlws, lws);
   copy(as, s);
 }
@@ -258,36 +267,39 @@ void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
   BI_ASSERT(lws.size() == os.size());
 
   typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
 
   const int P = lws.size();
-  typename sim_temp_vector<V1>::type lws1(P), Ws(P);
-  typename sim_temp_vector<V2>::type Os(P), ps(P);
-  T1 W, a;
-  lws1 = lws;
 
   if (sort) {
+    vector_type lws1(P), Ws(P);
+    int_vector_type ps(P), Os(P), temp(P);
+
+    lws1 = lws;
     seq_elements(ps, 0);
     bi::sort_by_key(lws1, ps);
-  }
-  bi::inclusive_scan_sum_expu(lws1, Ws);
+    sumexpu_inclusive_scan(lws1, Ws);
 
-  W = *(Ws.end() - 1); // sum of weights
-  if (W > 0) {
-    a = rng.uniform(0.0, 1.0); // offset into strata
-    thrust::transform(Ws.begin(), Ws.end(), Os.begin(), resample_offspring<T1>(a, W, n));
-    thrust::adjacent_difference(Os.begin(), Os.end(), os.begin());
-    if (sort) {
-      typename sim_temp_vector<V2>::type temp(P);
+    T1 W = *(Ws.end() - 1); // sum of weights
+    if (W > 0) {
+      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+      bi::adjacent_difference(Os, os);
       temp = os;
-      bi::scatter(temp,ps,os);
-    }
+      bi::scatter(temp, ps, os);
 
-    #ifndef NDEBUG
-    int m = thrust::reduce(os.begin(), os.end());
-    BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
-    #endif
+      #ifndef NDEBUG
+      int m = sum_reduce(os);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
   } else {
-    throw ParticleFilterDegeneratedException();
+    int_vector_type Os(P);
+    cumulativeOffspring(rng, lws, Os, n);
+    bi::adjacent_difference(Os, os);
   }
 }
 
@@ -299,93 +311,210 @@ void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
   BI_ASSERT(lws.size() == os.size());
 
   typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
 
   const int P = lws.size();
-  typename sim_temp_vector<V2>::type Os(P);
-  T1 W, a;
 
   if (sort) {
+    int_vector_type Os(P), temp(P);
+
     if (!sorted) {
       lws1 = lws;
       seq_elements(ps, 0);
       bi::sort_by_key(lws1, ps);
-      bi::inclusive_scan_sum_expu(lws1, Ws);
+      sumexpu_inclusive_scan(lws1, Ws);
     }
-  } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
-  }
 
-  W = *(Ws.end() - 1); // sum of weights
-  if (W > 0) {
-    a = rng.uniform(0.0, 1.0); // offset into strata
-    thrust::transform(Ws.begin(), Ws.end(), Os.begin(), resample_offspring<T1>(a, W, n));
-    thrust::adjacent_difference(Os.begin(), Os.end(), os.begin());
-    if (sort) {
-      typename sim_temp_vector<V2>::type temp(P);
+    T1 W = *(Ws.end() - 1); // sum of weights
+    if (W > 0) {
+      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+      bi::adjacent_difference(Os, os);
       temp = os;
-      bi::scatter(temp,ps,os);
-    }
+      bi::scatter(temp, ps, os);
 
-    #ifndef NDEBUG
-    int m = thrust::reduce(os.begin(), os.end());
-    BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
-    #endif
+      #ifndef NDEBUG
+      int m = sum_reduce(os);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
   } else {
-    throw ParticleFilterDegeneratedException();
+    int_vector_type Os(P);
+    cumulativeOffspring(rng, lws, Os, n, sorted, lws1, ps, Ws);
+    bi::adjacent_difference(Os, os);
   }
 }
 
-// offspring for conditional SMC. May only work if ka = 0.
 template<class V1, class V2, class V3, class V4>
 void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
     throw (ParticleFilterDegeneratedException) {
+  /// @todo May only work if ka == 0
+
   /* pre-condition */
   BI_ASSERT(lws.size() == os.size());
   BI_ASSERT(ka >= 0 && ka < lws.size());
 
   typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
 
   const int P = lws.size();
-  typename sim_temp_vector<V2>::type Os(P);
-  T1 W, a;
 
   if (sort) {
+    int_vector_type Os(P), temp(P);
+
     if (!sorted) {
       lws1 = lws;
       seq_elements(ps, 0);
       bi::sort_by_key(lws1, ps);
-      bi::inclusive_scan_sum_expu(lws1, Ws);
+      sumexpu_inclusive_scan(lws1, Ws);
     }
-  } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
-  }
 
-  W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1); // sum of weights
 
-  int k = bi::find(ps,ka);
-  real left = k > 0 ? *(Ws.begin() + k-1) : 0.0;
-  real right = *(Ws.begin() + k);
-  real c = rng.uniform(left,right);
-  int strata = std::floor(n*c/W);
-  a = n*c/W - strata;
+    if (W > 0) {
+      int k = bi::find(ps,ka);
+      real left = k > 0 ? *(Ws.begin() + k-1) : 0.0;
+      real right = *(Ws.begin() + k);
+      real c = rng.uniform(left,right);
+      int strata = std::floor(n*c/W);
+      T1 a = n*c/W - strata;
 
-  if (W > 0) {
-//    a = rng.uniform(0.0, 1.0); // offset into strata
-    thrust::transform(Ws.begin(), Ws.end(), Os.begin(), resample_offspring<T1>(a, W, n));
-    thrust::adjacent_difference(Os.begin(), Os.end(), os.begin());
-    if (sort) {
-      typename sim_temp_vector<V2>::type temp(P);
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+      bi::adjacent_difference(Os, os);
       temp = os;
-      bi::scatter(temp,ps,os);
-    }
+      bi::scatter(temp, ps, os);
 
-    #ifndef NDEBUG
-    int m = thrust::reduce(os.begin(), os.end());
-    BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
-    #endif
+      #ifndef NDEBUG
+      int m = sum_reduce(os);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
   } else {
-    throw ParticleFilterDegeneratedException();
+    int_vector_type Os(P);
+    cumulativeOffspring(rng, lws, Os, n, ka, sorted, lws1, ps, Ws);
+    bi::adjacent_difference(Os, os);
+  }
+}
+
+template<class V1, class V2>
+void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
+    V2 Os, const int n) throw (ParticleFilterDegeneratedException) {
+  /* pre-condition */
+  BI_ASSERT(lws.size() == Os.size());
+
+  typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
+
+  const int P = lws.size();
+  T1 W, a;
+
+  if (sort) {
+    int_vector_type os(P);
+    offspring(rng, lws, os, n);
+    sum_inclusive_scan(os, Os);
+  } else {
+    vector_type Ws(P);
+    sumexpu_inclusive_scan(lws, Ws);
+
+    W = *(Ws.end() - 1); // sum of weights
+    if (W > 0) {
+      a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+
+      #ifndef NDEBUG
+      int m = *(Os.end() - 1);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
+  }
+}
+
+template<class V1, class V2, class V3, class V4>
+void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
+    V2 Os, const int n, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    throw (ParticleFilterDegeneratedException) {
+  /* pre-condition */
+  BI_ASSERT(lws.size() == Os.size());
+
+  typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
+
+  const int P = lws.size();
+
+  if (sort) {
+    int_vector_type os(P);
+    offspring(rng, lws, os, n, sorted, lws1, ps, Ws);
+    sum_inclusive_scan(os, Os);
+  } else {
+    sumexpu_inclusive_scan(lws, Ws);
+    T1 W = *(Ws.end() - 1); // sum of weights
+    if (W > 0) {
+      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+
+      #ifndef NDEBUG
+      int m = *(Os.end() - 1);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
+  }
+}
+
+template<class V1, class V2, class V3, class V4>
+void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
+    V2 Os, const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    throw (ParticleFilterDegeneratedException) {
+  /// @todo May only work if ka == 0
+
+  /* pre-condition */
+  BI_ASSERT(lws.size() == Os.size());
+  BI_ASSERT(ka >= 0 && ka < lws.size());
+
+  typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type vector_type;
+  typedef typename sim_temp_vector<V2>::type int_vector_type;
+
+  const int P = lws.size();
+
+  if (sort) {
+    int_vector_type os(P);
+    offspring(rng, lws, os, n, ka, sorted, lws1, ps, Ws);
+    sum_inclusive_scan(os, Os);
+  } else {
+    sumexpu_inclusive_scan(lws, Ws);
+    T1 W = *(Ws.end() - 1); // sum of weights
+
+    if (W > 0) {
+      int k = bi::find(ps, ka);
+      T1 left = k > 0 ? *(Ws.begin() + k-1) : 0.0;
+      T1 right = *(Ws.begin() + k);
+      real c = rng.uniform(left,right);
+      int strata = std::floor(n*c/W);
+      T1 a = n*c/W - strata;
+
+      op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
+
+      #ifndef NDEBUG
+      int m = *(Os.end() - 1);
+      BI_ASSERT_MSG(m == n, "Stratified resampler gives " << m << " offspring, should give " << n);
+      #endif
+    } else {
+      throw ParticleFilterDegeneratedException();
+    }
   }
 }
 
@@ -394,14 +523,14 @@ void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(as.size() == lws.size());
+
   const int P = as.size();
 
-  typename sim_temp_vector<V2>::type os(P), ps(P);
-  typename sim_temp_vector<V1>::type lws1(P),Ws(P);
+  typename sim_temp_vector<V2>::type Os(P), ps(P);
+  typename sim_temp_vector<V1>::type lws1(P), Ws(P);
 
-  offspring(rng, lws, os, P, false, lws1, ps, Ws);
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, lws, Os, P, false, lws1, ps, Ws);
+  cumulativeOffspringToAncestors(Os, as);
 }
 
 template<class V1, class V2, class V3, class V4>
@@ -411,11 +540,10 @@ void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as, int P,
   /* pre-condition */
   BI_ASSERT(as.size() == P);
 
-  typename sim_temp_vector<V2>::type os(lws.size());
+  typename sim_temp_vector<V2>::type Os(lws.size());
 
-  offspring(rng, lws, os, P, sorted, lws1, ps, Ws);
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, lws, Os, P, sorted, lws1, ps, Ws);
+  cumulativeOffspringToAncestors(Os, as);
 }
 
 template<class V1, class V2, class V3, class V4>
@@ -425,13 +553,13 @@ void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as, int P,
   /* pre-condition */
   BI_ASSERT(as.size() == P);
 
-  typename sim_temp_vector<V2>::type os(lws.size());
+  typename sim_temp_vector<V2>::type Os(lws.size());
 
-  offspring(rng, lws, os, P, ka, sorted, lws1, ps, Ws);
-  offspringToAncestors(os, as);
-  permute(as);
+  cumulativeOffspring(rng, lws, Os, P, ka, sorted, lws1, ps, Ws);
+  cumulativeOffspringToAncestors(Os, as);
 
-  BI_ASSERT(*(as.begin() + k)==ka);
+  /* post-condition */
+  BI_ASSERT(*(as.begin() + k) == ka);
 }
 
 #endif

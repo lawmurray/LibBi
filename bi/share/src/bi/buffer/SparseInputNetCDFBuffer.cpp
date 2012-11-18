@@ -161,9 +161,9 @@ void bi::SparseInputNetCDFBuffer::maskSparse0() {
 void bi::SparseInputNetCDFBuffer::rewind() {
   int tVar, rDim;
   real t;
-  set_elements(state.starts, 0);
-
+  state.starts.clear();
   state.times.clear();
+
   for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
     rDim = tDims[tVar];
     if (isAssoc(tVar) && hasTime(tVar, 0)) {
@@ -274,8 +274,9 @@ void bi::SparseInputNetCDFBuffer::map() {
   /* initial active regions */
   state.starts.resize(rDims.size());
   state.lens.resize(rDims.size());
-  set_elements(state.starts, 0);
-  set_elements(state.lens, 0);
+  state.starts.clear();
+  state.lens.clear();
+
   for (rDim = 0; rDim < (int)rDims.size(); ++rDim) {
     if (tAssoc[rDim] == -1) {
       /* this record dimension not associated with time variable, so entire

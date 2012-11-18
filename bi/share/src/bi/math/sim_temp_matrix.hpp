@@ -36,7 +36,7 @@ namespace bi {
  * @li it has the same scalar type.
  */
 template<class VM1, int size1_value = -1, int size2_value = -1,
-    int lead_value = -1, int inc_value = -1>
+    int lead_value = -1, int inc_value = 1>
 struct sim_temp_matrix {
   /**
    * @internal

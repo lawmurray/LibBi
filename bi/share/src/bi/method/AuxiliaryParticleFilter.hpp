@@ -339,7 +339,7 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::init(Random& rng, const real t,
   BI_ASSERT(lw2s.size() == as.size());
 
   ParticleFilter<B,S,R,IO1>::init(rng, t, s, lw1s, as, inInit);
-  set_elements(lw2s, 0.0);
+  lw2s.clear();
 }
 
 template<class B, class S, class R, class IO1>
@@ -351,7 +351,7 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::init(Random& rng, const real t,
   BI_ASSERT(lw2s.size() == as.size());
 
   ParticleFilter<B,S,R,IO1>::init(rng, t, theta, s, lw1s, as);
-  set_elements(lw2s, 0.0);
+  lw2s.clear();
 }
 
 template<class B, class S, class R, class IO1>

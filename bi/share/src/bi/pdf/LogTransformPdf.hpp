@@ -341,7 +341,7 @@ void bi::LogTransformPdf<Q1>::densities(const M2 X, V2 p,
   Z = X;
   log_columns(Z, logs);
   Q1::densities(Z, p, clear);
-  div_elements(p, detJ);
+  div_elements(p, detJ, p);
 }
 
 template<class Q1>
@@ -370,11 +370,11 @@ void bi::LogTransformPdf<Q1>::logDensities(const M2 X, V2 p, const bool clear) {
   typename sim_temp_vector<V2>::type logdetJ(p.size());
 
   det_rows(X, logs, logdetJ);
-  log_elements(logdetJ);
+  log_elements(logdetJ, logdetJ);
   Z = X;
   log_columns(Z, logs);
   Q1::logDensities(Z, p, clear);
-  sub_elements(p, logdetJ);
+  sub_elements(p, logdetJ, p);
 }
 
 template<class Q1>

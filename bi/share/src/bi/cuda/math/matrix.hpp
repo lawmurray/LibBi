@@ -550,7 +550,7 @@ bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& bi::gp
     T,size1_value,size2_value,lead_value,inc_value>::operator=(
     const gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& o) {
   /* pre-conditions */
-  BI_ASSERT(this->size1() == o.size1() && this->size2() == o.size2());
+  //BI_ASSERT(this->size1() == o.size1() && this->size2() == o.size2());
 
   if (!same(o)) {
     if (this->lead()*sizeof(T) <= CUDA_PITCH_LIMIT
@@ -789,7 +789,7 @@ namespace bi {
  * @li Assignments are always deep.
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
-    int lead_value = -1, int inc_value = -1, class A = device_allocator<T> >
+    int lead_value = -1, int inc_value = 1, class A = device_allocator<T> >
 class gpu_matrix: public gpu_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value> {
 public:

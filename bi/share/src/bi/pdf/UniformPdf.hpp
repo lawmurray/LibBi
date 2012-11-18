@@ -415,7 +415,7 @@ double bi::UniformPdf<V1>::operator()(const V3 x) {
 template<class V1>
 void bi::UniformPdf<V1>::init() {
   length = high;
-  sub_elements(length, low);
+  sub_elements(length, low, length);
   p = 1.0/prod_reduce(length);
 }
 

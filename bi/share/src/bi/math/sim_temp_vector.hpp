@@ -33,7 +33,7 @@ namespace bi {
  * @li it resides in the same location (host or device), and
  * @li it has the same scalar type.
  */
-template<class VM1, int size_value = -1, int inc_value = -1>
+template<class VM1, int size_value = -1, int inc_value = 1>
 struct sim_temp_vector {
   /**
    * @internal

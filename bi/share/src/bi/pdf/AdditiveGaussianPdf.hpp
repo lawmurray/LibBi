@@ -230,8 +230,7 @@ template<class V1, class M1>
 template<class V2, class V3>
 real bi::AdditiveGaussianPdf<V1,M1>::density(const V2 x1, const V3 x2) {
   typename sim_temp_vector<V3>::type z2(x2.size());
-  z2 = x2;
-  sub_elements(z2, x1);
+  sub_elements(x2, x1, z2);
   real p = GaussianPdf<V1,M1>::density(z2);
   if (!bi::is_finite(p)) {
     p = 0.0;
@@ -257,8 +256,7 @@ template<class V1, class M1>
 template<class V2, class V3>
 real bi::AdditiveGaussianPdf<V1,M1>::logDensity(const V2 x1, const V3 x2) {
   typename temp_vector<V3>::type z2(x2.size());
-  z2 = x2;
-  sub_elements(z2, x1);
+  sub_elements(x2, x1, z2);
   return GaussianPdf<V1,M1>::logDensity(z2);
 }
 

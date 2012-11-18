@@ -510,8 +510,7 @@ real bi::GaussianPdf<V1, M1>::density(const V2 x) {
   BI_ASSERT(x.size() == N);
 
   typename sim_temp_vector<V2>::type z(N);
-  z = x;
-  sub_elements(z, mu);
+  sub_elements(x, mu, z);
   trsv(U, z, 'U');
   real p = invZ*exp(-0.5*dot(z));
   if (bi::isnan(p)) {
@@ -545,8 +544,7 @@ real bi::GaussianPdf<V1, M1>::logDensity(const V2 x) {
   BI_ASSERT(x.size() == N);
 
   typename sim_temp_vector<V2>::type z(N);
-  z = x;
-  sub_elements(z, mu);
+  sub_elements(x, mu, z);
   trsv(U, z, 'U');
 
   return -0.5*dot(z) - logZ;

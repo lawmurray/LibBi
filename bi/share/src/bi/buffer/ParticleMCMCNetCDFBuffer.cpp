@@ -10,7 +10,7 @@
 bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode) :
     NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
-  assert (mode == READ_ONLY || mode == WRITE);
+  BI_ASSERT(mode == READ_ONLY || mode == WRITE);
   map();
 }
 

@@ -29,7 +29,7 @@ namespace bi {
  * pooled_allocator to reuse allocated buffers, and when GPU devices
  * are enabled, pinned_allocator for faster copying between host and device.
  */
-template<class T, int size_value = -1, int inc_value = -1>
+template<class T, int size_value = -1, int inc_value = 1>
 struct temp_host_vector {
   /**
    * Allocator type.

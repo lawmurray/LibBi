@@ -8,106 +8,195 @@
 #ifndef BI_CUDA_RESAMPLER_RESAMPLERKERNEL_CUH
 #define BI_CUDA_RESAMPLER_RESAMPLERKERNEL_CUH
 
+#include "misc.hpp"
 #include "../cuda.hpp"
 
 namespace bi {
 /**
- * ResamplerGPU::permute() kernel.
+ * ResamplerGPU::ancestorsToOffspring() kernel.
  *
- * @tparam T1 Integer type.
- * @tparam T2 Signed integer type.
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
  *
- * @param as[in,out] Ancestry to be permuted.
- * @param is[in,out] Workspace vector. All elements should be initialised to
- * -1.
- * @param P Number of particles.
+ * @param as Ancestry.
+ * @param[out] os Offspring. All elements should be initialised to 0.
  */
-template<class T1, class T2>
-CUDA_FUNC_GLOBAL void kernelResamplerPrePermute(T1* __restrict__ as,
-    T2* __restrict__ is, const int P);
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void kernelAncestorsToOffspring(const V1 as, V2 os);
 
 /**
- * ResamplerGPU::permute() kernel.
+ * ResamplerGPU::cumulativeOffspringToAncestorsPermute() kernel.
  *
- * @tparam T1 Integer type.
- * @tparam T2 Signed integer type.
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam V3 Integer vector type.
+ * @tparam PrePermute Do pre-permute step?
  *
- * @param as[in,out] Ancestry to be permuted.
- * @param is[in,out] Workspace vector. All elements should be initialised to
- * -1.
- * @param P Number of particles.
- *
- * This function is only correct for @p as consisting of indices,
- * <tt>0..P-1</tt>, in all other cases it returns a valid ancestry vector,
- * but one that does not necessarily satisfy the requirement that, if @c i
- * appears at least once in the ancestry vector, then <tt>as[i] == i</tt>.
- * Running #kernelResamplerPrePermute with the same arguments before calling
- * kernelResamplerPermute provides this guarantee.
+ * @param Os Cumulative offspring.
+ * @param[out] as Ancestry.
+ * @param[out] is Claims.
+ * @param doPrePermute Either ENABLE_PRE_PERMUTE or DISABLE_PRE_PERMUTE to
+ * enable or disable pre-permute step, respectively.
  */
-template<class T1, class T2>
-CUDA_FUNC_GLOBAL void kernelResamplerPermute(T1* __restrict__ as,
-    T2* __restrict__ is, const int P);
+template<class V1, class V2, class V3, class PrePermute>
+CUDA_FUNC_GLOBAL void kernelCumulativeOffspringToAncestors(
+    const V1 Os, V2 as, V3 is, const PrePermute doPrePermute);
 
 /**
- * @internal
+ * ResamplerGPU::prePermute() kernel.
  *
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
+ *
+ * @param as Ancestry to permute.
+ * @param is[out] Claims.
+ */
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void bi::kernelResamplerPrePermute(const V1 as, V2 is);
+
+/**
+ * ResamplerGPU::postPermute() kernel.
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam V3 Integer vector type.
+ *
+ * @param as Ancestry to permute.
+ * @param is[in,out] Workspace vector, in state as returned from
+ * #kernelResamplerPrePermute.
+ * @param out[out] Permuted ancestry vector.
+ *
+ * Before calling this kernel, #kernelResamplerPrePermute should be called.
+ * The remaining places in @p is are now claimed, and each thread @c i sets
+ * <tt>out(is(i)) = as(i)</tt>.
+ */
+template<class V1, class V2, class V3>
+CUDA_FUNC_GLOBAL void kernelResamplerPostPermute(const V1 as, const V2 is,
+    V3 out);
+
+/**
  * ResamplerGPU::copy() kernel.
  *
- * @tparam T1 Integer type.
+ * @tparam V1 Integer vector type.
  * @tparam M1 Matrix type.
  *
  * @param as Ancestry.
- * @param[in,out] s State.
+ * @param[in,out] X Matrix to copy.
  */
-template<class T1, class M1>
-CUDA_FUNC_GLOBAL void kernelResamplerCopy(const T1* __restrict__ as, M1 s);
+template<class V1, class M1>
+CUDA_FUNC_GLOBAL void kernelResamplerCopy(const V1 as, M1 X);
 
 }
 
-template<class T1, class T2>
-CUDA_FUNC_GLOBAL void bi::kernelResamplerPrePermute(T1* __restrict__ as, T2* __restrict__ is,
-    const int P) {
-  int id = blockIdx.x*blockDim.x + threadIdx.x;
-  if (id < P) {
-    T1 a = as[id];
-    atomicCAS(&is[a], -1, id);
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void bi::kernelAncestorsToOffspring(const V1 as, V2 os) {
+  const int P = as.size();
+  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+  if (p < P) {
+    atomicAdd(&os(as(p)), 1);
   }
 }
 
-template<class T1, class T2>
-CUDA_FUNC_GLOBAL void bi::kernelResamplerPermute(T1* __restrict__ as, T2* __restrict__ is,
-    const int P) {
-  int id = blockIdx.x*blockDim.x + threadIdx.x;
-  if (id < P) {
-    T1 a = as[id];
-    int claimedBy, next;
+template<class V1, class V2, class V3, class PrePermute>
+CUDA_FUNC_GLOBAL void bi::kernelCumulativeOffspringToAncestors(const V1 Os,
+    V2 as, V3 is, const PrePermute doPrePermute) {
+  const int P = Os.size(); // number of trajectories
+  const int p = blockIdx.x*blockDim.x + threadIdx.x; // trajectory id
 
-    /* first try to claim same place as ancestor index */
+  if (p < P) {
+    int O1 = (p > 0) ? Os(p - 1) : 0;
+    int O2 = Os(p);
+    int o = O2 - O1;
+
+    for (int i = 0; i < o; ++i) {
+      as(O1 + i) = p;
+    }
+    if (doPrePermute) {
+      is(p) = (o > 0) ? O1 : P;
+    }
+  }
+
+//  const int P = as.size(); // number of trajectories
+//  const int p = blockIdx.x*blockDim.x + threadIdx.x; // trajectory id
+//  const int W = (P + warpSize - 1)/warpSize; // number of warps
+//  const int w = p % warpSize; // warp id
+//  const int q = threadIdx.x % warpSize; // id in warp
+//
+//  /* Each warp is responsible for warpSize number of elements in as,
+//   * starting from index q*Q. First do binary search of Os to work out where
+//   * to start. Note each access of Os(pivot) is the same for each thread of a
+//   * warp, so the read is efficiently broadcast to all of its threads. */
+//  int start = 0, end = P, O;
+//  do {
+//    pivot = (end - start)/2; /// @todo Try something dependent on q
+//    O = Os(pivot);
+//    if (w*W < O) {
+//      end = pivot;
+//    } else {
+//      start = pivot;
+//    }
+//  } while (start != end);
+//
+//  /* work out the ancestor for the element corresponding to each thread in
+//   * the warp */
+//  int rem, a = -1, i = start;
+//  do {
+//    O = Os(i); // read will always be broadcast
+//    rem = O - w*W;
+//    if (a == -1 && q < rem) { // a == -1 ensures first satisfactory i taken
+//      a = i;
+//    }
+//    ++i;
+//  } while (rem < warpSize);
+//  as(p) = a; // write will always be coalesced
+}
+
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void bi::kernelResamplerPrePermute(const V1 as, V2 is) {
+  const int P = as.size();
+  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (p < P) {
+    atomicMin(&is(as(p)), p);
+  }
+}
+
+template<class V1, class V2, class V3>
+CUDA_FUNC_GLOBAL void bi::kernelResamplerPostPermute(const V1 as, const V2 is,
+    V3 out) {
+  const int P = as.size();
+  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+  if (p < P) {
+    int a = as(p), next, i;
+
     next = a;
-    claimedBy = atomicCAS(&is[next], -1, id);
-
-    if (claimedBy != id && claimedBy >= 0) {
-      // claim unsuccessful, try to claim own place...
-      claimedBy = id;
-      do {
-        next = claimedBy;
-        claimedBy = atomicCAS(&is[next], -1, id);
-        // ...and continue following trace until free space found
-      } while (claimedBy != id && claimedBy >= 0);
+    i = is(next);
+    if (i != p) {
+      // claim in pre-permute kernel was unsuccessful, try own spot next
+      next = p;
+      i = is(next);
+      while (i < P) { // and chase tail of rotation until free spot
+        next = i;
+        i = is(next);
+      }
     }
 
-    /* write ancestor into claimed place */
-    as[next] = a;
+    /* write ancestor into claimed place, note the out vector is required
+     * or this would cause a race condition with the read of as(p)
+     * above, so this cannot be done in-place */
+    out(next) = a;
   }
 }
 
-template<class T1, class M1>
-CUDA_FUNC_GLOBAL void bi::kernelResamplerCopy(const T1* __restrict__ as, M1 s) {
+template<class V1, class M1>
+CUDA_FUNC_GLOBAL void bi::kernelResamplerCopy(const V1 as, M1 X) {
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = blockIdx.y*blockDim.y + threadIdx.y;
 
-  if (p < s.size1() && id < s.size2() && as[p] != p) {
-    s(p,id) = s(as[p],id);
+  if (p < X.size1() && id < X.size2()/* && as(p) != p*/) {
+    // ^ extra condition above would destroy coalesced writes
+    X(p, id) = X(as(p), id);
   }
 }
 

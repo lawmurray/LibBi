@@ -75,6 +75,7 @@ libbi_a_SOURCES = \
   src/bi/host/math/qrupdate.cpp \
   src/bi/host/ode/IntegratorConstants.cpp \
   src/bi/host/random/RandomHost.cpp \
+  src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \
   src/bi/resampler/StratifiedResampler.cpp \
   src/bi/misc/omp.cpp \

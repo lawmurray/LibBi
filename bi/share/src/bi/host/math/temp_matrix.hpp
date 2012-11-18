@@ -32,7 +32,7 @@ namespace bi {
  * are enabled, pinned_allocator for faster copying between host and device.
  */
 template<class T, int size1_value = -1, int size2_value = -1, int lead_value =
-    -1, int inc_value = -1>
+    -1, int inc_value = 1>
 struct temp_host_matrix {
   /**
    * Allocator type.

@@ -154,7 +154,7 @@ void bi::RandomHost::multinomials(Random& rng, const V1 lps, V2 xs) {
 
   BOOST_AUTO(rng1, rng.getHostRng());
   typename sim_temp_vector<V1>::type Ps(lps.size());
-  inclusive_scan_sum_exp(lps, Ps);
+  sumexpu_inclusive_scan(lps, Ps);
 
   T1 u;
   T1 lower = 0.0;

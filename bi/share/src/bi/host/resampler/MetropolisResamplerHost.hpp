@@ -10,20 +10,20 @@
 
 template<class V1, class V2>
 void bi::MetropolisResamplerHost::ancestors(Random& rng, const V1 lws,
-    V2 as, int C) {
+    V2 as, int B) {
   const int P1 = lws.size(); // number of particles
   const int P2 = as.size(); // number of ancestors to draw
 
   #pragma omp parallel
   {
     real alpha, lw1, lw2;
-    int c, p1, p2, p;
+    int k, p1, p2, p;
 
     #pragma omp for
     for (p = 0; p < P2; ++p) {
       p1 = p;
       lw1 = lws(p);
-      for (c = 0; c < C; ++c) {
+      for (k = 0; k < B; ++k) {
         p2 = rng.uniformInt(0, P1 - 1);
         lw2 = lws(p2);
         alpha = rng.uniform<real>();
@@ -39,6 +39,13 @@ void bi::MetropolisResamplerHost::ancestors(Random& rng, const V1 lws,
       as(p) = p1;
     }
   }
+}
+
+template<class V1, class V2>
+void bi::MetropolisResamplerHost::ancestorsPermute(Random& rng, const V1 lws,
+    V2 as, int B) {
+  ancestors(rng, lws, as, B);
+  permute(as);
 }
 
 #endif

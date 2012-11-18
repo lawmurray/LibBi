@@ -184,7 +184,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * \f[T_{p,k} = p(\mathbf{X}_{p,*}\,|\,c_k)\f]
      */
     for (k = 0; k < K; ++k) {
-      BOOST_AUTO(col, column(*T,k));
+      BOOST_AUTO(col, column(T,k));
       this->get(k).densities(X, col);
     }
 
@@ -195,7 +195,7 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      *
      * where \f$D\f$ is diagonal matrix with diagonal \f$\mathbf{w}\f$.
      */
-    gdmm(1.0/W, this->ws, *T, 0.0, *U, 'R');
+    gdmm(1.0/W, this->ws, T, 0.0, U, 'R');
 
     /**
      * Normalise rows of \f$U\f$:
@@ -205,13 +205,12 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      *
      * where \f$D\f$ is a diagonal matrix with diagonal \f$1/\mathbf{a}\f$.
      */
-    gemv(1.0/W, *T, this->ws, 0.0, *a);
-    *b = *a;
-    rcp_elements(*b);
-    gdmm(1.0, *b, *U, 0.0, *T);
+    gemv(1.0/W, T, this->ws, 0.0, a);
+    rcp_elements(a, b);
+    gdmm(1.0, b, U, 0.0, T);
     #ifndef NDEBUG
     for (int i = 0; i < T->size1(); ++i) {
-      BI_ASSERT(relErr(sum_reduce(row(*T,i), 1.0) < 1.0e-5);
+      BI_ASSERT(relErr(sum_reduce(row(T, i), 1.0) < 1.0e-5);
     }
     #endif
 
@@ -220,8 +219,8 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      *
      * \f[\mathbf{w} = T^T\mathbf{y}\f]
      */
-    gemv(1.0/Y, *T, y, 0.0, this->ws, 'T');
-    thrust::inclusive_scan(this->ws.begin(), this->ws.end(), this->Ws.begin());
+    gemv(1.0/Y, T, y, 0.0, this->ws, 'T');
+    sum_inclusive_scan(ws, Ws);
     BI_ASSERT(rel_err(this->weight(), 1.0) < 1.0e-5);
     W = this->weight();
 
@@ -233,13 +232,12 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * where \f$D\f$ is a diagonal matrix with diagonal \f$1/\mathbf{w}\f$
      * (using new weights, which are column sums).
      */
-    *c = *ws;
-    rcp_elements(*c);
-    gdmm(1.0/Y, y, *T, 0.0, *U);
-    gdmm(1.0, *c, *U, 0.0, *T, 'R');
+    rcp_elements(ws, c);
+    gdmm(1.0/Y, y, T, 0.0, U);
+    gdmm(1.0, c, U, 0.0, T, 'R');
     #ifndef NDEBUG
     for (j = 0; j < T->size2(); ++j) {
-      BI_ASSERT(relErr(sum_reduce(column(*T,j)), 1.0) < 1.0e-5);
+      BI_ASSERT(relErr(sum_reduce(column(T,j)), 1.0) < 1.0e-5);
     }
     #endif
 
@@ -251,9 +249,9 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * \boldsymbol{\mu}_k &=& M_{*,k}
      * \f}
      */
-    gemm(1.0, X, *T, 0.0, *M, 'T');
+    gemm(1.0, X, T, 0.0, M, 'T');
     for (k = 0; k < K; ++k) {
-      this->get(k).setMean(column(*M,k));
+      this->get(k).setMean(column(M,k));
     }
 
     /**
@@ -274,10 +272,9 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * \f[Sigma_k = Z^TZ - \boldsymbol{\mu}_k\boldsymbol{\mu}_k^T\,.\f]
      */
     for (k = 0; k < K; ++k) {
-      *U = *T;
-      sqrt_elements(column(*U,k));
-      gdmm(1.0, column(*U,k), X, 0.0, *Z);
-      syrk(1.0, *Z, 0.0, this->get(k).cov(), 'L', 'T');
+      sqrt_elements(column(T, k), column(U, k));
+      gdmm(1.0, column(U, k), X, 0.0, Z);
+      syrk(1.0, Z, 0.0, this->get(k).cov(), 'L', 'T');
       syr(-1.0, this->get(k).mean(), this->get(k).cov());
     }
 
@@ -289,9 +286,8 @@ bool bi::GaussianMixturePdf<V1,M1>::refit(Random& rng, const int K,
      * \log l &=& \sum_p y_p \log a_p
      * \f}
      */
-    *b = *a;
-    log_elements(*b);
-    l2 = dot(y, *b);
+    log_elements(a, b);
+    l2 = dot(y, b);
     BI_ASSERT(steps == 0 || l2 > l1); // likelihood should always increase
 
     /**

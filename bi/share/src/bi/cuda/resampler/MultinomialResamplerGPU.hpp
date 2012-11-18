@@ -8,9 +8,9 @@
 #ifndef BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 #define BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 
-template<class V1, class V2, class V3, class V4>
+template<class V1, class V2, class V3, class V4, class V5>
 void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
-    int P, bool sort, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    int P, bool sort, bool sorted, V3 lws1, V4 ps, V5 Ws)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(as.size() == P);
@@ -28,10 +28,10 @@ void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
       lws1 = lws;
       seq_elements(ps, 0);
       bi::sort_by_key(lws1, ps);
-      bi::inclusive_scan_sum_expu(lws1, Ws);
+      sumexpu_inclusive_scan(lws1, Ws);
     }
   } else {
-    bi::inclusive_scan_sum_expu(lws, Ws);
+    sumexpu_inclusive_scan(lws, Ws);
   }
   W = *(Ws.end() - 1);  // sum of weights
   if (W > 0) {
@@ -40,12 +40,10 @@ void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
 
     /* sample */
     if (sort) {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(),
-          as1.begin());
-      thrust::gather(as1.begin(), as1.end(), ps.begin(), as.begin());
+      bi::lower_bound(Ws, alphas, as1);
+      bi::gather(as1, ps, as);
     } else {
-      thrust::lower_bound(Ws.begin(), Ws.end(), alphas.begin(), alphas.end(),
-          as.begin());
+      bi::lower_bound(Ws, alphas, as);
     }
   } else {
     throw ParticleFilterDegeneratedException();

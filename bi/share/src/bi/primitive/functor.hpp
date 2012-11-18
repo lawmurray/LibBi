@@ -181,6 +181,18 @@ struct nan_log_functor : public std::unary_function<T,T> {
 /**
  * @ingroup primitive_functor
  *
+ * Zero if input is zero, one if input is not.
+ */
+template<typename T>
+struct nonzero_functor : public std::unary_function<T,T> {
+  CUDA_FUNC_BOTH T operator()(const T &x) const {
+    return (x == static_cast<T>(0)) ? 0 : 1;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
  * \f$kx\f$; constant multiply unary function.
  */
 template<typename T>

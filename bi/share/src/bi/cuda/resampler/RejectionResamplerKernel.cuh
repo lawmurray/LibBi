@@ -8,31 +8,70 @@
 #ifndef BI_CUDA_RESAMPLER_REJECTIONRESAMPLERKERNEL_CUH
 #define BI_CUDA_RESAMPLER_REJECTIONRESAMPLERKERNEL_CUH
 
+#include "misc.hpp"
 #include "../cuda.hpp"
 
 namespace bi {
 /**
- * Rejection resampling kernel.
+ * Rejection resampling kernel with optional pre-permute.
  *
  * @tparam V1 Vector type.
- * @tparam V2 Integral vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam V3 Integer vector type.
+ * @tparam PrePermute Do pre-permute step?
  *
  * @param rng Random number generators.
  * @param lws Log-weights.
  * @param as[out] Ancestry.
+ * @param is[in,out] Workspace vector. All elements should be initialised to
+ * <tt>as.size()</tt>.
  * @param maxLogWeight Maximum log-weight.
+ * @param doPrePermute Either ENABLE_PRE_PERMUTE or DISABLE_PRE_PERMUTE to
+ * enable or disable pre-permute step, respectively.
+ *
+ * @seealso Resampler::prePermute()
  */
-template<class V1, class V2>
+template<class V1, class V2, class V3, class PrePermute>
 CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors(curandState* rng,
-    const V1 lws, V2 as, const typename V1::value_type maxLogWeight);
+    const V1 lws, V2 as, V3 is, const typename V1::value_type maxLogWeight,
+    const PrePermute doPrePermute);
+
+/**
+ * Rejection resampling kernel with optional pre-permute and variable
+ * task-length handling. This achieves better performance than
+ * kernelRejectionResamplerAncestorsPrePermute() for very large numbers of
+ * particles.
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam V3 Integer vector type.
+ * @tparam PrePermute Do pre-permute step?
+ *
+ * @param rng Random number generators.
+ * @param lws Log-weights.
+ * @param as[out] Ancestry.
+ * @param is[in,out] Workspace vector. All elements should be initialised to
+ * <tt>as.size()</tt>.
+ * @param maxLogWeight Maximum log-weight.
+ * @param doPrePermute Either ENABLE_PRE_PERMUTE or DISABLE_PRE_PERMUTE to
+ * enable or disable pre-permute step, respectively.
+ *
+ * @seealso Resampler::prePermute()
+ */
+template<class V1, class V2, class V3, class PrePermute>
+CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors2(curandState* rng,
+    const V1 lws, V2 as, V3 is, const typename V1::value_type maxLogWeight,
+    const PrePermute doPrePermute);
 
 }
 
 #include "../shared.cuh"
 
-template<class V1, class V2>
-CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(curandState* rng,
-    const V1 lws, V2 as, const typename V1::value_type maxLogWeight) {
+template<class V1, class V2, class V3, class PrePermute>
+CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(
+    curandState* rng, const V1 lws, V2 as, V3 is,
+    const typename V1::value_type maxLogWeight,
+    const PrePermute doPrePermute) {
   typedef typename V1::value_type T1;
 
   const int P1 = lws.size(); // number of particles
@@ -40,8 +79,9 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(curandState* rng,
   const int Q = gridDim.x*blockDim.x; // number of threads
   const int q = blockIdx.x*blockDim.x + threadIdx.x; // thread id
 
-  int p, p2;
+  int p, p2, i;
   real lalpha, lw2;
+  bool accept;
 
   RngGPU rng1;
   rng1.r = rng[q];
@@ -65,23 +105,73 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(curandState* rng,
       lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
     }
 
-    /* write result */
+    /* ancestor */
     as(p) = p2;
+
+    /* pre-permute */
+    if (doPrePermute) {
+      atomicMin(&is(p2), p);
+    }
   }
 
-  // less warp divergence, but no death-jump, and writes aren't coalesced, so
-  // slower overall
-  //
-  //p = q;
-  //do {
-  //  p2 = rng1.uniformInt(0, P1 - 1);
-  //  lw2 = lws(p2) - maxLogWeight;
-  //  lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
-  //  if (lalpha < lw2) {
-  //    as(p) = p2;
-  //    p += Q;
-  //  }
-  //} while (p < P2);
+  rng[q] = rng1.r;
+}
+
+template<class V1, class V2, class V3, class PrePermute>
+CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
+    curandState* rng, const V1 lws, V2 as, V3 is,
+    const typename V1::value_type maxLogWeight,
+    const PrePermute doPrePermute) {
+  typedef typename V1::value_type T1;
+
+  const int P1 = lws.size(); // number of particles
+  const int P2 = as.size(); // number of ancestors to draw
+  const int Q = gridDim.x*blockDim.x; // number of threads
+  const int q = blockIdx.x*blockDim.x + threadIdx.x; // thread id
+  const int bufSize = 4;
+
+  int p, p2, i;
+  int* buf = reinterpret_cast<int*>(shared_mem);
+  real lalpha, lw2;
+  bool accept;
+
+  RngGPU rng1;
+  rng1.r = rng[q];
+
+  for (p = q; p < P2; p += bufSize*Q) {
+    /* rejection sample to fill buffer */
+    i = 0;
+    accept = true;
+    do {
+      if (p < P2/P1*P1) {
+        /* death jump (stratified uniform) proposal */
+        p2 = p % P1;
+      } else {
+        /* random proposal */
+        p2 = rng1.uniformInt(0, P1 - 1);
+      }
+      lw2 = lws(p2) - maxLogWeight;
+      lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
+      accept = lalpha < lw2;
+      if (accept) {
+        buf[blockDim.x*i + threadIdx.x] = p2;
+        ++i;
+      }
+    } while (i < bufSize && p + i*Q < P2);
+
+    /* write buffer (coalesced) */
+    for (i = 0; i < bufSize && p + i*Q < P2; ++i) {
+      p2 = buf[blockDim.x*i + threadIdx.x];
+
+      /* ancestor */
+      as(p + i*Q) = p2;
+
+      /* pre-permute */
+      if (doPrePermute) {
+        atomicMin(&is(p2), p + i*Q);
+      }
+    }
+  }
 
   rng[q] = rng1.r;
 }

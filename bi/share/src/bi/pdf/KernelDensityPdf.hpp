@@ -353,12 +353,12 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::logDensities(const M2 X, V2 p,
     const bool clear) {
   if (clear) {
     densities(X, p, clear);
-    log_elements(p);
+    log_elements(p, p);
   } else {
     typename sim_temp_vector<V2>::type p1(p.size());
     densities(X, p1, true);
-    log_elements(p1);
-    add_elements(p, p1);
+    log_elements(p1, p1);
+    add_elements(p, p1, p);
   }
 }
 
@@ -373,10 +373,7 @@ void bi::KernelDensityPdf<V1,M1,S1,K1>::init() {
   typename sim_temp_vector<V1>::type w(lw.size());
 
   /* renormalise log-weights */
-  value_type mx = max_reduce(lw);
-  sub_elements(lw, mx);
-  w = lw;
-  expu_elements(w);
+  value_type mx = expu_elements(lw, w);
 
   /* sum weights */
   W = sum_reduce(w);

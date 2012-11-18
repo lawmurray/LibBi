@@ -200,7 +200,7 @@ inline void bi::InverseGammaPdf::sample(Random& rng, V2 x) {
   BI_ASSERT(x.size() == N);
 
   rng.gammas(x, alpha, 1.0/beta);
-  rcp_elements(x);
+  rcp_elements(x, x);
 }
 
 template<class M2>
@@ -209,7 +209,7 @@ void bi::InverseGammaPdf::samples(Random& rng, M2 X) {
   BI_ASSERT(X.size2() == N);
 
   rng.gammas(vec(X), alpha, 1.0/beta);
-  rcp_elements(vec(X));
+  rcp_elements(vec(X), vec(X));
 }
 
 template<class V2>

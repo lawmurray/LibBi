@@ -787,7 +787,7 @@ namespace bi {
  * This class support serialization through the Boost.Serialization library.
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
-    int lead_value = -1, int inc_value = -1, class A = pipelined_allocator<
+    int lead_value = -1, int inc_value = 1, class A = pipelined_allocator<
     aligned_allocator<T> > >
 class host_matrix: public host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value> {

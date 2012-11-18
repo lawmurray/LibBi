@@ -658,7 +658,7 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
 
       while (!success) {
         U = A;
-        addscal_elements(d, factor);
+        addscal_elements(d, factor, d);
         try {
           potrf(U, uplo);
           success = true;

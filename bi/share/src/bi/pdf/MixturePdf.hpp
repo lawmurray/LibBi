@@ -312,9 +312,8 @@ void bi::MixturePdf<Q1>::setWeight(const int i, const real w) {
   /* pre-condition */
   BI_ASSERT(i < count());
     
-  this->ws(i) = w;
-  real init = (i > 0) ? ws(i - 1) : 0.0;
-  thrust::inclusive_scan(ws.begin() + i, ws.end(), Ws.begin(), init);
+  *(this->ws.begin() + i) = w;
+  sum_inclusive_scan(ws, Ws);
 }
 
 template<class Q1>
@@ -329,7 +328,7 @@ void bi::MixturePdf<Q1>::setWeights(const V1& ws) {
   BI_ASSERT(this->ws.size() == ws.size());
 
   this->ws = ws;
-  thrust::inclusive_scan(this->ws.begin(), this->ws.end(), Ws.begin());
+  sum_inclusive_scan(ws, Ws);
 }
 
 template<class Q1>
@@ -414,7 +413,7 @@ void bi::MixturePdf<Q1>::densities(const M2 X, V2 p, const bool clear = false) {
   if (clear) {
     p = q;
   } else {
-    mul_elements(p, q);
+    mul_elements(p, q, p);
   }
 }
 

@@ -27,7 +27,7 @@ namespace bi {
  * on device that is similar to the given vector or matrix type @p VM1 in the
  * sense that it has the same scalar type.
  */
-template<class VM1, int size_value = -1, int inc_value = -1>
+template<class VM1, int size_value = -1, int inc_value = 1>
 struct sim_temp_gpu_vector {
   /**
    * @internal

@@ -16,57 +16,10 @@ namespace bi {
 /**
  * @internal
  *
- * @tparam V1 Vector type.
- *
- * Select ancestor for each particle given offspring.
- */
-template<class V1>
-struct resample_ancestors : public std::unary_function<
-    thrust::tuple<int,int,int>,void> {
-  /**
-   * Ancestors vector for output.
-   *
-   * @note nvcc will not permit a device_vector here, as it considers
-   * operator[] to be an external function call it seems.
-   */
-  int* as;
-
-  /**
-   * Number of particles.
-   */
-  const int P;
-
-  /**
-   * Constructor.
-   */
-  CUDA_FUNC_HOST resample_ancestors(V1 as) : as(thrust::raw_pointer_cast(&as[0])), P(as.size()) {
-    //
-  }
-
-  /**
-   * Apply functor.
-   *
-   * @param Particle index.
-   */
-  CUDA_FUNC_BOTH void operator()(thrust::tuple<int,int,int> x) {
-    const int& p = thrust::get<0>(x);
-    const int& o = thrust::get<1>(x);
-    const int& O = thrust::get<2>(x);
-    int i;
-
-    for (i = 0; i < o && O + i < P; ++i) {
-      as[O + i] = p;
-    }
-  }
-};
-
-/**
- * @internal
- *
  * Determine error in particular resampling.
  */
 template<class T>
-struct resample_check : public std::binary_function<T,int,T> {
+struct resample_error : public std::binary_function<T,int,T> {
   const T lW;
   const T P;
   // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
@@ -75,7 +28,7 @@ struct resample_check : public std::binary_function<T,int,T> {
   /**
    * Constructor.
    */
-  CUDA_FUNC_HOST resample_check(const T lW, const int P) : lW(lW),
+  CUDA_FUNC_HOST resample_error(const T lW, const int P) : lW(lW),
       P(P) {
     //
   }
@@ -114,6 +67,18 @@ public:
    */
   //@{
   /**
+   * Compute offspring vector from ancestors vector.
+   *
+   * @tparam V1 Integral vector type.
+   * @tparam V2 Integral vector type.
+   *
+   * @param as Ancestors.
+   * @param[out] os Offspring.
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
+  /**
    * Compute ancestor vector from offspring vector.
    *
    * @tparam V1 Integral vector type.
@@ -126,16 +91,41 @@ public:
   static void offspringToAncestors(const V1 os, V2 as);
 
   /**
-   * Compute offspring vector from ancestors vector.
+   * Compute already-permuted ancestor vector from offspring vector.
    *
    * @tparam V1 Integral vector type.
    * @tparam V2 Integral vector type.
    *
-   * @param as Ancestors.
-   * @param[out] os Offspring.
+   * @param os Offspring.
+   * @param[out] as Ancestors.
    */
   template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
+  static void offspringToAncestorsPermute(const V1 os, V2 as);
+
+  /**
+   * Compute ancestor vector from cumulative offspring vector.
+   *
+   * @tparam V1 Integral vector type.
+   * @tparam V2 Integral vector type.
+   *
+   * @param Os Cumulative offspring.
+   * @param[out] as Ancestors.
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
+
+  /**
+   * Compute already-permuted ancestor vector from cumulative offspring
+   * vector.
+   *
+   * @tparam V1 Integral vector type.
+   * @tparam V2 Integral vector type.
+   *
+   * @param Os Cumulative offspring.
+   * @param[out] as Ancestors.
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
 
   /**
    * Permute ancestors to permit in-place copy.
@@ -222,7 +212,7 @@ public:
   static typename V1::value_type ess(const V1 lws);
 
   /**
-   * Compute squared error of ancestry.
+   * Compute sum of squared errors of ancestry.
    *
    * @tparam V1 Vector type.
    * @tparam V2 Integral vector type.
@@ -232,7 +222,7 @@ public:
    *
    * @return Squared error.
    *
-   * This computes the squared error in the resampling, as in
+   * This computes the sum of squared error in the resampling, as in
    * @ref Kitagawa1996 "Kitagawa (1996)":
    *
    * \f[
@@ -243,21 +233,6 @@ public:
    */
   template<class V1, class V2>
   static typename V1::value_type error(const V1 lws, const V2 os);
-
-  /**
-   * Compute log-likelihood of ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param lws Log-weights.
-   * @param os Offspring.
-   *
-   * @return Log-likelihood of the offspring under the multinomial
-   * distribution defined by the weights.
-   */
-  template<class V1, class V2>
-  static typename V1::value_type loglikelihood(const V1 lws, const V2 os);
   //@}
 };
 
@@ -266,6 +241,36 @@ public:
  */
 class ResamplerHost {
 public:
+  /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
+  /**
+   * @copydoc Resampler::offspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestors(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::offspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestorsPermute(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
+
   /**
    * @copydoc Resampler::permute()
    */
@@ -278,11 +283,6 @@ public:
   template<class V1, class M1>
   static void copy(const V1 as, M1 X);
 
-  /**
-   * @copydoc Resampler::ancestorsToOffspring()
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
 };
 
 /**
@@ -291,23 +291,88 @@ public:
 class ResamplerGPU {
 public:
   /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
+  /**
+   * @copydoc Resampler::offspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestors(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::offspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestorsPermute(const V1 os, V2 as);
+
+  /**
+   * Like offspringToAncestorsPermute(), but only performs first stage of
+   * permutation. Second stage should be completed with postPermute().
+   */
+  template<class V1, class V2, class V3>
+  static void offspringToAncestorsPrePermute(const V1 os, V2 as, V3 is);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
+
+  /**
+   * Like cumulativeOffspringToAncestorsPermute(), but only performs first
+   * stage of permutation. Second stage should be completed with
+   * postPermute().
+   */
+  template<class V1, class V2, class V3>
+  static void cumulativeOffspringToAncestorsPrePermute(const V1 Os, V2 as,
+      V3 is);
+
+  /**
    * @copydoc Resampler::permute()
    */
   template<class V1>
   static void permute(V1 as);
 
   /**
+   * First stage of permutation.
+   *
+   * @tparam V1 Integer vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param as Input ancestry.
+   * @param is[out] Claims.
+   */
+  template<class V1, class V2>
+  static void prePermute(const V1 as, V2 is);
+
+  /**
+   * Second stage of permutation.
+   *
+   * @tparam V1 Integer vector type.
+   * @tparam V2 Integer vector type.
+   * @tparam V3 Integer vector type.
+   *
+   * @param as Input ancestry.
+   * @param is Claims, as output from pre-permute function.
+   * @param[out] cs Output, permuted ancestry.
+   */
+  template<class V1, class V2, class V3>
+  static void postPermute(const V1 as, const V2 is, V3 cs);
+
+  /**
    * @copydoc Resampler::copy()
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 s);
-
-  /**
-   * @copydoc Resampler::ancestorsToOffspring()
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
-
 };
 }
 
@@ -317,41 +382,10 @@ public:
 #endif
 
 #include "../primitive/vector_primitive.hpp"
-#include "../math/temp_vector.hpp"
-#include "../math/sim_temp_vector.hpp"
 
 #include "thrust/inner_product.h"
-#include "thrust/iterator/counting_iterator.h"
-#include "thrust/iterator/zip_iterator.h"
-#include "thrust/scan.h"
-#include "thrust/for_each.h"
-#include "thrust/sequence.h"
-#include "thrust/sort.h"
-#include "thrust/fill.h"
-#include "thrust/gather.h"
-#include "thrust/binary_search.h"
-#include "thrust/extrema.h"
 
-#include "boost/typeof/typeof.hpp"
 #include "boost/mpl/if.hpp"
-
-template<class V1, class V2>
-void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
-  /* pre-conditions */
-  BI_ASSERT(sum_reduce(os) == as.size());
-
-  typename sim_temp_vector<V1>::type Os(os.size());
-  thrust::exclusive_scan(os.begin(), os.end(), Os.begin());
-  BOOST_AUTO(first, thrust::make_zip_iterator(thrust::make_tuple(
-      thrust::counting_iterator<int>(0),
-      os.begin(),
-      Os.begin())));
-  BOOST_AUTO(last, thrust::make_zip_iterator(thrust::make_tuple(
-      thrust::counting_iterator<int>(os.size()),
-      os.end(),
-      Os.end())));
-  thrust::for_each(first, last, resample_ancestors<V2>(as));
-}
 
 template<class V1, class V2>
 void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
@@ -361,8 +395,41 @@ void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
   impl::ancestorsToOffspring(as, os);
 }
 
+template<class V1, class V2>
+void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      ResamplerGPU,
+      ResamplerHost>::type impl;
+  impl::offspringToAncestors(os, as);
+}
+
+template<class V1, class V2>
+void bi::Resampler::offspringToAncestorsPermute(const V1 os, V2 as) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      ResamplerGPU,
+      ResamplerHost>::type impl;
+  impl::offspringToAncestorsPermute(os, as);
+}
+
+template<class V1, class V2>
+void bi::Resampler::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      ResamplerGPU,
+      ResamplerHost>::type impl;
+  impl::cumulativeOffspringToAncestors(Os, as);
+}
+
+template<class V1, class V2>
+void bi::Resampler::cumulativeOffspringToAncestorsPermute(const V1 Os,
+    V2 as) {
+  typedef typename boost::mpl::if_c<V1::on_device,
+      ResamplerGPU,
+      ResamplerHost>::type impl;
+  impl::cumulativeOffspringToAncestorsPermute(Os, as);
+}
+
 template<class V1>
-void bi::Resampler::permute(V1 as) {
+void bi::Resampler::permute(const V1 as) {
   typedef typename boost::mpl::if_c<V1::on_device,
       ResamplerGPU,
       ResamplerHost>::type impl;
@@ -374,16 +441,18 @@ void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
   /* pre-condition */
   BI_ASSERT(qlws.size() == lws.size());
 
+  typedef typename sim_temp_vector<V3>::type vector_type;
   typedef typename V3::value_type T3;
+
   const int P = as.size();
 
-  typename sim_temp_vector<V3>::type num(P), den(P);
-
-  thrust::gather(as.begin(), as.end(), lws.begin(), num.begin());
-  thrust::gather(as.begin(), as.end(), qlws.begin(), den.begin());
+  vector_type lws1(lws.size());
+  lws1 = lws;
   lws.resize(P);
-  thrust::transform(num.begin(), num.end(), den.begin(), lws.begin(),
-      thrust::minus<T3>());
+
+  BOOST_AUTO(iter1, thrust::make_permutation_iterator(lws1.begin(), as.begin()));
+  BOOST_AUTO(iter2, thrust::make_permutation_iterator(qlws.begin(), as.begin()));
+  thrust::transform(iter1, iter1 + P, iter2, lws.begin(), thrust::minus<T3>());
 }
 
 template<class V1, class M1>
@@ -409,11 +478,12 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
   BI_ASSERT(!V1::on_device);
 
-  int i;
-  for (i = 0; i < as.size(); ++i) {
-    if (i != as(i)) {
-      v[i]->resize(v[as(i)]->size());
-      *v[i] = *v[as(i)];
+  #pragma omp parallel for
+  for (int i = 0; i < as.size(); ++i) {
+    int a = as(i);
+    if (i != a) {
+      v[i]->resize(v[a]->size());
+      *v[i] = *v[a];
     }
   }
 }
@@ -428,34 +498,7 @@ typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
   real lW = logsumexp_reduce(lws);
 
   return thrust::inner_product(lws.begin(), lws.end(), os.begin(), BI_REAL(0.0),
-      thrust::plus<real>(), resample_check<real>(lW, lws.size()));
-}
-
-template<class V1, class V2>
-typename V1::value_type bi::Resampler::loglikelihood(const V1 lws,
-    const V2 os) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == os.size());
-
-  typedef typename V1::value_type T1;
-
-  const int P = lws.size();
-
-  /* normalising constant */
-  BOOST_AUTO(iter1, thrust::make_transform_iterator(
-      thrust::counting_iterator<T1>(1.0), log_functor<real>()));
-  BOOST_AUTO(iter2, thrust::make_transform_iterator(os.begin(),
-      log_factorial_functor<T1>()));
-  T1 logNum = thrust::reduce(iter1, iter1 + P);
-  T1 logDen = thrust::reduce(iter2, iter2 + P);
-
-  /* exponent */
-  T1 lW = log_sum_exp(lws.begin(), lws.end(), BI_REAL(0.0)); // log total weight
-  BOOST_AUTO(nlws, thrust::make_transform_iterator(lws.begin(),
-      add_constant_functor<T1>(-lW))); // normalised log weights
-  T1 expon = thrust::inner_product(os.begin(), os.end(), nlws, BI_REAL(0.0));
-
-  return logNum - logDen + expon;
+      thrust::plus<real>(), resample_error<real>(lW, lws.size()));
 }
 
 #endif

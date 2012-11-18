@@ -359,7 +359,8 @@ void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng, const real t,
   BOOST_AUTO(x, gsl_vector_reference(state.x));
   x = vec(s.get(P_VAR));
   gsl_vector_reference(state.step) = x;
-  mulscal_elements(gsl_vector_reference(state.step), simplexSizeRel);
+  mulscal_elements(gsl_vector_reference(state.step), simplexSizeRel,
+      gsl_vector_reference(state.step));
 
   /* parameters */
   NelderMeadOptimiserParams<B,L,F>* params = new NelderMeadOptimiserParams<B,

@@ -33,11 +33,6 @@ public:
   typedef typename temp_host_vector<real>::type vector_type;
 
   /**
-   * Vector reference type.
-   */
-  typedef vector_type::vector_reference_type vector_reference_type;
-
-  /**
    * Constructor.
    *
    * @param m Model.
@@ -55,7 +50,7 @@ public:
    *
    * @return The most recent log-weights vector to be written to the cache.
    */
-  const vector_reference_type getLogWeights() const;
+  const vector_type getLogWeights() const;
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::readLogWeights()
@@ -218,9 +213,9 @@ bi::ParticleFilterCache<IO1,CL>::~ParticleFilterCache() {
 }
 
 template<class IO1, bi::Location CL>
-const typename bi::ParticleFilterCache<IO1,CL>::vector_reference_type bi::ParticleFilterCache<
+const typename bi::ParticleFilterCache<IO1,CL>::vector_type bi::ParticleFilterCache<
     IO1,CL>::getLogWeights() const {
-  return logWeightsCache.ref();
+  return logWeightsCache;
 }
 
 template<class IO1, bi::Location CL>

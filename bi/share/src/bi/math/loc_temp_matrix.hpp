@@ -30,7 +30,7 @@ namespace bi {
  * host or device according to a template argument.
  */
 template<Location L, class T, int size1_value = -1, int size2_value = -1,
-    int lead_value = -1, int inc_value = -1>
+    int lead_value = -1, int inc_value = 1>
 struct loc_temp_matrix {
   #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<L,

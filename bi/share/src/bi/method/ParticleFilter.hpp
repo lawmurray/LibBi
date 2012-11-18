@@ -716,7 +716,7 @@ template<class V1>
 void bi::ParticleFilter<B,S,R,IO1>::normalise(V1 lws) {
   typedef typename V1::value_type T1;
   T1 lW = logsumexp_reduce(lws);
-  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW);
+  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW, lws);
 }
 
 template<class B, class S, class R, class IO1>

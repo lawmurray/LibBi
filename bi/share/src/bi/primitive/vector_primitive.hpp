@@ -32,10 +32,10 @@ namespace bi {
  * @tparam UnaryFunctor Unary functor type.
  * @tparam BinaryFunctor Binary functor type.
  *
- * @tparam x[out] The vector.
- * @tparam op1 The unary functor to apply to each element of @p x.
- * @tparam init Initial value of the reduction.
- * @tparam op2 The binary functor used for the reduction.
+ * @param x The vector.
+ * @param op1 The unary functor to apply to each element of @p x.
+ * @param init Initial value of the reduction.
+ * @param op2 The binary functor used for the reduction.
  *
  * @return Reduction.
  */
@@ -53,6 +53,16 @@ typename V1::value_type op_reduce(const V1 x, UnaryFunctor op1,
  */
 template<class V1>
 typename V1::value_type sum_reduce(const V1 x);
+
+/**
+ * Count nonzeros reduction.
+ *
+ * @ingroup primitive_vector
+ *
+ * @see op_reduce
+ */
+template<class V1>
+int count_reduce(const V1 x);
 
 /**
  * Sum-of-squares reduction
@@ -178,6 +188,155 @@ typename V1::value_type ess_reduce(const V1 lws);
 //@}
 
 /**
+ * @name Scans
+ */
+//@{
+/**
+ * Apply exclusive scan across a vector.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ * @tparam UnaryFunctor Unary functor type.
+ * @tparam BinaryFunctor Binary functor type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ * @param op1 Unary functor to apply to each element of @p x.
+ * @param init Initial value of the scan.
+ * @param op2 The binary functor used for the scan.
+ */
+template<class V1, class V2, class UnaryFunctor, class BinaryFunctor>
+void op_exclusive_scan(const V1 x, V2 y, const typename V1::value_type init,
+    UnaryFunctor op1 = thrust::identity<typename V1::value_type>(),
+    BinaryFunctor op2 = thrust::plus<typename V1::value_type>());
+
+/**
+ * Apply inclusive scan across a vector.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ * @tparam UnaryFunctor Unary functor type.
+ * @tparam BinaryFunctor Binary functor type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ * @param op1 Unary functor to apply to each element of @p x.
+ * @param op2 The binary functor used for the scan.
+ */
+template<class V1, class V2, class UnaryFunctor, class BinaryFunctor>
+void op_inclusive_scan(const V1 x, V2 y, UnaryFunctor op1,
+    BinaryFunctor op2 = thrust::plus<typename V1::value_type>());
+
+/**
+ * Exclusive scan-sum.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ */
+template<class V1, class V2>
+void sum_exclusive_scan(const V1 x, V2 y);
+
+/**
+ * Inclusive scan-sum.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ */
+template<class V1, class V2>
+void sum_inclusive_scan(const V1 x, V2 y);
+
+/**
+ * Exclusive scan-count of nonzero elements.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ * @param init Initial value of the scan.
+ */
+template<class V1, class V2>
+void count_exclusive_scan(const V1 x, V2 y);
+
+/**
+ * Inclusive scan-count of nonzero elements.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ */
+template<class V1, class V2>
+void count_inclusive_scan(const V1 x, V2 y);
+
+/**
+ * Sum-exp exclusive scan, unnormalised.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x The vector.
+ * @param[out] X Result.
+ *
+ * @return The maximum element, the exponential of which is the normalising
+ * constant.
+ *
+ * On return, each element \f$y_i\f$, \f$i > 0\f$, of the output sequence
+ * %equals \f$\sum_{j=0}^{i-1} \exp\left(x_i - \alpha\right)\f$, where
+ * \f$\alpha = \max_k x_k\f$, and \f$y_0 = 0\f$.
+ *
+ * NaN values do not contribute to the sum.
+ */
+template<class V1, class V2>
+typename V1::value_type sumexpu_exclusive_scan(const V1 x, V2 X);
+
+/**
+ * Sum-exp inclusive scan, unnormalised.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x The vector.
+ * @param[out] X Result.
+ *
+ * @return The maximum element, the exponential of which is the normalising
+ * constant.
+ *
+ * On return, each element \f$y_i\f$ of the output sequence %equals
+ * \f$\sum_{j=0}^{i} \exp\left(x_i - \alpha\right)\f$, where
+ * \f$\alpha = \max_k x_k\f$.
+ *
+ * NaN values do not contribute to the sum.
+ */
+template<class V1, class V2>
+typename V1::value_type sumexpu_inclusive_scan(const V1 x, V2 X);
+
+//@}
+
+/**
  * @name Unary transformations
  */
 //@{
@@ -187,11 +346,12 @@ typename V1::value_type ess_reduce(const V1 lws);
  * @tparam V1 Vector type.
  * @tparam UnaryFunctor Unary functor type.
  *
- * @tparam x[out] The vector.
+ * @tparam x Input vector.
+ * @tparam y Output vector (may be the same as @p x).
  * @tparam op The unary functor.
  */
-template<class V1, class UnaryFunctor>
-void op_elements(V1 x, UnaryFunctor op);
+template<class V1, class V2, class UnaryFunctor>
+void op_elements(const V1 x, V2 y, UnaryFunctor op);
 
 /**
  * Square all elements.
@@ -200,8 +360,8 @@ void op_elements(V1 x, UnaryFunctor op);
  *
  * @see op_elements
  */
-template<class V1>
-void sq_elements(V1 x);
+template<class V1, class V2>
+void sq_elements(const V1 x, V2 y);
 
 /**
  * Square-root all elements.
@@ -210,8 +370,8 @@ void sq_elements(V1 x);
  *
  * @see op_elements
  */
-template<class V1>
-void sqrt_elements(V1 x);
+template<class V1, class V2>
+void sqrt_elements(const V1 x, V2 y);
 
 /**
  * Reciprocate (multiplicatively invert) all elements.
@@ -220,8 +380,8 @@ void sqrt_elements(V1 x);
  *
  * @see op_elements
  */
-template<class V1>
-void rcp_elements(V1 x);
+template<class V1, class V2>
+void rcp_elements(const V1 x, V2 y);
 
 /**
  * Exponentiate all elements.
@@ -230,8 +390,8 @@ void rcp_elements(V1 x);
  *
  * @see op_elements
  */
-template<class V1>
-void exp_elements(V1 x);
+template<class V1, class V2>
+void exp_elements(const V1 x, V2 y);
 
 /**
  * Exponentiate all elements, unnormalised.
@@ -243,8 +403,8 @@ void exp_elements(V1 x);
  *
  * @see op_elements
  */
-template<class V1>
-typename V1::value_type expu_elements(V1 x);
+template<class V1, class V2>
+typename V1::value_type expu_elements(const V1 x, V2 y);
 
 /**
  * Log all elements.
@@ -253,8 +413,8 @@ typename V1::value_type expu_elements(V1 x);
  *
  * @see op_elements
  */
-template<class V1>
-void log_elements(V1 x);
+template<class V1, class V2>
+void log_elements(const V1 x, V2 y);
 
 /**
  * Add scalar to all elements.
@@ -262,14 +422,16 @@ void log_elements(V1 x);
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
  *
- * @param[in,out] x The vector.
- * @param y The scalar.
+ * @param x Input vector.
+ * @param value The scalar.
+ * @param[out] y Output vector (may be the same as @p x).
  *
  * @see op_elements
  */
-template<class V1>
-void addscal_elements(V1 x, const typename V1::value_type y);
+template<class V1, class V2>
+void addscal_elements(const V1 x, const typename V1::value_type a, V2 y);
 
 /**
  * Subtract scalar from all elements.
@@ -277,14 +439,16 @@ void addscal_elements(V1 x, const typename V1::value_type y);
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
  *
- * @param[in,out] x The vector.
- * @param y The scalar.
+ * @param x Input vector.
+ * @param value The scalar.
+ * @param[out] y Output vector (may be the same as @p x).
  *
  * @see op_elements
  */
-template<class V1>
-void subscal_elements(V1 x, const typename V1::value_type y);
+template<class V1, class V2>
+void subscal_elements(const V1 x, const typename V1::value_type a, V2 y);
 
 /**
  * Multiply scalar into all elements.
@@ -292,29 +456,33 @@ void subscal_elements(V1 x, const typename V1::value_type y);
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
  *
- * @param[in,out] x The vector.
- * @param y The scalar.
+ * @param x Input vector.
+ * @param a The scalar.
+ * @param[out] y Output vector (may be the same as @p x).
  *
  * @see op_elements
  */
-template<class V1>
-void mulscal_elements(V1 x, const typename V1::value_type y);
+template<class V1, class V2>
+void mulscal_elements(const V1 x, const typename V1::value_type a, V2 y);
 
 /**
- * Divide scalar into all elements.
+ * Divide scalar through all elements.
  *
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
  *
- * @param[in,out] x The vector.
- * @param y The scalar.
+ * @param x Input vector.
+ * @param a The scalar.
+ * @param[out] y Output vector (may be the same as @p x).
  *
  * @see op_elements
  */
-template<class V1>
-void divscal_elements(V1 x, const typename V1::value_type y);
+template<class V1, class V2>
+void divscal_elements(V1 x, const typename V1::value_type a, V2 y);
 
 /**
  * Multiply by scalar, then add scalar, to all elements.
@@ -322,48 +490,43 @@ void divscal_elements(V1 x, const typename V1::value_type y);
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
  *
- * @param[in,out] x The vector.
+ * @param x Input vector.
  * @param a The scalar to multiply.
- * @param y The scalar to add.
+ * @param b The scalar to add.
+ * @param[out] y Output vector.
  *
  * @see op_elements
  */
-template<class V1>
-void axpyscal_elements(V1 x, const typename V1::value_type a,
-    const typename V1::value_type y);
-
-/**
- * Subtract scalar, then divide by scalar, to all elements.
- *
- * @ingroup primitive_vector
- *
- * @tparam V1 Vector type.
- *
- * @param[in,out] x The vector.
- * @param y The scalar to subtract.
- * @param a The scalar to divide through.
- *
- * @see op_elements
- */
-template<class V1>
-void invaxpyscal_elements(V1 x, const typename V1::value_type y,
-    const typename V1::value_type a);
+template<class V1, class V2>
+void axpyscal_elements(const V1 x, const typename V1::value_type a,
+    const typename V1::value_type b, V2 y);
 
 /**
  * Fill with constant.
  *
  * @ingroup primitive_vector
  *
+ * @tparam V1 Vector type.
+ *
+ * @param[in,out] x Vector.
+ * @param a The scalar.
+ *
  * @see op_elements
  */
 template<class V1>
-void set_elements(V1 x, const typename V1::value_type value);
+void set_elements(V1 x, const typename V1::value_type a);
 
 /**
  * Fill with sequence.
  *
  * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param[in,out] x Vector.
+ * @param init The first value.
  *
  * @see op_elements
  */
@@ -376,20 +539,22 @@ void seq_elements(V1 x, const typename V1::value_type init);
  */
 //@{
 /**
- * Apply binary functor to the elements of a vector.
+ * Apply binary functor to two vectors.
  *
  * @ingroup primitive_vector
  *
  * @tparam V1 Vector type.
  * @tparam V2 Vector type.
+ * @tparam V3 Vector type.
  * @tparam BinaryFunctor Binary functor type.
  *
- * @tparam x1[in,out] The first vector.
+ * @tparam x1 The first vector.
  * @tparam x2 The second vector.
+ * @tparam[out] y The output vector. May be the same as @p x1 or @p x2.
  * @tparam op The binary functor.
  */
-template<class V1, class V2, class BinaryFunctor>
-void op_elements(V1 x1, const V2 x2, BinaryFunctor op);
+template<class V1, class V2, class V3, class BinaryFunctor>
+void op_elements(const V1 x1, const V2 x2, V3 y, BinaryFunctor op);
 
 /**
  * Add vector to vector.
@@ -398,8 +563,8 @@ void op_elements(V1 x1, const V2 x2, BinaryFunctor op);
  *
  * @see op_elements()
  */
-template<class V1, class V2>
-void add_elements(V1 x1, const V2 x2);
+template<class V1, class V2, class V3>
+void add_elements(const V1 x1, const V2 x2, V3 y);
 
 /**
  * Subtract vector from vector.
@@ -408,8 +573,8 @@ void add_elements(V1 x1, const V2 x2);
  *
  * @see op_elements()
  */
-template<class V1, class V2>
-void sub_elements(V1 x1, const V2 x2);
+template<class V1, class V2, class V3>
+void sub_elements(const V1 x1, const V2 x2, V3 y);
 
 /**
  * Multiply vector into vector, element-wise.
@@ -418,8 +583,8 @@ void sub_elements(V1 x1, const V2 x2);
  *
  * @see op_elements()
  */
-template<class V1, class V2>
-void mul_elements(V1 x1, const V2 x2);
+template<class V1, class V2, class V3>
+void mul_elements(const V1 x1, const V2 x2, V3 y);
 
 /**
  * Divide vector into vector, element-wise.
@@ -428,16 +593,14 @@ void mul_elements(V1 x1, const V2 x2);
  *
  * @see op_elements()
  */
-template<class V1, class V2>
-void div_elements(V1 x1, const V2 x2);
-
+template<class V1, class V2, class V3>
+void div_elements(const V1 x1, const V2 x2, V3 y);
 //@}
 
 /**
  * @name Other
  */
 //@{
-
 /**
  * Sort elements of a vector into ascending order.
  *
@@ -465,50 +628,14 @@ template<class V1, class V2>
 void sort_by_key(V1 keys, V2 values);
 
 /**
- * Sum-exp exclusive scan, unnormalised.
+ * Lower bound.
  *
  * @ingroup primitive_vector
  *
- * @tparam V1 Vector type.
- * @tparam V2 Vector type.
- *
- * @param x The vector.
- * @param[out] X Result.
- *
- * @return The maximum element, the exponential of which is the normalising
- * constant.
- *
- * On return, each element \f$y_i\f$, \f$i > 0\f$, of the output sequence
- * %equals \f$\sum_{j=0}^{i-1} \exp\left(x_i - \alpha\right)\f$, where
- * \f$\alpha = \max_k x_k\f$, and \f$y_0 = 0\f$.
- *
- * NaN values do not contribute to the sum.
+ * @see thrust::lower_bound()
  */
-template<class V1, class V2>
-typename V1::value_type exclusive_scan_sum_expu(const V1 x, V2 X);
-
-/**
- * Sum-exp inclusive scan, unnormalised.
- *
- * @ingroup primitive_vector
- *
- * @tparam V1 Vector type.
- * @tparam V2 Vector type.
- *
- * @param x The vector.
- * @param[out] X Result.
- *
- * @return The maximum element, the exponential of which is the normalising
- * constant.
- *
- * On return, each element \f$y_i\f$ of the output sequence %equals
- * \f$\sum_{j=0}^{i} \exp\left(x_i - \alpha\right)\f$, where
- * \f$\alpha = \max_k x_k\f$.
- *
- * NaN values do not contribute to the sum.
- */
-template<class V1, class V2>
-typename V1::value_type inclusive_scan_sum_expu(const V1 x, V2 X);
+template<class V1, class V2, class V3>
+void lower_bound(const V1 values, const V2 query, V3 result);
 
 /**
  * Gather.
@@ -530,6 +657,14 @@ void gather(const V1 map, const V2 input, V3 result);
 template<class V1, class V2, class V3>
 void scatter(const V1 input, const V2 map, V3 result);
 
+/**
+ * Adjacent difference.
+ *
+ * @see thrust::adjacent_difference()
+ */
+template<class V1, class V2>
+void adjacent_difference(const V1 x, V2 y);
+
 template<class V1>
 int find(const V1 input, const typename V1::value_type y);
 
@@ -550,6 +685,8 @@ bool equal(const V1 input1, const V1 input2);
 #include "thrust/sort.h"
 #include "thrust/gather.h"
 #include "thrust/equal.h"
+#include "thrust/binary_search.h"
+#include "thrust/adjacent_difference.h"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -570,6 +707,12 @@ inline typename V1::value_type bi::sum_reduce(const V1 x) {
 }
 
 template<class V1>
+inline int bi::count_reduce(const V1 x) {
+  typedef typename V1::value_type T1;
+  return op_reduce(x, nonzero_functor<T1>(), 0, thrust::plus<int>());
+}
+
+template<class V1>
 inline typename V1::value_type bi::sumsq_reduce(const V1 x) {
   typedef typename V1::value_type T1;
   return op_reduce(x, square_functor<T1>(), 0.0, thrust::plus<T1>());
@@ -577,12 +720,18 @@ inline typename V1::value_type bi::sumsq_reduce(const V1 x) {
 
 template<class V1>
 inline typename V1::value_type bi::prod_reduce(const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(x.size() > 0);
+
   typedef typename V1::value_type T1;
   return op_reduce(x, thrust::identity<T1>(), 1.0, thrust::multiplies<T1>());
 }
 
 template<class V1>
 inline typename V1::value_type bi::min_reduce(const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(x.size() > 0);
+
   typedef typename V1::value_type T1;
   if (x.inc() == 1) {
     return *thrust::min_element(x.fast_begin(), x.fast_end(), nan_less_functor<T1>());
@@ -593,6 +742,9 @@ inline typename V1::value_type bi::min_reduce(const V1 x) {
 
 template<class V1>
 inline typename V1::value_type bi::max_reduce(const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(x.size() > 0);
+
   typedef typename V1::value_type T1;
   if (x.inc() == 1) {
     return *thrust::max_element(x.fast_begin(), x.fast_end(), nan_less_functor<T1>());
@@ -603,6 +755,9 @@ inline typename V1::value_type bi::max_reduce(const V1 x) {
 
 template<class V1>
 inline typename V1::value_type bi::amin_reduce(const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(x.size() > 0);
+
   typedef typename V1::value_type T1;
 
   if (x.inc() == 1) {
@@ -618,6 +773,9 @@ inline typename V1::value_type bi::amin_reduce(const V1 x) {
 
 template<class V1>
 inline typename V1::value_type bi::amax_reduce(const V1 x) {
+  /* pre-condition */
+  BI_ASSERT(x.size() > 0);
+
   typedef typename V1::value_type T1;
 
   if (x.inc() == 1) {
@@ -664,6 +822,9 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
 
 template<class V1>
 inline typename V1::value_type bi::ess_reduce(const V1 lws) {
+  /* pre-condition */
+  BI_ASSERT(lws.size() > 0);
+
   typedef typename V1::value_type T1;
 
   T1 sum1, sum2, ess;
@@ -675,109 +836,141 @@ inline typename V1::value_type bi::ess_reduce(const V1 lws) {
   return ess;
 }
 
-template<class V1, class UnaryFunctor>
-inline void bi::op_elements(V1 x, UnaryFunctor op) {
-  if (x.inc() == 1) {
-    thrust::transform(x.fast_begin(), x.fast_end(), x.fast_begin(), op);
+template<class V1, class V2, class UnaryOperator, class BinaryOperator>
+void bi::op_exclusive_scan(const V1 x, V2 y, typename V1::value_type init,
+    UnaryOperator op1, BinaryOperator op2) {
+  if (x.inc() == 1 && y.inc() == 1) {
+    thrust::transform_exclusive_scan(x.fast_begin(), x.fast_end(),
+        y.fast_begin(), op1, init, op2);
   } else {
-    thrust::transform(x.begin(), x.end(), x.begin(), op);
+    thrust::transform_exclusive_scan(x.begin(), x.end(), y.begin(), op1,
+        init, op2);
   }
 }
 
-template<class V1, class V2, class BinaryFunctor>
-inline void bi::op_elements(V1 x1, const V2 x2, BinaryFunctor op) {
-  if (x1.inc() == 1 && x2.inc() == 1) {
-    thrust::transform(x1.fast_begin(), x1.fast_end(), x2.fast_begin(), x1.fast_begin(), op);
+template<class V1, class V2, class UnaryOperator, class BinaryOperator>
+void bi::op_inclusive_scan(const V1 x, V2 y, UnaryOperator op1,
+    BinaryOperator op2) {
+  if (x.inc() == 1 && y.inc() == 1) {
+    thrust::transform_inclusive_scan(x.fast_begin(), x.fast_end(),
+        y.fast_begin(), op1, op2);
   } else {
-    thrust::transform(x1.begin(), x1.end(), x2.begin(), x1.begin(), op);
+    thrust::transform_inclusive_scan(x.begin(), x.end(), y.begin(), op1, op2);
   }
 }
 
 template<class V1, class V2>
-inline void bi::add_elements(V1 x1, const V2 x2) {
-  op_elements(x1, x2, thrust::plus<typename V1::value_type>());
+inline void bi::sum_exclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_exclusive_scan(x, y, 0.0, thrust::identity<T1>(), thrust::plus<T1>());
 }
 
 template<class V1, class V2>
-inline void bi::sub_elements(V1 x1, const V2 x2) {
-  op_elements(x1, x2, thrust::minus<typename V1::value_type>());
+inline void bi::sum_inclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_inclusive_scan(x, y, thrust::identity<T1>(), thrust::plus<T1>());
 }
 
 template<class V1, class V2>
-inline void bi::mul_elements(V1 x1, const V2 x2) {
-  op_elements(x1, x2, thrust::multiplies<typename V1::value_type>());
+inline void bi::count_exclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_exclusive_scan(x, y, 0, nonzero_functor<T1>());
 }
 
 template<class V1, class V2>
-inline void bi::div_elements(V1 x1, const V2 x2) {
-  op_elements(x1, x2, thrust::divides<typename V1::value_type>());
+inline void bi::count_inclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_inclusive_scan(x, y, nonzero_functor<T1>(), thrust::plus<T1>());
 }
 
-template<class V1>
-inline void bi::sq_elements(V1 x) {
-  op_elements(x, square_functor<typename V1::value_type>());
-}
-
-template<class V1>
-inline void bi::sqrt_elements(V1 x) {
-  op_elements(x, sqrt_functor<typename V1::value_type>());
-}
-
-template<class V1>
-inline void bi::rcp_elements(V1 x) {
-  op_elements(x, rcp_functor<typename V1::value_type>());
-}
-
-template<class V1>
-inline void bi::exp_elements(V1 x) {
-  op_elements(x, nan_exp_functor<typename V1::value_type>());
-}
-
-template<class V1>
-inline typename V1::value_type bi::expu_elements(V1 x) {
+template<class V1, class V2>
+inline typename V1::value_type bi::sumexpu_exclusive_scan(const V1 x, V2 y) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  op_elements(x, nan_minus_and_exp_functor<T1>(mx));
+  op_exclusive_scan(x, y, 0.0, nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
 
   return mx;
 }
 
-template<class V1>
-inline void bi::log_elements(V1 x) {
-  op_elements(x, nan_log_functor<typename V1::value_type>());
+template<class V1, class V2>
+inline typename V1::value_type bi::sumexpu_inclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+
+  T1 mx = max_reduce(x);
+  op_inclusive_scan(x, y, nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
+
+  return mx;
 }
 
-template<class V1>
-inline void bi::addscal_elements(V1 x, const typename V1::value_type y) {
-  op_elements(x, add_constant_functor<typename V1::value_type>(y));
+template<class V1, class V2, class UnaryFunctor>
+inline void bi::op_elements(const V1 x, V2 y, UnaryFunctor op) {
+  if (x.inc() == 1 && y.inc() == 1) {
+    thrust::transform(x.fast_begin(), x.fast_end(), y.fast_begin(), op);
+  } else {
+    thrust::transform(x.begin(), x.end(), y.begin(), op);
+  }
 }
 
-template<class V1>
-inline void bi::subscal_elements(V1 x, const typename V1::value_type y) {
-  op_elements(x, sub_constant_functor<typename V1::value_type>(y));
+template<class V1, class V2>
+inline void bi::sq_elements(const V1 x, V2 y) {
+  op_elements(x, y, square_functor<typename V1::value_type>());
 }
 
-template<class V1>
-inline void bi::mulscal_elements(V1 x, const typename V1::value_type y) {
-  op_elements(x, mul_constant_functor<typename V1::value_type>(y));
+template<class V1, class V2>
+inline void bi::sqrt_elements(const V1 x, V2 y) {
+  op_elements(x, y, sqrt_functor<typename V1::value_type>());
 }
 
-template<class V1>
-inline void bi::divscal_elements(V1 x, const typename V1::value_type y) {
-  op_elements(x, div_constant_functor<typename V1::value_type>(y));
+template<class V1, class V2>
+inline void bi::rcp_elements(const V1 x, V2 y) {
+  op_elements(x, y, rcp_functor<typename V1::value_type>());
 }
 
-template<class V1>
+template<class V1, class V2>
+inline void bi::exp_elements(const V1 x, V2 y) {
+  op_elements(x, y, nan_exp_functor<typename V1::value_type>());
+}
+
+template<class V1, class V2>
+inline typename V1::value_type bi::expu_elements(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+
+  T1 mx = max_reduce(x);
+  op_elements(x, y, nan_minus_and_exp_functor<T1>(mx));
+
+  return mx;
+}
+
+template<class V1, class V2>
+inline void bi::log_elements(const V1 x, V2 y) {
+  op_elements(x, y, nan_log_functor<typename V1::value_type>());
+}
+
+template<class V1, class V2>
+inline void bi::addscal_elements(const V1 x, const typename V1::value_type a, V2 y) {
+  op_elements(x, y, add_constant_functor<typename V1::value_type>(a));
+}
+
+template<class V1, class V2>
+inline void bi::subscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+  op_elements(x, y, sub_constant_functor<typename V1::value_type>(a));
+}
+
+template<class V1, class V2>
+inline void bi::mulscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+  op_elements(x, y, mul_constant_functor<typename V1::value_type>(a));
+}
+
+template<class V1, class V2>
+inline void bi::divscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+  op_elements(x, y, div_constant_functor<typename V1::value_type>(a));
+}
+
+template<class V1, class V2>
 inline void bi::axpyscal_elements(V1 x, const typename V1::value_type a,
-    const typename V1::value_type y) {
-  op_elements(x, axpy_constant_functor<typename V1::value_type>(a, y));
-}
-
-template<class V1>
-inline void bi::invaxpyscal_elements(V1 x, const typename V1::value_type y,
-    const typename V1::value_type a) {
-  op_elements(x, invaxpy_constant_functor<typename V1::value_type>(y, a));
+    const typename V1::value_type b, V2 y) {
+  op_elements(x, y, axpy_constant_functor<typename V1::value_type>(a, b));
 }
 
 template<class V1>
@@ -796,6 +989,35 @@ inline void bi::seq_elements(V1 x, const typename V1::value_type init) {
   } else {
     thrust::sequence(x.begin(), x.end(), init);
   }
+}
+
+template<class V1, class V2, class V3, class BinaryFunctor>
+inline void bi::op_elements(const V1 x1, const V2 x2, V3 y, BinaryFunctor op) {
+  if (x1.inc() == 1 && x2.inc() == 1 && y.inc() == 1) {
+    thrust::transform(x1.fast_begin(), x1.fast_end(), x2.fast_begin(), y.fast_begin(), op);
+  } else {
+    thrust::transform(x1.begin(), x1.end(), x2.begin(), y.begin(), op);
+  }
+}
+
+template<class V1, class V2, class V3>
+inline void bi::add_elements(const V1 x1, const V2 x2, V3 y) {
+  op_elements(x1, x2, y, thrust::plus<typename V1::value_type>());
+}
+
+template<class V1, class V2, class V3>
+inline void bi::sub_elements(const V1 x1, const V2 x2, V3 y) {
+  op_elements(x1, x2, y, thrust::minus<typename V1::value_type>());
+}
+
+template<class V1, class V2, class V3>
+inline void bi::mul_elements(const V1 x1, const V2 x2, V3 y) {
+  op_elements(x1, x2, y, thrust::multiplies<typename V1::value_type>());
+}
+
+template<class V1, class V2, class V3>
+inline void bi::div_elements(const V1 x1, const V2 x2, V3 y) {
+  op_elements(x1, x2, y, thrust::divides<typename V1::value_type>());
 }
 
 template<class V1>
@@ -817,36 +1039,15 @@ inline void bi::sort_by_key(V1 keys, V2 values) {
   }
 }
 
-template<class V1, class V2>
-inline typename V1::value_type bi::exclusive_scan_sum_expu(const V1 x, V2 X) {
-  typedef typename V1::value_type T1;
-
-  T1 mx = max_reduce(x);
-  if (x.inc() == 1 && X.inc() == 1) {
-    thrust::transform_exclusive_scan(x.fast_begin(), x.fast_end(),
-        X.fast_begin(), nan_minus_and_exp_functor<T1>(mx), 0,
-        thrust::plus<T1>());
+template<class V1, class V2, class V3>
+inline void bi::lower_bound(const V1 values, const V2 query, V3 result) {
+  if (values.inc() == 1 && query.inc() == 1 && result.inc() == 1) {
+    thrust::lower_bound(values.fast_begin(), values.fast_end(),
+        query.fast_begin(), query.fast_end(), result.fast_begin());
   } else {
-    thrust::transform_exclusive_scan(x.begin(), x.end(), X.begin(),
-        nan_minus_and_exp_functor<T1>(mx), 0, thrust::plus<T1>());
+    thrust::lower_bound(values.begin(), values.end(), query.begin(),
+        query.end(), result.begin());
   }
-  return mx;
-}
-
-template<class V1, class V2>
-inline typename V1::value_type bi::inclusive_scan_sum_expu(const V1 x, V2 X) {
-  typedef typename V1::value_type T1;
-
-  T1 mx = max_reduce(x);
-  if (x.inc() == 1 && X.inc() == 1) {
-    thrust::transform_inclusive_scan(x.fast_begin(), x.fast_end(),
-        X.fast_begin(), nan_minus_and_exp_functor<T1>(mx),
-        thrust::plus<T1>());
-  } else {
-    thrust::transform_inclusive_scan(x.begin(), x.end(), X.begin(),
-        nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
-  }
-  return mx;
 }
 
 template<class V1, class V2, class V3>
@@ -866,6 +1067,15 @@ inline void bi::scatter(const V1 input, const V2 map, V3 result) {
         result.fast_begin());
   } else {
     thrust::scatter(input.begin(), input.end(), map.begin(), result.begin());
+  }
+}
+
+template<class V1, class V2>
+inline void bi::adjacent_difference(const V1 x, V2 y) {
+  if (x.inc() == 1 && y.inc() == 1) {
+    thrust::adjacent_difference(x.fast_begin(), x.fast_end(), y.fast_begin());
+  } else {
+    thrust::adjacent_difference(x.begin(), x.end(), y.begin());
   }
 }
 

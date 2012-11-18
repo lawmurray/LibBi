@@ -306,7 +306,7 @@ template<class M1>
 void bi::SMC2NetCDFBuffer::readState(const VarType type, const int t,
     M1 X) {
   /* pre-conditions */
-  assert (X.size1() == npDim->size());
+  BI_ASSERT(X.size1() == npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
@@ -363,7 +363,7 @@ template<class M1>
 void bi::SMC2NetCDFBuffer::writeState(const VarType type, const int t,
     const M1 X, const int p) {
   /* pre-conditions */
-  assert (X.size1() <= npDim->size());
+  BI_ASSERT(X.size1() <= npDim->size());
 
   typedef typename M1::value_type temp_value_type;
   typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;

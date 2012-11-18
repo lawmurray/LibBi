@@ -120,7 +120,7 @@ inline typename V1::difference_type bi::RngHost::multinomial(const V1 lps) {
   typedef boost::uniform_real<typename V1::value_type> dist_type;
 
   typename sim_temp_vector<V1>::type Ps(lps.size());
-  inclusive_scan_sum_expu(lps, Ps);
+  sumexpu_inclusive_scan(lps, Ps);
 
   dist_type dist(0.0, *(Ps.end() - 1));
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);

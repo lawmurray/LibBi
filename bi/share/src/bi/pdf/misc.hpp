@@ -601,7 +601,7 @@ void bi::renormalise(V1 lws) {
       bi::log(0.0));
   real mx = max_reduce(lws);
   if (is_finite(mx)) {
-    sub_elements(lws, mx);
+    sub_elements(lws, mx, lws);
   }
 }
 
@@ -877,8 +877,7 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   T Wt = sum_reduce(w);
   Y = X;
   sub_rows(Y, mu);
-  v = w;
-  sqrt_elements(v);
+  sqrt_elements(w, v);
   gdmm(1.0, v, Y, 0.0, Z);
   syrk(1.0/Wt, Z, 0.0, Sigma, 'U', 'T');
   // alternative weight: 1.0/(Wt - W2t/Wt)
@@ -892,8 +891,8 @@ void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
 
   temp_host_vector<real>::type diff(q.size());
   diff = q.upper();
-  sub_elements(diff, q.lower());
-  sq_elements(diff);
+  sub_elements(diff, q.lower(), diff);
+  sq_elements(diff, diff);
 
   Sigma.clear();
   axpy(1.0/12.0, diff, diagonal(Sigma));
@@ -972,11 +971,10 @@ void bi::var(const M1 X, const V1 w, const V2 mu, V3 sigma) {
   T1 Wt = sum_reduce(w);
   Z = X;
   sub_rows(Z, mu);
-  v = w;
-  sqrt_elements(v);
+  sqrt_elements(w, v);
   gdmm(1.0, v, Z, 0.0, Y);
   dot_columns(Y, sigma);
-  div_elements(sigma, Wt);
+  divscal_elements(sigma, Wt, sigma);
   // alternative weight: 1.0/(Wt - W2t/Wt)
 }
 
@@ -1025,7 +1023,7 @@ inline void bi::exp_vector(V2 x, const V3& is) {
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
     BOOST_AUTO(elem, subrange(x, *iter, 1));
-    exp_elements(elem);
+    exp_elements(elem, elem);
   }
 }
 
@@ -1035,7 +1033,7 @@ inline void bi::exp_columns(M2 X, const V2& is) {
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
     BOOST_AUTO(col, column(X, *iter));
-    exp_elements(col);
+    exp_elements(col, col);
   }
 }
 
@@ -1045,7 +1043,7 @@ inline void bi::exp_rows(M2 X, const V2& is) {
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
     BOOST_AUTO(row1, row(X, *iter));
-    exp_elements(row1);
+    exp_elements(row1, row1);
   }
 }
 
@@ -1054,7 +1052,8 @@ inline void bi::log_vector(V2 x, const V3& is) {
   BOOST_AUTO(iter, is.begin());
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
-    log_elements(subrange(x, *iter, 1));
+    BOOST_AUTO(elem, subrange(x, *iter, 1));
+    log_elements(elem, elem);
   }
 }
 
@@ -1063,7 +1062,8 @@ inline void bi::log_columns(M2 X, const V2& is) {
   BOOST_AUTO(iter, is.begin());
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
-    log_elements(column(X, *iter));
+    BOOST_AUTO(col, column(X, *iter));
+    log_elements(col, col);
   }
 }
 
@@ -1072,7 +1072,8 @@ inline void bi::log_rows(M2 X, const V2& is) {
   BOOST_AUTO(iter, is.begin());
   BOOST_AUTO(end, is.end());
   for (; iter != end; ++iter) {
-    log_elements(row(X, *iter));
+    BOOST_AUTO(row1, row(X, *iter));
+    log_elements(row1, row1);
   }
 }
 
@@ -1094,7 +1095,7 @@ void bi::det_rows(const M2 X, const V2& is, V3 det) {
 
   set_elements(det, 1.0);
   for (; iter != end; ++iter) {
-    mul_elements(det, column(X, *iter));
+    mul_elements(det, column(X, *iter), det);
   }
 }
 

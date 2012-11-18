@@ -27,7 +27,7 @@ namespace bi {
  * loc_vector is a convenience class for creating a vector on host or device
  * according to a template argument.
  */
-template<Location L, class T, int size_value = -1, int inc_value = -1>
+template<Location L, class T, int size_value = -1, int inc_value = 1>
 struct loc_vector {
   #ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<L,

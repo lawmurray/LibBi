@@ -78,7 +78,7 @@ protected:
    * Set size.
    */
   static CUDA_FUNC_BOTH void setSize(const int size1) {
-    //BI_ASSERT_MSG(gpu_storage_size<size_value>::size1 == size1,
+    ////BI_ASSERT_MSG(gpu_storage_size<size_value>::size1 == size1,
     //    "Cannot set static size");
   }
 
@@ -133,7 +133,7 @@ protected:
    * Set increment.
    */
   static CUDA_FUNC_BOTH void setInc(const int inc1) {
-    //BI_ASSERT_MSG(gpu_storage_inc<inc_value>::inc1 == inc1,
+    ////BI_ASSERT_MSG(gpu_storage_inc<inc_value>::inc1 == inc1,
     //    "Cannot set static increment");
   }
 
@@ -479,8 +479,8 @@ template<class T, int size_value, int inc_value>
 inline bi::gpu_vector_reference<T,size_value,inc_value>::gpu_vector_reference(
     T* data, const size_type size, const size_type inc) {
   /* pre-condition */
-  //BI_ASSERT(size >= 0);
-  //BI_ASSERT(inc >= 1);
+  ////BI_ASSERT(size >= 0);
+  ////BI_ASSERT(inc >= 1);
 
   this->setBuf(data);
   this->setSize(size);
@@ -498,7 +498,7 @@ inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_referenc
     T,size_value,inc_value>::operator=(
     const gpu_vector_reference<T,size_value,inc_value>& o) {
   /* pre-condition */
-  BI_ASSERT(this->size() == o.size());
+  //BI_ASSERT(this->size() == o.size());
 
   if (!same(o)) {
     if (this->inc() == 1) {
@@ -523,7 +523,7 @@ template<class V1>
 inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_reference<
     T,size_value,inc_value>::operator=(const V1& o) {
   /* pre-condition */
-  BI_ASSERT(this->size() == o.size());
+  //BI_ASSERT(this->size() == o.size());
 
   if (!this->same(o)) {
     if (this->inc() == 1) {
@@ -597,7 +597,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::gpu_vector_reference<T,size_value,inc_value>::fast_iterator bi::gpu_vector_reference<
     T,size_value,inc_value>::fast_begin() {
   /* pre-condition */
-  BI_ASSERT(this->inc() == 1);
+  //BI_ASSERT(this->inc() == 1);
 
   return fast_iterator(pointer(this->buf()));
 }
@@ -606,7 +606,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::gpu_vector_reference<
     T,size_value,inc_value>::fast_begin() const {
   /* pre-condition */
-  BI_ASSERT(this->inc() == 1);
+  //BI_ASSERT(this->inc() == 1);
 
   return const_fast_iterator(const_pointer(this->buf()));
 }
@@ -615,7 +615,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::gpu_vector_reference<T,size_value,inc_value>::fast_iterator bi::gpu_vector_reference<
     T,size_value,inc_value>::fast_end() {
   /* pre-condition */
-  BI_ASSERT(this->inc() == 1);
+  //BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
@@ -624,7 +624,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::gpu_vector_reference<T,size_value,inc_value>::const_fast_iterator bi::gpu_vector_reference<
     T,size_value,inc_value>::fast_end() const {
   /* pre-condition */
-  BI_ASSERT(this->inc() == 1);
+  //BI_ASSERT(this->inc() == 1);
 
   return this->fast_begin() + this->size();
 }
@@ -660,7 +660,7 @@ void bi::gpu_vector_reference<T,size_value,inc_value>::load(Archive& ar,
     const unsigned version) {
   size_type size, i;
   ar & size;
-  BI_ASSERT(this->size() == size);
+  //BI_ASSERT(this->size() == size);
 
   typename temp_host_vector<T>::type tmp(size);
   for (i = 0; i < size; ++i) {
@@ -688,7 +688,7 @@ namespace bi {
  *
  * @li Assignments are always deep.
  */
-template<class T = real, int size_value = -1, int inc_value = -1,
+template<class T = real, int size_value = -1, int inc_value = 1,
     class A = device_allocator<T> >
 class gpu_vector: public gpu_vector_reference<T,
     size_value,inc_value> {
@@ -804,7 +804,7 @@ template<class T, int size_value, int inc_value, class A>
 bi::gpu_vector<T,size_value,inc_value,A>::gpu_vector(const size_type size) :
     gpu_vector_reference<T,size_value,inc_value>(NULL, size), own(true) {
   /* pre-condition */
-  BI_ASSERT(size >= 0);
+  //BI_ASSERT(size >= 0);
 
   if (size > 0) {
     this->setBuf(alloc.allocate(size));
@@ -843,7 +843,7 @@ bi::gpu_vector<T,size_value,inc_value,A>::~gpu_vector() {
 template<class T, int size_value, int inc_value, class A>
 inline bi::gpu_vector<T,size_value,inc_value,A>& bi::gpu_vector<T,size_value,
     inc_value,A>::operator=(const gpu_vector<T,size_value,inc_value,A>& o) {
-  vector_reference_type::operator=(o);
+  gpu_vector_reference<T,size_value,inc_value>::operator=(o);
   return *this;
 }
 

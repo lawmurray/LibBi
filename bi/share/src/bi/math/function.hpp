@@ -23,6 +23,7 @@ namespace bi {
 
 CUDA_FUNC_BOTH double abs(const double x);
 CUDA_FUNC_BOTH float abs(const float x);
+CUDA_FUNC_BOTH int abs(const int x);
 CUDA_FUNC_BOTH double log(const double x);
 CUDA_FUNC_BOTH float log(const float x);
 CUDA_FUNC_BOTH double nanlog(const double x);
@@ -104,6 +105,10 @@ inline double bi::abs(const double x) {
 
 inline float bi::abs(const float x) {
   return ::fabsf(x);
+}
+
+inline int bi::abs(const int x) {
+  return (x >= 0) ? x : -x;
 }
 
 inline double bi::log(const double x) {

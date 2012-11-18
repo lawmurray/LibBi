@@ -9,6 +9,13 @@
 #define BI_CUDA_DEVICE_HPP
 
 namespace bi {
+#ifdef ENABLE_CUDA
+/**
+ * Device properties structure.
+ */
+extern cudaDeviceProp device_prop;
+#endif
+
 /**
  * Choose CUDA device to use.
  *
@@ -47,6 +54,11 @@ int deviceOverloading();
  */
 int deviceWarpSize();
 
+/**
+ * Return maximum amount of shared memory per block.
+ */
+size_t deviceSharedMemPerBlock();
+
 #ifdef ENABLE_CUDA
 /**
  * Balance 1d kernel execution configuration.
@@ -54,14 +66,6 @@ int deviceWarpSize();
 void deviceBalance1d(dim3& Db, dim3& Dg);
 #endif
 
-}
-
-inline int bi::deviceOverloading() {
-  return 4;
-}
-
-inline int bi::deviceWarpSize() {
-  return 32;
 }
 
 #ifdef ENABLE_CUDA

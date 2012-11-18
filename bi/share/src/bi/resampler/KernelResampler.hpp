@@ -135,9 +135,8 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
   V3 mu(N), ws(P);
 
   /* compute statistics */
-  ws = lws;
   synchronize(!ws.on_device && lws.on_device);
-  expu_elements(ws);
+  expu_elements(lws, ws);
   mean(s.getDyn(), ws, mu);
   cov(s.getDyn(), ws, mu, Sigma);
 

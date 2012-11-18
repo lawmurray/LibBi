@@ -480,8 +480,7 @@ void bi::SMC2<B,F,R,IO1>::adapt(std::vector<ThetaParticle<B,L>*>& thetas,
   }
 
   /* compute weighted mean, covariance and Cholesky factor */
-  ws = lws;
-  expu_elements(ws);
+  expu_elements(lws, ws);
   mean(X, ws, mu);
   cov(X, ws, mu, Sigma);
   chol(Sigma, U);

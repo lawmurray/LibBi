@@ -11,20 +11,23 @@
 
 #include <vector>
 
+#ifdef ENABLE_CUDA
+cudaDeviceProp bi::device_prop;
+#endif
+
 int bi::chooseDevice(const int rank) {
   int dev, num;
-  cudaDeviceProp prop;
   std::vector<int> valid;
 
   /* build list of valid devices */
   CUDA_CHECKED_CALL(cudaGetDeviceCount(&num));
   for (dev = 0; dev < num; ++dev) {
-    CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
-    if (prop.major >= 2) { // require compute 2.0 or later
+    CUDA_CHECKED_CALL(cudaGetDeviceProperties(&device_prop, dev));
+    if (device_prop.major >= 2) { // require compute 2.0 or later
       valid.push_back(dev);
     }
   }
-  BI_ERROR_MSG(valid.size() > 0, "No devices of at least compute 1.3 available");
+  BI_ERROR_MSG(valid.size() > 0, "No devices of at least compute 2.0 available");
 
   /* select device */
   CUDA_CHECKED_CALL(cudaSetDevice(valid[rank % valid.size()]));
@@ -38,25 +41,29 @@ int bi::deviceIdealThreads() {
 }
 
 int bi::deviceIdealThreadsPerBlock() {
-  int dev;
-  cudaDeviceProp prop;
-  CUDA_CHECKED_CALL(cudaGetDevice(&dev));
-  CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
-
-  if (prop.major == 1) {
-    return 128;
-  } else if (prop.major == 2) {
+  if (device_prop.major >= 2) {
     return 256;
   } else {
-    return 512;
+    return 128;
   }
 }
 
 int bi::deviceMultiprocessors() {
-  int dev;
-  cudaDeviceProp prop;
-  CUDA_CHECKED_CALL(cudaGetDevice(&dev));
-  CUDA_CHECKED_CALL(cudaGetDeviceProperties(&prop, dev));
+  return device_prop.multiProcessorCount;
+}
 
-  return prop.multiProcessorCount;
+int bi::deviceOverloading() {
+  if (device_prop.major >= 3) {
+    return 8;
+  } else {
+    return 4;
+  }
+}
+
+int bi::deviceWarpSize() {
+  return device_prop.warpSize;
+}
+
+size_t bi::deviceSharedMemPerBlock() {
+  return device_prop.sharedMemPerBlock;
 }

@@ -21,7 +21,7 @@
  *
  * @arg @p cond Condition.
  */
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__CUDA_ARCH__)
 #define BI_ASSERT(cond) assert(cond)
 #else
 #define BI_ASSERT(cond)
@@ -36,7 +36,7 @@
  * @arg @p cond Condition.
  * @arg @p msg Message to print if condition failed.
  */
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(__CUDA_ARCH__)
 #define BI_ASSERT_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Error: " << msg << std::endl; \
@@ -54,7 +54,7 @@
  * @arg @p cond Condition.
  * @arg @p msg Message to print if condition failed.
  */
-#ifdef NDEBUG
+#if !defined(NDEBUG) && !defined(__CUDA_ARCH__)
 #define BI_ERROR_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Error: " << msg << std::endl; \

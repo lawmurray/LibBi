@@ -17,29 +17,29 @@ namespace bi {
 /**
  * MultinomialResampler implementation on host.
  */
-class MultinomialResamplerHost {
+class MultinomialResamplerHost : public ResamplerHost {
 public:
   /**
    * Select ancestors, sorted in ascending order by construction. The basis
    * of this implementation is the generation of sorted random variates
    * using the method of @ref Bentley1979 "Bentley & Saxe (1979)".
    */
-  template<class V1, class V2, class V3, class V4>
+  template<class V1, class V2, class V3, class V4, class V5>
   static void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sort, bool sorted,
-      V3 slws, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
+      V3 slws, V4 ps, V5 Ws) throw (ParticleFilterDegeneratedException);
 };
 
 /**
  * MultinomialResampler implementation on device.
  */
-class MultinomialResamplerGPU {
+class MultinomialResamplerGPU : public ResamplerGPU {
 public:
   /**
    * @copydoc MultinomialResampler::ancestors()
    */
-  template<class V1, class V2, class V3, class V4>
+  template<class V1, class V2, class V3, class V4, class V5>
   static void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sort, bool sorted,
-      V3 slws, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
+      V3 slws, V4 ps, V5 Ws) throw (ParticleFilterDegeneratedException);
 };
 
 /**
@@ -100,14 +100,14 @@ public:
   void ancestors(Random& rng, const V1 lws, V2 as)
       throw (ParticleFilterDegeneratedException);
 
-  template<class V1, class V2, class V3, class V4>
+  template<class V1, class V2, class V3, class V4, class V5>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
+      int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V5 Ws)
       throw (ParticleFilterDegeneratedException);
 
-  template<class V1, class V2, class V3, class V4>
+  template<class V1, class V2, class V3, class V4, class V5>
   void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sorted,
-      V3 slws, V4 ps, V3 Ws)
+      V3 slws, V4 ps, V5 Ws)
       throw (ParticleFilterDegeneratedException);
 
   /**
@@ -128,7 +128,7 @@ protected:
 }
 
 #include "../host/resampler/MultinomialResamplerHost.hpp"
-#ifdef ENABLE_GPU
+#ifdef ENABLE_CUDA
 #include "../cuda/resampler/MultinomialResamplerGPU.hpp"
 #endif
 
@@ -225,22 +225,23 @@ void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
   ancestors(rng, lws, as, P, false, lws1, ps, Ws);
 }
 
-template<class V1, class V2, class V3, class V4>
+template<class V1, class V2, class V3, class V4, class V5>
 void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V5 Ws)
     throw (ParticleFilterDegeneratedException) {
   ancestors(rng, lws, as, P, sorted, lws1, ps, Ws);
   set_elements(subrange(as, k, 1), ka);
 }
 
-template<class V1, class V2, class V3, class V4>
+template<class V1, class V2, class V3, class V4, class V5>
 void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    int P, bool sorted, V3 lws1, V4 ps, V3 Ws)
+    int P, bool sorted, V3 lws1, V4 ps, V5 Ws)
     throw (ParticleFilterDegeneratedException) {
   /* pre-conditions */
-  assert (V1::on_device == V2::on_device);
-  assert (V1::on_device == V3::on_device);
-  assert (V1::on_device == V4::on_device);
+  BI_ASSERT(V1::on_device == V2::on_device);
+  BI_ASSERT(V1::on_device == V3::on_device);
+  BI_ASSERT(V1::on_device == V4::on_device);
+  BI_ASSERT(V1::on_device == V5::on_device);
 
   typedef typename boost::mpl::if_c<V1::on_device,
       MultinomialResamplerGPU,
