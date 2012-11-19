@@ -106,10 +106,10 @@ int main(int argc, char* argv[]) {
   for (z = 0; z < ZS; ++z) {
     /* generate log-weights */
     if (z > 0) {
-      addscal_elements(vec(x), 1.0, vec(x));
+      addscal_elements(vec(x), 0.5, vec(x));
     }
     g.logDensities(x, vec(lW), true);
-    zs(z) = z;
+    zs(z) = 0.5*z;
     std::cerr << "z=" << z << ":";
   
     /* test on weight sets */
