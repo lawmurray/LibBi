@@ -51,24 +51,6 @@ void bi::ResamplerGPU::offspringToAncestorsPermute(const V1 os, V2 as) {
 
   offspringToAncestorsPrePermute(os, cs, is);
   postPermute(cs, is, as);
-
-//  /* pre-condition */
-//  BI_ASSERT(sum_reduce(os) == as.size());
-//  BI_ASSERT(V1::on_device);
-//  BI_ASSERT(V2::on_device);
-//
-//  const int P = as.size();
-//
-//  typename sim_temp_vector<V1>::type Os(os.size()), Is(os.size());
-//  bi::sum_inclusive_scan(os, Os);
-//  bi::count_inclusive_scan(os, Is);
-//
-//  dim3 Dg, Db;
-//  Db.x = bi::min(deviceIdealThreadsPerBlock(), P);
-//  Dg.x = (P + Db.x - 1)/Db.x;
-//
-//  kernelCumulativeOffspringToAncestorsPermute<<<Dg,Db>>>(os, Os, Is, as);
-//  CUDA_CHECK;
 }
 
 template<class V1, class V2, class V3>
@@ -142,8 +124,8 @@ void bi::ResamplerGPU::cumulativeOffspringToAncestorsPrePermute(const V1 Os,
   //    ENABLE_PRE_PERMUTE);
   kernelCumulativeOffspringToAncestors<<<Dg,Db>>>(Os, as, is,
       DISABLE_PRE_PERMUTE);
-  prePermute(as, is);
   CUDA_CHECK;
+  prePermute(as, is);
 }
 
 template<class V1>

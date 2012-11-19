@@ -116,39 +116,28 @@ CUDA_FUNC_GLOBAL void bi::kernelCumulativeOffspringToAncestors(const V1 Os,
     }
   }
 
+//  this implementation slightly slower...
+//
 //  const int P = as.size(); // number of trajectories
 //  const int p = blockIdx.x*blockDim.x + threadIdx.x; // trajectory id
-//  const int W = (P + warpSize - 1)/warpSize; // number of warps
-//  const int w = p % warpSize; // warp id
-//  const int q = threadIdx.x % warpSize; // id in warp
 //
-//  /* Each warp is responsible for warpSize number of elements in as,
-//   * starting from index q*Q. First do binary search of Os to work out where
-//   * to start. Note each access of Os(pivot) is the same for each thread of a
-//   * warp, so the read is efficiently broadcast to all of its threads. */
-//  int start = 0, end = P, O;
-//  do {
-//    pivot = (end - start)/2; /// @todo Try something dependent on q
+//  int start = 0, end = P, O, pivot;
+//  while (start != end) {
+//    pivot = (start + end)/2;
 //    O = Os(pivot);
-//    if (w*W < O) {
+//    if (p < O) {
 //      end = pivot;
 //    } else {
-//      start = pivot;
+//      start = pivot + 1;
 //    }
-//  } while (start != end);
+//  }
 //
-//  /* work out the ancestor for the element corresponding to each thread in
-//   * the warp */
-//  int rem, a = -1, i = start;
-//  do {
-//    O = Os(i); // read will always be broadcast
-//    rem = O - w*W;
-//    if (a == -1 && q < rem) { // a == -1 ensures first satisfactory i taken
-//      a = i;
+//  if (p < P) {
+//    as(p) = start; // write will always be coalesced
+//    if (doPrePermute) {
+//      atomicMin(&is(start), p);
 //    }
-//    ++i;
-//  } while (rem < warpSize);
-//  as(p) = a; // write will always be coalesced
+//  }
 }
 
 template<class V1, class V2>
