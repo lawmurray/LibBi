@@ -88,13 +88,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(
 
   for (p = q; p < P2; p += Q) {
     /* first proposal */
-    if (p < P2/P1*P1) {
-      /* death jump (stratified uniform) proposal */
-      p2 = p % P1;
-    } else {
-      /* random proposal */
-      p2 = rng1.uniformInt(0, P1 - 1);
-    }
+    p2 = (p < P2/P1*P1) ? p % P1 : rng1.uniformInt(0, P1 - 1);
     lw2 = lws(p2) - maxLogWeight;
     lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
 
@@ -143,13 +137,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
     i = 0;
     accept = true;
     do {
-      if (p < P2/P1*P1) {
-        /* death jump (stratified uniform) proposal */
-        p2 = p % P1;
-      } else {
-        /* random proposal */
-        p2 = rng1.uniformInt(0, P1 - 1);
-      }
+      p2 = (accept && p < P2/P1*P1) ? p % P1 : rng1.uniformInt(0, P1 - 1);
       lw2 = lws(p2) - maxLogWeight;
       lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
       accept = lalpha < lw2;
