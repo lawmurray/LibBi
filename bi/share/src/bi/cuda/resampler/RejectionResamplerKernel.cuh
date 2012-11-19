@@ -125,7 +125,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
   const int bufSize = 4;
 
   int p, p2, i;
-  int* buf = reinterpret_cast<int*>(shared_mem);
+  int* __restrict__ buf = reinterpret_cast<int*>(shared_mem);
   real lalpha, lw2;
   bool accept;
 
@@ -137,10 +137,10 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
     i = 0;
     accept = true;
     do {
-      p2 = (accept && p < P2/P1*P1) ? p % P1 : rng1.uniformInt(0, P1 - 1);
+      p2 = (accept && p < P2/P1*P1) ? (p + i*Q) % P1 : rng1.uniformInt(0, P1 - 1);
       lw2 = lws(p2) - maxLogWeight;
       lalpha = bi::log(rng1.uniform((T1)0.0, (T1)1.0));
-      accept = lalpha < lw2;
+      accept = lalpha <= lw2;
       if (accept) {
         buf[blockDim.x*i + threadIdx.x] = p2;
         ++i;

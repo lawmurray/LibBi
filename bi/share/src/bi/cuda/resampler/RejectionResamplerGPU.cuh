@@ -27,21 +27,20 @@ void bi::RejectionResamplerGPU::ancestors(Random& rng, const V1 lws,
   int_vector_type is(0); // just placeholder
 
   dim3 Db, Dg;
-  int Ns;
+  //int Ns;
 
   Db.x = bi::min(P, deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
   //deviceBalance1d(Db, Dg);
 
-  if (bufSize*Db.x*Dg.x <= P) {
-    Ns = bufSize*Db.x*sizeof(T2);
-    kernelRejectionResamplerAncestors2<<<Dg,Db,Ns>>>(rng.devRngs,
+  //if (bufSize*Db.x*Dg.x <= P) {
+  //  Ns = bufSize*Db.x*sizeof(T2);
+  //  kernelRejectionResamplerAncestors2<<<Dg,Db,Ns>>>(rng.devRngs,
+  //      lws, as, is, maxLogWeight, DISABLE_PRE_PERMUTE);
+  //} else {
+    kernelRejectionResamplerAncestors<<<Dg,Db>>>(rng.devRngs,
         lws, as, is, maxLogWeight, DISABLE_PRE_PERMUTE);
-  } else {
-    Ns = 0;
-    kernelRejectionResamplerAncestors<<<Dg,Db,Ns>>>(rng.devRngs,
-        lws, as, is, maxLogWeight, DISABLE_PRE_PERMUTE);
-  }
+  //}
   CUDA_CHECK;
 }
 
@@ -62,21 +61,20 @@ void bi::RejectionResamplerGPU::ancestorsPermute(Random& rng, const V1 lws,
   set_elements(is, P);
 
   dim3 Db, Dg;
-  int Ns;
+  //int Ns;
 
   Db.x = bi::min(P, deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
   //deviceBalance1d(Db, Dg);
 
-  if (bufSize*Db.x*Dg.x <= P) {
-    Ns = bufSize*Db.x*sizeof(T2);
-    kernelRejectionResamplerAncestors2<<<Dg,Db,Ns>>>(rng.devRngs,
-        lws, cs, is, maxLogWeight, ENABLE_PRE_PERMUTE);
-  } else {
-    Ns = 0;
-    kernelRejectionResamplerAncestors<<<Dg,Db,Ns>>>(rng.devRngs,
-        lws, cs, is, maxLogWeight, ENABLE_PRE_PERMUTE);
-  }
+  //if (bufSize*Db.x*Dg.x <= P) {
+  //  Ns = bufSize*Db.x*sizeof(int);
+  //  kernelRejectionResamplerAncestors2<<<Dg,Db,Ns>>>(rng.devRngs,
+  //      lws, cs, is, maxLogWeight, ENABLE_PRE_PERMUTE);
+  //} else {
+      kernelRejectionResamplerAncestors<<<Dg,Db>>>(rng.devRngs,
+          lws, cs, is, maxLogWeight, ENABLE_PRE_PERMUTE);
+  //}
   CUDA_CHECK;
 
   /* finish permutation */
