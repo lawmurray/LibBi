@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
       real W = actualP*bi::exp(-0.25*z*z)/(2.0*BI_SQRT_TWO_PI);
       real wmax = (1.0/BI_SQRT_TWO_PI)/W;
       real beta = 1.0/actualP;
-      real alpha = (1.0 - wmax)/(actualP*wmax);
+      real alpha = (actualP - 1.0)*(1.0 - wmax)/(actualP*wmax);
       real epsilon = 1.0e-3;
       real lambda = 1.0 - alpha - beta;
       int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
