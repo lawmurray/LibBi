@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
   host_matrix<int,-1,-1,-1,1> times(REPS, PS);
   host_matrix<real,-1,-1,-1,1> sqerrs(REPS, PS);
   host_vector<int,-1,1> actualPs(PS);
-  host_vector<int,-1,1> zs(ZS);
+  host_vector<real,-1,1> zs(ZS);
   
   GaussianPdf<> f(1), g(1);
   f.samples(rng, x);
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
     }
     g.logDensities(x, vec(lW), true);
     zs(z) = 0.5*z;
-    std::cerr << "z=" << z << ":";
+    std::cerr << "z=" << zs(z) << ":";
   
     /* test on weight sets */
     for (p = 0; p < PS; ++p) {
@@ -122,13 +122,14 @@ int main(int argc, char* argv[]) {
       int_vector_type as(actualP);
       int_vector_type os(actualP);
       int_vector_type Os(actualP);
-    
+      as.clear(); // needed for sort and ess    
+
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
-      real W = actualP*bi::exp(-0.25*z*z)/(2.0*BI_SQRT_TWO_PI);
+      real W = actualP*bi::exp(-0.25*zs(z)*zs(z))/(2.0*BI_SQRT_TWO_PI);
       real wmax = (1.0/BI_SQRT_TWO_PI)/W;
       real beta = 1.0/actualP;
-      real alpha = (actualP - 1.0)*(1.0 - wmax)/(actualP*wmax);
-      real epsilon = 1.0e-3;
+      real alpha = (1.0 - wmax)/(actualP*wmax);
+      real epsilon = 1.0e-2*wmax;
       real lambda = 1.0 - alpha - beta;
       int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
       resam.setSteps(B);
@@ -147,12 +148,16 @@ int main(int argc, char* argv[]) {
         resam.ancestorsPermute(rng, lws, as, maxLogWeight);
         [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
         resam.ancestorsPermute(rng, lws, as);
-        [% ELSE %]
+        [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
         resam.ancestors(rng, lws, as);
         resam.permute(as);
+        [% ELSIF client.get_named_arg('resampler') == 'sort' %]
+        bi::sort(lws);
+        [% ELSIF client.get_named_arg('resampler') == 'ess' %]
+        real ess = bi::ess_reduce(lws);
         [% END %]
 
-		/* time */                
+        /* time */                
         synchronize();
         time = timer.toc();
 
