@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
       int_vector_type as(actualP);
       int_vector_type os(actualP);
       int_vector_type Os(actualP);
-      as.clear(); // needed for sort and ess    
+      seq_elements(as, 0); // needed for sort and ess    
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
       real W = actualP*bi::exp(-0.25*zs(z)*zs(z))/(2.0*BI_SQRT_TWO_PI);
