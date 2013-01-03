@@ -90,11 +90,11 @@ This would be saved in a file named {\sf PZ.bi}. We can now consider
 performing various tasks with the Bi command-line interface, the simplest of
 which is simulating from the model:
 \begin{alltt}{\sf
-bi simulate --model-file PZ.bi -P 128 -T 365 -K 366 --output-file results/simulate.nc
+bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 --output-file results/simulate.nc
 }\end{alltt}
 This command will simulate 128 trajectories of the model ({\sf -P 128}), each
 of 365 days ({\sf -T 365}), outputting the results to the NetCDF\index{NetCDF}
-file {\sf results/simulate.nc} every day ({\sf -K 366}).
+file {\sf results/simulate.nc} every day ({\sf -K 365}).
 
 The \hyperref[hyper][Command_line_interface]{command-line interface} provides
 numerous other functionality, including filtering and smoothing the model with
@@ -519,14 +519,31 @@ where \textsf{\textit{command}} is any one of the following:
 \end{itemize}
 and available \textsf{\textit{options}} depend on the command.
 
-Options for each command may be specified in a configuration file\index{config
-  file} or on the command line itself. For a configuration file, give the name
-of the file on the command line, preceded by \textsf{@}, e.g.
+Options may be specified in a configuration file\index{config file} or on the
+command line itself. To use a configuration file, give the name of the file on
+the command line, preceded by \textsf{@}, e.g.
 \begin{alltt}{\sf
     bi \textit{command} @command.conf
 }\end{alltt}
-An option given on the command line override an option of the same name given
-in the configuration file.
+
+More than one config file may be specified, each preceded by \textsf{@}. An
+option given on the command line will override an option of the same name
+given in the configuration file.
+
+A config file simply contains a list of command-line options just as they
+would be given on the command line itself. For readability, the command-line
+options may be spread over any number of lines, and end-of-line comments,
+preceded by \textsf{\#}, may appear. The contents of one config file may be
+nested in another by using the \textsf{@file.conf} syntax within that
+other. This can be useful in avoiding redundancy. For example, the
+\textsf{\hyperref[hyper][filter]{filter}} command inherits all the options of
+\textsf{\hyperref[hyper][simulate]{simulate}}, and the
+\textsf{\hyperref[hyper][sample]{sample}} command inherits all the options of
+\textsf{\hyperref[hyper][filter]{filter}}. In this case it may be useful to
+write a \textsf{simulate.conf} file that is nested within a
+\textsf{filter.conf} file, that is nested within a \textsf{sample.conf} file,
+so that the config files inherit options just as the commands do.
+
 
 \section{Data files\label{Data_files}}
 
