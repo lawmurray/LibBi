@@ -8,18 +8,62 @@
 \usepackage{hyperref}
 \usepackage{makeidx}
 \usepackage{lmodern} % vertically centres tilde in code
-\usepackage[T1]{fontenc}
 \usepackage{textcomp}
 \usepackage{microtype}
+%\usepackage{fancybox}
+%\usepackage{fancyvrb}
+\usepackage{relsize}
+\usepackage{inconsolata}
+\usepackage[T1]{fontenc}
 
 \parskip 11pt
 \parindent 0pt
 
-\title{\Huge{Bi User Guide, Developer Guide and Reference\\DRAFT}}
+% new commands (\begingroup ... \endgroup for accepting arguments with _)
+\newcommand\bitt[1]{\texttt{#1}}
+
+\newcommand\kwref{\begingroup \catcode`_=12 \dokwref}
+\newcommand\dokwref[1]{\hyperref[hyper][#1]{\bitt{#1}}\index{#1}\endgroup}
+
+\newcommand\actionref{\begingroup \catcode`_=12 \doactionref}
+\newcommand\doactionref[1]{\hyperref[hyper][action_#1]{\bitt{#1}}\index{#1}\endgroup}
+
+\newcommand\blockref{\begingroup \catcode`_=12 \doblockref}
+\newcommand\doblockref[1]{\hyperref[hyper][block_#1]{\bitt{#1}}\index{#1}\endgroup}
+
+\newcommand\clientref{\begingroup \catcode`_=12 \doclientref}
+\newcommand\doclientref[1]{\hyperref[hyper][client_#1]{\bitt{#1}}\index{#1}\endgroup}
+
+\newcommand\secref{\begingroup \catcode`_=12 \dosecref}
+\newcommand\dosecref[2]{\hyperref[hyper][#1]{#2}\index{#2} \endgroup}
+
+% new environments
+\newenvironment{bicode}
+{\begin{alltt}%
+\relsize{-0.5}}
+{\end{alltt}}
+
+\newenvironment{cppcode}
+{\begin{alltt}%
+\relsize{-0.5}}
+{\end{alltt}}
+
+\newenvironment{cmdcode}
+{\begin{alltt}%
+\relsize{-0.5}}
+{\end{alltt}}
+
+\newenvironment{tip}
+{\begin{minipage}{\textwidth}
+\textbf{Tip: }%
+}
+{\end{minipage}}
+
+\title{\Huge{Bi User Guide, Developer Guide and Reference}}
 \author{Lawrence Murray}
 
 % Prevents `--' in command-line options being interpreted as en-dash ligatures
-\DisableLigatures{family=sf*}
+%\DisableLigatures{family=sf*}
 
 \makeindex
 
@@ -52,6 +96,8 @@
 \input{common}
 \input{clients}
 
+\begingroup \catcode`_=12 % allows bare underscores in index
 \printindex
+\endgroup
 
 \end{document}

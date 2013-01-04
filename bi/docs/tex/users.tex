@@ -28,9 +28,8 @@ probability densities:
 \item the observation model, specifying the observation density conditioned on
   the parameters and current state.
 \end{itemize}
-Each of these is explicitly specified using the
-\hyperref[hyper][Modelling_language]{Bi modelling language}\index{modelling
-  language}.
+Each of these is explicitly specified using the Bi
+\secref{Modelling_language}{modelling language}.
 
 We begin with a brief example to set the scene. Consider the following
 Lotka-Volterra-like predator-prey model between zooplankton (predator, $Z$)
@@ -46,59 +45,59 @@ daily. Parameters to be estimated are $\mu$ and $\sigma$, and $P$ is observed,
 with noise, at daily intervals.
 
 The model above might be specified in the Bi modelling language as follows:
-\begin{alltt}{\sf
-    /**
-     * Lotka-Volterra-like phytoplankton-zooplankton (PZ) model.
-     */
-    model PZ \{
-      const c = 0.25     // zooplankton clearance rate
-      const e = 0.3      // zooplankton growth efficiency
-      const m_l = 0.1    // zooplankton linear mortality
-      const m_q = 0.1    // zooplankton quadratic mortality
+\begin{bicode}
+/**
+ * Lotka-Volterra-like phytoplankton-zooplankton (PZ) model.
+ */
+model PZ \{
+  const c = 0.25   // zooplankton clearance rate
+  const e = 0.3    // zooplankton growth efficiency
+  const m_l = 0.1  // zooplankton linear mortality
+  const m_q = 0.1  // zooplankton quadratic mortality
 
-      param mu, sigma     // mean and standard deviation of phytoplankton growth
-      state P, Z         // phytoplankton, zooplankton
-      noise alpha        // stochastic phytoplankton growth rate
-      obs P_obs          // observations of phytoplankton
+  param mu, sigma  // mean and standard deviation of phytoplankton growth
+  state P, Z       // phytoplankton, zooplankton
+  noise alpha      // stochastic phytoplankton growth rate
+  obs P_obs        // observations of phytoplankton
   
-      sub parameter \{
-        mu ~ uniform(0.0, 1.0)
-        sigma ~ uniform(0.0, 0.5)
-      \}
+  sub parameter \{
+    mu ~ uniform(0.0, 1.0)
+    sigma ~ uniform(0.0, 0.5)
+  \}
   
-      sub initial \{
-        P ~ log_normal(log(2.0), 0.2)
-        Z ~ log_normal(log(2.0), 0.1)
-      \}
+  sub initial \{
+    P ~ log_normal(log(2.0), 0.2)
+    Z ~ log_normal(log(2.0), 0.1)
+  \}
 
-      sub transition(delta = 1.0) \{
-        do \{
-          alpha ~ normal(mu, sigma)
-        \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
-          P <- ode(alpha*P - c*P*Z)
-          Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
-        \}
-      \}
-
-      sub observation \{
-        P_obs ~ log_normal(log(P), 0.2)
-      \}
+  sub transition(delta = 1.0) \{
+    do \{
+      alpha ~ normal(mu, sigma)
+    \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+      P <- ode(alpha*P - c*P*Z)
+      Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
     \}
-}\end{alltt}
+  \}
 
-This would be saved in a file named {\sf PZ.bi}. We can now consider
+  sub observation \{
+    P_obs ~ log_normal(log(P), 0.2)
+  \}
+\}
+\end{bicode}
+
+This would be saved in a file named \bitt{PZ.bi}. We can now consider
 performing various tasks with the Bi command-line interface, the simplest of
 which is simulating from the model:
-\begin{alltt}{\sf
+\begin{cmdcode}
 bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 --output-file results/simulate.nc
-}\end{alltt}
-This command will simulate 128 trajectories of the model ({\sf -P 128}), each
-of 365 days ({\sf -T 365}), outputting the results to the NetCDF\index{NetCDF}
-file {\sf results/simulate.nc} every day ({\sf -K 365}).
+\end{cmdcode}
+This command will simulate 128 trajectories of the model (\bitt{-P 128}), each
+of 365 days (\bitt{-T 365}), outputting the results to the NetCDF\index{NetCDF}
+file \bitt{results/simulate.nc} every day (\bitt{-K 365}).
 
-The \hyperref[hyper][Command_line_interface]{command-line interface} provides
-numerous other functionality, including filtering and smoothing the model with
-respect to data, and optimising or sampling its parameters.
+The \secref{Command_line_interface}{command-line interface} provides numerous
+other functionality, including filtering and smoothing the model with respect
+to data, and optimising or sampling its parameters.
 
 \section{Components\label{Components}}
 
@@ -115,218 +114,210 @@ Bi consists of three components:
   for querying, analysing and visualising outputs.
 \end{description}
 
-The \hyperref[hyper][Command_line_interface]{command-line interface} provides
+The \secref{Command_line_interface}{command-line interface} provides
 for interaction with LibBi and GenBi. OctBi can be installed separately as a
 GNU Octave package for easily working with output files from this.
 
 \section{The Bi modelling language\label{Modelling_language}}
 
 A model specification file contains a single model specification. The
-specification always starts with an outer \hyperref[hyper][model]{\sf
-  model}\index{model} statement that declares and names the model. It then
-proceeds with declarations of dimensions and variables, followed by four
-\emph{top-level blocks} -- \hyperref[hyper][parameter]{\sf parameter},
-\hyperref[hyper][initial]{\sf initial}, \hyperref[hyper][transition]{\sf
-  transition} and \hyperref[hyper][observation]{\sf observation} -- that
-describe the factors of the hierarchical model.
+specification always starts with an outer \kwref{model} statement that
+declares and names the model. It then proceeds with declarations of dimensions
+and variables, followed by four \emph{top-level blocks} --
+\blockref{parameter}, \blockref{initial}, \blockref{transition} and
+\blockref{observation} -- that describe the factors of the hierarchical model.
 
 A suitable template is:
-\begin{alltt}{\sf
-    model \textsl{Name} \{
-      // declare dimensions...
-      // declare variables...
+\begin{bicode}
+model \textsl{Name} \{
+  // declare dimensions...
+  // declare variables...
 
-      sub parameter \{
-        // specify the parameter model
-      \}
+  sub parameter \{
+    // specify the parameter model
+  \}
 
-      sub initial \{
-        // specify the initial condition model
-      \}
+  sub initial \{
+    // specify the initial condition model
+  \}
 
-      sub transition \{
-        // specify the transition model
-      \}
+  sub transition \{
+    // specify the transition model
+  \}
 
-      sub observation \{
-        // specify the observation model
-      \}
-    \}
-}\end{alltt}
+  sub observation \{
+    // specify the observation model
+  \}
+\}
+\end{bicode}
 
-Note that the contents of the \hyperref[hyper][model]{\sf model}\index{model}
-statement and each top-level block are contained in curly braces ({\sf
-\{\(\ldots\)\}}), in typical C-style. Comments are also C-style, an inline
-comment being wrapped by \textsf{/*} and \textsf{*/}, and the double-slash
-(\textsf{//}) denoting an end-of-line comment. Semicolons at the end of each
-line are optional.
+Note that the contents of the \kwref{model} statement and each top-level block
+are contained in curly braces (\bitt{\{\(\ldots\)\}}), in typical
+C-style. Comments are also C-style, an inline comment being wrapped by
+\bitt{/*} and \bitt{*/}, and the double-slash (\bitt{//}) denoting an
+end-of-line comment. Semicolons at the end of each line are optional.
 
-Each top-level blocks may contain further nested \emph{blocks}, which
-in turn contain \emph{actions}, each of which specifies the distribution of,
-or means to evaluate, a variable.
+\subsection{Variables\label{Variables}}
 
 \subsection{Dimensions\label{Dimensions}}
 
-\subsection{Variables\label{Variables}}
 
 \subsection{Actions\label{Actions}}
 
 Within each top-level block, a probability density is specified using
-\emph{actions}. If \textsf{x} is some variable already declared, an action
+\emph{actions}. If \bitt{x} is some variable already declared, an action
 takes the form:
-\begin{alltt}{\sf
-    x ~ \textsl{name}(\textsl{arguments}, ...)
-}\end{alltt}
+\begin{bicode}
+x ~ \textsl{name}(\textsl{arguments}, ...)
+\end{bicode}
 or
-\begin{alltt}{\sf
-    x <- \textsl{name}(\textsl{arguments}, ...)
-}\end{alltt}
+\begin{bicode}
+x <- \textsl{name}(\textsl{arguments}, ...)
+\end{bicode}
 
-The first form indicates that the (random) variable \textsf{x} is distributed
+The first form indicates that the (random) variable \bitt{x} is distributed
 according to the action given on the right. Such actions are usually, and
 unsurprisingly, named after common parametric distributions (e.g.
-\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian},
-\hyperref[hyper][gamma]{\sf gamma}\index{gamma} and
-\hyperref[hyper][uniform]{\sf uniform}\index{uniform}).
+\actionref{gaussian}, \actionref{gamma} and \actionref{uniform}).
 
-The second form indicates that the (deterministic) variable \textsf{x} should
+The second form indicates that the (deterministic) variable \bitt{x} should
 be assigned a value evaluated according to the action given on the right. Such
 actions may require the evaluation of a simple scalar, vector or matrix
 expression, or may required more complicated processing, such as the numerical
 integration of ordinary differential equations\index{ordinary differential
-  equations} (e.g. the \hyperref[hyper][ode]{\sf ode}\index{ode} action).
+  equations} (e.g. the \actionref{ode}) action).
 
 Actions support both \emph{named}\index{named arguments} and \emph{positional}
 arguments\index{positional arguments}, and this will be indicated in their
 documentation. Positional arguments are interpreted by the order given. For
 example
-\begin{alltt}{\sf
-    x ~ gaussian(0.0, 1.0)
-}\end{alltt}
-means that \textsf{x} is distributed according to the
-\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} action with, by the
-definition of that action, mean $0.0$ and standard deviation $1.0$.
+\begin{bicode}
+x ~ gaussian(0.0, 1.0)
+\end{bicode}
+means that \bitt{x} is distributed according to the \actionref{gaussian}
+action with, by the definition of that action, mean $0.0$ and standard
+deviation $1.0$.
 
-The \hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} action also
-happens to support named arguments, so the following is equivalent:
-\begin{alltt}{\sf
-    x ~ gaussian(mean = 0.0, std = 1.0)
-}\end{alltt}
+The \actionref{gaussian} action also happens to support named arguments, so
+the following is equivalent:
+\begin{bicode}
+x ~ gaussian(mean = 0.0, std = 1.0)
+\end{bicode}
 The order of named arguments is unimportant, so the following is also
 equivalent:
-\begin{alltt}{\sf
-    x ~ gaussian(std = 1.0, mean = 0.0)
-}\end{alltt}
+\begin{bicode}
+x ~ gaussian(std = 1.0, mean = 0.0)
+\end{bicode}
 
 Positional and named arguments may be mixed, but all positional arguments must
 appear before all named arguments. Thus, this is valid:
-\begin{alltt}{\sf
-    x ~ gaussian(0.0, std = 1.0)
-}\end{alltt}
+\begin{bicode}
+x ~ gaussian(0.0, std = 1.0)
+\end{bicode}
 but these are not:
-\begin{alltt}{\sf
-    x ~ gaussian(mean = 0.0, 1.0)
-    x ~ gaussian(std = 1.0, 0.0)
-}\end{alltt}
+\begin{bicode}
+x ~ gaussian(mean = 0.0, 1.0)
+x ~ gaussian(std = 1.0, 0.0)
+\end{bicode}
 This avoids ambiguity.
 
 Refer to the definition of a particular action to determine which arguments
 may be passed in positional, named or either form.
 
-\subsection{Serialisation\label{Serialisation}}
-
-It is assumed that all actions within the same block are independent, and can
-be evaluated concurrently. Where dependencies exist between actions, the
-\hyperref[hyper][do_then]{\sf do.. then}\index{do.. then} clause may be used to
-serialise actions so as to satisfy prerequisites:
-\begin{alltt}{\sf
-    do \{
-      eps ~ gaussian(0.0, 1.0)
-    \} then \{
-      x <- A*x + eps
-    \}
-}\end{alltt}
-Here, the variable \textsf{x} depends on the variable \textsf{eps} first being
-evaluated.
-
-Any number of {\sf then} parts may follow the initial {\sf do}.
-
-Under the hood, Bi assumes that it can evaluate actions within the same block
-in parallel, unless it is told otherwise. The \hyperref[hyper][do_then]{\sf
-  do.. then}\index{do.. then} clause is the only way to tell it otherwise.
-
 \subsection{Blocks}
 
-Some actions are more complicated and can be wrapped in \emph{named blocks}. A
-good example is the \hyperref[hyper][ode]{\sf ode}\index{ode} action. This
-describes the differential equation\index{ordinary differential equations} for
-a single variable, which must be grouped with other actions that describe the
-differential equations of other variables in the same system. The grouping is
-achieved by the \hyperref[hyper][ode]{\sf ode}\index{ode} named block.
+Some actions are more complicated and can be wrapped in \emph{blocks}. A
+good example is the \actionref{ode} action. This describes a single ordinary
+differential equation\index{ordinary differential equations}, which must be
+grouped with other actions that describe the other ordinary differential
+equations of the same system. The grouping is achieved by the \blockref{ode}
+block.
 
 Consider the following Lotka-Volterra-type\index{Lotka-Volterra} transition
 model:
-\begin{alltt}{\sf
-    sub transition \{
-      sub ode \{
-        P <- ode(alpha*P - c*P*Z)
-        Z <- ode(e*c*P*Z - m_l*Z)
-      \}
-    \}
-}\end{alltt}
-Here, the additional \hyperref[hyper][ode]{\sf ode}\index{ode} block combines
-the two actions into the one system of ordinary differential equations.
+\begin{bicode}
+sub transition \{
+  sub ode \{
+    P <- ode(alpha*P - c*P*Z)
+    Z <- ode(e*c*P*Z - m_l*Z)
+  \}
+\}
+\end{bicode}
+Here, the additional \blockref{ode} block combines the two actions into the
+one system of ordinary differential equations.
 
 Note that every action is automatically wrapped in an appropriate enclosing
 block like this by GenBi. Indeed, in this case, GenBi will implicitly wrap the
-two \hyperref[hyper][ode]{\sf ode}\index{ode} actions in the one
-\hyperref[hyper][ode]{\sf ode}\index{ode} block anyway, so that explicitly
-doing so is unnecessary (but unharmful). Like actions, however, blocks can
-take arguments; explicitly giving the enclosing block permits arguments to be
-changed. In this case, the \hyperref[hyper][ode]{\sf ode}\index{ode} block has
-parameters to configure the numerical integrator used to simulate the
-differential system. These can be adjusted:
-\begin{alltt}{\sf
-    sub transition \{
-      sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
-        P <- ode(alpha*P - c*P*Z)
-        Z <- ode(e*c*P*Z - m_l*Z)
-      \}
-    \}
-}\end{alltt}
+two \actionref{ode} actions in the one \blockref{ode} block anyway, so that
+explicitly doing so is unnecessary (but unharmful). Like actions, however,
+blocks can take arguments; explicitly giving the enclosing block permits
+arguments to be changed. In this case, the \blockref{ode} block has parameters
+to configure the numerical integrator used to simulate the differential
+system. These can be adjusted:
+\begin{bicode}
+sub transition \{
+  sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+    P <- ode(alpha*P - c*P*Z)
+    Z <- ode(e*c*P*Z - m_l*Z)
+  \}
+\}
+\end{bicode}
 
-The top-level \hyperref[hyper][transition]{\sf transition}\index{transition}
-block, too, has an optional argument, giving the time-step for discrete-time
-parts of the system. While not too useful here given the continuous-time
-model, this argument can nevertheless be given:
-\begin{alltt}{\sf
-    sub transition(delta = 1.0) \{
-      sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
-        P <- ode(alpha*P - c*P*Z)
-        Z <- ode(e*c*P*Z - m_l*Z)
-      \}
-    \}
-}\end{alltt}
+The top-level \blockref{transition} block, too, has an optional argument,
+giving the time-step for discrete-time parts of the system. While not too
+useful here given the continuous-time model, this argument can nevertheless be
+given:
+\begin{bicode}
+sub transition(delta = 1.0) \{
+  sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+    P <- ode(alpha*P - c*P*Z)
+    Z <- ode(e*c*P*Z - m_l*Z)
+  \}
+\}
+\end{bicode}
+
+\begin{tip}
+The implicit wrapping of actions in blocks by GenBi should be intuitive. To
+see precisely what transformations are being made to the model, use the
+\clientref{rewrite} command.
+\end{tip}
 
 Arguments, both positional and named, work for blocks as they do for actions.
 
-Finally, named blocks can be used in a \hyperref[hyper][do_then]{\sf
-  do.. then}\index{do.. then} clause. The \textsf{do} or \textsf{then} keyword
-simply replaces the \textsf{sub} keyword, for example:
-\begin{alltt}{\sf
-    sub transition(delta = 1.0) \{
-      do \{
-        alpha ~ normal(mu, sigma)
-      \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
-        P <- ode(alpha*P - c*P*Z)
-        Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
-      \}
-    \}
-}\end{alltt}
+\subsection{The \bitt{do..then} clause\label{do_then}}
 
-The implicit wrapping of actions in blocks by GenBi should be intuitive. To
-see precisely what transformations are being made to the model, use the
-\hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command.
+It is assumed that all actions within the same block are independent, and can
+be evaluated concurrently. Where dependencies exist between actions, the
+\bitt{do..then} clause may be used to serialise actions so
+as to satisfy prerequisites:
+\begin{bicode}
+do \{
+  eps ~ gaussian(0.0, 1.0)
+\} then \{
+  x <- A*x + eps
+\}
+\end{bicode}
+Here, the variable \bitt{x} depends on the variable \bitt{eps} first being
+evaluated.
+
+Any number of \bitt{then} parts may follow the initial \bitt{do}.
+
+Under the hood, Bi assumes that it can evaluate actions within the same block
+in parallel, unless it is told otherwise. The \bitt{do..then} clause is the
+only way to tell it otherwise.
+
+Named blocks can be used in a \bitt{do..then} clause. The \bitt{do} or
+\bitt{then} keyword simply replaces the \bitt{sub} keyword, for example:
+\begin{bicode}
+sub transition(delta = 1.0) \{
+  do \{
+    alpha ~ normal(mu, sigma)
+  \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+    P <- ode(alpha*P - c*P*Z)
+    Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
+  \}
+\}
+\end{bicode}
 
 \subsection{Expressions\label{Expressions}}
 
@@ -334,27 +325,21 @@ Bi supports expressions over scalars, vectors and matrices, as well as the
 special type \textit{element}, which requires some explanation. These are
 defined as follows:
 \begin{itemize}
-
 \item a \textit{scalar}\index{scalar} is a literal, constant or variable that
   is not declared over any dimensions,
-
 \item a \textit{vector}\index{vector} is a variable declared over
   exactly one dimension,
-
 \item a \textit{matrix}\index{matrix} is a variable declared over exactly two
   dimensions,
-
 \item variables declared over three or more dimensions are not given a special
   name,
-
 \item an \textit{element} is a reference to a single element of any
   variable declared over one or more dimensions.
-
 \end{itemize}
 
 The particular distinction of the element type in Bi will be unfamiliar to
 most users. Syntactically, whenever square brackets are used to refer to a
-single element of a variable (e.g. \textsf{a[i]}), that symbol is of the
+single element of a variable (e.g. \bitt{a[i]}), that symbol is of the
 element type.
 
 There are a few implications of these definitions that may not be immediately
@@ -383,10 +368,10 @@ Special classes of expression are:
   only.
 \item A \textit{static expression}\index{static expression} is one that does
   not depend on time. It may refer to literals, constants, variables of type
-  \textsf{param}, and inlines that expand to other static expressions only.
+  \bitt{param}, and inlines that expand to other static expressions only.
 \item A \textit{common expression}\index{common expression} is one that does
   not depend on the state of a particular trajectory. It may refer to
-  literals, constants, variables of type \textsf{param} or \textsf{input}, and
+  literals, constants, variables of type \bitt{param} or \bitt{input}, and
   inlines that expand to other common expressions only.
 \item An \textit{element expression}\index{element expression} is one that
   references at least one element. It may refer to literals, constants,
@@ -401,148 +386,146 @@ They are appropriate when each element of the target variable can be expressed
 as a function of scalars and/or the elements of other variables.
 
 Consider the following example describing a Lorenz 96 model:
+\begin{bicode}
+dim x(size = 20, boundary = 'cyclic')
+param F
+state X[x]
+\(\ldots\)
+X[i] <- ode(X[i - 1]*(X[i + 1] - X[i - 2]) - X[i] + F)
+\end{bicode}
 
-\begin{alltt}{\sf
-    dim x(size = 20, boundary = 'cyclic')
-    param F
-    state X[x]
-    \(\ldots\)
-    X[i] <- ode(X[i - 1]*(X[i + 1] - X[i - 2]) - X[i] + F)
-}\end{alltt}
-
-Here, \textsf{X} is a vector variable declared along the \textsf{x}
-dimension. The final line is an \hyperref[hyper][ode]{\sf ode}\index{ode}
-action giving the derivative of the \textsf{i}th element of \textsf{X}. The
-presence of the element syntax \textsf{X[i]} is what makes this an element
+Here, \bitt{X} is a vector variable declared along the \bitt{x}
+dimension. The final line is an \actionref{ode}
+action giving the derivative of the \bitt{i}th element of \bitt{X}. The
+presence of the element syntax \bitt{X[i]} is what makes this an element
 expression.
 
-The \textit{alias} \textsf{i} on the left-hand side is an arbitrary name for
-indexing along the dimension of \textsf{X}. Note the way in which \textsf{i}
-is used on the right-hand side to refer to other elements of the \textsf{X}
+The \textit{alias} \bitt{i} on the left-hand side is an arbitrary name for
+indexing along the dimension of \bitt{X}. Note the way in which \bitt{i}
+is used on the right-hand side to refer to other elements of the \bitt{X}
 vector. Indexing expressions that appear between square brackets, such as
-\textsf{[i + 1]}, \textsf{[i - 2]} and \textsf{[i]} above must be constant
+\bitt{[i + 1]}, \bitt{[i - 2]} and \bitt{[i]} above must be constant
 expressions\index{constant expression}. Note that, in this particular case,
-any such expressions that evaluate to outside the bounds of \textsf{X} will
-wrap around to the start or end of the vector, as the \textsf{x} dimension is
-declared with \textsf{boundary = 'cyclic'}.
+any such expressions that evaluate to outside the bounds of \bitt{X} will
+wrap around to the start or end of the vector, as the \bitt{x} dimension is
+declared with \bitt{boundary = 'cyclic'}.
 
 Consider another example:
-\begin{alltt}{\sf
-    dim m(20)
-    state D[m,m], x[m], y[m]
-    \(\ldots\)
-    D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
-}\end{alltt}
+\begin{bicode}
+dim m(20)
+state D[m,m], x[m], y[m]
+\(\ldots\)
+D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
+\end{bicode}
 
-This computes the Euclidean distance matrix \textsf{D} between several points
-with coordinates given in the vectors \textsf{x} and \textsf{y}. This
-demonstrates how multiple indices, in this case \textsf{i} and \textsf{j}, may
-be used. The particular selection of \textsf{i} and \textsf{j} is again
+This computes the Euclidean distance matrix \bitt{D} between several points
+with coordinates given in the vectors \bitt{x} and \bitt{y}. This
+demonstrates how multiple indices, in this case \bitt{i} and \bitt{j}, may
+be used. The particular selection of \bitt{i} and \bitt{j} is again
 arbitrary; any name may be used.
 
 Element expressions may use any scalar operators and functions. All operands
 and arguments must be scalars or elements. Thus the following is not
 permitted:
-\begin{alltt}{\sf
-    d[i] <- dot(x, y)
-}\end{alltt}
-as \hyperref[hyper][dot]{\sf dot}\index{dot} is a vector function. One might
-consider expressing the same as:
-\begin{alltt}{\sf
-    do \{
-      c <- dot(x,y)
-    \} then \{
-      d[i] <- c
-    \}
-}\end{alltt}
-where the dot product is first stored in the scalar variable \textsf{c}, and
-then copied into each element of the vector \textsf{d}.
+\begin{bicode}
+d[i] <- dot(x, y)
+\end{bicode}
+as \actionref{dot} is a vector action. One might consider expressing the same
+as:
+\begin{bicode}
+do \{
+  c <- dot(x,y)
+\} then \{
+  d[i] <- c
+\}
+\end{bicode}
+where the dot product is first stored in the scalar variable \bitt{c}, and
+then copied into each element of the vector \bitt{d}.
 
 \subsection{Operators\label{Operators}}
 
 Arithmetic operators:
 
-{\sf + - * / \% \^{}}
+\bitt{+ - * / \% \^{}}
 
-{\sf .+ .- .* ./ .\% .\^{}}
+\bitt{.+ .- .* ./ .\% .\^{}}
 
 The first set imply matrix operations in the appropriate context. The second
 set force element-wise operation.
 
 Bitshift operators:
 
-{\sf << >>}
+\bitt{<< >>}
 
 Comparison operators:
 
-{\sf == != < <= > >= }
+\bitt{== != < <= > >= }
 
 Logical operators:
 
-{\sf \&\& ||}
+\bitt{\&\& ||}
 
 Ternary operators:
 
-{\sf ?:}
+\bitt{?:}
 
 \subsection{Functions\label{Functions}}
 
 The following math functions are supported in expressions:
 
-{\sf abs log nanlog exp nanexp max min sqrt pow mod ceil floor gamma lgamma
+\bitt{abs log nanlog exp nanexp max min sqrt pow mod ceil floor gamma lgamma
   sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh}
 
 \section{Command line interface\label{Command_line_interface}}\index{command line}
 
 Methods are applied to models via the command line interface of Bi. Invoke Bi
 via the command line as:
-\begin{alltt}{\sf
-    bi \textit{command} \textit{options} ...
-}\end{alltt}
-where \textsf{\textit{command}} is any one of the following:
+\begin{cmdcode}
+bi \textit{command} \textit{options} ...
+\end{cmdcode}
+where \bitt{\textit{command}} is any one of the following:
 \begin{itemize}
-\item \textsf{\hyperref[hyper][simulate]{simulate}} to simulate trajectories
+\item \clientref{simulate} to simulate trajectories
   from a model,
-\item \textsf{\hyperref[hyper][filter]{filter}} for filtering problems using the
+\item \clientref{filter} for filtering problems using the
   model and observations,
-\item \textsf{\hyperref[hyper][smooth]{smooth}} for smoothing problems using the
+\item \clientref{smooth} for smoothing problems using the
   model and observations,
-\item \textsf{\hyperref[hyper][optimise]{optimise}} for parameter optimisation
+\item \clientref{optimise} for parameter optimisation
   problems using the model and observations,
-\item \textsf{\hyperref[hyper][sample]{sample}} for parameter sampling
+\item \clientref{sample} for parameter sampling
   problems using the model and observations,
-\item \textsf{\hyperref[hyper][draw]{draw}} to visualise a model (useful for
+\item \clientref{draw} to visualise a model (useful for
   debugging and development),
-\item \textsf{\hyperref[hyper][rewrite]{rewrite}} to process a model and
+\item \clientref{rewrite} to process a model and
   output a new model after applying internal transformations and optimisations
   (useful for debugging and development),
 \end{itemize}
-and available \textsf{\textit{options}} depend on the command.
+and available \bitt{\textit{options}} depend on the command.
 
 Options may be specified in a configuration file\index{config file} or on the
 command line itself. To use a configuration file, give the name of the file on
-the command line, preceded by \textsf{@}, e.g.
-\begin{alltt}{\sf
-    bi \textit{command} @command.conf
-}\end{alltt}
+the command line, preceded by \bitt{@}, e.g.
+\begin{cmdcode}
+bi \textit{command} @command.conf
+\end{cmdcode}
 
-More than one config file may be specified, each preceded by \textsf{@}. An
+More than one config file may be specified, each preceded by \bitt{@}. An
 option given on the command line will override an option of the same name
 given in the configuration file.
 
 A config file simply contains a list of command-line options just as they
 would be given on the command line itself. For readability, the command-line
 options may be spread over any number of lines, and end-of-line comments,
-preceded by \textsf{\#}, may appear. The contents of one config file may be
-nested in another by using the \textsf{@file.conf} syntax within that
+preceded by \bitt{\#}, may appear. The contents of one config file may be
+nested in another by using the \bitt{@file.conf} syntax within that
 other. This can be useful in avoiding redundancy. For example, the
-\textsf{\hyperref[hyper][filter]{filter}} command inherits all the options of
-\textsf{\hyperref[hyper][simulate]{simulate}}, and the
-\textsf{\hyperref[hyper][sample]{sample}} command inherits all the options of
-\textsf{\hyperref[hyper][filter]{filter}}. In this case it may be useful to
-write a \textsf{simulate.conf} file that is nested within a
-\textsf{filter.conf} file, that is nested within a \textsf{sample.conf} file,
-so that the config files inherit options just as the commands do.
+\clientref{filter} command inherits all the options of \clientref{simulate},
+and the \clientref{sample} command inherits all the options of
+\clientref{filter}. In this case it may be useful to write a
+\bitt{simulate.conf} file that is nested within a \bitt{filter.conf} file,
+that is nested within a \bitt{sample.conf} file, so that the config files
+inherit options just as the commands do.
 
 
 \section{Data files\label{Data_files}}
@@ -561,23 +544,23 @@ ignored.
 Each variable may be defined along one or more of the following dimensions, in
 the order given:
 \begin{enumerate}
-\item A dimension named \textsf{ns}, used to index multiple experiments set up
+\item A dimension named \bitt{ns}, used to index multiple experiments set up
   in the same file. If not given for a variable, that variable is assumed to
   be the same for all experiments.
 \item Any number of dimensions with names matching those given in the model
   specification.
-\item A dimension named \textsf{np}, used to index values of the variable over
+\item A dimension named \bitt{np}, used to index values of the variable over
   trajectories. If not given for a variable, that variable is assumed to be
   the same for all trajectories. Its length should be greater than or equal to
   the number of trajectories being simulated. Variables of type
-  \textsf{param}, \textsf{input} and \textsf{obs} may not use an \textsf{np}
+  \bitt{param}, \bitt{input} and \bitt{obs} may not use an \bitt{np}
   dimension.
 \end{enumerate}
 
 Additionally, a search for \emph{time variables}\index{time variable} is
 made. Time variables have a name prefixed by ``time''. Each such variable may
 be defined along an arbitrary single inner dimension, and optionally along the
-\textsf{ns} dimension as an outer dimension also. The former dimension becomes
+\bitt{ns} dimension as an outer dimension also. The former dimension becomes
 a \emph{record dimension}\index{record dimension}. The time variable gives the
 time associated with each index of the dimension. Its values must be
 monotonically non-decreasing across the dimension.
@@ -596,7 +579,7 @@ the coordinates for spatial nodes of the model that have a corresponding
 variable in the file associated with the time variable. Each coordinate
 variable should be defined along an optional innermost dimension indexing the
 dimensions for nodes of two or more dimensions, then the same record dimension
-as the time variable, and optionally along the \textsf{ns} dimension as the
+as the time variable, and optionally along the \bitt{ns} dimension as the
 outermost dimension.
 
 If a multidimensional variable is associated with a coordinate variable with
@@ -622,51 +605,44 @@ all time variables are identical), and no coordinate variables are used.
 The precise way in which input files and the model specification interact is
 best demonstrated in the steps taken to simulate a model. Computing densities
 is similar. The \emph{initialisation file} referred to in the proceeding steps
-is that given by the {\sf --init-file} command-line option, and the
-\emph{input file} that given by {\sf --input-file}.
+is that given by the \bitt{--init-file} command-line option, and the
+\emph{input file} that given by \bitt{--input-file}.
 \begin{enumerate}
-\item Any {\sf input} variables in the input file that are not associated with
+\item Any \bitt{input} variables in the input file that are not associated with
   a time variable are initialised by reading from the file.
-\item The \hyperref[hyper][parameter]{\sf parameter}\index{parameter}
-  top-level block is sampled.
-\item Any {\sf param} variables in the input file are overwritten by reading
+\item The \blockref{parameter} top-level block is sampled.
+\item Any \bitt{param} variables in the input file are overwritten by reading
   from the file.
 \item Any static expressions extracted by GenBi for precomputation are
   evaluated.
-\item The \hyperref[hyper][initial]{\sf initial}\index{initial} top-level
-  block is sampled.
-\item Any {\sf state} variables in the input file are overwritten by reading
+\item The \blockref{initial} top-level block is sampled.
+\item Any \bitt{state} variables in the input file are overwritten by reading
   from the file.
-\item The \hyperref[hyper][transition]{\sf transition}\index{transition}
-  top-level block is sampled forward through time. Sampling stops at each time
-  that an {\sf input} variable is to change, according to the input file, at
-  which point the {\sf input} variable is updated and sampling of the
-  \hyperref[hyper][transition]{\sf transition}\index{transition} block
+\item The \blockref{transition} top-level block is sampled forward through
+  time. Sampling stops at each time that an \bitt{input} variable is to
+  change, according to the input file, at which point the \bitt{input}
+  variable is updated and sampling of the \blockref{transition} block
   continues. Continuous-time\index{continuous time} components of the
-  \hyperref[hyper][transition]{\sf transition}\index{transition} block
-  (e.g. \hyperref[hyper][ode]{\sf ode}\index{ode} actions) are always
+  \blockref{transition} block (e.g. \actionref{ode} actions) are always
   actioned. The remaining, discrete-time\index{discrete time} components, are
   only actioned when the current time is an integer multiple of the time step
-  given by the \hyperref[hyper][transition]{\sf transition}\index{transition}
-  block's {\sf delta} argument.
+  given by the \blockref{transition} block's \bitt{delta} argument.
 \end{enumerate}
 
 Note two important points in this procedure:
 \begin{itemize}
-\item An {\sf input} variable in the input file that is not associated with a
-  time variable is initialised before anything else, whereas an {\sf input}
+\item An \bitt{input} variable in the input file that is not associated with a
+  time variable is initialised before anything else, whereas an \bitt{input}
   variable that is associated with a time variable is not initialised until
   simulation begins, even if the first entry of that variable indicates an
   update at time zero.
-\item While the \hyperref[hyper][parameter]{\sf parameter}\index{parameter}
-  and \hyperref[hyper][initial]{\sf initial}\index{initial} blocks are
+\item While the \blockref{parameter} and \blockref{initial} blocks are
   sampled, the samples may be later overwritten from the initialisation
   file. Thus, the initialisation file need not contain a complete set of
   variables in order to ensure that all variables are initialised before
   simulation proceeds. This also ensures
-  \hyperref[hyper][Pseudorandom_reproducibility]{pseudorandom
-    reproducibility}\index{pseudorandom numbers} regardless of the presence,
-  or content, of the initialisation file.
+  \secref{Pseudorandom_reproducibility}{pseudorandom reproducibility}
+  regardless of the presence, or content, of the initialisation file.
 \end{itemize}
 
 \section{Performance guide\label{Performance guide}\index{performance}}
@@ -686,48 +662,48 @@ Bi will do the following for you:
 Reducing redundant or repetitious computations is thus unnecessary where these
 are constant or static subexpressions. For example, taking the square-root of
 a variance parameter need not be of concern:
-\begin{alltt}{\sf
-    param sigma2
+\begin{bicode}
+param sigma2
+\(\ldots\)
+sub transition \{
+    epsilon ~ gaussian(mu, sqrt(sigma2))
     \(\ldots\)
-    sub transition \{
-        epsilon ~ gaussian(mu, sqrt(sigma2))
-        \(\ldots\)
-    \}
-}\end{alltt}
-Here, \textsf{sqrt(sigma2)} will be extracted and precomputed outside of the
-transition model -- \textsf{sigma2} is a parameter, and so
-\textsf{sqrt(sigma2)} a static expression.
+\}
+\end{bicode}
+Here, \bitt{sqrt(sigma2)} will be extracted and precomputed outside of the
+transition model -- \bitt{sigma2} is a parameter, and so
+\bitt{sqrt(sigma2)} a static expression.
 
-Use the \hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command if you
-wish to inspect the transformations that GenBi makes to a model.
+Use the \clientref{rewrite} command if you wish to inspect the transformations
+that GenBi makes to a model.
 
 The following I/O and configuration issues are worth considering:
 \begin{itemize}
-\item When declaring a variable, use the \textsf{io} argument to omit it from
+\item When declaring a variable, use the \bitt{io} argument to omit it from
   output files if it will not be of interest.
 
-\item The \textsf{--debug} command-line option is recommended for test runs to
+\item The \bitt{--debug} command-line option is recommended for test runs to
   enable the assertion checking\index{assertion checking} that ensures valid
   code generation and input files. For production runs, however, it need not
   be used, and this will give significant performance improvements.
 
-\item Experiment with the \textsf{--gpu} command-line option to make use of a
+\item Experiment with the \bitt{--gpu} command-line option to make use of a
   CUDA-enabled GPU\index{GPU}. This will usually improve performance when a
   sufficient number of model trajectories are to be simulated.
 
-\item Experiment with the \textsf{--sse} option to make use of CPU SSE
+\item Experiment with the \bitt{--sse} option to make use of CPU SSE
   instructions\index{SSE}\index{SIMD}. These can provide up to a two-fold
   (double precision) or four-fold (single precision) speed-up. Be careful
-  though: models making heavy use of math functions such as \textsf{exp},
-  \textsf{log} and trigonometric functions may instead run slower.
+  though: models making heavy use of math functions such as \bitt{exp},
+  \bitt{log} and trigonometric functions may instead run slower.
 
 \item Experiment with using single precision\index{single precision} by using
-  the \textsf{--no-double} command line option. Assuming numerical error is
+  the \bitt{--no-double} command line option. Assuming numerical error is
   tolerable, this can offer significant performance improvements, especially
-  when used with the \textsf{--gpu} or \textsf{--sse} options (where single
+  when used with the \bitt{--gpu} or \bitt{--sse} options (where single
   precision facilitates both computational and memory efficiencies).
 
-\item \index{multithreading}Experiment with the \textsf{--threads} command
+\item \index{multithreading}Experiment with the \bitt{--threads} command
   line option to set the number of CPU threads. One can typically expect a
   linear speedup in the number of threads for methods based on the simulation
   of many trajectories (e.g. the particle filter). Depreciating returns may be
@@ -738,7 +714,7 @@ The following I/O and configuration issues are worth considering:
 
 \item Use the Intel C++ compiler\index{Intel compiler} if
   available. Anecdotally, this tends to produce code that runs 10-20\% faster
-  than \textsf{gcc}\index{gcc}. The \textsf{configure} scripts for both LibBi
+  than \bitt{gcc}\index{gcc}. The \bitt{configure} scripts for both LibBi
   and client programs will automatically detect this compiler\index{compiler},
   and use it if available.
 
@@ -757,7 +733,7 @@ The following naming conventions are recommended:
   matrix variables are appropriate, and standard symbols (rather than
   descriptive names) are encouraged. Greek letters should be written out in
   full, the first letter capitalised for the capital version
-  (e.g. \textsf{gamma} and \textsf{Gamma}).
+  (e.g. \bitt{gamma} and \bitt{Gamma}).
 \item Comments should be used liberally, with descriptions provided for all
   dimensions and variables in particular. Consider including units as part of
   the description, where relevant.

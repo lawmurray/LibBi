@@ -30,9 +30,9 @@ my $HTML_DIR = File::Spec->catdir('docs', 'html');
 foreach my $dir ($ACTION_TMPDIR, $BLOCK_TMPDIR, $CLIENT_TMPDIR) {
     my @files = <$dir/*.pm>;	
     foreach my $file (@files) {
-	my $contents = read_file($file);
-	$contents = process_pod($contents);
-	write_file($file, $contents);
+        my $contents = read_file($file);
+        $contents = process_pod($contents);
+        write_file($file, $contents);
     }
 }
 
@@ -44,7 +44,8 @@ system("pod2latex -h1level 2 -modify -sections '!(AUTHOR|VERSION|INHERITS|METHOD
 # postprocess tex
 foreach my $file ($ACTION_OUT, $BLOCK_OUT, $CLIENT_OUT) {
     my $contents = read_file($file);
-    $contents = &process_tex($contents);
+    $file =~ /(\w+)s.tex$/;
+    $contents = &process_tex($contents, $1);
     write_file($file, $contents);
 }
 
@@ -57,12 +58,15 @@ system("cd $TEX_DIR; pdflatex index.tex; makeindex index; pdflatex index.tex; pd
 
 sub process_tex {
     my $contents = shift;
+    my $type = shift;
 
-    $contents =~ s/\\texttt\{/\{\\sf /g;
+    $contents =~ s/\\label\{([A-Za-z0-9\-\_\\]*?)\}/\\label\{${type}_$1\}/g;
+    $contents =~ s/\\texttt\{/\\bitt\{/g;
     $contents =~ s/\\begin\{verbatim\}((?:.|\n)*?)\\end\{verbatim\}/&process_tt($1)/gem;
     $contents =~ s/I<(.*?)>/\\textsl\{$1\}/g;
     $contents =~ s/(SYNOPSIS|DESCRIPTION|ARGUMENTS|PARAMETERS|OPTIONS|SEE ALSO)/ucfirst(lc($1))/ge;
-    $contents =~ s/\$\\backslash\$hyperref\[hyper\]\[([A-Za-z0-9\-\_\\]*?)\]\\\{([A-Za-z0-9\-\_\\]*?)\\\}/"\\hyperref\[hyper\]\[" . &process_label($1) . "\]\{$2\}\\index\{" . &process_index($2) . "\}"/ge;
+    $contents =~ s/\$\\backslash\$secref\{([A-Za-z0-9\-\_\\]*?)\}\\\{([A-Za-z0-9\-\_\\]*?)\\\}/"\\secref\{" . &process_label($1) . "\}\{$2\}"/ge;
+    $contents =~ s/\$\\backslash\$actionref\\\{([A-Za-z0-9\-\_\\]*?)\\\}/"\\actionref\{" . &process_label($1) . "\}"/ge;
     $contents =~ s/\\label\{([A-Za-z0-9\-\_\\]*?)\}/"\\label\{" . &process_label($1) . "\}"/ge;
     $contents =~ s/\\index\{([A-Za-z0-9\-\_\\]+?)\}/"\\index\{" . &process_index($1) . "\}"/ge;
 
@@ -70,7 +74,7 @@ sub process_tex {
     $contents =~ s/\\index\{[A-Za-z0-9\-\_\\ ]+?\!(?:SYNOPSIS|DESCRIPTION|ARGUMENTS|PARAMETERS|OPTIONS|SEE ALSO)\}//ig;
     $contents =~ s/(\\paragraph\*?\{.*?)\\index\{.*?\}/$1/g;
 
-    $contents =~ s/\\subsection{((?:\w|\\_)+)/\\subsection{{\\sf $1}/g;
+    $contents =~ s/\\subsection{((?:\w|\\_)+)/\\subsection{\\bitt\{$1\}/g;
     
     return $contents;
 }
@@ -81,7 +85,7 @@ sub process_tt {
     $contents =~ s/([{}])/\\$1/g;
     $contents =~ s/\.\.\./\\(\\ldots\\)/g;
     
-    return "\\begin\{alltt\}\{\\sf$contents\}\\end\{alltt\}";
+    return "\\begin\{bicode\}$contents\\end\{bicode\}";
 }
 
 sub process_label {
@@ -105,8 +109,8 @@ sub process_index {
 sub process_pod {
     my $contents = shift;
 	
-    $contents =~ s/L\<(\w+)\>/C\<\\hyperref\[hyper\]\[$1\]\{$1\}\>/g;
-    $contents =~ s/L\<(\w+)\|(\w+)\>/C\<\\hyperref\[hyper\]\[$2\]\{$1\}\>/g;
+    $contents =~ s/L\<(\w+)\>/\\actionref\{$1\}/g;
+    $contents =~ s/L\<(\w+)\|(\w+)\>/\\secref\{$2\}\{$1\}/g;
 	
     return $contents;
 }
