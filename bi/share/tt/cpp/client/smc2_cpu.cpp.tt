@@ -36,6 +36,7 @@
 #include "bi/resampler/RejectionResampler.hpp"
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
+#include "bi/resampler/SystematicResampler.hpp"
 [% END %]
 
 #include "bi/method/Simulator.hpp"
@@ -143,6 +144,8 @@ int main(int argc, char* argv[]) {
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler resam(ENABLE_SORT);
+    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+    SystematicResampler resam(ENABLE_SORT);
     [% ELSE %]
     StratifiedResampler resam(ENABLE_SORT);
     [% END %]
@@ -177,6 +180,8 @@ int main(int argc, char* argv[]) {
     RejectionResampler thetabase;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler thetabase(ENABLE_SORT);
+    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+    SystematicResampler thetabase(ENABLE_SORT);
     [% ELSE %]
     StratifiedResampler thetabase(ENABLE_SORT);
     [% END %]
@@ -188,6 +193,8 @@ int main(int argc, char* argv[]) {
     RejectionResampler thetaresam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
     MultinomialResampler thetaresam(ENABLE_SORT);
+    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+    SystematicResampler thetaresam(ENABLE_SORT);
     [% ELSE %]
     StratifiedResampler thetaresam(ENABLE_SORT);
     [% END %]

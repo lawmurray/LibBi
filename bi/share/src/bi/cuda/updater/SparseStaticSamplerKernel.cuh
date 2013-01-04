@@ -43,14 +43,14 @@ CUDA_FUNC_GLOBAL void bi::kernelSparseStaticSampler(curandState* rng,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  const int p = blockIdx.x*blockDim.x + threadIdx.x;
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
   PX pax;
   OX x;
 
   RngGPU rng1;
-  rng1.r = rng[p];
+  rng1.r = rng[q];
   Visitor::accept(rng1, s, mask, pax, x);
-  rng[p] = rng1.r;
+  rng[q] = rng1.r;
 }
 
 #endif

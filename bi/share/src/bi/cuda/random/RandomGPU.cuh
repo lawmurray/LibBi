@@ -16,7 +16,7 @@ void bi::RandomGPU::uniforms(Random& rng, V1 x,
     const typename V1::value_type lower,
     const typename V1::value_type upper) {
   dim3 Db, Dg;
-  Db.x = deviceIdealThreadsPerBlock();
+  Db.x = bi::min(x.size(), deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
 
   kernelUniforms<<<Dg,Db>>>(rng.devRngs, x, lower, upper);
@@ -27,7 +27,7 @@ template<class V1>
 void bi::RandomGPU::gaussians(Random& rng, V1 x,
     const typename V1::value_type mu, const typename V1::value_type sigma) {
   dim3 Db, Dg;
-  Db.x = deviceIdealThreadsPerBlock();
+  Db.x = bi::min(x.size(), deviceIdealThreadsPerBlock());
   Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
 
   kernelGaussians<<<Dg,Db>>>(rng.devRngs, x, mu, sigma);
@@ -37,7 +37,12 @@ void bi::RandomGPU::gaussians(Random& rng, V1 x,
 template<class V1>
 void bi::RandomGPU::gammas(Random& rng, V1 x,
     const typename V1::value_type alpha, const typename V1::value_type beta) {
-  BI_ERROR_MSG(false, "Not implemented on device");
+  dim3 Db, Dg;
+  Db.x = bi::min(x.size(), deviceIdealThreadsPerBlock());
+  Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
+
+  kernelGammas<<<Dg,Db>>>(rng.devRngs, x, alpha, beta);
+  CUDA_CHECK;
 }
 
 template<class V1, class V2>

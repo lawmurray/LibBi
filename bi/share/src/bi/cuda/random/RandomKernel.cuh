@@ -54,6 +54,21 @@ CUDA_FUNC_GLOBAL void kernelGaussians(curandState* rng, V1 x,
     const typename V1::value_type mu = 0.0,
     const typename V1::value_type sigma = 1.0);
 
+/**
+ * Kernel function to fill vector with gamma variates.
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param rng Random number generator.
+ * @param[out] x Vector to fill.
+ * @param alpha Shape.
+ * @param beta Scale.
+ */
+template<class V1>
+CUDA_FUNC_GLOBAL void kernelGammas(curandState* rng, V1 x,
+    const typename V1::value_type alpha = 1.0,
+    const typename V1::value_type beta = 1.0);
+
 }
 
 #include "../../random/Random.hpp"
@@ -63,29 +78,43 @@ template<class V1>
 CUDA_FUNC_GLOBAL void bi::kernelUniforms(curandState* rng, V1 x,
     const typename V1::value_type lower,
     const typename V1::value_type upper) {
-  int p = blockIdx.x*blockDim.x + threadIdx.x;
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
   const int Q = blockDim.x*gridDim.x;
 
   RngGPU rng1;
-  rng1.r = rng[p];
-  for (; p < x.size(); p += Q) {
+  rng1.r = rng[q];
+  for (int p = q; p < x.size(); p += Q) {
     x(p) = rng1.uniform(lower, upper);
   }
-  rng[p] = rng1.r;
+  rng[q] = rng1.r;
 }
 
 template<class V1>
 CUDA_FUNC_GLOBAL void bi::kernelGaussians(curandState* rng, V1 x,
     const typename V1::value_type mu, const typename V1::value_type sigma) {
-  int p = blockIdx.x*blockDim.x + threadIdx.x;
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
   const int Q = blockDim.x*gridDim.x;
 
   RngGPU rng1;
-  rng1.r = rng[p];
-  for (; p < x.size(); p += Q) {
+  rng1.r = rng[q];
+  for (int p = q; p < x.size(); p += Q) {
     x(p) = rng1.gaussian(mu, sigma);
   }
-  rng[p] = rng1.r;
+  rng[q] = rng1.r;
+}
+
+template<class V1>
+CUDA_FUNC_GLOBAL void bi::kernelGammas(curandState* rng, V1 x,
+    const typename V1::value_type alpha, const typename V1::value_type beta) {
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
+  const int Q = blockDim.x*gridDim.x;
+
+  RngGPU rng1;
+  rng1.r = rng[q];
+  for (int p = q; p < x.size(); p += Q) {
+    x(p) = rng1.gamma(alpha, beta);
+  }
+  rng[q] = rng1.r;
 }
 
 #endif

@@ -61,6 +61,13 @@ public:
    */
   template<class V1, class V2, class V3, class B, Location L>
   void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, State<B,L>& s);
+
+  /**
+   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
+   */
+  template<class V1, class V2, class O1>
+  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
+      O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -184,6 +191,14 @@ template<class V1, class V2, class V3, class B, bi::Location L>
 void bi::KernelResampler<R>::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, State<B,L>& s) {
   BI_ASSERT(false);
+}
+
+template<class R>
+template<class V1, class V2, class O1>
+void bi::KernelResampler<R>::cond_resample(Random& rng, const int ka,
+    const int k, V1 lws, V2 as, O1& s)
+    throw (ParticleFilterDegeneratedException) {
+  BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class R>

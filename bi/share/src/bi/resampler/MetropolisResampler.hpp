@@ -99,6 +99,13 @@ public:
    */
   template<class V1, class V2, class V3, class O1>
   void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s);
+
+  /**
+   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
+   */
+  template<class V1, class V2, class O1>
+  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
+      O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -194,6 +201,13 @@ void bi::MetropolisResampler::resample(Random& rng, const int a,
   permute(as);
   copy(as, s);
   correct(as, qlws, lws);
+}
+
+template<class V1, class V2, class O1>
+void bi::MetropolisResampler::cond_resample(Random& rng, const int ka,
+    const int k, V1 lws, V2 as, O1& s)
+    throw (ParticleFilterDegeneratedException) {
+  BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class V1, class V2>

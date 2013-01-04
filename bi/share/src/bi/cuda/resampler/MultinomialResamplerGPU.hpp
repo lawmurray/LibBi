@@ -50,7 +50,12 @@ void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
   }
 
   /* post-condition */
-  BI_ASSERT(max_reduce(as) < lws.size());
+  //BI_ASSERT(max_reduce(as) < lws.size());
+  // ^ CUDA craziness, doesn't like the above at runtime
+  #ifndef NDEBUG
+  bool cond = max_reduce(as) < lws.size();
+  BI_ASSERT(cond);
+  #endif
 }
 
 #endif

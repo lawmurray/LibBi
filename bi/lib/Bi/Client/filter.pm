@@ -64,7 +64,7 @@ particle filter type:
 
 =over 4
 
-=item * C<--resampler> (default C<'stratified'>)
+=item * C<--resampler> (default C<'systematic'>)
 
 The type of resampler to use; one of:
 
@@ -72,7 +72,11 @@ The type of resampler to use; one of:
 
 =item * C<'stratified'>
 
-for a stratified (systematic) resampler (Kitagawa 1996),
+for a stratified resampler (Kitagawa 1996),
+
+=item * C<'systematic'>
+
+for a systematic (or 'deterministic stratified') resampler (Kitagawa 1996),
 
 =item * C<'multinomial'>
 
@@ -200,7 +204,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'resampler',
       type => 'string',
-      default => 'stratified'
+      default => 'systematic'
     },
     {
       name => 'ess-rel',
