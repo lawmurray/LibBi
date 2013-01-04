@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
       seq_elements(as, 0); // needed for sort and ess    
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
-      real W = actualP*bi::exp(-0.25*zs(z)*zs(z))/(2.0*BI_SQRT_TWO_PI);
+      real W = actualP*bi::exp(-0.25*zs(z)*zs(z))/(2.0*bi::sqrt(BI_PI));
       real wmax = (1.0/BI_SQRT_TWO_PI)/W;
       real beta = 1.0/actualP;
       real alpha = (1.0 - wmax)/(actualP*wmax);
