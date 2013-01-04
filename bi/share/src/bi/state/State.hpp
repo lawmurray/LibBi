@@ -411,7 +411,7 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
     Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
-    p(0), P(P) {
+    p(0), P(roundup(P)) {
   clear();
 }
 
