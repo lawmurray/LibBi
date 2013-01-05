@@ -1,4 +1,4 @@
-\documentclass[a4paper,twoside,notitlepage]{refrep}
+\documentclass[a4paper,notitlepage]{refrep}
 
 %\usepackage{fullpage}
 \usepackage{amsmath}
@@ -13,14 +13,19 @@
 %\usepackage{fancybox}
 %\usepackage{fancyvrb}
 %\usepackage{titling}
+\usepackage{color}
+\usepackage{framed}
+\usepackage{mdframed}
 \usepackage{relsize}
-\IfFileExists{inconsolata.sty}{\usepackage{inconsolata}}{}
+\usepackage{mathpazo}
 \usepackage[T1]{fontenc}
 
 % font adjustments
 \def\bs{\char'134 } % backslash in \tt font.
 % Prevents `--' in command-line options being interpreted as en-dash ligatures
 %\DisableLigatures{family=sf*}
+
+\definecolor{shadecolor}{gray}{0.95}
 
 % new commands (\begingroup ... \endgroup for accepting arguments with _)
 \newcommand\bitt[1]{\texttt{#1}}
@@ -40,27 +45,26 @@
 \newcommand\secref{\begingroup \catcode`_=12 \dosecref}
 \newcommand\dosecref[2]{\hyperref[hyper][#1]{#2}\index{#2} \endgroup}
 
+\makeatletter
+\newcommand*{\toccontents}{\@starttoc{toc}}
+\makeatother
+
 % new environments
 \newenvironment{bicode}
-{\begin{alltt}%
-\relsize{-0.5}}
-{\end{alltt}}
+{\begin{mdframed}[linewidth=0,backgroundcolor=shadecolor,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}\begin{alltt}\relsize{-0.5}}
+{\end{alltt}\end{minipage}\end{mdframed}}
 
 \newenvironment{cppcode}
-{\begin{alltt}%
-\relsize{-0.5}}
-{\end{alltt}}
+{\begin{mdframed}[linewidth=0,backgroundcolor=shadecolor,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}\begin{alltt}}
+{\end{alltt}\end{minipage}\end{mdframed}}
 
 \newenvironment{cmdcode}
-{\begin{alltt}%
-\relsize{-0.5}}
-{\end{alltt}}
+{\begin{mdframed}[linewidth=0,backgroundcolor=shadecolor,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}\begin{alltt}}
+{\end{alltt}\end{minipage}\end{mdframed}}
 
 \newenvironment{tip}
-{\begin{minipage}{\textwidth}
-\textbf{Tip: }%
-}
-{\end{minipage}}
+{\vspace{\baselineskip}\marginlabel{Tip $\rightarrow$}\vspace{-1.4\baselineskip}\begin{mdframed}[linewidth=0.4pt,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}}
+{\end{minipage}\end{mdframed}\vspace{\baselineskip}}
 
 % can also use:
 % \seealso{}, \attention, \marginlabel{} before paragraphs to make notes in right margin.
@@ -69,18 +73,58 @@
 \author{Lawrence Murray}
 \date{}
 
-\pagestyle{myfootings}
-\markboth{Bi}{Bi}
-
 \makeindex
 
 \begin{document}
 
-\maketitle
+\pagestyle{empty}
 
-\tableofcontents
+% title page
+\begin{leftbar}
 
+\vspace{3cm}
+
+\fontsize{72pt}{92pt}\selectfont
+\textbf{Bi}
+
+\vspace{6cm}
+
+\fontsize{24pt}{30pt}\selectfont
+User Guide \\
+Developer Guide \\
+Reference
+
+\vspace{6cm}
+
+\fontsize{16pt}{24pt}\selectfont
+Version 1.0.0
+
+\vspace{1cm}
+
+\end{leftbar}
+
+% fineprint page
 \newpage
+\setcounter{page}{1}
+\pagenumbering{roman}
+\pagestyle{plain}
+
+\begin{description}
+\item[Developers]
+Lawrence Murray
+\item[Contributors]
+Anthony Lee \\
+Pierre Jacob
+\end{description}
+
+% contents
+\newpage
+\toccontents
+
+% and the rest
+\newpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
 
 \chapter{User Guide\label{User_Guide}}
 

@@ -88,33 +88,33 @@ preferred block type, the action will be implicitly wrapped in it anyway.
 
 For example, take the model specification:
 \begin{bicode}
-    sub transition \{
-      do \{
-        x <- a*x + b
-        y <- c*y + d
-      \} then \{
-        x ~ uniform(x - 1.0, x + 1.0)
-        y ~ gaussian(y, 1.0)
-      \}
-    \}
+sub transition \{
+  do \{
+    x <- a*x + b
+    y <- c*y + d
+  \} then \{
+    x ~ uniform(x - 1.0, x + 1.0)
+    y ~ gaussian(y, 1.0)
+  \}
+\}
 \end{bicode}
 The \actionref{uniform} and \actionref{gaussian} actions prefer different
 parent block types. These additional block types will be inserted, to give the
 equivalent of the user having specified:
 \begin{bicode}
-    sub transition \{
-      do \{
-        x <- a*x + b
-        y <- c*y + d
-      \} then \{
-        sub uniform_ \{
-          x ~ uniform(x - 1.0, x + 1.0)
-        \}
-        sub gaussian_ \{
-          y ~ gaussian(y, 1.0)
-        \}
-      \}  
+sub transition \{
+  do \{
+    x <- a*x + b
+    y <- c*y + d
+  \} then \{
+    sub uniform_ \{
+      x ~ uniform(x - 1.0, x + 1.0)
     \}
+    sub gaussian_ \{
+      y ~ gaussian(y, 1.0)
+    \}
+  \}  
+\}
 \end{bicode}
 
 For the developer, then, actions and blocks are always written in tandem.
@@ -282,13 +282,13 @@ considered, such as favouring static scheduling\index{static scheduling} over
 dynamic scheduling\index{dynamic scheduling} for OpenMP\index{OpenMP} thread
 blocks. Consider the following:
 \begin{cppcode}
-    Random rng;
+Random rng;
 
-    #pragma omp parallel for
-    for (int i = 0; i < N; ++i) \{
-       x = rng.uniform();
-       \(\ldots\)
-    \}
+#pragma omp parallel for
+for (int i = 0; i < N; ++i) \{
+  x = rng.uniform();
+  \(\ldots\)
+\}
 \end{cppcode}
 
 \bitt{Random} maintains a separate pseudorandom number
@@ -298,25 +298,25 @@ variates drawn from each generator, so that reproducibility of results for a
 given seed is not guaranteed. Static scheduling should be enforced in this
 case to ensure reproducibility:
 \begin{cppcode}
-    Random rng;
+Random rng;
 
-    #pragma omp parallel for schedule(static)
-    for (int i = 0; i < N; ++i) \{
-       x = rng.uniform();
-       \(\ldots\)
-    \}
+#pragma omp parallel for schedule(static)
+for (int i = 0; i < N; ++i) \{
+  x = rng.uniform();
+  \(\ldots\)
+\}
 \end{cppcode}
 
 A more subtle consideration is the conditional generation of
 variates. Consider the following code, evaluating a
 Metropolis-Hastings\index{Metropolis-Hastings} acceptance criterion:
 \begin{cppcode}
-    alpha = (l1*p1*q2)/(l2*p2*q1);
-    if (alpha >= 1.0 || rng.uniform() < alpha) \{
-      accept();
-    \} else \{
-      reject();
-    \}
+alpha = (l1*p1*q2)/(l2*p2*q1);
+if (alpha >= 1.0 || rng.uniform() < alpha) \{
+  accept();
+\} else \{
+  reject();
+\}
 \end{cppcode}
 Here, \bitt{rng.uniform()} is called only when \bitt{alpha >= 1.0} (given
 operator short-circuiting). We might prefer, however, that across multiple
@@ -325,13 +325,13 @@ same state for the $n$th iteration, regardless of the acceptance criteria
 across the preceding iterations. Moving the variate generation outside the
 conditional will fix this:
 \begin{cppcode}
-    alpha = (l1*p1*q2)/(l2*p2*q1);
-    u = rng.uniform();
-    if (alpha >= 1.0 || u < alpha) \{
-      accept();
-    \} else \{
-      reject();
-    \}
+alpha = (l1*p1*q2)/(l2*p2*q1);
+u = rng.uniform();
+if (alpha >= 1.0 || u < alpha) \{
+  accept();
+\} else \{
+  reject();
+\}
 \end{cppcode}
 
 \subsection{Shallow copy, deep assignment}

@@ -55,7 +55,7 @@ model PZ \{
   const m_l = 0.1  // zooplankton linear mortality
   const m_q = 0.1  // zooplankton quadratic mortality
 
-  param mu, sigma  // mean and standard deviation of phytoplankton growth
+  param mu, sigma  // mean and std. dev. of phytoplankton growth
   state P, Z       // phytoplankton, zooplankton
   noise alpha      // stochastic phytoplankton growth rate
   obs P_obs        // observations of phytoplankton
@@ -89,7 +89,8 @@ This would be saved in a file named \bitt{PZ.bi}. We can now consider
 performing various tasks with the Bi command-line interface, the simplest of
 which is simulating from the model:
 \begin{cmdcode}
-bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 --output-file results/simulate.nc
+bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 \textbackslash
+    --output-file results/simulate.nc
 \end{cmdcode}
 This command will simulate 128 trajectories of the model (\bitt{-P 128}), each
 of 365 days (\bitt{-T 365}), outputting the results to the NetCDF\index{NetCDF}
@@ -111,14 +112,14 @@ to data, and optimising or sampling its parameters.
 
 Bi consists of three components:
 \begin{description}
-\item[LibBi,]\index{LibBi} which provides classes and functions for simulation
+\item[LibBi]\index{LibBi} which provides classes and functions for simulation
   and inference, numerical computing, memory management and I/O. It is written
   in C++ with extensive use of generic programming concepts.
-\item[GenBi,]\index{GenBi} which parses the Bi modelling language, constructs
+\item[GenBi]\index{GenBi} which parses the Bi modelling language, constructs
   and optimises an internal model representation, and generates C++ code for
   compiling against LibBi. It is written in Perl using object-oriented
   concepts, and the Perl Template Toolkit for code generation.
-\item[OctBi,]\index{OctBi} which provides a set of functions for GNU Octave
+\item[OctBi]\index{OctBi} which provides a set of functions for GNU Octave
   for querying, analysing and visualising outputs.
 \end{description}
 
@@ -486,23 +487,23 @@ via the command line as:
 bi \textit{command} \textit{options} ...
 \end{cmdcode}
 where \bitt{\textit{command}} is any one of the following:
-\begin{itemize}
-\item \clientref{simulate} to simulate trajectories
+\begin{description}
+\item[\clientref{simulate}] to simulate trajectories
   from a model,
-\item \clientref{filter} for filtering problems using the
+\item[\clientref{filter}] for filtering problems using the
   model and observations,
-\item \clientref{smooth} for smoothing problems using the
+\item[\clientref{smooth}] for smoothing problems using the
   model and observations,
-\item \clientref{optimise} for parameter optimisation
+\item[\clientref{optimise}] for parameter optimisation
   problems using the model and observations,
-\item \clientref{sample} for parameter sampling
+\item[\clientref{sample}] for parameter sampling
   problems using the model and observations,
-\item \clientref{draw} to visualise a model (useful for
+\item[\clientref{draw}] to visualise a model (useful for
   debugging and development),
-\item \clientref{rewrite} to process a model and
+\item[\clientref{rewrite}] to process a model and
   output a new model after applying internal transformations and optimisations
   (useful for debugging and development),
-\end{itemize}
+\end{description}
 and available \bitt{\textit{options}} depend on the command.
 
 Options may be specified in a configuration file\index{config file} or on the
