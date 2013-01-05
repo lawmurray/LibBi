@@ -8,145 +8,145 @@ by replacing this with \bitt{--without}.
 
 \subsubsection{General options}
 
-\begin{itemize}
-\item \bitt{--help}
+\begin{description}
+\item[\bitt{--help}]
 
 Display help.
 
-\item \bitt{--verbose} (default off)
+\item[\bitt{--verbose}] (default off)
 
 Enable verbose reporting.
-\end{itemize}
+\end{description}
 
 \subsubsection{Build options}
 
-\begin{itemize}
-\item \bitt{--dry-gen} (default off)
+\begin{description}
+\item[\bitt{--dry-gen}] (default off)
 
 Do not (re)generate code.
 
-\item \bitt{--dry-build} (default off)
+\item[\bitt{--dry-build}] (default off)
 
 Do not build.
 
-\item \bitt{--warn} (default off)
+\item[\bitt{--warn}] (default off)
 
 Enable compiler warnings.
 
-\item \bitt{--native} (default off)
+\item[\bitt{--native}] (default off)
 
 Compile for native platform.
 
-\item \bitt{--force} (default off)
+\item[\bitt{--force}] (default off)
 
 Force all build steps to be performed, even when determined to be not
 required. This is useful as a workaround of any faults in detecting
 changes, or when system headers or libraries change and recompilation or
 relinking is required.
 
-\item \bitt{--enable-assert} (default on)
+\item[\bitt{--enable-assert}] (default on)
 
 Enable assertion checking (recommended for test runs, not recommended for
 production runs).
 
-\item \bitt{--enable-cuda} (default off)
+\item[\bitt{--enable-cuda}] (default off)
 
 Enable CUDA device code.
 
-\item \bitt{--enable-sse} (default off)
+\item[\bitt{--enable-sse}] (default off)
 
 Enable SSE host code.
 
-\item \bitt{--enable-mkl} (default off)
+\item[\bitt{--enable-mkl}] (default off)
 
 Enable Intel MKL code.
 
-\item \bitt{--enable-mpi} (default off)
+\item[\bitt{--enable-mpi}] (default off)
 
 Enable MPI code.
 
-\item \bitt{--enable-vampir} (default off)
+\item[\bitt{--enable-vampir}] (default off)
 
 Enable Vampir.
 
-\item \bitt{--enable-single} (default off)
+\item[\bitt{--enable-single}] (default off)
 
 Use single-precision floating point.
-\end{itemize}
+\end{description}
 
 \subsubsection{Run options}
 
-\begin{itemize}
-\item \bitt{--dry-run}
+\begin{description}
+\item[\bitt{--dry-run}]
 
 Do not run.
 
-\item \bitt{--seed} (default 0)
+\item[\bitt{--seed}] (default 0)
 
 Pseudorandom number generator seed.
 
-\item \bitt{--threads \textsl{N}} (default 0)
+\item[\bitt{--threads \textsl{N}}] (default 0)
 
 Run with \bitt{\textsl{N}} threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-\item \bitt{--enable-timing} (default off)
+\item[\bitt{--enable-timing}] (default off)
 
 Enable timings.
 
-\item \bitt{--enable-output} (default on)
+\item[\bitt{--enable-output}] (default on)
 
 Enable output.
 
-\item \bitt{--with-gdb} (default off)
+\item[\bitt{--with-gdb}] (default off)
 
 Run within the \bitt{gdb} debugger.
 
-\item \bitt{--with-valgrind} (default off)
+\item[\bitt{--with-valgrind}] (default off)
 
 Run within \bitt{valgrind}.
 
-\item \bitt{--with-cuda-gdb} (default off)
+\item[\bitt{--with-cuda-gdb}] (default off)
 
 Run within the \bitt{cuda-gdb} debugger.
 
-\item \bitt{--with-cuda-memcheck} (default off)
+\item[\bitt{--with-cuda-memcheck}] (default off)
 
 Run within \bitt{cuda-memcheck}.
 
-\item \bitt{--with-gperftools} (default off)
+\item[\bitt{--with-gperftools}] (default off)
 
 Run with \bitt{gperftools} profiler.
 
-\item \bitt{--gperftools-file} (default '\textsl{command}.prof')
+\item[\bitt{--gperftools-file}] (default '\textsl{command}.prof')
 
 Output file to use under \bitt{--with-gperftools}.
 
-\item \bitt{--with-mpi} (default off)
+\item[\bitt{--with-mpi}] (default off)
 
 Run with \bitt{mpirun}.
 
-\item \bitt{--mpi-np}
+\item[\bitt{--mpi-np}]
 
 Number of processes when running under \bitt{mpirun}. Corresponds to \bitt{-np}
 option to \bitt{mpirun}
 
-\item \bitt{--mpi-npernode}
+\item[\bitt{--mpi-npernode}]
 
 Number of processes per node when running under \bitt{mpirun}. Corresponds to
 \bitt{-npernode} option to \bitt{mpirun}.
 
-\end{itemize}
+\end{description}
 
 \subsubsection{Model transformation options}
-\begin{itemize}
-\item \bitt{--transform-extended} (default off, enabled automatically when
+\begin{description}
+\item[\bitt{--transform-extended}] (default off, enabled automatically when
   required)
 
 Linearise the model and symbolically compute Jacobian expressions for use with
 the extended Kalman filter.
 
-\item \bitt{--transform-param-to-state} (default off)
+\item[\bitt{--transform-param-to-state}] (default off)
 
 Augment the state with parameters by interpreting \kwref{param} statements as
 \kwref{state}, merging the \blockref{parameter} top-level block into the
@@ -156,7 +156,7 @@ Augment the state with parameters by interpreting \kwref{param} statements as
 
 This is useful for joint state and parameter estimation using filters.
 
-\item \bitt{--transform-obs-to-state} (default off)
+\item[\bitt{--transform-obs-to-state}] (default off)
 
 Augment the state with observations by interpreting \kwref{obs} statements as
 \kwref{state}, merging the \kwref{observation} top-level block into the
@@ -166,7 +166,7 @@ block into the \blockref{lookahead_transition} top-level block.
 
 This is useful for producing simulated data sets from a model.
 
-\item \bitt{--transform-initial-to-param} (default off)
+\item[\bitt{--transform-initial-to-param}] (default off)
 
 Augment the parameters with the initial conditions of the state variables by
 adding a new \kwref{param} for each \kwref{state} variable to hold its initial
@@ -180,4 +180,4 @@ This is useful for treating the initial conditions as parameters in sampling
 schemes such as PMCMC and SMC$^2$. Note that the transformation is semantic,
 not substantial.
 
-\end{itemize}
+\end{description}

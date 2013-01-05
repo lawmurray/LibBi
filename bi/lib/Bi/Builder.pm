@@ -38,9 +38,9 @@ Constructor.
 
 =over 4
 
-=item * I<name> The model name.
+=item I<name> The model name.
 
-=item * I<verbose> Is verbosity enabled?
+=item I<verbose> Is verbosity enabled?
 
 =back
 

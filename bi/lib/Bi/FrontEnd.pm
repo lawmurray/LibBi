@@ -26,14 +26,14 @@ supported at this level, additional arguments depend on the client program:
 
 =over 4
 
-=item * C<--help> Display general help, or help for client program (if client
+=item C<--help> Display general help, or help for client program (if client
 program is specified).
 
-=item * C<--verbose> Enable verbose reporting.
+=item C<--verbose> Enable verbose reporting.
 
-=item * C<--dry-build> Generate code, but do not build or execute.
+=item C<--dry-build> Generate code, but do not build or execute.
 
-=item * C<--dry-run> Generate code and build, but do not execute.
+=item C<--dry-run> Generate code and build, but do not execute.
 
 =back
 

@@ -26,7 +26,7 @@ use Carp::Assert;
 
 =over 4
 
-=item * C<expr> (position 0, mandatory)
+=item C<expr> (position 0, mandatory)
 
 Expression to evaluate.
 

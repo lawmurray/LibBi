@@ -28,7 +28,7 @@ type C<param>, C<force>, C<state> and C<noise>.
 
 =over 4
 
-=item * C<delta> (default 1.0)
+=item C<delta> (default 1.0)
 
 The time step for discrete-time components of the transition.
 

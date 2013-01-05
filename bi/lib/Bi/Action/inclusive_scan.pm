@@ -23,7 +23,7 @@ use strict;
 
 =over 4
 
-=item * C<x> (position 0, mandatory)
+=item C<x> (position 0, mandatory)
 
 The vector over which to scan.
 

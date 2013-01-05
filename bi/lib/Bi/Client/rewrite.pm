@@ -26,7 +26,9 @@ The following options are supported:
 
 =over 4
 
-=item * C<--model-file> the model specification file.
+=item C<--model-file>
+
+the model specification file.
 
 =back
 =head1 METHODS

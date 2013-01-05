@@ -27,43 +27,43 @@ following additional options:
 
 =over 4
 
-=item * C<--optimiser> or C<--optimizer> (default C<'nm'>)
+=item C<--optimiser> or C<--optimizer> (default C<'nm'>)
 
 The optimisation method to use; one of:
 
 =over 8
 
-=item * C<'nm'>
+=item C<'nm'>
 
 Nelder-Mead simplex method.
 
 =back
 
-=item * C<--mode> (default C<'ml'>)
+=item C<--mode> (default C<'ml'>)
 
 Optimisation mode, one of:
 
 =over 8
 
-=item * C<'ml'>
+=item C<'ml'>
 
 Maximum likelihood estimation.
 
-=item * C<'map'>
+=item C<'map'>
 
 Maximum I<a posteriori> estimation.
 
 =back
 
-=item * C<--simplex-size-real> (default 0.1)
+=item C<--simplex-size-real> (default 0.1)
 
 Size of initial simplex relative to starting point of each variable. 
 
-=item * C<--stop-size> (default 1.0-e4)
+=item C<--stop-size> (default 1.0-e4)
 
 Size-based stopping criterion.
 
-=item * C<--stop-steps> (default 100)
+=item C<--stop-steps> (default 100)
 
 Maximum number of steps to take.
 

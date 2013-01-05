@@ -25,11 +25,11 @@ use strict;
 
 =over 4
 
-=item * C<alpha> (position 0, default 1.0)
+=item C<alpha> (position 0, default 1.0)
 
 First shape parameter of the distribution.
 
-=item * C<beta> (position 1, default 1.0)
+=item C<beta> (position 1, default 1.0)
 
 Second shape parameter of the distribution.
 

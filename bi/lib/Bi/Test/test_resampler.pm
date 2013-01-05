@@ -22,51 +22,51 @@ use strict;
 
 =over 4
 
-=item * C<--resampler> (default C<'stratified'>)
+=item C<--resampler> (default C<'stratified'>)
 
 The type of resampler to use; one of:
 
 =over 8
 
-=item * C<'stratified'>
+=item C<'stratified'>
 
 for a stratified (systematic) resampler (Kitagawa 1996),
 
-=item * C<'multinomial'>
+=item C<'multinomial'>
 
 for a multinomial resampler,
 
-=item * C<'metropolis'>
+=item C<'metropolis'>
 
 for a Metropolis resampler (Murray 2011),
 
-=item * C<'rejection'>
+=item C<'rejection'>
 
 for a rejection resampler, or
 
 =back
 
-=item * C<--Zs> (default 5)
+=item C<--Zs> (default 5)
 
 Number of weight vector parameterisations to use.
 
-=item * C<--Ps> (default 5)
+=item C<--Ps> (default 5)
 
 Number of weight vector sizes to use.
 
-=item * C<--reps> (default 100)
+=item C<--reps> (default 100)
 
 Number of trials on each combination of parameters and sizes.
 
-=item * C<--enable-sort> (default on)
+=item C<--enable-sort> (default on)
 
 Sort weights prior to resampling.
 
-=item * C<-C> (default 0)
+=item C<-C> (default 0)
 
 Number of steps to take for Metropolis resampler.
 
-=item * C<--output-file> (mandatory)
+=item C<--output-file> (mandatory)
 
 File to which to write output.
 

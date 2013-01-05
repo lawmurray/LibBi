@@ -25,11 +25,11 @@ use strict;
 
 =over 4
 
-=item * C<shape> (position 0, default 1.0)
+=item C<shape> (position 0, default 1.0)
 
 Shape parameter of the distribution.
 
-=item * C<upper> (position 1, default 1.0)
+=item C<upper> (position 1, default 1.0)
 
 Scale parameter of the distribution.
 

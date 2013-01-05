@@ -29,19 +29,19 @@ use Bi::Model::Dim;
 
 =over 4
 
-=item * C<has_input> (default 1)
+=item C<has_input> (default 1)
 
 Include variable when doing input from a file?
 
-=item * C<has_output> (default 1)
+=item C<has_output> (default 1)
 
 Include variable when doing output to a file?
 
-=item * C<input_name> (default the same as the name of the variable)
+=item C<input_name> (default the same as the name of the variable)
 
 Name to use for the variable in input files.
 
-=item * C<output_name> (default the same as the name of the variable)
+=item C<output_name> (default the same as the name of the variable)
 
 Name to use for the variable in output files.
 

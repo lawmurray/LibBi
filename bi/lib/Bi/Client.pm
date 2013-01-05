@@ -125,15 +125,15 @@ Constructor.
 
 =over 4
 
-=item * I<cmd>
+=item I<cmd>
 
 The command.
 
-=item * I<builddir>
+=item I<builddir>
 
 The build directory
 
-=item * I<verbose>
+=item I<verbose>
 
 Is verbosity enabled?
 

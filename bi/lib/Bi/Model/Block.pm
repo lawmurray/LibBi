@@ -278,7 +278,7 @@ Get single action.
 
 =over 4
 
-=item * I<i> Action index. Defaults to 0.,
+=item I<i> Action index. Defaults to 0.,
 
 =back
 
@@ -301,7 +301,7 @@ Get single sub-block.
 
 =over 4
 
-=item * I<i> Sub-block index. Defaults to 0.,
+=item I<i> Sub-block index. Defaults to 0.,
 
 =back
 

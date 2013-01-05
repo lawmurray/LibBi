@@ -25,17 +25,17 @@ following additional options:
 
 =over 4
 
-=item * C<--nsamples> (default 1)
+=item C<--nsamples> (default 1)
 
 Number of parameter samples to draw.
 
-=item * C<--sampler> (default C<'pmmh'>)
+=item C<--sampler> (default C<'pmmh'>)
 
 The type of sampler to use; one of:
 
 =over 8
 
-=item * C<'pmmh'>
+=item C<'pmmh'>
 
 Particle marginal Metropolis-Hastings (PMMH). The proposal works according to
 the L<proposal_parameter> top-level block. If this is not defined,
@@ -45,17 +45,17 @@ block is used to make Metropolis-Hastings proposals over initial conditions
 also. If this is not defined, independent draws are taken from the L<initial>
 top-level block instead.
 
-=item * C<'smc2'>
+=item C<'smc2'>
 
 Sequential Monte Carlo Squared (SMC^2).
 
 =back
 
-=item * C<--conditional-pf>
+=item C<--conditional-pf>
 
 ...
 
-=item * C<--joint-adaptation>
+=item C<--joint-adaptation>
 
 ...
 
@@ -65,20 +65,20 @@ Sequential Monte Carlo Squared (SMC^2).
 
 =over 4
 
-=item * C<--nmoves> (default 1)
+=item C<--nmoves> (default 1)
 
 Number of PMMH steps to perform after resampling.
 
-=item * C<--sample-ess-rel> (default 0.5)
+=item C<--sample-ess-rel> (default 0.5)
 
 ESS threshold triggering resampling steps. Parameter samples will only be
 resampled if ESS is below this proportion of C<--nsamples>.
 
-=item * C<--enable-local-move> (default off)
+=item C<--enable-local-move> (default off)
 
 Enable random walk proposals, instead of independent proposals
 
-=item * C<--local-move-scale> (default 0.25)
+=item C<--local-move-scale> (default 0.25)
 
 The proportion of the parameter samples' standard deviation to be used in the
 proposal distribution for random walk proposals.

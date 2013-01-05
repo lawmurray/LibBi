@@ -26,11 +26,11 @@ use strict;
 
 =over 4
 
-=item * C<A> (position 0, mandatory)
+=item C<A> (position 0, mandatory)
 
 The matrix.
 
-=item * C<x> (position 1, mandatory)
+=item C<x> (position 1, mandatory)
 
 The vector.
 

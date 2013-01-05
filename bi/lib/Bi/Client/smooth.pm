@@ -22,35 +22,35 @@ use strict;
 
 =over 4
 
-=item * C<--smoother> (default C<'pfs'>)
+=item C<--smoother> (default C<'pfs'>)
 
 The type of smoother to use; one of:
 
 =over 8
 
-=item * C<'pfs'>
+=item C<'pfs'>
 
 for a particle filter-smoother,
 
-=item * C<'rtss'>
+=item C<'rtss'>
 
 for a Rauch-Tung-Striebel (RTS) smoother.
 
 =back
 
-=item * C<--filter-file> (mandatory)
+=item C<--filter-file> (mandatory)
 
 File from which to read filter results.
 
-=item * C<--output-file>
+=item C<--output-file>
 
 File to which to write output.
 
-=item * C<--time> (default 0)
+=item C<--time> (default 0)
 
 True to time the run, false otherwise.
 
-=item * C<--output> (default 1)
+=item C<--output> (default 1)
 
 True to produce output, false otherwise.
 

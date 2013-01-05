@@ -24,7 +24,7 @@ use strict;
 
 =over 4
 
-=item * C<std> (position 0, default 1.0)
+=item C<std> (position 0, default 1.0)
 
 For a univariate or i.i.d. distribution, a scalar giving the standard
 deviation. For a multivariate distribution of independent variables, a vector

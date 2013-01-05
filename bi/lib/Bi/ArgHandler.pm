@@ -225,20 +225,20 @@ specification, and translate all into named arguments.
 
 =over 4
 
-=item * I<spec> Array-of-hashes parameter specification. Each element of the
+=item I<spec> Array-of-hashes parameter specification. Each element of the
 outer array consists of a hash with up to four key-value pairs:
 
 =over 4
 
-=item * I<name> of the parameter (mandatory),
+=item I<name> of the parameter (mandatory),
 
-=item * I<positional> indicating whether or not the parameter may be used
+=item I<positional> indicating whether or not the parameter may be used
 positionally (defaults to 0),
 
-=item * I<mandatory> indicating whether or not the parameter is required
+=item I<mandatory> indicating whether or not the parameter is required
 (defaults to 0), and
 
-=item * I<default> giving a default value if the parameter is not supplied.
+=item I<default> giving a default value if the parameter is not supplied.
 
 =back
 

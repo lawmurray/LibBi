@@ -39,36 +39,36 @@ use Bi::Utility qw(find);
 
 =over 4
 
-=item * C<alg> (position 0, default C<'rk43'>)
+=item C<alg> (position 0, default C<'rk43'>)
 
 The numerical integration algorithm to be used. Valid values are:
 
 =over 8
 
-=item * C<'rk4'>
+=item C<'rk4'>
 
 The classic order 4 Runge-Kutta with fixed step size.
 
-=item * C<'dopri5'>
+=item C<'dopri5'>
 
 An order 5(4) Dormand-Prince with adaptive step size control.
 
-=item * C<'rk43'>
+=item C<'rk43'>
 
 An order 4(3) low-storage Runge-Kutta with adaptive step size control.
 
 =back
 
-=item * C<h> (position 1, default 1.0)
+=item C<h> (position 1, default 1.0)
 
 For a fixed step size, the step size to use. For an adaptive step size, the
 suggested initial step size to use.
 
-=item * C<atoler> (position 2, default 1.0e-3)
+=item C<atoler> (position 2, default 1.0e-3)
 
 The absolute error tolerance for adaptive step size control.
 
-=item * C<rtoler> (position 3, default 1.0e-3)
+=item C<rtoler> (position 3, default 1.0e-3)
 
 The relative error tolerance for adaptive step size control.
 

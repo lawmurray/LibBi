@@ -25,11 +25,11 @@ use strict;
 
 =over 4
 
-=item * C<mean> (position 0, default 0.0)
+=item C<mean> (position 0, default 0.0)
 
 Mean.
 
-=item * C<std> (position 1, default 1.0)
+=item C<std> (position 1, default 1.0)
 
 For a univariate or i.i.d. distribution, a scalar giving the standard
 deviation. For a multivariate distribution of independent variables, a vector
@@ -37,7 +37,7 @@ of the same size as the target giving the standard deviations of those
 variables. For a general multivariate distribution, a matrix giving the
 upper-triangular Cholesky factor of the covariance matrix.
 
-=item * C<log> (default false)
+=item C<log> (default false)
 
 True for a log-normal distribution, false for a normal distribution. Must be
 a constant expression. For clarity, consider using the L<log_normal> or

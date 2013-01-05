@@ -25,17 +25,17 @@ following additional options:
 
 =over 4
 
-=item * C<--filter> (default C<'pf'>)
+=item C<--filter> (default C<'pf'>)
 
 The type of filter to use; one of:
 
 =over 8
 
-=item * C<'pf'> or C<'pf0'>
+=item C<'pf'> or C<'pf0'>
 
 Bootstrap particle filter,
 
-=item * C<'pf1'>
+=item C<'pf1'>
 
 Auxiliary particle filter with lookahead. The lookahead operates by advancing
 each particle according to the L<lookahead_transition> top-level block, and
@@ -44,12 +44,12 @@ former is not defined, the L<transition> top-level block will be used
 instead. If the latter is not defined, the L<observation> top-level block will
 be used instead.
 
-=item * C<'anpf'>
+=item C<'anpf'>
 
 Bootstrap particle filter with adaptive number of particles at each time
 step.
 
-=item * C<'ekf'>
+=item C<'ekf'>
 
 Extended Kalman filter.
 
@@ -64,13 +64,13 @@ particle filter type:
 
 =over 4
 
-=item * C<--resampler> (default C<'systematic'>)
+=item C<--resampler> (default C<'systematic'>)
 
 The type of resampler to use; one of:
 
 =over 8
 
-=item * C<'stratified'>
+=item C<'stratified'>
 
 for a stratified resampler (Kitagawa 1996),
 
@@ -82,21 +82,21 @@ for a systematic (or 'deterministic stratified') resampler (Kitagawa 1996),
 
 for a multinomial resampler,
 
-=item * C<'metropolis'>
+=item C<'metropolis'>
 
 for a Metropolis resampler (Murray 2011),
 
-=item * C<'rejection'>
+=item C<'rejection'>
 
 for a rejection resampler, or
 
-=item * C<'kernel'>
+=item C<'kernel'>
 
 for a kernel density resampler (Liu & West 2001).
 
 =back
 
-=item * C<--ess-rel> (default 1)
+=item C<--ess-rel> (default 1)
 
 Use effective sample size (ESS) resampling condition. Particles will only be
 resampled if ESS is below this proportion of C<P>.
@@ -110,29 +110,29 @@ C<'anpf'>:
 
 =over 4
 
-=item * C<--stopper> (default 'miness')
+=item C<--stopper> (default 'miness')
 
 The stopping criterion to use; one of:
 
 =over 8
 
-=item * C<'deterministic'>
+=item C<'deterministic'>
 
 fixed number of particles,
 
-=item * C<'sumofweights'>
+=item C<'sumofweights'>
 
 sum of weights,
 
-=item * C<'miness'>
+=item C<'miness'>
 
 minimum ESS,
 
-=item * C<'stddev'>
+=item C<'stddev'>
 
 ...
 
-=item * C<'var'>
+=item C<'var'>
 
 ...
 
@@ -160,7 +160,7 @@ minimum ESS,
 
 =over 4
 
-=item * C<--enable-sort> (default on)
+=item C<--enable-sort> (default on)
 
 Sort weights prior to resampling.
 
@@ -170,14 +170,14 @@ Sort weights prior to resampling.
 
 =over 4
 
-=item * C<--b-abs> or C<--b-rel> (default 0)
+=item C<--b-abs> or C<--b-rel> (default 0)
 
 Bandwidth. If C<--b-rel> is used, particles are standardised to zero mean and
 unit covariance for the construction of the kernel density estimate. If
 C<--b-abs> is used they are not. A value of zero in either case will result
 in a rule-of-thumb bandwidth.
 
-=item * C<--enable-shrink> (default on)
+=item C<--enable-shrink> (default on)
 
 True to shrink the kernel density estimate to preserve covariance
 (Liu & West 2001).
@@ -188,7 +188,7 @@ True to shrink the kernel density estimate to preserve covariance
 
 =over 4
 
-=item * C<-C> (default 0)
+=item C<-C> (default 0)
 
 Number of steps to take.
 

@@ -1,23 +1,26 @@
-\documentclass[a4paper,11pt,times]{report}
+\documentclass[a4paper,twoside,notitlepage]{refrep}
 
-\usepackage{fullpage}
+%\usepackage{fullpage}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{alltt}
 \usepackage{html}
 \usepackage{hyperref}
 \usepackage{makeidx}
-\usepackage{lmodern} % vertically centres tilde in code
-\usepackage{textcomp}
-\usepackage{microtype}
+%\usepackage{lmodern} % vertically centres tilde in code
+%\usepackage{textcomp}
+%\usepackage{microtype}
 %\usepackage{fancybox}
 %\usepackage{fancyvrb}
+%\usepackage{titling}
 \usepackage{relsize}
-\usepackage{inconsolata}
+\IfFileExists{inconsolata.sty}{\usepackage{inconsolata}}{}
 \usepackage[T1]{fontenc}
 
-%\parskip 11pt
-%\parindent 0pt
+% font adjustments
+\def\bs{\char'134 } % backslash in \tt font.
+% Prevents `--' in command-line options being interpreted as en-dash ligatures
+%\DisableLigatures{family=sf*}
 
 % new commands (\begingroup ... \endgroup for accepting arguments with _)
 \newcommand\bitt[1]{\texttt{#1}}
@@ -59,11 +62,15 @@
 }
 {\end{minipage}}
 
-\title{\Huge{Bi}}
-\author{Lawrence Murray}
+% can also use:
+% \seealso{}, \attention, \marginlabel{} before paragraphs to make notes in right margin.
 
-% Prevents `--' in command-line options being interpreted as en-dash ligatures
-%\DisableLigatures{family=sf*}
+\title{Bi}
+\author{Lawrence Murray}
+\date{}
+
+\pagestyle{myfootings}
+\markboth{Bi}{Bi}
 
 \makeindex
 
@@ -72,6 +79,8 @@
 \maketitle
 
 \tableofcontents
+
+\newpage
 
 \chapter{User Guide\label{User_Guide}}
 

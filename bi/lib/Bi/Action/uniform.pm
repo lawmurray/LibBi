@@ -25,11 +25,11 @@ use strict;
 
 =over 4
 
-=item * C<lower> (position 0, default 0.0)
+=item C<lower> (position 0, default 0.0)
 
 Lower bound on the interval.
 
-=item * C<upper> (position 1, default 1.0)
+=item C<upper> (position 1, default 1.0)
 
 Upper bound on the interval.
 
@@ -48,6 +48,8 @@ our $ACTION_ARGS = [
     default => 1.0
   }
 ];
+
+=head1 METHODS
 
 =item B<make_range>
 

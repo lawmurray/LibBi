@@ -28,7 +28,7 @@ use Carp::Assert;
 
 =over 4
 
-=item * C<dfdt> (position 0, mandatory)
+=item C<dfdt> (position 0, mandatory)
 
 An L<expression> giving the time derivative of the variable.
 

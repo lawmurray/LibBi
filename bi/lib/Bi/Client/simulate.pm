@@ -14,62 +14,62 @@ L<Bi::Client>
 
 =over 4
 
-=item * C<--start-time> (default 0.0)
+=item C<--start-time> (default 0.0)
 
 Start time.
 
-=item * C<-T> (default 0.0)
+=item C<-T> (default 0.0)
 
 Length of time.
 
-=item * C<-P> (default 1)
+=item C<-P> (default 1)
 
 Number of trajectories.
 
-=item * C<-K> (default 0)
+=item C<-K> (default 0)
 
 Number of dense output times. The state is always output at time C<-T> and at
 all observation times in C<--obs-file>. This argument gives the number of
 additional, equispaced times at which to output. For each C<k> in <0,...,K-1>,
 the state will be output at time C<T*k/K>.
 
-=item * C<--init-file>
+=item C<--init-file>
 
 File from which to initialise parameters and initial conditions.
 
-=item * C<--input-file>
+=item C<--input-file>
 
 File from which to read inputs.
 
-=item * C<--obs-file>
+=item C<--obs-file>
 
 File from which to read observations.
 
-=item * C<--output-file>
+=item C<--output-file>
 
 File to which to write output.
 
-=item * C<--init-ns> (default 0)
+=item C<--init-ns> (default 0)
 
 Index along the C<ns> dimension of C<--init-file> to use.
 
-=item * C<--init-np> (default 0)
+=item C<--init-np> (default 0)
 
 Index along the C<np> dimension of C<--init-file> to use.
 
-=item * C<--input-ns> (default 0)
+=item C<--input-ns> (default 0)
 
 Index along the C<ns> dimension of C<--input-file> to use.
 
-=item * C<--input-np> (default 0)
+=item C<--input-np> (default 0)
 
 Index along the C<np> dimension of C<--input-file> to use.
 
-=item * C<--obs-ns> (default 0)
+=item C<--obs-ns> (default 0)
 
 Index along the C<ns> dimension of C<--obs-file> to use.
 
-=item * C<--obs-np> (default 0)
+=item C<--obs-np> (default 0)
 
 Index along the C<np> dimension of C<--obs-file> to use.
 
