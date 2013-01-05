@@ -95,6 +95,14 @@ This command will simulate 128 trajectories of the model (\bitt{-P 128}), each
 of 365 days (\bitt{-T 365}), outputting the results to the NetCDF\index{NetCDF}
 file \bitt{results/simulate.nc} every day (\bitt{-K 365}).
 
+\begin{tip}
+On the first occasion that a command is run, Bi generates and compiles code
+for you behind the scenes. This takes some time, depending on the complexity
+of the model. The second time the command is run there is no such overhead,
+and execution time is noticeably shorter. Changes to some command-line options
+may also trigger a recompile.
+\end{tip}
+
 The \secref{Command_line_interface}{command-line interface} provides numerous
 other functionality, including filtering and smoothing the model with respect
 to data, and optimising or sampling its parameters.
@@ -444,37 +452,31 @@ then copied into each element of the vector \bitt{d}.
 
 \subsection{Operators\label{Operators}}
 
-Arithmetic operators:
+The following operators are supported in expressions:
 
-\bitt{+ - * / \% \^{}}
-
-\bitt{.+ .- .* ./ .\% .\^{}}
-
-The first set imply matrix operations in the appropriate context. The second
-set force element-wise operation.
-
-Bitshift operators:
-
-\bitt{<< >>}
-
-Comparison operators:
-
-\bitt{== != < <= > >= }
-
-Logical operators:
-
-\bitt{\&\& ||}
-
-Ternary operators:
-
-\bitt{?:}
+\noindent
+\begin{tabular}{lr}
+\hline
+Scalar/vector/matrix arithmetic operators: & \bitt{+ - * / \% \^{}} \\
+Element-wise vector/matrix operators:  & \bitt{.+ .- .* ./ .\% .\^{}} \\
+Bitshift operators: & \bitt{<< >>} \\
+Comparison operators: & \bitt{== != < <= > >= } \\
+Logical operators: & \bitt{\&\& ||} \\
+Ternary operators: & \bitt{?:} \\
+\hline
+\end{tabular}
 
 \subsection{Functions\label{Functions}}
 
-The following math functions are supported in expressions:
+The following functions are supported in expressions:
 
+\noindent
+\begin{tabular}{p{\textwidth}}
+\hline
 \bitt{abs log nanlog exp nanexp max min sqrt pow mod ceil floor gamma lgamma
-  sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh}
+  sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh} \\
+\hline
+\end{tabular}
 
 \section{Command line interface\label{Command_line_interface}}\index{command line}
 

@@ -3,39 +3,39 @@
 
 Bi is available via Subversion at
 \hyperref[hyper][https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi]{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
-would typically check out a working copy of the \textsf{trunk} directory:
-\begin{alltt}{\sf
-svn co https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk bi
-}\end{alltt}
+would typically check out a working copy of the \bitt{trunk} directory:
+\begin{cmdcode}
+svn co https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk
+\end{cmdcode}
 
 For any endeavours that may temporarily break functionality, working on a
 branch, rather than the main trunk, is essential. A branch can be created by
 copying the trunk into an appropriately named subdirectory of the
-\textsf{branches} directory:
-\begin{alltt}{\sf
+\bitt{branches} directory:
+\begin{cmdcode}
 svn copy -m 'Created branch for...' \textbackslash
   https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk \textbackslash
   https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
-}\end{alltt}
-and then checking out a working copy of the branch instead. Branches are not
-required to actually work at any time, so regular commits are encouraged, even
-for code that does not yet compile or run correctly. Note that you may like to
-copy only a particular subdirectory of the trunk, rather than the entire
-thing.
+\end{cmdcode}
+and then checking out a working copy of the branch instead. While the trunk
+should contain a working version of Bi at all times, branches need
+not. Regular commits to branches are thus encouraged, even of unfinished code
+or code that does not yet compile and run correctly. Note that you may like to
+copy only a particular subdirectory of the trunk into a branch, rather than
+the whole directory.
 
 Once modifications are complete, a branch can be merged back into a working
 copy of the trunk:
-\begin{alltt}{\sf
+\begin{cmdcode}
 svn merge --reintegrate \textbackslash
   https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
-}\end{alltt}
+\end{cmdcode}
 and then the working copy of the trunk committed.
 
 \section{Using the Eclipse IDE}
 
-Bi is set up to use the Eclipse IDE. LibBi works with the Eclipse IDE for
-C/C++, and GenBi with the EPIC (Eclipse Perl Integration) project. From a
-vanilla install of the Eclipse IDE for C/C++ (available at
+Bi is set up to use the Eclipse IDE. From a vanilla install of the Eclipse IDE
+for C/C++ (available at
 \hyperref[hyper][http://www.eclipse.org]{http://www.eclipse.org}), a number of
 additional plugins are supported, and recommended. These are, along with the
 URLs of their update sites:
@@ -53,25 +53,20 @@ URLs of their update sites:
 They may be installed via the \textsf{Help > Install New Software...} menu
 item in Eclipse, in each case entering the update site URL.
 
-With Subclipse installed, each of LibBi, GenBi and OctBi may be checked out of
-the Subversion repository as a separate project in Eclipse. Use the
-\textsf{File > New > Other...} menu item and select the \textsf{SVN > Checkout
-  Projects from SVN} item from the list. Enter the URL of the Bi Subversion
-repository trunk (or of a branch), then select one or more of the
-\textsf{libbi}, \textsf{genbi} or \textsf{octbi} directories to check these
-out as Eclipse projects.
+With Subclipse installed, Bi may be checked out of the Subversion repository
+as a separate project in Eclipse. Use the \textsf{File > New > Other...} menu
+item and select the \textsf{SVN > Checkout Projects from SVN} item from the
+list. Enter the URL of the Bi Subversion repository trunk (or of a branch),
+then select one or more of the subdirectories to check these out as Eclipse
+projects.
 
-For LibBi, you will need to run \textsf{./autogen.sh} then
-\textsf{./configure} from the command line before you can build from within
-Eclipse.
-
-A custom code style is available in the \textsf{custom\_code\_style.xml} file,
+A custom code style is available in the \bitt{custom\_code\_style.xml} file,
 and should be used. This may be loaded via the \textsf{Window > Preferences}
 dialog, using the \textsf{Import...} button under \textsf{C/C++ > Code Style}.
 
 
 %%%%
-\section{Developing GenBi}
+\section{Developing Bi}
 
 Developing Bi involves adding or modifying functionality in one or more of its
 major \hyperref[hyper][Components]{components}. A typical exercise is adding
@@ -92,7 +87,7 @@ specification, does not explicitly place an action within its
 preferred block type, the action will be implicitly wrapped in it anyway.
 
 For example, take the model specification:
-\begin{alltt}{\sf
+\begin{bicode}
     sub transition \{
       do \{
         x <- a*x + b
@@ -102,12 +97,11 @@ For example, take the model specification:
         y ~ gaussian(y, 1.0)
       \}
     \}
-}\end{alltt}
-The \hyperref[hyper][uniform]{\sf uniform}\index{uniform} and
-\hyperref[hyper][gaussian]{\sf gaussian}\index{gaussian} actions prefer
-different parent block types. These additional block types will be inserted,
-to give the equivalent of the user having specified:
-\begin{alltt}{\sf
+\end{bicode}
+The \actionref{uniform} and \actionref{gaussian} actions prefer different
+parent block types. These additional block types will be inserted, to give the
+equivalent of the user having specified:
+\begin{bicode}
     sub transition \{
       do \{
         x <- a*x + b
@@ -121,30 +115,28 @@ to give the equivalent of the user having specified:
         \}
       \}  
     \}
-}\end{alltt}
+\end{bicode}
 
 For the developer, then, actions and blocks are always written in tandem.
-Note the underscore suffix on \textsf{uniform\_} and \textsf{gaussian\_} is a
+Note the underscore suffix on \bitt{uniform\_} and \bitt{gaussian\_} is a
 convention that marks these as blocks for internal use only -- the user is not
-intended to use them explicitly (see the \hyperref[hyper][Style_guide]{\sf
-  Style guide}\index{style guide}).
+intended to use them explicitly (see the \secref{Style_guide}{style guide}).
 
 It is worth familiarising yourself with this behaviour, and indeed other
-transformations made by GenBi, by using the
-\hyperref[hyper][rewrite]{\sf rewrite}\index{rewrite} command.
+transformations made by GenBi, by using the \clientref{rewrite} command.
 
 \subsubsection{Adding a block}
 
 To add a block:
 \begin{enumerate}
 \item Choose a name for the block.
-\item Create a Perl module \textsf{Bi::Block::\textit{name}} in the
-  file \textsf{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
+\item Create a Perl module \bitt{Bi::Block::\textit{name}} in the
+  file \bitt{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
   ``CamelCase'' naming conventions should be ignored in favour of Bi block
   naming conventions here.
 \item Create a new Perl Template Toolkit template
-  \textsf{gen/src/tt/block/\textit{name}.hpp.tt}. When rendered, the template
-  will be passed a single variable named \textsf{block}, which is an object of
+  \bitt{gen/src/tt/block/\textit{name}.hpp.tt}. When rendered, the template
+  will be passed a single variable named \bitt{block}, which is an object of
   the class created in the previous step.
 \end{enumerate}
 
@@ -157,16 +149,16 @@ block type, as the basis for your new block type.
 To add an action:
 \begin{enumerate}
 \item Choose a name for the action.
-\item Create a Perl module \textsf{Bi::Block::\textit{name}} in the
-  file \textsf{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
+\item Create a Perl module \bitt{Bi::Action::\textit{name}} in the
+  file \bitt{gen/src/Bi/Action/\textit{name}.pm}. Note that Perl module
   ``CamelCase'' naming conventions should be ignored in favour of Bi action
   naming conventions here.
 \item If necessary, create a new Perl Template Toolkit template
-  \textsf{gen/src/tt/action/\textit{name}.hpp.tt}. When rendered, the template
-  will be passed a single variable named \textsf{action}, which is an object
-  of the class created in the previous step. Often, this template is not
-  necessary, such as when the template for the containing block generates all
-  the code required.
+  \bitt{gen/src/tt/action/\textit{name}.hpp.tt}. During rendering, the
+  template will be passed a single variable named \bitt{action}, which is an
+  object of the class created in the previous step. This template is
+  not required; the template of the containing block may generate all the
+  necessary code.
 \end{enumerate}
 
 \subsubsection{Adding a client\label{Adding_a_client}}
@@ -175,22 +167,22 @@ To add a client:
 \begin{enumerate}
 \item Consider whether an existing client can be modified or a new client
   should be added. For an existing client, edit the corresponding Perl module
-  \textsf{src/Bi/Client/\textit{name}.pm}. For a new client, choose a name
-  and create a new Perl module \textsf{src/Bi/Client/\textit{name}.pm}. Again,
+  \bitt{src/Bi/Client/\textit{name}.pm}. For a new client, choose a name
+  and create a new Perl module \bitt{src/Bi/Client/\textit{name}.pm}. Again,
   Bi client naming conventions should be favoured over Perl module naming
   conventions.
 \item Consider whether an existing template can be modified or a new template
   should be created. For an existing template, edit the corresponding template
-  in \textsf{tt/cpp/client/\textit{template}.cpp.tt}. For a new template:
+  in \bitt{tt/cpp/client/\textit{template}.cpp.tt}. For a new template:
 \begin{enumerate}
-\item Create files \textsf{tt/cpp/client/\textit{template}.cpp.tt} and
-  \textsf{tt/cpp/client/\textit{template}.cu.tt}. Note that the second
-  typically only needs to \textsf{\#include} the former, the \textsf{*.cu}
+\item Create files \bitt{tt/cpp/client/\textit{template}.cpp.tt} and
+  \bitt{tt/cpp/client/\textit{template}.cu.tt}. Note that the second
+  typically only needs to \bitt{\#include} the former, the \bitt{*.cu}
   file extension is merely needed for a CUDA-enabled compile.
 \item Modify the Perl module to select this template for use where
   appropriate.
 \item Add the template name to the list given at the top of
-  \textsf{tt/build/Makefile.am.tt} to ensure that a build fule is generated
+  \bitt{tt/build/Makefile.am.tt} to ensure that a build fule is generated
   for it.
 \end{enumerate}
 \end{enumerate}
@@ -251,13 +243,13 @@ following additional recommended pertain to developers:
 
 Header files are given two extensions in LibBi:
 \begin{enumerate}
-\item {\sf *.hpp} headers may be safely included in any C++ (e.g.
-{\sf *.cpp}) or CUDA ({\sf *.cu}) source files,
-\item {\sf *.cuh} headers may only be safely included in CUDA ({\sf *.cu})
+\item \bitt{*.hpp} headers may be safely included in any C++ (e.g.
+\bitt{*.cpp}) or CUDA (\bitt{*.cu}) source files,
+\item \bitt{*.cuh} headers may only be safely included in CUDA (\bitt{*.cu})
 source files. They include CUDA C extensions.
 \end{enumerate}
 
-Note that not all {\sf *.hpp} headers can be safely included in {\sf *.cu}
+Note that not all \bitt{*.hpp} headers can be safely included in \bitt{*.cu}
 files either, due to CUDA compiler limitations, particularly those headers
 that further include Boost headers which make extensive use of
 templates. Efforts have been made to quarantine such incidences from the CUDA
@@ -265,31 +257,31 @@ compiler, but mileage may vary.
 
 \subsection{Coding conventions}
 
-The following names are used for template parameters (where {\sf n}>
-is an integer):
+The following names are used for template parameters (where \bitt{n} is an
+integer):
 \begin{itemize}
-\item {\sf B} for the model type,
-\item {\sf Tn} for scalar types,
-\item {\sf Vn} for matrix types,
-\item {\sf Mn} for vector types,
-\item {\sf Qn} for pdf types,
-\item {\sf S} for type lists,
-\item {\sf L} for location (host or device),
-\item {\sf CL} for location of a cache,
-\item {\sf PX} for parents type,
-\item {\sf CX} for coordinates type,
-\item {\sf OX} for output type.
+\item \bitt{B} for the model type,
+\item \bitt{Tn} for scalar types,
+\item \bitt{Vn} for matrix types,
+\item \bitt{Mn} for vector types,
+\item \bitt{Qn} for pdf types,
+\item \bitt{S} for type lists,
+\item \bitt{L} for location (host or device),
+\item \bitt{CL} for location of a cache,
+\item \bitt{PX} for parents type,
+\item \bitt{CX} for coordinates type,
+\item \bitt{OX} for output type.
 \end{itemize}
 
 \subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
 
 It is important to maintain reproducibility of results under the same random
 number seed\index{random number seed}, typically passed using the
-\textsf{--seed} option on the command line. Real time impacts should be
+\bitt{--seed} option on the command line. Real time impacts should be
 considered, such as favouring static scheduling\index{static scheduling} over
 dynamic scheduling\index{dynamic scheduling} for OpenMP\index{OpenMP} thread
 blocks. Consider the following:
-\begin{alltt}{\sf
+\begin{cppcode}
     Random rng;
 
     #pragma omp parallel for
@@ -297,15 +289,15 @@ blocks. Consider the following:
        x = rng.uniform();
        \(\ldots\)
     \}
-}\end{alltt}
+\end{cppcode}
 
-\textsf{Random} maintains a separate pseudorandom number
+\bitt{Random} maintains a separate pseudorandom number
 generator\index{pseudorandom number generation} for each OpenMP thread. If
 dynamically scheduled, the above loop gives no guarantees as to the number of
 variates drawn from each generator, so that reproducibility of results for a
 given seed is not guaranteed. Static scheduling should be enforced in this
 case to ensure reproducibility:
-\begin{alltt}{\sf
+\begin{cppcode}
     Random rng;
 
     #pragma omp parallel for schedule(static)
@@ -313,26 +305,26 @@ case to ensure reproducibility:
        x = rng.uniform();
        \(\ldots\)
     \}
-}\end{alltt}
+\end{cppcode}
 
 A more subtle consideration is the conditional generation of
 variates. Consider the following code, evaluating a
 Metropolis-Hastings\index{Metropolis-Hastings} acceptance criterion:
-\begin{alltt}{\sf
+\begin{cppcode}
     alpha = (l1*p1*q2)/(l2*p2*q1);
     if (alpha >= 1.0 || rng.uniform() < alpha) \{
       accept();
     \} else \{
       reject();
     \}
-}\end{alltt}
-Here, \textsf{rng.uniform()} is called only when \textsf{alpha >= 1.0} (given
+\end{cppcode}
+Here, \bitt{rng.uniform()} is called only when \bitt{alpha >= 1.0} (given
 operator short-circuiting). We might prefer, however, that across multiple
 runs with the same seed, the pseudorandom number generator is always in the
 same state for the $n$th iteration, regardless of the acceptance criteria
 across the preceding iterations. Moving the variate generation outside the
 conditional will fix this:
-\begin{alltt}{\sf
+\begin{cppcode}
     alpha = (l1*p1*q2)/(l2*p2*q1);
     u = rng.uniform();
     if (alpha >= 1.0 || u < alpha) \{
@@ -340,7 +332,7 @@ conditional will fix this:
     \} else \{
       reject();
     \}
-}\end{alltt}
+\end{cppcode}
 
 \subsection{Shallow copy, deep assignment}
 

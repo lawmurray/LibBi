@@ -2,17 +2,18 @@
 
 The options in this section are common across all client programs.
 
-Options prefixed with {\sf --enable} may be negated by replacing this with
-{\sf --disable}. Likewise, options prefixed with {\sf --with} may be negated
-by replacing this with {\sf --without}.
+Options prefixed with \bitt{--enable} may be negated by replacing this with
+\bitt{--disable}. Likewise, options prefixed with \bitt{--with} may be negated
+by replacing this with \bitt{--without}.
 
 \subsubsection{General options}
+
 \begin{itemize}
-\item {\sf --help}
+\item \bitt{--help}
 
 Display help.
 
-\item {\sf --verbose} (default off)
+\item \bitt{--verbose} (default off)
 
 Enable verbose reporting.
 \end{itemize}
@@ -20,158 +21,160 @@ Enable verbose reporting.
 \subsubsection{Build options}
 
 \begin{itemize}
-\item {\sf --dry-gen} (default off)
+\item \bitt{--dry-gen} (default off)
 
 Do not (re)generate code.
 
-\item {\sf --dry-build} (default off)
+\item \bitt{--dry-build} (default off)
 
 Do not build.
 
-\item {\sf --warn} (default off)
+\item \bitt{--warn} (default off)
 
 Enable compiler warnings.
 
-\item {\sf --native} (default off)
+\item \bitt{--native} (default off)
 
 Compile for native platform.
 
-\item {\sf --force} (default off)
+\item \bitt{--force} (default off)
 
 Force all build steps to be performed, even when determined to be not
 required. This is useful as a workaround of any faults in detecting
 changes, or when system headers or libraries change and recompilation or
 relinking is required.
 
-\item {\sf --enable-assert} (default on)
+\item \bitt{--enable-assert} (default on)
 
 Enable assertion checking (recommended for test runs, not recommended for
 production runs).
 
-\item {\sf --enable-cuda} (default off)
+\item \bitt{--enable-cuda} (default off)
 
 Enable CUDA device code.
 
-\item {\sf --enable-sse} (default off)
+\item \bitt{--enable-sse} (default off)
 
 Enable SSE host code.
 
-\item {\sf --enable-mkl} (default off)
+\item \bitt{--enable-mkl} (default off)
 
 Enable Intel MKL code.
 
-\item {\sf --enable-mpi} (default off)
+\item \bitt{--enable-mpi} (default off)
 
 Enable MPI code.
 
-\item {\sf --enable-vampir} (default off)
+\item \bitt{--enable-vampir} (default off)
 
 Enable Vampir.
 
-\item {\sf --enable-single} (default off)
+\item \bitt{--enable-single} (default off)
 
 Use single-precision floating point.
 \end{itemize}
 
 \subsubsection{Run options}
+
 \begin{itemize}
-\item {\sf --dry-run}
+\item \bitt{--dry-run}
 
 Do not run.
 
-\item {\sf --seed} (default 0)
+\item \bitt{--seed} (default 0)
 
 Pseudorandom number generator seed.
 
-\item {\sf --threads \textsl{N}} (default 0)
+\item \bitt{--threads \textsl{N}} (default 0)
 
-Run with {\sf \textsl{N}} threads. If zero, the number of threads used is the
+Run with \bitt{\textsl{N}} threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-\item {\sf --enable-timing} (default off)
+\item \bitt{--enable-timing} (default off)
 
 Enable timings.
 
-\item {\sf --enable-output} (default on)
+\item \bitt{--enable-output} (default on)
 
 Enable output.
 
-\item {\sf --with-gdb} (default off)
+\item \bitt{--with-gdb} (default off)
 
-Run within the {\sf gdb} debugger.
+Run within the \bitt{gdb} debugger.
 
-\item {\sf --with-valgrind} (default off)
+\item \bitt{--with-valgrind} (default off)
 
-Run within {\sf valgrind}.
+Run within \bitt{valgrind}.
 
-\item {\sf --with-cuda-gdb} (default off)
+\item \bitt{--with-cuda-gdb} (default off)
 
-Run within the {\sf cuda-gdb} debugger.
+Run within the \bitt{cuda-gdb} debugger.
 
-\item {\sf --with-cuda-memcheck} (default off)
+\item \bitt{--with-cuda-memcheck} (default off)
 
-Run within {\sf cuda-memcheck}.
+Run within \bitt{cuda-memcheck}.
 
-\item {\sf --with-gperftools} (default off)
+\item \bitt{--with-gperftools} (default off)
 
-Run with {\sf gperftools} profiler.
+Run with \bitt{gperftools} profiler.
 
-\item {\sf --gperftools-file} (default '\textsl{command}.prof')
+\item \bitt{--gperftools-file} (default '\textsl{command}.prof')
 
-Output file to use under {\sf --with-gperftools}.
+Output file to use under \bitt{--with-gperftools}.
 
-\item {\sf --with-mpi} (default off)
+\item \bitt{--with-mpi} (default off)
 
-Run with {\sf mpirun}.
+Run with \bitt{mpirun}.
 
-\item {\sf --mpi-np}
+\item \bitt{--mpi-np}
 
-Number of processes when running under {\sf mpirun}. Corresponds to {\sf -np}
-option to {\sf mpirun}
+Number of processes when running under \bitt{mpirun}. Corresponds to \bitt{-np}
+option to \bitt{mpirun}
 
-\item {\sf --mpi-npernode}
+\item \bitt{--mpi-npernode}
 
-Number of processes per node when running under {\sf mpirun}. Corresponds to
-{\sf -npernode} option to {\sf mpirun}.
+Number of processes per node when running under \bitt{mpirun}. Corresponds to
+\bitt{-npernode} option to \bitt{mpirun}.
 
 \end{itemize}
 
 \subsubsection{Model transformation options}
 \begin{itemize}
-\item {\sf --transform-extended} (default off, enabled automatically when
+\item \bitt{--transform-extended} (default off, enabled automatically when
   required)
 
 Linearise the model and symbolically compute Jacobian expressions for use with
 the extended Kalman filter.
 
-\item {\sf --transform-param-to-state} (default off)
+\item \bitt{--transform-param-to-state} (default off)
 
-Augment the state with parameters by interpreting {\sf param} statements as
-{\sf state}, merging the {\sf parameter} top-level block into the {\sf
-  initial} top-level block, and merging the {\sf proposal\_parameter}
-top-level block into the {\sf proposal\_initial} top-level block.
+Augment the state with parameters by interpreting \kwref{param} statements as
+\kwref{state}, merging the \blockref{parameter} top-level block into the
+\blockref{initial} top-level block, and merging the
+\blockref{proposal_parameter} top-level block into the
+\blockref{proposal_initial} top-level block.
 
 This is useful for joint state and parameter estimation using filters.
 
-\item {\sf --transform-obs-to-state} (default off)
+\item \bitt{--transform-obs-to-state} (default off)
 
-Augment the state with observations by interpreting {\sf obs} statements as
-{\sf state}, merging the {\sf observation} top-level block into the {\sf
-  transition}, {\sf initial} and {\sf proposal\_initial} top-level blocks,
-and merging the {\sf lookahead\_observation} top-level block into the
-{\sf lookahead\_transition} top-level block.
+Augment the state with observations by interpreting \kwref{obs} statements as
+\kwref{state}, merging the \kwref{observation} top-level block into the
+\blockref{transition}, \blockref{initial} and \blockref{proposal_initial}
+top-level blocks, and merging the \blockref{lookahead_observation} top-level
+block into the \blockref{lookahead_transition} top-level block.
 
 This is useful for producing simulated data sets from a model.
 
-\item {\sf --transform-initial-to-param} (default off)
+\item \bitt{--transform-initial-to-param} (default off)
 
 Augment the parameters with the initial conditions of the state variables by
-adding a new {\sf param} for each {\sf state} variable to hold its initial
-value, merging the {\sf initial} top-level block into the {\sf parameter}
-top-level block, merging the {\sf proposal\_initial} top-level block into the
-{\sf proposal\_parameter} top-level block, and replacing both the {\sf
-  proposal\_parameter} and {\sf proposal\_initial} top-level blocks with
-$\delta$-masses.
+adding a new \kwref{param} for each \kwref{state} variable to hold its initial
+value, merging the \blockref{initial} top-level block into the
+\blockref{parameter} top-level block, merging the \blockref{proposal_initial}
+top-level block into the \blockref{proposal_parameter} top-level block, and
+replacing both the \blockref{proposal_parameter} and
+\blockref{proposal_initial} top-level blocks with $\delta$-masses.
 
 This is useful for treating the initial conditions as parameters in sampling
 schemes such as PMCMC and SMC$^2$. Note that the transformation is semantic,

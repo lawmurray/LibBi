@@ -1,94 +1,93 @@
-\subsection{{\sf model}\label{model}}
+\subsection{\bitt{model}\label{model}}
 
 Declare a model.
 
 \subsubsection*{Synopsis\label{model_Synopsis}}
-\begin{alltt}{\sf
+\begin{bicode}
     model \textsl{Name} \{
       \(\ldots\)
     \}
-}\end{alltt}
-
+\end{bicode}
 
 \subsubsection*{Description\label{model_Description}}
 
-A \textsf{model} statement is the outermost statement of a model specification,
+A \bitt{model} statement is the outermost statement of a model specification,
 declaring and naming the model.
 
-Immediately within the \textsf{model} statement, the following named top-level blocks should
+Immediately within the \bitt{model} statement, the following named top-level blocks should
 be used to specify the model:
 \begin{itemize}
-\item \textsf{\hyperref[hyper][parameter]{parameter}}, specifying the prior density over parameters,
-\item \textsf{\hyperref[hyper][initial]{initial}}, specifying the prior density over initial conditions,
-\item \textsf{\hyperref[hyper][transition]{transition}}, specifying the transition density, and
-\item \textsf{\hyperref[hyper][observation]{observation}}, specifying the observation density.
+\item \blockref{parameter}, specifying the prior density over parameters,
+\item \blockref{initial}, specifying the prior density over initial conditions,
+\item \blockref{transition}, specifying the transition density, and
+\item \blockref{observation}, specifying the observation density.
 \end{itemize}
 
 The following named top-level blocks are optional, but may be required in order to use particular methods:
 \begin{itemize}
-\item \textsf{\hyperref[hyper][proposal_parameter]{proposal\textunderscore{}parameter}}, specifying the proposal density over parameters,
-\item \textsf{\hyperref[hyper][proposal_initial]{proposal\textunderscore{}initial}}, specifying the proposal density over initial conditions,
-\item \textsf{\hyperref[hyper][lookahead_transition]{lookahead\textunderscore{}transition}}, specifying a lookahead density to accompany the transition density, and
-\item \textsf{\hyperref[hyper][lookahead_observation]{lookahead\textunderscore{}observation}}, specifying a lookahead density to accompany the observation density.
+\item \blockref{proposal_parameter}, specifying the proposal density over parameters,
+\item \blockref{proposal_initial}, specifying the proposal density over initial conditions,
+\item \blockref{lookahead_transition}, specifying a lookahead density to accompany the transition density, and
+\item \blockref{lookahead_observation}, specifying a lookahead density to accompany the observation density.
 \end{itemize}
 
-\subsection{{\sf dim}\label{dim}\index{dim}}
+\subsection{\bitt{dim}\label{dim}\index{dim}}
 
 Declare a dimension.
 
 \subsubsection*{Synopsis\label{dim_Synopsis}}
-\begin{alltt}{\sf
+\begin{bicode}
     dim \textsl{name}(100, 'cyclic')
     dim \textsl{name}(size = 100, boundary = 'cyclic')
-}\end{alltt}
+\end{bicode}
 
 
 \subsubsection*{Description\label{dim_Description}}
 
-A \textsf{dim} statement declares a dimension with a given size and boundary
+A \bitt{dim} statement declares a dimension with a given size and boundary
 condition.
 
-A \textsf{dim} statement may only be used at the top level of the model
+A \bitt{dim} statement may only be used at the top level of the model
 specification. Dimensions must be declared before any variables are declared
 along them.
 
 \subsubsection*{Arguments\label{dim_Arguments}}
 
 \begin{itemize}
-\item \textsf{size} (position 0, mandatory)
+\item \bitt{size} (position 0, mandatory)
 
 Length of the dimension.
 
-\item \textsf{boundary} (position 1, default 'none')
+\item \bitt{boundary} (position 1, default 'none')
 
 Boundary condition of the dimension. Valid values are:
 
 \begin{itemize}
 
-\item \textsf{'none'}
+\item \bitt{'none'}
 
 No boundary condition.
 
-\item \textsf{'cyclic'}
+\item \bitt{'cyclic'}
 
-Cyclic boundary condition; all indices are taken modulo the \textsf{size} of
+Cyclic boundary condition; all indices are taken modulo the \bitt{size} of
 the dimension.
 
 \end{itemize}
 \end{itemize}
 
-\subsection{{\sf input}\index{input}, {\sf noise}\index{noise}, {\sf obs}\index{obs}, {\sf param}\index{param} and {\sf state}\index{state}\label{var}}
+\subsection{\bitt{input}\index{input}, \bitt{noise}\index{noise}, \bitt{obs}\index{obs}, \bitt{param}\index{param} and \bitt{state}\index{state}\label{var}}
 
 Declare an input, noise, observed, parameter or state variable.
 
 \subsubsection*{Synopsis\label{var_Synopsis}}
 
-\begin{alltt}{\sf
+\begin{bicode}
     state x
     state x[i]
     state x(io = 0)
     state x[i](io = 0)
-}\end{alltt}
+\end{bicode}
 
 \subsubsection*{Description\label{var_Description}}
 
@@ -102,13 +101,13 @@ prior to the declaration of the variable.
 \subsubsection*{Arguments\label{var_Arguments}}
 
 \begin{itemize}
-\item \textsf{io} (default 1)
+\item \bitt{io} (default 1)
 
 Should the variable be included in input and output buffers? Excluding an
 uninteresting variable from outputs by setting this to 0 will save disk space
 and I/O time.
 
-\item \textsf{tmp} (default 0)
+\item \bitt{tmp} (default 0)
 
 Is the variable merely a temporary? This is used internally to flag
 temporary variables that are created to hold intermediate results, but which
@@ -117,36 +116,36 @@ distribution over all variables. It may have occasional use externally.
 
 \end{itemize}
 
-\subsection{{\sf const}\label{const}\index{const}}
+\subsection{\bitt{const}\label{const}\index{const}}
 
 Declare a constant.
 
 \subsubsection*{Synopsis\label{const_Synopsis}}
-\begin{alltt}{\sf
+\begin{bicode}
     const \textsl{name} = \textsl{constant_expression}
-}\end{alltt}
+\end{bicode}
 
 \subsubsection*{Description\label{const_description}}
 
-A {\sf const} statement declares a constant, the value of which is evaluated
+A \bitt{const} statement declares a constant, the value of which is evaluated
 using the given constant expression\index{constant expression}. The constant
 may then be used, by name, in other expressions.
 
 A constant may be declared anywhere in a model specification, but always has
 global scope.
 
-\subsection{{\sf inline}\label{inline}\index{inline}}
+\subsection{\bitt{inline}\label{inline}\index{inline}}
 
 Declare an inline expression.
 
 \subsubsection*{Synopsis\label{inline_synopsis}}
-\begin{alltt}{\sf
+\begin{bicode}
     inline \textsl{name} = \textsl{expression}
-}\end{alltt}
+\end{bicode}
 
 \subsubsection*{Description\label{inline_description}}
 
-An {\sf inline} statement declares an inline expression\index{inline
+An \bitt{inline} statement declares an inline expression\index{inline
   expression}. The inline may then be used, by name, in other expressions, as
 long as it will not violate any constraints on those expressions (e.g. an
 inline expression named within a constant expression must itself be a constant
@@ -155,6 +154,6 @@ expression).
 An inline expression may be declared anywhere in a model specification, but
 always has global scope.
 
-\subsection{{\sf sub}\label{sub}\index{sub}}
+\subsection{\bitt{sub}\label{sub}\index{sub}}
 
-\subsection{{\sf do} and {\sf then}\label{do_then}\index{do.. then}}
+\subsection{\bitt{do} and \bitt{then}\label{do_then}\index{do.. then}}
