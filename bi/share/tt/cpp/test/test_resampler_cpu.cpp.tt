@@ -14,6 +14,7 @@
 #include "bi/resampler/RejectionResampler.hpp"
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
+#include "bi/resampler/SystematicResampler.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/pdf/GaussianPdf.hpp"
 #include "bi/math/loc_vector.hpp"
@@ -72,7 +73,9 @@ int main(int argc, char* argv[]) {
   RejectionResampler resam;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
   MultinomialResampler resam(ENABLE_SORT);
-  [% ELSE %]
+  [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+  SystematicResampler resam(ENABLE_SORT);
+  [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
   StratifiedResampler resam(ENABLE_SORT);
   [% END %]
 
@@ -141,7 +144,10 @@ int main(int argc, char* argv[]) {
         timer.tic();
         
         [% IF client.get_named_arg('resampler') == 'stratified' %]
-        resam.cumulativeOffspring(rng, lws, Os, actualP);        
+        resam.cumulativeOffspring(rng, lws, Os, actualP);
+        resam.cumulativeOffspringToAncestorsPermute(Os, as);
+        [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+        resam.cumulativeOffspring(rng, lws, Os, actualP);
         resam.cumulativeOffspringToAncestorsPermute(Os, as);
         [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
         real maxLogWeight = -BI_HALF_LOG_TWO_PI;
