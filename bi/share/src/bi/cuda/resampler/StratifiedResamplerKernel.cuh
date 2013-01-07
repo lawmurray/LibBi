@@ -46,7 +46,7 @@ CUDA_FUNC_GLOBAL void bi::kernelStratifiedResamplerOp(const V1 alphas,
     T1 reach = Ws(p)/W*n;
     int k = bi::min(n - 1, static_cast<int>(reach));
 
-    Os(i) = static_cast<int>(reach + alphas(k));
+    Os(p) = static_cast<int>(reach + alphas(k));
   }
 }
 
