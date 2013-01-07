@@ -58,7 +58,6 @@ struct RandomHost {
    */
   template<class V1, class V2>
   static void multinomials(Random& rng, const V1 lps, V2 xs);
-
 };
 }
 
@@ -72,15 +71,19 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
   BI_ASSERT(upper >= lower);
 
   typedef typename V1::value_type T1;
+  typedef boost::uniform_real<T1> dist_type;
 
   #pragma omp parallel
   {
     RngHost& rng1 = rng.getHostRng();
     int j;
 
+    dist_type dist(lower, upper);
+    boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
+
     #pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
-      x(j) = rng1.uniform(lower, upper);
+      x(j) = gen();
     }
   }
 }
@@ -92,15 +95,19 @@ void bi::RandomHost::gaussians(Random& rng, V1 x,
   BI_ASSERT(sigma >= 0.0);
 
   typedef typename V1::value_type T1;
+  typedef boost::normal_distribution<T1> dist_type;
 
   #pragma omp parallel
   {
     RngHost& rng1 = rng.getHostRng();
     int j;
 
+    dist_type dist(mu, sigma);
+    boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
+
     #pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
-      x(j) = rng1.gaussian(mu, sigma);
+      x(j) = gen();
     }
   }
 }
@@ -112,15 +119,19 @@ void bi::RandomHost::gammas(Random& rng, V1 x,
   BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
+  typedef boost::gamma_distribution<T1> dist_type;
 
   #pragma omp parallel
   {
     RngHost& rng1 = rng.getHostRng();
     int j;
 
+    dist_type dist(alpha);
+    boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
+
     #pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
-      x(j) = rng1.gamma(alpha, beta);
+      x(j) = beta*gen();
     }
   }
 }
@@ -132,15 +143,23 @@ void bi::RandomHost::betas(Random& rng, V1 x,
   BI_ASSERT(alpha > 0.0 && beta > 0.0);
 
   typedef typename V1::value_type T1;
+  typedef boost::gamma_distribution<T1> dist_type;
 
   #pragma omp parallel
   {
     RngHost& rng1 = rng.getHostRng();
     int j;
 
+    dist_type dist1(alpha), dist2(beta);
+    boost::variate_generator<RngHost::rng_type&, dist_type> gen1(rng1.rng, dist1), gen2(rng1.rng, dist2);
+    T1 y1, y2;
+
     #pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
-      x(j) = rng1.beta(alpha, beta);
+      y1 = gen1();
+      y2 = gen2();
+
+      x(j) = y1/(y1 + y2);
     }
   }
 }
@@ -162,6 +181,7 @@ void bi::RandomHost::multinomials(Random& rng, const V1 lps, V2 xs) {
 
   int i, p;
   for (i = 0; i < xs.size(); ++i) {
+    ///@todo Review implementation, in particular the next two repeated calls
     u = rng1.uniform(lower, upper);
     p = thrust::lower_bound(Ps.begin(), Ps.end(), u) - Ps.begin();
 

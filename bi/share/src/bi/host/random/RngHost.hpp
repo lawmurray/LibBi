@@ -71,7 +71,6 @@ public:
   template<class T1>
   T1 beta(const T1 alpha = 1.0, const T1 beta = 1.0);
 
-private:
   /**
    * Random number generator type.
    */
