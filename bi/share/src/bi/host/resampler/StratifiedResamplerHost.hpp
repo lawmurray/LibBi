@@ -25,13 +25,9 @@ void bi::StratifiedResamplerHost::op(Random& rng, const V1 Ws, V2 Os,
   #pragma omp parallel for
   for (int i = 0; i < P; ++i) {
     T1 reach = Ws(i)/W*n;
-    int m = static_cast<int>(reach);
+    int k = bi::min(n - 1, static_cast<int>(reach));
 
-    if (m < n) {
-      Os(i) = static_cast<int>(reach + alphas(m));
-    } else {
-      Os(i) = n;
-    }
+    Os(i) = static_cast<int>(reach + alphas(k));
   }
 }
 
