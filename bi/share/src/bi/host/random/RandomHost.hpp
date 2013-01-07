@@ -75,7 +75,7 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
 
   #pragma omp parallel
   {
-    BOOST_AUTO(rng1, rng.getHostRng());
+    RngHost& rng1 = rng.getHostRng();
     int j;
 
     #pragma omp for schedule(static)
@@ -95,7 +95,7 @@ void bi::RandomHost::gaussians(Random& rng, V1 x,
 
   #pragma omp parallel
   {
-    BOOST_AUTO(rng1, rng.getHostRng());
+    RngHost& rng1 = rng.getHostRng();
     int j;
 
     #pragma omp for schedule(static)
@@ -115,7 +115,7 @@ void bi::RandomHost::gammas(Random& rng, V1 x,
 
   #pragma omp parallel
   {
-    BOOST_AUTO(rng1, rng.getHostRng());
+    RngHost& rng1 = rng.getHostRng();
     int j;
 
     #pragma omp for schedule(static)
@@ -135,7 +135,7 @@ void bi::RandomHost::betas(Random& rng, V1 x,
 
   #pragma omp parallel
   {
-    BOOST_AUTO(rng1, rng.getHostRng());
+    RngHost& rng1 = rng.getHostRng();
     int j;
 
     #pragma omp for schedule(static)
@@ -152,7 +152,7 @@ void bi::RandomHost::multinomials(Random& rng, const V1 lps, V2 xs) {
 
   typedef typename V1::value_type T1;
 
-  BOOST_AUTO(rng1, rng.getHostRng());
+  RngHost& rng1 = rng.getHostRng();
   typename sim_temp_vector<V1>::type Ps(lps.size());
   sumexpu_inclusive_scan(lps, Ps);
 
