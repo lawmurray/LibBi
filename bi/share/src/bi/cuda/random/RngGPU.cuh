@@ -81,6 +81,10 @@ public:
 }
 
 inline void bi::RngGPU::seed(const unsigned seed) {
+  /**
+   * @todo RNG seeding on device is very slow, perhaps use multiple seeds
+   * rather than separate streams in the one seed's sequence.
+   */
   curand_init(seed, blockIdx.x*blockDim.x + threadIdx.x, 0, &r);
 }
 
