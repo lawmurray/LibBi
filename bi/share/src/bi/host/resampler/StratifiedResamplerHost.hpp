@@ -27,7 +27,7 @@ void bi::StratifiedResamplerHost::op(Random& rng, const V1 Ws, V2 Os,
     T1 reach = Ws(i)/W*n;
     int k = bi::min(n - 1, static_cast<int>(reach));
 
-    Os(i) = static_cast<int>(reach + alphas(k));
+    Os(i) = bi::min(n, static_cast<int>(reach + alphas(k)));
   }
 }
 

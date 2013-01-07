@@ -48,7 +48,7 @@ struct resample_cumulative_offspring : public std::unary_function<T,int> {
    * @return Cumulative offspring for particle this index.
    */
   CUDA_FUNC_BOTH int operator()(const T Ws) {
-    return static_cast<int>(Ws/W*n + a);
+    return bi::min(n, static_cast<int>(Ws/W*n + a));
   }
 };
 
