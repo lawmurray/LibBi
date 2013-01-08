@@ -81,7 +81,7 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
     dist_type dist(lower, upper);
     boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
 
-    #pragma omp for schedule(static)
+    #pragma omp for
     for (j = 0; j < x.size(); ++j) {
       x(j) = gen();
     }
