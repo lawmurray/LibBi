@@ -168,9 +168,13 @@ int main(int argc, char* argv[]) {
         time = timer.toc();
 
         /* error */
+        [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
         synchronize();
         sqerr = bi::sqrt(resam.error(lws, os));
+        [% ELSE %]
+        sqerr = 0.0;
+        [% END %]
         
         sqerrs(rep, p) = sqerr;
         times(rep, p) = time;
