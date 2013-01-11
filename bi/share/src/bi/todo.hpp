@@ -3,8 +3,6 @@
  *
  * @todo * (L) Fix ESS threshold for MPI.
  *
- * @todo * (L) Fix GPU permute.
- *
  * @todo * (A) Make ESS threshold clear with adaptive particle filter.
  *
  * @todo Adapting number of samples of initial conditions.
@@ -68,8 +66,6 @@
  * @todo Beta action maxLogDensity().
  *
  * @todo Automatically create directories for --output-file option.
- *
- * @todo Try GPU permute with atomicExch() instead of atomicCAS().
  *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
  *
