@@ -1,10 +1,10 @@
 \section{Introduction\label{Introduction}}
 
-Bi (short for ``Bayesian inference'') is used for probabilistic inference over
-state-space models, including simulation, filtering and smoothing for state
-estimation, and optimisation and sampling for parameter estimation.
+LibBi is used for Bayesian inference over state-space models, including
+simulation, filtering and smoothing for state estimation, and optimisation and
+sampling for parameter estimation.
 
-Bi supports state-space models of the form:
+LibBi supports state-space models of the form:
 \begin{equation*}
 p(\mathbf{y}_{1:T},\mathbf{x}_{1:T},\boldsymbol{\theta}) =
 \underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
@@ -28,7 +28,7 @@ probability densities:
 \item the observation model, specifying the observation density conditioned on
   the parameters and current state.
 \end{itemize}
-Each of these is explicitly specified using the Bi
+Each of these is explicitly specified using the LibBi
 \secref{Modelling_language}{modelling language}.
 
 We begin with a brief example to set the scene. Consider the following
@@ -44,7 +44,7 @@ in discrete time by drawing $\alpha_t \sim \mathcal{N}(\mu,\sigma)$
 daily. Parameters to be estimated are $\mu$ and $\sigma$, and $P$ is observed,
 with noise, at daily intervals.
 
-The model above might be specified in the Bi modelling language as follows:
+The model above might be specified in the LibBi modelling language as follows:
 \begin{bicode}
 /**
  * Lotka-Volterra-like phytoplankton-zooplankton (PZ) model.
@@ -86,7 +86,7 @@ model PZ \{
 \end{bicode}
 
 This would be saved in a file named \bitt{PZ.bi}. We can now consider
-performing various tasks with the Bi command-line interface, the simplest of
+performing various tasks with the LibBi command-line interface, the simplest of
 which is simulating from the model:
 \begin{cmdcode}
 bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 \textbackslash
@@ -97,7 +97,7 @@ of 365 days (\bitt{-T 365}), outputting the results to the NetCDF\index{NetCDF}
 file \bitt{results/simulate.nc} every day (\bitt{-K 365}).
 
 \begin{tip}
-On the first occasion that a command is run, Bi generates and compiles code
+On the first occasion that a command is run, LibBi generates and compiles code
 for you behind the scenes. This takes some time, depending on the complexity
 of the model. The second time the command is run there is no such overhead,
 and execution time is noticeably shorter. Changes to some command-line options
@@ -110,7 +110,7 @@ to data, and optimising or sampling its parameters.
 
 \section{Components\label{Components}}
 
-Bi consists of three components:
+LibBi consists of three components:
 \begin{description}
 \item[LibBi]\index{LibBi} which provides classes and functions for simulation
   and inference, numerical computing, memory management and I/O. It is written
@@ -127,7 +127,7 @@ The \secref{Command_line_interface}{command-line interface} provides
 for interaction with LibBi and GenBi. OctBi can be installed separately as a
 GNU Octave package for easily working with output files from this.
 
-\section{The Bi modelling language\label{Modelling_language}}
+\section{The LibBi modelling language\label{Modelling_language}}
 
 A model specification file contains a single model specification. The
 specification always starts with an outer \kwref{model} statement that
@@ -311,7 +311,7 @@ evaluated.
 
 Any number of \bitt{then} parts may follow the initial \bitt{do}.
 
-Under the hood, Bi assumes that it can evaluate actions within the same block
+Under the hood, LibBi assumes that it can evaluate actions within the same block
 in parallel, unless it is told otherwise. The \bitt{do..then} clause is the
 only way to tell it otherwise.
 
@@ -330,7 +330,7 @@ sub transition(delta = 1.0) \{
 
 \subsection{Expressions\label{Expressions}}
 
-Bi supports expressions over scalars, vectors and matrices, as well as the
+LibBi supports expressions over scalars, vectors and matrices, as well as the
 special type \textit{element}, which requires some explanation. These are
 defined as follows:
 \begin{itemize}
@@ -346,7 +346,7 @@ defined as follows:
   variable declared over one or more dimensions.
 \end{itemize}
 
-The particular distinction of the element type in Bi will be unfamiliar to
+The particular distinction of the element type in LibBi will be unfamiliar to
 most users. Syntactically, whenever square brackets are used to refer to a
 single element of a variable (e.g. \bitt{a[i]}), that symbol is of the
 element type.
@@ -481,7 +481,7 @@ The following functions are supported in expressions:
 
 \section{Command line interface\label{Command_line_interface}}\index{command line}
 
-Methods are applied to models via the command line interface of Bi. Invoke Bi
+Methods are applied to models via the command line interface of LibBi. Invoke LibBi
 via the command line as:
 \begin{cmdcode}
 bi \textit{command} \textit{options} ...
@@ -533,7 +533,7 @@ inherit options just as the commands do.
 
 \section{Data files\label{Data_files}}
 
-Input data is provided to Bi in the format of NetCDF\index{NetCDF} files. The
+Input data is provided to LibBi in the format of NetCDF\index{NetCDF} files. The
 structure of such files is specified here.
 
 \subsection{Input files}
@@ -650,12 +650,12 @@ Note two important points in this procedure:
 
 \section{Performance guide\label{Performance guide}\index{performance}}
 
-One of the aims of Bi is to alleviate you, the user, from performance
+One of the aims of LibBi is to alleviate you, the user, from performance
 considerations. Consequently, there is little scope in the modelling language
 for performance tuning, but little need either. Where you have some control is
 in compilation and I/O.
 
-Bi will do the following for you:
+LibBi will do the following for you:
 \begin{itemize}
 \item Precompute constant subexpressions.
 \item Precompute static subexpressions in the transition and observation

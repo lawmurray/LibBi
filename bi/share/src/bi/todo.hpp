@@ -22,8 +22,6 @@
  *
  * @todo * (All) Example models for release. Look at POMP?
  *
- * @todo * (L) "bi package" command.
- *
  * @todo Test suite (list of bi commands that can be run to test
  * changes). Regression tests.
  *

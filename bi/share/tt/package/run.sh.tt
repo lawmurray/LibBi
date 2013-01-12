@@ -1,0 +1,3 @@
+#!/bin/sh
+
+bi simulate --model-file [% name %].bi

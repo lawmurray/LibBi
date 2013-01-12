@@ -1,0 +1,6 @@
+/**
+ * [% description %]
+ */
+model [% name %] {
+
+}

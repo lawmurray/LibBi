@@ -69,7 +69,7 @@
 % can also use:
 % \seealso{}, \attention, \marginlabel{} before paragraphs to make notes in right margin.
 
-\title{Bi}
+\title{LibBi}
 \author{Lawrence Murray}
 \date{}
 
@@ -85,14 +85,14 @@
 \vspace{3cm}
 
 \fontsize{72pt}{92pt}\selectfont
-Bi
+LibBi
 
 \vspace{6cm}
 
 \fontsize{24pt}{30pt}\selectfont
 User Guide \\
-Developer Guide \\
-Reference
+User Reference \\
+Developer Guide
 
 \vspace{6cm}
 
@@ -130,11 +130,7 @@ Pierre Jacob
 
 \input{users}
 
-\chapter{Developer Guide\label{Developer_Guide}}
-
-\input{developers}
-
-\chapter{Reference\label{Reference}}
+\chapter{User Reference\label{User_Reference}}
 
 \section{Models}
 \input{models}
@@ -148,6 +144,10 @@ Pierre Jacob
 \section{Clients}
 \input{common}
 \input{clients}
+
+\chapter{Developer Guide\label{Developer_Guide}}
+
+\input{developers}
 
 \begingroup \catcode`_=12 % allows bare underscores in index
 \printindex

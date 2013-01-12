@@ -1,0 +1,9 @@
+MANIFEST
+META
+README.txt
+LICENSE.txt
+VERSION.txt
+run.sh
+[% name %].bi
+data
+results

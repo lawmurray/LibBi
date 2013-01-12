@@ -1,4 +1,4 @@
-Bi Installation Guide
+LibBi Installation Guide
 ------------------------------------------------------------------------------
 
 * Requirements
@@ -77,7 +77,7 @@ then within cpan:
     install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
        Parse::Slurp File::ShareDir Getopt::ArgvFile
 
-Bi can then be run with:
+LibBi client programs can then be run with:
 
     /path/to/bi/script/bi ...
 
@@ -110,7 +110,7 @@ Now install required packages from MacPorts:
 
 This can take over an hour!
 
-To ensure that Bi can find the gfortran libraries, symlink them into the
+To ensure that LibBi can find the gfortran libraries, symlink them into the
 /opt/local/lib directory as follows:
 
     sudo ln -s /opt/local/lib/gcc45/libgfortran.a /opt/local/lib/.
@@ -134,7 +134,7 @@ It is important that you do this *after* installing the MacPorts dependencies
 above, otherwise the modules will be installed to the system default perl, not
 MacPorts' perl.
 
-Now, set up the environment for Bi to compile its client programs. Firstly,
+Now, set up the environment for LibBi to compile its client programs. Firstly,
 add the following to ~/.profile
 
     export LDFLAGS='-L/opt/local/lib'
@@ -142,20 +142,20 @@ add the following to ~/.profile
     export LD_LIBRARY_PATH=/opt/local/lib
     export LD_INCLUDE_PATH=/opt/local/include
 
-Bi needs to use the MacPorts g++ compiler in /opt/local/bin, not the system
+LibBi needs to use the MacPorts g++ compiler in /opt/local/bin, not the system
 default g++ in /usr/bin. To do this, set the following environment variable:
 
     export CXX=/opt/local/bin/g++-mp-*
 
 You can put this in ~/.profile, although keep in mind that *any* configure
-scripts that you run will then use this g++, not just Bi. This mightn't be a
-problem. If it is, just enter the above line each time you open a terminal
+scripts that you run will then use this g++, not just LibBi. This mightn't be
+a problem. If it is, just enter the above line each time you open a terminal
 window.
 
 Quit Terminal then start it again, to ensure that these environment variables
 are set.
 
-Bi can then be run with:
+LibBi client programs can then be run with:
 
     /path/to/bi/script/bi ...
 
