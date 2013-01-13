@@ -31,7 +31,7 @@ probability densities:
 Each of these is explicitly specified using the LibBi
 \secref{Modelling_language}{modelling language}.
 
-We begin with a brief example to set the scene. Consider the following
+A brief example will help to set the scene. Consider the following
 Lotka-Volterra-like predator-prey model between zooplankton (predator, $Z$)
 and phytoplankton (prey, $P$):
 \begin{eqnarray*}
@@ -108,29 +108,52 @@ The \secref{Command_line_interface}{command-line interface} provides numerous
 other functionality, including filtering and smoothing the model with respect
 to data, and optimising or sampling its parameters.
 
-\section{Components\label{Components}}
+To play with this example further, download the \bitt{PZ} package from
+\url{www.libbi.org}. Inspect and execute the \texttt{run.sh} script to get
+started.
 
-LibBi consists of three components:
-\begin{description}
-\item[LibBi]\index{LibBi} which provides classes and functions for simulation
-  and inference, numerical computing, memory management and I/O. It is written
-  in C++ with extensive use of generic programming concepts.
-\item[GenBi]\index{GenBi} which parses the Bi modelling language, constructs
-  and optimises an internal model representation, and generates C++ code for
-  compiling against LibBi. It is written in Perl using object-oriented
-  concepts, and the Perl Template Toolkit for code generation.
-\item[OctBi]\index{OctBi} which provides a set of functions for GNU Octave
-  for querying, analysing and visualising outputs.
-\end{description}
+\section{Getting started}\label{Getting_started}
 
-The \secref{Command_line_interface}{command-line interface} provides
-for interaction with LibBi and GenBi. OctBi can be installed separately as a
-GNU Octave package for easily working with output files from this.
+There is a standard file and directory structure for a LibBi project. Sticking
+to it ensures that your projects will be easy to share and distribute via
+LibBi packages. To set up the standard structure, create an empty directory
+somewhere, and from within that directory run:
+\begin{cmdcode}
+bi package --create --name \emph{Name}
+\end{cmdcode}
+replacing \bitt{\emph{Name}} with the name of your project.
 
-\section{The LibBi modelling language\label{Modelling_language}}
+\begin{tip}
+By convention, names always begin with an uppercase letter, and multiple words
+are denoted using CamelCase. See the \secref{Style_guide}{Style guide} for
+more such conventions.
+\end{tip}
 
-A model specification file contains a single model specification. The
-specification always starts with an outer \kwref{model} statement that
+Each of the files that are created contains some placeholder content that is
+intended to be modified. Following this guide, and looking at some existing
+examples, is a good way to proceed.
+
+The following command can be run at any time to validate that a project still
+conforms to the standard structure:
+\begin{cmdcode}
+bi package --validate
+\end{cmdcode}
+
+Finally, the following command can be used to build a package for
+distribution:
+\begin{cmdcode}
+bi package --build
+\end{cmdcode}
+This creates a \bitt{*.tar.gz} file in the current directory containing the
+project files.
+
+\section{Modelling language\label{Modelling_language}}
+
+Models for use with LibBi are specified in the LibBi modelling language. A
+model specification is put in a file with an extension of \bitt{*.bi}. Each
+such files will contain only a single model specification.
+
+A specification always starts with an outer \kwref{model} statement that
 declares and names the model. It then proceeds with declarations of dimensions
 and variables, followed by four \emph{top-level blocks} --
 \blockref{parameter}, \blockref{initial}, \blockref{transition} and
@@ -139,6 +162,7 @@ and variables, followed by four \emph{top-level blocks} --
 A suitable template is:
 \begin{bicode}
 model \textsl{Name} \{
+  // declare constants...
   // declare dimensions...
   // declare variables...
 
@@ -164,12 +188,104 @@ Note that the contents of the \kwref{model} statement and each top-level block
 are contained in curly braces (\bitt{\{\(\ldots\)\}}), in typical
 C-style. Comments are also C-style, an inline comment being wrapped by
 \bitt{/*} and \bitt{*/}, and the double-slash (\bitt{//}) denoting an
-end-of-line comment. Semicolons at the end of each line are optional.
+end-of-line comment. Lines may optionally end with a semicolon.
 
-\subsection{Variables\label{Variables}}
+\subsection{Constants\label{Constants}}
+
+\seealso{See also \secref{const}{\bitt{const}}}
+Constants are named and immutable scalar values. They are declared using:
+\begin{bicode}
+const \emph{name} = \emph{constant_expression}
+\end{bicode}
+Often \bitt{\emph{constant\_expression}} is simply a literal value, but in
+general it may be any constant scalar expression (see
+\secref{Expressions}{Expressions}).
+
+\subsection{Inlines\label{Inlines}}
+
+\seealso{See also \secref{inline}{\bitt{inline}}}
+Inlines are named scalar expressions. They are declared using:
+\begin{bicode}
+inline \emph{name} = \emph{expression}
+\end{bicode}
+Any use of the inline \bitt{\emph{name}} in subsequent expressions is
+precisely equivalent to wrapping \bitt{\emph{expression}} in parentheses and
+replacing \bitt{\emph{name}} with it. Inlines may be recursively nested.
 
 \subsection{Dimensions\label{Dimensions}}
 
+\seealso{See also \secref{dim}{\bitt{dim}}}
+Dimensions are used to construct vector, matrix and higher-dimensional
+variables. Typically they have a spatial interpretation, for example a large
+3-dimensional spatial model may declare dimensions \bitt{x}, \bitt{y} and
+\bitt{z}.
+
+Dimensions are declared using:
+\begin{bicode}
+dim \emph{name}(\emph{size})
+\end{bicode}
+This declares a dimension of name \bitt{\emph{name}} and size
+\bitt{\emph{size}}.
+
+\begin{tip}
+Because LibBi is primarily meant for state-space models, the time dimension is
+special and not declared explicitly.
+\end{tip}
+
+\subsection{Variables\label{Variables}}
+
+\seealso{See also \secref{var}{\bitt{input}, \bitt{noise}, \bitt{obs},
+    \bitt{param} and \bitt{state}}} Variables are named and
+mutable scalar, vector, matrix or higher-dimensional objects.
+
+A simple scalar variable is declared using:
+\begin{bicode}
+\emph{type} \emph{name}
+\end{bicode}
+where \bitt{\emph{type}} is one of:
+\begin{description}
+\item[\bitt{input}] for an observed variable that is set (and possibly changes
+  over time) according to input from a file,
+\item[\bitt{param}] for a latent variable that does not change over time,
+\item[\bitt{state}] for a latent variable that changes over time,
+\item[\bitt{noise}] for a latent variable that changes in time with no
+  autocorrelation in time,
+\item[\bitt{obs}] for an observed variable that changes over time.
+\end{description}
+For example, for the equation of the state-space model in the
+\secref{Introduction}{Introduction}, the parameter $\theta$ may be declared
+using:
+\begin{bicode}
+param theta
+\end{bicode}
+the state variable $x$ using:
+\begin{bicode}
+state x
+\end{bicode}
+and the observed variable $y$ using:
+\begin{bicode}
+obs y
+\end{bicode}
+
+A vector, matrix or higher-dimensional variable is declared by listing the
+names of the \hyperref{Dimensions}{Dimensions} over which it should extend in
+a comma-separated list enclosed in square brackets, after the variable
+name. For example:
+\begin{bicode}
+dim m(50)
+dim n(20)
+...
+state x[m,n]
+\end{bicode}
+declares a state variable \bitt{x}, which is a matrix of size $50 \times 20$
+declared over the dimensions \bitt{m} and \bitt{n}.
+
+The declaration of a variable can also include various arguments that control,
+for example, whether or not it is included in output files. These are
+specified in parentheses after the variable declaration, for example:
+\begin{bicode}
+state x[m,n](has_output = 0)
+\end{bicode}
 
 \subsection{Actions\label{Actions}}
 
@@ -256,13 +372,13 @@ Here, the additional \blockref{ode} block combines the two actions into the
 one system of ordinary differential equations.
 
 Note that every action is automatically wrapped in an appropriate enclosing
-block like this by GenBi. Indeed, in this case, GenBi will implicitly wrap the
-two \actionref{ode} actions in the one \blockref{ode} block anyway, so that
-explicitly doing so is unnecessary (but unharmful). Like actions, however,
-blocks can take arguments; explicitly giving the enclosing block permits
-arguments to be changed. In this case, the \blockref{ode} block has parameters
-to configure the numerical integrator used to simulate the differential
-system. These can be adjusted:
+block like this during processing. Indeed, in this case, the two
+\actionref{ode} actions will be implicitly wrapped in the one \blockref{ode}
+block anyway, so that explicitly doing so is unnecessary (but unharmful). Like
+actions, however, blocks can take arguments; explicitly giving the enclosing
+block permits arguments to be changed. In this case, the \blockref{ode} block
+has parameters to configure the numerical integrator used to simulate the
+differential system. These can be adjusted:
 \begin{bicode}
 sub transition \{
   sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
@@ -286,9 +402,10 @@ sub transition(delta = 1.0) \{
 \end{bicode}
 
 \begin{tip}
-The implicit wrapping of actions in blocks by GenBi should be intuitive. To
-see precisely what transformations are being made to the model, use the
-\clientref{rewrite} command.
+The details of the implicit wrapping of actions by blocks should usually be
+unimportant, but to see precisely what transformations are being made to the
+model, use the \clientref{rewrite} command. This is particularly useful for
+debugging purposes when a model is not behaving as expected.
 \end{tip}
 
 Arguments, both positional and named, work for blocks as they do for actions.
@@ -531,9 +648,9 @@ that is nested within a \bitt{sample.conf} file, so that the config files
 inherit options just as the commands do.
 
 
-\section{Data files\label{Data_files}}
+\section{Data\label{Data}}
 
-Input data is provided to LibBi in the format of NetCDF\index{NetCDF} files. The
+Data is input to and output from LibBi using NetCDF\index{NetCDF} files. The
 structure of such files is specified here.
 
 \subsection{Input files}
@@ -682,48 +799,53 @@ that GenBi makes to a model.
 
 The following I/O and configuration issues are worth considering:
 \begin{itemize}
-\item When declaring a variable, use the \bitt{io} argument to omit it from
-  output files if it will not be of interest.
+\item When declaring a variable, use a \bitt{has\_output = 0} argument to omit
+  it from output files if it will not be of interest.
 
-\item The \bitt{--debug} command-line option is recommended for test runs to
-  enable the assertion checking\index{assertion checking} that ensures valid
-  code generation and input files. For production runs, however, it need not
-  be used, and this will give significant performance improvements.
+\item LibBi includes a great deal of in-code assertion
+  checking\index{assertion checking} to help ensure valid code
+  generation. These assertion checks are enabled by default, and it is
+  recommended that they remain so for test runs. Significant performance gains
+  can be realised by disabling these assertion checks with the
+  \bitt{--disable-assert} command-line option, and this is recommended for
+  production runs.
 
-\item Experiment with the \bitt{--gpu} command-line option to make use of a
-  CUDA-enabled GPU\index{GPU}. This will usually improve performance when a
-  sufficient number of model trajectories are to be simulated.
+\item \marginlabel{GPU} Experiment with the \bitt{--enable-cuda} command-line
+  option to make use of a CUDA-enabled GPU\index{GPU}. This will usually
+  improve performance when a sufficient number of model trajectories are to be
+  simulated.
 
-\item Experiment with the \bitt{--sse} option to make use of CPU SSE
-  instructions\index{SSE}\index{SIMD}. These can provide up to a two-fold
-  (double precision) or four-fold (single precision) speed-up. Be careful
-  though: models making heavy use of math functions such as \bitt{exp},
-  \bitt{log} and trigonometric functions may instead run slower.
+\item \marginlabel{SSE} Experiment with the \bitt{--enable-sse} command-line
+  option to make use of CPU SSE instructions\index{SSE}\index{SIMD}. These can
+  provide up to a two-fold (double precision) or four-fold (single precision)
+  speed-up.
 
-\item Experiment with using single precision\index{single precision} by using
-  the \bitt{--no-double} command line option. Assuming numerical error is
-  tolerable, this can offer significant performance improvements, especially
-  when used with the \bitt{--gpu} or \bitt{--sse} options (where single
-  precision facilitates both computational and memory efficiencies).
+\item \marginlabel{Multicore} \index{multithreading}Experiment with the
+  \bitt{--threads} command-line option to set the number of CPU
+  threads. Typically there are depreciating returns as the number of threads
+  is increased, and beyond the number of CPU cores available performance will
+  be particularly poor. For CPUs with hyperthreading enabled, it is
+  recommended that the number of threads is no more than the number of
+  physical CPU cores, which may be half the default number of threads.
 
-\item \index{multithreading}Experiment with the \bitt{--threads} command
-  line option to set the number of CPU threads. One can typically expect a
-  linear speedup in the number of threads for methods based on the simulation
-  of many trajectories (e.g. the particle filter). Depreciating returns may be
-  apparent for other methods.
+\item \marginlabel{Single precision} Experiment with using
+  single precision\index{single precision} by using the \bitt{--enable-single}
+  command-line option. Assuming numerical error is tolerable, this can offer
+  significant performance improvements, especially when used in combination
+  with the \bitt{--enable-cuda} or \bitt{--enable-sse} options.
 
-\item Use optimised libraries for your platform, especially the
-  BLAS\index{BLAS} and LAPACK\index{LAPACK} libraries.
+\item Use optimised versions of libraries, especially the BLAS\index{BLAS} and
+  LAPACK\index{LAPACK} libraries.
 
 \item Use the Intel C++ compiler\index{Intel compiler} if
   available. Anecdotally, this tends to produce code that runs 10-20\% faster
-  than \bitt{gcc}\index{gcc}. The \bitt{configure} scripts for both LibBi
-  and client programs will automatically detect this compiler\index{compiler},
-  and use it if available.
+  than \bitt{gcc}\index{gcc}. The \bitt{configure} scripts for both LibBi and
+  client programs should automatically detect the Intel C++
+  compiler\index{compiler}, and use it if available.
 
 \end{itemize}
 
-\section{Style guide\label{Style_guide}}\index{style guide}
+\section{Style guide\label{sec:Style_guide}}\index{style guide}
 
 The following naming conventions are recommended:
 \begin{itemize}

@@ -59,7 +59,8 @@ foreach my $file ($ACTION_OUT, $BLOCK_OUT, $CLIENT_OUT) {
 }
 
 # convert tex to html
-system("cd $PDF_DIR; latex2html -antialias -antialias_text -show_section_numbers -local_icons -toc_depth 4 -split 5 -dir ../html index.tex");
+# (broken)
+#system("cd $PDF_DIR; latex2html -antialias -antialias_text -show_section_numbers -local_icons -toc_depth 4 -split 5 -dir ../html index.tex");
 
 # compile tex
 system("cd $PDF_DIR; pdflatex index.tex; makeindex index; pdflatex index.tex; pdflatex index.tex");

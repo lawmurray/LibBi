@@ -1,5 +1,40 @@
 %%%%
-\section{Obtaining the source code}
+\section{Introduction}
+
+LibBi consists of a few different components:
+\begin{itemize}
+\item A \emph{library} which provides classes and functions for simulation,
+  filtering, smoothing, optimising and sampling from state-space models, as
+  well as auxiliary functionality such as memory management, I/O, numerical
+  computing etc. It is written in C++ using a generic programming paradigm.
+\item A \emph{code generator} which parses the LibBi modelling language,
+  contructs and optimises an internal model representation, and generates C++
+  code for compilation against the library. In addition it generates a GNU
+  Autotools build system and various client programs for common tasks.
+\item A \emph{command-line interface} which hides the code generation,
+  compilation and linking procedures behind a simple interface for users.
+\item Packages for common statistical software, such as \emph{OctBi} for GNU
+  Octave and \emph{RBi} for R, that allow querying, collation and
+  visualisation of results output by LibBi.
+\end{itemize}.
+
+Developing LibBi involves adding or modifying functionality in one or more of
+its major \hyperref[hyper][Components]{components}. A typical exercise is
+adding block and action types to the code generator to introduce new features,
+such as support for additional probability density functions. This may also
+involve implementing new functionality in the library that these blocks and
+actions can use. Another common task is adding a new inference method to the
+library, then adding or modifying the code generator to produce the client
+code that will use this.
+
+\section{Setting up a development environment}
+
+When developing LibBi, it is recommended that you do not install it in the
+usual manner as a system-wide Perl module. The recommended approach is to set
+up a local directory with the LibBi files in such a way that modifications to
+these files take effect immediately.
+
+\subsection{Obtaining the source code}
 
 Bi is available via Subversion at
 \hyperref[hyper][https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi]{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
@@ -32,10 +67,10 @@ svn merge --reintegrate \textbackslash
 \end{cmdcode}
 and then the working copy of the trunk committed.
 
-\section{Using the Eclipse IDE}
+\subsection{Using Eclipse\label{Using_Eclipse}}
 
-Bi is set up to use the Eclipse IDE. From a vanilla install of the Eclipse IDE
-for C/C++ (available at
+LibBi is set up to use the Eclipse IDE. From a vanilla install of the Eclipse
+IDE for C/C++ (available at
 \hyperref[hyper][http://www.eclipse.org]{http://www.eclipse.org}), a number of
 additional plugins are supported, and recommended. These are, along with the
 URLs of their update sites:
@@ -60,31 +95,30 @@ list. Enter the URL of the Bi Subversion repository trunk (or of a branch),
 then select one or more of the subdirectories to check these out as Eclipse
 projects.
 
-A custom code style is available in the \bitt{custom\_code\_style.xml} file,
-and should be used. This may be loaded via the \textsf{Window > Preferences}
-dialog, using the \textsf{Import...} button under \textsf{C/C++ > Code Style}.
+\marginlabel{Code style file}
+\index{style guide} A custom code style is available in the
+\bitt{custom\_code\_style.xml} file, and should be used. This may be loaded
+via the \textsf{Window > Preferences} dialog, using the \textsf{Import...}
+button under \textsf{C/C++ > Code Style}.
 
+\subsection{Using another development environment}
+
+It is not necessary to use Eclipse to develop LibBi. Any text editor will
+do. You are asked, however, to pay particular attention to maintaining the
+appropriate coding style, particularly with regard to indenting.
 
 %%%%
-\section{Developing Bi}
+\section{Developing the code generator}
 
-Developing Bi involves adding or modifying functionality in one or more of its
-major \hyperref[hyper][Components]{components}. A typical exercise is adding
-block and action types to GenBi to introduce new features, such as support for
-additional probability density functions. This may also involve implementing
-new functionality in LibBi on which these blocks and actions can draw. Another
-common task is adding a new inference method to LibBi, then adding or
-modifying templates in GenBi to produce the client code that will use this.
+\subsection{Actions and blocks}
 
-\subsection{Actions, blocks and clients}
-
-A user of Bi is exposed only to those blocks and actions which they explicitly
-write in their model specification file. Developers must be aware that beyond
-these \textit{explicit} blocks, additional \textit{implicit} blocks are
-inserted according to the actions specified by the user. In particular, each
-action has a preferred parent block type. If the user, in writing their model
-specification, does not explicitly place an action within its
-preferred block type, the action will be implicitly wrapped in it anyway.
+A user of LibBi is exposed only to those blocks and actions which they
+explicitly write in their model specification file. Developers must be aware
+that beyond these \textit{explicit} blocks, additional \textit{implicit}
+blocks are inserted according to the actions specified by the user. In
+particular, each action has a preferred parent block type. If the user, in
+writing their model specification, does not explicitly place an action within
+its preferred block type, the action will be implicitly wrapped in it anyway.
 
 For example, take the model specification:
 \begin{bicode}
@@ -125,8 +159,6 @@ intended to use them explicitly (see the \secref{Style_guide}{style guide}).
 It is worth familiarising yourself with this behaviour, and indeed other
 transformations made by GenBi, by using the \clientref{rewrite} command.
 
-\subsubsection{Adding a block}
-
 To add a block:
 \begin{enumerate}
 \item Choose a name for the block.
@@ -144,8 +176,6 @@ As implementation details of the Perl module and template are subject to
 change, it is highly recommended that you copy and modify an existing, similar
 block type, as the basis for your new block type.
 
-\subsubsection{Adding an action}
-
 To add an action:
 \begin{enumerate}
 \item Choose a name for the action.
@@ -161,7 +191,7 @@ To add an action:
   necessary code.
 \end{enumerate}
 
-\subsubsection{Adding a client\label{Adding_a_client}}
+\subsection{Clients}
 
 To add a client:
 \begin{enumerate}
@@ -237,7 +267,20 @@ following additional recommended pertain to developers:
   should be suffixed with a single underscore.
 \end{itemize}
 
-\section{Developing LibBi}
+\section{Developing the library}
+
+\subsection{Paradigm}
+
+The library is implemented in a generic programming paradigm. While classes
+and objects are used extensively, it is not object-oriented \textsl{per
+  se}. In particular:
+\begin{itemize}
+\item Class inheritance is used for convenience of implementation, not
+  necessarily to represent ``is a'' relationships.
+\item Polymorphism is seldom, if ever, employed.
+\item Static dispatch is favoured strongly over dynamic dispatch for
+  reasons related to performance. Virtual functions are not used.
+\end{itemize}
 
 \subsection{Header files}
 
@@ -254,24 +297,6 @@ files either, due to CUDA compiler limitations, particularly those headers
 that further include Boost headers which make extensive use of
 templates. Efforts have been made to quarantine such incidences from the CUDA
 compiler, but mileage may vary.
-
-\subsection{Coding conventions}
-
-The following names are used for template parameters (where \bitt{n} is an
-integer):
-\begin{itemize}
-\item \bitt{B} for the model type,
-\item \bitt{Tn} for scalar types,
-\item \bitt{Vn} for matrix types,
-\item \bitt{Mn} for vector types,
-\item \bitt{Qn} for pdf types,
-\item \bitt{S} for type lists,
-\item \bitt{L} for location (host or device),
-\item \bitt{CL} for location of a cache,
-\item \bitt{PX} for parents type,
-\item \bitt{CX} for coordinates type,
-\item \bitt{OX} for output type.
-\end{itemize}
 
 \subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
 
@@ -352,3 +377,30 @@ common. These are templated overloads of the default versions which accept, as
 arguments, objects of some class other than the containing class. When a
 generic copy constructor or assignment operator is used, the default copy
 constructor or assignment operator should always be overridden also.
+
+\subsection{Coding conventions}
+
+The following names are used for template parameters (where \bitt{n} is an
+integer):
+\begin{itemize}
+\item \bitt{B} for the model type,
+\item \bitt{Tn} for scalar types,
+\item \bitt{Vn} for matrix types,
+\item \bitt{Mn} for vector types,
+\item \bitt{Qn} for pdf types,
+\item \bitt{S} for type lists,
+\item \bitt{L} for location (host or device),
+\item \bitt{CL} for location of a cache,
+\item \bitt{PX} for parents type,
+\item \bitt{CX} for coordinates type,
+\item \bitt{OX} for output type.
+\end{itemize}
+
+\subsection{Style guide}
+
+In brief, the style of C++ code added to the library should conform to what is
+already there. If using Eclipse, the custom code style file (see
+\secref{Using_Eclipse}{Using Eclipse}) is a good start.
+
+C++ code written in the library should conform to the ``Kernigan and Ritchie''
+style, indenting with two spaces and never tabs.
