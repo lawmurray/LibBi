@@ -32,8 +32,8 @@ Each of these is explicitly specified using the LibBi modelling
 language\seealso{See \secref{Models}{Models}}.
 
 A brief example will help to set the scene. Consider the following
-Lotka-Volterra-like predator-prey model between zooplankton (predator, $Z$)
-and phytoplankton (prey, $P$):
+Lotka-Volterra-like\index{Lotka-Volterra} predator-prey\index{predator-prey}
+model between zooplankton (predator, $Z$) and phytoplankton (prey, $P$):
 \begin{eqnarray*}
 \frac{dP}{dt} &=& \alpha_t P - cPZ\\
 \frac{dZ}{dt} &=& ecPZ - m_lZ - m_q Z^2.
@@ -192,7 +192,7 @@ end-of-line comment. Lines may optionally end with a semicolon.
 
 \subsection{Constants\label{Constants}}
 
-\seealso{See also \secref{const}{\bitt{const}}}
+\seealso{See also \secref{const}{\kwref{const}}}
 Constants are named and immutable scalar values. They are declared using:
 \begin{bicode}
 const \emph{name} = \emph{constant_expression}
@@ -203,7 +203,7 @@ general it may be any constant scalar expression (see
 
 \subsection{Inlines\label{Inlines}}
 
-\seealso{See also \secref{inline}{\bitt{inline}}}
+\seealso{See also \secref{inline}{\kwref{inline}}}
 Inlines are named scalar expressions. They are declared using:
 \begin{bicode}
 inline \emph{name} = \emph{expression}
@@ -214,10 +214,11 @@ replacing \bitt{\emph{name}} with it. Inlines may be recursively nested.
 
 \subsection{Dimensions\label{Dimensions}}
 
-\seealso{See also \secref{dim}{\bitt{dim}}}
-Dimensions are used to construct vector, matrix and higher-dimensional
-variables. Typically they have a spatial interpretation, for example a large
-3-dimensional spatial model may declare dimensions \bitt{x}, \bitt{y} and
+\seealso{See also \secref{dim}{\kwref{dim}}} Dimensions are used to construct
+vector\index{vector}, matrix\index{matrix} and
+higher-dimensional\index{higher\,dimensional} variables. Typically they have a
+spatial interpretation, for example a large 3-dimensional spatial
+model\index{spatial\,model} may declare dimensions \bitt{x}, \bitt{y} and
 \bitt{z}.
 
 Dimensions are declared using:
@@ -234,9 +235,10 @@ special and not declared explicitly.
 
 \subsection{Variables\label{Variables}}
 
-\seealso{See also \secref{var}{\bitt{input}, \bitt{noise}, \bitt{obs},
-    \bitt{param} and \bitt{state}}} Variables are named and
-mutable scalar, vector, matrix or higher-dimensional objects.
+\seealso{See also \secref{var}{\kwref{input}, \kwref{noise}, \kwref{obs},
+    \kwref{param} and \kwref{state}}} Variables are named and mutable
+scalar\index{scalar}, vector\index{vector}, matrix\index{matrix} or
+higher-dimensional\index{higher\,dimensional} objects.
 
 A simple scalar variable is declared using:
 \begin{bicode}
@@ -244,13 +246,13 @@ A simple scalar variable is declared using:
 \end{bicode}
 where \bitt{\emph{type}} is one of:
 \begin{description}
-\item[\bitt{input}] for an observed variable that is set (and possibly changes
+\item[\kwref{input}] for an observed variable that is set (and possibly changes
   over time) according to input from a file,
-\item[\bitt{param}] for a latent variable that does not change over time,
-\item[\bitt{state}] for a latent variable that changes over time,
-\item[\bitt{noise}] for a latent variable that changes in time with no
+\item[\kwref{param}] for a latent variable that does not change over time,
+\item[\kwref{state}] for a latent variable that changes over time,
+\item[\kwref{noise}] for a latent variable that changes in time with no
   autocorrelation in time,
-\item[\bitt{obs}] for an observed variable that changes over time.
+\item[\kwref{obs}] for an observed variable that changes over time.
 \end{description}
 For example, for the equation of the state-space model in the
 \secref{Introduction}{Introduction}, the parameter $\theta$ may be declared
@@ -267,9 +269,10 @@ and the observed variable $y$ using:
 obs y
 \end{bicode}
 
-A vector, matrix or higher-dimensional variable is declared by listing the
-names of the \hyperref{Dimensions}{Dimensions} over which it should extend in
-a comma-separated list enclosed in square brackets, after the variable
+A vector\index{vector}, matrix\index{matrix} or
+higher-dimensional\index{higher\,dimensional} variable is declared by listing
+the names of the \hyperref{Dimensions}{Dimensions} over which it should extend
+in a comma-separated list enclosed in square brackets, after the variable
 name. For example:
 \begin{bicode}
 dim m(50)
@@ -277,8 +280,8 @@ dim n(20)
 ...
 state x[m,n]
 \end{bicode}
-declares a state variable \bitt{x}, which is a matrix of size $50 \times 20$
-declared over the dimensions \bitt{m} and \bitt{n}.
+declares a state variable \bitt{x}, which is a matrix\index{matrix} of size
+$50 \times 20$ declared over the dimensions \bitt{m} and \bitt{n}.
 
 The declaration of a variable can also include various arguments that control,
 for example, whether or not it is included in output files. These are
@@ -305,15 +308,16 @@ according to the action given on the right. Such actions are usually, and
 unsurprisingly, named after common parametric distributions (e.g.
 \actionref{gaussian}, \actionref{gamma} and \actionref{uniform}).
 
-The second form indicates that the (deterministic) variable \bitt{x} should
-be assigned a value evaluated according to the action given on the right. Such
-actions may require the evaluation of a simple scalar, vector or matrix
-expression, or may required more complicated processing, such as the numerical
-integration of ordinary differential equations\index{ordinary differential
-  equations} (e.g. the \actionref{ode}) action).
+The second form indicates that the (deterministic) variable \bitt{x} should be
+assigned a value evaluated according to the action given on the right. Such
+actions may require the evaluation of a simple scalar\index{scalar},
+vector\index{vector} or matrix\index{matrix} expression, or may required more
+complicated processing, such as the numerical integration of ordinary
+differential equations\index{ordinary\,differential\,equations} (e.g. the
+\actionref{ode}) action).
 
-Actions support both \emph{named}\index{named arguments} and \emph{positional}
-arguments\index{positional arguments}, and this will be indicated in their
+Actions support both \emph{named}\index{named\,arguments} and \emph{positional}
+arguments\index{positional\,arguments}, and this will be indicated in their
 documentation. Positional arguments are interpreted by the order given. For
 example
 \begin{bicode}
@@ -353,7 +357,7 @@ may be passed in positional, named or either form.
 
 Some actions are more complicated and can be wrapped in \emph{blocks}. A
 good example is the \actionref{ode} action. This describes a single ordinary
-differential equation\index{ordinary differential equations}, which must be
+differential equation\index{ordinary\,differential\,equations}, which must be
 grouped with other actions that describe the other ordinary differential
 equations of the same system. The grouping is achieved by the \blockref{ode}
 block.
@@ -481,35 +485,37 @@ obvious (or intuitive):
   binary operations, elements may be paired with scalars, but not with vectors
   or matrices. Scalars, on the other hand, may be paired with vectors and
   matrices. The element syntax is, essentially, a concise means of describing
-  element-wise transformation kernels (element expressions\index{element
-    expressions}) that are readily performed in parallel.
+  element-wise transformation kernels (element
+  expressions\index{element\,expression}) that are readily performed in
+  parallel.
 
 \end{itemize}
 
 Special classes of expression are:
 \begin{itemize}
-\item A \textit{constant expression}\index{constant expression} is one that
+\item A \textit{constant expression}\index{constant\,expression} is one that
   can be evaluated at compile-time. It must be scalar, and may refer to
   literals, constants and inlines that expand to other constant expressions
   only.
-\item A \textit{static expression}\index{static expression} is one that does
+\item A \textit{static expression}\index{static\,expression} is one that does
   not depend on time. It may refer to literals, constants, variables of type
-  \bitt{param}, and inlines that expand to other static expressions only.
-\item A \textit{common expression}\index{common expression} is one that does
+  \kwref{param}, and inlines that expand to other static expressions only.
+\item A \textit{common expression}\index{common\,expression} is one that does
   not depend on the state of a particular trajectory. It may refer to
-  literals, constants, variables of type \bitt{param} or \bitt{input}, and
+  literals, constants, variables of type \kwref{param} or \kwref{input}, and
   inlines that expand to other common expressions only.
-\item An \textit{element expression}\index{element expression} is one that
+\item An \textit{element expression}\index{element\,expression} is one that
   references at least one element. It may refer to literals, constants,
   scalars and elements only.
 \end{itemize}
 Note that a constant expression is a static expression, and a static
 expression is a common expression.
 
-Element expressions are used for more complicated computations that cannot be
-expressed in matrix form, or that when expressed as such become contrived.
-They are appropriate when each element of the target variable can be expressed
-as a function of scalars and/or the elements of other variables.
+Element expressions\index{element\,expression} are used for more complicated
+computations that cannot be expressed in matrix\index{matrix} form, or that
+when expressed as such become contrived.  They are appropriate when each
+element of the target variable can be expressed as a function of scalars
+and/or the elements of other variables.
 
 Consider the following example describing a Lorenz 96 model:
 \begin{bicode}
@@ -531,7 +537,7 @@ indexing along the dimension of \bitt{X}. Note the way in which \bitt{i}
 is used on the right-hand side to refer to other elements of the \bitt{X}
 vector. Indexing expressions that appear between square brackets, such as
 \bitt{[i + 1]}, \bitt{[i - 2]} and \bitt{[i]} above must be constant
-expressions\index{constant expression}. Note that, in this particular case,
+expressions\index{constant\,expression}. Note that, in this particular case,
 any such expressions that evaluate to outside the bounds of \bitt{X} will
 wrap around to the start or end of the vector, as the \bitt{x} dimension is
 declared with \bitt{boundary = 'cyclic'}.
@@ -544,15 +550,16 @@ state D[m,m], x[m], y[m]
 D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
 \end{bicode}
 
-This computes the Euclidean distance matrix \bitt{D} between several points
-with coordinates given in the vectors \bitt{x} and \bitt{y}. This
-demonstrates how multiple indices, in this case \bitt{i} and \bitt{j}, may
-be used. The particular selection of \bitt{i} and \bitt{j} is again
-arbitrary; any name may be used.
+This computes the Euclidean distance
+matrix\index{matrix}\index{distance\,matrix} \bitt{D} between several points
+with coordinates given in the vectors\index{vector} \bitt{x} and
+\bitt{y}. This demonstrates how multiple indices, in this case \bitt{i} and
+\bitt{j}, may be used. The particular selection of \bitt{i} and \bitt{j} is
+again arbitrary; any name may be used.
 
-Element expressions may use any scalar operators and functions. All operands
-and arguments must be scalars or elements. Thus the following is not
-permitted:
+Element expressions\index{element\,expression} may use any
+scalar\index{scalar} operators and functions. All operands and arguments must
+be scalars or elements. Thus the following is not permitted:
 \begin{bicode}
 d[i] <- dot(x, y)
 \end{bicode}
@@ -582,7 +589,7 @@ Comparison operators: & \bitt{== != < <= > >= } \\
 Logical operators: & \bitt{\&\& ||} \\
 Ternary operators: & \bitt{?:} \\
 \hline
-\end{tabular}
+\end{tabular}\index{scalar}\index{vector}\index{matrix}\index{arithmetic}\index{operators}
 
 \subsection{Functions\label{Functions}}
 
@@ -594,30 +601,30 @@ The following functions are supported in expressions:
 \bitt{abs log nanlog exp nanexp max min sqrt pow mod ceil floor gamma lgamma
   sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh} \\
 \hline
-\end{tabular}
+\end{tabular}\index{functions}
 
-\section{Data\label{Data}}
+\section{Data\label{Data}}\index{data}\index{I/O}
 
-Data is input to and output from LibBi using NetCDF\index{NetCDF} files. The
-structure of such files is specified here.
+Data\index{data} is input to and output from\index{I/O} LibBi using
+NetCDF\index{NetCDF} files. The structure of such files is specified here.
 
 \subsection{Input files}
 
 Input files take three forms:
 \begin{itemize}
-\item initialisation files, containing the initial values of \bitt{state}
+\item initialisation files, containing the initial values of \kwref{state}
   variables,
-\item input files, containing the values of \bitt{input} variables, possibly
+\item input files, containing the values of \kwref{input} variables, possibly
   changing across time, and
-\item observation files, containing the observed values of \bitt{obs}
+\item observation files, containing the observed values of \kwref{obs}
   variables.
 \end{itemize}
 All of these use the same structure. That structure is quite flexible,
 allowing for the representation of both dense and sparse input. Sparsity may
 be in time or space. An example of the former is, in a discrete-time model,
-having a scalar \bitt{obs} variable that is not necessarily observed at all
+having a scalar \kwref{obs} variable that is not necessarily observed at all
 time steps. An example of the latter is, again in a discrete-time model,
-having a vector \bitt{obs} variable for which not all elements are necessarily
+having a vector \kwref{obs} variable for which not all elements are necessarily
 observed at all time steps.
 
 Each variable in the NetCDF file is associated with the variable of the same
@@ -637,7 +644,7 @@ dimensions, in the order given:
 \item Optionally, a dimension named \bitt{np}, used to index multiple
   trajectories (or samples, or particles) of a variable. If not given for a
   variable, the value of that variable is assumed to be the same for all
-  trajectories. Variables of type \bitt{param}, \bitt{input} and \bitt{obs}
+  trajectories. Variables of type \kwref{param}, \kwref{input} and \kwref{obs}
   may not use an \bitt{np} dimension, as by their nature they are meant to be
   in common across all trajectories.
 \end{enumerate}
@@ -657,15 +664,16 @@ the order given:
 \item Optionally, the \bitt{ns} dimension.
 \item An arbitrarily named dimension.
 \end{enumerate}
-The latter dimension becomes a \emph{time dimension}\index{time
-  dimension}. The time variable gives the time associated with each index of
-the time dimension, a sequence which must be monotonically
-non-decreasing. Other variables defined along the same time dimension become
-associated with the time variable. The time dimension thus indexes both the
-times at which these variables change, and the values that they assume. A
-variable may only be associated with one time dimension, and \texttt{param}
-variables may not be associated with one at all. If a variable is not defined
-across a time dimension, it is assumed to have the same value at all times.
+The latter dimension becomes a \emph{time
+  dimension}\index{time\,dimension}. The time variable gives the time
+associated with each index of the time dimension, a sequence which must be
+monotonically non-decreasing. Other variables defined along the same time
+dimension become associated with the time variable. The time dimension thus
+indexes both the times at which these variables change, and the values that
+they assume. A variable may only be associated with one time dimension, and
+\texttt{param} variables may not be associated with one at all. If a variable
+is not defined across a time dimension, it is assumed to have the same value
+at all times.
 
 Time variables and time dimensions are interpreted slightly differently for
 each of the input file types:
@@ -685,7 +693,7 @@ each of the input file types:
 \begin{example}
 \noindent \textbf{Representing a scalar input}
 
-Assume that we have an \bitt{obs} variable named \bitt{y}, and we wish to
+Assume that we have an \kwref{obs} variable named \bitt{y}, and we wish to
 construct an observation file containing our data set, which consists of
 observations of \bitt{y} at various times. A valid structure would be to
 create a NetCDF file with:
@@ -715,7 +723,7 @@ time_y[nr]    y[nr]
 \begin{example}
 \noindent \textbf{Representing a vector input, densely}
 
-Assume that we have an \bitt{obs} variable named \bitt{y}, which is a vector
+Assume that we have an \kwref{obs} variable named \bitt{y}, which is a vector
 defined across a dimension of size three called \bitt{n}. We wish to construct
 an observation file containing a our data set, which consists of observations
 of \bitt{y} at various times, where at each time all three elements of
@@ -745,7 +753,7 @@ time_y[nr]     y[nr,n]
 
 \end{example}
 
-\subsubsection{Coordinate variables\index{Coordinate_variables}}
+\subsubsection{Coordinate variables\label{Coordinate_variables}}
 
 \emph{Coordinate variables} are used for sparse indexing of model dimensions
 in a file. Each variable with a name beginning with ``coord'' is assumed to be
@@ -756,16 +764,16 @@ dimensions, in the order given:
 \item A time dimension or some other arbitrary dimension.
 \item Optionally, some arbitrary dimension.
 \end{enumerate}
-The second dimension becomes a \emph{coordinate dimension}\index{coordinate
-  dimension}, which may also be a time dimension. Other variables defined
-along the same coordinate dimension become associated with the coordinate
-variable. The coordinate variable gives the coordinate associated with each
-index along the coordinate dimension. The last dimension, if any, should have
-a length equal to the number of dimensions across which those other variables
-are defined. So, for example, if these variables are matrices, the last
-dimension should have a length of two. If the variables are vectors, so that
-they have only one dimension, the coordinate variable need not have this last
-dimension.
+The second dimension becomes a \emph{coordinate
+  dimension}\index{coordinate\,dimension}, which may also be a time
+dimension. Other variables defined along the same coordinate dimension become
+associated with the coordinate variable. The coordinate variable gives the
+coordinate associated with each index along the coordinate dimension. The last
+dimension, if any, should have a length equal to the number of dimensions
+across which those other variables are defined. So, for example, if these
+variables are matrices, the last dimension should have a length of two. If the
+variables are vectors, so that they have only one dimension, the coordinate
+variable need not have this last dimension.
 
 %If a multidimensional variable is associated with a coordinate variable with
 %fewer components than the number of dimensions along which it is defined,
@@ -780,7 +788,7 @@ densely.
 \begin{example}
 \noindent \textbf{Representing a vector input, sparsely}
 
-Assume that we have an \bitt{obs} variable named \bitt{y}, which is a vector
+Assume that we have an \kwref{obs} variable named \bitt{y}, which is a vector
 defined across a dimension of size three called \bitt{n}. We wish to construct
 an observation file containing our data set, which consists of observations of
 \bitt{y} at various times, where at each time only a subset of the elements of
@@ -827,30 +835,30 @@ is similar. The \emph{initialisation file} referred to in the proceeding steps
 is that given by the \bitt{--init-file} command-line option, and the
 \emph{input file} that given by \bitt{--input-file}.
 \begin{enumerate}
-\item Any \bitt{input} variables in the input file that are not associated with
+\item Any \kwref{input} variables in the input file that are not associated with
   a time variable are initialised by reading from the file.
 \item The \blockref{parameter} top-level block is sampled.
-\item Any \bitt{param} variables in the input file are overwritten by reading
+\item Any \kwref{param} variables in the input file are overwritten by reading
   from the file.
 \item Any static expressions extracted for precomputation are evaluated.
 \item The \blockref{initial} top-level block is sampled.
-\item Any \bitt{state} variables in the input file are overwritten by reading
+\item Any \kwref{state} variables in the input file are overwritten by reading
   from the file.
 \item The \blockref{transition} top-level block is sampled forward through
-  time. Sampling stops at each time that an \bitt{input} variable is to
-  change, according to the input file, at which point the \bitt{input}
+  time. Sampling stops at each time that an \kwref{input} variable is to
+  change, according to the input file, at which point the \kwref{input}
   variable is updated and sampling of the \blockref{transition} block
-  continues. Continuous-time\index{continuous time} components of the
+  continues. Continuous-time\index{continuous\,time} components of the
   \blockref{transition} block (e.g. \actionref{ode} actions) are always
-  actioned. The remaining, discrete-time\index{discrete time} components, are
+  actioned. The remaining, discrete-time\index{discrete\,time} components, are
   only actioned when the current time is an integer multiple of the time step
   given by the \blockref{transition} block's \bitt{delta} argument.
 \end{enumerate}
 
 Note two important points in this procedure:
 \begin{itemize}
-\item An \bitt{input} variable in the input file that is not associated with a
-  time variable is initialised before anything else, whereas an \bitt{input}
+\item An \kwref{input} variable in the input file that is not associated with a
+  time variable is initialised before anything else, whereas an \kwref{input}
   variable that is associated with a time variable is not initialised until
   simulation begins, even if the first entry of that variable indicates an
   update at time zero.
@@ -865,7 +873,7 @@ Note two important points in this procedure:
 
 \subsection{Output files}
 
-\section{Command-line interface\label{Command_line_interface}}\index{command line}
+\section{Command-line interface\label{Command_line_interface}}\index{command\,line}
 
 Methods are applied to models via the command line interface of LibBi. Invoke LibBi
 via the command line as:
@@ -892,7 +900,7 @@ where \bitt{\textit{command}} is any one of the following:
 \end{description}
 and available \bitt{\textit{options}} depend on the command.
 
-Options may be specified in a configuration file\index{config file} or on the
+Options may be specified in a configuration file\index{config\,file} or on the
 command line itself. To use a configuration file, give the name of the file on
 the command line, preceded by \bitt{@}, e.g.
 \begin{cmdcode}
@@ -954,7 +962,7 @@ The following I/O and configuration issues are worth considering:
   it from output files if it will not be of interest.
 
 \item LibBi includes a great deal of in-code assertion
-  checking\index{assertion checking} to help ensure valid code
+  checking\index{assertion\,checking} to help ensure valid code
   generation. These assertion checks are enabled by default, and it is
   recommended that they remain so for test runs. Significant performance gains
   can be realised by disabling these assertion checks with the
@@ -971,8 +979,8 @@ The following I/O and configuration issues are worth considering:
   provide up to a two-fold (double precision) or four-fold (single precision)
   speed-up.
 
-\item \marginlabel{Multicore} \index{multithreading}Experiment with the
-  \bitt{--threads} command-line option to set the number of CPU
+\item \marginlabel{Multicore}\index{multithreading}\index{OpenMP} Experiment
+  with the \bitt{--threads} command-line option to set the number of CPU
   threads. Typically there are depreciating returns as the number of threads
   is increased, and beyond the number of CPU cores available performance will
   be particularly poor. For CPUs with hyperthreading enabled, it is
@@ -980,7 +988,7 @@ The following I/O and configuration issues are worth considering:
   physical CPU cores, which may be half the default number of threads.
 
 \item \marginlabel{Single precision} Experiment with using
-  single precision\index{single precision} by using the \bitt{--enable-single}
+  single precision\index{single\,precision} by using the \bitt{--enable-single}
   command-line option. Assuming numerical error is tolerable, this can offer
   significant performance improvements, especially when used in combination
   with the \bitt{--enable-cuda} or \bitt{--enable-sse} options.
@@ -988,7 +996,7 @@ The following I/O and configuration issues are worth considering:
 \item Use optimised versions of libraries, especially the BLAS\index{BLAS} and
   LAPACK\index{LAPACK} libraries.
 
-\item Use the Intel C++ compiler\index{Intel compiler} if
+\item Use the Intel C++ compiler\index{Intel\,compiler} if
   available. Anecdotally, this tends to produce code that runs 10-20\% faster
   than \bitt{gcc}\index{gcc}. The \bitt{configure} scripts for both LibBi and
   client programs should automatically detect the Intel C++
@@ -996,7 +1004,7 @@ The following I/O and configuration issues are worth considering:
 
 \end{itemize}
 
-\section{Style guide\label{sec:Style_guide}}\index{style guide}
+\section{Style guide\label{sec:Style_guide}}\index{style\,guide}
 
 The following naming conventions are recommended:
 \begin{itemize}
@@ -1006,14 +1014,14 @@ The following naming conventions are recommended:
 \item Dimension and variable names should be consistent, where possible, with
   their counterparts in a description of the model as it might appear in a
   scientific paper. For example, single upper-case letters for the names of
-  matrix variables are appropriate, and standard symbols (rather than
-  descriptive names) are encouraged. Greek letters should be written out in
-  full, the first letter capitalised for the capital version
+  matrix\index{matrix} variables are appropriate, and standard symbols (rather
+  than descriptive names) are encouraged. Greek letters should be written out
+  in full, the first letter capitalised for the capital version
   (e.g. \bitt{gamma} and \bitt{Gamma}).
 \item Comments should be used liberally, with descriptions provided for all
   dimensions and variables in particular. Consider including units as part of
   the description, where relevant.
 \item Names ending in '\_' (the underscore) are intended for internal use
   only, and so no such names should generally appear in a model specification.
-\item Indent using two spaces, and do not use tabs.
+\item Indent using two spaces, and do not use tabs.\index{indenting}
 \end{itemize}

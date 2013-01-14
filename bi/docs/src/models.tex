@@ -16,20 +16,20 @@ declaring and naming the model.
 
 Immediately within the \bitt{model} statement, the following named top-level blocks should
 be used to specify the model:
-\begin{itemize}
+\begin{description}
 \item \blockref{parameter}, specifying the prior density over parameters,
 \item \blockref{initial}, specifying the prior density over initial conditions,
 \item \blockref{transition}, specifying the transition density, and
 \item \blockref{observation}, specifying the observation density.
-\end{itemize}
+\end{description}
 
 The following named top-level blocks are optional, but may be required in order to use particular methods:
-\begin{itemize}
+\begin{description}
 \item \blockref{proposal_parameter}, specifying the proposal density over parameters,
 \item \blockref{proposal_initial}, specifying the proposal density over initial conditions,
 \item \blockref{lookahead_transition}, specifying a lookahead density to accompany the transition density, and
 \item \blockref{lookahead_observation}, specifying a lookahead density to accompany the observation density.
-\end{itemize}
+\end{description}
 
 \subsection{\bitt{dim}\label{dim}\index{dim}}
 
@@ -53,28 +53,26 @@ along them.
 
 \subsubsection*{Arguments\label{dim_Arguments}}
 
-\begin{itemize}
-\item \bitt{size} (position 0, mandatory)
+\begin{description}
+\item[\bitt{size}] (position 0, mandatory)
 
 Length of the dimension.
 
-\item \bitt{boundary} (position 1, default 'none')
+\item[\bitt{boundary}] (position 1, default 'none')
 
 Boundary condition of the dimension. Valid values are:
 
-\begin{itemize}
-
-\item \bitt{'none'}
+\begin{description}
+\item[\bitt{'none'}]
 
 No boundary condition.
 
-\item \bitt{'cyclic'}
+\item[\bitt{'cyclic'}]
 
 Cyclic boundary condition; all indices are taken modulo the \bitt{size} of
 the dimension.
-
-\end{itemize}
-\end{itemize}
+\end{description}
+\end{description}
 
 \subsection{\bitt{input}\index{input}, \bitt{noise}\index{noise}, \bitt{obs}\index{obs}, \bitt{param}\index{param} and \bitt{state}\index{state}\label{var}}
 
@@ -100,25 +98,29 @@ prior to the declaration of the variable.
 
 \subsubsection*{Arguments\label{var_Arguments}}
 
-\begin{itemize}
-\item \bitt{io} (default 1)
+\begin{description}
+\item[\bitt{has\_input}] (default 1)\index{I/O}
 
-Should the variable be included in input and output buffers? Excluding an
-uninteresting variable from outputs by setting this to 0 will save disk space
-and I/O time.
+Include variable when doing input from a file?
 
-\item \bitt{tmp} (default 0)
+\item[\bitt{has\_output}] (default 1)\index{I/O}
 
-Is the variable merely a temporary? This is used internally to flag
-temporary variables that are created to hold intermediate results, but which
-need not be represented in, for example, means and covariances of the joint
-distribution over all variables. It may have occasional use externally.
+Include variable when doing output to a file?
 
-\end{itemize}
+\item[\bitt{input\_name}] (default the same as the name of the
+  variable)\index{I/O}
+
+Name to use for the variable in input files.
+
+\item[\bitt{output\_name}] (default the same as the name of the
+  variable)\index{I/O}
+
+Name to use for the variable in output files.
+\end{description}
 
 \subsection{\bitt{const}\label{const}\index{const}}
 
-Declare a constant.
+Declare a constant\index{constant}.
 
 \subsubsection*{Synopsis\label{const_Synopsis}}
 \begin{bicode}
@@ -127,16 +129,17 @@ Declare a constant.
 
 \subsubsection*{Description\label{const_description}}
 
-A \bitt{const} statement declares a constant, the value of which is evaluated
-using the given constant expression\index{constant expression}. The constant
-may then be used, by name, in other expressions.
+A \bitt{const}\index{const} statement declares a constant\index{constant}, the
+value of which is evaluated using the given constant
+expression\index{constant\,expression}. The constant may then be used, by
+name, in other expressions.
 
-A constant may be declared anywhere in a model specification, but always has
-global scope.
+A constant\index{constant} may be declared anywhere in a model specification,
+but always has global scope\index{scope}.
 
 \subsection{\bitt{inline}\label{inline}\index{inline}}
 
-Declare an inline expression.
+Declare an inline expression\index{inline expression}.
 
 \subsubsection*{Synopsis\label{inline_synopsis}}
 \begin{bicode}
@@ -145,11 +148,11 @@ Declare an inline expression.
 
 \subsubsection*{Description\label{inline_description}}
 
-An \bitt{inline} statement declares an inline expression\index{inline
-  expression}. The inline may then be used, by name, in other expressions, as
-long as it will not violate any constraints on those expressions (e.g. an
-inline expression named within a constant expression must itself be a constant
-expression).
+An \bitt{inline}\index{inline} statement declares an inline
+expression\index{inline expression}. The inline may then be used, by name, in
+other expressions, as long as it will not violate any constraints on those
+expressions (e.g. an inline expression named within a constant expression must
+itself be a constant expression).
 
-An inline expression may be declared anywhere in a model specification, but
-always has global scope.
+An inline expression\index{inline expression} may be declared anywhere in a
+model specification, but always has global scope\index{scope}.

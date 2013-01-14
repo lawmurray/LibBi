@@ -124,8 +124,6 @@ sub process_args {
 
 1;
 
-=back
-
 =head1 AUTHOR
 
 Lawrence Murray <lawrence.murray@csiro.au>

@@ -95,7 +95,7 @@ then select one or more of the subdirectories to check these out as Eclipse
 projects.
 
 \marginlabel{Code style file}
-\index{style guide} A custom code style is available in the
+\index{style\,guide} A custom code style is available in the
 \bitt{custom\_code\_style.xml} file, and should be used. This may be loaded
 via the \textsf{Window > Preferences} dialog, using the \textsf{Import...}
 button under \textsf{C/C++ > Code Style}.
@@ -104,7 +104,8 @@ button under \textsf{C/C++ > Code Style}.
 
 It is not necessary to use Eclipse to develop LibBi. Any text editor will
 do. You are asked, however, to pay particular attention to maintaining the
-appropriate coding style, particularly with regard to indenting.
+appropriate coding style, particularly with regard to
+indenting\index{indenting}.
 
 %%%%
 \section{Developing the code generator}
@@ -258,7 +259,7 @@ POD documentation in these modules is automatically converted to LaTeX and
 incorporated in the \hyperref[hyper][Reference]{Reference} section of this
 manual.
 
-\subsection{Style guide\label{Developer_style_guide}}\index{style guide}
+\subsection{Style guide\label{Developer_style_guide}}\index{style\,guide}
 
 Further to the \hyperref[hyper][Style_guide]{Style guide} for users, the
 following additional recommended pertain to developers:
@@ -300,13 +301,13 @@ that further include Boost headers which make extensive use of
 templates. Efforts have been made to quarantine such incidences from the CUDA
 compiler, but mileage may vary.
 
-\subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom numbers}
+\subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom\,number\,generation}
 
 It is important to maintain reproducibility of results under the same random
-number seed\index{random number seed}, typically passed using the
+number seed\index{random\,number\,seed}, typically passed using the
 \bitt{--seed} option on the command line. Real time impacts should be
-considered, such as favouring static scheduling\index{static scheduling} over
-dynamic scheduling\index{dynamic scheduling} for OpenMP\index{OpenMP} thread
+considered, such as favouring static scheduling\index{static\,scheduling} over
+dynamic scheduling\index{dynamic\,scheduling} for OpenMP\index{OpenMP} thread
 blocks. Consider the following:
 \begin{cppcode}
 Random rng;
@@ -319,7 +320,7 @@ for (int i = 0; i < N; ++i) \{
 \end{cppcode}
 
 \bitt{Random} maintains a separate pseudorandom number
-generator\index{pseudorandom number generation} for each OpenMP thread. If
+generator\index{pseudorandom\,number\,generation} for each OpenMP thread. If
 dynamically scheduled, the above loop gives no guarantees as to the number of
 variates drawn from each generator, so that reproducibility of results for a
 given seed is not guaranteed. Static scheduling should be enforced in this
@@ -404,5 +405,5 @@ In brief, the style of C++ code added to the library should conform to what is
 already there. If using Eclipse, the custom code style file (see
 \secref{Using_Eclipse}{Using Eclipse}) is a good start.
 
-C++ code written in the library should conform to the ``Kernigan and Ritchie''
-style, indenting with two spaces and never tabs.
+C++ code written in the library should conform to the ``Kernighan and Ritchie''
+style, indenting\index{indenting} with two spaces and never tabs.
