@@ -16,20 +16,20 @@ declaring and naming the model.
 
 Immediately within the \bitt{model} statement, the following named top-level blocks should
 be used to specify the model:
-\begin{description}
+\begin{itemize}
 \item \blockref{parameter}, specifying the prior density over parameters,
 \item \blockref{initial}, specifying the prior density over initial conditions,
 \item \blockref{transition}, specifying the transition density, and
 \item \blockref{observation}, specifying the observation density.
-\end{description}
+\end{itemize}
 
 The following named top-level blocks are optional, but may be required in order to use particular methods:
-\begin{description}
+\begin{itemize}
 \item \blockref{proposal_parameter}, specifying the proposal density over parameters,
 \item \blockref{proposal_initial}, specifying the proposal density over initial conditions,
 \item \blockref{lookahead_transition}, specifying a lookahead density to accompany the transition density, and
 \item \blockref{lookahead_observation}, specifying a lookahead density to accompany the observation density.
-\end{description}
+\end{itemize}
 
 \subsection{\bitt{dim}\label{dim}\index{dim}}
 
