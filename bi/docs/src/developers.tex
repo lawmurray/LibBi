@@ -1,6 +1,6 @@
 \section{Introduction}
 
-LibBi consists of a few different components:
+LibBi consists of a few different components\index{components}:
 \begin{itemize}
 \item A \emph{library} which provides classes and functions for simulation,
   filtering, smoothing, optimising and sampling from state-space models, as
@@ -18,13 +18,13 @@ LibBi consists of a few different components:
 \end{itemize}.
 
 Developing LibBi involves adding or modifying functionality in one or more of
-its major \hyperref[hyper][Components]{components}. A typical exercise is
-adding block and action types to the code generator to introduce new features,
-such as support for additional probability density functions. This may also
-involve implementing new functionality in the library that these blocks and
-actions can use. Another common task is adding a new inference method to the
-library, then adding or modifying the code generator to produce the client
-code that will use this.
+these major components\index{components}. A typical exercise is adding block
+and action types to the code generator to introduce new features, such as
+support for additional probability density
+functions\index{probability\,density}. This may also involve implementing new
+functionality in the library that these blocks and actions can use. Another
+common task is adding a new inference method to the library, then adding or
+modifying the code generator to produce the client code that will use this.
 
 \section{Setting up a development environment}
 
@@ -36,7 +36,7 @@ these files take effect immediately.
 \subsection{Obtaining the source code}
 
 Bi is available via Subversion at
-\hyperref[hyper][https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi]{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
+\href{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
 would typically check out a working copy of the \bitt{trunk} directory:
 \begin{cmdcode}
 svn co https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk
@@ -70,19 +70,14 @@ and then the working copy of the trunk committed.
 
 LibBi is set up to use the Eclipse IDE. From a vanilla install of the Eclipse
 IDE for C/C++ (available at
-\hyperref[hyper][http://www.eclipse.org]{http://www.eclipse.org}), a number of
+\href{http://www.eclipse.org}{http://www.eclipse.org}), a number of
 additional plugins are supported, and recommended. These are, along with the
 URLs of their update sites:
 \begin{itemize}
-\item Subclipse (Subversion integration)
-  \hyperref[hyper][http://subclipse.tigris.org/update]{http://subclipse.tigris.org/update\_1.8.x}
-  (change 1.8 to match your Subversion version)
-
-\item Eclox (Doxygen integration) \hyperref[hyper][http://download.gna.org/eclox/update]{http://download.gna.org/eclox/update}
-
-\item EPIC (Perl integration) \hyperref[hyper][http://e-p-i-c.sf.net/updates/testing]{http://e-p-i-c.sf.net/updates/testing}
-
-\item Perl Template Toolkit Editor \hyperref[hyper][http://perleclipse.com/TTEditor/UpdateSite]{http://perleclipse.com/TTEditor/UpdateSite}
+\item Subclipse (Subversion integration) \href{http://subclipse.tigris.org/update}{http://subclipse.tigris.org/update\_1.8.x} (change 1.8 to match your Subversion version).
+\item Eclox (Doxygen integration) \href{http://download.gna.org/eclox/update}{http://download.gna.org/eclox/update}.
+\item EPIC (Perl integration) \href{http://e-p-i-c.sf.net/updates/testing}{http://e-p-i-c.sf.net/updates/testing}.
+\item Perl Template Toolkit Editor \href{http://perleclipse.com/TTEditor/UpdateSite}{http://perleclipse.com/TTEditor/UpdateSite}.
 \end{itemize}
 They may be installed via the \textsf{Help > Install New Software...} menu
 item in Eclipse, in each case entering the update site URL.
@@ -256,12 +251,12 @@ actions and blocks, and command-line options for clients, are enumerated in
 these. The idea of this is to keep implementation and documentation together.
 
 POD documentation in these modules is automatically converted to LaTeX and
-incorporated in the \hyperref[hyper][Reference]{Reference} section of this
+incorporated in the \secref{User_Reference}{User Reference} section of this
 manual.
 
 \subsection{Style guide\label{Developer_style_guide}}\index{style\,guide}
 
-Further to the \hyperref[hyper][Style_guide]{Style guide} for users, the
+Further to the \secref{Style_guide}{style guide} for users, the
 following additional recommended pertain to developers:
 \begin{itemize}
 \item Action, block, client and argument names are all lowercase, with

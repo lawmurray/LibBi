@@ -18,7 +18,7 @@ $\mathbf{x}_{1:T}$ are state variables, and $\boldsymbol{\theta}$ are
 parameters.
 
 The model is hierarchically factored into four particular conditional
-probability densities:
+probability densities\index{probability\,density}:
 \begin{itemize}
 \item the parameter model, specifying the prior density over parameters,
 \item the initial condition model, specifying the prior density over initial
@@ -235,7 +235,7 @@ special and not declared explicitly.
 
 \subsection{Variables\label{Variables}}
 
-\seealso{See also \secref{var}{\kwref{input}, \kwref{noise}, \kwref{obs},
+\seealso{See also \secref{input}{\kwref{input}, \kwref{noise}, \kwref{obs},
     \kwref{param} and \kwref{state}}} Variables are named and mutable
 scalar\index{scalar}, vector\index{vector}, matrix\index{matrix} or
 higher-dimensional\index{higher\,dimensional} objects.
@@ -271,7 +271,7 @@ obs y
 
 A vector\index{vector}, matrix\index{matrix} or
 higher-dimensional\index{higher\,dimensional} variable is declared by listing
-the names of the \hyperref{Dimensions}{Dimensions} over which it should extend
+the names of the \secref{Dimensions}{Dimensions} over which it should extend
 in a comma-separated list enclosed in square brackets, after the variable
 name. For example:
 \begin{bicode}
@@ -1004,7 +1004,7 @@ The following I/O and configuration issues are worth considering:
 
 \end{itemize}
 
-\section{Style guide\label{sec:Style_guide}}\index{style\,guide}
+\section{Style guide\label{Style_guide}}\index{style\,guide}
 
 The following naming conventions are recommended:
 \begin{itemize}
