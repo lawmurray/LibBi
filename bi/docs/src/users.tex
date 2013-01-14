@@ -28,8 +28,8 @@ probability densities:
 \item the observation model, specifying the observation density conditioned on
   the parameters and current state.
 \end{itemize}
-Each of these is explicitly specified using the LibBi
-\secref{Modelling_language}{modelling language}.
+Each of these is explicitly specified using the LibBi modelling
+language\seealso{See \secref{Models}{Models}}.
 
 A brief example will help to set the scene. Consider the following
 Lotka-Volterra-like predator-prey model between zooplankton (predator, $Z$)
@@ -147,7 +147,7 @@ bi package --build
 This creates a \bitt{*.tar.gz} file in the current directory containing the
 project files.
 
-\section{Modelling language\label{Modelling_language}}
+\section{Models\label{Models}}
 
 Models for use with LibBi are specified in the LibBi modelling language. A
 model specification is put in a file with an extension of \bitt{*.bi}. Each
@@ -596,58 +596,6 @@ The following functions are supported in expressions:
 \hline
 \end{tabular}
 
-\section{Command line interface\label{Command_line_interface}}\index{command line}
-
-Methods are applied to models via the command line interface of LibBi. Invoke LibBi
-via the command line as:
-\begin{cmdcode}
-bi \textit{command} \textit{options} ...
-\end{cmdcode}
-where \bitt{\textit{command}} is any one of the following:
-\begin{description}
-\item[\clientref{simulate}] to simulate trajectories
-  from a model,
-\item[\clientref{filter}] for filtering problems using the
-  model and observations,
-\item[\clientref{smooth}] for smoothing problems using the
-  model and observations,
-\item[\clientref{optimise}] for parameter optimisation
-  problems using the model and observations,
-\item[\clientref{sample}] for parameter sampling
-  problems using the model and observations,
-\item[\clientref{draw}] to visualise a model (useful for
-  debugging and development),
-\item[\clientref{rewrite}] to process a model and
-  output a new model after applying internal transformations and optimisations
-  (useful for debugging and development),
-\end{description}
-and available \bitt{\textit{options}} depend on the command.
-
-Options may be specified in a configuration file\index{config file} or on the
-command line itself. To use a configuration file, give the name of the file on
-the command line, preceded by \bitt{@}, e.g.
-\begin{cmdcode}
-bi \textit{command} @command.conf
-\end{cmdcode}
-
-More than one config file may be specified, each preceded by \bitt{@}. An
-option given on the command line will override an option of the same name
-given in the configuration file.
-
-A config file simply contains a list of command-line options just as they
-would be given on the command line itself. For readability, the command-line
-options may be spread over any number of lines, and end-of-line comments,
-preceded by \bitt{\#}, may appear. The contents of one config file may be
-nested in another by using the \bitt{@file.conf} syntax within that
-other. This can be useful in avoiding redundancy. For example, the
-\clientref{filter} command inherits all the options of \clientref{simulate},
-and the \clientref{sample} command inherits all the options of
-\clientref{filter}. In this case it may be useful to write a
-\bitt{simulate.conf} file that is nested within a \bitt{filter.conf} file,
-that is nested within a \bitt{sample.conf} file, so that the config files
-inherit options just as the commands do.
-
-
 \section{Data\label{Data}}
 
 Data is input to and output from LibBi using NetCDF\index{NetCDF} files. The
@@ -871,9 +819,7 @@ of size $m$ in the NetCDF file, and the values of \bitt{coord\_y} in the above
 table would be vectors.
 \end{example}
 
-\subsection{Output files}
-
-\section{Bringing it all together\label{Bringing_it_all_together}}
+\subsection{Simulating models with input\label{Simulating_models_with_input}}
 
 The precise way in which input files and the model specification interact is
 best demonstrated in the steps taken to simulate a model. Computing densities
@@ -886,8 +832,7 @@ is that given by the \bitt{--init-file} command-line option, and the
 \item The \blockref{parameter} top-level block is sampled.
 \item Any \bitt{param} variables in the input file are overwritten by reading
   from the file.
-\item Any static expressions extracted by GenBi for precomputation are
-  evaluated.
+\item Any static expressions extracted for precomputation are evaluated.
 \item The \blockref{initial} top-level block is sampled.
 \item Any \bitt{state} variables in the input file are overwritten by reading
   from the file.
@@ -917,6 +862,59 @@ Note two important points in this procedure:
   \secref{Pseudorandom_reproducibility}{pseudorandom reproducibility}
   regardless of the presence, or content, of the initialisation file.
 \end{itemize}
+
+\subsection{Output files}
+
+\section{Command-line interface\label{Command_line_interface}}\index{command line}
+
+Methods are applied to models via the command line interface of LibBi. Invoke LibBi
+via the command line as:
+\begin{cmdcode}
+bi \textit{command} \textit{options} ...
+\end{cmdcode}
+where \bitt{\textit{command}} is any one of the following:
+\begin{description}
+\item[\clientref{simulate}] to simulate trajectories
+  from a model,
+\item[\clientref{filter}] for filtering problems using the
+  model and observations,
+\item[\clientref{smooth}] for smoothing problems using the
+  model and observations,
+\item[\clientref{optimise}] for parameter optimisation
+  problems using the model and observations,
+\item[\clientref{sample}] for parameter sampling
+  problems using the model and observations,
+\item[\clientref{draw}] to visualise a model (useful for
+  debugging and development),
+\item[\clientref{rewrite}] to process a model and
+  output a new model after applying internal transformations and optimisations
+  (useful for debugging and development),
+\end{description}
+and available \bitt{\textit{options}} depend on the command.
+
+Options may be specified in a configuration file\index{config file} or on the
+command line itself. To use a configuration file, give the name of the file on
+the command line, preceded by \bitt{@}, e.g.
+\begin{cmdcode}
+bi \textit{command} @command.conf
+\end{cmdcode}
+
+More than one config file may be specified, each preceded by \bitt{@}. An
+option given on the command line will override an option of the same name
+given in the configuration file.
+
+A config file simply contains a list of command-line options just as they
+would be given on the command line itself. For readability, the command-line
+options may be spread over any number of lines, and end-of-line comments,
+preceded by \bitt{\#}, may appear. The contents of one config file may be
+nested in another by using the \bitt{@file.conf} syntax within that
+other. This can be useful in avoiding redundancy. For example, the
+\clientref{filter} command inherits all the options of \clientref{simulate},
+and the \clientref{sample} command inherits all the options of
+\clientref{filter}. In this case it may be useful to write a
+\bitt{simulate.conf} file that is nested within a \bitt{filter.conf} file,
+that is nested within a \bitt{sample.conf} file, so that the config files
+inherit options just as the commands do.
 
 \section{Performance guide\label{Performance guide}\index{performance}}
 
@@ -948,7 +946,7 @@ transition model -- \bitt{sigma2} is a parameter, and so
 \bitt{sqrt(sigma2)} a static expression.
 
 Use the \clientref{rewrite} command if you wish to inspect the transformations
-that GenBi makes to a model.
+made to a model.
 
 The following I/O and configuration issues are worth considering:
 \begin{itemize}
