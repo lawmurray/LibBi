@@ -655,68 +655,221 @@ structure of such files is specified here.
 
 \subsection{Input files}
 
-Each node in the model is associated with the variable of the same name in the
-NetCDF file. Nodes which cannot be associated with a NetCDF variable will
-produce warnings at runtime if an attempt is made to read or write to them
-while debugging is enabled. Extraneous variables in the NetCDF file are
-ignored.
+Input files take three forms:
+\begin{itemize}
+\item initialisation files, containing the initial values of \bitt{state}
+  variables,
+\item input files, containing the values of \bitt{input} variables, possibly
+  changing across time, and
+\item observation files, containing the observed values of \bitt{obs}
+  variables.
+\end{itemize}
+All of these use the same structure. That structure is quite flexible,
+allowing for the representation of both dense and sparse input. Sparsity may
+be in time or space. An example of the former is, in a discrete-time model,
+having a scalar \bitt{obs} variable that is not necessarily observed at all
+time steps. An example of the latter is, again in a discrete-time model,
+having a vector \bitt{obs} variable for which not all elements are necessarily
+observed at all time steps.
 
-Each variable may be defined along one or more of the following dimensions, in
-the order given:
+Each variable in the NetCDF file is associated with the variable of the same
+name in the model specification. Extraneous variables in the NetCDF file are
+ignored. Variables in the model specification which cannot be matched to a
+variable in the NetCDF file do not receive input from it.
+
+Each variable in the NetCDF file may be defined along the following
+dimensions, in the order given:
 \begin{enumerate}
-\item A dimension named \bitt{ns}, used to index multiple experiments set up
-  in the same file. If not given for a variable, that variable is assumed to
-  be the same for all experiments.
-\item Any number of dimensions with names matching those given in the model
-  specification.
-\item A dimension named \bitt{np}, used to index values of the variable over
-  trajectories. If not given for a variable, that variable is assumed to be
-  the same for all trajectories. Its length should be greater than or equal to
-  the number of trajectories being simulated. Variables of type
-  \bitt{param}, \bitt{input} and \bitt{obs} may not use an \bitt{np}
-  dimension.
+\item Optionally, a dimension named \bitt{ns}, used to index multiple
+  experiments set up in the same file. If not given for a variable, that
+  variable is assumed to be the same for all experiments.
+\item Optionally, a time dimension (see below).
+\item Optionally, a number of dimensions with names matching those given in
+  the model specification.
+\item Optionally, a dimension named \bitt{np}, used to index multiple
+  trajectories (or samples, or particles) of a variable. If not given for a
+  variable, the value of that variable is assumed to be the same for all
+  trajectories. Variables of type \bitt{param}, \bitt{input} and \bitt{obs}
+  may not use an \bitt{np} dimension, as by their nature they are meant to be
+  in common across all trajectories.
 \end{enumerate}
 
-Additionally, a search for \emph{time variables}\index{time variable} is
-made. Time variables have a name prefixed by ``time''. Each such variable may
-be defined along an arbitrary single inner dimension, and optionally along the
-\bitt{ns} dimension as an outer dimension also. The former dimension becomes
-a \emph{record dimension}\index{record dimension}. The time variable gives the
-time associated with each index of the dimension. Its values must be
-monotonically non-decreasing across the dimension.
+A variable given in the model specification may be represented either
+\emph{densely} or \emph{sparsely} across those dimensions. For a dense
+representation, use dimensions as in item 3 above. For a sparse
+representation, see \secref{Coordinate_variables}{Coordinate variables}.
 
-Any other variables may be specified across the same record dimension,
-giving their values at the times given by the associated time variable.
-A variable may only be associated with one record dimension, and s- and
-p-vars may not be associated with one at all. If a variable is not defined
-across a record dimension, it is assumed to have the same value at all
-times.
+\subsubsection{Time variables\label{Time_variables}}
 
-For each time variable, a search is made for an associated \emph{coordinate
-  variable}\index{coordinate variable}. This is a variable of the same name,
-but with the ``time'' prefix replaced by ``coord''. Its purpose is to specify
-the coordinates for spatial nodes of the model that have a corresponding
-variable in the file associated with the time variable. Each coordinate
-variable should be defined along an optional innermost dimension indexing the
-dimensions for nodes of two or more dimensions, then the same record dimension
-as the time variable, and optionally along the \bitt{ns} dimension as the
-outermost dimension.
+\emph{Time variables} are used to index time in a file. Each variable in the
+NetCDF file with a name beginning with ``time'' is assumed to be a time
+variable. Each such variable may be defined along the following dimensions, in
+the order given:
+\begin{enumerate}
+\item Optionally, the \bitt{ns} dimension.
+\item An arbitrarily named dimension.
+\end{enumerate}
+The latter dimension becomes a \emph{time dimension}\index{time
+  dimension}. The time variable gives the time associated with each index of
+the time dimension, a sequence which must be monotonically
+non-decreasing. Other variables defined along the same time dimension become
+associated with the time variable. The time dimension thus indexes both the
+times at which these variables change, and the values that they assume. A
+variable may only be associated with one time dimension, and \texttt{param}
+variables may not be associated with one at all. If a variable is not defined
+across a time dimension, it is assumed to have the same value at all times.
 
-If a multidimensional variable is associated with a coordinate variable with
-fewer components than the number of dimensions along which it is defined,
-these are assumed to index the outermost dimensions. That is, a variable may
-be sparse in some dimensions and dense in others, but the sparse dimensions
-must be the outermost.
+Time variables and time dimensions are interpreted slightly differently for
+each of the input file types:
+\begin{enumerate}
+\item For an initialisation file, the starting time (given by the \bitt{-t}
+  command-line option, see \clientref{simulate}) is looked-up in each time
+  variable, and the corresponding record in each associated variable is used
+  for its initialisation.
+\item For input files, a time variable gives the times at which each
+  associated variable changes in value. Each variable maintains its new
+  value until the time of the next change.
+\item For observation files, a time variable gives the times at which each
+  associated variable is observed. The value of each variable is interpreted
+  as being its value at that precise instant in time.
+\end{enumerate}
+
+\begin{example}
+\noindent \textbf{Representing a scalar input}
+
+Assume that we have an \bitt{obs} variable named \bitt{y}, and we wish to
+construct an observation file containing our data set, which consists of
+observations of \bitt{y} at various times. A valid structure would be to
+create a NetCDF file with:
+\begin{itemize}
+\item a dimension named \bitt{nr}, to be our time dimension,
+\item a variable named \bitt{time\_y}, defined along the dimension \bitt{nr},
+  to be our time variable, and
+\item a variable named \bitt{y}, defined along the dimension \bitt{nr}, to
+  contain the observations.
+\end{itemize}
+We would then fill the variable \bitt{time\_y} with the observation times of
+our data set, and \bitt{y} with the actual observations. It may look something
+like this:
+
+\begin{cmdcode}
+time_y[nr]    y[nr]
+       0.0     6.75
+       1.0     4.56
+       2.0     9.45
+       5.5     4.23
+       6.0     7.12
+       9.5     5.23
+\end{cmdcode}
+
+\end{example}
+
+\begin{example}
+\noindent \textbf{Representing a vector input, densely}
+
+Assume that we have an \bitt{obs} variable named \bitt{y}, which is a vector
+defined across a dimension of size three called \bitt{n}. We wish to construct
+an observation file containing a our data set, which consists of observations
+of \bitt{y} at various times, where at each time all three elements of
+\bitt{y} are observed. A valid structure would be to create a NetCDF file
+with:
+\begin{itemize}
+\item a dimension named \bitt{nr}, to be our time dimension,
+\item a variable named \bitt{time\_y}, defined along the dimension \bitt{nr},
+  to be our time variable,
+\item a dimension named \bitt{n}, and
+\item a variable named \bitt{y}, defined along the dimensions \bitt{nr} and
+  \bitt{n}, to contain the observations.
+\end{itemize}
+We would then fill the variable \bitt{time\_y} with the observation times of
+our data set, and \bitt{y} with the actual observations. It may look something
+like this:
+
+\begin{cmdcode}
+time_y[nr]     y[nr,n]
+       0.0     6.75 3.34 3.45
+       1.0     4.56 4.54 1.34
+       2.0     9.45 3.43 1.65
+       5.5     4.23 8.65 4.64
+       6.0     7.12 4.56 3.53
+       9.5     5.23 3.45 3.24
+\end{cmdcode}
+
+\end{example}
+
+\subsubsection{Coordinate variables\index{Coordinate_variables}}
+
+\emph{Coordinate variables} are used for sparse indexing of model dimensions
+in a file. Each variable with a name beginning with ``coord'' is assumed to be
+a coordinate variable. Each such variable may be defined along the following
+dimensions, in the order given:
+\begin{enumerate}
+\item Optionally, the \bitt{ns} dimension.
+\item A time dimension or some other arbitrary dimension.
+\item Optionally, some arbitrary dimension.
+\end{enumerate}
+The second dimension becomes a \emph{coordinate dimension}\index{coordinate
+  dimension}, which may also be a time dimension. Other variables defined
+along the same coordinate dimension become associated with the coordinate
+variable. The coordinate variable gives the coordinate associated with each
+index along the coordinate dimension. The last dimension, if any, should have
+a length equal to the number of dimensions across which those other variables
+are defined. So, for example, if these variables are matrices, the last
+dimension should have a length of two. If the variables are vectors, so that
+they have only one dimension, the coordinate variable need not have this last
+dimension.
+
+%If a multidimensional variable is associated with a coordinate variable with
+%fewer components than the number of dimensions along which it is defined,
+%these are assumed to index the outermost dimensions. That is, a variable may
+%be sparse in some dimensions and dense in others, but the sparse dimensions
+%must be the outermost.
 
 If a variable specified across one or more dimensions in the model cannot be
-associated with a coordinate variable, then it is assumed to be dense across
-all of its dimensions in the NetCDF file.
+associated with a coordinate variable, then it is assumed to be represented
+densely.
 
-Record dimensions, time variables and coordinate variables facilitate sparse
-representation by storing only the change-points for each variable over
-time. Dense representations are incorporated via the special case where all
-variables are associated with the same time variable (or equivalently, where
-all time variables are identical), and no coordinate variables are used.
+\begin{example}
+\noindent \textbf{Representing a vector input, sparsely}
+
+Assume that we have an \bitt{obs} variable named \bitt{y}, which is a vector
+defined across a dimension of size three called \bitt{n}. We wish to construct
+an observation file containing our data set, which consists of observations of
+\bitt{y} at various times, where at each time only a subset of the elements of
+\bitt{y} are observed. A valid structure would be to create a NetCDF file
+with:
+\begin{itemize}
+\item a dimension named \bitt{nr}, to be our time dimension,
+\item a variable named \bitt{time\_y}, defined along the dimension \bitt{nr},
+  to be our time variable,
+\item a variable named \bitt{coord\_y}, defined along the dimension \bitt{nr},
+  to be out coordinate variable,
+\item a variable named \bitt{y}, defined along the dimension \bitt{nr}, to
+  contain the observations.
+\end{itemize}
+We would then fill the variable \bitt{time\_y} with the observation times of
+our data set, \bitt{coord\_y} with the coordinate of each observation, and
+\bitt{y} with the observations themselves. It may look something like this:
+
+\begin{cmdcode}
+time_y[nr]    coord_y[nr]    y[nr,n]
+       0.0             0       6.75
+       0.0             1       3.34
+       1.0             0       4.56
+       1.0             1       4.54
+       1.0             2       1.34
+       2.0             1       3.43
+       5.5             3       4.64
+       6.0             0       4.23
+       6.0             2       3.53
+       9.5             1       3.45
+\end{cmdcode}
+
+Note that, if \bitt{y} had $m > 1$ dimensions, the \bitt{coord\_y}
+variable would be defined along some additional, arbitrarily named dimension
+of size $m$ in the NetCDF file, and the values of \bitt{coord\_y} in the above
+table would be vectors.
+\end{example}
 
 \subsection{Output files}
 

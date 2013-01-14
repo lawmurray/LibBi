@@ -63,7 +63,11 @@
 {\end{alltt}\end{minipage}\end{mdframed}}
 
 \newenvironment{tip}
-{\vspace{\baselineskip}\marginlabel{Tip $\rightarrow$}\vspace{-1.4\baselineskip}\begin{mdframed}[linewidth=0.4pt,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}}
+{\vspace{\baselineskip}\marginlabel{Tip $\rightarrow$}\vspace{-1.4\baselineskip}\begin{mdframed}[linewidth=0.4pt,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}\relsize{-0.5}}
+{\end{minipage}\end{mdframed}\vspace{\baselineskip}}
+
+\renewenvironment{example}
+{\vspace{\baselineskip}\marginlabel{Example $\rightarrow$}\vspace{-1.4\baselineskip}\begin{mdframed}[linewidth=0.4pt,skipabove=\baselineskip,innertopmargin=0]\begin{minipage}{\textwidth}\relsize{-0.5}}
 {\end{minipage}\end{mdframed}\vspace{\baselineskip}}
 
 % can also use:
