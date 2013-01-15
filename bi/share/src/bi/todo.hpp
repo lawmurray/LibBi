@@ -90,4 +90,7 @@
  * @todo bi --help
  *
  * @todo bi smooth
+ *
+ * @todo AVX support (should be very similar to SSE support, but with slightly
+ * different intrinsics).
  */
