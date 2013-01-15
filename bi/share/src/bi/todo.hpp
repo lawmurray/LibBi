@@ -55,7 +55,7 @@
  *
  * @todo * (L) Review OctBi.
  *
- * @todo * (A) Get OctBi working with MATLAB?
+ * @todo * (A) Get OctBi working with MATLAB.
  *
  * @todo * (P) Review RBi.
  *
@@ -82,4 +82,12 @@
  *
  * @todo Allowing arbitrary indexing expressions on the right, not just
  * expressions of type k, k + n and k - n.
+ *
+ * @todo Tidy up output file variable names, perhaps precede internal
+ * variables with the program or schema name, e.g. simulate.time,
+ * filter.logweight etc.
+ *
+ * @todo bi --help
+ *
+ * @todo bi smooth
  */
