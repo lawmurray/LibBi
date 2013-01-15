@@ -1,6 +1,6 @@
 =head1 NAME
 
-eval_ - generic update action.
+eval_ - arbitrary expression.
 
 =head1 SYNOPSIS
 
@@ -9,8 +9,8 @@ eval_ - generic update action.
 =head1 DESCRIPTION
 
 An C<eval_> action sets a variable using an expression. It need not be used
-explicitly: any expression not explicitly enclosed by a named action is
-evaluated using C<eval_>.
+explicitly: any expression using the C<<-> operator without naming an action
+is evaluated using C<eval_>.
 
 =cut
 

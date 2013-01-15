@@ -18,8 +18,6 @@
  * @todo * (L) Custom block/action. Bi C++ interface for writing custom functions
  * in Bi files.
  *
- * @todo * (L) pdf action as default for var ~ logpdf type expressions.
- *
  * @todo * (All) Example models for release. Look at POMP?
  *
  * @todo Test suite (list of bi commands that can be run to test
