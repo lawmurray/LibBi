@@ -603,12 +603,12 @@ The following functions are supported in expressions:
 \hline
 \end{tabular}\index{functions}
 
-\section{Data\label{Data}}\index{data}\index{I/O}
+\section{Input files\label{Input_files}}\index{data}\index{I/O}\index{input}
 
-Data\index{data} is input to and output from\index{I/O} LibBi using
-NetCDF\index{NetCDF} files. The schema of such files are described in this
-section, the schema being the names of the dimensions and variables that are
-expected in such files.
+Data\index{data} is input to\index{I/O} LibBi using NetCDF\index{NetCDF}
+files. The schema of input files is described in this section, the schema
+being the names of the dimensions and variables that are expected in such
+files.
 
 The syntax \bitt{x[m,n]} is used to refer to a variable in a NetCDF file named
 \bitt{x}, defined across the dimensions named \bitt{m} and \bitt{n}. Note
@@ -618,8 +618,6 @@ whether a reference is to a LibBi or NetCDF variable or dimension, however,
 and indeed in many cases the reference is to both -- most NetCDF variables in
 input and output files are simply representations of the LibBi variables of
 the same names.
-
-\subsection{Input files}
 
 Input files take three forms:
 \begin{itemize}
@@ -665,7 +663,7 @@ A variable given in the model specification may be represented either
 representation, use dimensions as in item 3 above. For a sparse
 representation, see \secref{Coordinate_variables}{Coordinate variables}.
 
-\subsubsection{Time variables\label{Time_variables}}
+\subsection{Time variables\label{Time_variables}}
 
 \emph{Time variables} are used to index time in a file. Each variable in the
 NetCDF file with a name beginning with ``time'' is assumed to be a time
@@ -762,7 +760,7 @@ time_y[nr]     y[nr,n]
 
 \end{example}
 
-\subsubsection{Coordinate variables\label{Coordinate_variables}}
+\subsection{Coordinate variables\label{Coordinate_variables}}
 
 \emph{Coordinate variables} are used for sparse indexing of model dimensions
 in a file. Each variable with a name beginning with ``coord'' is assumed to be
@@ -879,128 +877,6 @@ Note two important points in this procedure:
   regardless of the presence, or content, of the initialisation file.
 \end{itemize}
 
-\subsection{Output files}
-
-The schema of an output file depends on the program that produces it. These
-are related by strong conventions, however, and most schemas simply extend
-that of the \clientref{simulate} program. This section enumerates each schema
-in turn.
-
-\begin{tip}
-If using OctBi or RBi for collating and visualising the output of LibBi, it
-may not be necessary to understand these schema, as they are encapsulated in
-higher-level functions.
-\end{tip}
-
-\subsubsection{Simulation schema}
-
-This schema used by the \clientref{simulate} program. It consists of
-dimensions:
-\begin{itemize}
-\item \bitt{nr} indexing time,
-\item \bitt{np} indexing trajectories, and
-\item for each dimension \bitt{\emph{n}} in the model, a dimension
-  \bitt{\emph{n}}.
-\end{itemize}
-And variables:
-\begin{itemize}
-\item \bitt{time[nr]} giving the output times,
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
-\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
-  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{x}[nr,\emph{m},...,\emph{n},np]}.
-\end{itemize}
-
-\subsubsection{Particle filter schema}
-
-This schema is used by the \clientref{filter} program when a particle filter,
-besides the adaptive particle filter, is chosen. It extends the simulation
-schema. The \bitt{np} dimension is now interpreted as indexing
-\emph{particles} not \emph{trajectories}. The following variables are
-added:
-\begin{itemize}
-\item \bitt{logweight[nr,np]} giving the log-weights of each particle at each
-  time,
-\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time, and
-\item \bitt{resample[nr]} indicating whether or not resampling was performed
-  at each time.
-\end{itemize}
-
-\begin{tip}
-To draw a whole trajectory out of a file of the particle filter schema, begin
-at the last time, select a particle, and use the \bitt{ancestor} vector at
-each time to trace that particle's ancestry back through time. One cannot
-simply take a row from the matrix of a state variable to obtain a complete
-trajectory, as in the simulation schema.
-\end{tip}
-
-\subsubsection{Simulation ``flexi'' schema}
-
-This schema is currently not used directly, but the particle filter ``flexi''
-schema below extends it. The complication here is that the number of
-particles at each time can vary. The schema consists of the following
-dimensions:
-\begin{itemize}
-\item \bitt{np} indexing trajectories,
-\item \bitt{nrp} indexing both time and trajectories, and
-\item for each dimension \bitt{\emph{n}} in the model, a dimension
-  \bitt{\emph{n}}.
-\end{itemize}
-And variables:
-\begin{itemize}
-\item \bitt{time[nr]} giving the output times,
-\item \bitt{start[nr]} giving, for each time, the starting index along the
-  \bitt{nrp} dimension for particles associated with it,
-\item \bitt{len[nr]} giving, for each time, the number of particles associated
-  with it,
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
-\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
-  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{x}[\emph{m},...,\emph{n},nrp]}.
-\end{itemize}
-
-\begin{tip}
-With the ``flexi'' schema, to read the contents of a variable at some time
-\bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
-dimension, beginning at index \bitt{start[\emph{t}]}.
-\end{tip}
-
-\subsubsection{Particle filter ``flexi'' schema}
-
-This scheme is used by the \clientref{filter} program when an adaptive
-particle filter is chosen. It extends the simulation ``flexi'' schema. The
-following variables are added:
-\begin{itemize}
-\item \bitt{logweight[nrp]} giving the log-weights of each particle at each
-  time,
-\item \bitt{ancestor[nrp]} giving the ancestry vector at each time, and
-\item \bitt{resample[nr]} indicating whether or not resampling was performed
-  at each time.
-\end{itemize}
-
-\subsubsection{Kalman filter schema}
-
-This schema is used by the \clientref{filter} program when a Kalman filter is
-chosen.
-
-\subsubsection{Optimisation schema}
-
-This schema is used by the \clientref{optimise} program.
-
-\subsubsection{PMCMC schema}
-
-This schema is used by the \clientref{sample} program when a PMCMC method is
-chosen.
-
-\subsubsection{SMC$^2$ schema}
-
-This schema is used by the \clientref{sample} program when an SMC$^2$ method
-is chosen.
-
 \section{Command-line interface\label{Command_line_interface}}\index{command\,line}
 
 Methods are applied to models via the command line interface of LibBi. Invoke LibBi
@@ -1051,6 +927,205 @@ and the \clientref{sample} command inherits all the options of
 \bitt{simulate.conf} file that is nested within a \bitt{filter.conf} file,
 that is nested within a \bitt{sample.conf} file, so that the config files
 inherit options just as the commands do.
+
+\section{Output files}
+
+The schema of an output file depends on the program that produces it. These
+are related by strong conventions, however, and most schemas simply extend
+that of the \clientref{simulate} program. This section outlines each schema.
+
+\begin{tip}
+If using OctBi or RBi for collating and visualising the output of LibBi, it
+may not be necessary to understand these schema, as they are encapsulated in
+higher-level functions.
+\end{tip}
+
+\subsection{Simulation schema}
+
+This schema used by the \clientref{simulate} program. It consists of
+dimensions:
+\begin{itemize}
+\item \bitt{nr} indexing time,
+\item \bitt{np} indexing trajectories, and
+\item for each dimension \bitt{\emph{n}} in the model, a dimension
+  \bitt{\emph{n}}.
+\end{itemize}
+And variables:
+\begin{itemize}
+\item \bitt{time[nr]} giving the output times,
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
+\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
+  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{x}[nr,\emph{m},...,\emph{n},np]}.
+\end{itemize}
+
+\subsection{Particle filter schema}
+
+This schema is used by the \clientref{filter} program when a particle filter,
+besides the adaptive particle filter, is chosen. It extends the simulation
+schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension is now interpreted as indexing \emph{particles}
+  not \emph{trajectories}.
+\end{itemize}
+
+The following variables are added:
+\begin{itemize}
+\item \bitt{logweight[nr,np]} giving the log-weights of each particle at each
+  time,
+\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time, and
+\item \bitt{resample[nr]} indicating whether or not resampling was performed
+  at each time.
+\end{itemize}
+
+\begin{tip}
+To draw a whole trajectory out of a file of the particle filter schema, begin
+at the last time, select a particle, and use the \bitt{ancestor} vector at
+each time to trace that particle's ancestry back through time. One cannot
+simply take a row from the matrix of a state variable to obtain a complete
+trajectory, as in the simulation schema.
+\end{tip}
+
+\subsection{Simulation ``flexi'' schema}
+
+This schema is currently not used directly, but the particle filter ``flexi''
+schema below extends it. The complication here is that the number of
+particles at each time can vary. The schema consists of the following
+dimensions:
+\begin{itemize}
+\item \bitt{np} indexing trajectories,
+\item \bitt{nrp} indexing both time and trajectories, and
+\item for each dimension \bitt{\emph{n}} in the model, a dimension
+  \bitt{\emph{n}}.
+\end{itemize}
+And variables:
+\begin{itemize}
+\item \bitt{time[nr]} giving the output times,
+\item \bitt{start[nr]} giving, for each time, the starting index along the
+  \bitt{nrp} dimension for particles associated with it,
+\item \bitt{len[nr]} giving, for each time, the number of particles associated
+  with it,
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
+\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
+  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{x}[\emph{m},...,\emph{n},nrp]}.
+\end{itemize}
+
+\begin{tip}
+With the ``flexi'' schema, to read the contents of a variable at some time
+\bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
+dimension, beginning at index \bitt{start[\emph{t}]}.
+\end{tip}
+
+\subsection{Particle filter ``flexi'' schema}
+
+This scheme is used by the \clientref{filter} program when an adaptive
+particle filter is chosen. It extends the simulation ``flexi'' schema. The
+following variables are added:
+\begin{itemize}
+\item \bitt{logweight[nrp]} giving the log-weights of each particle at each
+  time,
+\item \bitt{ancestor[nrp]} giving the ancestry vector at each time, and
+\item \bitt{resample[nr]} indicating whether or not resampling was performed
+  at each time.
+\end{itemize}
+
+\subsection{Kalman filter schema}
+
+This schema is used by the \clientref{filter} program when a Kalman filter is
+chosen. It extends the simulation schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension is always of size 1, and
+\item variables that correspond to \kwref{state} and \kwref{noise} variables
+  in the model are now interpreted as containing the means of the filter
+  density at each time.
+\end{itemize}
+
+The following dimensions are added:
+\begin{itemize}
+\item \bitt{nxcol} indexing columns of covariance matrices, and
+\item \bitt{nxrow} indexing rows of covariance matrices.
+\end{itemize}
+
+The following variables are added:
+\begin{itemize}
+\item \bitt{S\_[nr,nxcol,nxrow]} containing the upper-triangular Cholesky
+  factor of the covariance matrix of the filter density at each time.
+\item For each \kwref{noise} and \kwref{state} variable \bitt{\emph{x}}, a
+  variable \bitt{index.\emph{x}} giving the index of the first row (and
+  column) in \bitt{S\_} pertaining to this variable, the first such index being
+  zero.
+\end{itemize}
+
+\subsection{Optimisation schema}
+
+This schema is used by the \clientref{optimise} program. It consists of
+dimensions:
+\begin{itemize}
+\item \texttt{ns} indexing iterations of the optimiser (an \emph{unlimited} or
+  \emph{record} dimension in NetCDF nomenclature).
+\end{itemize}
+And variables:
+\begin{itemize}
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[ns,\emph{m},...,\emph{n}]},
+\item \bitt{optimiser.value[ns]} giving the value of the function being
+  optimised at each iteration, and
+\item \bitt{optimiser.size[ns]} giving the value of the convergence criterion
+  at each iteration.
+\end{itemize}
+
+\subsection{PMCMC schema}
+
+This schema is used by the \clientref{sample} program when a PMCMC method is
+chosen. It extends the simulation schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension indexes samples, not trajectories, and
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, there is a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n},np]} instead of
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]} (i.e. \kwref{param} variables are
+  defined over the \bitt{np} dimension also).
+\end{itemize}
+The following variables are added:
+\begin{itemize}
+\item \bitt{loglikelihood[np]} giving the log-likelihood estimate
+  $p(\mathbf{y}_{1:T}|\boldsymbol{\theta}^p)$ for each sample
+  $\boldsymbol{\theta}^p$, and
+\item \bitt{logprior[np]} giving the log-prior density
+  $p(\boldsymbol{\theta}^p)$ of each sample $\boldsymbol{\theta}^p$.
+\end{itemize}
+
+\subsection{SMC$^2$ schema}
+
+This schema is used by the \clientref{sample} program when an SMC$^2$ method
+is chosen. It extends the simulation schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension indexes samples, not trajectories, and
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, there is a variable
+  \bitt{\emph{theta}[nr,\emph{m},...,\emph{n},np]} instead of
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]} (i.e. \kwref{param} variables are
+  defined over the \bitt{nr} and \bitt{np} dimensions also).
+\end{itemize}
+
+The following variables are added:
+\begin{itemize}
+\item \bitt{logweight[nr,np]} giving the log-weight of each $\theta$-particle
+  at each time,
+\item \bitt{numberx[nr,np]} giving the number of $x$-particles associated with
+  each $\theta$-particle at each time,
+\item \bitt{evidence[nr]} giving the incremental evidence at each time,
+\item \bitt{ess[nr]} giving the effective sample size of the $\theta$-particle
+  sample at each time, and
+\item \bitt{acceptancerate[nr]} giving the acceptance rate of the PMCMC
+  rejuvenation step performed at each time (will be zero if not performed).
+\end{itemize}
 
 \section{Performance guide\label{Performance guide}\index{performance}}
 
