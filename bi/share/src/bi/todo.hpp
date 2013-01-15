@@ -61,8 +61,6 @@
  *
  * @todo Use new NetCDF C++ interface.
  *
- * @todo Beta action maxLogDensity().
- *
  * @todo Automatically create directories for --output-file option.
  *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
@@ -93,4 +91,6 @@
  *
  * @todo AVX support (should be very similar to SSE support, but with slightly
  * different intrinsics).
+ *
+ * @todo Replace BI_REAL(1.0/0.0) with BI_INF constant.
  */

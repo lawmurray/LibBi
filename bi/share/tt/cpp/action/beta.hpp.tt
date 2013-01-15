@@ -73,14 +73,25 @@ public:
 }
   
 [% sig_action_static_function('maxlogdensity') %] {
-  T1 a, b;
+  T1 a, b, logZ;
     
   alpha(s, p, cox, pax, a);
   beta(s, p, cox, pax, b);
 
   BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
+  [% IF alpha.is_common >= 1.0 && beta.is_common %]
+  if (a >= BI_REAL(1.0) && b >= BI_REAL(1.0)) {
+    T1 mode = (a - BI_REAL(1.0))/(a + b - BI_REAL(2.0));
+    logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
+    lp += (a - BI_REAL(1.0))*bi::log(mode) +
+        (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - mode) - logZ;
+  } else {
+    lp = BI_REAL(1.0/0.0);
+  }
+  [% ELSE %]
   lp = BI_REAL(1.0/0.0);
+  [% END %]
 
   x.template fetch<target_type>(s, p, ix) = xy;
 }
