@@ -24,10 +24,12 @@ use strict;
 
 use Carp::Assert;
 use Bi::Model::Action;
+use Bi::Model::Target;
 use Bi::Model::Block;
 use Bi::Model::Const;
 use Bi::Model::Inline;
 use Bi::Model::Dim;
+use Bi::Model::DimAlias;
 use Bi::Model::State;
 use Bi::Model::StateAux;
 use Bi::Model::Noise;

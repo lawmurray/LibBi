@@ -41,8 +41,7 @@ Unique numerical id of the action.
 
 =item I<target>
 
-Target to which the action applies, as L<Bi::Expression::VarIdentifier>
-object.
+Target to which the action applies, as L<Bi::Model::Target> object.
 
 =item I<op>
 
@@ -71,7 +70,7 @@ sub new {
     my $expr = shift;
 
     # pre-conditions
-    assert(!defined($target) || $target->isa('Bi::Expression::VarIdentifier')) if DEBUG;
+    assert(!defined($target) || $target->isa('Bi::Model::Target')) if DEBUG;
     assert(defined $expr) if DEBUG;
     
     my $args;
@@ -91,7 +90,8 @@ sub new {
     my $self = new Bi::ArgHandler($args, $named_args);
     $self->{_id} = $id;
     $self->{_target} = $target;
-    $self->{_dims} = (defined $target) ? $target->get_dims : undef;
+    $self->{_left} = (defined $target) ? $target->gen_ref : undef;
+    $self->{_dims} = (defined $target) ? $target->get_var->get_dims : undef;
     $self->{_op} = $op;
     $self->{_name} = lc($name);
     $self->{_parent} = undef;
@@ -146,7 +146,7 @@ sub new_copy_action {
     my $to = shift;
     my $from = shift;
     
-    assert ($to->isa('Bi::Expression::VarIdentifier')) if DEBUG;
+    assert ($to->isa('Bi::Expression::Target')) if DEBUG;
     assert ($from->isa('Bi::Expression::VarIdentifier')) if DEBUG;
         
     return $class->new($id, $to, '<-', $from);
@@ -167,6 +167,7 @@ sub clone {
     my $clone = Bi::ArgHandler::clone($self);
     $clone->{_id} = $model->next_action_id;
     $clone->{_target} = $self->get_target->clone;
+    $clone->{_left} = $self->get_left->clone;
     $clone->{_dims} = [ @{$self->get_dims} ];
     $clone->{_op} = $self->get_op;
     $clone->{_name} = $self->get_name;
@@ -198,13 +199,22 @@ sub get_id {
 
 =item B<get_target>
 
-Get the target variable of the action, as a
-L<Bi::Expression::VarIdentifier> object.
+Get the target of the action, as a L<Bi::Model::Target> object.
 
 =cut
 sub get_target {
     my $self = shift;
     return $self->{_target};
+}
+
+=item B<get_left>
+
+Get the target of the action, as a L<Bi::Expression::VarIdentifier> object.
+
+=cut
+sub get_left {
+    my $self = shift;
+    return $self->{_left};
 }
 
 =item B<has_op>
@@ -534,9 +544,10 @@ sub set_target {
     my $self = shift;
     my $target = shift;
     
-    assert (!defined($target) || $target->isa('Bi::Expression::VarIdentifier')) if DEBUG;
+    assert (!defined($target) || $target->isa('Bi::Model::Target')) if DEBUG;
     
     $self->{_target} = $target;
+    $self->{_left} = (defined $target) ? $target->gen_ref : undef;
 }
 
 =item B<ensure_op>(I<op>)
@@ -618,10 +629,21 @@ sub accept {
 
     if (defined $self->{_target}) {
         $self->{_target} = $self->get_target->accept($visitor, @args);
+        $self->{_left} = (defined $self->get_target) ? $self->get_target->gen_ref : undef;
     }
     Bi::ArgHandler::accept($self, $visitor, @args);
 
-    return $visitor->visit($self, @args);
+    return $visitor->visit($self, @args);    
+}
+
+=item B<equals>(I<obj>)
+
+=cut
+sub equals {
+    my $self = shift;
+    my $obj = shift;
+    
+    return ref($obj) eq ref($self) && $self->get_id eq $obj->get_id;
 }
 
 1;

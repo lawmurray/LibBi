@@ -1,0 +1,47 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+/**
+ * Block: [% block.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
+};
+
+#include "bi/updater/DynamicUpdater.hpp"
+#include "bi/updater/DynamicSampler.hpp"
+#include "bi/updater/DynamicLogDensity.hpp"
+#include "bi/updater/DynamicMaxLogDensity.hpp"
+
+[% sig_block_dynamic_function('simulate') %] {
+  bi::DynamicUpdater<[% model_class_name %],action_typelist>::update(t1, t2, s);
+}
+
+[% sig_block_dynamic_function('sample') %] {
+  bi::DynamicSampler<[% model_class_name %],action_typelist>::samples(rng, t1, t2, s);
+}
+
+[% sig_block_dynamic_function('logdensity') %] {
+  bi::DynamicLogDensity<[% model_class_name %],action_typelist>::logDensities(t1, t2, s, lp);
+}
+
+[% sig_block_dynamic_function('maxlogdensity') %] {
+  bi::DynamicMaxLogDensity<[% model_class_name %],action_typelist>::maxLogDensities(t1, t2, s, lp);
+}
+
+[%-PROCESS block/misc/footer.hpp.tt-%]

@@ -13,7 +13,7 @@
 [%-
 A = block.get_action.get_named_arg('A');
 x = block.get_action.get_named_arg('x');
-target = block.get_action.get_target;
+target = block.get_action.get_left;
 %]
 
 /**

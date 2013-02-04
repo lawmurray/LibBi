@@ -474,7 +474,9 @@ sub equals {
         foreach $key (keys %{$self->get_named_args}) {
             $equals = $equals && $obj->is_named_arg($key) && $self->get_named_arg($key)->equals($obj->get_named_arg($key));
         }
-    } 
+    }
+    
+    return $equals;
 }
 
 =back

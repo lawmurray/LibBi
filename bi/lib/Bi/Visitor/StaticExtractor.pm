@@ -83,7 +83,7 @@ sub visit {
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
         $is_static = $node->get_inline->get_expr->is_static;
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-        my @statics = splice(@$statics, -$node->num_offsets, $node->num_offsets);
+        my @statics = splice(@$statics, -$node->num_indexes, $node->num_indexes);
         $is_static = reduce { $a && $b } $node->is_static, @statics;
         $num_statics = reduce { $a + $b } 0, @statics;
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {

@@ -9,7 +9,7 @@
   /**
    * Target type.
    */
-  typedef Var[% action.get_target.get_var.get_name %] target_type;
+  typedef Var[% action.get_left.get_var.get_name %] target_type;
 
   /**
    * Is this a matrix action?

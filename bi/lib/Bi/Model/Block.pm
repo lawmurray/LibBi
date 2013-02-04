@@ -379,7 +379,7 @@ sub get_vars {
     my $vars = [];
     
     foreach $action (@{$self->get_actions}) {
-      Bi::Utility::push_unique($vars, $action->get_target);
+      Bi::Utility::push_unique($vars, $action->get_left);
       Bi::Utility::push_unique($vars, $action->get_vars);
     }
     return $vars;
@@ -556,7 +556,7 @@ sub add_extended_actions {
     
     foreach my $action (@$actions) {
         # search for index that corresponds to the target of this action
-        my $j = find($vars, $action->get_target->get_var);
+        my $j = find($vars, $action->get_left->get_var);
         assert ($j >= 0);
 
         $J_new->set($j, $j, new Bi::Expression::Literal(0));
@@ -583,8 +583,8 @@ sub add_extended_actions {
             
             my $id = $model->next_action_id;
             my $var = $model->get_std_var($vars->[$j], $vars->[$j]);
-            my @offsets = map { $_->clone } (@{$action->get_target->get_offsets}, @{$action->get_target->get_offsets});
-            my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+            my @aliases = map { $_->clone } (@{$action->get_target->get_aliases}, @{$action->get_target->get_aliases});
+            my $target = new Bi::Model::Target($var, \@aliases);
             my $action = new Bi::Model::Action($id, $target, '<-', $std);
                 
             $self->push_action($action);
@@ -612,13 +612,13 @@ sub add_extended_actions {
                 
                 	if (defined $J_commit->get($l, $i)) {
                         my $arg = $J_commit->get($l, $i);
-                        my $offsets1 = [];
-                        my $offsets2 =  $ref->get_offsets;
-                        if (@$offsets2) {
-                           $offsets1 = $vars->[$l]->gen_offsets;
+                        my $indexes1 = [];
+                        my $indexes2 =  $ref->get_indexes;
+                        if (@$indexes2) {
+                           $indexes1 = $vars->[$l]->gen_indexes;
                 	    }
-		                my @offsets = map { $_->clone } (@{$offsets1}, @{$offsets2});
-		                $arg->set_offsets(\@offsets);
+		                my @indexes = map { $_->clone } (@{$indexes1}, @{$indexes2});
+		                $arg->set_indexes(\@indexes);
 
 						if (!defined $expr) {
 							$expr = $d->clone*$arg;
@@ -631,13 +631,13 @@ sub add_extended_actions {
             if (defined $expr) {
             	my $id = $model->next_action_id;
 		        my $var = $model->get_jacobian_var($vars->[$l], $vars->[$j]);
-		        my $offsets1 = [];
-		        my $offsets2 = $action->get_target->get_offsets;
-		        if (@$offsets2) {
-		            $offsets1 = $vars->[$l]->gen_offsets;
+		        my $aliases1 = [];
+		        my $aliases2 = $action->get_target->get_aliases;
+		        if (@$aliases2) {
+		            $aliases1 = $vars->[$l]->gen_aliases;
 		        }
-		        my @offsets = map { $_->clone } (@$offsets1, @$offsets2);
-		        my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+		        my @aliases = map { $_->clone } (@$aliases1, @$aliases2);
+		        my $target = new Bi::Model::Target($var, \@aliases);
 	            my $action = new Bi::Model::Action($id, $target, '<-', $expr);
 	            $self->push_action($action);
             }
@@ -680,6 +680,16 @@ sub accept {
     @{$self->{_actions}} = map { $_->accept($visitor, @args) } @{$self->get_actions};
     
     return $visitor->visit($self, @args);
+}
+
+=item B<equals>(I<obj>)
+
+=cut
+sub equals {
+    my $self = shift;
+    my $obj = shift;
+    
+    return ref($obj) eq ref($self) && $self->get_id eq $obj->get_id;
 }
 
 1;

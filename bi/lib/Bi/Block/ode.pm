@@ -4,13 +4,15 @@ ode - block for control of ordinary differential equation actions.
 
 =head1 SYNOPSIS
 
-    do ode(alg = '...', h = 1.0, atoler = 1.0e-3, rtoler = 1.0e-3) {
-      X1 <- ode(...)
-      X2 <- ode(...)
+    ode(alg = 'rk43', h = 1.0, atoler = 1.0e-3, rtoler = 1.0e-3) {
+      x1 <- ode(...)
+      x2 <- ode(...)
       ...
     }
 
-    do ode(I<alg>, I<h>, I<atoler>, I<rtoler>) {
+    ode('rk43', 1.0, 1.0e-3, 1.0e-3) {
+      x1 <- ode(...)
+      x2 <- ode(...)
       ...
     }
 
@@ -125,7 +127,7 @@ sub add_extended_actions {
     my %ids;
     foreach my $action (@$actions) {
         my ($ds, $refs) = $action->jacobian;
-    	my $i = find($vars, $action->get_target->get_var);
+    	my $i = find($vars, $action->get_left->get_var);
     	$ids{$i} = 1;
     	foreach my $ref (@$refs) {
     		$i = find($vars, $ref->get_var);
@@ -144,7 +146,7 @@ sub add_extended_actions {
     
     foreach my $action (@$actions) {
         # search for index that corresponds to the target of this action
-        my $j = find($vars, $action->get_target->get_var);
+        my $j = find($vars, $action->get_left->get_var);
         assert ($j >= 0) if DEBUG;
         
         # mean
@@ -171,8 +173,8 @@ sub add_extended_actions {
                 
                 	if (defined $J_commit->get($l, $i)) {
                         my $arg = $J_commit->get($l, $i)->clone;
-		                my @offsets = map { $_->clone } (@{$vars->[$l]->gen_offsets}, @{$ref->get_offsets});
-                        $arg->set_offsets(\@offsets);
+		                my @indexes = map { $_->clone } (@{$vars->[$l]->gen_indexes}, @{$ref->get_indexes});
+                        $arg->set_indexes(\@indexes);
 
 						if (!defined $expr) {
 							$expr = $d->clone*$arg;
@@ -185,8 +187,8 @@ sub add_extended_actions {
             if (defined $expr) {
             	my $id = $model->next_action_id;
 		        my $var = $model->get_jacobian_var($vars->[$l], $vars->[$j]);
-		        my @offsets = map { $_->clone } (@{$vars->[$l]->gen_offsets}, @{$action->get_target->get_offsets});
-		        my $target = new Bi::Expression::VarIdentifier($var, \@offsets);
+		        my @aliases = map { $_->clone } (@{$vars->[$l]->gen_aliases}, @{$action->get_target->get_aliases});
+		        my $target = new Bi::Model::Target($var, \@aliases);
 	            my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $expr ]));
 	            $self->push_action($action);
             }

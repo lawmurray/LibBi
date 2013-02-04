@@ -6,5 +6,5 @@
 ## $Date$
 -%]
 [%-FOREACH ref IN action.get_vars %]
-block[% block.get_id %]_[% ref.to_dot %] -> block[% block.get_id %]_[% action.get_target.to_dot %];
+block[% block.get_id %]_[% ref.to_dot %] -> block[% block.get_id %]_[% action.get_left.to_dot %];
 [%-END-%]

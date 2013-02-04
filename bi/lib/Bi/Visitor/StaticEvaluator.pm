@@ -64,7 +64,7 @@ sub evaluate {
     foreach my $extract (@$extracts) {
         $var = new Bi::Model::ParamAux($model->tmp_var, $extract->get_dims);
         $model->add_var($var);
-        $target = new Bi::Expression::VarIdentifier($var);
+        $target = new Bi::Model::Target($var);
         
         $action = new Bi::Model::Action($model->next_action_id, $target, '<-', $extract->clone);
         push(@$actions, $action);

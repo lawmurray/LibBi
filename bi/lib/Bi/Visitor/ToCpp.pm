@@ -76,28 +76,26 @@ sub visit {
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
         $str = $node->get_inline->get_name . '_';
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-        $str = $node->get_var->get_name;
-        if ($node->num_offsets) {
-            my @offsets = splice(@$args, -$node->num_offsets, $node->num_offsets);
-            $str .= '_' . join('_', @offsets);
+        $str = $node->get_var->get_name . '_';
+        if ($node->num_indexes) {
+            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
+            $str .= join('_', @indexes);
         }
         $str .= '_';
-    } elsif ($node->isa('Bi::Expression::DimAlias')) {
-        $str = $node->get_alias;
+    } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
+        $str = $node->get_alias->get_name . '_';
     } elsif ($node->isa('Bi::Expression::Literal')) {
         $str = 'BI_REAL(' . $node->get_value . ')'; 
     } elsif ($node->isa('Bi::Expression::IntegerLiteral')) {
         $str = $node->get_value;
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
         $str = '"' . $node->get_value . '"';
-    } elsif ($node->isa('Bi::Expression::Offset')) {
-        $str = $node->get_alias;
-        my $offset = $node->get_offset;
-        if ($offset > 0) {
-            $str .= "p$offset";
-        } elsif ($offset < 0) {
-            $str .= 'm' . abs($offset);
-        }
+    } elsif ($node->isa('Bi::Expression::Index')) {
+    	my @exprs = pop(@$args);
+        $str = _encode16($exprs[0]);
+    } elsif ($node->isa('Bi::Expression::Range')) {
+        my @exprs = splice(@$args, -2);
+        $str = "($exprs[0]:$exprs[1])";
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
         $str = '(' . $exprs[0] . ' ?' . $exprs[1] . ' : ' . $exprs[2] . ')';
@@ -110,6 +108,17 @@ sub visit {
     
     push(@$args, $str);
     return $node;
+}
+
+=item B<_encode16>(I<str>)
+
+Encode a string in base-16, lowercase, and return.
+
+=cut
+sub _encode16 {
+    my $str = shift;
+    
+    return join('', map { sprintf("%x", ord($_)) } split(//, $str));
 }
 
 1;

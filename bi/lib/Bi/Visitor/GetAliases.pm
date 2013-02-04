@@ -24,6 +24,8 @@ use base 'Bi::Visitor';
 use warnings;
 use strict;
 
+use Bi::Utility qw(push_unique);
+
 =item B<evaluate>(I<expr>)
 
 Evaluate.
@@ -35,7 +37,7 @@ Evaluate.
 =back
 
 Returns an array ref containing all the unique dimension aliases in the
-expression, as strings.
+expression, as L<Bi::Expression::DimAliasIdentifier> objects.
 
 =cut
 sub evaluate {
@@ -61,10 +63,8 @@ sub visit {
     my $node = shift;
     my $aliases = shift;
     
-    if ($node->isa('Bi::Expression::Offset')) {
-        Bi::Utility::push_unique($aliases, $node->get_alias);
-    } elsif ($node->isa('Bi::Expression::DimAlias')) {
-        Bi::Utility::push_unique($aliases, $node->get_alias);
+    if ($node->isa('Bi::Expression::DimAliasIdentifier')) {
+        push_unique($aliases, $node);
     }
     
     return $node;

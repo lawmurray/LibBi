@@ -98,6 +98,7 @@ sub process_tt {
 	
     $contents =~ s/([{}])/\\$1/g;
     $contents =~ s/\.\.\./\\(\\ldots\\)/g;
+    $contents =~ s/^    //gm;
     
     return "\\begin\{bicode\}$contents\\end\{bicode\}";
 }

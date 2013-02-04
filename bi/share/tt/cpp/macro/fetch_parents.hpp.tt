@@ -17,9 +17,9 @@
   /* variables */
   [% FOREACH ref IN expr.get_vars %]
   [% IF action.is_matrix %]
-  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p));
-  [% ELSIF ref.get_offsets.size > 0 %]
-  Coord[% ref.get_var.get_name %] cox[% loop.index %]([% FOREACH offset IN ref.get_offsets %][% offset.to_ascii %][% ',' UNLESS loop.last %][% END %]);
+  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_expr.get_name %]>(s, p));
+  [% ELSIF ref.get_indexes.size > 0 %]
+  Coord[% ref.get_var.get_name %] cox[% loop.index %]([% FOREACH index IN ref.get_indexes %][% index.get_expr.to_cpp %][% ',' UNLESS loop.last %][% END %]);
   BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p, cox[% loop.index %].index()));
   [% ELSIF ref.get_var.num_dims > 0 %]
   Coord[% ref.get_var.get_name %] cox[% loop.index %](cox.index());

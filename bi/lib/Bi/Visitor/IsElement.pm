@@ -65,7 +65,7 @@ sub visit {
     my $args = shift;
     my $is = 0;
     
-    if ($node->isa('Bi::Expression::Offset')) {
+    if ($node->isa('Bi::Expression::Index')) {
         $is = 1;
     } else {
         my $num_args = 0;
@@ -78,7 +78,7 @@ sub visit {
         } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
             $num_args = 1;
         } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-            $num_args = $node->num_offsets;
+            $num_args = $node->num_indexes;
         }
 
         if ($num_args) {

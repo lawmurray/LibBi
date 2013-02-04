@@ -1,10 +1,10 @@
 =head1 NAME
 
-standard_wiener_ - optimisation block for standard L<wiener> actions.
+wiener_ - block for L<wiener> actions.
 
 =cut
 
-package Bi::Block::standard_wiener_;
+package Bi::Block::wiener_;
 
 use base 'Bi::Model::Block';
 use warnings;
@@ -18,12 +18,12 @@ sub validate {
     $self->process_args($BLOCK_ARGS);
     
     if ($self->num_blocks > 0) {
-        die("a 'standard_wiener_' block may not contain sub-blocks\n");
+        die("a 'wiener_' block may not contain sub-blocks\n");
     }
 
     foreach my $action (@{$self->get_actions}) {
         if ($action->get_name ne 'wiener') {
-            die("a 'standard_wiener_' block may only contain 'wiener' actions\n");
+            die("a 'wiener_' block may only contain 'wiener' actions\n");
         }
     }
 }

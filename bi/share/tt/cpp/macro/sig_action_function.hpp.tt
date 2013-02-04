@@ -31,8 +31,11 @@
   template <class R1, class T1, bi::Location L, class CX, class PX, class OX>
   void [% class_name %]::samples(R1& rng, const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x)
   [% ELSIF function == 'logdensity' %]
-  template <class T1, bi::Location L, class CX, class PX, class OX, class T1>
-  void [% class_name %]::logDensities(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x, T1& lp)
+  template <class T1, bi::Location L, class CX, class PX, class OX, class T2>
+  void [% class_name %]::logDensities(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x, T2& lp)
+  [% ELSIF function == 'maxlogdensity' %]
+  template <class T1, bi::Location L, class CX, class PX, class OX, class T2>
+  void [% class_name %]::maxLogDensities(const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const int ix, const CX& cox, const PX& pax, OX& x, T2& lp)
   [% ELSE %]
   template <class T1, bi::Location L, class CX, class PX, class T2>
   void [% class_name %]::[% function %](const T1 t1, const T1 t2, bi::State<[% model_class_name %],L>& s, const int p, const CX& cox, const PX& pax, T2& x)

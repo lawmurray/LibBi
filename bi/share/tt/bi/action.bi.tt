@@ -8,6 +8,6 @@ PROCESS macro/arg_list.bi.tt
 -%]
 
 [%-action.get_target.get_var.get_name-%]
-[%-IF action.get_target.num_offsets-%]
-[[% FOREACH offset IN action.get_target.get_offsets %][% offset.get_alias %][% IF !loop.last %],[% END %][% END %]]
+[%-IF action.get_target.num_aliases-%]
+[[% FOREACH alias IN action.get_target.get_aliases %][% alias.get_name %][% IF alias.has_start %]=[% alias.get_start %][% IF alias.has_end %]:[% alias.get_end %][% END %][% END %][% IF !loop.last %],[% END %][% END %]]
 [%-END-%] [% action.get_op %] [% IF action.get_name == 'eval' %][% action.get_named_arg('expr').to_bi %][% ELSE %][% action.get_name %][% arg_list(action) %][% END %] // Action[% action.get_id %]

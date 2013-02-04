@@ -29,16 +29,12 @@
  *
  * @todo * (P) Documentation on producing NetCDF files from e.g. CSV files.
  *
- * @todo Iterated filtering.
- *
  * @todo Fixed lag smoother.
  *
  * @todo Collapsed state-space model.
  *
  * @todo Log and logit transforms of parameters (e.g. --transform-*).
  * 
- * @todo Clock resampling.
- *
  * @todo Evidence estimation using PMCMC.
  *
  * @todo Univariate proposals.
@@ -59,14 +55,7 @@
  *
  * @todo Use new NetCDF C++ interface.
  *
- * @todo Automatically create directories for --output-file option.
- *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
- *
- * @todo Give error if non-existent config file is given on command line.
- *
- * @todo Fix issue where hidden directory needs to be deleted if ./autogen.sh
- * or ./configure fails (or user hits Ctrl-C during one of these processes).
  *
  * @todo Need a locking system to ensure exclusive use of build directories.
  * Having a problem on cluster where multiple jobs are trying to build
@@ -76,19 +65,15 @@
  * If another process wants to use it, rather than waiting, it could simply
  * create a new directory with another name and work from there.
  *
- * @todo Allowing arbitrary indexing expressions on the right, not just
- * expressions of type k, k + n and k - n.
- *
  * @todo Tidy up output file variable names, perhaps precede internal
  * variables with the program or schema name, e.g. simulate.time,
  * filter.logweight etc.
- *
- * @todo bi --help
  *
  * @todo bi smooth
  *
  * @todo AVX support (should be very similar to SSE support, but with slightly
  * different intrinsics).
  *
- * @todo Replace BI_REAL(1.0/0.0) with BI_INF constant.
+ * @todo Replace BI_REAL(1.0/0.0) with BI_INF constant. Introduce named
+ * literals such as true, false, pi, nan, inf into language.
  */

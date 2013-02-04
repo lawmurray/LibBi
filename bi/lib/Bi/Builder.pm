@@ -153,7 +153,8 @@ sub get_dir {
 =item B<_autogen>
 
 Run the C<autogen.sh> script if one or more of it, C<configure.ac> or
-C<Makefile.am> has been modified since the last run.
+C<Makefile.am> has been modified since the last run, or if the C<configure>
+script does not exist (meaning its last execution failed).
 
 No return value.
 
@@ -165,7 +166,9 @@ sub _autogen {
     if ($self->{_force} ||
         $self->_is_modified(File::Spec->catfile($builddir, 'autogen.sh')) ||
         $self->_is_modified(File::Spec->catfile($builddir, 'configure.ac')) ||
-        $self->_is_modified(File::Spec->catfile($builddir, 'Makefile.am'))) {          
+        $self->_is_modified(File::Spec->catfile($builddir, 'Makefile.am')) ||
+        !-e File::Spec->catfile($builddir, 'configure') ||
+        !-e File::Spec->catfile($builddir, 'install-sh')) {
         my $cwd = getcwd();
         
         my $options = '';
@@ -188,7 +191,8 @@ sub _autogen {
 
 =item B<_configure>
 
-Run the C<configure> script if it has been modified since the last run.
+Run the C<configure> script if it has been modified since the last run, or
+if C<Makefile> does not exist (meaning its last execution failed).
 
 No return value.
 
@@ -232,7 +236,8 @@ sub _configure {
     }
 
     if ($self->{_force} ||
-        $self->_is_modified(File::Spec->catfile($builddir, 'configure'))) {
+        $self->_is_modified(File::Spec->catfile($builddir, 'configure')) ||
+        !-e File::Spec->catfile($builddir, 'Makefile')) {
         
         my $cmd = "./configure $options CXXFLAGS='$cxxflags' LINKFLAGS='$linkflags'";
         if ($self->{_verbose}) {

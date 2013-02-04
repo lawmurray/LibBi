@@ -28,7 +28,7 @@ sub validate {
     
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('~');
-    $self->set_parent('standard_wiener_');
+    $self->set_parent('wiener_');
 }
 
 sub mean {

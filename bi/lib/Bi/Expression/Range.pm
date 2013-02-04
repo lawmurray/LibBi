@@ -32,11 +32,11 @@ Constructor.
 
 =item I<start>
 
-Starting index.
+L<Bi::Expression> giving starting index.
 
 =item I<end>
 
-Ending index.
+L<Bi::Expression> giving ending index.
 
 =back
 
@@ -101,6 +101,9 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
+    $self->{_start} = $self->get_start->accept($visitor, @args);
+    $self->{_end} = $self->get_end->accept($visitor, @args);
+    
     return $visitor->visit($self, @args);
 }
 
@@ -115,8 +118,8 @@ sub equals {
     
     return (
         ref($obj) eq ref($self) &&
-        $self->get_start == $obj->get_start &&
-        $self->get_end == $obj->get_end);
+        $self->get_start->equals($obj->get_start) &&
+        $self->get_end->equals($obj->get_end));
 }
 
 1;

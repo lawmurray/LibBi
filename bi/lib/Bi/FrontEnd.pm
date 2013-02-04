@@ -26,8 +26,7 @@ supported at this level, additional arguments depend on the client program:
 
 =over 4
 
-=item C<--help> Display general help, or help for client program (if client
-program is specified).
+=item C<--help> Display general help.
 
 =item C<--verbose> Enable verbose reporting.
 
@@ -122,10 +121,6 @@ sub do {
            $self->help;
         } elsif (!defined($cmd) || $cmd eq '') {
             die("no command given\n");
-        } elsif ($cmd eq 'clean') {
-            $self->clean;
-        } elsif ($cmd eq 'draw') {
-            $self->draw;
         } else {
             $self->client;
         }
@@ -149,31 +144,6 @@ sub help {
     } else {
         # general help
         print "General help\n";
-    }
-}
-
-=item B<draw>
-
-Draw graph of model.
-
-=cut
-sub draw {
-    my $self = shift;
-    
-    if (!defined $self->{_model_file}) {
-        die("no model specified\n");
-    } else {
-        my $fh = new IO::File;
-        $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
-        my $parser = new Bi::Parser();
-        my $model = $parser->parse($fh);
-        $fh->close;    
-    
-        my $optimiser = new Bi::Optimiser($model);
-        $optimiser->optimise;
-
-        my $dot = new Bi::Gen::Dot;
-        $dot->gen($model);
     }
 }
 

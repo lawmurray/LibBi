@@ -1,10 +1,10 @@
 =head1 NAME
 
-Bi::Expression::Offset - dimension offset in a variable reference.
+Bi::Expression::Index - dimension index in a variable reference.
 
 =head1 SYNOPSIS
 
-    use Bi::Expression::Offset;
+    use Bi::Expression::Index;
 
 =head1 INHERITS
 
@@ -16,7 +16,7 @@ L<Bi::Expression>
 
 =cut
 
-package Bi::Expression::Offset;
+package Bi::Expression::Index;
 
 use base 'Bi::Expression';
 use warnings;
@@ -24,19 +24,15 @@ use strict;
 
 use Carp::Assert;
 
-=item B<new>(I<alias>, I<offset>)
+=item B<new>(I<expr>)
 
 Constructor.
 
 =over 4
 
-=item I<alias>
+=item I<expr>
 
-Alias of the dimension.
-
-=item I<offset>
-
-Offset along the dimension, as an integer.
+Index expression as L<Bi::Expression> object.
 
 =back
 
@@ -45,12 +41,10 @@ Returns the new object.
 =cut
 sub new {
     my $class = shift;
-    my $alias = shift;
-    my $offset = shift;
+    my $expr = shift;
     
     my $self = {
-        _alias => $alias,
-        _offset => $offset,
+        _expr => $expr
     };
     bless $self, $class;
 
@@ -71,24 +65,14 @@ sub clone {
     return $clone; 
 }
 
-=item B<get_alias>
+=item B<get_expr>
 
-Get the alias, as a string.
-
-=cut
-sub get_alias {
-    my $self = shift;
-    return $self->{_alias};
-}
-
-=item B<get_offset>
-
-Get the offset.
+Get the index expression.
 
 =cut
-sub get_offset {
+sub get_expr {
     my $self = shift;
-    return $self->{_offset};
+    return $self->{_expr};
 }
 
 =item B<accept>(I<visitor>, ...)
@@ -100,6 +84,8 @@ sub accept {
     my $self = shift;
     my $visitor = shift;
     my @args = @_;
+    
+    $self->{_expr} = $self->get_expr->accept($visitor, @args);
     
     return $visitor->visit($self, @args);
 }
@@ -115,8 +101,7 @@ sub equals {
     
     return (
         ref($obj) eq ref($self) &&
-        $self->get_alias eq $obj->get_alias &&
-        $self->get_offset == $obj->get_offset);
+        $self->get_expr->equals($obj->get_expr));
 }
 
 1;

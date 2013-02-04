@@ -31,9 +31,6 @@ The following options are supported:
 the model specification file.
 
 =back
-=head1 METHODS
-
-=over 4
 
 =cut
 
@@ -44,6 +41,12 @@ use warnings;
 use strict;
 
 use Bi::Gen::Bi;
+
+=head1 METHODS
+
+=over 4
+
+=cut
 
 sub init {
     my $self = shift;

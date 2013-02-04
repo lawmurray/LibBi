@@ -23,7 +23,9 @@ public:
 
 #include "bi/math/pi.hpp"
 
-[% std_action_static_function('simulate') %]
+[% sig_action_dynamic_function('simulate') %] {
+  x.template fetch<target_type>(s, p, ix) = pax.template fetch_alt<target_type>(s, p, ix);
+}
 
 [% sig_action_dynamic_function('sample') %] {
   real mu, sigma, u;

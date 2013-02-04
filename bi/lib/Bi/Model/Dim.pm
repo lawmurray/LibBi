@@ -154,6 +154,16 @@ sub accept {
     return $visitor->visit($self, @args);
 }
 
+=item B<equals>(I<obj>)
+
+=cut
+sub equals {
+    my $self = shift;
+    my $obj = shift;
+    
+    return ref($obj) eq ref($self) && $self->get_name eq $obj->get_name;
+}
+
 =back
 
 =head1 SEE ALSO

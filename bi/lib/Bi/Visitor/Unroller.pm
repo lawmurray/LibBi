@@ -63,34 +63,34 @@ sub visit {
     my $dims;
     my $class;
     my $tmp;
+    my $target;
     my $ident;
     my $action;
     my $arg;
     my $i;
 
     if ($node->isa('Bi::Expression::Function')) {        
-        if (!$node->is_math) {
+        if (!$node->is_math) {            
             # create new action from subexpression
             $action = new Bi::Model::Action($model->next_action_id,
                     undef, undef, $node);
-                    
+
+            if ($node->is_element) {
+                die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
+            }
             if (!$action->can_nest) {
-                die("action '" . $action->get_name . "' cannot be nested\n");
+                die("action '" . $action->get_name . "' cannot be nested, resolve with do..then clause\n");
             }
 
             # insert intermediate variable
             $tmp = $self->_create_temp_var($model, $node, $node->get_dims);
 
             # create reference to this new variable
-            if ($node->is_element) {
-                my @offsets = map { new Bi::Expression::Offset($_, 0) } @{$node->get_aliases};
-                $ident = new Bi::Expression::VarIdentifier($tmp, \@offsets);
-            } else {
-                $ident = new Bi::Expression::VarIdentifier($tmp);
-            }
+            $target = new Bi::Model::Target($tmp);
+            $ident = new Bi::Expression::VarIdentifier($tmp);
             
             # and unroll
-            $action->set_target($ident);
+            $action->set_target($target);
             $result = $ident;
             push(@$actions, $action);
         }
@@ -110,48 +110,48 @@ sub visit {
             # write arguments to intermediate variables first
             for ($i = 0; $i > $node->num_args; ++$i) {
                 $arg = $node->get_args->[$i];
-                if (!$arg->is_const && !$arg->isa('Bi::Expression::VarIdentifier')) {
+                if (!$arg->is_const && !$arg->is_basic) {                    
                     # create new action from subexpression
                     $action = new Bi::Model::Action($model->next_action_id,
                             undef, undef, $arg);
+
+                    if ($arg->is_element) {
+                        die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
+                    }
                     
                     # insert intermediate variable
-                    $tmp = $self->_create_temp_var($model, $arg, $action->get_dims);
+                    $tmp = $self->_create_temp_var($model, $arg, $action->get_var->get_dims);
                     
                     # create reference to this new variable
-                    if ($arg->is_element) {
-                        my @offsets = map { new Bi::Expression::Offset($_, 0) } @{$arg->get_aliases};
-                        $ident = new Bi::Expression::VarIdentifier($tmp, \@offsets);
-                    } else {
-                        $ident = new Bi::Expression::VarIdentifier($tmp);
-                    }
+                    $target = new Bi::Model::Target($tmp);
+                    $ident = new Bi::Expression::VarIdentifier($tmp);
                 
                     # and unroll
-                    $action->set_target($ident);
+                    $action->set_target($target);
                     $node->get_args->[$i] = $ident;
                     push(@$actions, $action);
                 }
             }
             foreach $name (keys %{$node->get_named_args}) {
                 $arg = $node->get_named_args->{$name};
-                if (!$arg->is_const && !$arg->isa('Bi::Expression::VarIdentifier')) {
+                if (!$arg->is_const && !$arg->is_basic) {
                     # create new action from subexpression
                     $action = new Bi::Model::Action($model->next_action_id,
                             undef, undef, $arg);
+
+                    if ($arg->is_element) {
+                        die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
+                    }
                     
                     # insert intermediate variable
-                    $tmp = $self->_create_temp_var($model, $arg, $action->get_dims);
+                    $tmp = $self->_create_temp_var($model, $arg, $action->get_var->get_dims);
                     
                     # create reference to this new variable
-                    if ($arg->is_element) {
-                        my @offsets = map { new Bi::Expression::Offset($_, 0) } @{$arg->get_aliases};
-                        $ident = new Bi::Expression::VarIdentifier($tmp, \@offsets);
-                    } else {
-                        $ident = new Bi::Expression::VarIdentifier($tmp);
-                    }
+                    $target = new Bi::Model::Target($tmp);
+                    $ident = new Bi::Expression::VarIdentifier($tmp);
                 
                     # and unroll
-                    $action->set_target($ident);
+                    $action->set_target($target);
                     $node->get_named_args->{$name} = $ident;
                     push(@$actions, $action);
                 }

@@ -26,13 +26,13 @@ use Carp::Assert;
 
 use Bi::Expression::BinaryOperator;
 use Bi::Expression::ConstIdentifier;
-use Bi::Expression::DimAlias;
+use Bi::Expression::DimAliasIdentifier;
 use Bi::Expression::Function;
+use Bi::Expression::Index;
 use Bi::Expression::InlineIdentifier;
 use Bi::Expression::IntegerLiteral;
 use Bi::Expression::Literal;
 use Bi::Expression::Matrix;
-use Bi::Expression::Offset;
 use Bi::Expression::Range;
 use Bi::Expression::StringLiteral;
 use Bi::Expression::TernaryOperator;
@@ -48,6 +48,7 @@ use Bi::Visitor::GetAliases;
 use Bi::Visitor::EvalConst;
 use Bi::Visitor::IsElement;
 use Bi::Visitor::IsConst;
+use Bi::Visitor::IsBasic;
 use Bi::Visitor::ToSymbolic;
 use Bi::Visitor::Simplify;
 
@@ -300,13 +301,25 @@ sub num_aliases {
 
 =item B<get_aliases>
 
-Get all dimension aliases used in the expression, as strings.
+Get all dimension aliases used in the expression, as
+L<Bi::Expression::DimAliasIdentifier> objects.
 
 =cut
 sub get_aliases {
     my $self = shift;
     
     return Bi::Visitor::GetAliases->evaluate($self);
+}
+
+=item B<is_basic>
+
+Is this a basic expression?
+
+=cut
+sub is_basic {
+    my $self = shift;
+
+    return Bi::Visitor::IsBasic->evaluate($self);
 }
 
 =item B<d>(I<ident>)

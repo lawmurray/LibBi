@@ -31,7 +31,9 @@ Constructor.
 
 =over 4
 
-=item I<const> The constant referenced, as L<Bi::Model::Const> object.
+=item I<const>
+
+The constant referenced, as L<Bi::Model::Const> object.
 
 =back
 
@@ -105,7 +107,8 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    return (ref($obj) eq ref($self) && $self->get_const->get_name eq $obj->get_const->get_name); 
+    return (ref($obj) eq ref($self) &&
+        $self->get_const->equals($obj->get_const)); 
 }
 
 1;

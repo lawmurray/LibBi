@@ -229,26 +229,22 @@ sub visit {
         }
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         my $name = $node->get_var->get_name;
-        if ($node->num_offsets) {
-            my @offsets = splice(@$args, -$node->num_offsets, $node->num_offsets);
-            $name .= '_' . join('_', @offsets);
+        if ($node->num_indexes) {
+            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
+            $name .= '_' . join('_', @indexes);
         }
         $self->_substitute($name, $node);
         $symb = new Math::Symbolic::Variable($name);
-    } elsif ($node->isa('Bi::Expression::DimAlias')) {
-        $symb = $node->get_alias;
+    } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
+        $symb = $node->get_alias->get_name;
     } elsif ($node->isa('Bi::Expression::Literal')) {
         $symb = new Math::Symbolic::Constant($node->get_value);
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
-         die('cannot convert string literals to symbolic');
-    } elsif ($node->isa('Bi::Expression::Offset')) {
-        $symb = $node->get_alias;
-        my $offset = $node->get_offset;
-        if ($offset > 0) {
-            $symb .= "p$offset";
-        } elsif ($offset < 0) {
-            $symb .= 'm' . abs($offset);
-        }
+        die("cannot convert string literals to symbolic\n");
+    } elsif ($node->isa('Bi::Expression::Index')) {
+    	die("cannot convert element expressions to symbolic\n");
+    } elsif ($node->isa('Bi::Expression::Range')) {
+        die("cannot convert ranges to symbolic\n");
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         die('cannot convert ternary operator ?: to symbolic');
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {

@@ -886,20 +886,21 @@ bi \textit{command} \textit{options} ...
 \end{cmdcode}
 where \bitt{\textit{command}} is any one of the following:
 \begin{description}
-\item[\clientref{simulate}] to simulate trajectories
-  from a model,
-\item[\clientref{filter}] for filtering problems using the
+\item[\clientref{simulate}] for simulating trajectories from a model,
+\item[\clientref{filter}] for filtering problems using the model and
+  observations,
+\item[\clientref{smooth}] for smoothing problems using the model and
+  observations,
+\item[\clientref{optimise}] for parameter optimisation problems using the
   model and observations,
-\item[\clientref{smooth}] for smoothing problems using the
-  model and observations,
-\item[\clientref{optimise}] for parameter optimisation
-  problems using the model and observations,
-\item[\clientref{sample}] for parameter sampling
-  problems using the model and observations,
+\item[\clientref{sample}] for parameter sampling problems using the model and
+  observations,
+\item[\clientref{package}] for creating projects and building packages for
+  distribution,
+\item[\clientref{help}] for accessing online help,
 \item[\clientref{draw}] to visualise a model (useful for
   debugging and development),
-\item[\clientref{rewrite}] to process a model and
-  output a new model after applying internal transformations and optimisations
+\item[\clientref{rewrite}] to inspect the internal representation of a model
   (useful for debugging and development),
 \end{description}
 and available \bitt{\textit{options}} depend on the command.

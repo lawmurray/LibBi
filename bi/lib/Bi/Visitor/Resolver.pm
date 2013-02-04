@@ -95,17 +95,17 @@ sub visit {
     if ($node->isa('Bi::Model::Action')) {
         if ($node->is_inplace) {
             $sub_inplace_reads = [ map { $_->get_var } @{$node->get_vars} ];
-            $sub_inplace_writes = [ $node->get_target->get_var ];
+            $sub_inplace_writes = [ $node->get_left->get_var ];
         } else {
             $sub_reads = [ map { $_->get_var } @{$node->get_vars} ];
-            $sub_writes = [ $node->get_target->get_var ];
+            $sub_writes = [ $node->get_left->get_var ];
             
             # an action only conflicts with itself if it is not an inplace
             # action, and reads from the same variable to which it writes,
-            # with nonzero offsets along the dimensions of that variable...
+            # with nontrivial indexes along the dimensions of that variable
             foreach $ref (@{$node->get_vars}) {
-                if ($ref->get_var->equals($node->get_target->get_var) &&
-                        !$ref->no_offset) {
+                if ($ref->get_var->equals($node->get_left->get_var) &&
+                        !$ref->trivial_index) {
                     push_unique($sub_conflicts, $node->get_var);
                     last;
                 }
@@ -113,7 +113,7 @@ sub visit {
             
             # ...or if it marks itself as such
             if ($node->unroll_target) {
-                push_unique($sub_conflicts, $node->get_target->get_var);
+                push_unique($sub_conflicts, $node->get_left->get_var);
             }
         }
 

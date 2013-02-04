@@ -67,6 +67,7 @@ sub new {
     $lexer->skip('\s+'); # skips whitespace
     $self->YYData->{DATA} = $lexer;
     $self->{_model} = $model;
+    $self->{_target} = undef;
 
     bless $self, $class;
     return $self;
@@ -99,6 +100,28 @@ Get the model being constructed by the parser.
 sub get_model {
     my $self = shift;
     return $self->{_model};
+}
+
+=item B<get_target>
+
+Get the target of the last encountered action.
+
+=cut
+sub get_target {
+	my $self = shift;
+	return $self->{_target};
+}
+
+=item B<set_target>(I<target>)
+
+Set the target of the last encountered action.
+
+=cut
+sub set_target {
+	my $self = shift;
+	my $target = shift;
+	
+	$self->{_target} = $target;
 }
 
 =back
@@ -405,16 +428,51 @@ Handle action specification.
 =cut
 sub action {
     my $self = shift;
-    my $name = shift;
-    my $aliases = shift;
-    my $ranges = shift;
+    my $target = shift;
     my $op = shift;
     my $expr = shift;
        
+    # check dimension aliases on right, noting that C<identifier> assumes
+    # that a symbol is a dimension alias if it can't recognise it as anything
+    # else
+    #my $alias;
+    #my $right_alias;
+    #my $right_aliases = $expr->get_aliases;
+    #RIGHT_ALIAS: foreach $right_alias (@$right_aliases) {
+    #    foreach $alias (@$aliases) {
+    #        next RIGHT_ALIAS if ($alias eq $right_alias->get_alias);
+    #    }
+    #    $self->error("unrecognised name '" . $right_alias->get'");
+    #}
+    
+    # construct action
+    my $action;
+    eval {
+        $action = new Bi::Model::Action($self->get_model->next_action_id,
+            $target, $op, $expr);
+    };
+    if ($@) {
+        $self->_error($@);
+    }
+    
+    return $action;
+}
+
+=item B<target>(I<name>, I<aliases>)
+
+Handle target.
+
+=cut
+sub target {
+	my $self = shift;
+    my $name = shift;
+    my $aliases = shift;
+    
     if (!defined($aliases)) {
         $aliases = [];
     }
-       
+    
+    # check variable
     my $var;
     if ($self->get_model->is_var($name)) {
         $var = $self->get_model->get_var($name);
@@ -429,36 +487,11 @@ sub action {
         my $plural = ($num_dims == 1) ? '' : 's';
         $self->error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
     }
+
+    my $target = new Bi::Model::Target($var, $aliases);
+    $self->set_target($target);
     
-    # check dimension aliases on right, noting that C<identifier> assumes
-    # that a symbol is a dimension alias if it can't recognise it as anything
-    # else
-    my $alias;
-    my $right_alias;
-    my $right_aliases = $expr->get_aliases;
-    RIGHT_ALIAS: foreach $right_alias (@$right_aliases) {
-        foreach $alias (@$aliases) {
-            next RIGHT_ALIAS if ($alias eq $right_alias);
-        }
-        $self->error("unrecognised name '$right_alias'");
-    }
-    
-    my $offsets = [];
-    foreach $alias (@$aliases) {
-        push(@$offsets, Bi::Expression::Offset->new($alias, 0));
-    }
-    my $target = Bi::Expression::VarIdentifier->new($var, $offsets, $ranges);
-    
-    my $action;
-    eval {
-        $action = new Bi::Model::Action($self->get_model->next_action_id,
-            $target, $op, $expr);
-    };
-    if ($@) {
-        $self->_error($@);
-    }
-    
-    return $action;
+    return $target;	
 }
 
 =item B<spec>(I<name>, I<dims>, I<props>)
@@ -497,7 +530,7 @@ sub dim_arg {
     }
 }
 
-=item B<dim_alias>(I<name>)
+=item B<dim_alias>(I<name>, I<start>, I<end>)
 
 Handle action dimension alias.
 
@@ -505,6 +538,8 @@ Handle action dimension alias.
 sub dim_alias {
     my $self = shift;
     my $name = shift;
+    my $start = shift;
+    my $end = shift;
 
     if ($self->get_model->is_var($name)) {
         $self->error("variable name '$name' cannot be used as dimension alias");
@@ -514,7 +549,7 @@ sub dim_alias {
         $self->error("inline expression name '$name' cannot be used as dimension alias");
     }
     
-    return $name;
+    return new Bi::Model::DimAlias($name, $start, $end);
 }
 
 =item B<dim_range>(I<name>)
@@ -578,7 +613,7 @@ sub string_literal {
     return Bi::Expression::StringLiteral->new($value);
 }
 
-=item B<identifier>(I<name>, I<offsets>)
+=item B<identifier>(I<name>, I<indexes>)
 
 Handle reference to identifier.
 
@@ -586,27 +621,27 @@ Handle reference to identifier.
 sub identifier {
     my $self = shift;
     my $name = shift;
-    my $offsets = shift;
+    my $indexes = shift;
     my $ranges = shift;
     
     if ($self->get_model->is_const($name)) {
-        if (defined($offsets) || defined($ranges)) {
+        if (defined($indexes) || defined($ranges)) {
             $self->error("constant '$name' is scalar");
         }
         return new Bi::Expression::ConstIdentifier($self->get_model->get_const($name));
     } elsif ($self->get_model->is_inline($name)) {
-        if (defined($offsets) || defined($ranges)) {
+        if (defined($indexes) || defined($ranges)) {
             $self->error("inline expression '$name' is scalar");
         }
         return new Bi::Expression::InlineIdentifier($self->get_model->get_inline($name));
     } elsif ($self->get_model->is_var($name)) {
         my $var = $self->get_model->get_var($name);
-        if (defined($offsets) && @$offsets > 0 && @$offsets != $var->num_dims) {
+        if (defined($indexes) && @$indexes > 0 && @$indexes != $var->num_dims) {
             my $plural1 = ($var->num_dims == 1) ? '' : 's';
-            my $plural2 = (@$offsets == 1) ? '' : 's'; 
+            my $plural2 = (@$indexes == 1) ? '' : 's'; 
             $self->error("variable '" . $name . "' extends along " .
-                $var->num_dims . " dimension$plural1, but " . scalar(@$offsets) .
-                " offset$plural2 given");
+                $var->num_dims . " dimension$plural1, but " . scalar(@$indexes) .
+                " index$plural2 given");
         }
         if (defined($ranges) && @$ranges > 0 && @$ranges != $var->num_dims) {
             my $plural1 = ($var->num_dims == 1) ? '' : 's';
@@ -615,39 +650,45 @@ sub identifier {
                 $var->num_dims . " dimension$plural1, but " . scalar(@$ranges) .
                 " range$plural2 given");
         }
-        return new Bi::Expression::VarIdentifier($var, $offsets, $ranges);
-    } elsif (defined($offsets) || defined($ranges)) {
+        return new Bi::Expression::VarIdentifier($var, $indexes, $ranges);
+    } elsif (defined($indexes) || defined($ranges)) {
         $self->error("no variable, constant or inline expression named '$name'");
+    } elsif (defined $self->get_target) {
+    	my $target = $self->get_target;
+    	my $alias = $target->get_alias($name);
+    	if (defined $alias) {
+    		return new Bi::Expression::DimAliasIdentifier($alias);
+    	} else {
+            $self->error("no variable, constant, inline expression or dimension alias named '$name'");
+    	}
     } else {
-        # assume at this stage that it's a dimension alias, B<action> fixes
-        # later
-        return new Bi::Expression::DimAlias($name)
+        $self->error("no variable, constant, inline expression or dimension alias named '$name'");
     }
 }
 
-=item B<offset>(I<name>, I<sign>, I<value>)
+=item B<index>(I<index>)
 
 Handle dimension index.
 
 =cut
-sub offset {
+sub index {
     my $self = shift;
-    my $alias = shift;
-    my $sign = shift;
-    my $value = shift;
+    my $index = shift;
     
-    # defaults
-    $sign = 1 if (!defined($sign));
-    $value = 0 if (!defined($value));
-    $value = int($value);
-    
-    if ($sign eq '+') {
-        $sign = 1;
-    } elsif ($sign eq '-') {
-        $sign = -1;
-    }
+    return new Bi::Expression::Index($index);
+}
 
-    return Bi::Expression::Offset->new($alias, $sign*$value);
+=item B<range>(I<start>, I<end>)
+
+Handle dimension range.
+
+=cut
+sub range {
+    my $self = shift;
+    my $start = shift;
+    my $end = shift;
+    
+    return new Bi::Expression::Range($start, $end);
 }
 
 =item B<function>(I<name>, I<args>)
@@ -730,42 +771,6 @@ sub ternary_operator {
 =back
 
 =head2 Utility methods
-
-=over 4
-
-=item B<error>(I<msg>)
-
-Print I<msg> as error and terminate.
-
-=cut
-sub error {
-    my $self = shift;
-    my $msg = shift;
-
-    my $lexer = $self->YYData->{DATA};
-    my $line = $lexer->line;
-    my $text = $lexer->token->text;
-    
-    chomp $msg;
-    die("Error (line $line): $msg\n");
-}
-
-=item B<warn>(I<msg>)
-
-Print I<msg> as warning.
-
-=cut
-sub warning {
-    my $self = shift;
-    my $msg = shift;
-
-    my $lexer = $self->YYData->{DATA};
-    my $line = $lexer->line;
-    my $text = $lexer->token->text;
-    
-    chomp $msg;
-    warn("Warning (line $line): $msg\n");
-}
 
 =item B<append>(I<list>, I<value>)
 
@@ -852,19 +857,42 @@ sub _parse_error {
     die("Error (line $line): syntax error near '$text'\n");
 }
 
-=item B<_parse_error>
+=item B<_error>
 
 Other error routine.
 
 =cut
 sub _error {
-    my $self = shift;
+	my $self = shift;
     my $msg = shift;
     my $lexer = $self->YYData->{DATA};
     my $line = $lexer->line;
+            
+    # tidy up message
+    chomp $msg;
+    $msg =~ s/^Error: //;
+    $msg = "Error (line $line): $msg";
+
+	die("$msg\n");
+}
+
+=item B<_warn>(I<msg>)
+
+Warning routine.
+
+=cut
+sub _warn {
+	my $self = shift;
+    my $msg = shift;
+    my $lexer = $self->YYData->{DATA};
+    my $line = $lexer->line;
+            
+    # tidy up message
+    chomp $msg;
+    $msg =~ s/^Warning: //;
+    $msg = "Warning (line $line): $msg";
     
-    chomp($msg);
-    die("Error (line $line): $msg\n");
+    warn("$msg\n");
 }
 
 1;

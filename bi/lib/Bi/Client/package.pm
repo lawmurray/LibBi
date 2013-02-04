@@ -376,7 +376,7 @@ Reads in the C<MANIFEST> file and returns a list of all files included.
 sub _read_manifest {
     my $self = shift;
     
-    open(MANIFEST, 'MANIFEST') || die("Could not open MANIFEST.\n");
+    open(MANIFEST, 'MANIFEST') || die("could not open MANIFEST.\n");
     my @manifest = <MANIFEST>;
     close MANIFEST;
     chomp(@manifest);
@@ -396,7 +396,7 @@ sub _read_meta {
     my $key;
     my $lineno = 1;
 
-    open(META, 'META') || die("Could not open META.\n");
+    open(META, 'META') || die("could not open META.\n");
     while ($line = <META>) {
         if ($line =~ /^(\w+): *(.*?)$/) {
             $key = lc($1);

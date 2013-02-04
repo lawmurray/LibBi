@@ -151,10 +151,9 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    my $equals = 
-        ref($obj) eq ref($self) &&
+    return (ref($obj) eq ref($self) &&
         $self->get_name eq $obj->get_name &&
-        $self->Bi::ArgHandler::equals($obj);
+        $self->Bi::ArgHandler::equals($obj));
 }
 
 1;

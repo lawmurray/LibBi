@@ -113,7 +113,7 @@ inline [% class_name %]::[% class_name %]() {
   [%-END %]
 }
 
-[% IF var.get_dims.size > 1 %]
+[% IF var.get_dims.size > 0 %]
 inline [% class_name %]::[% class_name %]([% FOREACH dim IN var.get_dims %]const int [% dim.get_name %][% loop.index %][% ", " UNLESS loop.last %][% END %]) {
   [%-FOREACH dim IN var.get_dims %]
   [% IF dim.get_named_arg('boundary').eval_const == 'cyclic' %]
@@ -125,9 +125,11 @@ inline [% class_name %]::[% class_name %]([% FOREACH dim IN var.get_dims %]const
 }
 [% END %]
 
+[% IF var.get_dims.size > 1 %]
 inline [% class_name %]::[% class_name %](const int ix) {
   setIndex(ix);
 }
+[% END %]
 
 inline void [% class_name %]::inc() {
   [% FOREACH dim IN var.get_dims.reverse %]

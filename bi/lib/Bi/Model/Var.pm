@@ -200,7 +200,8 @@ sub get_size {
 
 =item B<gen_aliases>
 
-Generate list of aliases for this variable's dimensions.
+Generate list of aliases for this variable's dimensions, for use in 
+L<Bi::Model::Target> objects.
 
 =cut
 sub gen_aliases {
@@ -210,24 +211,26 @@ sub gen_aliases {
 	my $i;
 	for ($i = 0; $i < $self->num_dims; ++$i) {
 		my $dim = $self->get_dims->[$i];
-		my $alias = $dim->get_name . $i . '_';
+		my $name = $dim->get_name . $i . '_';
+		my $alias = new Bi::Model::DimAlias($name);
 		push(@aliases, $alias);
 	}
 	return \@aliases;
 }
 
-=item B<gen_offsets>
+=item B<gen_indexes>
 
-Generate list of offsets for this variable, for use in action targets.
+Generate list of indexes for this variable, for use in
+L<Bi::Expression::VarIdentifier> objects.
 
 =cut
-sub gen_offsets {
+sub gen_indexes {
 	my $self = shift;
 	
 	my $aliases = $self->gen_aliases;
-	my @offsets = map { new Bi::Expression::Offset($_, 0) } @$aliases;
+	my @indexes = map { new Bi::Expression::DimAliasIdentifier($_) } @$aliases;
 	
-	return \@offsets;
+	return \@indexes;
 }
 
 =item B<validate>

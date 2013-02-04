@@ -28,7 +28,7 @@ public:
    * @param[in,out] s State.
    * @param[in,out] lp Log-density.
    *
-   * The log density is <i>added to</i> @p lp.
+   * The maximum log density is <i>added to</i> @p lp.
    */
   template<class V1>
   static void maxLogDensities(State<B,ON_HOST>& s, V1 lp);
@@ -42,7 +42,7 @@ public:
    * @param p Trajectory index.
    * @param[in,out] lp Log-density.
    *
-   * The log density is <i>added to</i> @p lp.
+   * The maximum log density is <i>added to</i> @p lp.
    */
   template<class V1>
   static void maxLogDensities(State<B,ON_HOST>& s, const int p, V1 lp);
@@ -56,7 +56,7 @@ public:
    * @param[in,out] s State.
    * @param[in,out] lp Log-density.
    *
-   * The log density is <i>added to</i> @p lp.
+   * The maximum log density is <i>added to</i> @p lp.
    */
   template<class V1>
   static void maxLogDensities(State<B,ON_DEVICE>& s, V1 lp);
@@ -70,7 +70,7 @@ public:
    * @param p Trajectory index.
    * @param[in,out] lp Log-density.
    *
-   * The log density is <i>added to</i> @p lp.
+   * The maximum log density is <i>added to</i> @p lp.
    */
   template<class V1>
   static void maxLogDensities(State<B,ON_DEVICE>& s, const int p, V1 lp);

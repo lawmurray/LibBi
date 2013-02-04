@@ -1,10 +1,10 @@
 =head1 NAME
 
-Bi::Expression::DimAlias - dimension alias.
+Bi::Expression::DimAliasIdentifier - reference to dimension alias.
 
 =head1 SYNOPSIS
 
-    use Bi::Expression::DimAlias;
+    use Bi::Expression::DimAliasIdentifier;
 
 =head1 INHERITS
 
@@ -16,7 +16,7 @@ L<Bi::Expression>
 
 =cut
 
-package Bi::Expression::DimAlias;
+package Bi::Expression::DimAliasIdentifier;
 
 use base 'Bi::Expression';
 use warnings;
@@ -32,7 +32,7 @@ Constructor.
 
 =item I<alias>
 
-Alias of the dimension.
+The dimension alias referenced, as a L<Bi::Model::DimAlias> object.
 
 =back
 
@@ -42,6 +42,8 @@ Returns the new object.
 sub new {
     my $class = shift;
     my $alias = shift;
+    
+    assert ($alias->isa('Bi::Model::DimAlias')) if DEBUG;
     
     my $self = {
         _alias => $alias
@@ -67,7 +69,7 @@ sub clone {
 
 =item B<get_alias>
 
-Get the alias, as a string.
+Get the dimension alias, as a L<Bi::Model::DimAlias> object.
 
 =cut
 sub get_alias {
@@ -107,7 +109,9 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    return ref($obj) eq ref($self) && $self->get_alias eq $obj->get_alias;
+    return (
+        ref($obj) eq ref($self) &&
+        $self->get_alias->equals($obj->get_alias));
 }
 
 1;

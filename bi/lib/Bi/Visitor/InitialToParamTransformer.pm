@@ -118,7 +118,7 @@ sub visit {
             foreach $state (@{$model->get_vars('state')}) {
                 $param = $model->get_var($state->get_name . '_0_');
                 $action = new Bi::Model::Action($model->next_action_id,
-                    new Bi::Expression::VarIdentifier($state), '<-',
+                    new Bi::Model::Target($state), '<-',
                     new Bi::Expression::VarIdentifier($param));
                 $node->push_action($action);
             }

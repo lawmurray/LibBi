@@ -57,7 +57,9 @@ sub evaluate {
     bless $self, $class;
 
     foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
-	    $model->get_block($name)->accept($self, $model, $actions);
+        if ($model->is_block($name)) {
+    	    $model->get_block($name)->accept($self, $model, $actions);
+        }
     }
 }
 
@@ -74,8 +76,9 @@ sub visit {
 
     if ($node->isa('Bi::Expression')) {
         foreach my $action (@$actions) {
-            if ($node->equals($action->get_named_arg('expr'))) {
-                $node = $action->get_target->clone;
+            my $expr = $action->get_named_arg('expr');            
+            if ($node->equals($expr)) {
+                $node = $action->get_left->clone;
                 last;
             }
         }

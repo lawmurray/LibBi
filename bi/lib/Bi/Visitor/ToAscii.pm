@@ -77,26 +77,22 @@ sub visit {
         $str = $node->get_inline->get_name;
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         $str = $node->get_var->get_name;
-        if ($node->num_offsets) {
-            my @offsets = splice(@$args, -$node->num_offsets, $node->num_offsets);
-            $str .= '[' . join(',', @offsets) . ']';
+        if ($node->num_indexes) {
+            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
+            $str .= '[' . join(',', @indexes) . ']';
         }
-    } elsif ($node->isa('Bi::Expression::DimAlias')) {
-        $str = $node->get_alias;
+    } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
+        $str = $node->get_alias->get_name;
     } elsif ($node->isa('Bi::Expression::Literal') || $node->isa('Bi::Expression::IntegerLiteral')) {
         $str = $node->get_value;
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
         $str = '"' . $node->get_value . '"';
-    } elsif ($node->isa('Bi::Expression::Offset')) {
-        $str = $node->get_alias;
-        my $offset = $node->get_offset;
-        if ($offset > 0) {
-            $str .= " + $offset";
-        } elsif ($offset < 0) {
-            $str .= " - " . abs($offset);
-        }
+    } elsif ($node->isa('Bi::Expression::Index')) {
+        my @exprs = pop(@$args);
+        $str = $exprs[0];
     } elsif ($node->isa('Bi::Expression::Range')) {
-        $str = $node->get_start . ':' . $node->get_end;
+        my @exprs = splice(@$args, -2);
+        $str = "($exprs[0]:$exprs[1])";
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
         $str = '(' . $exprs[0] . ' ? ' . $exprs[1] . ' : ' . $exprs[2] . ')';

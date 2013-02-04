@@ -7,8 +7,8 @@
 -%]
 [%-MACRO alias_dims(action) BLOCK %]
   [%-i = 0-%]
-  [%-FOREACH offset IN action.get_target.get_offsets %]
-  const int [% offset.get_alias %] = cox.[% action.get_target.get_var.get_dims.$i.get_name %][% i %];
+  [%-FOREACH alias IN action.get_target.get_aliases %]
+  const int [% alias.get_name %]_ = cox.[% action.get_left.get_var.get_dims.$i.get_name %][% i %];
   [%-i = i + 1-%]
   [%-END %]
 [%-END-%]

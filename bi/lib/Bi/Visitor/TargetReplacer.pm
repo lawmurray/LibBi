@@ -63,9 +63,9 @@ sub visit {
     my $to = shift;
     
     if ($node->isa('Bi::Model::Action')) {
-        if ($node->get_target->get_var->equals($from)) {
+        if ($node->get_left->get_var->equals($from)) {
             my $ident = new Bi::Expression::VarIdentifier($to,
-                $node->get_target->get_offsets);
+                $node->get_left->get_indexes);
             $node->set_target($ident);
         }
     }

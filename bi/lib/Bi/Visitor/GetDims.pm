@@ -63,7 +63,7 @@ sub visit {
     
     my $sub_dims = [];
     if ($node->isa('Bi::Expression::VarIdentifier')) {
-    	if ($node->num_offsets == 0) {
+    	if ($node->num_indexes == 0) {
 	        $sub_dims = $node->get_var->get_dims;
     	    @$dims = @$sub_dims;
     	}
