@@ -286,7 +286,7 @@ sub _make {
     
     my $builddir = $self->get_dir;
     my $cwd = getcwd();
-    my $cmd = "make -j 12 $options $target";
+    my $cmd = "make -j 4 $options $target";
     
     if ($self->{_verbose}) {
         print "$cmd\n";
