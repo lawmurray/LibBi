@@ -263,8 +263,8 @@ Run C<make> to compile the given client program.
 
 =over 4
 
-=item I<client> The name of the client program ('simulate', 'filter',
-'pmcmc', etc).
+=item I<client> The name of the client program ('simulate', 'pf', 'pmmh',
+etc).
 
 =back
 
