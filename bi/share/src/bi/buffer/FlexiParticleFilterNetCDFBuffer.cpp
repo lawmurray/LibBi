@@ -24,7 +24,9 @@ bi::FlexiParticleFilterNetCDFBuffer::FlexiParticleFilterNetCDFBuffer(
 }
 
 void bi::FlexiParticleFilterNetCDFBuffer::create() {
-  ncFile->add_att("data_format", "ANPF");
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "FlexiParticleFilter");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   aVar = ncFile->add_var("ancestor", ncInt, nrpDim);
   BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),

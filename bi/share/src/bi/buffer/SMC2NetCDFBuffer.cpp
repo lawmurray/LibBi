@@ -31,7 +31,9 @@ void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
   Var* var;
   Dim* dim;
 
-  ncFile->add_att("data_format", "SMC2");
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "SMC2");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   /* dimensions */
   nrDim = createDim("nr", T);

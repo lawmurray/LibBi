@@ -6,7 +6,7 @@ sampling for parameter estimation.
 
 LibBi supports state-space models of the form:
 \begin{equation*}
-p(\mathbf{y}_{1:T},\mathbf{x}_{1:T},\boldsymbol{\theta}) =
+p(\mathbf{y}_{1:T},\mathbf{x}_{0:T},\boldsymbol{\theta}) =
 \underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
 \underbrace{p(\mathbf{x}_0|\boldsymbol{\theta})}_{\text{initial}}
 \prod_{t=1}^T

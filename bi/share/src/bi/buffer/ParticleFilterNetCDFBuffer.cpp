@@ -24,7 +24,9 @@ bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
 }
 
 void bi::ParticleFilterNetCDFBuffer::create() {
-  ncFile->add_att("data_format", "PF");
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "ParticleFilter");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   aVar = ncFile->add_var("ancestor", ncInt, nrDim, npDim);
   BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),

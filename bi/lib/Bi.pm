@@ -1,6 +1,6 @@
 =head1 NAME
 
-Bi - Bayesian inference for state-space models, including sequential Monte
+LibBi - Bayesian inference for state-space models, including sequential Monte
 Carlo (SMC), particle Markov chain Monte Carlo (PMCMC) and SMC^2 methods on
 multithreaded, graphics processing unit (GPU) and distributed memory
 architectures.

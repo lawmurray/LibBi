@@ -34,7 +34,9 @@ void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
   Var* var;
   Dim* dim;
 
-  ncFile->add_att("data_format", "FSIM");
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "FlexiSimulator");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   /* dimensions */
   nrDim = createDim("nr", T);

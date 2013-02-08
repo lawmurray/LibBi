@@ -1,7 +1,7 @@
 use inc::Module::Install;
 
 # metadata
-name 'LibBi';
+name 'libbi';
 abstract 'Bayesian inference for state-space models, including sequential
 Monte Carlo (SMC), particle Markov chain Monte Carlo (PMCMC) and SMC^2 methods
 on multithreaded, graphics processing unit (GPU) and distributed memory

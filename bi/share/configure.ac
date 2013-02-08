@@ -1,4 +1,4 @@
-AC_INIT([bi], [1.0.0], [bug-report@example.com], [bi], [http://www.example.com])
+AC_INIT([LibBi], [1.0.0], [bug-report@libbi.org], [libbi], [http://www.libbi.org])
 AC_PREREQ([2.62])
 AC_LANG([C++])
 AM_INIT_AUTOMAKE([1.10 no-define foreign])

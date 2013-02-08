@@ -33,7 +33,9 @@ void bi::SimulatorNetCDFBuffer::create(const long P, const long T) {
   Var* var;
   Dim* dim;
 
-  ncFile->add_att("data_format", "SIM");
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "Simulator");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   /* dimensions */
   nrDim = createDim("nr", T);
