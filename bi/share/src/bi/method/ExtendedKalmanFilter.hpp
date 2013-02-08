@@ -529,7 +529,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(State<B,L>& s, M1 U1, M1 S1)
   real ll = 0.0;
 
   /* update observations at current time */
-  if (sim->getObs()->isValid() && sim->getObs()->getTime() == sim->getTime()) {
+  if (sim->getObs() != NULL && sim->getObs()->isValid() && sim->getObs()->getTime() == sim->getTime()) {
     const int P = s.size();
     const int W = sim->getObs()->getMask().size();
 

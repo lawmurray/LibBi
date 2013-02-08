@@ -650,7 +650,7 @@ void bi::ParticleFilter<B,S,R,IO1>::correct(State<B,L>& s, V1 lws) {
   BI_ASSERT(s.size() == lws.size());
 
   /* update observations at current time */
-  if (sim->getObs()->isValid() && sim->getObs()->getTime() == sim->getTime()) {
+  if (sim->getObs() != NULL && sim->getObs()->isValid() && sim->getObs()->getTime() == sim->getTime()) {
     m.observationLogDensities(s, sim->getObs()->getMask(), lws);
   }
 }
