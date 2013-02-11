@@ -115,43 +115,6 @@ sub new {
     return $self;
 }
 
-=item B<new_copy_action>(I<id>, I<to>, I<from>)
-
-Constructor for action that copies one variable to another.
-
-=over 4
-
-=item I<id>
-
-Unique numerical id of the action.
-
-=item I<to>
-
-Variable reference, as L<Bi::Expression::VarIdentifier> object, to which the
-action copies.
-
-=item I<from>
-
-Variable reference, as L<Bi::Expression::VarIdentifier> object, from which
-the action copies.
-
-=back
-
-Returns the new object.
-
-=cut
-sub new_copy_action {
-    my $class = shift;
-    my $id = shift;
-    my $to = shift;
-    my $from = shift;
-    
-    assert ($to->isa('Bi::Model::Target')) if DEBUG;
-    assert ($from->isa('Bi::Expression::VarIdentifier')) if DEBUG;
-        
-    return $class->new($id, $to, '<-', $from);
-}
-
 =item B<clone>(I<model>)
 
 Return a clone of the object. A I<model>, of type L<Bi::Model>, is required

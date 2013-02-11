@@ -87,7 +87,6 @@ sub visit {
     my $set;
     my $name;
     my $var;
-    my $commit_block;
     my $action;
     my $dims;
     my $tmp;
@@ -139,12 +138,16 @@ sub visit {
     } elsif ($node->isa('Bi::Model::Block')) {
         if ($node->get_commit) {
             if (@$conflicts) {
-                # replace with two blocks, one that does computation and
-                # writes to intermediate variables, one that does commit
-                $commit_block = Bi::Model::Block->new_copy_block(
-                        $self->get_model->next_block_id);
-                $result = new Bi::Model::Block($self->get_model->next_block_id,
-                        undef, [], {}, [], [ $node, $commit_block ]);
+                # replace with two blocks, the first preloading conflicting
+                # variables into temporaries, the second as the original
+                # block but replacing reads of conflicted variables with
+                # reads from these temporaries.
+                my $read_block = new Bi::Model::Block(
+                    $self->get_model->next_block_id);
+                my $write_block = $node;
+                $result = new Bi::Model::Block(
+                    $self->get_model->next_block_id);
+                $result->push_blocks([ $read_block, $write_block ]);
 
                 foreach $var (@$conflicts) {
                     # insert intermediate output variable
@@ -157,16 +160,17 @@ sub visit {
                         });
                     $self->get_model->add_var($tmp);
         
-                    # update references to this variable in children
-                    Bi::Visitor::TargetReplacer->evaluate($node, $var, $tmp);
-                        
-                    # add copy back to commit block
-                    $action = Bi::Model::Action->new_copy_action(
-                           $self->get_model->next_action_id,
-                           new Bi::Model::Target($var),
-                           new Bi::Expression::VarIdentifier($tmp));
+                    # update reads from this variable in write block
+                    Bi::Visitor::VarReplacer->evaluate($node, $var, $tmp);
 
-                    $commit_block->push_action($action);
+                    # add preload to read block
+                    $action = new Bi::Model::Action(
+                           $self->get_model->next_action_id,
+                           new Bi::Model::Target($tmp),
+                           '<-',
+                           new Bi::Expression::VarIdentifier($var));
+
+                    $read_block->push_action($action);
                 }
             }
 

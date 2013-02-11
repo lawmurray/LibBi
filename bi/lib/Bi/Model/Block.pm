@@ -143,18 +143,6 @@ sub clear {
     $self->{_blocks} = [];
 }
 
-=item B<new_copy_block>(I<id>)
-
-Constructor for block of copy actions.
-
-=cut
-sub new_copy_block {
-    my $class = shift;
-    my $id = shift;
-    
-    return $class->new($id, 'eval_');
-}
-
 =item B<get_id>
 
 Get the id of the block.
