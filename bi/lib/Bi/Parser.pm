@@ -380,9 +380,9 @@ sub block {
         # discourage user from mixing blocks and loose actions at the same
         # level
         if (@$actions == 1) {
-            $self->warning('action outside block');
+            $self->_warn('action outside block');
         } else {
-            $self->warning('actions outside block');
+            $self->_warn('actions outside block');
         }
     }
 
@@ -442,7 +442,7 @@ sub action {
     #    foreach $alias (@$aliases) {
     #        next RIGHT_ALIAS if ($alias eq $right_alias->get_alias);
     #    }
-    #    $self->error("unrecognised name '" . $right_alias->get'");
+    #    $self->_error("unrecognised name '" . $right_alias->get'");
     #}
     
     # construct action
@@ -477,7 +477,7 @@ sub target {
     if ($self->get_model->is_var($name)) {
         $var = $self->get_model->get_var($name);
     } else {
-        $self->error("no such variable '$name'");
+        $self->_error("no such variable '$name'");
     }
     
     # check dimension aliases on left
@@ -485,7 +485,7 @@ sub target {
     my $num_dims = $var->num_dims;
     if ($num_aliases > $num_dims) {
         my $plural = ($num_dims == 1) ? '' : 's';
-        $self->error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
+        $self->_error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
     }
 
     my $target = new Bi::Model::Target($var, $aliases);
@@ -526,7 +526,7 @@ sub dim_arg {
     if ($self->get_model->is_dim($name)) {
         return $self->get_model->get_dim($name);
     } else {
-        $self->error("no such dimension '$name'");
+        $self->_error("no such dimension '$name'");
     }
 }
 
@@ -542,11 +542,11 @@ sub dim_alias {
     my $end = shift;
 
     if ($self->get_model->is_var($name)) {
-        $self->error("variable name '$name' cannot be used as dimension alias");
+        $self->_error("variable name '$name' cannot be used as dimension alias");
     } elsif ($self->get_model->is_const($name)) {
-        $self->error("constant name '$name' cannot be used as dimension alias");
+        $self->_error("constant name '$name' cannot be used as dimension alias");
     } elsif ($self->get_model->is_inline($name)) {
-        $self->error("inline expression name '$name' cannot be used as dimension alias");
+        $self->_error("inline expression name '$name' cannot be used as dimension alias");
     }
     
     return new Bi::Model::DimAlias($name, $start, $end);
@@ -626,12 +626,12 @@ sub identifier {
     
     if ($self->get_model->is_const($name)) {
         if (defined($indexes) || defined($ranges)) {
-            $self->error("constant '$name' is scalar");
+            $self->_error("constant '$name' is scalar");
         }
         return new Bi::Expression::ConstIdentifier($self->get_model->get_const($name));
     } elsif ($self->get_model->is_inline($name)) {
         if (defined($indexes) || defined($ranges)) {
-            $self->error("inline expression '$name' is scalar");
+            $self->_error("inline expression '$name' is scalar");
         }
         return new Bi::Expression::InlineIdentifier($self->get_model->get_inline($name));
     } elsif ($self->get_model->is_var($name)) {
@@ -639,30 +639,30 @@ sub identifier {
         if (defined($indexes) && @$indexes > 0 && @$indexes != $var->num_dims) {
             my $plural1 = ($var->num_dims == 1) ? '' : 's';
             my $plural2 = (@$indexes == 1) ? '' : 's'; 
-            $self->error("variable '" . $name . "' extends along " .
+            $self->_error("variable '" . $name . "' extends along " .
                 $var->num_dims . " dimension$plural1, but " . scalar(@$indexes) .
                 " index$plural2 given");
         }
         if (defined($ranges) && @$ranges > 0 && @$ranges != $var->num_dims) {
             my $plural1 = ($var->num_dims == 1) ? '' : 's';
             my $plural2 = (@$ranges == 1) ? '' : 's'; 
-            $self->error("variable '" . $name . "' extends along " .
+            $self->_error("variable '" . $name . "' extends along " .
                 $var->num_dims . " dimension$plural1, but " . scalar(@$ranges) .
                 " range$plural2 given");
         }
         return new Bi::Expression::VarIdentifier($var, $indexes, $ranges);
     } elsif (defined($indexes) || defined($ranges)) {
-        $self->error("no variable, constant or inline expression named '$name'");
+        $self->_error("no variable, constant or inline expression named '$name'");
     } elsif (defined $self->get_target) {
     	my $target = $self->get_target;
     	my $alias = $target->get_alias($name);
     	if (defined $alias) {
     		return new Bi::Expression::DimAliasIdentifier($alias);
     	} else {
-            $self->error("no variable, constant, inline expression or dimension alias named '$name'");
+            $self->_error("no variable, constant, inline expression or dimension alias named '$name'");
     	}
     } else {
-        $self->error("no variable, constant, inline expression or dimension alias named '$name'");
+        $self->_error("no variable, constant, inline expression or dimension alias named '$name'");
     }
 }
 
@@ -763,7 +763,7 @@ sub ternary_operator {
     my $expr3 = shift;
     
     if ($expr1->num_dims > 0) {
-        $self->error("conditional in ternary operator must be scalar");
+        $self->_error("conditional in ternary operator must be scalar");
     }    
     return Bi::Expression::TernaryOperator->new($expr1, $op1, $expr2, $op2, $expr3);
 }
