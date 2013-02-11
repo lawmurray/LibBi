@@ -146,7 +146,7 @@ sub new_copy_action {
     my $to = shift;
     my $from = shift;
     
-    assert ($to->isa('Bi::Expression::Target')) if DEBUG;
+    assert ($to->isa('Bi::Model::Target')) if DEBUG;
     assert ($from->isa('Bi::Expression::VarIdentifier')) if DEBUG;
         
     return $class->new($id, $to, '<-', $from);

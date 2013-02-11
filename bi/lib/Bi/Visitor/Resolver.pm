@@ -106,7 +106,7 @@ sub visit {
             foreach $ref (@{$node->get_vars}) {
                 if ($ref->get_var->equals($node->get_left->get_var) &&
                         !$ref->trivial_index) {
-                    push_unique($sub_conflicts, $node->get_var);
+                    push_unique($sub_conflicts, $node->get_left->get_var);
                     last;
                 }
             }
@@ -163,7 +163,7 @@ sub visit {
                     # add copy back to commit block
                     $action = Bi::Model::Action->new_copy_action(
                            $self->get_model->next_action_id,
-                           new Bi::Expression::VarIdentifier($var),
+                           new Bi::Model::Target($var),
                            new Bi::Expression::VarIdentifier($tmp));
 
                     $commit_block->push_action($action);
