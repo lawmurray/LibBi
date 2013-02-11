@@ -541,12 +541,14 @@ sub dim_alias {
     my $start = shift;
     my $end = shift;
 
-    if ($self->get_model->is_var($name)) {
-        $self->_error("variable name '$name' cannot be used as dimension alias");
-    } elsif ($self->get_model->is_const($name)) {
-        $self->_error("constant name '$name' cannot be used as dimension alias");
-    } elsif ($self->get_model->is_inline($name)) {
-        $self->_error("inline expression name '$name' cannot be used as dimension alias");
+    if (defined $name) {
+        if ($self->get_model->is_var($name)) {
+            $self->_error("variable name '$name' cannot be used as dimension alias");
+        } elsif ($self->get_model->is_const($name)) {
+            $self->_error("constant name '$name' cannot be used as dimension alias");
+        } elsif ($self->get_model->is_inline($name)) {
+            $self->_error("inline expression name '$name' cannot be used as dimension alias");
+        }
     }
     
     return new Bi::Model::DimAlias($name, $start, $end);

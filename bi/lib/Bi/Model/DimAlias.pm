@@ -86,6 +86,16 @@ sub get_name {
     return $self->{_name};
 }
 
+=item B<has_name>
+
+Is there a name?
+
+=cut
+sub has_name {
+    my $self = shift;
+    return defined $self->{_name};
+}
+
 =item B<get_start>
 
 Get the starting index of the alias.
