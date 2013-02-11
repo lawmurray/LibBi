@@ -92,6 +92,12 @@ sub new {
         'disable-extradebug' => sub { $self->{_extradebug} = 0 },
     );
     GetOptions(@args) || die("could not read command line arguments\n");
+    
+    # can't support SSE when CUDA enabled at this stage
+    if ($self->{_cuda}) {
+    	warn("SSE has been disabled, unsupported when CUDA also enabled\n");
+    	$self->{_sse} = 0;
+    }
 
     # work out name of build directory
     my @builddir = 'build';
