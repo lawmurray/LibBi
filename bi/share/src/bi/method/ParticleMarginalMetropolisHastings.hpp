@@ -514,10 +514,6 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::propose(Random& rng,
   row(s.get(P_VAR), 0) = s.getParameters1();
   row(s.get(PY_VAR), 0) = s.getParameters2();
   s.getLogProposal2() = m.proposalParameterLogDensity(s);
-
-  /* prior log-density */
-  row(s.get(PY_VAR), 0) = s.getParameters2();
-  s.getLogPrior2() = m.parameterLogDensity(s);
 }
 
 template<class B, class F, class IO1>
