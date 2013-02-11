@@ -224,7 +224,8 @@ void bi::SystematicResampler::resample(Random& rng, const int a,
   typename sim_temp_vector<V3>::type Os(P);
 
   cumulativeOffspring(rng, qlws, Os, P - 1);
-  addscal_elements(subrange(Os, a, Os.size() - a), 1);
+  BOOST_AUTO(tail, subrange(Os, a, Os.size() - a));
+  addscal_elements(tail, 1, tail);
   cumulativeOffspringToAncestorsPermute(Os, as);
   correct(as, qlws, lws);
   copy(as, s);
