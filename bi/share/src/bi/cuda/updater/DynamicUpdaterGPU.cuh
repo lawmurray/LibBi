@@ -13,7 +13,7 @@
 
 namespace bi {
 /**
- * Dynamic updater, on GPU.
+ * Dynamic updater, on device.
  *
  * @ingroup method_updater
  *

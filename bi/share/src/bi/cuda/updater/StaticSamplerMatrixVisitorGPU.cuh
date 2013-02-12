@@ -61,7 +61,6 @@ inline void bi::StaticSamplerMatrixVisitorGPU<B,S,PX,OX>::accept(
   typedef typename front::target_type target_type;
 
   const int Q = gridDim.x*blockDim.x; // number of threads
-  const int size = var_size<target_type>::value;
   int p = blockIdx.x*blockDim.x + threadIdx.x;
 
   while (p < s.size()) {

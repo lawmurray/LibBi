@@ -56,8 +56,9 @@ public:
 #include "../../typelist/pop_front.hpp"
 
 template<class B, class S, class T1, class PX, class OX>
-inline void bi::DynamicUpdaterMatrixVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
-    const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i, const PX& pax, OX& x) {
+inline void bi::DynamicUpdaterMatrixVisitorGPU<B,S,T1,PX,OX>::accept(
+    const T1 t1, const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i,
+    const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
@@ -65,7 +66,8 @@ inline void bi::DynamicUpdaterMatrixVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1
   if (i == 0) {
     front::simulates(t1, t2, s, p, pax, x);
   } else {
-    DynamicUpdaterMatrixVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p, i - 1, pax, x);
+    DynamicUpdaterMatrixVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p,
+        i - 1, pax, x);
   }
 }
 

@@ -58,6 +58,7 @@ inline void bi::StaticUpdaterVisitorGPU<B,S,PX,OX>::accept(State<B,ON_DEVICE>& s
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
   typedef typename target_type::coord_type coord_type;
+
   const int size = var_size<target_type>::value;
 
   if (i < size) {
