@@ -551,7 +551,6 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
       s.getParameters2() = row(thetaproposals, p);
       s.getLogProposal1() = logdensCurrent[p];
       s.getLogProposal2() = logdensProposals[p];
-      s.getLogLikelihood1() = lws(p);
       pmmh->logPrior(s);
       pmmh->logLikelihood(rng, t, T, K, s);
       pmmhaccept = pmmh->computeAcceptReject(rng, s);
