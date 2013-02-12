@@ -4,7 +4,7 @@ Bi::Builder - builds client programs on demand.
 
 =head1 SYNOPSIS
 
-    use Bi::Builder
+    use Bi::Builder;
     my $builder = new Bi::Builder($dir);
     my $client = 'simulate';  # or 'filter' or 'smooth' etc
     $builder->build($client);
@@ -94,7 +94,7 @@ sub new {
     GetOptions(@args) || die("could not read command line arguments\n");
     
     # can't support SSE when CUDA enabled at this stage
-    if ($self->{_cuda}) {
+    if ($self->{_cuda} && $self->{_sse}) {
     	warn("SSE has been disabled, unsupported when CUDA also enabled\n");
     	$self->{_sse} = 0;
     }
