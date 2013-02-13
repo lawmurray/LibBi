@@ -36,9 +36,19 @@ public:
   ParticleMCMCCache(B& m, IO1* out = NULL);
 
   /**
+   * Shallow copy constructor.
+   */
+  ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>& o);
+
+  /**
    * Destructor.
    */
   ~ParticleMCMCCache();
+
+  /**
+   * Deep assignment operator.
+   */
+  ParticleMCMCCache<IO1,CL>& operator=(const ParticleMCMCCache<IO1,CL>& o);
 
   /**
    * @copydoc ParticleMCMCNetCDFBuffer::readTimes()
@@ -241,11 +251,48 @@ bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(B& m, IO1* out) : m(m),
 }
 
 template<class IO1, bi::Location CL>
+bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>& o) :
+    m(o.m),
+    llCache(o.llCache),
+    lpCache(o.lpCache),
+    parameterCache(o.parameterCache),
+    first(o.first),
+    len(o.len),
+    out(o.out) {
+  trajectoryCache.resize(o.trajectoryCache.size());
+  for (int i = 0; i < trajectoryCache.size(); ++i) {
+    trajectoryCache[i] = new CacheCross<real,CL>(*o.trajectoryCache[i]);
+  }
+}
+
+template<class IO1, bi::Location CL>
 bi::ParticleMCMCCache<IO1,CL>::~ParticleMCMCCache() {
   flush();
   for (int t = 0; t < trajectoryCache.size(); ++t) {
     delete trajectoryCache[t];
   }
+}
+
+template<class IO1, bi::Location CL>
+bi::ParticleMCMCCache<IO1,CL>& bi::ParticleMCMCCache<IO1,CL>::operator=(
+    const ParticleMCMCCache<IO1,CL>& o) {
+  m = o.m;
+
+  empty();
+  llCache = o.llCache;
+  lpCache = o.lpCache;
+  parameterCache = o.parameterCache;
+  first = o.first;
+  len = o.len;
+  out = o.out;
+
+  trajectoryCache.resize(o.trajectoryCache.size());
+  for (int i = 0; i < trajectoryCache.size(); ++i) {
+    trajectoryCache[i] = new CacheCross<real,CL>();
+    trajectoryCache[i] = *o.trajectoryCache[i];
+  }
+
+  return *this;
 }
 
 template<class IO1, bi::Location CL>

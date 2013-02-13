@@ -429,6 +429,19 @@ struct ParticleFilterFactory {
       NULL, const real essRel = 1.0, IO1* out = NULL) {
     return new ParticleFilter<B,S,R,IO1>(m, sim, resam, essRel, out);
   }
+
+  /**
+   * Create particle filter.
+   *
+   * @return ParticleFilter object. Caller has ownership.
+   *
+   * @see ParticleFilter::ParticleFilter()
+   */
+  template<class B, class S, class R>
+  static ParticleFilter<B,S,R,ParticleFilterCache<> >* create(B& m, S* sim = NULL, R* resam =
+      NULL, const real essRel = 1.0) {
+    return new ParticleFilter<B,S,R,ParticleFilterCache<> >(m, sim, resam, essRel);
+  }
 };
 }
 

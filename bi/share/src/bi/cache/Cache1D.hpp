@@ -41,6 +41,16 @@ public:
   Cache1D(const int size = 0);
 
   /**
+   * Shallow copy constructor.
+   */
+  Cache1D(const Cache1D& o);
+
+  /**
+   * Deep assignment operator.
+   */
+  Cache1D& operator=(const Cache1D& o);
+
+  /**
    * Read page.
    *
    * @param p Page index.
@@ -86,8 +96,25 @@ private:
 }
 
 template<class T1, bi::Location CL>
-inline bi::Cache1D<T1,CL>::Cache1D(const int size) : Cache(size), pages(size) {
+inline bi::Cache1D<T1,CL>::Cache1D(const int size) : Cache(size),
+    pages(size) {
   //
+}
+
+template<class T1, bi::Location CL>
+bi::Cache1D<T1,CL>::Cache1D(const Cache1D<T1,CL>& o) : Cache(o),
+    pages(o.pages) {
+  //
+}
+
+template<class T1, bi::Location CL>
+bi::Cache1D<T1,CL>& bi::Cache1D<T1,CL>::operator=(const Cache1D<T1,CL>& o) {
+  Cache::operator=(o);
+
+  pages.resize(o.pages.size(), false);
+  pages = o.pages;
+
+  return *this;
 }
 
 template<class T1, bi::Location CL>

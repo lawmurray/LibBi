@@ -19,14 +19,31 @@ namespace bi {
  * @ingroup io_cache
  *
  * @tparam CL Location for cache.
+ *
+ * @todo Can this be replaced with generic CacheObject class?
  */
 template<Location CL>
 class SparseCache {
 public:
   /**
+   * Default constructor.
+   */
+  SparseCache();
+
+  /**
+   * Shallow copy constructor.
+   */
+  SparseCache(const SparseCache<CL>& o);
+
+  /**
    * Destructor.
    */
   ~SparseCache();
+
+  /**
+   * Deep assignment operator.
+   */
+  SparseCache<CL>& operator=(const SparseCache<CL>& o);
 
   /**
    * Is page valid?
@@ -117,8 +134,37 @@ private:
 }
 
 template<bi::Location CL>
+bi::SparseCache<CL>::SparseCache() {
+  //
+}
+
+template<bi::Location CL>
+bi::SparseCache<CL>::SparseCache(const SparseCache<CL>& o) : valids(o.valids) {
+  pages.resize(o.pages.size());
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new page_type(o.pages[i]);
+  }
+}
+
+template<bi::Location CL>
 bi::SparseCache<CL>::~SparseCache() {
   clear();
+}
+
+template<bi::Location CL>
+bi::SparseCache<CL>& bi::SparseCache<CL>::operator=(const SparseCache<CL>& o) {
+  clear();
+
+  valids.resize(o.valids.size(), false);
+  valids = o.valids;
+
+  pages.resize(o.pages.size());
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new page_type(o.pages[i]->size1(), o.pages[i]->size2());
+    *pages[i] = *o.pages[i];
+  }
+
+  return this;
 }
 
 template<bi::Location CL>

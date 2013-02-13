@@ -10,6 +10,7 @@
 
 #include "../math/loc_vector.hpp"
 #include "../state/ThetaState.hpp"
+#include "../cache/ParticleFilterCache.hpp"
 
 namespace bi {
 /**
@@ -42,7 +43,7 @@ public:
   ThetaParticle(const ThetaParticle<B,L>& o);
 
   /**
-   * Assignment operator.
+   * Deep assignment operator.
    */
   ThetaParticle& operator=(const ThetaParticle<B,L>& o);
 
@@ -60,6 +61,11 @@ public:
    * Ancestors.
    */
   int_vector_type& getAncestors();
+
+  /**
+   * Get output.
+   */
+  ParticleFilterCache<>& getOutput();
 
   /**
    * Resize.
@@ -84,6 +90,11 @@ private:
    * Ancestors of \f$x\f$-particles.
    */
   int_vector_type as;
+
+  /**
+   * Cache to store history.
+   */
+  ParticleFilterCache<> cache;
 
   /**
    * Serialize.
@@ -119,7 +130,8 @@ bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
     ThetaState<B,L>(o),
     incLogLikelihood(o.incLogLikelihood),
     lws(o.lws),
-    as(o.as) {
+    as(o.as),
+    cache(o.cache) {
   //
 }
 
@@ -130,6 +142,7 @@ bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
   incLogLikelihood = o.incLogLikelihood;
   lws = o.lws;
   as = o.as;
+  cache = o.cache;
 
   return *this;
 }
@@ -152,6 +165,11 @@ typename bi::ThetaParticle<B,L>::int_vector_type&
 }
 
 template<class B, bi::Location L>
+typename bi::ParticleFilterCache<>& bi::ThetaParticle<B,L>::getOutput() {
+  return cache;
+}
+
+template<class B, bi::Location L>
 void bi::ThetaParticle<B,L>::resize(const int P, const bool preserve) {
   ThetaState<B,L>::resize(P, preserve);
   lws.resize(P, preserve);
@@ -165,6 +183,7 @@ void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
   ar & incLogLikelihood;
   ar & lws;
   ar & as;
+  ar & cache;
 }
 
 template<class B, bi::Location L>
@@ -178,6 +197,7 @@ void bi::ThetaParticle<B,L>::load(Archive& ar, const unsigned version) {
 
   ar & lws;
   ar & as;
+  ar & cache;
 }
 
 #endif

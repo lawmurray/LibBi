@@ -22,9 +22,24 @@ template<class T1>
 class CacheObject : public Cache {
 public:
   /**
+   * Default constructor.
+   */
+  CacheObject();
+
+  /**
+   * Shallow copy constructor.
+   */
+  CacheObject(const CacheObject<T1>& o);
+
+  /**
    * Destructor.
    */
   ~CacheObject();
+
+  /**
+   * Deep assignment operator.
+   */
+  CacheObject<T1>& operator=(const CacheObject<T1>& o);
 
   /**
    * Number of pages in cache.
@@ -69,8 +84,34 @@ private:
 }
 
 template<class T1>
+bi::CacheObject<T1>::CacheObject() {
+  //
+}
+
+template<class T1>
+bi::CacheObject<T1>::CacheObject(const CacheObject<T1>& o) : Cache(o) {
+  pages.resize(o.pages.size());
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new T1(*o.pages[i]);
+  }
+}
+
+template<class T1>
 bi::CacheObject<T1>::~CacheObject() {
   empty();
+}
+
+template<class T1>
+bi::CacheObject<T1>& bi::CacheObject<T1>::operator=(const CacheObject<T1>& o) {
+  Cache::operator=(o);
+
+  empty();
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new T1();
+    *pages[i] = *o.pages[i];
+  }
+
+  return *this;
 }
 
 template<class T1>

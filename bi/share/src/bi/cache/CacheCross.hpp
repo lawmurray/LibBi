@@ -49,6 +49,16 @@ public:
   CacheCross(const int rows = 0, const int cols = 0);
 
   /**
+   * Shallow copy constructor.
+   */
+  CacheCross(const CacheCross<T1,CL>& o);
+
+  /**
+   * Deep assignment operator.
+   */
+  CacheCross<T1,CL>& operator=(const CacheCross<T1,CL>& o);
+
+  /**
    * Read row.
    *
    * @param i Index of row.
@@ -101,6 +111,24 @@ inline bi::CacheCross<T1,CL>::CacheCross(const int rows, const int cols) :
     Cache(rows), X(rows, cols) {
   //
 }
+
+template<class T1, bi::Location CL>
+inline bi::CacheCross<T1,CL>::CacheCross(const CacheCross<T1,CL>& o) :
+    Cache(o), X(o.X) {
+  //
+}
+
+template<class T1, bi::Location CL>
+inline bi::CacheCross<T1,CL>& bi::CacheCross<T1,CL>::operator=(
+    const CacheCross<T1,CL>& o) {
+  Cache::operator=(o);
+
+  X.resize(o.X.size1(), o.X.size2(), false);
+  X = o.X;
+
+  return *this;
+}
+
 
 template<class T1, bi::Location CL>
 inline const typename bi::CacheCross<T1,CL>::vector_reference_type bi::CacheCross<T1,CL>::get(

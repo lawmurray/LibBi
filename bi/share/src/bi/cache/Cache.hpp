@@ -26,6 +26,16 @@ public:
   Cache(const int size = 0);
 
   /**
+   * Shallow copy constructor.
+   */
+  Cache(const Cache& o);
+
+  /**
+   * Deep assignment operator.
+   */
+  Cache& operator=(const Cache& o);
+
+  /**
    * Size of cache.
    */
   int size() const;

@@ -413,6 +413,7 @@ void bi::SMC2<B,F,R,IO1>::init(Random& rng, const real t,
     theta.getLogPrior1() = m.parameterLogDensity(theta);
 
     /* initialise x-particles for this theta */
+    pmmh->getFilter()->setOutput(&theta.getOutput());
     pmmh->getFilter()->init(rng, t, row(theta.get(P_VAR), 0), theta,
         theta.getLogWeights(), theta.getAncestors());
   }
@@ -438,12 +439,14 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const real T,
 
     /* set up filter */
     if (i == 0) {
+      pmmh->getFilter()->setOutput(NULL);
       pmmh->getFilter()->getSim()->setTime(state.t, s);  // may have been left inconsistent from last rejuvenate
       pmmh->getFilter()->mark();
     } else {
       pmmh->getFilter()->top();
     }
     r = pmmh->getFilter()->step(rng, T, s, thetaLws, thetaAs, n);
+    pmmh->getFilter()->setOutput(&s.getOutput());
     pmmh->getFilter()->output(n, s, r, thetaLws, thetaAs);
 
     thetaIncLl = logsumexp_reduce(thetaLws)
@@ -524,6 +527,10 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
     row(thetaparticles, p) = row(thetas[p]->get(P_VAR), 0);
   }
 
+  /* cache for proposed new particle filters */
+  ParticleFilterCache<> cache;
+  pmmh->getFilter()->setOutput(&cache);
+
   double meanAcceptRate = 0.;
   for (int indexMove = 0; indexMove < Nmoves; indexMove++) {
     q.samples(rng, thetaproposals);
@@ -547,7 +554,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
       bool pmmhaccept = true;
 
       /* instead of using PMMH->propose, we use the Gaussian density fitted
-       * on the current theta particles to propose new theta particles */
+       * to the current theta particles */
       //s.getParameters2() = row(thetaproposals, p);
       //s.getLogProposal1() = logdensCurrent[p];
       //s.getLogProposal2() = logdensProposals[p];
@@ -563,6 +570,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
         row(thetaparticles, p) = s.getParameters1();
         s.getLogWeights().resize(s.size());
         s.getLogWeights() = pmmh->getFilter()->getOutput()->getLogWeights();
+        s.getOutput() = cache;
 
         theta.resize(s.size());
         theta = s;

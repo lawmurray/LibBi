@@ -204,6 +204,19 @@ struct AuxiliaryParticleFilterFactory {
       R* resam = NULL, const real essRel = 1.0, IO1* out = NULL) {
     return new AuxiliaryParticleFilter<B,S,R,IO1>(m, sim, resam, essRel, out);
   }
+
+  /**
+   * Create auxiliary particle filter.
+   *
+   * @return AuxiliaryParticleFilter object. Caller has ownership.
+   *
+   * @see AuxiliaryParticleFilter::AuxiliaryParticleFilter()
+   */
+  template<class B, class S, class R>
+  static AuxiliaryParticleFilter<B,S,R,ParticleFilterCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL, const real essRel = 1.0) {
+    return new AuxiliaryParticleFilter<B,S,R,ParticleFilterCache<> >(m, sim, resam, essRel);
+  }
 };
 }
 

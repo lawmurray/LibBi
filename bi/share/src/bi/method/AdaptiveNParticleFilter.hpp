@@ -167,6 +167,21 @@ struct AdaptiveNParticleFilterFactory {
     return new AdaptiveNParticleFilter<B,S,R,S2,IO1>(m, sim, resam, essRel,
         stopper, blockSize, out);
   }
+
+  /**
+   * Create adaptive N particle filter.
+   *
+   * @return AdaptiveNParticleFilter object. Caller has ownership.
+   *
+   * @see AdaptiveNParticleFilter::AdaptiveNParticleFilter()
+   */
+  template<class B, class S, class R, class S2>
+  static AdaptiveNParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL, const real essRel = 1.0, S2* stopper = NULL,
+      const int blockSize = 128) {
+    return new AdaptiveNParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m, sim, resam, essRel,
+        stopper, blockSize);
+  }
 };
 }
 

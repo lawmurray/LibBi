@@ -14,6 +14,20 @@ bi::Cache::Cache(const int size) : valids(size), dirties(size) {
   clear();
 }
 
+bi::Cache::Cache(const Cache& o) : valids(o.valids), dirties(o.dirties) {
+  //
+}
+
+bi::Cache& bi::Cache::operator=(const Cache& o) {
+  valids.resize(o.valids.size(), false);
+  dirties.resize(o.dirties.size(), false);
+
+  valids = o.valids;
+  dirties = o.dirties;
+
+  return *this;
+}
+
 bool bi::Cache::isValid(const int p, const int len) const {
   BOOST_AUTO(tmp, subrange(valids, p, len));
   return std::find(tmp.begin(), tmp.end(), false) == tmp.end();

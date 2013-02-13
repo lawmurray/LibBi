@@ -614,38 +614,39 @@ template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::advance(Random& rng, const real T,
     State<B,L>& s) {
-  real sgn = (T >= state.t) ? 1.0 : -1.0;
+  /* pre-condition */
+  BI_ASSERT(T >= state.t);
+
   real ti = state.t, tj, tf, ty, td;
 
   /* time of next input */
-  if (in != NULL && in->hasNext() && sgn * (in->getNextTime() - ti) >= 0.0) {
+  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
     tf = in->getNextTime();
   } else {
-    tf = T + sgn * 1.0;
+    tf = BI_REAL(1.0/0.0);
   }
 
   /* time of next observation */
-  if (obs != NULL && obs->hasNext()
-      && sgn * (obs->getNextTime() - ti) >= 0.0) {
+  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
     ty = obs->getNextTime();
   } else {
-    ty = T + sgn * 1.0;
+    ty = BI_REAL(1.0/0.0);
   }
 
   /* stopping time */
-  real stop = sgn * bi::min(sgn * ty, sgn * T);
+  real stop = bi::min(ty, T);
 
   do {
-    td = gt_step(ti, sgn * m.getDelta());
-    tj = sgn * bi::min(sgn * tf, bi::min(sgn * td, sgn * stop));
+    td = gt_step(ti, m.getDelta());
+    tj = bi::min(tf, bi::min(td, stop));
 
     /* inputs */
-    if (stop > ti && sgn * ti >= sgn * tf) {
+    if (stop > ti && ti >= tf) {
       in->update(s);
-      if (in->hasNext() && sgn * in->getNextTime() > sgn * tf) {
+      if (in->hasNext() && in->getNextTime() > tf) {
         tf = in->getNextTime();
       } else {
-        tf = stop + sgn * 1.0;
+        tf = BI_REAL(1.0/0.0);
       }
     }
 
@@ -655,17 +656,17 @@ void bi::Simulator<B,F,O,IO1>::advance(Random& rng, const real T,
     }
 
     /* observations */
-    if (sgn * tj >= sgn * ty) {
+    if (tj >= ty) {
       obs->update(s);
-      if (obs->hasNext() && sgn * obs->getTime() > sgn * ty) {
-        ty = obs->getTime();
+      if (obs->hasNext() && obs->getNextTime() >= ty) {
+        ty = obs->getNextTime();
       } else {
-        ty = stop + sgn * 1.0;
+        ty = BI_REAL(1.0/0.0);
       }
     }
 
     ti = tj;
-  } while (sgn * ti < sgn * stop);
+  } while (ti < stop);
   state.t = stop;
 }
 
@@ -674,38 +675,36 @@ template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::advance(const real T, State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.transitionSimulates() rather than m.transitionSamples()
-  real sgn = (T >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, ty, td;
 
   /* time of next input */
-  if (in != NULL && in->hasNext() && sgn * (in->getNextTime() - ti) >= 0.0) {
+  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
     tf = in->getNextTime();
   } else {
-    tf = T + sgn * 1.0;
+    tf = BI_REAL(1.0/0.0);
   }
 
   /* time of next observation */
-  if (obs != NULL && obs->hasNext()
-      && sgn * (obs->getNextTime() - ti) >= 0.0) {
+  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
     ty = obs->getNextTime();
   } else {
-    ty = T + sgn * 1.0;
+    ty = BI_REAL(1.0/0.0);
   }
 
   /* stopping time */
-  real stop = sgn * bi::min(sgn * ty, sgn * T);
+  real stop = bi::min(ty, T);
 
   do {
-    td = gt_step(ti, sgn * m.getDelta());
-    tj = sgn * bi::min(sgn * tf, bi::min(sgn * td, sgn * stop));
+    td = gt_step(ti, m.getDelta());
+    tj = bi::min(tf, bi::min(td, stop));
 
     /* inputs */
-    if (stop > ti && sgn * ti >= sgn * tf) {
+    if (stop > ti && ti >= tf) {
       in->update(s);
-      if (in->hasNext() && sgn * in->getNextTime() > sgn * tf) {
+      if (in->hasNext() && in->getNextTime() > tf) {
         tf = in->getNextTime();
       } else {
-        tf = stop + sgn * 1.0;
+        tf = BI_REAL(1.0/0.0);
       }
     }
 
@@ -715,17 +714,17 @@ void bi::Simulator<B,F,O,IO1>::advance(const real T, State<B,L>& s) {
     }
 
     /* observations */
-    if (sgn * tj >= sgn * ty) {
+    if (tj >= ty) {
       obs->update(s);
-      if (obs->hasNext() && sgn * obs->getTime() > sgn * ty) {
+      if (obs->hasNext() && obs->getTime() > ty) {
         ty = obs->getTime();
       } else {
-        ty = stop + sgn * 1.0;
+        ty = BI_REAL(1.0/0.0);
       }
     }
 
     ti = tj;
-  } while (sgn * ti < sgn * stop);
+  } while (ti < stop);
   state.t = stop;
 }
 
@@ -735,38 +734,36 @@ void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng, const real T,
     State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.lookaheadTransitionSamples() rather than m.transitionSamples()
-  real sgn = (T >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, ty, td;
 
   /* time of next input */
-  if (in != NULL && in->hasNext() && sgn * (in->getNextTime() - ti) >= 0.0) {
+  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
     tf = in->getNextTime();
   } else {
-    tf = T + sgn * 1.0;
+    tf = BI_REAL(1.0/0.0);
   }
 
   /* time of next observation */
-  if (obs != NULL && obs->hasNext()
-      && sgn * (obs->getNextTime() - ti) >= 0.0) {
+  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
     ty = obs->getNextTime();
   } else {
-    ty = T + sgn * 1.0;
+    ty = BI_REAL(1.0/0.0);
   }
 
   /* stopping time */
-  real stop = sgn * bi::min(sgn * ty, sgn * T);
+  real stop = bi::min(ty, T);
 
   do {
-    td = gt_step(ti, sgn * m.getDelta());
-    tj = sgn * bi::min(sgn * tf, bi::min(sgn * td, sgn * stop));
+    td = gt_step(ti, m.getDelta());
+    tj = bi::min(tf, bi::min(td, stop));
 
     /* inputs */
-    if (stop > ti && sgn * ti >= sgn * tf) {
+    if (stop > ti && ti >= tf) {
       in->update(s);
-      if (in->hasNext() && sgn * in->getNextTime() > sgn * tf) {
+      if (in->hasNext() && in->getNextTime() > tf) {
         tf = in->getNextTime();
       } else {
-        tf = stop + sgn * 1.0;
+        tf = BI_REAL(1.0/0.0);
       }
     }
 
@@ -776,17 +773,17 @@ void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng, const real T,
     }
 
     /* observations */
-    if (sgn * tj >= sgn * ty) {
+    if (tj >= ty) {
       obs->update(s);
-      if (obs->hasNext() && sgn * obs->getTime() > sgn * ty) {
+      if (obs->hasNext() && obs->getTime() > ty) {
         ty = obs->getTime();
       } else {
-        ty = stop + sgn * 1.0;
+        ty = BI_REAL(1.0/0.0);
       }
     }
 
     ti = tj;
-  } while (sgn * ti < sgn * stop);
+  } while (ti < stop);
   state.t = stop;
 }
 
@@ -795,38 +792,36 @@ template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::lookahead(const real T, State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.lookaheadTransitionSimulates() rather than m.transitionSamples()
-  real sgn = (T >= state.t) ? 1.0 : -1.0;
   real ti = state.t, tj, tf, ty, td;
 
   /* time of next input */
-  if (in != NULL && in->hasNext() && sgn * (in->getNextTime() - ti) >= 0.0) {
+  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
     tf = in->getNextTime();
   } else {
-    tf = T + sgn * 1.0;
+    tf = BI_REAL(1.0/0.0);
   }
 
   /* time of next observation */
-  if (obs != NULL && obs->hasNext()
-      && sgn * (obs->getNextTime() - ti) >= 0.0) {
+  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
     ty = obs->getNextTime();
   } else {
-    ty = T + sgn * 1.0;
+    ty = BI_REAL(1.0/0.0);
   }
 
   /* stopping time */
-  real stop = sgn * bi::min(sgn * ty, sgn * T);
+  real stop = bi::min(ty, T);
 
   do {
-    td = gt_step(ti, sgn * m.getDelta());
-    tj = sgn * bi::min(sgn * tf, bi::min(sgn * td, sgn * stop));
+    td = gt_step(ti, m.getDelta());
+    tj = bi::min(tf, bi::min(td, stop));
 
     /* inputs */
-    if (stop > ti && sgn * ti >= sgn * tf) {
+    if (stop > ti && ti >= tf) {
       in->update(s);
-      if (in->hasNext() && sgn * in->getNextTime() > sgn * tf) {
+      if (in->hasNext() && in->getNextTime() > tf) {
         tf = in->getNextTime();
       } else {
-        tf = stop + sgn * 1.0;
+        tf = BI_REAL(1.0/0.0);
       }
     }
 
@@ -836,17 +831,17 @@ void bi::Simulator<B,F,O,IO1>::lookahead(const real T, State<B,L>& s) {
     }
 
     /* observations */
-    if (sgn * tj >= sgn * ty) {
+    if (tj >= ty) {
       obs->update(s);
-      if (obs->hasNext() && sgn * obs->getTime() > sgn * ty) {
+      if (obs->hasNext() && obs->getTime() > ty) {
         ty = obs->getTime();
       } else {
-        ty = stop + sgn * 1.0;
+        ty = BI_REAL(1.0/0.0);
       }
     }
 
     ti = tj;
-  } while (sgn * ti < sgn * stop);
+  } while (ti < stop);
   state.t = stop;
 }
 

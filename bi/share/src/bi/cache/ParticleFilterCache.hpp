@@ -35,15 +35,25 @@ public:
   /**
    * Constructor.
    *
-   * @param m Model.
    * @param out output buffer.
    */
-  ParticleFilterCache(const Model& m, IO1* out = NULL);
+  ParticleFilterCache(IO1* out = NULL);
+
+  /**
+   * Shallow copy.
+   */
+  ParticleFilterCache(const ParticleFilterCache<IO1,CL>& o);
 
   /**
    * Destructor.
    */
   ~ParticleFilterCache();
+
+  /**
+   * Deep assignment.
+   */
+  ParticleFilterCache<IO1,CL>& operator=(
+      const ParticleFilterCache<IO1,CL>& o);
 
   /**
    * Get the most recent log-weights vector.
@@ -182,9 +192,8 @@ struct ParticleFilterCacheFactory {
    * @see ParticleFilterCache::ParticleFilterCache()
    */
   template<class IO1>
-  static ParticleFilterCache<IO1,CL>* create(const Model& m,
-      IO1* out = NULL) {
-    return new ParticleFilterCache<IO1,CL>(m, out);
+  static ParticleFilterCache<IO1,CL>* create(IO1* out = NULL) {
+    return new ParticleFilterCache<IO1,CL>(out);
   }
 
   /**
@@ -194,17 +203,42 @@ struct ParticleFilterCacheFactory {
    *
    * @see ParticleFilterCache::ParticleFilterCache()
    */
-  static ParticleFilterCache<ParticleFilterNetCDFBuffer,CL>* create(
-      const Model& m) {
-    return new ParticleFilterCache<ParticleFilterNetCDFBuffer,CL>(m);
+  static ParticleFilterCache<ParticleFilterNetCDFBuffer,CL>* create() {
+    return new ParticleFilterCache<ParticleFilterNetCDFBuffer,CL>();
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(const Model& m, IO1* out) :
-    SimulatorCache<IO1,CL>(out), ancestryCache(m), out(out) {
+bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(IO1* out) :
+    SimulatorCache<IO1,CL>(out), out(out) {
   //
+}
+
+template<class IO1, bi::Location CL>
+bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(
+    const ParticleFilterCache<IO1,CL>& o) :
+    SimulatorCache<IO1,CL>(o),
+    ancestryCache(o.ancestryCache),
+    resampleCache(o.resampleCache),
+    logWeightsCache(o.logWeightsCache),
+    out(o.out) {
+  //
+}
+
+template<class IO1, bi::Location CL>
+bi::ParticleFilterCache<IO1,CL>& bi::ParticleFilterCache<IO1,CL>::operator=(
+    const ParticleFilterCache<IO1,CL>& o) {
+  SimulatorCache<IO1,CL>::operator=(o);
+
+  logWeightsCache.resize(o.logWeightsCache.size(), false);
+
+  ancestryCache = o.ancestryCache;
+  resampleCache = o.resampleCache;
+  logWeightsCache = o.logWeightsCache;
+  out = o.out;
+
+  return *this;
 }
 
 template<class IO1, bi::Location CL>
@@ -299,7 +333,7 @@ template<class B, bi::Location L, class V1>
 void bi::ParticleFilterCache<IO1,CL>::writeState(const int t,
     const State<B,L>& s, const V1 as) {
   SimulatorCache<IO1,CL>::writeState(t, s);
-  ancestryCache.writeState(s, as);
+  ancestryCache.writeState(t, s, as);
 }
 
 template<class IO1, bi::Location CL>

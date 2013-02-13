@@ -23,6 +23,21 @@ template<class T1>
 class Cache2D : public Cache {
 public:
   /**
+   * Default constructor.
+   */
+  Cache2D();
+
+  /**
+   * Shallow copy constructor.
+   */
+  Cache2D(const Cache2D<T1>& o);
+
+  /**
+   * Deep assignment operator.
+   */
+  Cache2D<T1>& operator=(const Cache2D<T1>& o);
+
+  /**
    * Matrix type.
    */
   typedef host_matrix<T1> matrix_type;
@@ -80,6 +95,26 @@ private:
    */
   matrix_type pages;
 };
+}
+
+template<class T1>
+inline bi::Cache2D<T1>::Cache2D() {
+  //
+}
+
+template<class T1>
+bi::Cache2D<T1>::Cache2D(const Cache2D<T1>& o) : Cache(o), pages(o.pages) {
+  //
+}
+
+template<class T1>
+bi::Cache2D<T1>& bi::Cache2D<T1>::operator=(const Cache2D<T1>& o) {
+  Cache::operator=(o);
+
+  pages.resize(o.pages.size1(), o.pages.size2(), false);
+  pages = o.pages;
+
+  return *this;
 }
 
 template<class T1>

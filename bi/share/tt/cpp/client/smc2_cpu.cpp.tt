@@ -123,11 +123,8 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'ekf' %]
-    KalmanFilterNetCDFBuffer* outFilter = NULL;
-    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim)));
   [% ELSE %]
-    BOOST_AUTO(outFilter, bi::ParticleFilterCacheFactory<LOCATION>::create(m));
-
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]
     real h;
@@ -152,7 +149,7 @@ int main(int argc, char* argv[]) {
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'pf1' %]
-      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, ESS_REL, outFilter)));
+      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, ESS_REL)));
     [% ELSIF client.get_named_arg('filter') == 'anpf' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -166,9 +163,9 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, ESS_REL, &stopper, BLOCK_P, outFilter)));
+      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, ESS_REL, &stopper, BLOCK_P)));
     [% ELSE %]
-      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, ESS_REL, outFilter)));
+      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, ESS_REL)));
     [% END %]
   [% END %]
   
@@ -225,7 +222,6 @@ int main(int argc, char* argv[]) {
   delete sampler;
   //delete out;
   delete filter;
-  delete outFilter;
   delete sim;
   delete obs;
   delete in;

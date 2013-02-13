@@ -305,7 +305,7 @@ protected:
  */
 struct ExtendedKalmanFilterFactory {
   /**
-   * Create unscented Kalman filter.
+   * Create extended Kalman filter.
    *
    * @return ExtendedKalmanFilter object. Caller has ownership.
    *

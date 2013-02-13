@@ -34,9 +34,19 @@ public:
   SimulatorCache(IO1* out = NULL);
 
   /**
+   * Shallow copy constructor.
+   */
+  SimulatorCache(const SimulatorCache<IO1,CL>& o);
+
+  /**
    * Destructor.
    */
   ~SimulatorCache();
+
+  /**
+   * Deep assignment operator.
+   */
+  SimulatorCache<IO1,CL>& operator=(const SimulatorCache<IO1,CL>& o);
 
   /**
    * Get the vector of all times.
@@ -158,8 +168,22 @@ bi::SimulatorCache<IO1,CL>::SimulatorCache(IO1* out) : out(out) {
 }
 
 template<class IO1, bi::Location CL>
+bi::SimulatorCache<IO1,CL>::SimulatorCache(const SimulatorCache<IO1,CL>& o) :
+    timeCache(o.timeCache), out(o.out) {
+  //
+}
+
+template<class IO1, bi::Location CL>
 bi::SimulatorCache<IO1,CL>::~SimulatorCache() {
   flush();
+}
+
+template<class IO1, bi::Location CL>
+bi::SimulatorCache<IO1,CL>& bi::SimulatorCache<IO1,CL>::operator=(const SimulatorCache<IO1,CL>& o) {
+  timeCache = o.timeCache;
+  out = o.out;
+
+  return *this;
 }
 
 template<class IO1, bi::Location CL>

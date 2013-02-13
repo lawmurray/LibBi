@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sim, SimulatorFactory::create(m, in, obs));
   
   /* filter */
-  BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(m, bufOutput));
+  BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
 
   [% IF client.get_named_arg('filter') == 'pf1' %]
   BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, ESS_REL, out)));

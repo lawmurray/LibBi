@@ -23,9 +23,24 @@ template<Location L>
 class CacheMask : public Cache {
 public:
   /**
+   * Default constructor.
+   */
+  CacheMask();
+
+  /**
+   * Shallow copy constructor.
+   */
+  CacheMask(const CacheMask<L>& o);
+
+  /**
    * Destructor.
    */
   ~CacheMask();
+
+  /**
+   * Assignment operator.
+   */
+  CacheMask<L>& operator=(const CacheMask<L>& o);
 
   /**
    * Number of pages in cache.
@@ -69,8 +84,34 @@ private:
 }
 
 template<bi::Location L>
+bi::CacheMask<L>::CacheMask() {
+  //
+}
+
+template<bi::Location L>
+bi::CacheMask<L>::CacheMask(const CacheMask<L>& o) : Cache(o) {
+  pages.resize(o.pages.size());
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new Mask<L>(*o.pages[i]);
+  }
+}
+
+template<bi::Location L>
 bi::CacheMask<L>::~CacheMask() {
   empty();
+}
+
+template<bi::Location L>
+bi::CacheMask<L>& bi::CacheMask<L>::operator=(const CacheMask<L>& o) {
+  Cache::operator=(o);
+
+  empty();
+  for (int i = 0; i < pages.size(); ++i) {
+    pages[i] = new Mask<L>();
+    *pages[i] = *o.pages[i];
+  }
+
+  return *this;
 }
 
 template<bi::Location L>

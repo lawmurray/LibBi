@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
   	KalmanFilterNetCDFBuffer* outFilter = NULL;
     BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
   [% ELSE %]
-    BOOST_AUTO(outFilter, bi::ParticleFilterCacheFactory<LOCATION>::create(m));
+    BOOST_AUTO(outFilter, bi::ParticleFilterCacheFactory<LOCATION>::create());
 
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]

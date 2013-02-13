@@ -40,10 +40,33 @@ class AncestryCache {
 public:
   /**
    * Constructor.
-   *
-   * @param size2 Number of variables to store.
    */
-  AncestryCache(const Model& m);
+  AncestryCache();
+
+  /**
+   * Shallow copy constructor.
+   */
+  AncestryCache(const AncestryCache& o);
+
+  /**
+   * Deep assignment operator.
+   */
+  AncestryCache& operator=(const AncestryCache& o);
+
+  /**
+   * Size of the cache (number of time points represented).
+   */
+  int size() const;
+
+  /**
+   * Clear the cache.
+   */
+  void clear();
+
+  /**
+   * Empty the cache.
+   */
+  void empty();
 
   /**
    * Read single trajectory from the cache.
@@ -63,26 +86,12 @@ public:
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
+   * @param t Time index.
    * @param s State.
    * @param as Ancestors.
    */
   template<class B, Location L, class V1>
-  void writeState(const State<B,L>& s, const V1 as);
-
-  /**
-   * Size of the cache (number of time points represented).
-   */
-  int size() const;
-
-  /**
-   * Clear the cache.
-   */
-  void clear();
-
-  /**
-   * Empty the cache.
-   */
-  void empty();
+  void writeState(const int t, const State<B,L>& s, const V1 as);
 
 private:
   /**
@@ -131,6 +140,10 @@ private:
 #include "../math/view.hpp"
 #include "../primitive/vector_primitive.hpp"
 
+inline int bi::AncestryCache::size() const {
+  return size1;
+}
+
 template<class M1>
 void bi::AncestryCache::readTrajectory(const int p, M1 X) const {
   /* pre-conditions */
@@ -152,7 +165,11 @@ void bi::AncestryCache::readTrajectory(const int p, M1 X) const {
 }
 
 template<class B, bi::Location L, class V1>
-void bi::AncestryCache::writeState(const State<B,L>& s, const V1 as) {
+void bi::AncestryCache::writeState(const int t, const State<B,L>& s,
+    const V1 as) {
+  /* pre-condition */
+  BI_ASSERT(t == this->size());
+
   typedef typename temp_host_matrix<real>::type host_matrix_type;
   typedef typename temp_host_vector<int>::type host_vector_type;
 
@@ -229,7 +246,7 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
   /* write any remaining particles into new entries in the cache */
   len = P - p;
 
-  particles.resize(particles.size1() + len, particles.size2(), true);
+  particles.resize(particles.size1() + len, X.size2(), true);
   ancestors.resize(ancestors.size() + len, true);
   legacies.resize(legacies.size() + len, true);
 
@@ -243,10 +260,6 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
   /* post-conditions */
   BI_ASSERT(particles.size1() == ancestors.size());
   BI_ASSERT(particles.size1() == legacies.size());
-}
-
-inline int bi::AncestryCache::size() const {
-  return size1;
 }
 
 #endif
