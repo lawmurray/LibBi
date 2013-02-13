@@ -83,7 +83,7 @@ public:
 
   BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
   
-  [% IF (std.is_common && action.get_left.get_var.get_type == 'obs') || (!log && std.is_common) %]
+  [% IF std.is_common && (action.get_left.is_common || !log) %]
   std(s, p, cox, pax, sigma);
   [% IF log %]
   lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma*xy);

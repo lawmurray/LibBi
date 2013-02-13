@@ -13,6 +13,8 @@ beta = action.get_named_arg('beta');
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
+#include "bi/random/generic.hpp"
+
 /**
  * Action: [% action.get_name %].
  */
@@ -52,7 +54,8 @@ public:
     
   alpha(s, p, cox, pax, a);
   beta(s, p, cox, pax, b);
-  u = rng.beta(a, b);
+  
+  u = bi::beta(rng, a, b);
   
   x.template fetch<target_type>(s, p, ix) = u;
 }

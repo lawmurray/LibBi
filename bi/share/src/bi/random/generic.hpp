@@ -1,0 +1,133 @@
+/**
+ * @file
+ *
+ * Generic (host and device) functions for distributions which are sampled
+ * via the simulation of other more basic distributions.
+ *
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * $Rev$
+ * $Date$
+ */
+#ifndef BI_RANDOM_GENERIC_HPP
+#define BI_RANDOM_GENERIC_HPP
+
+#include "../cuda/cuda.hpp"
+
+namespace bi {
+/**
+ * Generate a random number from a beta distribution with given parameters.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param alpha Shape.
+ * @param beta Shape.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 beta(R& rng, const T1 alpha = 1.0, const T1 beta = 1.0);
+
+/**
+ * Generate a random number from a Gaussian distribution that is truncated
+ * with a lower bound.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param lower Lower bound of the distribution.
+ * @param mu Mean of the distribution.
+ * @param sigma Standard deviation of the distribution.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu =
+    0.0, const T1 sigma = 1.0);
+
+/**
+ * Generate a random number from a Gaussian distribution that is truncated
+ * with a upper bound.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param upper Upper bound of the distribution.
+ * @param mu Mean of the distribution.
+ * @param sigma Standard deviation of the distribution.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu =
+    0.0, const T1 sigma = 1.0);
+
+/**
+ * Generate a random number from a Gaussian distribution that is truncated
+ * with both a lower and an upper bound.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param lower Lower bound of the distribution.
+ * @param upper Upper bound of the distribution.
+ * @param mu Mean of the distribution.
+ * @param sigma Standard deviation of the distribution.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
+    const T1 mu = 0.0, const T1 sigma = 1.0);
+
+}
+
+template<class R, class T1>
+inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  BI_ASSERT(alpha > static_cast<T1>(0.0) && beta > static_cast<T1>(0.0));
+
+  const T1 x = rng.gamma(alpha, static_cast<T1>(1.0));
+  const T1 y = rng.gamma(beta, static_cast<T1>(1.0));
+
+  return x / (x + y);
+}
+
+template<class R, class T1>
+T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu, const T1 sigma) {
+  T1 u;
+  do {
+    u = rng.gaussian(mu, sigma);
+  } while (u < lower);
+
+  return u;
+}
+
+template<class R, class T1>
+T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu, const T1 sigma) {
+  T1 u;
+  do {
+    u = rng.gaussian(mu, sigma);
+  } while (u > upper);
+
+  return u;
+}
+
+template<class R, class T1>
+T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu, const T1 sigma) {
+  /* pre-conditions */
+  BI_ASSERT(upper > lower);
+
+  T1 u;
+  do {
+    u = rng.gaussian(mu, sigma);
+  } while (u < lower || u > upper);
+
+  return u;
+}
+
+#endif

@@ -31,11 +31,7 @@ Mean.
 
 =item C<std> (position 1, default 1.0)
 
-For a univariate or i.i.d. distribution, a scalar giving the standard
-deviation. For a multivariate distribution of independent variables, a vector
-of the same size as the target giving the standard deviations of those
-variables. For a general multivariate distribution, a matrix giving the
-upper-triangular Cholesky factor of the covariance matrix.
+Standard deviation.
 
 =item C<log> (default false)
 

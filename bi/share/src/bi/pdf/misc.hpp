@@ -13,7 +13,6 @@
 #include "UniformPdf.hpp"
 #include "GammaPdf.hpp"
 #include "InverseGammaPdf.hpp"
-//#include "FactoredPdf.hpp"
 
 namespace bi {
 /**
@@ -239,20 +238,6 @@ template<class V1>
 void mean(const InverseGammaPdf& q, V1 mu);
 
 /**
- * Compute mean of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam S Type list.
- * @tparam V1 Vector type.
- *
- * @param q Pdf.
- * @param[out] mu Mean.
- */
-//template<class S, class V1>
-//void mean(const FactoredPdf<S>& q, V1 mu);
-
-/**
  * Compute unweighted covariance of sample set.
  *
  * @ingroup math_pdf
@@ -345,20 +330,6 @@ void cov(const GammaPdf& q, M1 Sigma);
  */
 template<class M1>
 void cov(const InverseGammaPdf& q, M1 Sigma);
-
-/**
- * Compute covariance of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam S Type list.
- * @tparam M1 Matrix type.
- *
- * @param q Pdf.
- * @param[out] Sigma Covariance.
- */
-//template<class S, class M1>
-//void cov(const FactoredPdf<S>& q, M1 Sigma);
 
 /**
  * Compute unweighted variance of sample set.
@@ -565,7 +536,6 @@ void det_rows(const M2 X, const V2& is, V3 det);
 
 }
 
-//#include "FactoredPdfVisitor.hpp"
 #include "../kd/FastGaussianKernel.hpp"
 #include "../math/misc.hpp"
 #include "../math/sim_temp_vector.hpp"
@@ -843,12 +813,6 @@ inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
   set_elements(mu, alpha*std::pow(beta, 2));
 }
 
-//template<class S, class V1>
-//void bi::mean(const FactoredPdf<S>& q, V1 mu) {
-//  mu.clear();
-//  FactoredPdfVisitor<S>::acceptMean(mu, &q.factors[0]);
-//}
-
 template<class M1, class V1, class M2>
 void bi::cov(const M1 X, const V1 mu, M2 Sigma) {
   /* pre-conditions */
@@ -935,12 +899,6 @@ void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
   Sigma.clear();
   set_elements(diagonal(Sigma), sigma);
 }
-
-//template<class S, class M1>
-//void bi::cov(const FactoredPdf<S>& q, M1 Sigma) {
-//  Sigma.clear();
-//  FactoredPdfVisitor<S>::acceptCov(Sigma, &q.factors[0]);
-//}
 
 template<class M1, class V1, class V2>
 void bi::var(const M1 X, const V1 mu, V2 sigma) {

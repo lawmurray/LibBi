@@ -78,6 +78,10 @@ CUDA_FUNC_BOTH double acosh(const double x);
 CUDA_FUNC_BOTH float acosh(const float x);
 CUDA_FUNC_BOTH double atanh(const double x);
 CUDA_FUNC_BOTH float atanh(const float x);
+CUDA_FUNC_BOTH double erf(const double x);
+CUDA_FUNC_BOTH float erf(const float x);
+CUDA_FUNC_BOTH double erfc(const double x);
+CUDA_FUNC_BOTH float erfc(const float x);
 
 template<class T>
 CUDA_FUNC_BOTH bool isnan(const T x);
@@ -333,6 +337,22 @@ inline double bi::atanh(const double x) {
 
 inline float bi::atanh(const float x) {
   return ::atanhf(x);
+}
+
+inline double bi::erf(const double x){
+  return ::erf(x);
+}
+
+inline float bi::erf(const float x) {
+  return ::erff(x);
+}
+
+inline double bi::erfc(const double x){
+  return ::erfc(x);
+}
+
+inline float bi::erfc(const float x) {
+  return ::erfcf(x);
 }
 
 template<class T>

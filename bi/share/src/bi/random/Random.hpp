@@ -150,19 +150,6 @@ public:
    */
   template<class T1>
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
-
-  /**
-   * Generate a random number from a beta distribution with given parameters.
-   *
-   * @tparam T1 Scalar type.
-   *
-   * @param alpha Shape.
-   * @param beta Shape.
-   *
-   * @return The random number.
-   */
-  template<class T1>
-  T1 beta(const T1 alpha = 1.0, const T1 beta = 1.0);
   //@}
 
   /**
@@ -262,14 +249,14 @@ public:
    */
   RngHost& getHostRng();
 
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   /**
    * Get a thread's random number generator.
    *
    * @param p Thread number.
    */
   CUDA_FUNC_DEVICE curandState& getDevRng(const int p);
-  #endif
+#endif
   //@}
 
 public:
@@ -278,12 +265,12 @@ public:
    */
   RngHost* hostRngs;
 
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   /**
    * Random number generators on device.
    */
   curandState* devRngs;
-  #endif
+#endif
 
   /**
    * Does this object own the host and device random number generators? This
@@ -328,62 +315,57 @@ inline T1 bi::Random::gamma(const T1 alpha, const T1 beta) {
   return getHostRng().gamma(alpha, beta);
 }
 
-template<class T1>
-inline T1 bi::Random::beta(const T1 alpha, const T1 beta) {
-  return getHostRng().beta(alpha, beta);
-}
-
 template<class V1>
 void bi::Random::uniforms(V1 x, const typename V1::value_type lower,
     const typename V1::value_type upper) {
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
-  #else
+#else
   typedef RandomHost impl;
-  #endif
+#endif
   impl::uniforms(*this, x, lower, upper);
 }
 
 template<class V1>
 void bi::Random::gaussians(V1 x, const typename V1::value_type mu,
     const typename V1::value_type sigma) {
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
-  #else
+#else
   typedef RandomHost impl;
-  #endif
+#endif
   impl::gaussians(*this, x, mu, sigma);
 }
 
 template<class V1>
 void bi::Random::gammas(V1 x, const typename V1::value_type alpha,
     const typename V1::value_type beta) {
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
-  #else
+#else
   typedef RandomHost impl;
-  #endif
+#endif
   impl::gammas(*this, x, alpha, beta);
 }
 
 template<class V1>
 void bi::Random::betas(V1 x, const typename V1::value_type alpha,
     const typename V1::value_type beta) {
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
-  #else
+#else
   typedef RandomHost impl;
-  #endif
+#endif
   impl::betas(*this, x, alpha, beta);
 }
 
 template<class V1, class V2>
 void bi::Random::multinomials(const V1 lps, V2 xs) {
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   typedef typename boost::mpl::if_c<V1::on_device,RandomGPU,RandomHost>::type impl;
-  #else
+#else
   typedef RandomHost impl;
-  #endif
+#endif
   impl::multinomials(*this, lps, xs);
 }
 

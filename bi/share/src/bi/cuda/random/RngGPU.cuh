@@ -64,16 +64,6 @@ public:
   CUDA_FUNC_DEVICE T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
 
   /**
-   * @copydoc Random::beta
-   */
-  CUDA_FUNC_DEVICE float beta(const float alpha = 1.0, const float beta = 1.0);
-
-  /**
-   * @copydoc Random::beta
-   */
-  CUDA_FUNC_DEVICE double beta(const double alpha = 1.0, const double beta = 1.0);
-
-  /**
    * CURAND state.
    */
   curandState r;
@@ -145,20 +135,6 @@ inline T1 bi::RngGPU::gamma(const T1 alpha, const T1 beta) {
       bi::log(u) >= static_cast<T1>(0.5)*x2 + d - dv + d*bi::log(v));
 
   return scale*dv;
-}
-
-inline float bi::RngGPU::beta(const float alpha, const float beta) {
-  const float x = gamma(alpha, 1.0f);
-  const float y = gamma(beta, 1.0f);
-
-  return x/(x + y);
-}
-
-inline double bi::RngGPU::beta(const double alpha, const double beta) {
-  const double x = gamma(alpha, 1.0);
-  const double y = gamma(beta, 1.0);
-
-  return x/(x + y);
 }
 
 #endif

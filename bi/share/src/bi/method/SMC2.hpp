@@ -548,9 +548,11 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng, const real t, const real T,
 
       /* instead of using PMMH->propose, we use the Gaussian density fitted
        * on the current theta particles to propose new theta particles */
-      s.getParameters2() = row(thetaproposals, p);
-      s.getLogProposal1() = logdensCurrent[p];
-      s.getLogProposal2() = logdensProposals[p];
+      //s.getParameters2() = row(thetaproposals, p);
+      //s.getLogProposal1() = logdensCurrent[p];
+      //s.getLogProposal2() = logdensProposals[p];
+
+      pmmh->propose(rng, s);
       pmmh->logPrior(s);
       pmmh->logLikelihood(rng, t, T, K, s);
       pmmhaccept = pmmh->computeAcceptReject(rng, s);

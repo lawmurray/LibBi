@@ -66,12 +66,6 @@ public:
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
 
   /**
-   * @copydoc Random::beta
-   */
-  template<class T1>
-  T1 beta(const T1 alpha = 1.0, const T1 beta = 1.0);
-
-  /**
    * Random number generator type.
    */
   typedef boost::mt19937 rng_type;
@@ -164,17 +158,6 @@ inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
   return beta*gen();
-}
-
-template<class T1>
-inline T1 bi::RngHost::beta(const T1 alpha, const T1 beta) {
-  /* pre-condition */
-  BI_ASSERT(alpha > 0.0 && beta > 0.0);
-
-  const T1 x = gamma(alpha, 1.0);
-  const T1 y = gamma(beta, 1.0);
-
-  return x/(x + y);
 }
 
 #endif

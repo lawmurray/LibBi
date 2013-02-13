@@ -1,0 +1,169 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[% USE Math %]
+
+[%-
+mean = action.get_named_arg('mean');
+std = action.get_named_arg('std');
+lower = action.get_named_arg('lower');
+upper = action.get_named_arg('upper');
+has_lower = action.is_named_arg('lower');
+has_upper = action.is_named_arg('upper');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+#include "bi/random/generic.hpp"
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('mean') %]
+  [% declare_action_static_function('std') %]
+  [% declare_action_static_function('z') %]
+  [% IF has_lower %]
+  [% declare_action_static_function('lower') %]
+  [% END %]
+  [% IF has_upper %]
+  [% declare_action_static_function('upper') %]
+  [% END %]
+  
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+[% sig_action_static_function('mean') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(mean) %]
+  
+  x = [% mean.to_cpp %];
+}
+
+[% sig_action_static_function('std') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(std) %]
+  
+  x = [% std.to_cpp %];
+}
+
+[% IF has_lower %]
+[% sig_action_static_function('lower') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(lower) %]
+  
+  x = [% lower.to_cpp %];
+}
+[% END %]
+
+[% IF has_upper %]
+[% sig_action_static_function('upper') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(upper) %]
+  
+  x = [% upper.to_cpp %];
+}
+[% END %]
+
+[% sig_action_static_function('z') %] {
+  T1 mu, sigma, mn, mx;
+    
+  mean(s, p, cox, pax, mu);
+  std(s, p, cox, pax, sigma);
+
+  x = BI_REAL(1.0); // (re)normalising constant for truncation
+  [% IF has_lower %]
+  lower(s, p, cox, pax, mn);
+  x -= BI_REAL(0.5)*(BI_REAL(1.0) + bi::erf((mn - mu)/(BI_REAL([% Math.sqrt(2.0) %])*sigma)));
+  [% END %]
+
+  [% IF has_upper %]
+  upper(s, p, cox, pax, mx);
+  x -= BI_REAL(0.5)*bi::erfc((mx - mu)/(BI_REAL([% Math.sqrt(2.0) %])*sigma));
+  [% END %]
+}
+
+[% std_action_static_function('simulate') %]
+
+[% sig_action_static_function('sample') %] {
+  real mu, sigma, mn, mx, u;
+    
+  mean(s, p, cox, pax, mu);
+  std(s, p, cox, pax, sigma);
+  [% IF has_lower && has_upper %]
+  lower(s, p, cox, pax, mn);
+  upper(s, p, cox, pax, mx);
+  u = truncated_gaussian(rng, mn, mx, mu, sigma);
+  [% ELSIF has_lower && !has_upper %]
+  lower(s, p, cox, pax, mn);
+  u = lower_truncated_gaussian(rng, mn, mu, sigma);
+  [% ELSIF !has_lower && !has_upper %]
+  upper(s, p, cox, pax, mx);
+  u = upper_truncated_gaussian(rng, mx, mu, sigma);
+  [% ELSE %]
+  u = rng.gaussian(mu, sigma);
+  [% END %]
+
+  x.template fetch<target_type>(s, p, ix) = u;
+}
+
+[% sig_action_static_function('logdensity') %] {
+  T1 mu, sigma, mn, mx, Z;
+  bool inside = true;
+
+  mean(s, p, cox, pax, mu);
+  std(s, p, cox, pax, sigma);
+  z(s, p, cox, pax, Z);
+  
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+
+  [% IF has_lower && has_upper %]
+  lower(s, p, cox, pax, mn);
+  upper(s, p, cox, pax, mx);
+  inside = xy >= mn && xy <= mx;
+  [% ELSIF has_lower && !has_upper %]
+  lower(s, p, cox, pax, mn);
+  inside = xy >= mn;
+  [% ELSIF !has_lower && !has_upper %]
+  upper(s, p, cox, pax, mx);
+  inside = xy <= mx;
+  [% END %]
+
+  if (inside) {
+    lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  } else {
+    lp = BI_REAL(-1.0)/BI_REAL(0.0);
+  }
+  
+  x.template fetch<target_type>(s, p, ix) = xy;
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  T1 sigma, Z;
+
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  
+  [%# not a tight bound unless lower < mu < upper, but a bound nonetheless %]
+  [% IF std.is_common && (!has_lower || lower.is_common) && (!has_upper || upper.is_common) %]
+  std(s, p, cox, pax, sigma);
+  z(s, p, cox, pax, Z);
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  [% ELSE %]
+  lp = BI_REAL(1.0/0.0);
+  [% END %]
+  
+  x.template fetch<target_type>(s, p, ix) = xy;
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]
