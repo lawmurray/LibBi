@@ -79,10 +79,10 @@ sub process_tex {
     $contents =~ s/\\label\{([A-Za-z0-9\-\_\\]*?)\}/"\\label\{" . &process_label($1) . "\}"/ge;
     $contents =~ s/\\index\{([A-Za-z0-9\-\_\\ ]+?)\}/"\\index\{" . &process_index($1) . "\}"/ge;
     $contents =~ s/\\mbox\{\}//g;
-    $contents =~ s/\\item\[\{?(.*?) *(\((?:position ?\d+,? ?)?(?:default ?|mandatory).*?\)?)\}?\]/\\item\[$1\] $2/g;
+    $contents =~ s/\\item\[\{?(.*?) *(\((?:position ?\d+,? ?)?(?:(?:default ?|mandatory).*?)?\)?)\}?\]/\\item\[$1\] $2/g;
     $contents =~ s/\\textbf\{(\(default .*?\))\}/$1/g; # longer command line options seem to end up with some bold?
     $contents =~ s/\(default ?\\textbf\{ ?(.*?)\}?\)\}?/\(default $1\)/g; # ^ same again
-    $contents =~ s/\\subsubsection\*\{See also\\label\{.*?\}\}\n\n\n(\\\w+ref\{.*\})/\\seealso\{See also $1\}/g;
+    $contents =~ s/\\subsubsection\*\{See also\\label\{.*?\}\}\n\n\n(\\\w+ref\{.*\})/\\newseealso\{See also $1\}/g;
 
     # remove index entries for subsections and paragraphs
     $contents =~ s/\\index\{[A-Za-z0-9\-\_\\ ]+?\!(?:SYNOPSIS|DESCRIPTION|ARGUMENTS|PARAMETERS|OPTIONS|SEE ALSO)\}//ig;

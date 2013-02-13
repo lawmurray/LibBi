@@ -45,6 +45,9 @@
 \newcommand\secref{\begingroup \catcode`_=12 \dosecref}
 \newcommand\dosecref[2]{\hyperref[hyper][#1]{#2}\endgroup}
 
+\newcommand\newseealso{\begingroup \catcode`_=12 \donewseealso}
+\newcommand\donewseealso[1]{\seealso{#1}\endgroup}
+
 \makeatletter
 \newcommand*{\toccontents}{\@starttoc{toc}}
 \makeatother
