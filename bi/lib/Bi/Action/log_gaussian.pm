@@ -7,10 +7,6 @@ the C<log> argument defaulting to true.
 
 L<gaussian>
 
-=head1 AUTHOR
-
-Lawrence Murray <lawrence.murray@csiro.au>
-
 =cut
 
 package Bi::Action::log_gaussian;

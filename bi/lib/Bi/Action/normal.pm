@@ -6,10 +6,6 @@ normal - normal distribution, synonym of L<gaussian>.
 
 L<gaussian>
 
-=head1 AUTHOR
-
-Lawrence Murray <lawrence.murray@csiro.au>
-
 =cut
 
 package Bi::Action::normal;

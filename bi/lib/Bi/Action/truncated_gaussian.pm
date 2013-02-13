@@ -5,12 +5,13 @@ truncated_gaussian - truncated Gaussian distribution.
 =head1 SYNOPSIS
 
     x ~ truncated_gaussian(0.0, 1.0, -2.0, 2.0)
-    x ~ truncated_gaussian(0.0, 1.0, upper = 1.0)
+    x ~ truncated_gaussian(0.0, 1.0, lower = -2.0, upper = 2.0)
+    x ~ truncated_gaussian(0.0, 1.0, upper = 2.0)
 
 =head1 DESCRIPTION
 
 A C<truncated_gaussian> action specifies a variate that is distributed
-according to a Gaussian distribution with a lower and/or upper bound.
+according to a Gaussian distribution with a closed lower and/or upper bound.
 
 For a one-sided truncation, simply omit the relevant C<lower> or C<upper>
 argument.
