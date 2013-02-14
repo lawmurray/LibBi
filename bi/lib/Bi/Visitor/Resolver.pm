@@ -76,7 +76,6 @@ sub visit {
     my $inplace_writes = shift;
     my $conflicts = shift;
 
-    my $result = $node;
     my $sub_reads = [];
     my $sub_writes = [];
     my $sub_inplace_reads = [];
@@ -144,10 +143,13 @@ sub visit {
                 # reads from these temporaries.
                 my $read_block = new Bi::Model::Block(
                     $self->get_model->next_block_id);
-                my $write_block = $node;
-                $result = new Bi::Model::Block(
+                my $write_block = new Bi::Model::Block(
                     $self->get_model->next_block_id);
-                $result->push_blocks([ $read_block, $write_block ]);
+
+                $write_block->set_blocks($node->get_blocks);
+                $write_block->set_actions($node->get_actions);
+                $node->set_blocks([ $read_block, $write_block ]);
+                $node->set_actions([]);
 
                 foreach $var (@$conflicts) {
                     # insert intermediate output variable
@@ -186,7 +188,7 @@ sub visit {
         assert(!$node->get_commit || !scalar(@$conflicts)) if DEBUG;
     }
     
-    return $result;
+    return $node;
 }
 
 1;
