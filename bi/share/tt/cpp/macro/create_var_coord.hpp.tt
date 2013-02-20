@@ -133,10 +133,10 @@ inline [% class_name %]::[% class_name %](const int ix) {
 
 inline void [% class_name %]::inc() {
   [% FOREACH dim IN var.get_dims.reverse %]
-  if ([% dim.get_name %][% loop.index %] < N[% dim.get_name | upper %][% loop.index %] - 1) {
-    ++[% dim.get_name %][% loop.index %];
+  if ([% dim.get_name %][% var.num_dims - loop.index - 1 %] < N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %] - 1) {
+    ++[% dim.get_name %][% var.num_dims - loop.index - 1 %];
   } else {
-    [% dim.get_name %][% loop.index %] = 0;
+    [% dim.get_name %][% var.num_dims - loop.index - 1 %] = 0;
   [% END %]
   [% FOREACH dim IN var.get_dims.reverse %]
   }
@@ -145,10 +145,10 @@ inline void [% class_name %]::inc() {
 
 inline void [% class_name %]::dec() {
   [% FOREACH dim IN var.get_dims.reverse %]
-  if ([% dim.get_name %][% loop.index %] > 0) {
-    --[% dim.get_name %][% loop.index %];
+  if ([% dim.get_name %][% var.num_dims - loop.index - 1 %] > 0) {
+    --[% dim.get_name %][% var.num_dims - loop.index - 1 %];
   } else {
-    [% dim.get_name %][% loop.index %] = N[% dim.get_name | upper %][% loop.index %] - 1;
+    [% dim.get_name %][% var.num_dims - loop.index - 1 %] = N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %] - 1;
   [% END %]
   [% FOREACH dim IN var.get_dims.reverse %]
   }
@@ -161,14 +161,14 @@ inline int [% class_name %]::index() const {
   [% ELSE %]
   [% FOREACH dim IN var.get_dims.reverse %]
   [% IF loop.first %]
-  int i = [% dim.get_name %][% loop.index %];
+  int i = [% dim.get_name %][% var.num_dims - loop.index - 1 %];
   [% IF !loop.last %]
-  int len = N[% dim.get_name | upper %][% loop.index %];
+  int len = N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %];
   [% END %]
   [% ELSE %]
-  i += [% dim.get_name %][% loop.index %]*len;
+  i += [% dim.get_name %][% var.num_dims - loop.index - 1 %]*len;
   [% IF !loop.last %]
-  len *= N[% dim.get_name | upper %][% loop.index %];
+  len *= N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %];
   [% END %]
   [% END %]
   [% END %]
@@ -187,10 +187,10 @@ inline void [% class_name %]::setIndex(const int i) {
   
   [%-FOREACH dim IN var.get_dims.reverse %]
   [%-IF loop.last-%]
-  [% dim.get_name %][% loop.index %] = j;
+  [% dim.get_name %][% var.num_dims - loop.index - 1 %] = j;
   [%-ELSE-%]
-  rest = j/N[% dim.get_name | upper %][% loop.index %];
-  [% dim.get_name %][% loop.index %] = j - rest*N[% dim.get_name | upper %][% loop.index %];
+  rest = j/N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %];
+  [% dim.get_name %][% var.num_dims - loop.index - 1 %] = j - rest*N[% dim.get_name | upper %][% var.num_dims - loop.index - 1 %];
   j = rest;
   [%-END-%]
   [%-END %]

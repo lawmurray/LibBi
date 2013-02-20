@@ -49,7 +49,7 @@ public:
 
 [% sig_action_static_function('range') %] {
   [% alias_dims(action) %]
-  [% fetch_parents(upper) %]
+  [% fetch_parents(range) %]
   
   x = [% range.to_cpp %];
 }
