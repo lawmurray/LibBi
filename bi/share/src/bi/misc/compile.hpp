@@ -48,6 +48,10 @@
  *
  * Declare variable as thread local storage.
  */
+#if defined(__GNUC__)
 #define BI_THREAD __thread
+#else
+#define BI_THREAD
+#endif
 
 #endif

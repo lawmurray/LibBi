@@ -26,7 +26,7 @@ extern BI_THREAD int bi_omp_tid;
 /**
  * Maximum number of threads. Saves function calls to omp_get_max_threads().
  */
-extern BI_THREAD int bi_omp_max_threads;
+extern int bi_omp_max_threads;
 
 #ifdef ENABLE_CUDA
 /**
@@ -43,7 +43,6 @@ extern BI_THREAD cudaStream_t bi_omp_cuda_stream;
 
 #ifdef __ICC
 #pragma omp threadprivate(bi_omp_tid)
-#pragma omp threadprivate(bi_omp_max_threads)
 #ifdef ENABLE_CUDA
 #pragma omp threadprivate(bi_omp_cublas_handle)
 #pragma omp threadprivate(bi_omp_cuda_stream)
