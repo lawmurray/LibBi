@@ -37,10 +37,10 @@ void bi_omp_init(const int threads) {
   #pragma omp parallel
   {
     bi_omp_tid = omp_get_thread_num();
-    //#ifdef ENABLE_CUDA
-    //CUBLAS_CHECKED_CALL(cublasCreate(&bi_omp_cublas_handle));
-    //CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
-    //#endif
+    #ifdef ENABLE_CUDA
+    CUBLAS_CHECKED_CALL(cublasCreate(&bi_omp_cublas_handle));
+    CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
+    #endif
   }
 }
 
