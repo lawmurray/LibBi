@@ -54,7 +54,7 @@
  * @arg @p cond Condition.
  * @arg @p msg Message to print if condition failed.
  */
-#if !defined(NDEBUG) && !defined(__CUDA_ARCH__)
+#if defined(NDEBUG) && !defined(__CUDA_ARCH__)
 #define BI_ERROR_MSG(cond, msg) \
   if (!(cond)) { \
     std::cerr << "Error: " << msg << std::endl; \
