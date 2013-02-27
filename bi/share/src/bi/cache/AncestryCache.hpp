@@ -166,12 +166,10 @@ private:
    */
   int size1;
 
-  #ifdef ENABLE_DIAGNOSTICS
   /**
    * Time taken for last write, in microseconds.
    */
   int usecs;
-  #endif
 };
 }
 
