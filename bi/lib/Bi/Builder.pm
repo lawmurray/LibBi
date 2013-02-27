@@ -65,6 +65,8 @@ sub new {
         _mpi => 0,
         _vampir => 0,
         _single => 0,
+        _extradebug => 0,
+        _diagnostics => 0,
         _tstamps => {}
     };
     bless $self, $class;
@@ -90,6 +92,8 @@ sub new {
         'disable-single' => sub { $self->{_single} = 0 },
         'enable-extradebug' => sub { $self->{_extradebug} = 1 },
         'disable-extradebug' => sub { $self->{_extradebug} = 0 },
+        'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
+        'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
     );
     GetOptions(@args) || die("could not read command line arguments\n");
     
@@ -109,6 +113,7 @@ sub new {
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
     push(@builddir, 'extradebug') if $self->{_extradebug};
+    push(@builddir, 'diagnostics') if $self->{_diagnostics};
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
     mkpath($self->{_builddir});
@@ -224,6 +229,7 @@ sub _configure {
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
     $options .= $self->{_extradebug} ? ' --enable-extradebug' : ' --disable-extradebug';
+    $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
     
     if ($self->{_extradebug}) {
     	$cxxflags = '-O0 -g3 -fno-inline -D_GLIBCXX_DEBUG';

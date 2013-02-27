@@ -93,6 +93,36 @@ public:
   template<class B, Location L, class V1>
   void writeState(const int t, const State<B,L>& s, const V1 as);
 
+  /**
+   * @name Diagnostics
+   */
+  //@{
+  /**
+   * Report to stderr.
+   */
+  void report() const;
+
+  /**
+   * Number of slots in the cache.
+   */
+  int numSlots() const;
+
+  /**
+   * Number of slots in the cache which contain active nodes.
+   */
+  int numNodes() const;
+
+  /**
+   * Number of free blocks (one or more continugous free slots) in the cache.
+   */
+  int numFreeBlocks() const;
+
+  /**
+   * Largest free block in the cache.
+   */
+  int largestFreeBlock() const;
+  //@}
+
 private:
   /**
    * Host implementation of writeState().
@@ -260,6 +290,10 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
   /* post-conditions */
   BI_ASSERT(particles.size1() == ancestors.size());
   BI_ASSERT(particles.size1() == legacies.size());
+
+  #ifdef ENABLE_DIAGNOSTICS
+  report();
+  #endif
 }
 
 #endif

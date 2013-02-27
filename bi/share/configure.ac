@@ -69,12 +69,20 @@ AC_ARG_ENABLE([vampir],
      esac],[vampir=false])
      
 AC_ARG_ENABLE([extradebug],
-     [  --enable-extradebug         debugging options to compiler],
+     [  --enable-extradebug     debugging options to compiler],
      [case "${enableval}" in
        yes) extradebug=true ;;
        no)  extradebug=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-extradebug]) ;;
      esac],[extradebug=false])
+
+AC_ARG_ENABLE([diagnostics],
+     [  --enable-diagnostics    output diagnostics during run],
+     [case "${enableval}" in
+       yes) diagnostics=true ;;
+       no)  diagnostics=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-diagnostics]) ;;
+     esac],[diagnostics=false])
      
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
@@ -263,6 +271,7 @@ AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
+AM_CONDITIONAL([ENABLE_DIAGNOSTICS], [test x$diagnostics = xtrue])
 
 # Variables for automake
 AC_SUBST([CUDA_CPPFLAGS], $CUDA_CPPFLAGS)
