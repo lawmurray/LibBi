@@ -12,9 +12,6 @@ class_name = "Model" _ model.get_name;
 ELSE;
 class_name = "Model";
 END;
-
-gperftools = client.get_named_arg('with-gperftools');
-mpi = client.get_named_arg('with-mpi');
 -%]
 
 /**
@@ -24,7 +21,7 @@ mpi = client.get_named_arg('with-mpi');
  * $Rev$
  * $Date$
  */
-[% IF gperftools %]
+[% IF client.get_named_arg('with-gperftools') %]
 #include "google/profiler.h"
 [% END %]
 #include "bi/init.hpp"

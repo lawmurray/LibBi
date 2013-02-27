@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   
   /* theta-particles resampler */
-  [% IF mpi %]
+  [% IF client.get_named_arg('with-mpi') %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler thetabase(C);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sampler, SMC2Factory::create(m, pmmh, &thetaresam, bufOutput));
 
   /* sample */
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
   TicToc timer;
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
   if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStop();
   [% END %]
 

@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs, out));
 
   /* simulate */
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
   TicToc timer;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStop();
   [% END %]
 

@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   /* resampler */
-  [% IF mpi %]
+  [% IF client.get_named_arg('with-mpi') %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler base(C);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, ESS_REL, out)));
   [% END %]
 
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
   TicToc timer;
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
   if (ENABLE_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF gperftools %]
+  [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStop();
   [% END %]
 

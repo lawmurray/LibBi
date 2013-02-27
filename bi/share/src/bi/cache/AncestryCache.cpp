@@ -106,7 +106,8 @@ void bi::AncestryCache::report() const {
   std::cerr << "AncestryCache: ";
   std::cerr << slots << " slots, ";
   std::cerr << nodes << " nodes, ";
-  std::cerr << freeBlocks << " free blocks with ";
-  std::cerr << std::setprecision(4) << frag << "% fragmentation.";
+  std::cerr << freeBlocks << " free blocks, ";
+  std::cerr << std::setprecision(4) << frag << "% fragmentation, ";
+  std::cerr << usecs << " us last write.";
   std::cerr << std::endl;
 }

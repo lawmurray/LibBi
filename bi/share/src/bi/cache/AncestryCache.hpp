@@ -11,6 +11,7 @@
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
 #include "../misc/location.hpp"
+#include "../misc/TicToc.hpp"
 #include "../state/State.hpp"
 #include "../model/Model.hpp"
 
@@ -164,6 +165,13 @@ private:
    * Size of the cache (number of time points represented).
    */
   int size1;
+
+  #ifdef ENABLE_DIAGNOSTICS
+  /**
+   * Time taken for last write, in microseconds.
+   */
+  int usecs;
+  #endif
 };
 }
 
@@ -218,6 +226,11 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
   /* pre-conditions */
   BI_ASSERT(X.size1() == as.size());
   BI_ASSERT(!V1::on_device);
+
+  #ifdef ENABLE_DIAGNOSTICS
+  synchronize();
+  TicToc clock;
+  #endif
 
   const int P = X.size1();
   typename temp_host_vector<int>::type newAs(P);
@@ -287,13 +300,15 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
 
   ++size1;
 
+  #ifdef ENABLE_DIAGNOSTICS
+  synchronize();
+  usecs = clock.toc();
+  report();
+  #endif
+
   /* post-conditions */
   BI_ASSERT(particles.size1() == ancestors.size());
   BI_ASSERT(particles.size1() == legacies.size());
-
-  #ifdef ENABLE_DIAGNOSTICS
-  report();
-  #endif
 }
 
 #endif
