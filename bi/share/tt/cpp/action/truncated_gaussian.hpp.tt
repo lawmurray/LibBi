@@ -11,10 +11,10 @@
 [%-
 mean = action.get_named_arg('mean');
 std = action.get_named_arg('std');
-lower = action.get_named_arg('lower');
-upper = action.get_named_arg('upper');
 has_lower = action.is_named_arg('lower');
 has_upper = action.is_named_arg('upper');
+IF has_lower; lower = action.get_named_arg('lower'); END;
+IF has_upper; upper = action.get_named_arg('upper'); END;
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
