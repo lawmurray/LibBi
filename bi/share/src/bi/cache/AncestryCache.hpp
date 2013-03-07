@@ -249,7 +249,7 @@ inline int bi::AncestryCache::size() const {
 
 template<class M1, class V1>
 void bi::AncestryCache::prune(const M1 X, const V1 as, const bool r) {
-  if (maxLegacy == 0 || (r && numSlots() - numNodes() < X.size1())) {
+  if (maxLegacy == 0 || (r/* && numSlots() - numNodes() < X.size1()*/)) {
     ++maxLegacy;
     numOccupied = 0;
     if (current.size()) {
@@ -270,7 +270,7 @@ void bi::AncestryCache::enlarge(const M1 X) {
   int oldSize = particles.size1();
   int newSize = numOccupied + X.size1();
   if (newSize > oldSize) {
-    newSize = 2 * bi::max(oldSize, X.size1());
+    newSize = oldSize + X.size1()/*2 * bi::max(oldSize, X.size1())*/;
     particles.resize(newSize, X.size2(), true);
     ancestors.resize(newSize, true);
     legacies.resize(newSize, true);
