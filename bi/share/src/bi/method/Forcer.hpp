@@ -9,7 +9,7 @@
 #define BI_METHOD_FORCER_HPP
 
 #include "../buffer/SparseInputNetCDFBuffer.hpp"
-#include "../cache/SparseCache.hpp"
+#include "../cache/Cache2D.hpp"
 
 namespace bi {
 /**
@@ -69,9 +69,14 @@ private:
   IO1* in;
 
   /**
-   * Cache.
+   * Cache of dynamic inputs.
    */
-  SparseCache<CL> cache;
+  Cache2D<real,CL> cache;
+
+  /**
+   * Cache of static inputs.
+   */
+  Cache2D<real,CL> cache0;
 };
 
 /**
@@ -110,17 +115,22 @@ template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
 inline void bi::Forcer<IO1,CL>::update(const int k, State<B,L>& s) {
   if (cache.isValid(k)) {
-    cache.read(k, s.get(F_VAR));
+    vec(s.get(F_VAR)) = cache.get(k);
   } else {
     in->read(k, F_VAR, s.get(F_VAR));
-    cache.write(k, s.get(F_VAR));
+    cache.set(k, vec(s.get(F_VAR)));
   }
 }
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
 inline void bi::Forcer<IO1,CL>::update0(State<B,L>& s) {
-  in->read0(F_VAR, s.get(F_VAR));
+  if (cache0.isValid(0)) {
+    vec(s.get(F_VAR)) = cache0.get(0);
+  } else {
+    in->read0(F_VAR, s.get(F_VAR));
+    cache0.set(0, vec(s.get(F_VAR)));
+  }
 }
 
 #endif

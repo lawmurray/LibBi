@@ -18,44 +18,33 @@ namespace bi {
  * @ingroup io_cache
  *
  * @tparam T1 Scalar type.
+ * @tparam CL Cache location.
  */
-template<class T1>
-class Cache2D : public Cache {
+template<class T1, Location CL>
+class Cache2D: public Cache {
 public:
   /**
-   * Default constructor.
+   * Matrix type.
    */
-  Cache2D();
+  typedef typename loc_matrix<CL,T1>::type matrix_type;
+
+  /**
+   * Constructor.
+   *
+   * @param len Length of each page (number of rows).
+   * @param size Number of pages (number of columns).
+   */
+  Cache2D(const int len = 0, const int size = 0);
 
   /**
    * Shallow copy constructor.
    */
-  Cache2D(const Cache2D<T1>& o);
+  Cache2D(const Cache2D<T1,CL>& o);
 
   /**
    * Deep assignment operator.
    */
-  Cache2D<T1>& operator=(const Cache2D<T1>& o);
-
-  /**
-   * Matrix type.
-   */
-  typedef host_matrix<T1> matrix_type;
-
-  /**
-   * Number of pages in cache.
-   */
-  int size() const;
-
-  /**
-   * Read individual value.
-   *
-   * @param i Row index.
-   * @param j Column (page) index.
-   *
-   * @return Value.
-   */
-  T1 get(const int i, const int j) const;
+  Cache2D<T1,CL>& operator=(const Cache2D<T1,CL>& o);
 
   /**
    * Read page.
@@ -78,16 +67,17 @@ public:
   void set(const int p, const V1 x);
 
   /**
-   * Get all pages.
+   * Resize cache.
    *
-   * @return Pages.
+   * @param len Length of each page (number of rows).
+   * @param size Number of pages (number of columns).
    */
-  const host_matrix<T1>& getPages() const;
+  void resize(const int len = 0, const int size = 0);
 
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(Cache2D<T1>& o);
+  void swap(Cache2D<T1,CL>& o);
 
   /**
    * Empty cache.
@@ -120,64 +110,49 @@ private:
 };
 }
 
-template<class T1>
-inline bi::Cache2D<T1>::Cache2D() {
+template<class T1, bi::Location CL>
+inline bi::Cache2D<T1,CL>::Cache2D(const int len, const int size) :
+    pages(len, size) {
   //
 }
 
-template<class T1>
-bi::Cache2D<T1>::Cache2D(const Cache2D<T1>& o) : Cache(o), pages(o.pages) {
+template<class T1, bi::Location CL>
+bi::Cache2D<T1,CL>::Cache2D(const Cache2D<T1,CL>& o) :
+    Cache(o), pages(o.pages) {
   //
 }
 
-template<class T1>
-bi::Cache2D<T1>& bi::Cache2D<T1>::operator=(const Cache2D<T1>& o) {
-  Cache::operator=(o);
-
+template<class T1, bi::Location CL>
+bi::Cache2D<T1,CL>& bi::Cache2D<T1,CL>::operator=(const Cache2D<T1,CL>& o) {
   pages.resize(o.pages.size1(), o.pages.size2(), false);
   pages = o.pages;
+  Cache::operator=(o);
 
   return *this;
 }
 
-template<class T1>
-inline int bi::Cache2D<T1>::size() const {
-  return pages.size2();
-}
-
-template<class T1>
-inline T1 bi::Cache2D<T1>::get(const int i, const int j) const {
-  /* pre-condition */
-  BI_ASSERT(isValid(j));
-
-  return pages(i,j);
-}
-
-template<class T1>
-inline const typename bi::Cache2D<T1>::matrix_type::vector_reference_type
-    bi::Cache2D<T1>::get(const int p) const {
+template<class T1, bi::Location CL>
+inline const typename bi::Cache2D<T1,CL>::matrix_type::vector_reference_type bi::Cache2D<
+    T1,CL>::get(const int p) const {
   /* pre-condition */
   BI_ASSERT(isValid(p));
 
   return column(pages, p);
 }
 
-template<class T1>
+template<class T1, bi::Location CL>
 template<class V1>
-void bi::Cache2D<T1>::set(const int p, const V1 x) {
-  /* pre-condition */
+void bi::Cache2D<T1,CL>::set(const int p, const V1 x) {
+  /* pre-conditions */
   BI_ASSERT(p >= 0);
+  BI_ASSERT(pages.size1() == 0 || x.size() == pages.size1());
 
-  if (pages.size1() != x.size()) {
-    clear();
-    pages.resize(x.size(), p + 1);
-    Cache::resize(p + 1);
+  if (pages.size1() == 0) {
+    pages.resize(x.size(), pages.size2());
   }
-  if (pages.size2() <= p) {
-    pages.resize(pages.size1(), p + 1, true);
-    Cache::resize(p + 1);
+  if (p >= size()) {
+    resize(pages.size1(), p + 1);
   }
-
   setDirty(p);
   setValid(p);
   column(pages, p) = x;
@@ -186,35 +161,36 @@ void bi::Cache2D<T1>::set(const int p, const V1 x) {
   BI_ASSERT(isValid(p) && isDirty(p));
 }
 
-template<class T1>
-inline const bi::host_matrix<T1>& bi::Cache2D<T1>::getPages() const {
-  return pages;
+template<class T1, bi::Location CL>
+void bi::Cache2D<T1,CL>::resize(const int len, const int size) {
+  pages.resize(len, size, true);
+  Cache::resize(size);
 }
 
-template<class T1>
-void bi::Cache2D<T1>::swap(Cache2D<T1>& o) {
+template<class T1, bi::Location CL>
+void bi::Cache2D<T1,CL>::swap(Cache2D<T1,CL>& o) {
   Cache::swap(o);
   pages.swap(o.pages);
 }
 
-template<class T1>
-void bi::Cache2D<T1>::empty() {
+template<class T1, bi::Location CL>
+void bi::Cache2D<T1,CL>::empty() {
   Cache::empty();
-  pages.resize(0,0);
+  pages.resize(0, 0);
 }
 
-template<class T1>
+template<class T1, bi::Location CL>
 template<class Archive>
-void bi::Cache2D<T1>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<Cache>(*this);
+void bi::Cache2D<T1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object < Cache > (*this);
   save_resizable_matrix(ar, version, pages);
 }
 
-template<class T1>
+template<class T1, bi::Location CL>
 template<class Archive>
-void bi::Cache2D<T1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<Cache>(*this);
-  load_resizable_vector(ar, version, pages);
+void bi::Cache2D<T1,CL>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object < Cache > (*this);
+  load_resizable_matrix(ar, version, pages);
 }
 
 #endif

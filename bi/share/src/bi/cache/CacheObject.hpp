@@ -42,18 +42,13 @@ public:
   CacheObject<T1>& operator=(const CacheObject<T1>& o);
 
   /**
-   * Number of pages in cache.
-   */
-  int size() const;
-
-  /**
    * Read page.
    *
    * @param p Page index.
    *
    * @return Page.
    */
-  T1 get(const int p) const;
+  const T1& get(const int p) const;
 
   /**
    * Write page.
@@ -65,6 +60,11 @@ public:
    */
   template<class T2>
   void set(const int p, const T2& x);
+
+  /**
+   * Resize cache.
+   */
+  void resize(const int size);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -113,10 +113,7 @@ bi::CacheObject<T1>::CacheObject() {
 
 template<class T1>
 bi::CacheObject<T1>::CacheObject(const CacheObject<T1>& o) : Cache(o) {
-  pages.resize(o.pages.size());
-  for (int i = 0; i < pages.size(); ++i) {
-    pages[i] = new T1(*o.pages[i]);
-  }
+  operator=(o);
 }
 
 template<class T1>
@@ -126,24 +123,25 @@ bi::CacheObject<T1>::~CacheObject() {
 
 template<class T1>
 bi::CacheObject<T1>& bi::CacheObject<T1>::operator=(const CacheObject<T1>& o) {
-  Cache::operator=(o);
-
-  empty();
-  for (int i = 0; i < pages.size(); ++i) {
-    pages[i] = new T1();
-    *pages[i] = *o.pages[i];
+  resize(o.size());
+  for (int i = 0; i < o.size(); ++i) {
+    if (o.pages[i] != NULL) {
+      if (pages[i] == NULL) {
+        pages[i] = new T1();
+      }
+      *pages[i] = *o.pages[i];
+    } else {
+      delete pages[i];
+      pages[i] = NULL;
+    }
   }
+  Cache::operator=(o);
 
   return *this;
 }
 
 template<class T1>
-inline int bi::CacheObject<T1>::size() const {
-  return (int)pages.size();
-}
-
-template<class T1>
-inline T1 bi::CacheObject<T1>::get(const int p) const {
+inline const T1& bi::CacheObject<T1>::get(const int p) const {
   /* pre-condition */
   BI_ASSERT(isValid(p));
 
@@ -152,13 +150,12 @@ inline T1 bi::CacheObject<T1>::get(const int p) const {
 
 template<class T1>
 template<class T2>
-inline void bi::CacheObject<T1>::set(const int p, const T2& x) {
+void bi::CacheObject<T1>::set(const int p, const T2& x) {
   if (size() <= p) {
+    Cache::resize(p + 1);
     pages.resize(p + 1);
     pages[p] = new T1();
-    Cache::resize(p + 1);
   }
-  pages[p]->resize(x.size());
   *pages[p] = x;
   setValid(p);
 
@@ -167,19 +164,33 @@ inline void bi::CacheObject<T1>::set(const int p, const T2& x) {
 }
 
 template<class T1>
+void bi::CacheObject<T1>::resize(const int size) {
+  /* pre-condition */
+  BI_ASSERT(size >= 0);
+
+  int oldSize = this->size();
+  if (size < oldSize) {
+    for (int i = size; i < pages.size(); ++i) {
+      delete pages[i];
+      pages[i] = NULL;
+    }
+  }
+  pages.resize(size, NULL);
+  Cache::resize(size);
+}
+
+template<class T1>
 void bi::CacheObject<T1>::swap(CacheObject<T1>& o) {
-  Cache::swap(o);
   pages.swap(o.pages);
+  Cache::swap(o);
 }
 
 template<class T1>
 void bi::CacheObject<T1>::empty() {
-  BOOST_AUTO(iter, pages.begin());
-  while (iter != pages.end()) {
-    delete *iter;
-    ++iter;
+  for (int i = 0; i < size(); ++i) {
+    delete pages[i];
+    pages[i] = NULL;
   }
-  pages.clear();
   Cache::empty();
 }
 

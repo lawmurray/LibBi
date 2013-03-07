@@ -10,8 +10,8 @@
 
 #include "../state/Mask.hpp"
 #include "../buffer/SparseInputNetCDFBuffer.hpp"
-#include "../cache/SparseCache.hpp"
-#include "../cache/CacheMask.hpp"
+#include "../cache/Cache2D.hpp"
+#include "../cache/CacheObject.hpp"
 
 namespace bi {
 /**
@@ -25,11 +25,6 @@ namespace bi {
 template<class IO1 = SparseInputNetCDFBuffer, Location CL = ON_HOST>
 class Observer {
 public:
-  /**
-   * Mask type.
-   */
-  typedef Mask<CL> mask_type;
-
   /**
    * Constructor.
    *
@@ -76,17 +71,17 @@ private:
   /**
    * Cache.
    */
-  SparseCache<CL> cache;
+  Cache2D<real,CL> cache;
 
   /**
    * Cache for masks on host.
    */
-  CacheMask<ON_HOST> maskHostCache;
+  CacheObject<Mask<ON_HOST> > maskHostCache;
 
   /**
    * Cache for masks.
    */
-  CacheMask<CL> maskCache;
+  CacheObject<Mask<CL> > maskCache;
 };
 
 /**
@@ -143,10 +138,10 @@ template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
 inline void bi::Observer<IO1,CL>::update(const int k, State<B,L>& s) {
   if (cache.isValid(k)) {
-    cache.read(k, s.get(OY_VAR));
+    vec(s.get(OY_VAR)) = cache.get(k);
   } else {
     in->readState(k, O_VAR, getHostMask(k), s.get(OY_VAR));
-    cache.write(k, s.get(OY_VAR));
+    cache.set(k, vec(s.get(OY_VAR)));
   }
 }
 

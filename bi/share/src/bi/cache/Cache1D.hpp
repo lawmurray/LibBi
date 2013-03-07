@@ -21,7 +21,7 @@ namespace bi {
  * @tparam CL Cache location.
  */
 template<class T1, Location CL>
-class Cache1D : public Cache {
+class Cache1D: public Cache {
 public:
   /**
    * Vector type.
@@ -43,12 +43,12 @@ public:
   /**
    * Shallow copy constructor.
    */
-  Cache1D(const Cache1D& o);
+  Cache1D(const Cache1D<T1,CL>& o);
 
   /**
    * Deep assignment operator.
    */
-  Cache1D& operator=(const Cache1D& o);
+  Cache1D<T1,CL>& operator=(const Cache1D<T1,CL>& o);
 
   /**
    * Read page.
@@ -119,14 +119,14 @@ private:
 }
 
 template<class T1, bi::Location CL>
-inline bi::Cache1D<T1,CL>::Cache1D(const int size) : Cache(size),
-    pages(size) {
+inline bi::Cache1D<T1,CL>::Cache1D(const int size) :
+    Cache(size), pages(size) {
   //
 }
 
 template<class T1, bi::Location CL>
-bi::Cache1D<T1,CL>::Cache1D(const Cache1D<T1,CL>& o) : Cache(o),
-    pages(o.pages) {
+bi::Cache1D<T1,CL>::Cache1D(const Cache1D<T1,CL>& o) :
+    Cache(o), pages(o.pages) {
   //
 }
 
@@ -149,8 +149,8 @@ inline T1 bi::Cache1D<T1,CL>::get(const int p) const {
 }
 
 template<class T1, bi::Location CL>
-inline const typename bi::Cache1D<T1,CL>::vector_reference_type bi::Cache1D<T1,CL>::get(
-    const int p, const int len) const {
+inline const typename bi::Cache1D<T1,CL>::vector_reference_type bi::Cache1D<
+    T1,CL>::get(const int p, const int len) const {
   /* pre-condition */
   BI_ASSERT(isValid(p, len));
 
@@ -191,14 +191,14 @@ void bi::Cache1D<T1,CL>::empty() {
 template<class T1, bi::Location CL>
 template<class Archive>
 void bi::Cache1D<T1,CL>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   save_resizable_vector(ar, version, pages);
 }
 
 template<class T1, bi::Location CL>
 template<class Archive>
 void bi::Cache1D<T1,CL>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   load_resizable_vector(ar, version, pages);
 }
 
