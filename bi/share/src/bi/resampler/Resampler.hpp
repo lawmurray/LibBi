@@ -10,6 +10,7 @@
 
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
+#include "../misc/exception.hpp"
 #include "../misc/location.hpp"
 #include "../traits/resampler_traits.hpp"
 
@@ -20,7 +21,7 @@ namespace bi {
  * Determine error in particular resampling.
  */
 template<class T>
-struct resample_error : public std::binary_function<T,int,T> {
+struct resample_error: public std::binary_function<T,int,T> {
   const T lW;
   const T P;
   // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
@@ -29,8 +30,9 @@ struct resample_error : public std::binary_function<T,int,T> {
   /**
    * Constructor.
    */
-  CUDA_FUNC_HOST resample_error(const T lW, const int P) : lW(lW),
-      P(P) {
+  CUDA_FUNC_HOST
+  resample_error(const T lW, const int P) :
+      lW(lW), P(P) {
     //
   }
 
@@ -42,11 +44,12 @@ struct resample_error : public std::binary_function<T,int,T> {
    *
    * @return Contribution to error for this index.
    */
-  CUDA_FUNC_BOTH T operator()(const T& lw, const int& o) {
+  CUDA_FUNC_BOTH
+  T operator()(const T& lw, const int& o) {
     T eps;
 
     if (bi::is_finite(lw)) {
-      eps = bi::exp(lw - lW) - o/P; // P of type T, not int, see note above
+      eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
       eps *= eps;
     } else {
       eps = 0.0;
@@ -245,7 +248,8 @@ public:
    * @param lws Log-weights.
    */
   template<class V1>
-  bool isTriggered(const V1 lws) const;
+  bool isTriggered(const V1 lws) const
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Compute effective sample size (ESS) of log-weights.
@@ -257,7 +261,8 @@ public:
    * @return ESS.
    */
   template<class V1>
-  static typename V1::value_type ess(const V1 lws);
+  static typename V1::value_type ess(const V1 lws)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Compute sum of squared errors of ancestry.
@@ -454,50 +459,38 @@ inline double bi::Resampler::getMaxLogWeight() const {
 
 template<class V1, class V2>
 void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::ancestorsToOffspring(as, os);
 }
 
 template<class V1, class V2>
 void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::offspringToAncestors(os, as);
 }
 
 template<class V1, class V2>
 void bi::Resampler::offspringToAncestorsPermute(const V1 os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::offspringToAncestorsPermute(os, as);
 }
 
 template<class V1, class V2>
 void bi::Resampler::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::cumulativeOffspringToAncestors(Os, as);
 }
 
 template<class V1, class V2>
 void bi::Resampler::cumulativeOffspringToAncestorsPermute(const V1 Os,
     V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::cumulativeOffspringToAncestorsPermute(Os, as);
 }
 
 template<class V1>
 void bi::Resampler::permute(const V1 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::permute(as);
 }
 
@@ -515,9 +508,12 @@ void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
   lws1 = lws;
   lws.resize(P);
 
-  BOOST_AUTO(iter1, thrust::make_permutation_iterator(lws1.begin(), as.begin()));
-  BOOST_AUTO(iter2, thrust::make_permutation_iterator(qlws.begin(), as.begin()));
-  thrust::transform(iter1, iter1 + P, iter2, lws.begin(), thrust::minus<T3>());
+  BOOST_AUTO(iter1,
+      thrust::make_permutation_iterator(lws1.begin(), as.begin()));
+  BOOST_AUTO(iter2,
+      thrust::make_permutation_iterator(qlws.begin(), as.begin()));
+  thrust::transform(iter1, iter1 + P, iter2, lws.begin(),
+      thrust::minus<T3>());
 }
 
 template<class V1, class M1>
@@ -525,9 +521,7 @@ void bi::Resampler::copy(const V1 as, M1 s) {
   /* pre-condition */
   BI_ASSERT(as.size() <= s.size1());
 
-  typedef typename boost::mpl::if_c<M1::on_device,
-      ResamplerGPU,
-      ResamplerHost>::type impl;
+  typedef typename boost::mpl::if_c<M1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::copy(as, s);
 }
 
@@ -543,7 +537,7 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
   BI_ASSERT(!V1::on_device);
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int i = 0; i < as.size(); ++i) {
     int a = as(i);
     if (i != a) {
@@ -561,21 +555,30 @@ void bi::Resampler::normalise(V1 lws) {
 }
 
 template<class V1>
-bool bi::Resampler::isTriggered(const V1 lws) const {
+bool bi::Resampler::isTriggered(const V1 lws) const
+    throw (ParticleFilterDegeneratedException) {
   return essRel >= 1.0 || ess(lws) < essRel * lws.size();
 }
 
 template<class V1>
-typename V1::value_type bi::Resampler::ess(const V1 lws) {
-  return ess_reduce(lws);
+typename V1::value_type bi::Resampler::ess(const V1 lws)
+    throw (ParticleFilterDegeneratedException) {
+  typename V1::value_type result = ess_reduce(lws);
+
+  if (result > 0.0) {
+    return result;
+  } else {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class V1, class V2>
 typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
   real lW = logsumexp_reduce(lws);
 
-  return thrust::inner_product(lws.begin(), lws.end(), os.begin(), BI_REAL(0.0),
+  return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
+      BI_REAL(0.0),
       thrust::plus<real>(), resample_error<real>(lW, lws.size()));
-}
+    }
 
 #endif

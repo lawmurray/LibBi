@@ -31,28 +31,25 @@ public:
   DistributedResampler(R* base, const double essRel = 0.5);
 
   /**
-   * @name High-level interface
-   */
-  //@{
-  /**
-   * @copydoc Resampler::isTriggered
-   */
-  template<class V1>
-  bool isTriggered(const V1 lws) const;
-
-  /**
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
   void resample(Random&, V1 lws, V2 as, O1& s)
       throw (ParticleFilterDegeneratedException);
-  //@}
+
+  /**
+   * @copydoc Resampler::isTriggered
+   */
+  template<class V1>
+  bool isTriggered(const V1 lws) const
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc Resampler::ess
    */
   template<class V1>
-  static typename V1::value_type ess(const V1 lws);
+  static typename V1::value_type ess(const V1 lws)
+      throw (ParticleFilterDegeneratedException);
 
 private:
   /**
@@ -121,16 +118,6 @@ bi::DistributedResampler<R>::DistributedResampler(R* base,
 }
 
 template<class R>
-template<class V1>
-bool bi::DistributedResampler<R>::isTriggered(const V1 lws) const {
-  boost::mpi::communicator world;
-  const int size = world.size();
-  const int P = lws.size();
-
-  return essRel >= 1.0 || ess(lws) < essRel * size * P;
-}
-
-template<class R>
 template<class V1, class V2, class O1>
 void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
@@ -167,6 +154,46 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
   permute(as);
   copy(as, s);
   lws.clear();
+}
+
+template<class R>
+template<class V1>
+bool bi::DistributedResampler<R>::isTriggered(const V1 lws) const
+    throw (ParticleFilterDegeneratedException) {
+  boost::mpi::communicator world;
+  const int size = world.size();
+  const int P = lws.size();
+
+  return essRel >= 1.0 || ess(lws) < essRel * size * P;
+}
+
+template<class R>
+template<class V1>
+typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws)
+    throw (ParticleFilterDegeneratedException) {
+  typedef typename V1::value_type T1;
+
+  T1 mx, sum1, sum2, result;
+  boost::mpi::communicator world;
+
+  mx = max_reduce(lws);
+  mx = boost::mpi::all_reduce(world, mx, boost::mpi::maximum<T1>());
+
+  sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
+  sum1 = boost::mpi::all_reduce(world, sum1, std::plus<T1>());
+
+  sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
+  sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
+
+  result = (sum1 * sum1) / sum2;
+
+  if (result > 0.0) {
+    return result;
+  } else {
+    throw ParticleFilterDegeneratedException();
+  }
 }
 
 template<class R>
@@ -245,28 +272,6 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
-}
-
-template<class R>
-template<class V1>
-typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws) {
-  typedef typename V1::value_type T1;
-
-  T1 mx, sum1, sum2;
-  boost::mpi::communicator world;
-
-  mx = max_reduce(lws);
-  mx = boost::mpi::all_reduce(world, mx, boost::mpi::maximum<T1>());
-
-  sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  sum1 = boost::mpi::all_reduce(world, sum1, std::plus<T1>());
-
-  sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
-
-  return (sum1 * sum1) / sum2;
 }
 
 template<class R>
