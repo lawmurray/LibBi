@@ -696,7 +696,7 @@ void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
   if (out != NULL && now.hasOutput()) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
-    out->writeState(k, s, as);
+    out->writeState(k, s, as, r);
     out->writeResample(k, r);
     out->writeLogWeights(k, lws);
   }

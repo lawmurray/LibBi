@@ -67,6 +67,7 @@ sub new {
         _single => 0,
         _extradebug => 0,
         _diagnostics => 0,
+        _gperftools => 0,
         _tstamps => {}
     };
     bless $self, $class;
@@ -94,6 +95,8 @@ sub new {
         'disable-extradebug' => sub { $self->{_extradebug} = 0 },
         'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
+        'enable-gperftools' => sub { $self->{_gperftools} = 1 },
+        'disable-gperftools' => sub { $self->{_gperftools} = 0 },
     );
     GetOptions(@args) || die("could not read command line arguments\n");
     
@@ -114,6 +117,7 @@ sub new {
     push(@builddir, 'single') if $self->{_single};
     push(@builddir, 'extradebug') if $self->{_extradebug};
     push(@builddir, 'diagnostics') if $self->{_diagnostics};
+    push(@builddir, 'gperftools') if $self->{_gperftools};
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
     mkpath($self->{_builddir});
@@ -230,6 +234,7 @@ sub _configure {
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
     $options .= $self->{_extradebug} ? ' --enable-extradebug' : ' --disable-extradebug';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
+    $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
     if ($self->{_extradebug}) {
     	$cxxflags = '-O0 -g3 -fno-inline -D_GLIBCXX_DEBUG';

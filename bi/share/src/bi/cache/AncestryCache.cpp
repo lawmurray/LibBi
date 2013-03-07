@@ -10,13 +10,14 @@
 #include <iomanip>
 
 bi::AncestryCache::AncestryCache() :
-    particles(0, 0), size1(0), numOccupied(0), q(0) {
+    particles(0, 0), size1(0), maxLegacy(0), numOccupied(0), q(0) {
   //
 }
 
 bi::AncestryCache::AncestryCache(const AncestryCache& o) :
     particles(o.particles), ancestors(o.ancestors), legacies(o.legacies), current(
-        o.current), size1(o.size1), numOccupied(o.numOccupied), q(o.q) {
+        o.current), size1(o.size1), maxLegacy(0), numOccupied(o.numOccupied), q(
+        o.q) {
   //
 }
 
@@ -31,6 +32,7 @@ bi::AncestryCache& bi::AncestryCache::operator=(const AncestryCache& o) {
   legacies = o.legacies;
   current = o.current;
   size1 = o.size1;
+  maxLegacy = o.maxLegacy;
   numOccupied = o.numOccupied;
   q = o.q;
 
@@ -43,15 +45,19 @@ void bi::AncestryCache::swap(AncestryCache& o) {
   legacies.swap(o.legacies);
   current.swap(o.current);
   std::swap(size1, o.size1);
+  std::swap(maxLegacy, o.maxLegacy);
   std::swap(usecs, o.usecs);
   std::swap(numOccupied, o.numOccupied);
   std::swap(q, o.q);
 }
 
 void bi::AncestryCache::clear() {
-  set_elements(legacies, -1);
+  legacies.clear();
   current.resize(0, false);
   size1 = 0;
+  maxLegacy = 0;
+  numOccupied = 0;
+  q = 0;
 }
 
 void bi::AncestryCache::empty() {
@@ -60,22 +66,15 @@ void bi::AncestryCache::empty() {
   legacies.resize(0, false);
   current.resize(0, false);
   size1 = 0;
-}
-
-int bi::AncestryCache::numSlots() const {
-  return particles.size1();
-}
-
-int bi::AncestryCache::numNodes() const {
-  return numSlots()
-      - op_reduce(legacies, less_constant_functor<int>(size() - 1), 0,
-          thrust::plus<int>());
+  maxLegacy = 0;
+  numOccupied = 0;
+  q = 0;
 }
 
 int bi::AncestryCache::numFreeBlocks() const {
   int q, len = 0, blocks = 0;
   for (q = 0; q < legacies.size(); ++q) {
-    if (legacies(q) < size() - 1) {
+    if (legacies(q) < maxLegacy) {
       ++len;
     } else {
       if (len > 0) {
@@ -92,7 +91,7 @@ int bi::AncestryCache::numFreeBlocks() const {
 int bi::AncestryCache::largestFreeBlock() const {
   int q, len = 0, maxLen = 0;
   for (q = 0; q < legacies.size(); ++q) {
-    if (legacies(q) < size() - 1) {
+    if (legacies(q) < maxLegacy) {
       ++len;
       if (len > maxLen) {
         maxLen = len;

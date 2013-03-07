@@ -61,19 +61,14 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
-      name => 'enable-timing',
+      name => 'with-timing',
       type => 'bool',
       default => 0
     },
     {
-      name => 'enable-output',
+      name => 'with-output',
       type => 'bool',
       default => 1
-    },
-    {
-      name => 'with-gperftools',
-      type => 'bool',
-      default => 0
     },
     {
       name => 'gperftools-file',

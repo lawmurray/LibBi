@@ -135,9 +135,10 @@ public:
    * @param t Time index.
    * @param s State.
    * @param as Ancestors.
+   * @param r Was resampling performed?
    */
   template<class B, Location L, class V1>
-  void writeState(const int t, const State<B,L>& s, const V1 as);
+  void writeState(const int t, const State<B,L>& s, const V1 as, const bool r);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -355,9 +356,9 @@ void bi::ParticleFilterCache<IO1,CL>::readTrajectory(const int p,
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L, class V1>
 void bi::ParticleFilterCache<IO1,CL>::writeState(const int t,
-    const State<B,L>& s, const V1 as) {
+    const State<B,L>& s, const V1 as, const bool r) {
   SimulatorCache<IO1,CL>::writeState(t, s);
-  ancestryCache.writeState(t, s, as);
+  ancestryCache.writeState(t, s, as, r);
 }
 
 template<class IO1, bi::Location CL>

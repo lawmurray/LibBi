@@ -81,6 +81,10 @@ Enable Vampir.
 \item[\bitt{--enable-single}] (default off)
 
 Use single-precision floating point.
+
+\item[\bitt{--enable-gperftools}] (default off)
+
+Enable the \bitt{gperftools} compiler.
 \end{description}
 
 \subsubsection{Run options}
@@ -99,11 +103,11 @@ Pseudorandom number generator seed.
 Run with \bitt{\textsl{N}} threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-\item[\bitt{--enable-timing}] (default off)
+\item[\bitt{--with-timing}] (default off)
 
 Enable timings.
 
-\item[\bitt{--enable-output}] (default on)
+\item[\bitt{--with-output}] (default on)
 
 Enable output.
 
@@ -123,13 +127,9 @@ Run within the \bitt{cuda-gdb} debugger.
 
 Run within \bitt{cuda-memcheck}.
 
-\item[\bitt{--with-gperftools}] (default off)
-
-Run with \bitt{gperftools} profiler.
-
 \item[\bitt{--gperftools-file}] (default '\textsl{command}.prof')
 
-Output file to use under \bitt{--with-gperftools}.
+Output file to use under \bitt{--enable-gperftools}.
 
 \item[\bitt{--with-mpi}] (default off)
 

@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   KalmanFilterNetCDFBuffer* bufOutput;
-  if (ENABLE_OUTPUT) {
+  if (WITH_OUTPUT) {
     bufOutput = new KalmanFilterNetCDFBuffer(m, P, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
     bufOutput = NULL;
@@ -97,21 +97,21 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(filter, ExtendedKalmanFilterFactory::create(m, sim, bufOutput));
 
   /* filter */
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
-  TicToc timer;  
+  #endif
+  TicToc timer;
   
   filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
   synchronize();
 
   /* output timing results */
-  if (ENABLE_TIMING) {
+  if (WITH_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
 
   delete filter;
   //delete out;

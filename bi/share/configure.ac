@@ -83,6 +83,14 @@ AC_ARG_ENABLE([diagnostics],
        no)  diagnostics=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-diagnostics]) ;;
      esac],[diagnostics=false])
+
+AC_ARG_ENABLE([gperftools],
+     [  --enable-gperftools    enable gperftools profiler],
+     [case "${enableval}" in
+       yes) gperftool=true ;;
+       no)  gperftool=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-gperftool]) ;;
+     esac],[gperftool=false])
      
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
@@ -256,6 +264,10 @@ if test x$mpi = xtrue; then
 	AC_CHECK_HEADER([boost/mpi.hpp], [], [AC_MSG_ERROR([MPI header not found (required with --enable-mpi)])], [])
 fi
 
+if test x$gperftools = xtrue; then
+    AC_CHECK_HEADER([google/profiler.h], [], [AC_MSG_ERROR([gperftools header not found (required with --enable-gperftools)])], [])
+fi
+
 # Restore user's flags
 CPPFLAGS=$USER_CPPFLAGS
 CXXFLAGS=$USER_CXXFLAGS
@@ -272,6 +284,7 @@ AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
 AM_CONDITIONAL([ENABLE_DIAGNOSTICS], [test x$diagnostics = xtrue])
+AM_CONDITIONAL([ENABLE_GPERFTOOLS], [test x$gperftools = xtrue])
 
 # Variables for automake
 AC_SUBST([CUDA_CPPFLAGS], $CUDA_CPPFLAGS)

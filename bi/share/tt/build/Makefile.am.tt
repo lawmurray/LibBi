@@ -148,6 +148,10 @@ if ENABLE_DIAGNOSTICS
 CPPFLAGS += -DENABLE_DIAGNOSTICS
 endif
 
+if ENABLE_GPERFTOOLS
+CPPFLAGS += -DENABLE_GPERFTOOLS
+endif
+
 # suffix rules for CUDA files
 .cu.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \

@@ -21,9 +21,9 @@ END;
  * $Rev$
  * $Date$
  */
-[% IF client.get_named_arg('with-gperftools') %]
+#ifdef ENABLE_GPERFTOOLS
 #include "google/profiler.h"
-[% END %]
+#endif
 #include "bi/init.hpp"
 #include "bi/cuda/cuda.hpp"
 #include "bi/mpi/mpi.hpp"

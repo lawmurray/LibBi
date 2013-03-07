@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   OptimiserNetCDFBuffer* bufOutput = NULL;
-  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
     bufOutput = new OptimiserNetCDFBuffer(m, OUTPUT_FILE, NetCDFBuffer::REPLACE);
   }
   
@@ -174,21 +174,21 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(optimiser, (NelderMeadOptimiserFactory<LOCATION>::create(m, filter, bufOutput, mode)));
 
   /* optimise */
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
+  #endif
   TicToc timer;
   
   optimiser->optimise(rng, START_TIME, T, K, s, bufInit, SIMPLEX_SIZE_REL, STOP_STEPS, STOP_SIZE);
   synchronize();
 
   /* output timing results */
-  if (ENABLE_TIMING) {
+  if (WITH_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
 
   delete optimiser;
   //delete out;

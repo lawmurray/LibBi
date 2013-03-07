@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   SMC2NetCDFBuffer* bufOutput = NULL;
-  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
       bufOutput = new SMC2NetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
 
@@ -216,21 +216,21 @@ int main(int argc, char* argv[]) {
       NMOVES, adapter, ADAPTER_SCALE, out));
 
   /* sample */
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
+  #endif
   TicToc timer;
 
   sampler->sample(rng, sched.begin(), sched.end(), s, bufInit, NSAMPLES);
   synchronize();
   
   /* output timing results */
-  if (ENABLE_TIMING) {
+  if (WITH_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
 
   delete sampler;
   delete out;

@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
   
   /* outputs */
   ParticleMCMCNetCDFBuffer* bufOutput = NULL;
-  if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
       bufOutput = new ParticleMCMCNetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
 
@@ -176,9 +176,9 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sampler, ParticleMarginalMetropolisHastingsFactory::create(m, filter, out));
 
   /* sample */
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
+  #endif
   TicToc timer;
 
   [% IF client.get_named_arg('filter') == 'anpf' && client.get_named_arg('joint-adaptation') == '1' %]
@@ -195,12 +195,12 @@ int main(int argc, char* argv[]) {
       sampler->getNumSteps() << " proposals accepted" << std::endl;
 
   /* output timing results */
-  if (ENABLE_TIMING) {
+  if (WITH_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
 
   delete sampler;
   delete out;

@@ -106,12 +106,12 @@ int main(int argc, char* argv[]) {
   /* output */
   [% IF client.get_named_arg('filter') == 'anpf' %]
   FlexiParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (ENABLE_OUTPUT) {
+  if (WITH_OUTPUT) {
     bufOutput = new FlexiParticleFilterNetCDFBuffer(m, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
   [% ELSE %]
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (ENABLE_OUTPUT) {
+  if (WITH_OUTPUT) {
     bufOutput = new ParticleFilterNetCDFBuffer(m, P, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
   [% END %]
@@ -181,21 +181,21 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
   [% END %]
 
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
+  #endif
   TicToc timer;
   
   filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
   synchronize();
   
   /* output timing results */
-  if (ENABLE_TIMING) {
+  if (WITH_TIMING) {
     std::cout << timer.toc() << std::endl;
   }
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
 
   delete filter;
   delete out;
