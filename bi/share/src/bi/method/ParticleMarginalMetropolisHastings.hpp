@@ -8,7 +8,7 @@
 #ifndef BI_METHOD_PARTICLEMARGINALMETROPOLISHASTINGS_HPP
 #define BI_METHOD_PARTICLEMARGINALMETROPOLISHASTINGS_HPP
 
-#include "misc.hpp"
+#include "../state/Schedule.hpp"
 #include "../state/ThetaState.hpp"
 #include "../cache/ParticleMCMCCache.hpp"
 #include "../math/vector.hpp"
@@ -84,22 +84,22 @@ public:
    * @tparam F #concept::Filter type.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
    * @param s State.
    * @param inInit Initialisation file.
    * @param C Number of samples to draw.
    */
   template<Location L, class IO2>
-  void sample(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, IO2* inInit = NULL, const int C = 1,
-      const FilterMode = UNCONDITIONED);
+  void sample(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit = NULL,
+      const int C = 1, const FilterMode = UNCONDITIONED);
 
   template<Location L, class IO2>
-  void sampleTogether(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, IO2* inInit, const int C);
+  void sampleTogether(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit,
+      const int C);
   //@}
 
   /**
@@ -115,55 +115,99 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
    * @param s State.
    * @param inInit Initialisation file.
    */
   template<Location L, class IO2>
-  void init(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, IO2* inInit = NULL);
+  void init(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit = NULL);
 
   /**
    * Take one step.
    *
    * @tparam L Location.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
-   * @param s State.
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
+   * @param[in,out] s State.
    * @param type Type of filtering to perform.
    *
    * @return True if the step is accepted, false otherwise.
    */
   template<Location L>
-  bool step(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, const FilterMode type = UNCONDITIONED);
+  bool step(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, const FilterMode type =
+          UNCONDITIONED);
+
+  template<Location L, class Q1>
+  bool step(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, Q1& q,
+      const bool localMove = false, const FilterMode type = UNCONDITIONED);
+
+  template<Location L>
+  bool stepTogether(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s);
 
   template<Location L>
   bool computeAcceptReject(Random& rng, ThetaState<B,L>& s);
 
-  template<Location L>
-  bool stepTogether(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s);
-
+  /**
+   * Propose using proposal defined in model.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param[in,out] s State.
+   */
   template<Location L>
   void propose(Random& rng, ThetaState<B,L>& s);
 
+  /**
+   * @tparam L Location.
+   * @tparam #concept::Pdf type.
+   * @param[in,out] rng Random number generator.
+   * @param[in,out] s State.
+   * @param q Proposal distribution.
+   * @param localMove Should a local move be used? This means that the draw
+   * from @p q is added to the local state.
+   */
+  template<Location L, class Q1>
+  void propose(Random& rng, ThetaState<B,L>& s, Q1& q, const bool localMove =
+      false);
+
+  /**
+   * Update state with log-prior density.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] s State.
+   */
   template<Location L>
   void logPrior(ThetaState<B,L>& s);
 
+  /**
+   * Update state with log-likelihood.
+   *
+   * @tparam L
+   *
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
+   * @param[in,out] s State.
+   * @param type Type of filtering to perform.
+   */
   template<Location L>
-  void logLikelihood(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, const FilterMode filtermode = UNCONDITIONED);
+  void logLikelihood(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s,
+      const FilterMode filtermode = UNCONDITIONED);
 
   template<Location L>
-  real logLikelihood(Random& rng, const real t, const real T, const int K,
-      ThetaState<B,L>& s, ThetaState<B,L>& s_2);
+  real logLikelihood(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, ThetaState<B,L>& s, ThetaState<B,L>& s_2);
 
   /**
    * Output.
@@ -219,7 +263,7 @@ public:
   /**
    * Accept step.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
    */
   template<Location L>
@@ -333,13 +377,18 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::setOutput(IO1* out) {
 template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::sample(Random& rng,
-    const real t, const real T, const int K, ThetaState<B,L>& s, IO2* inInit,
-    const int C, const FilterMode filterMode) {
-  int c;
+    const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, IO2* inInit, const int C,
+    const FilterMode filterMode) {
+  /* pre-condition */
+  BI_ASSERT(C >= 0);
+
   const int P = s.size();
-  init(rng, t, T, K, s, inInit);
+
+  int c;
+  init(rng, first, last, s, inInit);
   for (c = 0; c < C; ++c) {
-    step(rng, t, T, K, s, filterMode);
+    step(rng, first, last, s, filterMode);
     report(c, s);
     output(c, s);
     s.setRange(0, P);
@@ -350,19 +399,23 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::sample(Random& rng,
 template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::sampleTogether(
-    Random& rng, const real t, const real T, const int K, ThetaState<B,L>& s,
-    IO2* inInit, const int C) {
-  int c;
-  const int P = s.size();
-  init(rng, t, T, K, s, inInit);
+    Random& rng, const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, IO2* inInit, const int C) {
+  /* pre-condition */
+  BI_ASSERT(C >= 0);
 
-  step(rng, t, T, K, s, UNCONDITIONED);
+  const int P = s.size();
+
+  int c;
+  init(rng, first, last, s, inInit);
+
+  step(rng, first, last, s, UNCONDITIONED);
   report(0);
   output(0, s);
   s.setRange(0, P);
 
   for (c = 1; c < C; ++c) {
-    stepTogether(rng, t, T, K, s);
+    stepTogether(rng, first, last, s);
     report(c, s);
     output(c, s);
     s.setRange(0, P);
@@ -373,10 +426,10 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::sampleTogether(
 template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::init(Random& rng,
-    const real t, const real T, const int K, ThetaState<B,L>& s,
-    IO2* inInit) {
+    const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, IO2* inInit) {
   /* log-likelihood */
-  s.getLogLikelihood1() = filter->filter(rng, t, T, K, s, inInit);
+  s.getLogLikelihood1() = filter->filter(rng, first, last, s, inInit);
   s.getParameters1() = vec(s.get(P_VAR));
 
   /* prior log-density */
@@ -394,13 +447,42 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::init(Random& rng,
 template<class B, class F, class IO1>
 template<bi::Location L>
 bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::step(Random& rng,
-    const real t, const real T, const int K, ThetaState<B,L>& s,
-    const FilterMode filtermode) {
+    const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, const FilterMode filtermode) {
   bool result = false;
   try {
     propose(rng, s);
     logPrior(s);
-    logLikelihood(rng, t, T, K, s, filtermode);
+    logLikelihood(rng, first, last, s, filtermode);
+    result = computeAcceptReject(rng, s);
+  } catch (CholeskyException e) {
+    result = false;
+  } catch (ParticleFilterDegeneratedException e) {
+    result = false;
+  } catch (ConditionalParticleFilterException e) {
+    result = false;
+  }
+
+  /* accept or reject */
+  if (result) {
+    accept(rng, s);
+  } else {
+    reject();
+  }
+  return result;
+}
+
+template<class B, class F, class IO1>
+template<bi::Location L, class Q1>
+bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::step(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, Q1& q, const bool localMove,
+    const FilterMode filtermode) {
+  bool result = false;
+  try {
+    propose(rng, s, q, localMove);
+    logPrior(s);
+    logLikelihood(rng, first, last, s, filtermode);
     result = computeAcceptReject(rng, s);
   } catch (CholeskyException e) {
     result = false;
@@ -421,36 +503,8 @@ bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::step(Random& rng,
 
 template<class B, class F, class IO1>
 template<bi::Location L>
-bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::computeAcceptReject(
-    Random& rng, ThetaState<B,L>& s) {
-  bool result;
-
-  if (!bi::is_finite(s.getLogLikelihood2())) {
-    result = false;
-  } else if (!bi::is_finite(s.getLogLikelihood1())) {
-    result = true;
-  } else {
-    real loglr = s.getLogLikelihood2() - s.getLogLikelihood1();
-    real logpr = s.getLogPrior2() - s.getLogPrior1();
-    real logqr = s.getLogProposal1() - s.getLogProposal2();
-
-    if (!bi::is_finite(s.getLogProposal1())
-        && !bi::is_finite(s.getLogProposal2())) {
-      logqr = 0.0;
-    }
-    real logratio = loglr + logpr + logqr;
-    real u = rng.uniform<real>();
-
-    result = bi::log(u) < logratio;
-  }
-
-  return result;
-}
-
-template<class B, class F, class IO1>
-template<bi::Location L>
 bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::stepTogether(
-    Random& rng, const real t, const real T, const int K,
+    Random& rng, const ScheduleIterator first, const ScheduleIterator last,
     ThetaState<B,L>& s) {
   bool result = false;
   ThetaState<B,L> s_2(m, s.size());
@@ -459,7 +513,7 @@ bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::stepTogether(
   try {
     propose(rng, s);
     logPrior(s);
-    real loglr = logLikelihood(rng, t, T, K, s, s_2);
+    real loglr = logLikelihood(rng, first, last, s, s_2);
 
     if (!bi::is_finite(s.getLogLikelihood2())) {
       result = false;
@@ -498,6 +552,34 @@ bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::stepTogether(
 
 template<class B, class F, class IO1>
 template<bi::Location L>
+bool bi::ParticleMarginalMetropolisHastings<B,F,IO1>::computeAcceptReject(
+    Random& rng, ThetaState<B,L>& s) {
+  bool result;
+
+  if (!bi::is_finite(s.getLogLikelihood2())) {
+    result = false;
+  } else if (!bi::is_finite(s.getLogLikelihood1())) {
+    result = true;
+  } else {
+    real loglr = s.getLogLikelihood2() - s.getLogLikelihood1();
+    real logpr = s.getLogPrior2() - s.getLogPrior1();
+    real logqr = s.getLogProposal1() - s.getLogProposal2();
+
+    if (!bi::is_finite(s.getLogProposal1())
+        && !bi::is_finite(s.getLogProposal2())) {
+      logqr = 0.0;
+    }
+    real logratio = loglr + logpr + logqr;
+    real u = rng.uniform<real>();
+
+    result = bi::log(u) < logratio;
+  }
+
+  return result;
+}
+
+template<class B, class F, class IO1>
+template<bi::Location L>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::propose(Random& rng,
     ThetaState<B,L>& s) {
   /* proposal */
@@ -517,6 +599,25 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::propose(Random& rng,
 }
 
 template<class B, class F, class IO1>
+template<bi::Location L, class Q1>
+void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::propose(Random& rng,
+    ThetaState<B,L>& s, Q1& q, const bool localMove) {
+  if (localMove) {
+    q.sample(rng, s.getParameters2());
+    s.getLogProposal2() = q.logDensity(s.getParameters2());
+    axpy(1.0, s.getParameters1(), s.getParameters2());
+
+    axpy(-1.0, s.getParameters2(), s.getParameters1());
+    s.getLogProposal1() = q.logDensity(s.getParameters1());
+    axpy(1.0, s.getParameters2(), s.getParameters1());
+  } else {
+    q.sample(rng, s.getParameters2());
+    s.getLogProposal1() = q.logDensity(s.getParameters1());
+    s.getLogProposal2() = q.logDensity(s.getParameters2());
+  }
+}
+
+template<class B, class F, class IO1>
 template<bi::Location L>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logPrior(
     ThetaState<B,L>& s) {
@@ -528,22 +629,22 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logPrior(
 template<class B, class F, class IO1>
 template<bi::Location L>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
-    Random& rng, const real t, const real T, const int K, ThetaState<B,L>& s,
-    const FilterMode filtermode) {
+    Random& rng, const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, const FilterMode filtermode) {
   /* log-likelihood */
   if (!bi::is_finite(s.getLogPrior2())) {
     s.getLogLikelihood2() = -1.0 / 0.0;
   } else {
     /* likelihood */
-    s.getLogLikelihood2() = filter->filter(rng, t, T, K, s.getParameters2(),
-        s);
+    s.getLogLikelihood2() = filter->filter(rng, first, last,
+        s.getParameters2(), s);
 
     /* check for s.getLogPrior1() is 0 to avoid computation of ll at step 1
      this is to prevent numerical instability associated with a
      (virtual) trajectory with no weight. */
     if (filtermode == CONDITIONED && bi::exp(s.getLogPrior1()) > 0) {
       try {
-        s.getLogLikelihood1() = filter->filter(rng, t, T, K,
+        s.getLogLikelihood1() = filter->filter(rng, first, last,
             s.getParameters1(), s, s.getTrajectory());
       } catch (CholeskyException e) {
         throw ConditionalParticleFilterException();
@@ -557,11 +658,11 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
 template<class B, class F, class IO1>
 template<bi::Location L>
 real bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
-    Random& rng, const real t, const real T, const int K, ThetaState<B,L>& s,
-    ThetaState<B,L>& s_2) {
+    Random& rng, const ScheduleIterator first, const ScheduleIterator last,
+    ThetaState<B,L>& s, ThetaState<B,L>& s_2) {
   real ll1 = 0.0, ll2 = 0.0, loglr;
 
-  loglr = filter->filter(rng, t, T, K, s.getParameters1(), s,
+  loglr = filter->filter(rng, first, last, s.getParameters1(), s,
       s.getTrajectory(), s.getParameters2(), s_2, ll1, ll2);
   s.getLogLikelihood1() = ll1;
   s.getLogLikelihood2() = ll2;
@@ -573,10 +674,10 @@ template<class B, class F, class IO1>
 template<bi::Location L>
 void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::accept(Random& rng,
     ThetaState<B,L>& s) {
-  s.getParameters1() = s.getParameters2();
-  s.getLogLikelihood1() = s.getLogLikelihood2();
-  s.getLogPrior1() = s.getLogPrior2();
-  s.getLogProposal1() = s.getLogProposal2();
+  std::swap(s.getParameters1(), s.getParameters2());
+  std::swap(s.getLogLikelihood1(), s.getLogLikelihood2());
+  std::swap(s.getLogPrior1(), s.getLogPrior2());
+  std::swap(s.getLogProposal1(), s.getLogProposal2());
   filter->sampleTrajectory(rng, s.getTrajectory());
 
   ++accepted;

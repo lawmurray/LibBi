@@ -13,8 +13,6 @@ beta = action.get_named_arg('beta');
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-#include "bi/random/generic.hpp"
-
 /**
  * Action: [% action.get_name %].
  */
@@ -31,7 +29,7 @@ public:
   [% declare_action_static_function('maxlogdensity') %]
 };
 
-#include "bi/math/pi.hpp"
+#include "bi/random/generic.hpp"
 
 [% sig_action_static_function('alpha') %] {
   [% alias_dims(action) %]

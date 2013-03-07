@@ -208,6 +208,7 @@ public:
   typedef int size_type;
   typedef int difference_type;
   static const bool on_device = true;
+  static const Location location = ON_DEVICE;
 
   /**
    * Shallow copy.

@@ -121,6 +121,11 @@ public:
   void flush();
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(Cache& o);
+
+  /**
    * Clear cache.
    */
   void clear();
@@ -140,6 +145,24 @@ private:
    * Dirtiness of pages. Same indexing as #valids applies.
    */
   host_vector<bool> dirties;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -173,6 +196,18 @@ inline void bi::Cache::setDirty(const int p, const bool dirty) {
   BI_ASSERT(p >= 0 && p < (int)dirties.size());
 
   dirties[p] = dirty;
+}
+
+template<class Archive>
+void bi::Cache::save(Archive& ar, const unsigned version) const {
+  save_resizable_vector(ar, version, valids);
+  save_resizable_vector(ar, version, dirties);
+}
+
+template<class Archive>
+void bi::Cache::load(Archive& ar, const unsigned version) {
+  load_resizable_vector(ar, version, valids);
+  load_resizable_vector(ar, version, dirties);
 }
 
 #endif

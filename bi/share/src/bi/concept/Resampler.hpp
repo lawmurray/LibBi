@@ -111,7 +111,7 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Integer vector type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param lws Log-weights.
    * @param[out] as Ancestors.
    */
@@ -125,7 +125,7 @@ struct Resampler {
    * @tparam V1 Vector type.
    * @tparam V2 Integer vector type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param lws Log-weights.
    * @param[out] os Offspring.
    * @param P Total number of offspring.

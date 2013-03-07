@@ -48,6 +48,8 @@ CUDA_FUNC_BOTH double ceil(const double x);
 CUDA_FUNC_BOTH float ceil(const float x);
 CUDA_FUNC_BOTH double floor(const double x);
 CUDA_FUNC_BOTH float floor(const float x);
+CUDA_FUNC_BOTH double round(const double x);
+CUDA_FUNC_BOTH float round(const float x);
 CUDA_FUNC_BOTH double gamma(const double x);
 CUDA_FUNC_BOTH float gamma(const float x);
 CUDA_FUNC_BOTH double lgamma(const double x);
@@ -217,6 +219,14 @@ inline double bi::floor(const double x) {
 
 inline float bi::floor(const float x) {
   return ::floorf(x);
+}
+
+inline double bi::round(const double x) {
+  return ::round(x);
+}
+
+inline float bi::round(const float x) {
+  return ::roundf(x);
 }
 
 inline double bi::gamma(const double x) {

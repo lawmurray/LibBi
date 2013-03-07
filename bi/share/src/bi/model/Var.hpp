@@ -71,6 +71,13 @@ public:
   VarType getType() const;
 
   /**
+   * Get starting index of variable.
+   *
+   * @return Starting index of the variable.
+   */
+  int getStart() const;
+
+  /**
    * Get %size of variable. This is the product of the size of all dimensions
    * with which the variable is associated, or one if the variable is not
    * associated with any dimensions.
@@ -137,6 +144,11 @@ protected:
   int id;
 
   /**
+   * Starting index.
+   */
+  int start;
+
+  /**
    * Size.
    */
   int size;
@@ -163,6 +175,7 @@ bi::Var::Var(const X& o) {
   this->outputName = o.getOutputName();
   this->type = var_type<X>::value;
   this->id = var_id<X>::value;
+  this->start = var_start<X>::value;
   this->size = var_size<X>::value;
   this->input = o.hasInput();
   this->output = o.hasOutput();
@@ -186,6 +199,10 @@ inline int bi::Var::getId() const {
 
 inline bi::VarType bi::Var::getType() const {
   return type;
+}
+
+inline int bi::Var::getStart() const {
+  return start;
 }
 
 inline int bi::Var::getSize() const {

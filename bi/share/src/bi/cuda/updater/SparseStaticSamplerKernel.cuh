@@ -17,7 +17,7 @@ namespace bi {
  * @tparam B Model type.
  * @tparam S Action type list.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param mask Mask.
  */
 template<class B, class S>

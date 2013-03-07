@@ -157,25 +157,11 @@ struct var_size {
  *
  * @ingroup model_low
  *
- * @tparam B Model type.
  * @tparam X Node type.
  */
-template<class B, class X>
-struct var_net_start {
+template<class X>
+struct var_start {
   static const int value = X::START;
-};
-
-/**
- * End of variable in the type list of its associated net.
- *
- * @ingroup model_low
- *
- * @tparam B Model type.
- * @tparam X Node type.
- */
-template<class B, class X>
-struct var_net_end {
-  static const int value = X::START + X::SIZE;
 };
 
 /**

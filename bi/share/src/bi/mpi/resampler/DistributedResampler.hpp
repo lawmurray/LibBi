@@ -19,37 +19,27 @@ namespace bi {
  * @tparam R Resampler type.
  */
 template<class R>
-class DistributedResampler : public Resampler {
+class DistributedResampler: public Resampler {
 public:
-  /**
-   * Return type for select().
-   */
-  template<class O1>
-  struct select_type {
-    //
-  };
-
-  template<class B, Location L>
-  struct select_type<State<B,L> > {
-    typedef typename State<B,L>::vector_reference_type type;
-  };
-
-  template<class T1>
-  struct select_type<std::vector<T1*> > {
-    typedef T1 type;
-  };
-
   /**
    * Constructor.
    *
    * @param base Base resampler.
+   * @param essRel Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
-  DistributedResampler(R* base);
+  DistributedResampler(R* base, const double essRel = 0.5);
 
   /**
    * @name High-level interface
    */
   //@{
+  /**
+   * @copydoc Resampler::isTriggered
+   */
+  template<class V1>
+  bool isTriggered(const V1 lws) const;
+
   /**
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
@@ -124,8 +114,20 @@ private:
 #include <list>
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(R* base) : base(base) {
+bi::DistributedResampler<R>::DistributedResampler(R* base,
+    const double essRel) :
+    Resampler(essRel), base(base) {
   //
+}
+
+template<class R>
+template<class V1>
+bool bi::DistributedResampler<R>::isTriggered(const V1 lws) const {
+  boost::mpi::communicator world;
+  const int size = world.size();
+  const int P = lws.size();
+
+  return essRel >= 1.0 || ess(lws) < essRel * size * P;
 }
 
 template<class R>
@@ -156,7 +158,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 
   /* compute offspring on root and broadcast */
   if (rank == 0) {
-    base->offspring(rng, vec(Lws), vec(O), P*size);
+    base->offspring(rng, vec(Lws), vec(O), P * size);
   }
   boost::mpi::broadcast(world, O, 0);
 
@@ -179,9 +181,9 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   int sendi, recvi, sendj, recvj, sendn, recvn, n, sendr, recvr, tag = 0;
 
-  int_vector_type Ps(size); // number of particles in each process
-  int_vector_type ranks(size); // ranks sorted by number of particles
-  std::list<boost::mpi::request> reqs;
+  int_vector_type Ps(size);  // number of particles in each process
+  int_vector_type ranks(size);  // ranks sorted by number of particles
+  std::list < boost::mpi::request > reqs;
 
   sum_rows(O, Ps);
   seq_elements(ranks, 0);
@@ -250,21 +252,27 @@ template<class V1>
 typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws) {
   typedef typename V1::value_type T1;
 
+  T1 mx, sum1, sum2;
   boost::mpi::communicator world;
 
-  T1 sm = sumexp_reduce(lws);
-  T1 smsq = sumexpsq_reduce(lws);
+  mx = max_reduce(lws);
+  mx = boost::mpi::all_reduce(world, mx, boost::mpi::maximum<T1>());
 
-  sm = boost::mpi::all_reduce(world, sm, std::plus<T1>());
-  smsq = boost::mpi::all_reduce(world, smsq, std::plus<T1>());
+  sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
+  sum1 = boost::mpi::all_reduce(world, sum1, std::plus<T1>());
 
-  return (sm*sm)/smsq;
+  sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
+  sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
+
+  return (sum1 * sum1) / sum2;
 }
 
 template<class R>
 template<class B, bi::Location L>
-typename bi::State<B,L>::vector_reference_type
-    bi::DistributedResampler<R>::select(State<B,L>& s, const int p) {
+typename bi::State<B,L>::vector_reference_type bi::DistributedResampler<R>::select(
+    State<B,L>& s, const int p) {
   return row(s.getDyn(), p);
 }
 

@@ -11,12 +11,12 @@
 #include "../../math/scalar.hpp"
 #include "../../misc/assert.hpp"
 #include "../../misc/compile.hpp"
+#include "../../misc/location.hpp"
 #include "../../typelist/equals.hpp"
 #include "../../primitive/strided_range.hpp"
 #include "../../primitive/aligned_allocator.hpp"
 #include "../../primitive/pipelined_allocator.hpp"
 
-#include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 #include "boost/serialization/array.hpp"
 
@@ -187,6 +187,7 @@ public:
   typedef int size_type;
   typedef int difference_type;
   static const bool on_device = false;
+  static const Location location = ON_HOST;
 
   /**
    * Shallow copy.

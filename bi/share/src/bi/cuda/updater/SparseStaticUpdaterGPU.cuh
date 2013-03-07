@@ -9,7 +9,7 @@
 #define BI_CUDA_UPDATER_SPARSESTATICUPDATERGPU_CUH
 
 #include "../../state/State.hpp"
-#include "../../buffer/Mask.hpp"
+#include "../../state/Mask.hpp"
 #include "../../method/misc.hpp"
 
 namespace bi {

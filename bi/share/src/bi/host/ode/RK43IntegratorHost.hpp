@@ -12,7 +12,7 @@ namespace bi {
 /**
  * RK4(3)5[2R+]C low-storage Runge-Kutta integrator.
  *
- * @ingroup math_ode
+ * @ingroup method_updater
  *
  * @tparam B Model type.
  * @tparam S Action type list.

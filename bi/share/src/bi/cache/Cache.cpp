@@ -65,6 +65,11 @@ void bi::Cache::resize(const int size) {
   }
 }
 
+void bi::Cache::swap(Cache& o) {
+  valids.swap(o.valids);
+  dirties.swap(o.dirties);
+}
+
 void bi::Cache::flush() {
   set_elements(dirties, false);
 }

@@ -651,9 +651,11 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
       bool success = false;
       T1 smallest = amin_reduce(d);
       T1 largest = amax_reduce(d);
-      T1 factor = pow(2.0, -std::numeric_limits<real>::digits);
-      if (smallest > 0.0) {
-        factor *= smallest;
+      T1 factor;
+      if (1.0e-6*smallest > 0.0) {
+        factor = 1.0e-6*smallest;
+      } else {
+        factor = 1.0e-6;
       }
 
       while (!success) {

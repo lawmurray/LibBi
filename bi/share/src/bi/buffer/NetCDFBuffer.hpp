@@ -75,6 +75,11 @@ public:
    */
   void sync();
 
+  /**
+   * Does nothing but maintain interface with caches.
+   */
+  void clear();
+
 protected:
   /**
    * Constructor.
@@ -218,6 +223,7 @@ protected:
 }
 
 #include "../misc/assert.hpp"
+#include "../math/temp_vector.hpp"
 
 inline bool bi::NetCDFBuffer::hasDim(const char* name) {
   /* pre-condition */

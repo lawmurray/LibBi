@@ -9,7 +9,7 @@
 #define BI_HOST_UPDATER_SPARSESTATICUPDATERVISITORHOST_HPP
 
 #include "../../typelist/typelist.hpp"
-#include "../../buffer/Mask.hpp"
+#include "../../state/Mask.hpp"
 
 namespace bi {
 /**

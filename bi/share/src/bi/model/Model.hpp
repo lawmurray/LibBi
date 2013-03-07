@@ -108,18 +108,6 @@ public:
   int getNumVars(const VarType type) const;
 
   /**
-   * Get starting %index of given variable. This is the cumulative sum of the
-   * sizes of all variables of the same type preceding the given variable, useful
-   * for array indexing etc.
-   *
-   * @param type Variable type.
-   * @param id Variable id.
-   *
-   * @return Starting index of given variable.
-   */
-  int getVarStart(const VarType type, const int id) const;
-
-  /**
    * Add a dimension.
    *
    * @tparam D Dimension type, derived from Dim.
@@ -179,11 +167,6 @@ protected:
    * Variables, indexed by type and name.
    */
   std::vector<std::map<std::string,Var*> > varsByName;
-
-  /**
-   * Variable starting indices, indexed by type and id.
-   */
-  std::vector<std::vector<int> > varStarts;
 };
 
 }
@@ -202,7 +185,6 @@ bi::Model::Model(B& o) {
   netNumVars.resize(NUM_VAR_TYPES);
   varsById.resize(NUM_VAR_TYPES);
   varsByName.resize(NUM_VAR_TYPES);
-  varStarts.resize(NUM_VAR_TYPES);
 
   netSizes[D_VAR] = B::ND;
   netSizes[DX_VAR] = B::NDX;
@@ -226,7 +208,6 @@ bi::Model::Model(B& o) {
     type1 = static_cast<VarType>(i);
 
     varsById[type1].resize(netNumVars[type1]);
-    varStarts[type1].resize(netNumVars[type1]);
   }
 }
 
@@ -245,7 +226,6 @@ void bi::Model::addVar(X& var) {
 
   varsById[type][id] = &var;
   varsByName[type].insert(std::make_pair(var.getName(), &var));
-  varStarts[type][id] = var_net_start<B,X>::value;
   var.initDims(*this);
 }
 
@@ -280,14 +260,6 @@ inline int bi::Model::getNumDims() const {
 
 inline int bi::Model::getNumVars(const VarType type) const {
   return netNumVars[type];
-}
-
-inline int bi::Model::getVarStart(const VarType type,
-    const int id) const {
-  /* pre-condition */
-  BI_ASSERT(id < netNumVars[type]);
-
-  return varStarts[type][id];
 }
 
 inline bi::Var* bi::Model::getVar(const VarType type,

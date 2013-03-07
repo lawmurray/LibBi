@@ -9,7 +9,7 @@
 
 #include "../random/Random.hpp"
 #include "../state/State.hpp"
-#include "../buffer/Mask.hpp"
+#include "../state/Mask.hpp"
 #include "../misc/location.hpp"
 
 namespace concept {

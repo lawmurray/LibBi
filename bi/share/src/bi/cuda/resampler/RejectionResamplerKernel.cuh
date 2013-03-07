@@ -20,7 +20,7 @@ namespace bi {
  * @tparam V3 Integer vector type.
  * @tparam PrePermute Do pre-permute step?
  *
- * @param rng Random number generators.
+ * @param[in,out] rng Random number generators.
  * @param lws Log-weights.
  * @param as[out] Ancestry.
  * @param is[in,out] Workspace vector. All elements should be initialised to
@@ -47,7 +47,7 @@ CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors(curandState* rng,
  * @tparam V3 Integer vector type.
  * @tparam PrePermute Do pre-permute step?
  *
- * @param rng Random number generators.
+ * @param[in,out] rng Random number generators.
  * @param lws Log-weights.
  * @param as[out] Ancestry.
  * @param is[in,out] Workspace vector. All elements should be initialised to

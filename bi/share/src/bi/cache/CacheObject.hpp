@@ -67,6 +67,11 @@ public:
   void set(const int p, const T2& x);
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(CacheObject<T1>& o);
+
+  /**
    * Empty cache.
    */
   void empty();
@@ -80,6 +85,24 @@ private:
    * resizing!
    */
   std::vector<T1*> pages;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -144,6 +167,12 @@ inline void bi::CacheObject<T1>::set(const int p, const T2& x) {
 }
 
 template<class T1>
+void bi::CacheObject<T1>::swap(CacheObject<T1>& o) {
+  Cache::swap(o);
+  pages.swap(o.pages);
+}
+
+template<class T1>
 void bi::CacheObject<T1>::empty() {
   BOOST_AUTO(iter, pages.begin());
   while (iter != pages.end()) {
@@ -152,6 +181,20 @@ void bi::CacheObject<T1>::empty() {
   }
   pages.clear();
   Cache::empty();
+}
+
+template<class T1>
+template<class Archive>
+void bi::CacheObject<T1>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<Cache>(*this);
+  ar & pages;
+}
+
+template<class T1>
+template<class Archive>
+void bi::CacheObject<T1>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<Cache>(*this);
+  ar & pages;
 }
 
 #endif

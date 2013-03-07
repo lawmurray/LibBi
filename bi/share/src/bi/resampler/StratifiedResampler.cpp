@@ -7,6 +7,8 @@
  */
 #include "StratifiedResampler.hpp"
 
-bi::StratifiedResampler::StratifiedResampler(const bool sort) : sort(sort) {
+bi::StratifiedResampler::StratifiedResampler(const bool sort,
+    const double essRel) :
+    Resampler(essRel), sort(sort) {
   //
 }

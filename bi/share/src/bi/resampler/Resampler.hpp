@@ -11,6 +11,7 @@
 #include "../state/State.hpp"
 #include "../random/Random.hpp"
 #include "../misc/location.hpp"
+#include "../traits/resampler_traits.hpp"
 
 namespace bi {
 /**
@@ -63,9 +64,33 @@ struct resample_error : public std::binary_function<T,int,T> {
 class Resampler {
 public:
   /**
-   * @name Low-level interface.
+   * Constructor.
+   *
+   * @param essRel Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
-  //@{
+  Resampler(const double essRel = 0.5);
+
+  /**
+   * Get relative ESS threshold.
+   */
+  double getEssRel() const;
+
+  /**
+   * Set relative ESS threshold.
+   */
+  void setEssRel(const double essRel = 0.5);
+
+  /**
+   * Get maximum log-weight.
+   */
+  double getMaxLogWeight() const;
+
+  /**
+   * Set maximum log-weight.
+   */
+  void setMaxLogWeight(const double maxLogWeight);
+
   /**
    * Compute offspring vector from ancestors vector.
    *
@@ -200,6 +225,29 @@ public:
   static void copy(const V1 as, std::vector<T1*>& v);
 
   /**
+   * Normalise log-weights after resampling.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   *
+   * The normalisation is such that the sum of the weights (i.e. @c exp of
+   * the components of the vector) is equal to the number of particles.
+   */
+  template<class V1>
+  void normalise(V1 lws);
+
+  /**
+   * Is ESS-based condition triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggered(const V1 lws) const;
+
+  /**
    * Compute effective sample size (ESS) of log-weights.
    *
    * @tparam V1 Vector type.
@@ -233,7 +281,17 @@ public:
    */
   template<class V1, class V2>
   static typename V1::value_type error(const V1 lws, const V2 os);
-  //@}
+
+protected:
+  /**
+   * Relative ESS threshold.
+   */
+  double essRel;
+
+  /**
+   * Maximum log-weight.
+   */
+  double maxLogWeight;
 };
 
 /**
@@ -282,7 +340,6 @@ public:
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 X);
-
 };
 
 /**
@@ -387,6 +444,14 @@ public:
 
 #include "boost/mpl/if.hpp"
 
+inline double bi::Resampler::getEssRel() const {
+  return essRel;
+}
+
+inline double bi::Resampler::getMaxLogWeight() const {
+  return maxLogWeight;
+}
+
 template<class V1, class V2>
 void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
   typedef typename boost::mpl::if_c<V1::on_device,
@@ -486,6 +551,18 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
       *v[i] = *v[a];
     }
   }
+}
+
+template<class V1>
+void bi::Resampler::normalise(V1 lws) {
+  typedef typename V1::value_type T1;
+  T1 lW = logsumexp_reduce(lws);
+  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW, lws);
+}
+
+template<class V1>
+bool bi::Resampler::isTriggered(const V1 lws) const {
+  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
 }
 
 template<class V1>

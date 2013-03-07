@@ -9,7 +9,7 @@
 #define BI_HOST_UPDATER_SPARSESTATICUPDATERHOST_HPP
 
 #include "../../state/State.hpp"
-#include "../../buffer/Mask.hpp"
+#include "../../state/Mask.hpp"
 
 namespace bi {
 /**

@@ -177,3 +177,7 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
 
   return ncVar;
 }
+
+void bi::NetCDFBuffer::clear() {
+  //
+}

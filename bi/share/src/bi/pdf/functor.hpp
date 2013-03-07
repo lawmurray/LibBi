@@ -17,66 +17,41 @@ namespace bi {
 /**
  * @ingroup math_pdf
  *
- * Gamma density functor.
- */
-template<class T>
-struct gamma_density_functor : public std::unary_function<T,T> {
-  const T alpha, beta, logZ;
-
-  CUDA_FUNC_HOST gamma_density_functor(const real alpha,
-      const real beta, const real logZ) : alpha(alpha), beta(beta),
-      logZ(logZ) {
-    //
-  }
-
-  CUDA_FUNC_BOTH T operator()(const T& x) const {
-    const T a = 1.0;
-
-    return bi::exp((alpha - a)*bi::log(x) - x/beta - logZ);
-  }
-};
-
-/**
- * @ingroup math_pdf
- *
  * Gamma log-density functor.
  */
 template<class T>
-struct gamma_log_density_functor : public std::unary_function<T,T> {
+struct gamma_log_density_functor: public std::unary_function<T,T> {
   const T alpha, beta, logZ;
 
-  CUDA_FUNC_HOST gamma_log_density_functor(const real alpha,
-      const real beta, const real logZ) : alpha(alpha), beta(beta),
-      logZ(logZ) {
+  CUDA_FUNC_HOST
+  gamma_log_density_functor(const T alpha, const T beta) :
+      alpha(alpha), beta(beta), logZ(
+          bi::lgamma(alpha) + alpha * bi::log(beta)) {
     //
   }
 
-  CUDA_FUNC_BOTH T operator()(const T& x) const {
-    const T a = 1.0;
-
-    return (alpha - a)*bi::log(x) - x/beta - logZ;
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return (alpha - static_cast<T>(1.0)) * bi::log(x) - x / beta - logZ;
   }
 };
 
 /**
  * @ingroup math_pdf
  *
- * Inverse gamma density functor.
+ * Gamma density functor.
  */
 template<class T>
-struct inverse_gamma_density_functor : public std::unary_function<T,T> {
-  const T alpha, beta, logZ;
-
-  CUDA_FUNC_HOST inverse_gamma_density_functor(const real alpha,
-      const real beta, const real logZ) : alpha(alpha), beta(beta),
-      logZ(logZ) {
+struct gamma_density_functor: private gamma_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  gamma_density_functor(const T alpha, const T beta) :
+      gamma_log_density_functor<T>(alpha, beta) {
     //
   }
 
-  CUDA_FUNC_BOTH T operator()(const T& x) const {
-    const T a = 1.0;
-
-    return bi::exp((-alpha - a)*bi::log(x) - beta/x - logZ);
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return bi::exp(gamma_log_density_functor<T>::operator()(x));
   }
 };
 
@@ -86,19 +61,38 @@ struct inverse_gamma_density_functor : public std::unary_function<T,T> {
  * Inverse gamma log-density functor.
  */
 template<class T>
-struct inverse_gamma_log_density_functor : public std::unary_function<T,T> {
-  const T alpha, beta, logZ;
-
-  CUDA_FUNC_HOST inverse_gamma_log_density_functor(const real alpha,
-      const real beta, const real logZ) : alpha(alpha), beta(beta),
-      logZ(logZ) {
+struct inverse_gamma_log_density_functor: private gamma_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  inverse_gamma_log_density_functor(const T alpha, const T beta) :
+      gamma_log_density_functor<T>(alpha, static_cast<T>(1.0) / beta) {
     //
   }
 
-  CUDA_FUNC_BOTH T operator()(const T& x) const {
-    const T a = 1.0;
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return gamma_log_density_functor<T>::operator()(static_cast<T>(1.0) / x)
+        - static_cast<T>(2.0) * bi::log(x);
+  }
+};
 
-    return (-alpha - a)*bi::log(x) - beta/x - logZ;
+/**
+ * @ingroup math_pdf
+ *
+ * Inverse gamma density functor.
+ */
+template<class T>
+struct inverse_gamma_density_functor: private gamma_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  inverse_gamma_density_functor(const T alpha, const T beta) :
+      gamma_log_density_functor<T>(alpha, static_cast<T>(1.0) / beta) {
+    //
+  }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return bi::exp(
+        gamma_log_density_functor<T>::operator()(static_cast<T>(1.0) / x)
+            - static_cast<T>(2.0) * bi::log(x));
   }
 };
 
@@ -114,7 +108,8 @@ struct gaussian_density_functor {
    *
    * @param logZ Log of normalising constant.
    */
-  gaussian_density_functor(const T1 logZ) : logZ(logZ) {
+  gaussian_density_functor(const T1 logZ) :
+      logZ(logZ) {
     //
   }
 
@@ -124,7 +119,7 @@ struct gaussian_density_functor {
   T1 operator()(const T1 p) {
     const T1 a = -0.5;
 
-    return bi::exp(a*p - logZ);
+    return bi::exp(a * p - logZ);
   }
 
   /**
@@ -145,7 +140,8 @@ struct gaussian_density_update_functor {
    *
    * @param logZ Log of normalising constant.
    */
-  gaussian_density_update_functor(const T1 logZ) : logZ(logZ) {
+  gaussian_density_update_functor(const T1 logZ) :
+      logZ(logZ) {
     //
   }
 
@@ -155,7 +151,7 @@ struct gaussian_density_update_functor {
   T1 operator()(const T1 p1, const T1 p2) {
     const T1 a = -0.5;
 
-    return p1*bi::exp(a*p2 - logZ);
+    return p1 * bi::exp(a * p2 - logZ);
   }
 
   /**
@@ -176,7 +172,8 @@ struct gaussian_log_density_functor {
    *
    * @param logZ Log of normalising constant.
    */
-  gaussian_log_density_functor(const T1 logZ) : logZ(logZ) {
+  gaussian_log_density_functor(const T1 logZ) :
+      logZ(logZ) {
     //
   }
 
@@ -186,7 +183,7 @@ struct gaussian_log_density_functor {
   T1 operator()(const T1 p) {
     const T1 a = -0.5;
 
-    return a*p - logZ;
+    return a * p - logZ;
   }
 
   /**
@@ -207,7 +204,8 @@ struct gaussian_log_density_update_functor {
    *
    * @param logZ Log of normalising constant.
    */
-  gaussian_log_density_update_functor(const T1 logZ) : logZ(logZ) {
+  gaussian_log_density_update_functor(const T1 logZ) :
+      logZ(logZ) {
     //
   }
 
@@ -217,7 +215,7 @@ struct gaussian_log_density_update_functor {
   T1 operator()(const T1 p1, const T1 p2) {
     const T1 a = -0.5;
 
-    return p1 + a*p2 - logZ;
+    return p1 + a * p2 - logZ;
   }
 
   /**

@@ -8,7 +8,7 @@
 #ifndef BI_STATE_STATE_HPP
 #define BI_STATE_STATE_HPP
 
-#include "../buffer/Mask.hpp"
+#include "../model/Var.hpp"
 #include "../traits/var_traits.hpp"
 #include "../math/loc_vector.hpp"
 #include "../math/loc_matrix.hpp"
@@ -193,6 +193,26 @@ public:
   CUDA_FUNC_BOTH const matrix_reference_type getVarAlt() const;
 
   /**
+   * Get buffer for variable.
+   *
+   * @param var Variable.
+   *
+   * @return Given buffer.
+   */
+  CUDA_FUNC_BOTH
+  matrix_reference_type getVar(const Var* var);
+
+  /**
+   * Get buffer for variable.
+   *
+   * @param var Variable.
+   *
+   * @return Given buffer.
+   */
+  CUDA_FUNC_BOTH
+  const matrix_reference_type getVar(const Var* var) const;
+
+  /**
    * Get variable.
    *
    * @tparam X Variable type.
@@ -243,28 +263,6 @@ public:
    */
   template<class X>
   CUDA_FUNC_BOTH const real& getVarAlt(const int p, const int ix) const;
-
-  /**
-   * Get buffer for variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   *
-   * @return Given buffer.
-   */
-  CUDA_FUNC_BOTH
-  matrix_reference_type getVar(const VarType type, const int id);
-
-  /**
-   * Get buffer for variable.
-   *
-   * @param type Node type.
-   * @param id Variable id.
-   *
-   * @return Given buffer.
-   */
-  CUDA_FUNC_BOTH
-  const matrix_reference_type getVar(const VarType type, const int id) const;
 
   /**
    * Get buffer of param and param_aux_ variables.
@@ -360,6 +358,11 @@ private:
   int P;
 
   /**
+   * Scaled time.
+   */
+  real t;
+
+  /**
    * Round up number of trajectories as required by implementation.
    *
    * @param P Minimum number of trajectories.
@@ -407,17 +410,21 @@ private:
 };
 }
 
+#include "../math/view.hpp"
+
+#include "boost/typeof/typeof.hpp"
+
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
     Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
-    p(0), P(roundup(P)) {
+    p(0), P(roundup(P)), t(0.0) {
   clear();
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P), t(o.t) {
   //
 }
 
@@ -425,6 +432,7 @@ template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
+  t = o.t;
 
   return *this;
 }
@@ -434,6 +442,7 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
+  t = o.t;
 
   return *this;
 }
@@ -568,7 +577,7 @@ template<class B, bi::Location L>
 template<class X>
 inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() {
   const VarType type = var_type<X>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
@@ -578,7 +587,7 @@ template<class B, bi::Location L>
 template<class X>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar() const {
   const VarType type = var_type<X>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
@@ -588,7 +597,7 @@ template<class B, bi::Location L>
 template<class X>
 inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() {
   const VarType type = alt_type<var_type<X>::value>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
@@ -598,17 +607,29 @@ template<class B, bi::Location L>
 template<class X>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVarAlt() const {
   const VarType type = alt_type<var_type<X>::value>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   return columns(get(type), start, size);
 }
 
 template<class B, bi::Location L>
+inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar(
+    const Var* var) {
+  return columns(get(var->getType()), var->getStart(), var->getSize());
+}
+
+template<class B, bi::Location L>
+inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getVar(
+    const Var* var) const {
+  return columns(get(var->getType()), var->getStart(), var->getSize());
+}
+
+template<class B, bi::Location L>
 template<class X>
 inline real& bi::State<B,L>::getVar(const int p, const int ix) {
   const VarType type = var_type<X>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
 
   switch (type) {
   case R_VAR:
@@ -640,7 +661,7 @@ template<class B, bi::Location L>
 template<class X>
 inline const real& bi::State<B,L>::getVar(const int p, const int ix) const {
   const VarType type = var_type<X>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
 
   switch (type) {
   case R_VAR:
@@ -672,7 +693,7 @@ template<class B, bi::Location L>
 template<class X>
 inline real& bi::State<B,L>::getVarAlt(const int p, const int ix) {
   const VarType type = alt_type<var_type<X>::value>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
 
   switch (type) {
   case R_VAR:
@@ -705,7 +726,7 @@ template<class X>
 inline const real& bi::State<B,L>::getVarAlt(const int p,
     const int ix) const {
   const VarType type = alt_type<var_type<X>::value>::value;
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
 
   switch (type) {
   case R_VAR:

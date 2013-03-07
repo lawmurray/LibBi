@@ -27,7 +27,7 @@ use strict;
 
 use Carp::Assert;
 use Cwd qw(abs_path getcwd);
-use Getopt::Long qw(:config pass_through);
+use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Spec;
 use File::Slurp;
 use File::Path;

@@ -143,12 +143,6 @@ protected:
    */
   real beta;
 
-  /**
-   * Log normalising term,
-   * \f$\log Z = \log\Gamma(\alpha) + \alpha\log \beta\f$.
-   */
-  real logZ;
-
 private:
   /**
    * Serialize.
@@ -227,7 +221,7 @@ void bi::GammaPdf::densities(const M2 X, V2 p, const bool clear) {
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
-  gamma_densities(Z, alpha, beta, logZ, p, clear);
+  gamma_densities(Z, alpha, beta, p, clear);
 }
 
 template<class V2>
@@ -237,7 +231,7 @@ real bi::GammaPdf::logDensity(const V2 x) {
 
   typedef typename V2::value_type T2;
 
-  return op_reduce(x, gamma_log_density_functor<T2>(alpha, beta, logZ), 0.0);
+  return op_reduce(x, gamma_log_density_functor<T2>(alpha, beta), 0.0);
 }
 
 template<class M2, class V2>
@@ -248,7 +242,7 @@ void bi::GammaPdf::logDensities(const M2 X, V2 p, const bool clear) {
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
-  gamma_log_densities(Z, alpha, beta, logZ, p, clear);
+  gamma_log_densities(Z, alpha, beta, p, clear);
 }
 
 template<class V2>
@@ -273,17 +267,17 @@ inline const real& bi::GammaPdf::scale() const {
 }
 
 inline void bi::GammaPdf::init() {
-  logZ = lgamma(alpha) + alpha*log(beta);
+  //
 }
 
 template<class Archive>
 void bi::GammaPdf::save(Archive& ar, const unsigned version) const {
-  ar & N & alpha & beta & logZ;
+  ar & N & alpha & beta;
 }
 
 template<class Archive>
 void bi::GammaPdf::load(Archive& ar, const unsigned version) {
-  ar & N & alpha & beta & logZ;
+  ar & N & alpha & beta;
 }
 
 #endif

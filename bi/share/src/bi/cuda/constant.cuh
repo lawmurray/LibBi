@@ -126,7 +126,7 @@ void bi::const_bind(const State<B,ON_DEVICE>& s) {
 template<class B, class X>
 bi::constant::vector_reference_type bi::constant::fetch(
     const State<B,ON_DEVICE>& s, const int p) {
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   if (is_p_var<X>::value) {
@@ -142,7 +142,7 @@ bi::constant::vector_reference_type bi::constant::fetch(
 template<class B, class X>
 bi::constant::vector_reference_type bi::constant::fetch_alt(
     const State<B,ON_DEVICE>& s, const int p) {
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   if (is_p_var<X>::value) {
@@ -156,7 +156,7 @@ bi::constant::vector_reference_type bi::constant::fetch_alt(
 template<class B, class X>
 const real& bi::constant::fetch(const State<B,ON_DEVICE>& s, const int p,
     const int ix) {
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   if (is_p_var<X>::value) {
@@ -172,7 +172,7 @@ const real& bi::constant::fetch(const State<B,ON_DEVICE>& s, const int p,
 template<class B, class X>
 const real& bi::constant::fetch_alt(const State<B,ON_DEVICE>& s,
     const int p, const int ix) {
-  const int start = var_net_start<B,X>::value;
+  const int start = var_start<X>::value;
   const int size = var_size<X>::value;
 
   if (is_p_var<X>::value) {

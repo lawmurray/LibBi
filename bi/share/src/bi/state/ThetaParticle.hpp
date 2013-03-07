@@ -15,6 +15,8 @@
 namespace bi {
 /**
  * Single \f$\theta\f$-particle state for SMC2.
+ *
+ * @ingroup state
  */
 template<class B, Location L>
 class ThetaParticle : public ThetaState<B,L> {

@@ -154,7 +154,7 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param t Start time.
    * @param T End time.
    * @param K Number of dense output points.
@@ -185,7 +185,7 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param t Start time.
    * @param T End time.
    * @param K Number of dense output points.

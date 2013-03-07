@@ -73,12 +73,13 @@ int main(int argc, char* argv[]) {
     bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
+  /* schedule */
+  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
+
   /* output */
-  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
-  
   SimulatorNetCDFBuffer* bufOutput = NULL;
   if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new SimulatorNetCDFBuffer(m, P, Y, OUTPUT_FILE,
+    bufOutput = new SimulatorNetCDFBuffer(m, P, sched.numOutputs(), OUTPUT_FILE,
         NetCDFBuffer::REPLACE);
   }
 
@@ -94,7 +95,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;
   
-  sim->simulate(rng, START_TIME, T, K, s, bufInit);
+  sim->simulate(rng, sched.begin(), sched.end(), s, bufInit);
   synchronize();
 
   /* output timing results */

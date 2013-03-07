@@ -13,7 +13,6 @@ CLIENTS = [
     'nm',
     'pf',
     'pmmh',
-    'rtss',
     'simulate',
     'smc2',
     'test',
@@ -65,7 +64,6 @@ libbi_a_SOURCES = \
   src/bi/buffer/ParticleMCMCNetCDFBuffer.cpp \
   src/bi/buffer/SMC2NetCDFBuffer.cpp \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
-  src/bi/buffer/SparseInputBuffer.cpp \
   src/bi/buffer/SparseInputNetCDFBuffer.cpp \
   src/bi/cache/AncestryCache.cpp \
   src/bi/cache/Cache.cpp \
@@ -75,13 +73,15 @@ libbi_a_SOURCES = \
   src/bi/host/math/qrupdate.cpp \
   src/bi/host/ode/IntegratorConstants.cpp \
   src/bi/host/random/RandomHost.cpp \
-  src/bi/resampler/MetropolisResampler.cpp \
-  src/bi/resampler/MultinomialResampler.cpp \
-  src/bi/resampler/StratifiedResampler.cpp \
-  src/bi/resampler/SystematicResampler.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
-  src/bi/random/Random.cpp
+  src/bi/random/Random.cpp \
+  src/bi/resampler/MetropolisResampler.cpp \
+  src/bi/resampler/MultinomialResampler.cpp \
+  src/bi/resampler/RejectionResampler.cpp \
+  src/bi/resampler/Resampler.cpp \
+  src/bi/resampler/StratifiedResampler.cpp \
+  src/bi/resampler/SystematicResampler.cpp
 
 if ENABLE_SSE
 libbi_a_SOURCES += \

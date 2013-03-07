@@ -27,10 +27,10 @@
 
 #include "bi/model/Model.hpp"
 #include "bi/state/State.hpp"
+#include "bi/state/Mask.hpp"
 #include "bi/random/Random.hpp"
 #include "bi/typelist/macro_typelist.hpp"
 #include "bi/typelist/macro_typetree.hpp"
-#include "bi/buffer/Mask.hpp"
 #include "bi/math/loc_temp_vector.hpp"
 
 [%
@@ -162,19 +162,6 @@ public:
   static int getRSize();
   [% END %]
 
-  [% IF model.is_block('transition') %]
-  /**
-   * Is current time on the delta of the transition model?
-   *
-   * @param t1 Current time.
-   * @param t2 Next time.
-   *
-   * @return True if @p t1 is on the delta of the transition model.
-   */
-  template<class T1>
-  static bool onDelta(const T1 t1, const T1 t2);
-  [% END %]
-
   [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
   /**
    * Deterministically simulate the @c [% toplevel %] block for one
@@ -185,13 +172,15 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state, on
    * output, contains the ending state.
    * @param p Trajectory index.
    */
   template<class T1, bi::Location L>
   static void [% toplevel | to_camel_case %]Simulate(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s,
+      const int p = 0);
       
   /**
    * Deterministically simulate the @c [% toplevel %] block.
@@ -201,12 +190,13 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state, on
    * output, contains the ending state.
    */
   template<class T1, bi::Location L>
   static void [% toplevel | to_camel_case %]Simulates(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s);
 
   /**
    * Stochastically simulate the @c [% toplevel %] block for one trajectory.
@@ -217,14 +207,15 @@ public:
    * @param rng Random number generator.
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state, on
    * output, contains the ending state.
    * @param p Trajectory index.
    */
   template<class T1, bi::Location L>
   static void [% toplevel | to_camel_case %]Sample(bi::Random& rng,
-      const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s,
-      const int p = 0);
+      const T1 t1, const T1 t2, const bool onDelta,
+      bi::State<[% class_name %],L>& s, const int p = 0);
   
   /**
    * Stochastically simulate the @c [% toplevel %] block.
@@ -235,12 +226,14 @@ public:
    * @param rng Random number generator.
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state, on
    * output, contains the ending state.
    */
   template<class T1, bi::Location L>
   static void [% toplevel | to_camel_case %]Samples(bi::Random& rng,
-      const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s);
+      const T1 t1, const T1 t2, const bool onDelta,
+      bi::State<[% class_name %],L>& s);
 
   /**
    * Compute the log-density of a query point under the @c [% toplevel %]
@@ -251,6 +244,7 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state and, in
    * the alternative buffers, the query point. On output, contains the
    * ending state, consistent with the query point.
@@ -260,7 +254,8 @@ public:
    */
   template<class T1, bi::Location L>
   static real [% toplevel | to_camel_case %]LogDensity(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s,
+      const int p = 0);
 
   /**
    * Compute the log-density of query points under the @c [% toplevel %]
@@ -272,6 +267,7 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state and, in
    * the alternative buffers, the query points. On output, contains the
    * ending state, consistent with the query points.
@@ -280,7 +276,8 @@ public:
    */
   template<class T1, bi::Location L, class V1>
   static void [% toplevel | to_camel_case %]LogDensities(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s, V1 lp);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s,
+      V1 lp);
 
   /**
    * Compute the maximum log-density of a query point under the
@@ -291,6 +288,7 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state and, in
    * the alternative buffers, the query point. On output, contains the
    * ending state, consistent with the query point.
@@ -300,7 +298,8 @@ public:
    */
   template<class T1, bi::Location L>
   static real [% toplevel | to_camel_case %]MaxLogDensity(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s, const int p = 0);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s,
+      const int p = 0);
 
   /**
    * Compute the maximum log-density of query points under the
@@ -312,6 +311,7 @@ public:
    *
    * @param t1 Starting time.
    * @param t2 Ending time.
+   * @param onDelta Is @p t1 a multiple of discrete-time step size?
    * @param[in,out] s State. On input, contains the starting state and, in
    * the alternative buffers, the query points. On output, contains the
    * ending state, consistent with the query points.
@@ -320,7 +320,8 @@ public:
    */
   template<class T1, bi::Location L, class V1>
   static void [% toplevel | to_camel_case %]MaxLogDensities(const T1 t1,
-      const T1 t2, bi::State<[% class_name %],L>& s, V1 lp);
+      const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, 
+      V1 lp);
   [% END %]
   
   [%-FOREACH toplevel IN STATIC_BLOCKS %]
@@ -598,8 +599,6 @@ private:
 #include "block/Block[% block.get_id %].hpp"
 [% END-%]
 
-#include "bi/method/misc.hpp"
-
 [% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
 inline int [% class_name %]::getFStart() {
   return [% model.get_named_arg('F_start_').eval_const %];
@@ -648,80 +647,80 @@ inline real [% class_name %]::getDelta() {
 
 [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]
 template<class T1, bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+void [% class_name %]::[% toplevel | to_camel_case %]Simulate(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, const int p) {
   const int start = s.start();
   const int size = s.size();
   s.setRange(p, 1);
-  [% toplevel | to_camel_case %]Simulates(t1, t2, s);
+  [% toplevel | to_camel_case %]Simulates(t1, t2, onDelta, s);
   s.setRange(start, size);
 }
 
 template<class T1, bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Simulates(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
+void [% class_name %]::[% toplevel | to_camel_case %]Simulates(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel) %]
-  Block[% model.get_block(toplevel).get_id %]::simulates(t1, t2, onDelta(t1, t2), s);
+  Block[% model.get_block(toplevel).get_id %]::simulates(t1, t2, onDelta, s);
   [% ELSE %]
   BI_ERROR_MSG(false, "Attempt to deterministically simulate stochastic model");
   [%-END %]
 }
 
 template<class T1, bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Sample(bi::Random& rng, const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+void [% class_name %]::[% toplevel | to_camel_case %]Sample(bi::Random& rng, const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, const int p) {
   const int start = s.start();
   const int size = s.size();
   s.setRange(p, 1);
-  [% toplevel | to_camel_case %]Samples(rng, t1, t2, s);
+  [% toplevel | to_camel_case %]Samples(rng, t1, t2, onDelta, s);
   s.setRange(start, size);
 }
 
 template<class T1, bi::Location L>
-void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s) {
+void [% class_name %]::[% toplevel | to_camel_case %]Samples(bi::Random& rng, const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s) {
   [%-IF model.is_block(toplevel)-%]
-  Block[% model.get_block(toplevel).get_id %]::samples(rng, t1, t2, onDelta(t1, t2), s);
+  Block[% model.get_block(toplevel).get_id %]::samples(rng, t1, t2, onDelta, s);
   [% ELSE %]
   //
   [%-END %]
 }
 
 template<class T1, bi::Location L>
-real [% class_name %]::[% toplevel | to_camel_case %]LogDensity(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+real [% class_name %]::[% toplevel | to_camel_case %]LogDensity(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, const int p) {
   typename bi::loc_temp_vector<L,real>::type lp(1);
   const int start = s.start();
   const int size = s.size();
   s.setRange(p, 1);
   lp.clear();
-  [% toplevel | to_camel_case %]LogDensities(t1, t2, s, lp);
+  [% toplevel | to_camel_case %]LogDensities(t1, t2, onDelta, s, lp);
   s.setRange(start, size);
   
   return *lp.begin();
 }
 
 template<class T1, bi::Location L, class V1>
-void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
+void [% class_name %]::[% toplevel | to_camel_case %]LogDensities(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel)-%]
-  Block[% model.get_block(toplevel).get_id %]::logDensities(t1, t2, onDelta(t1, t2), s, lp);
+  Block[% model.get_block(toplevel).get_id %]::logDensities(t1, t2, onDelta, s, lp);
   [% ELSE %]
   //
   [%-END %]
 }
 
 template<class T1, bi::Location L>
-real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, const int p) {
+real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, const int p) {
   typename bi::loc_temp_vector<L,real>::type lp(1);
   const int start = s.start();
   const int size = s.size();
   s.setRange(p, 1);
   lp.clear();
-  [% toplevel | to_camel_case %]MaxLogDensities(t1, t2, s, lp);
+  [% toplevel | to_camel_case %]MaxLogDensities(t1, t2, onDelta, s, lp);
   s.setRange(start, size);
   
   return *lp.begin();
 }
 
 template<class T1, bi::Location L, class V1>
-void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1, const T1 t2, bi::State<[% class_name %],L>& s, V1 lp) {
+void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(const T1 t1, const T1 t2, const bool onDelta, bi::State<[% class_name %],L>& s, V1 lp) {
   [%-IF model.is_block(toplevel)-%]
-  Block[% model.get_block(toplevel).get_id %]::maxLogDensities(t1, t2, onDelta(t1, t2), s, lp);
+  Block[% model.get_block(toplevel).get_id %]::maxLogDensities(t1, t2, onDelta, s, lp);
   [% ELSE %]
   //
   [%-END %]
@@ -897,15 +896,6 @@ void [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensities(bi::State<[
   [% ELSE %]
   //
   [%-END %]
-}
-[% END %]
-
-[% IF model.is_block('transition') %]
-template<class T1>
-inline bool [% class_name %]::onDelta(const T1 t1, const T1 t2) {
-  T1 sgn = (t2 >= t1) ? 1.0 : -1.0;
-  T1 nextDelta = sgn*bi::ge_step(t1, sgn*getDelta());
-  return sgn*t1 >= sgn*nextDelta;
 }
 [% END %]
 

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_MASK_HPP
-#define BI_BUFFER_MASK_HPP
+#ifndef BI_STATE_MASK_HPP
+#define BI_STATE_MASK_HPP
 
 #include "../cuda/cuda.hpp"
 #include "../math/loc_temp_vector.hpp"
@@ -21,7 +21,7 @@ namespace bi {
 /**
  * Mask.
  *
- * @ingroup io_mask
+ * @ingroup state
  *
  * @tparam L Location.
  */
@@ -81,21 +81,21 @@ public:
    * Add dense mask over variable.
    *
    * @param id Variable id.
-   * @param size Variable size.
+   * @param size Mask size (same as variable size, as the mask is dense).
    */
   void addDenseMask(const int id, const int size);
 
   /**
    * Add sparse mask over variables.
    *
-   * @tparam V1 Integer vector type.
-   * @tparam V2 Integer vector type.
+   * @param id Variable id.
+   * @param size Mask size.
    *
-   * @param ids Ids of variables.
-   * @param indices Serial indices of active coordinates.
+   * Once the sparse mask is added, getIndices() should be used to retrieve
+   * and write into the vector of serialised coordinates to indicate the
+   * precise elements of the vector that form part of the mask.
    */
-  template<class V1, class V2>
-  void addSparseMask(const V1 ids, const V2 ixs);
+  void addSparseMask(const int id, const int size);
 
   /**
    * Get number of variables.
@@ -106,6 +106,15 @@ public:
    * Size of mask.
    */
   CUDA_FUNC_BOTH int size() const;
+
+  /**
+   * Resize mask.
+   *
+   * @param numVars Number of variables.
+   * @param preserve True to preserve current contents, false to clear for
+   * new use.
+   */
+  void resize(const int numVars, const bool preserve = true);
 
   /**
    * Clear mask.
@@ -163,13 +172,6 @@ public:
 
 private:
   /**
-   * Initialise mask.
-   *
-   * @param numVars Number of variables.
-   */
-  void init(const int numVars);
-
-  /**
    * Mask information. This is stored as a three-row matrix rather than as
    * three vectors to reduce the size of Mask for passing as an argument to
    * CUDA kernels. Objects of this type are 144 bytes with separate vectors,
@@ -204,8 +206,7 @@ private:
 }
 
 template<bi::Location L>
-bi::Mask<L>::Mask(const int numVars) {
-  init(numVars);
+bi::Mask<L>::Mask(const int numVars) : info(3, numVars) {
   clear();
 }
 
@@ -232,6 +233,7 @@ bi::Mask<L>::~Mask() {
 
 template<bi::Location L>
 bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L>& o) {
+  info.resize(3, o.getNumVars(), false);
   ixs.resize(o.ixs.size(), false);
 
   info = o.info;
@@ -245,6 +247,7 @@ bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L>& o) {
 template<bi::Location L>
 template<bi::Location L2>
 bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L2>& o) {
+  info.resize(3, o.getNumVars(), false);
   ixs.resize(o.ixs.size(), false);
 
   info = o.info;
@@ -258,6 +261,20 @@ bi::Mask<L>& bi::Mask<L>::operator=(const Mask<L2>& o) {
 template<bi::Location L>
 inline int bi::Mask<L>::getNumVars() const {
   return info.size2();
+}
+
+template<bi::Location L>
+void bi::Mask<L>::resize(const int numVars, const bool preserve) {
+  if (preserve) {
+    int oldSize = info.size2();
+    info.resize(3, numVars, true);
+    if (numVars > oldSize) {
+      columns(info, oldSize, numVars - oldSize).clear();
+    }
+  } else {
+    info.resize(3, numVars, false);
+    clear();
+  }
 }
 
 template<bi::Location L>
@@ -283,23 +300,16 @@ void bi::Mask<L>::addDenseMask(const int id, const int size) {
 }
 
 template<bi::Location L>
-template<class V1, class V2>
-void bi::Mask<L>::addSparseMask(const V1 ids, const V2 indices) {
+void bi::Mask<L>::addSparseMask(const int id, const int size) {
   /* pre-condition */
   BI_ASSERT(L == ON_HOST);
 
   int start = ixs.size();
-  int size = indices.size();
 
   ixs.resize(start + size, true);
-  subrange(ixs, start, size) = indices;
-  sparseSize += ids.size() * size;
-
-  int id;
-  for (id = 0; id < ids.size(); ++id) {
-    info(2, id) = start;
-    info(1, id) = size;
-  }
+  sparseSize += size;
+  info(1, id) = size;
+  info(2, id) = start;
 }
 
 template<bi::Location L>
@@ -343,13 +353,6 @@ const typename bi::Mask<L>::vector_type::vector_reference_type bi::Mask<L>::getI
   const int size = *(info.buf() + id*info.lead() + 1*info.inc());
 
   return subrange(ixs, start, size);
-}
-
-template<bi::Location L>
-inline void bi::Mask<L>::init(const int numVars) {
-  info.resize(3, numVars, false);
-  ixs.resize(0, false);
-  clear();
 }
 
 #endif

@@ -30,6 +30,23 @@ template<class R, class T1>
 CUDA_FUNC_BOTH T1 beta(R& rng, const T1 alpha = 1.0, const T1 beta = 1.0);
 
 /**
+ * Generate a random number from a inverse gamma distribution with given
+ * parameters.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param alpha Shape.
+ * @param beta Scale.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 inverse_gamma(R& rng, const T1 alpha = 1.0, const T1 beta =
+    1.0);
+
+/**
  * Generate a random number from a Gaussian distribution that is truncated
  * with a lower bound.
  *
@@ -44,8 +61,8 @@ CUDA_FUNC_BOTH T1 beta(R& rng, const T1 alpha = 1.0, const T1 beta = 1.0);
  * @return The random number.
  */
 template<class R, class T1>
-CUDA_FUNC_BOTH T1 lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu =
-    0.0, const T1 sigma = 1.0);
+CUDA_FUNC_BOTH T1 lower_truncated_gaussian(R& rng, const T1 lower,
+    const T1 mu = 0.0, const T1 sigma = 1.0);
 
 /**
  * Generate a random number from a Gaussian distribution that is truncated
@@ -62,8 +79,8 @@ CUDA_FUNC_BOTH T1 lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu =
  * @return The random number.
  */
 template<class R, class T1>
-CUDA_FUNC_BOTH T1 upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu =
-    0.0, const T1 sigma = 1.0);
+CUDA_FUNC_BOTH T1 upper_truncated_gaussian(R& rng, const T1 upper,
+    const T1 mu = 0.0, const T1 sigma = 1.0);
 
 /**
  * Generate a random number from a Gaussian distribution that is truncated
@@ -98,7 +115,18 @@ inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
 }
 
 template<class R, class T1>
-T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu, const T1 sigma) {
+inline T1 bi::inverse_gamma(R& rng, const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  BI_ASSERT(alpha > static_cast<T1>(0.0) && beta > static_cast<T1>(0.0));
+
+  const T1 x = rng.gamma(alpha, static_cast<T1>(1.0)/beta);
+
+  return static_cast<T1>(1.0)/x;
+}
+
+template<class R, class T1>
+T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu,
+    const T1 sigma) {
   T1 u;
   do {
     u = rng.gaussian(mu, sigma);
@@ -108,7 +136,8 @@ T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu, const T1 si
 }
 
 template<class R, class T1>
-T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu, const T1 sigma) {
+T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu,
+    const T1 sigma) {
   T1 u;
   do {
     u = rng.gaussian(mu, sigma);
@@ -118,7 +147,8 @@ T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu, const T1 si
 }
 
 template<class R, class T1>
-T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu, const T1 sigma) {
+T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
+    const T1 sigma) {
   /* pre-conditions */
   BI_ASSERT(upper > lower);
 

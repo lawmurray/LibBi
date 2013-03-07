@@ -240,7 +240,7 @@ struct div_constant_functor : public std::unary_function<T,T> {
  * \f$y \gets ax + y\f$; element-wise multiply and add.
  */
 template<typename T>
-struct axpy_functor : public std::unary_function<T,void> {
+struct axpy_functor : public std::binary_function<T,T,T> {
   T a;
 
   axpy_functor() {
@@ -251,7 +251,7 @@ struct axpy_functor : public std::unary_function<T,void> {
     //
   }
 
-  CUDA_FUNC_BOTH void operator()(const T x, const T y) const {
+  CUDA_FUNC_BOTH T operator()(const T x, const T y) const {
     return a*x + y;
   }
 };

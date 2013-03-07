@@ -77,12 +77,13 @@ int main(int argc, char* argv[]) {
     bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
-  /* output */
-  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
+  /* schedule */
+  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
 
+  /* output */
   KalmanFilterNetCDFBuffer* bufOutput;
   if (ENABLE_OUTPUT) {
-    bufOutput = new KalmanFilterNetCDFBuffer(m, P, Y, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+    bufOutput = new KalmanFilterNetCDFBuffer(m, P, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
     bufOutput = NULL;
   }
@@ -101,7 +102,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;  
   
-  filter->filter(rng, START_TIME, T, K, s, bufInit);
+  filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
   synchronize();
 
   /* output timing results */

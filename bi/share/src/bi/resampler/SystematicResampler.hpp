@@ -22,7 +22,7 @@ namespace bi {
  * Determine number of offspring for each particle for SystematicResampler.
  */
 template<class T>
-struct resample_cumulative_offspring : public std::unary_function<T,int> {
+struct resample_cumulative_offspring: public std::unary_function<T,int> {
   const T a, W, n;
 
   /**
@@ -32,8 +32,9 @@ struct resample_cumulative_offspring : public std::unary_function<T,int> {
    * @param W Sum of weights.
    * @param n Number of samples to draw.
    */
-  CUDA_FUNC_HOST resample_cumulative_offspring(const T a, const T W,
-      const int n) : a(a), W(W), n(n) {
+  CUDA_FUNC_HOST
+  resample_cumulative_offspring(const T a, const T W, const int n) :
+      a(a), W(W), n(n) {
     /* pre-condition */
     BI_ASSERT(a >= 0.0 && a <= 1.0);
     BI_ASSERT(W > 0.0);
@@ -47,8 +48,9 @@ struct resample_cumulative_offspring : public std::unary_function<T,int> {
    *
    * @return Cumulative offspring for particle this index.
    */
-  CUDA_FUNC_BOTH int operator()(const T Ws) {
-    return bi::min(n, static_cast<int>(Ws/W*n + a));
+  CUDA_FUNC_BOTH
+  int operator()(const T Ws) {
+    return bi::min(n, static_cast<int>(Ws / W * n + a));
   }
 };
 
@@ -60,14 +62,16 @@ struct resample_cumulative_offspring : public std::unary_function<T,int> {
  * Systematic (determistic stratified) resampler based on the scheme of
  * @ref Kitagawa1996 "Kitagawa (1996)", with optional pre-sorting.
  */
-class SystematicResampler : public Resampler {
+class SystematicResampler: public Resampler {
 public:
   /**
    * Constructor.
    *
    * @param sort True to pre-sort weights, false otherwise.
+   * @param essRel Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
-  SystematicResampler(const bool sort = true);
+  SystematicResampler(const bool sort = true, const double essRel = 0.5);
 
   /**
    * @name High-level interface
@@ -77,28 +81,28 @@ public:
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s)
+  bool resample(Random& rng, V1 lws, V2 as, O1& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s)
+  bool resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
-      O1& s) throw (ParticleFilterDegeneratedException);
+  bool resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
+  bool cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
       O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -116,12 +120,11 @@ public:
   template<class V1, class V2, class V3, class V4>
   void offspring(Random& rng, const V1 lws, V2 o, const int n, int ka,
       bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+          throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void offspring(Random& rng, const V1 lws, V2 os,
-      const int n, bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+  void offspring(Random& rng, const V1 lws, V2 os, const int n, bool sorted,
+      V3 lws1, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::cumulativeoOffspring
@@ -133,12 +136,12 @@ public:
   template<class V1, class V2, class V3, class V4>
   void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
       int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+          throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
   void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
       bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+          throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::ancestors
@@ -148,14 +151,13 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void ancestors(Random& rng, const V1 lws, V2 as, int P,
-      bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+  void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sorted,
+      V3 lws1, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
   void ancestors(Random& rng, const V1 lws, V2 as, int P, int ka, int k,
       bool sorted, V3 lws1, V4 ps, V3 Ws)
-      throw (ParticleFilterDegeneratedException);
+          throw (ParticleFilterDegeneratedException);
   //@}
 
 protected:
@@ -182,7 +184,7 @@ protected:
 #include "thrust/for_each.h"
 
 template<class V1, class V2, class O1>
-void bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
+bool bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
@@ -190,14 +192,21 @@ void bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
   const int P = lws.size();
   typename sim_temp_vector<V2>::type Os(P);
 
-  cumulativeOffspring(rng, lws, Os, P);
-  cumulativeOffspringToAncestorsPermute(Os, as);
-  lws.clear();
-  copy(as, s);
+  bool r = isTriggered(lws);
+  if (r) {
+    cumulativeOffspring(rng, lws, Os, P);
+    cumulativeOffspringToAncestorsPermute(Os, as);
+    lws.clear();
+    copy(as, s);
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class V3, class O1>
-void bi::SystematicResampler::resample(Random& rng, const V1 qlws, V2 lws,
+bool bi::SystematicResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(qlws.size() == lws.size());
@@ -206,16 +215,24 @@ void bi::SystematicResampler::resample(Random& rng, const V1 qlws, V2 lws,
   const int P = lws.size();
   typename sim_temp_vector<V3>::type Os(P);
 
-  cumulativeOffspring(rng, qlws, Os, P);
-  cumulativeOffspringToAncestorsPermute(Os, as);
-  correct(as, qlws, lws);
-  copy(as, s);
+  bool r = isTriggered(lws);
+  if (r) {
+    cumulativeOffspring(rng, qlws, Os, P);
+    cumulativeOffspringToAncestorsPermute(Os, as);
+    correct(as, qlws, lws);
+    normalise(lws);
+    copy(as, s);
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class V3, class O1>
-void bi::SystematicResampler::resample(Random& rng, const int a,
+bool bi::SystematicResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(qlws.size() == lws.size());
 
@@ -223,42 +240,57 @@ void bi::SystematicResampler::resample(Random& rng, const int a,
   const int P = lws.size();
   typename sim_temp_vector<V3>::type Os(P);
 
-  cumulativeOffspring(rng, qlws, Os, P - 1);
-  BOOST_AUTO(tail, subrange(Os, a, Os.size() - a));
-  addscal_elements(tail, 1, tail);
-  cumulativeOffspringToAncestorsPermute(Os, as);
-  correct(as, qlws, lws);
-  copy(as, s);
+  bool r = isTriggered(lws);
+  if (r) {
+    cumulativeOffspring(rng, qlws, Os, P - 1);
+    BOOST_AUTO(tail, subrange(Os, a, Os.size() - a));
+    addscal_elements(tail, 1, tail);
+    cumulativeOffspringToAncestorsPermute(Os, as);
+    correct(as, qlws, lws);
+    normalise(lws);
+    copy(as, s);
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class O1>
-void bi::SystematicResampler::cond_resample(Random& rng, const int ka,
+bool bi::SystematicResampler::cond_resample(Random& rng, const int ka,
     const int k, V1 lws, V2 as, O1& s)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
   BI_ASSERT(k >= 0 && k < as.size());
   BI_ASSERT(ka >= 0 && ka < lws.size());
   BI_ASSERT(k == 0 && ka == 0);
 
-  const int P = lws.size();
-  typename sim_temp_vector<V2>::type Os(P);
+  bool r = isTriggered(lws);
+  if (r) {
+    const int P = lws.size();
+    typename sim_temp_vector<V2>::type Os(P);
 
-  int P2;
-  if (!sort) {
-    // change this?
-    P2 = 0;
+    int P2;
+    if (!sort) {
+      // change this?
+      P2 = 0;
+    } else {
+      P2 = s.size();
+    }
+    typename sim_temp_vector<V1>::type lws1(P2), Ws(P2);
+    typename sim_temp_vector<V2>::type ps(P2);
+
+    cumulativeOffspring(rng, lws, Os, P, ka, false, lws1, ps, Ws);
+    cumulativeOffspringToAncestorsPermute(Os, as);
+    BI_ASSERT(*(as.begin() + k) == ka);
+    copy(as, s);
+    lws.clear();
   } else {
-    P2 = s.size();
+    normalise(lws);
+    seq_elements(as, 0);
   }
-  typename sim_temp_vector<V1>::type lws1(P2), Ws(P2);
-  typename sim_temp_vector<V2>::type ps(P2);
-
-  cumulativeOffspring(rng, lws, Os, P, ka, false, lws1, ps, Ws);
-  cumulativeOffspringToAncestorsPermute(Os, as);
-  BI_ASSERT(*(as.begin() + k) == ka);
-  copy(as, s);
-  lws.clear();
+  return r;
 }
 
 template<class V1, class V2>
@@ -282,18 +314,19 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
     bi::sort_by_key(lws1, ps);
     sumexpu_inclusive_scan(lws1, Ws);
 
-    T1 W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
-      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      T1 a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
       bi::adjacent_difference(Os, os);
       temp = os;
       bi::scatter(temp, ps, os);
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = sum_reduce(os);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -307,7 +340,7 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
 template<class V1, class V2, class V3, class V4>
 void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int n, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == os.size());
 
@@ -327,18 +360,19 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
       sumexpu_inclusive_scan(lws1, Ws);
     }
 
-    T1 W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
-      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      T1 a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
       bi::adjacent_difference(Os, os);
       temp = os;
       bi::scatter(temp, ps, os);
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = sum_reduce(os);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -352,7 +386,7 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
 template<class V1, class V2, class V3, class V4>
 void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
     const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /// @todo May only work if ka == 0
 
   /* pre-condition */
@@ -375,25 +409,26 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
       sumexpu_inclusive_scan(lws1, Ws);
     }
 
-    T1 W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1);  // sum of weights
 
     if (W > 0) {
-      int k = bi::find(ps,ka);
-      real left = k > 0 ? *(Ws.begin() + k-1) : 0.0;
+      int k = bi::find(ps, ka);
+      real left = k > 0 ? *(Ws.begin() + k - 1) : 0.0;
       real right = *(Ws.begin() + k);
-      real c = rng.uniform(left,right);
-      int strata = std::floor(n*c/W);
-      T1 a = n*c/W - strata;
+      real c = rng.uniform(left, right);
+      int strata = std::floor(n * c / W);
+      T1 a = n * c / W - strata;
 
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
       bi::adjacent_difference(Os, os);
       temp = os;
       bi::scatter(temp, ps, os);
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = sum_reduce(os);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -425,16 +460,17 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
     vector_type Ws(P);
     sumexpu_inclusive_scan(lws, Ws);
 
-    W = *(Ws.end() - 1); // sum of weights
+    W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
-      a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
 
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = *(Os.end() - 1);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -444,7 +480,7 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
 template<class V1, class V2, class V3, class V4>
 void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
     V2 Os, const int n, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == Os.size());
 
@@ -460,15 +496,16 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
     sum_inclusive_scan(os, Os);
   } else {
     sumexpu_inclusive_scan(lws, Ws);
-    T1 W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
-      T1 a = rng.uniform((T1)0.0, (T1)1.0); // offset into strata
+      T1 a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = *(Os.end() - 1);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -478,7 +515,7 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
 template<class V1, class V2, class V3, class V4>
 void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
     V2 Os, const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   /// @todo May only work if ka == 0
 
   /* pre-condition */
@@ -497,22 +534,23 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
     sum_inclusive_scan(os, Os);
   } else {
     sumexpu_inclusive_scan(lws, Ws);
-    T1 W = *(Ws.end() - 1); // sum of weights
+    T1 W = *(Ws.end() - 1);  // sum of weights
 
     if (W > 0) {
       int k = bi::find(ps, ka);
-      T1 left = k > 0 ? *(Ws.begin() + k-1) : 0.0;
+      T1 left = k > 0 ? *(Ws.begin() + k - 1) : 0.0;
       T1 right = *(Ws.begin() + k);
-      real c = rng.uniform(left,right);
-      int strata = std::floor(n*c/W);
-      T1 a = n*c/W - strata;
+      real c = rng.uniform(left, right);
+      int strata = std::floor(n * c / W);
+      T1 a = n * c / W - strata;
 
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       int m = *(Os.end() - 1);
-      BI_ASSERT_MSG(m == n, "Systematic resampler gives " << m << " offspring, should give " << n);
-      #endif
+      BI_ASSERT_MSG(m == n,
+          "Systematic resampler gives " << m << " offspring, should give " << n);
+#endif
     } else {
       throw ParticleFilterDegeneratedException();
     }
@@ -535,9 +573,9 @@ void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as)
 }
 
 template<class V1, class V2, class V3, class V4>
-void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as, int P,
-    bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    int P, bool sorted, V3 lws1, V4 ps, V3 Ws)
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(as.size() == P);
 
@@ -548,9 +586,9 @@ void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as, int P,
 }
 
 template<class V1, class V2, class V3, class V4>
-void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as, int P, int ka,
-    int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
-    throw (ParticleFilterDegeneratedException) {
+void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(as.size() == P);
 

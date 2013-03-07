@@ -14,6 +14,8 @@
 namespace bi {
 /**
  * State for ParticleMarginalMetropolisHastings.
+ *
+ * @ingroup state
  */
 template<class B, Location L>
 class ThetaState : public State<B,L> {

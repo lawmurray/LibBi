@@ -24,7 +24,7 @@ namespace bi {
  * @tparam Q2 Pdf type.
  * @tparam V1 Vector type.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param p Target distribution.
  * @param q Proposal distribution.
  * @param M Constant, such that \f$\forall \mathbf{x}: M q(\mathbf{x}) \ge

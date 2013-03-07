@@ -7,255 +7,121 @@
  */
 #include "SparseInputNetCDFBuffer.hpp"
 
-#include "../math/view.hpp"
-#include "../math/loc_temp_vector.hpp"
-
-#include <algorithm>
-#include <utility>
-
 bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
     const std::string& file, const int ns, const int np) :
-    NetCDFBuffer(file), SparseInputBuffer(m), vars(NUM_VAR_TYPES), ns(ns), np(
-        np) {
+    NetCDFBuffer(file), m(m), vars(NUM_VAR_TYPES), ns(ns), np(np) {
   map();
-  mask0();
-  rewind();
 }
 
-bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(
-    const SparseInputNetCDFBuffer& o) :
-    NetCDFBuffer(o), SparseInputBuffer(o.m), vars(NUM_VAR_TYPES), ns(o.ns), np(
-        o.np) {
-  map();
-  mask0();
-  rewind();
-}
+void bi::SparseInputNetCDFBuffer::readMask(const int k, const VarType type,
+    Mask<ON_HOST>& mask) {
+  typedef typename temp_host_matrix<real>::type temp_matrix_type;
 
-void bi::SparseInputNetCDFBuffer::next() {
-  /* pre-condition */
-  BI_ASSERT(isValid());
+  mask.resize(m.getNumVars(type), false);
 
-  int tVar, rDim;
-  real t = getTime(), tnxt;
+  Var* var;
+  int r, start, len;
+  for (r = 0; r < recDims.size(); ++r) {
+    if (timeVars[r] != NULL) {
+      start = recStarts[k][r];
+      len = recLens[k][r];
 
-  /* advance currently active time variables */
-  do {
-    tVar = state.times.begin()->second;
-    rDim = tDims[tVar];
-    state.times.erase(state.times.begin());
+      if (len > 0) {
+        BOOST_AUTO(range, modelVars.equal_range(r));
+        BOOST_AUTO(iter, range.first);
+        BOOST_AUTO(end, range.second);
 
-    /* read next time for this time variable */
-    state.starts[rDim] += state.lens[rDim];
-    if (hasTime(tVar, state.starts[rDim])) {
-      readTime(tVar, state.starts[rDim], state.lens[rDim], tnxt);
-      state.times.insert(std::make_pair(tnxt, tVar));
-    } else {
-      state.lens[tVar] = 0;
-    }
-  } while (isValid() && getTime() == t);  // may be multiple time variables on current time
-}
-
-void bi::SparseInputNetCDFBuffer::mask() {
-  int tVar, rDim, i;
-  real t;
-
-  /* clear existing masks */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    state.masks[i]->clear();
-  }
-
-  /* construct new masks */
-  if (isValid()) {
-    t = getTime();
-    BOOST_AUTO(iter, state.times.begin());
-    while (iter != state.times.end() && iter->first == t) {
-      tVar = iter->second;
-      rDim = tDims[tVar];
-      if (isSparse(rDim)) {
-        maskSparse(rDim);
-      } else {
-        maskDense(rDim);
-      }
-      ++iter;
-    }
-  }
-}
-
-void bi::SparseInputNetCDFBuffer::mask0() {
-  int i;
-
-  /* clear existing masks */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    masks0[i]->clear();
-  }
-
-  maskDense0();
-  maskSparse0();
-}
-
-void bi::SparseInputNetCDFBuffer::maskDense(const int rDim) {
-  VarType type;
-  int i, j;
-  temp_host_vector<int>::type ids;
-
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    type = static_cast<VarType>(i);
-    readIds(rDim, type, ids);
-
-    for (j = 0; j < ids.size(); ++j) {
-      state.masks[type]->addDenseMask(ids[j],
-          m.getVar(type, ids[j])->getSize());
-    }
-  }
-}
-
-void bi::SparseInputNetCDFBuffer::maskSparse(const int rDim) {
-  VarType type;
-  int i;
-  temp_host_vector<int>::type ids, indices;
-
-  readIndices(rDim, state.starts[rDim], state.lens[rDim], indices);
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    type = static_cast<VarType>(i);
-    readIds(rDim, type, ids);
-    state.masks[type]->addSparseMask(ids, indices);
-  }
-}
-
-void bi::SparseInputNetCDFBuffer::maskDense0() {
-  int i, j, id;
-  VarType type;
-
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    type = static_cast<VarType>(i);
-    for (j = 0; j < (int)vUnassoc[type].size(); ++j) {
-      id = vUnassoc[type][j];
-      masks0[type]->addDenseMask(id, m.getVar(type, id)->getSize());
-    }
-  }
-}
-
-void bi::SparseInputNetCDFBuffer::maskSparse0() {
-  int rDim, i;
-  NcDim* dim;
-  temp_host_vector<int>::type ids, indices;
-
-  for (rDim = 0; rDim < (int)rDims.size(); ++rDim) {
-    if (tAssoc[rDim] == -1) {
-      BI_ASSERT(cAssoc[rDim] != -1);
-      dim = rDims[rDim];
-
-      readIndices(rDim, 0, dim->size(), indices);
-      for (i = 0; i < NUM_VAR_TYPES; ++i) {
-        if (vAssoc[rDim][i].size() > 0) {
-          ids.resize(vAssoc[rDim][i].size());
-          std::copy(vAssoc[rDim][i].begin(), vAssoc[rDim][i].end(),
-              ids.begin());
-          masks0[i]->addSparseMask(ids, indices);
+        if (coordVars[r] != NULL) {
+          /* sparse mask */
+          temp_matrix_type C(iter->second->getNumDims(), len);
+          readCoords(coordVars[r], start, len, C);
+          for (; iter != end; ++iter) {
+            var = iter->second;
+            if (var->getType() == type) {
+              mask.addSparseMask(var->getId(), len);
+              serialiseCoords(var, C, mask.getIndices(var->getId()));
+            }
+          }
+        } else {
+          /* dense mask */
+          for (; iter != end; ++iter) {
+            var = iter->second;
+            if (var->getType() == type) {
+              mask.addDenseMask(var->getId(), var->getSize());
+            }
+          }
         }
       }
     }
   }
 }
 
-void bi::SparseInputNetCDFBuffer::rewind() {
-  int tVar, rDim;
-  real t;
-  state.starts.clear();
-  state.times.clear();
+void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
+    Mask<ON_HOST>& mask) {
+  typedef typename temp_host_matrix<real>::type temp_matrix_type;
+  mask.resize(m.getNumVars(type), false);
 
-  for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
-    rDim = tDims[tVar];
-    if (isAssoc(tVar) && hasTime(tVar, 0)) {
-      readTime(tVar, 0, state.lens[rDim], t);
-      state.times.insert(std::make_pair(t, tVar));
-    } else {
-      state.lens[rDim] = 0;
-    }
-  }
-  mask();
-}
+  Var* var;
+  int r, start, len;
 
-void bi::SparseInputNetCDFBuffer::setTime(const real t) {
-  if (!isValid() || getTime() > t) {
-    rewind();
-  }
-  while (isValid() && getTime() < t) {
-    next();
-  }
-  BI_WARN_MSG(tVars.size() == 0 || (isValid() && getTime() == t), "No time " << t << " in file");
-}
+  /* sparse masks */
+  for (r = 0; r < recDims.size(); ++r) {
+    if (timeVars[r] == NULL) {
+      BOOST_AUTO(range, modelVars.equal_range(r));
+      BOOST_AUTO(iter, range.first);
+      BOOST_AUTO(end, range.second);
 
-int bi::SparseInputNetCDFBuffer::countTimes(const real t, const real T,
-    const int K) {
-  int size, tVar, rDim;
-  NcVar* var;
-  std::vector<real> ts;
+      start = 0;
+      len = recDims[r]->size();
 
-  /* times in file  */
-  for (tVar = 0; tVar < (int)tVars.size(); ++tVar) {
-    if (isAssoc(tVar)) {
-      rDim = tDims[tVar];
-      var = tVars[tVar];
-      size = rDims[rDim]->size();
-      ts.resize(ts.size() + size);
-
-      if (var->get_dim(0) == nsDim) {
-        var->set_cur(ns, 0);
-        var->get(&ts[ts.size() - size], 1, size);
-      } else {
-        var->set_cur((long)0);
-        var->get(&ts[ts.size() - size], size);
+      temp_matrix_type C(iter->second->getNumDims(), len);
+      readCoords(coordVars[r], start, len, C);
+      for (; iter != end; ++iter) {
+        var = iter->second;
+        if (var->getType() == type) {
+          mask.addSparseMask(var->getId(), C.size2());
+          serialiseCoords(var, C, mask.getIndices(var->getId()));
+        }
       }
-      std::inplace_merge(ts.begin(), ts.end() - size, ts.end());
     }
   }
 
-  /* dense times */
-  ts.resize(ts.size() + K + 1);
-  for (int k = 0; k < K; ++k) {
-    ts[ts.size() - K - 1 + k] = t + (T - t) * k / K;
+  /* dense masks */
+  r = -1;  // for those vars not associated with a record dimension
+  BOOST_AUTO(range, modelVars.equal_range(r));
+  BOOST_AUTO(iter, range.first);
+  BOOST_AUTO(end, range.second);
+
+  for (; iter != end; ++iter) {
+    var = iter->second;
+    if (var->getType() == type) {
+      mask.addDenseMask(var->getId(), var->getSize());
+    }
   }
-  ts[ts.size() - 1] = T;
-  std::inplace_merge(ts.begin(), ts.end() - K - 1, ts.end());
-
-  /* uniqueness */
-  std::vector<real>::iterator unique, lessThan, greaterThan;
-  unique = std::unique(ts.begin(), ts.end());
-  lessThan = std::upper_bound(ts.begin(), unique, T);  // <= T
-  greaterThan = std::lower_bound(ts.begin(), lessThan, t);    // >= t
-
-  return std::distance(greaterThan, lessThan);
 }
 
 void bi::SparseInputNetCDFBuffer::map() {
+  NcDim* ncDim;
   NcVar* ncVar;
-  Var* var;
   Dim* dim;
+  Var* var;
   VarType type;
-  int i, id, rDim;
-  std::pair<NcVar*,int> pair;
+  int i, k, id;
 
-  /* dimensions */
+  /* ns dimension */
   nsDim = NULL;
   if (hasDim("ns")) {
     nsDim = mapDim("ns");
     BI_ERROR_MSG(ns < nsDim->size(),
-        "Given index exceeds " << "length along ns dimension");
+        "Given index " << ns << " outside range of ns dimension");
   }
 
-  for (i = 0; i < m.getNumDims(); ++i) {
-    dim = m.getDim(i);
-    if (hasDim(dim->getName().c_str())) {
-      nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
-    }
-  }
-
+  /* np dimension */
   npDim = NULL;
   if (hasDim("np")) {
     npDim = mapDim("np");
     BI_ERROR_MSG(np < 0 || np < npDim->size(),
-        "Given index exceeds " << "length along np dimension");
+        "Given index " << np << " outside range of np dimension");
   }
 
   /* record dimensions, time and coordinate variables */
@@ -264,81 +130,107 @@ void bi::SparseInputNetCDFBuffer::map() {
 
     if (strncmp(ncVar->name(), "time", 4) == 0) {
       /* is a time variable */
-      mapTimeDim(ncVar);
+      ncDim = mapTimeDim(ncVar);
+      if (ncDim != NULL) {
+        BOOST_AUTO(iter, std::find(recDims.begin(), recDims.end(), ncDim));
+        if (iter == recDims.end()) {
+          /* newly encountered record dimension */
+          recDims.push_back(ncDim);
+          timeVars.push_back(ncVar);
+          coordVars.push_back(NULL);
+        } else {
+          /* record dimension encountered before */
+          k = std::distance(recDims.begin(), iter);
+          BI_ASSERT_MSG(timeVars[k] == NULL,
+              "Time variables " << timeVars[k]->name() << " and " << ncVar->name() << " cannot share the same record dimension " << (*iter)->name());
+          timeVars[k] = ncVar;
+        }
+      }
     } else if (strncmp(ncVar->name(), "coord", 5) == 0) {
       /* is a coordinate variable */
-      mapCoordDim(ncVar);
+      ncDim = mapCoordDim(ncVar);
+      if (ncDim != NULL) {
+        BOOST_AUTO(iter, std::find(recDims.begin(), recDims.end(), ncDim));
+        if (iter == recDims.end()) {
+          /* newly encountered record dimension */
+          recDims.push_back(ncDim);
+          timeVars.push_back(NULL);
+          coordVars.push_back(ncVar);
+        } else {
+          /* record dimension encountered before */
+          k = std::distance(recDims.begin(), iter);
+          BI_ASSERT_MSG(coordVars[k] == NULL,
+              "Coordinate variables " << coordVars[k]->name() << " and " << ncVar->name() << " cannot share the same record dimension " << (*iter)->name());
+          coordVars[k] = ncVar;
+        }
+      }
     }
   }
 
-  /* initial active regions */
-  state.starts.resize(rDims.size());
-  state.lens.resize(rDims.size());
-  state.starts.clear();
-  state.lens.clear();
-
-  for (rDim = 0; rDim < (int)rDims.size(); ++rDim) {
-    if (tAssoc[rDim] == -1) {
-      /* this record dimension not associated with time variable, so entire
-       * length is always active */
-      state.lens[rDim] = rDims[rDim]->size();
-    }
-  }
-
-  /* other variables */
-  vAssoc.clear();
-  vAssoc.resize(rDims.size());
-  for (i = 0; i < (int)rDims.size(); ++i) {
-    vAssoc[i].resize(NUM_VAR_TYPES);
-  }
-  vUnassoc.clear();
-  vUnassoc.resize(NUM_VAR_TYPES);
-
+  /* model variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
 
     /* initialise NetCDF variables for this type */
     vars[type].resize(m.getNumVars(type), NULL);
 
-    /* initialise record dimension associations for this type */
-    vDims[i].resize(m.getNumVars(type));
-    std::fill(vDims[i].begin(), vDims[i].end(), -1);
-
     /* map model variables */
     for (id = 0; id < m.getNumVars(type); ++id) {
       var = m.getVar(type, id);
       if (var->hasInput() && hasVar(var->getInputName().c_str())) {
-        pair = mapVar(var);
-        ncVar = pair.first;
-        rDim = pair.second;
-      } else {
-        ncVar = NULL;
-        rDim = -1;
+        BOOST_AUTO(pair, mapVarDim(var));
+        k = pair.first;
+        ncVar = pair.second;
+
+        if (ncVar != NULL) {
+          vars[type][id] = ncVar;
+        }
+        modelVars.insert(std::make_pair(k, var));
       }
-      vars[type][id] = ncVar;
-      vDims[type][id] = rDim;
-      if (rDim != -1) {
-        vAssoc[rDim][type].push_back(id);
-      } else if (ncVar != NULL) {
-        vUnassoc[type].push_back(id);
-      }
+    }
+  }
+
+  /* preload random access tables */
+  std::multimap<real,int> seq;
+  std::vector<int> starts(recDims.size(), 0), lens(recDims.size(), 0);
+  real t, tnxt;
+
+  for (k = 0; k < recDims.size(); ++k) {
+    if (timeVars[k] != NULL) {
+      /* initialise */
+      readTime(timeVars[k], starts[k], &lens[k], &tnxt);
+      seq.insert(std::make_pair(tnxt, k));
+    }
+  }
+  while (!seq.empty()) {
+    /* next in time */
+    tnxt = seq.begin()->first;
+
+    k = seq.begin()->second;
+    seq.erase(seq.begin());
+
+    ncDim = recDims[k];
+    ncVar = timeVars[k];
+
+    if (times.empty() || tnxt > times.back()) {
+      times.push_back(tnxt);
+      recStarts.push_back(std::vector<int>(recDims.size(), 0));
+      recLens.push_back(std::vector<int>(recDims.size(), 0));
+    }
+    recStarts.back()[k] = starts[k];
+    recLens.back()[k] = lens[k];
+
+    /* read next time and range for this time variable */
+    starts[k] += lens[k];
+    if (starts[k] < ncDim->size()) {
+      /* more to come on this record dimension */
+      readTime(ncVar, starts[k], &lens[k], &tnxt);
+      seq.insert(std::make_pair(tnxt, k));
     }
   }
 }
 
-NcDim* bi::SparseInputNetCDFBuffer::mapDim(const char* name,
-    const long size) {
-  /* pre-condition */
-  BI_ASSERT_MSG(hasDim(name), "File does not contain dimension " << name);
-
-  NcDim* ncDim = ncFile->get_dim(name);
-  BI_ERROR_MSG(size < 0 || ncDim->size() >= size || ncDim->size() == 1,
-      "Size of dimension " << name << " is " << ncDim->size() << ", but needs to be at least " << size);
-
-  return ncDim;
-}
-
-std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
+std::pair<int,NcVar*> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
   /* pre-condition */
   BI_ASSERT(var != NULL);
   BI_ASSERT_MSG(hasVar(var->getInputName().c_str()),
@@ -348,12 +240,11 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
   NcVar* ncVar;
   NcDim* ncDim;
   Dim* dim;
-  int i, j = 0, rDim = -1, cVar = -1;
+  int i, j = 0, k = -1;
   BI_UNUSED bool canHaveTime, canHaveP;
 
   canHaveTime = type == D_VAR || type == R_VAR || type == F_VAR
       || type == O_VAR;
-  canHaveP = type == D_VAR || type == R_VAR || type == P_VAR;
 
   ncVar = ncFile->get_var(var->getInputName().c_str());
   BI_ASSERT(ncVar != NULL && ncVar->is_valid());
@@ -365,19 +256,16 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
 
   /* check for record dimension */
   if (j < ncVar->num_dims()) {
-    for (i = 0; i < (int)rDims.size(); ++i) {
-      if (rDims[i] == ncVar->get_dim(j)) {
-        rDim = i;
-        cVar = cAssoc[rDim];
-        ++j;
-        break;
-      }
+    BOOST_AUTO(iter,
+        std::find(recDims.begin(), recDims.end(), ncVar->get_dim(j)));
+    if (iter != recDims.end()) {
+      k = std::distance(recDims.begin(), iter);
+      ++j;
     }
   }
 
   /* check for np-dimension */
-  if (canHaveP && npDim != NULL && j < ncVar->num_dims()
-      && ncVar->get_dim(j) == npDim) {
+  if (npDim != NULL && j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
     ++j;
   } else if (j < ncVar->num_dims()) {
     /* check for model dimensions */
@@ -387,142 +275,65 @@ std::pair<NcVar*,int> bi::SparseInputNetCDFBuffer::mapVar(const Var* var) {
 
       BI_ERROR_MSG(dim->getName().compare(ncDim->name()) == 0,
           "Dimension " << j << " of variable " << ncVar->name() << " should be " << dim->getName());
-      BI_ERROR_MSG(cVar == -1,
-          "Variable " << ncVar->name() << " has both dense " << "sparse definitions");
+      BI_ERROR_MSG(k < 0 || coordVars[k] == NULL,
+          "Variable " << ncVar->name() << " has both dense and sparse definitions");
     }
     BI_ERROR_MSG(i == var->getNumDims(),
         "Variable " << ncVar->name() << " is missing one or more dimensions");
 
     /* check again for np dimension */
-    if (canHaveP && npDim != NULL && j < ncVar->num_dims()
+    if (npDim != NULL && j < ncVar->num_dims()
         && ncVar->get_dim(j) == npDim) {
       ++j;
     }
-    BI_ERROR_MSG(j == ncVar->num_dims(),
-        "Variable " << ncVar->name() << " has extra dimensions");
-
   }
+  BI_ERROR_MSG(j == ncVar->num_dims(),
+      "Variable " << ncVar->name() << " has extra dimensions");
 
-  return std::make_pair(ncVar, rDim);
+  return std::make_pair(k, ncVar);
 }
 
-NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* var) {
-  /* pre-conditions */
-  BI_ERROR_MSG(var != NULL && var->is_valid(),
-      "File does not contain time variable " << var->name());
-
-  std::vector<NcDim*>::iterator iter;
+NcDim* bi::SparseInputNetCDFBuffer::mapTimeDim(NcVar* ncVar) {
   NcDim* ncDim;
-  int j = 0, rDim, tVar;
+  int j = 0;
 
   /* check dimensions */
-  ncDim = var->get_dim(j);
+  ncDim = ncVar->get_dim(j);
   if (ncDim != NULL && ncDim == nsDim) {
-    ++j;
-    ncDim = var->get_dim(j);
+    ncDim = ncVar->get_dim(j++);
   }
-  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid(),
-      "Time variable " << var->name() << " has invalid dimensions, must have optional ns " << "dimension followed by single arbitrary dimension");
-
-  /* add record dimension if not seen already */
-  iter = std::find(rDims.begin(), rDims.end(), ncDim);
-  if (iter == rDims.end()) {
-    /* not already noted */
-    rDims.push_back(ncDim);
-    tAssoc.push_back(-1);
-    cAssoc.push_back(-1);
-    rDim = rDims.size() - 1;
-  } else {
-    /* already noted */
-    rDim = std::distance(rDims.begin(), iter);
-  }
-
-  /* associate time variable with record dimension */
-  if (tAssoc[rDim] == -1) {
-    tVars.push_back(var);
-    tVar = tVars.size() - 1;
-    tAssoc[rDim] = tVar;
-    tDims.push_back(rDim);
-    BI_ASSERT(tDims.size() == tVars.size());
-    BI_ASSERT(tAssoc.size() == rDims.size());
-  } else {
-    BI_WARN_MSG(false,
-        "Record dimension " << ncDim->name() << " already associated with time variable " << tVars[tAssoc[rDim]]->name() << ", ignoring time variable " << var->name());
-    ncDim = NULL;
-  }
+  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid() && ncVar->num_dims() <= 2,
+      "Time variable " << ncVar->name() << " has invalid dimensions, must have optional ns dimension followed by single arbitrary dimension");
 
   return ncDim;
 }
 
-NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* var) {
-  /* pre-conditions */
-  BI_ERROR_MSG(var != NULL && var->is_valid(),
-      "File does not contain coordinate variable " << var->name());
-
-  std::vector<NcDim*>::iterator iter;
+NcDim* bi::SparseInputNetCDFBuffer::mapCoordDim(NcVar* ncVar) {
   NcDim* ncDim;
-  int j = 0, rDim, cVar;
+  int j = 0;
 
   /* check dimensions */
-  ncDim = var->get_dim(j);
+  ncDim = ncVar->get_dim(j);
   if (ncDim != NULL && ncDim == nsDim) {
-    ++j;
-    ncDim = var->get_dim(j);
+    ncDim = ncVar->get_dim(j++);
   }
-  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid(),
-      "Coordinate variable " << var->name() << " has invalid dimensions, must have optional ns " << "dimension followed by one or two arbitrary dimensions");
-
-  /* add record dimension if not noted already */
-  iter = std::find(rDims.begin(), rDims.end(), ncDim);
-  if (iter == rDims.end()) {
-    /* not already noted */
-    rDims.push_back(ncDim);
-    tAssoc.push_back(-1);
-    cAssoc.push_back(-1);
-    rDim = rDims.size() - 1;
-  } else {
-    /* already noted */
-    rDim = std::distance(rDims.begin(), iter);
-  }
-
-  /* associate time variable with record dimension */
-  if (cAssoc[rDim] == -1) {
-    cVars.push_back(var);
-    cVar = cVars.size() - 1;
-    cAssoc[rDim] = cVar;
-    BI_ASSERT(cAssoc.size() == rDims.size());
-  } else {
-    BI_WARN_MSG(false,
-        "Record dimension " << ncDim->name() << " already associated with coordinate variable " << cVars[cAssoc[rDim]]->name() << ", ignoring coordinate variable " << var->name());
-    ncDim = NULL;
-  }
+  BI_ERROR_MSG(ncDim != NULL && ncDim->is_valid() && ncVar->num_dims() <= 3,
+      "Coordinate variable " << ncVar->name() << " has invalid dimensions, must have optional ns dimension followed by one or two arbitrary dimensions");
 
   return ncDim;
 }
 
-bool bi::SparseInputNetCDFBuffer::hasTime(const int tVar, const int start) {
+void bi::SparseInputNetCDFBuffer::readTime(NcVar* ncVar, const int start,
+    int* const len, real* const t) {
   /* pre-condition */
-  BI_ASSERT(tVar >= 0 && tVar < (int)tVars.size());
   BI_ASSERT(start >= 0);
-
-  int rDim = tDims[tVar];
-  NcDim* ncDim = rDims[rDim];
-
-  return start < ncDim->size();
-}
-
-void bi::SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
-    int& len, real& t) {
-  /* pre-condition */
-  BI_ASSERT(tVar >= 0 && tVar < (int)tVars.size());
-  BI_ASSERT(start >= 0);
-  BI_ASSERT(hasTime(tVar, start));
+  BI_ASSERT(len != NULL);
+  BI_ASSERT(t != NULL);
 
   long offsets[2], counts[2];
   BI_UNUSED NcBool ret;
   real tnxt;
-  NcVar* ncVar = tVars[tVar];
-  int j = 0;
+  int j = 0, T;
 
   if (nsDim != NULL && ncVar->get_dim(j) == nsDim) {
     /* optional ns dimension */
@@ -531,25 +342,27 @@ void bi::SparseInputNetCDFBuffer::readTime(const int tVar, const int start,
     ++j;
   }
   BI_ASSERT(j < ncVar->num_dims());
+  T = ncVar->get_dim(j)->size();
   offsets[j] = start;
   counts[j] = 1;
+  //++j; // not here, need to hold ref to last offset
 
   /* may be multiple records with same time, keep reading until time changes */
-  len = 0;
-  t = 0.0;
+  *len = 0;
+  *t = 0.0;
   tnxt = 0.0;
-  while (t == tnxt && offsets[j] < rDims[tVar]->size()) {
+  while (*t == tnxt && offsets[j] < T) {
     ret = ncVar->set_cur(offsets);
     BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
     ret = ncVar->get(&tnxt, counts);
     BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
 
-    if (len == 0) {
-      t = tnxt;
+    if (*len == 0) {
+      *t = tnxt;
     }
-    if (tnxt == t) {
+    if (tnxt == *t) {
       ++offsets[j];
-      ++len;
+      ++(*len);
     }
   }
 }

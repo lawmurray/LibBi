@@ -24,7 +24,6 @@ public:
   /**
    * Update.
    *
-   * @param[in,out] rng Random number generator.
    * @param t1 Start of time interval.
    * @param t2 End of time interval.
    * @param s State.
@@ -33,7 +32,7 @@ public:
    * @param pax Parents.
    * @param[out] x Output.
    */
-  static CUDA_FUNC_DEVICE void accept(curandState* rng, const T1 t1,
+  static CUDA_FUNC_DEVICE void accept(const T1 t1,
       const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i,
       const PX& pax, OX& x);
 };
@@ -46,7 +45,7 @@ public:
 template<class B, class T1, class PX, class OX>
 class DynamicUpdaterVisitorGPU<B,empty_typelist,T1,PX,OX> {
 public:
-  static CUDA_FUNC_DEVICE void accept(curandState* rng, const T1 t1,
+  static CUDA_FUNC_DEVICE void accept(const T1 t1,
       const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i,
       const PX& pax, OX& x) {
     //
@@ -59,21 +58,21 @@ public:
 #include "../../typelist/pop_front.hpp"
 
 template<class B, class S, class T1, class PX, class OX>
-inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(
-    curandState* rng, const T1 t1, const T1 t2, State<B,ON_DEVICE>& s,
-    const int p, const int i, const PX& pax, OX& x) {
+inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
+    const T1 t2, State<B,ON_DEVICE>& s, const int p, const int i,
+    const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
   typedef typename target_type::coord_type coord_type;
 
-  const int size = var_size<target_type>::value;
+  const int size = var_size < target_type > ::value;
 
   if (i < size) {
     coord_type cox(i);
-    front::samples(rng, t1, t2, s, p, i, cox, pax, x);
+    front::simulates(t1, t2, s, p, i, cox, pax, x);
   } else {
-    DynamicUpdaterVisitorGPU<B,pop_front,T1,PX,OX>::accept(rng, t1, t2, s, p,
+    DynamicUpdaterVisitorGPU<B,pop_front,T1,PX,OX>::accept(t1, t2, s, p,
         i - size, pax, x);
   }
 }

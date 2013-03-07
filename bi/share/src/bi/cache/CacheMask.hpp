@@ -9,7 +9,7 @@
 #define BI_CACHE_CACHEMASK_HPP
 
 #include "Cache.hpp"
-#include "../buffer/Mask.hpp"
+#include "../state/Mask.hpp"
 
 namespace bi {
 /**
@@ -68,6 +68,11 @@ public:
   void set(const int p, const Mask<L2>& mask);
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(CacheMask<L>& o);
+
+  /**
    * Empty cache.
    */
   void empty();
@@ -80,6 +85,24 @@ private:
    * stored, lest we end up with shallow copy hell when resizing!
    */
   std::vector<Mask<L>*> pages;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -131,15 +154,23 @@ template<bi::Location L>
 template<bi::Location L2>
 inline void bi::CacheMask<L>::set(const int p, const Mask<L2>& mask) {
   if (size() <= p) {
-    pages.resize(p + 1);
-    pages[p] = new Mask<L>(mask.getNumVars());
+    pages.resize(p + 1, NULL);
     Cache::resize(p + 1);
+  }
+  if (pages[p] == NULL) {
+    pages[p] = new Mask<L>(mask.getNumVars());
   }
   *pages[p] = mask;
   setValid(p);
 
   /* post-condition */
   BI_ASSERT(isValid(p));
+}
+
+template<bi::Location L>
+void bi::CacheMask<L>::swap(CacheMask<L>& o) {
+  Cache::swap(o);
+  pages.swap(o.pages);
 }
 
 template<bi::Location L>
@@ -151,6 +182,20 @@ void bi::CacheMask<L>::empty() {
   }
   pages.clear();
   Cache::empty();
+}
+
+template<bi::Location L>
+template<class Archive>
+void bi::CacheMask<L>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<Cache>(*this);
+  ar & pages;
+}
+
+template<bi::Location L>
+template<class Archive>
+void bi::CacheMask<L>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<Cache>(*this);
+  ar & pages;
 }
 
 #endif

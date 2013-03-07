@@ -8,7 +8,7 @@
 #ifndef BI_CUDA_UPDATER_SPARSESTATICLOGDENSITYKERNEL_CUH
 #define BI_CUDA_UPDATER_SPARSESTATICLOGDENSITYKERNEL_CUH
 
-#include "../../buffer/Mask.hpp"
+#include "../../state/Mask.hpp"
 #include "../cuda.hpp"
 
 namespace bi {

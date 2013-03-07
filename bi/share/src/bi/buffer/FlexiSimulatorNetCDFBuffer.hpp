@@ -275,7 +275,7 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {
@@ -337,7 +337,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
   /* write data */
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    offset = m.getVarStart(type, id);
+    offset = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {

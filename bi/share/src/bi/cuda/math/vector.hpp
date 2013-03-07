@@ -12,6 +12,7 @@
 #include "../../math/scalar.hpp"
 #include "../../misc/compile.hpp"
 #include "../../misc/assert.hpp"
+#include "../../misc/location.hpp"
 #include "../../primitive/device_allocator.hpp"
 #include "../../primitive/strided_range.hpp"
 #include "../../typelist/equals.hpp"
@@ -191,6 +192,7 @@ public:
   typedef int size_type;
   typedef int difference_type;
   static const bool on_device = true;
+  static const Location location = ON_DEVICE;
 
   /**
    * Shallow copy.

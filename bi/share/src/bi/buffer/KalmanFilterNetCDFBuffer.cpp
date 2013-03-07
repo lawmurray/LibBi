@@ -25,7 +25,9 @@ bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(
 }
 
 void bi::KalmanFilterNetCDFBuffer::create(const long T) {
-  Var* node;
+  ncFile->add_att(PACKAGE_TARNAME "_schema", "KalmanFilter");
+  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
+  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
 
   /* dimensions */
   nxcolDim = createDim("nxcol", M);
@@ -36,26 +38,32 @@ void bi::KalmanFilterNetCDFBuffer::create(const long T) {
   BI_ERROR_MSG(SVar != NULL && SVar->is_valid(), "Could not create variable S_");
 
   /* index variables */
+  Var* var;
   int id, size = 0;
   std::stringstream name;
   for (id = 0; id < m.getNumVars(R_VAR); ++id) {
-    node = m.getVar(R_VAR, id);
-    if (node->hasOutput()) {
+    var = m.getVar(R_VAR, id);
+    if (var->hasOutput()) {
       name.str("");
-      name << "index." << node->getOutputName();
+      name << "index." << var->getOutputName();
       ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
-      size += node->getSize();
+      size += var->getSize();
     }
   }
   for (id = 0; id < m.getNumVars(D_VAR); ++id) {
-    node = m.getVar(D_VAR, id);
-    if (node->hasOutput()) {
+    var = m.getVar(D_VAR, id);
+    if (var->hasOutput()) {
       name.str("");
-      name << "index." << node->getOutputName();
+      name << "index." << var->getOutputName();
       ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
-      size += node->getSize();
+      size += var->getSize();
     }
   }
+
+  /* marginal log-likelihood variable */
+  llVar = ncFile->add_var("LL", netcdf_real);
+  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
+      "Could not create variable LL");
 }
 
 void bi::KalmanFilterNetCDFBuffer::map(const long T) {
@@ -75,4 +83,17 @@ void bi::KalmanFilterNetCDFBuffer::map(const long T) {
       "Dimension 1 of variable S_ should be nxcol");
   BI_ERROR_MSG(SVar->get_dim(2) == nxrowDim,
       "Dimension 2 of variable S_ should be nxrow");
+
+  /* marginal log-likelihood variable */
+  llVar = ncFile->get_var("LL");
+  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
+      "File does not contain variable LL");
+  BI_ERROR_MSG(llVar->num_dims() == 0, "Variable LL has " <<
+      llVar->num_dims() << " dimensions, should have 0");
+}
+
+void bi::KalmanFilterNetCDFBuffer::writeLL(const real ll) {
+  BI_UNUSED NcBool ret;
+  ret = llVar->put(&ll, 1);
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable ll");
 }

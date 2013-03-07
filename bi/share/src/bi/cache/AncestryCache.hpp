@@ -60,6 +60,21 @@ public:
   int size() const;
 
   /**
+   * Enlarge the cache to accommodate a new set of particles.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param X Particles.
+   */
+  template<class M1>
+  void enlarge(const M1 X);
+
+  /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(AncestryCache& o);
+
+  /**
    * Clear the cache.
    */
   void clear();
@@ -170,14 +185,63 @@ private:
    * Time taken for last write, in microseconds.
    */
   int usecs;
+
+  /**
+   * Number of occupied slots in the cache.
+   */
+  int numOccupied;
+
+  /**
+   * Current position in buffer.
+   */
+  int q;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
+#include "../math/temp_vector.hpp"
+#include "../math/temp_matrix.hpp"
 #include "../math/view.hpp"
+#include "../math/serialization.hpp"
 #include "../primitive/vector_primitive.hpp"
 
 inline int bi::AncestryCache::size() const {
   return size1;
+}
+
+template<class M1>
+void bi::AncestryCache::enlarge(const M1 X) {
+  int oldSize = particles.size1();
+  int newSize = numOccupied + X.size1();
+  if (newSize > oldSize) {
+    newSize = 2*bi::max(oldSize, X.size1());
+    particles.resize(newSize, X.size2(), true);
+    ancestors.resize(newSize, true);
+    legacies.resize(newSize, true);
+
+    set_elements(subrange(legacies, oldSize, newSize - oldSize), -1);
+  }
+
+  /* post-conditions */
+  BI_ASSERT(particles.size1() == ancestors.size());
+  BI_ASSERT(particles.size1() == legacies.size());
 }
 
 template<class M1>
@@ -225,28 +289,30 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
   BI_ASSERT(X.size1() == as.size());
   BI_ASSERT(!V1::on_device);
 
-  #ifdef ENABLE_DIAGNOSTICS
+#ifdef ENABLE_DIAGNOSTICS
   synchronize();
   TicToc clock;
-  #endif
+#endif
 
   const int P = X.size1();
   typename temp_host_vector<int>::type newAs(P);
-  int p, q, len, maxLen, a;
+  int p, /*q, */len, a;
 
   /* update ancestors and legacies */
+  numOccupied = 0;
   if (current.size()) {
-    #pragma omp parallel
+//#pragma omp parallel
     {
       int p, a;
 
-      #pragma omp for
+//#pragma omp for
       for (int p = 0; p < P; ++p) {
         a = current(as(p));
         newAs(p) = a;
         while (a != -1 && legacies(a) < size()) {
           legacies(a) = size();
           a = ancestors(a);
+          ++numOccupied;
         }
       }
     }
@@ -254,59 +320,72 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as) {
     set_elements(newAs, -1);
   }
 
-  /* write as many new particles as possible into existing entries in cache,
-   * by overwriting particles that have no legacy at the current time */
+  /* enlarge cache if necessary */
+  enlarge(X);
+
+  /* write new particles */
   current.resize(P, false);
   p = 0;
-  q = 0;
-  while (p < P && q < particles.size1()) {
+  //q = 0; // for first-fit
+  while (p < P) {
     /* starting index of writable range */
-    while (q < particles.size1() && legacies(q) == size()) {
+    if (q >= legacies.size()) {
+      q = 0;
+    }
+    while (legacies(q) == size()) {
       ++q;
-    }
-
-    if (q < particles.size1()) {
-      /* length of writable range */
-      maxLen = bi::min(P - p, particles.size1() - q);
-      len = 1;
-      while (len < maxLen && legacies(q + len) < size()) {
-        ++len;
+      if (q >= legacies.size()) {
+        q = 0;
       }
-
-      /* write */
-      rows(particles, q, len) = rows(X, p, len);
-      subrange(ancestors, q, len) = subrange(newAs, p, len);
-      set_elements(subrange(legacies, q, len), size());
-      seq_elements(subrange(current, p, len), q);
-
-      p += len;
-      q += len;
     }
+
+    /* length of writable range */
+    len = 1;
+    while (p + len < P && q + len < legacies.size()
+        && legacies(q + len) < size()) {
+      ++len;
+    }
+
+    /* write */
+    rows(particles, q, len) = rows(X, p, len);
+    subrange(ancestors, q, len) = subrange(newAs, p, len);
+    set_elements(subrange(legacies, q, len), size());
+    seq_elements(subrange(current, p, len), q);
+
+    p += len;
+    q += len;
   }
-
-  /* write any remaining particles into new entries in the cache */
-  len = P - p;
-
-  particles.resize(particles.size1() + len, X.size2(), true);
-  ancestors.resize(ancestors.size() + len, true);
-  legacies.resize(legacies.size() + len, true);
-
-  rows(particles, q, len) = rows(X, p, len);
-  subrange(ancestors, q, len) = subrange(newAs, p, len);
-  set_elements(subrange(legacies, q, len), size());
-  seq_elements(subrange(current, p, len), q);
-
   ++size1;
 
-  #ifdef ENABLE_DIAGNOSTICS
+#ifdef ENABLE_DIAGNOSTICS
   synchronize();
   usecs = clock.toc();
   report();
-  #endif
+#endif
+}
 
-  /* post-conditions */
-  BI_ASSERT(particles.size1() == ancestors.size());
-  BI_ASSERT(particles.size1() == legacies.size());
+template<class Archive>
+void bi::AncestryCache::save(Archive& ar, const unsigned version) const {
+  save_resizable_matrix(ar, version, particles);
+  save_resizable_vector(ar, version, ancestors);
+  save_resizable_vector(ar, version, legacies);
+  save_resizable_vector(ar, version, current);
+  ar & size1;
+  ar & usecs;
+  ar & numOccupied;
+  ar & q;
+}
+
+template<class Archive>
+void bi::AncestryCache::load(Archive& ar, const unsigned version) {
+  load_resizable_matrix(ar, version, particles);
+  load_resizable_vector(ar, version, ancestors);
+  load_resizable_vector(ar, version, legacies);
+  load_resizable_vector(ar, version, current);
+  ar & size1;
+  ar & usecs;
+  ar & numOccupied;
+  ar & q;
 }
 
 #endif

@@ -1,8 +1,6 @@
 /**
  * @todo Allow to specify a minimum number of blocks.
  *
- * @todo * (L) Fix ESS threshold for MPI.
- *
  * @todo * (A) Make ESS threshold clear with adaptive particle filter.
  *
  * @todo Adapting number of samples of initial conditions.
@@ -39,21 +37,19 @@
  *
  * @todo Univariate proposals.
  *
- * @todo Test functions for time T.
- *
  * @todo * (L) Multivariate normal
  *
  * @todo * (P) Exponential pdf, poisson pdf.
  *
  * @todo PMMH normalising constant estimates at each time.
  *
- * @todo * (L) Review OctBi.
- *
  * @todo * (A) Get OctBi working with MATLAB.
  *
  * @todo * (P) Review RBi.
  *
- * @todo Use new NetCDF C++ interface.
+ * @todo Use new NetCDF C++ interface. Or possible using C interface is an
+ * easier step from the old C++ interface, and avoids having to specially
+ * compile the new C++ interface in the current NetCDF distribution?
  *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
  *

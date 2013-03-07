@@ -11,6 +11,9 @@
 template<class V1, class V2>
 void bi::RejectionResamplerHost::ancestors(Random& rng, const V1 lws,
     V2 as, const typename V1::value_type maxLogWeight) {
+  /* pre-condition */
+  BI_ASSERT(max_reduce(lws) <= maxLogWeight);
+
   typedef typename V1::value_type T1;
 
   const int P1 = lws.size(); // number of particles

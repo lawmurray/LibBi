@@ -50,6 +50,8 @@ private:
 };
 }
 
+#include "../primitive/vector_primitive.hpp"
+
 template<class M1, class V1>
 bool bi::MedianPartitioner::init(const M1 X, const V1 is) {
   /* pre-condition */
@@ -75,7 +77,7 @@ bool bi::MedianPartitioner::init(const M1 X, const V1 is) {
 
   /* split on median of selected dimension */
   temp_host_vector<real>::type values(is.size());
-  thrust::gather(is.begin(), is.end(), column(X,longest).begin(), values.begin());
+  bi::gather(is, column(X,longest), values);
   int median = values.size()/2;
   std::nth_element(values.begin(), values.begin() + median, values.end());
 

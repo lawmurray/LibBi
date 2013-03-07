@@ -17,7 +17,7 @@ namespace bi {
 /**
  * MetropolisResampler implementation on host.
  */
-class MetropolisResamplerHost : public ResamplerHost {
+class MetropolisResamplerHost: public ResamplerHost {
 public:
   /**
    * @copydoc MetropolisResampler::ancestors()
@@ -35,7 +35,7 @@ public:
 /**
  * MetropolisResampler implementation on device.
  */
-class MetropolisResamplerGPU : public ResamplerGPU {
+class MetropolisResamplerGPU: public ResamplerGPU {
 public:
   /**
    * @copydoc MetropolisResampler::ancestors()
@@ -58,14 +58,16 @@ public:
  * Implements the Metropolis resampler as described in @ref Murray2011a
  * "Murray (2011)".
  */
-class MetropolisResampler : public Resampler {
+class MetropolisResampler: public Resampler {
 public:
   /**
    * Constructor.
    *
    * @param B Number of Metropolis steps to take.
+   * @param essRel Minimum ESS, as proportion of total number of particles,
+   * to trigger resampling.
    */
-  MetropolisResampler(const int B);
+  MetropolisResampler(const int B, const double essRel = 0.5);
 
   /**
    * Set number of steps to take.
@@ -80,31 +82,32 @@ public:
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s);
+  bool resample(Random& rng, V1 lws, V2 as, O1& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s);
+  bool resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, const int a, V1 lws, V2 as, O1& s);
+  bool resample(Random& rng, const int a, V1 lws, V2 as, O1& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s);
+  bool resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
+      O1& s);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
+  bool cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
       O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -148,32 +151,46 @@ private:
 #endif
 
 template<class V1, class V2, class O1>
-void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
+bool bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
 
-  ancestorsPermute(rng, lws, as);
-  copy(as, s);
-  lws.clear();
+  bool r = isTriggered(lws);
+  if (r) {
+    ancestorsPermute(rng, lws, as);
+    copy(as, s);
+    lws.clear();
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class O1>
-void bi::MetropolisResampler::resample(Random& rng, const int a, V1 lws,
+bool bi::MetropolisResampler::resample(Random& rng, const int a, V1 lws,
     V2 as, O1& s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
   BI_ASSERT(a >= 0 && a < as.size());
 
-  ///@todo Combine pre-permute into ancestors for conditional resampling
-  ancestors(rng, lws, as);
-  set_elements(subrange(as, 0, 1), a);
-  permute(as);
-  copy(as, s);
-  lws.clear();
+  bool r = isTriggered(lws);
+  if (r) {
+    ///@todo Combine pre-permute into ancestors for conditional resampling
+    ancestors(rng, lws, as);
+    set_elements(subrange(as, 0, 1), a);
+    permute(as);
+    copy(as, s);
+    lws.clear();
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class V3, class O1>
-void bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
+bool bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -181,13 +198,21 @@ void bi::MetropolisResampler::resample(Random& rng, const V1 qlws, V2 lws,
   BI_ASSERT(lws.size() == P);
   BI_ASSERT(as.size() == P);
 
-  ancestorsPermute(rng, qlws, as);
-  copy(as, s);
-  correct(as, qlws, lws);
+  bool r = isTriggered(lws);
+  if (r) {
+    ancestorsPermute(rng, qlws, as);
+    copy(as, s);
+    correct(as, qlws, lws);
+    normalise(lws);
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class V3, class O1>
-void bi::MetropolisResampler::resample(Random& rng, const int a,
+bool bi::MetropolisResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s) {
   /* pre-condition */
   const int P = qlws.size();
@@ -196,25 +221,32 @@ void bi::MetropolisResampler::resample(Random& rng, const int a,
   BI_ASSERT(as.size() == P);
   BI_ASSERT(a >= 0 && a < P);
 
-  ancestors(rng, qlws, as);
-  set_elements(subrange(as, 0, 1), a);
-  permute(as);
-  copy(as, s);
-  correct(as, qlws, lws);
+  bool r = isTriggered(lws);
+  if (r) {
+    ancestors(rng, qlws, as);
+    set_elements(subrange(as, 0, 1), a);
+    permute(as);
+    copy(as, s);
+    correct(as, qlws, lws);
+    normalise(lws);
+  } else {
+    normalise(lws);
+    seq_elements(as, 0);
+  }
+  return r;
 }
 
 template<class V1, class V2, class O1>
-void bi::MetropolisResampler::cond_resample(Random& rng, const int ka,
+bool bi::MetropolisResampler::cond_resample(Random& rng, const int ka,
     const int k, V1 lws, V2 as, O1& s)
-    throw (ParticleFilterDegeneratedException) {
+        throw (ParticleFilterDegeneratedException) {
   BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class V1, class V2>
 void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      MetropolisResamplerGPU,
+  typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
       MetropolisResamplerHost>::type impl;
   impl::ancestors(rng, lws, as, B);
 }
@@ -222,8 +254,7 @@ void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
 template<class V1, class V2>
 void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
     V2 as) throw (ParticleFilterDegeneratedException) {
-  typedef typename boost::mpl::if_c<V1::on_device,
-      MetropolisResamplerGPU,
+  typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
       MetropolisResamplerHost>::type impl;
   impl::ancestorsPermute(rng, lws, as, B);
 }

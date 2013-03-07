@@ -74,14 +74,30 @@ Number of PMMH steps to perform after resampling.
 ESS threshold triggering resampling steps. Parameter samples will only be
 resampled if ESS is below this proportion of C<--nsamples>.
 
-=item C<--enable-local-move> (default off)
+=item C<--adapter> (default 'none')
 
-Enable random walk proposals, instead of independent proposals
+Adaptation strategy for rejuvenation proposals:
 
-=item C<--local-move-scale> (default 0.25)
+=over 8
 
-The proportion of the parameter samples' standard deviation to be used in the
-proposal distribution for random walk proposals.
+=item C<'none'>
+
+No adaptation.
+
+=item C<'local'>
+
+Local proposal adaptation.
+
+=item C<'global'>
+
+Global proposal adaptation.
+
+=back
+
+=item C<--adapter-scale> (default 0.25)
+
+When local proposal adaptation is used, the scaling factor of the local
+proposal standard deviation relative to the global sample standard deviation.
 
 =back
 
@@ -118,12 +134,12 @@ our @CLIENT_OPTIONS = (
       default => 0.5
     },
     {
-      name => 'enable-local-move',
-      type => 'bool',
-      default => 0
+      name => 'adapter',
+      type => 'string',
+      default => 'none'
     },
     {
-      name => 'local-move-scale',
+      name => 'adapter-scale',
       type => 'float',
       default => 0.5
     },

@@ -13,7 +13,7 @@
 #include "KDTreeNode.hpp"
 #include "MedianPartitioner.hpp"
 
-#ifndef __CUDACC__
+#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
 #endif
 
@@ -124,7 +124,7 @@ private:
   static var_type* build(const M2 X, const V2 lw, S1 partitioner,
       const std::vector<int>& is, const int depth = 0);
 
-  #ifndef __CUDACC__
+  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -156,8 +156,8 @@ bi::KDTree<V1,M1>::KDTree() : root(NULL) {
 template<class V1, class M1>
 template<class M2, class V2, class S1>
 bi::KDTree<V1,M1>::KDTree(const M2 X, const V2 lw, const S1 partitioner) {
-  std::vector<int> is(X.size1());
-  thrust::sequence(is.begin(), is.end(), 0);
+  host_vector<int> is(X.size1());
+  seq_elements(is, 0);
 
   root = (is.size() > 0) ? build(X, lw, partitioner, is) : NULL;
 }
@@ -167,8 +167,8 @@ template<class M2, class S1>
 bi::KDTree<V1,M1>::KDTree(const M2 X, const S1 partitioner) {
   V1 lw(X.size1());
   lw.clear();
-  std::vector<int> is(X.size1());
-  thrust::sequence(is.begin(), is.end(), 0);
+  host_vector<int> is(X.size1());
+  seq_elements(is, 0);
 
   root = (is.size() > 0) ? build(X, lw, partitioner, is) : NULL;
 }

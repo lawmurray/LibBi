@@ -39,6 +39,10 @@ void bi::FlexiParticleFilterNetCDFBuffer::create() {
   rVar = ncFile->add_var("resample", ncInt, nrDim);
   BI_ERROR_MSG(rVar != NULL && rVar->is_valid(),
       "Could not create variable resample");
+
+  llVar = ncFile->add_var("LL", netcdf_real);
+  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
+      "Could not create variable LL");
 }
 
 void bi::FlexiParticleFilterNetCDFBuffer::map() {
@@ -65,4 +69,16 @@ void bi::FlexiParticleFilterNetCDFBuffer::map() {
       rVar->num_dims() << " dimensions, should have 1");
   BI_ERROR_MSG(rVar->get_dim(0) == nrDim,
       "Dimension 0 of variable resample should be nr");
+
+  llVar = ncFile->get_var("LL");
+  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
+      "File does not contain variable LL");
+  BI_ERROR_MSG(rVar->num_dims() == 0, "Variable LL has " <<
+      llVar->num_dims() << " dimensions, should have 0");
+}
+
+void bi::FlexiParticleFilterNetCDFBuffer::writeLL(const real ll) {
+  BI_UNUSED NcBool ret;
+  ret = llVar->put(&ll, 1);
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable ll");
 }

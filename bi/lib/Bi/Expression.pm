@@ -102,7 +102,7 @@ sub is_common {
     
     foreach $var (@$vars) {
         $type = $var->get_var->get_type; 
-        if ($type ne 'param' && $type ne 'param_aux_' && $type ne 'input') {
+        if ($type ne 'param' && $type ne 'param_aux_' && $type ne 'input' && $type ne 'obs') {
             return 0;
         }
     }

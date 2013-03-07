@@ -57,13 +57,12 @@ void gaussian_log_densities(const M1 Z, const T1 logZ, V1 p,
  * @param Z Gamma variates.
  * @param alpha Shape parameter.
  * @param beta Scale parameter.
- * @param logZ Log of normalisation constant.
  * @param[in,out] p Densities.
  * @param clear Clear @p p? If false, the density is multiplied into @p p.
  */
 template<class M1, class T1, class V1>
 void gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear = true);
+    V1 p, const bool clear = true);
 
 /**
  * Compute Gamma log-densities.
@@ -77,13 +76,12 @@ void gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
  * @param Z Gamma variates.
  * @param alpha Shape parameter.
  * @param beta Scale parameter.
- * @param logZ Log of normalisation constant.
  * @param[in,out] p Log-densities.
  * @param clear Clear @p p? If false, the log-density is added to @p p.
  */
 template<class M1, class T1, class V1>
 void gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear = true);
+    V1 p, const bool clear = true);
 
 /**
  * Compute inverse-Gamma densities.
@@ -97,13 +95,12 @@ void gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
  * @param Z Inverse-Gamma variates.
  * @param alpha Shape parameter.
  * @param beta Scale parameter.
- * @param logZ Log of normalisation constant.
  * @param[in,out] p Densities.
  * @param clear Clear @p p? If false, the density is multiplied into @p p.
  */
 template<class M1, class T1, class V1>
 void inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear = true);
+    V1 p, const bool clear = true);
 
 /**
  * Compute inverse-Gamma log-densities.
@@ -117,13 +114,12 @@ void inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
  * @param Z Inverse-gamma variates.
  * @param alpha Shape parameter.
  * @param beta Scale parameter.
- * @param logZ Log of normalisation constant.
  * @param[in,out] p Log-densities.
  * @param clear Clear @p p? If false, the log-density is added to @p p.
  */
 template<class M1, class T1, class V1>
 void inverse_gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear = true);
+    V1 p, const bool clear = true);
 
 }
 
@@ -167,11 +163,11 @@ void bi::gaussian_log_densities(const M1 Z, const T1 logZ, V1 p,
 
 template<class M1, class T1, class V1>
 void bi::gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear) {
+    V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), gamma_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), gamma_density_functor<T1>(alpha, beta));
   if (clear) {
     prod_columns(Z, p);
   } else {
@@ -183,11 +179,11 @@ void bi::gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
 
 template<class M1, class T1, class V1>
 void bi::gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear) {
+    V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), gamma_log_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), gamma_log_density_functor<T1>(alpha, beta));
   if (clear) {
     sum_columns(Z, p);
   } else {
@@ -199,11 +195,11 @@ void bi::gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
 
 template<class M1, class T1, class V1>
 void bi::inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear) {
+    V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), inverse_gamma_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), inverse_gamma_density_functor<T1>(alpha, beta));
   if (clear) {
     prod_columns(Z, p);
   } else {
@@ -215,11 +211,11 @@ void bi::inverse_gamma_densities(const M1 Z, const T1 alpha, const T1 beta,
 
 template<class M1, class T1, class V1>
 void bi::inverse_gamma_log_densities(const M1 Z, const T1 alpha, const T1 beta,
-    const T1 logZ, V1 p, const bool clear) {
+    V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), inverse_gamma_log_density_functor<T1>(alpha, beta, logZ));
+  op_elements(vec(Z), vec(Z), inverse_gamma_log_density_functor<T1>(alpha, beta));
   if (clear) {
     sum_columns(Z, p);
   } else {

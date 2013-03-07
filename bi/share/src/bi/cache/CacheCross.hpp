@@ -94,6 +94,11 @@ public:
   void resize(const int rows, const int cols);
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(CacheCross<T1,CL>& o);
+
+  /**
    * Empty cache.
    */
   void empty();
@@ -103,6 +108,24 @@ private:
    * Contents of cache.
    */
   matrix_type X;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -162,14 +185,34 @@ inline void bi::CacheCross<T1,CL>::set(const int p, const V1 x) {
 
 template<class T1, bi::Location CL>
 void bi::CacheCross<T1,CL>::resize(const int rows, const int cols) {
-  X.resize(rows, cols, true);
   Cache::resize(rows);
+  X.resize(rows, cols, true);
+}
+
+template<class T1, bi::Location CL>
+void bi::CacheCross<T1,CL>::swap(CacheCross<T1,CL>& o) {
+  Cache::swap(o);
+  X.swap(o.X);
 }
 
 template<class T1, bi::Location CL>
 void bi::CacheCross<T1,CL>::empty() {
-  X.resize(0,0);
   Cache::empty();
+  X.resize(0,0);
+}
+
+template<class T1, bi::Location CL>
+template<class Archive>
+void bi::CacheCross<T1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<Cache>(*this);
+  save_resizable_matrix(ar, version, X);
+}
+
+template<class T1, bi::Location CL>
+template<class Archive>
+void bi::CacheCross<T1,CL>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<Cache>(*this);
+  save_resizable_matrix(ar, version, X);
 }
 
 #endif

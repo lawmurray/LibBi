@@ -19,6 +19,8 @@ namespace bi {
  */
 class ParticleFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
+  using SimulatorNetCDFBuffer::writeState;
+
   /**
    * Constructor.
    *
@@ -107,7 +109,43 @@ public:
   template<class V1>
   void writeResamples(const int t, const V1 r);
 
-  void writeLL(const double ll);
+  /**
+   * Read resample flag.
+   *
+   * @param t Time index.
+   *
+   * @return Was resampling performed at this time?
+   */
+  int readResample(const int t) const;
+
+  /**
+   * Write resample flag.
+   *
+   * @param t Time index.
+   * @param r Was resampling performed at this time?
+   */
+  void writeResample(const int t, const int& r);
+
+  /**
+   * Write dynamic state and ancestors.
+   *
+   * @tparam B Model type.
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   *
+   * @param t Time index.
+   * @param s State.
+   * @param as Ancestors.
+   */
+  template<class B, Location L, class V1>
+  void writeState(const int t, const State<B,L>& s, const V1 as);
+
+  /**
+   * Write marginal log-likelihood estimate.
+   *
+   * @param ll Marginal log-likelihood estimate.
+   */
+  void writeLL(const real ll);
 
 protected:
   /**
@@ -136,7 +174,7 @@ protected:
   NcVar* rVar;
 
 	/**
-   * Log-likelihood estimate.
+   * Marginal log-likelihood estimate variable.
    */
   NcVar* llVar;
 };
@@ -275,7 +313,7 @@ void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t, const V1 r) {
 
   BI_UNUSED NcBool ret;
   ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable resamples");
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable resamples");
 
   if (V1::on_device || r.inc() != 1) {
     temp_vector_type r1(r.size());
@@ -285,7 +323,14 @@ void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t, const V1 r) {
   } else {
     ret = rVar->put(r.buf(), r.size());
   }
-  BI_ASSERT_MSG(ret, "Inconvertible type reading variable resamples");
+  BI_ASSERT_MSG(ret, "Inconvertible type writing variable resamples");
+}
+
+template<class B, bi::Location L, class V1>
+void bi::ParticleFilterNetCDFBuffer::writeState(const int t,
+    const State<B,L>& s, const V1 as) {
+  SimulatorNetCDFBuffer::writeState(t, s);
+  writeAncestors(t, as);
 }
 
 #endif

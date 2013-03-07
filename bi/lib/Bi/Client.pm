@@ -22,7 +22,7 @@ use strict;
 
 use Carp::Assert;
 use Cwd qw(abs_path);
-use Getopt::Long qw(:config pass_through no_auto_abbrev);
+use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 
 # options specific to execution
 our @EXEC_OPTIONS = (

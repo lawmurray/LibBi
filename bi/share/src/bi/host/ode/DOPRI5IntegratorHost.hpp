@@ -12,7 +12,7 @@ namespace bi {
 /**
  * Dormand-Prince 5(4) integrator.
  *
- * @ingroup math_ode
+ * @ingroup method_updater
  *
  * @tparam B Model type.
  * @tparam S Action type list.

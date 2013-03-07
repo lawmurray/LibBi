@@ -107,16 +107,21 @@ public:
   template<class M2>
   void swapWrite(const int p, M2 x);
 
-private:
   /**
-   * Type of pages.
+   * Swap the contents of the cache with that of another.
    */
-  typedef typename loc_matrix<CL,real>::type page_type;
+  void swap(SparseCache<CL>& o);
 
   /**
    * Clear cache.
    */
   void clear();
+
+private:
+  /**
+   * Type of pages.
+   */
+  typedef typename loc_matrix<CL,real>::type page_type;
 
   /**
    * Pages.
@@ -130,6 +135,24 @@ private:
    * Validity of each page.
    */
   std::vector<bool> valids;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -190,9 +213,11 @@ template<bi::Location CL>
 template<class M2>
 inline void bi::SparseCache<CL>::write(const int p, const M2 x) {
   if (size() <= p) {
-    pages.resize(p + 1);
-    pages[p] = new page_type(x.size1(), x.size2());
+    pages.resize(p + 1, NULL);
     valids.resize(p + 1, false);
+  }
+  if (pages[p] == NULL) {
+    pages[p] = new page_type(x.size1(), x.size2());
   }
   *pages[p] = x;
   valids[p] = true;
@@ -228,6 +253,12 @@ inline void bi::SparseCache<CL>::swapWrite(const int p, M2 x) {
 }
 
 template<bi::Location CL>
+void bi::SparseCache<CL>::swap(SparseCache<CL>& o) {
+  pages.swap(o.pages);
+  valids.swap(o.valids);
+}
+
+template<bi::Location CL>
 void bi::SparseCache<CL>::clear() {
   typename std::vector<page_type*>::iterator iter;
   for (iter = pages.begin(); iter != pages.end(); ++iter) {
@@ -235,6 +266,20 @@ void bi::SparseCache<CL>::clear() {
   }
 
   valids.clear();
+}
+
+template<bi::Location CL>
+template<class Archive>
+void bi::SparseCache<CL>::save(Archive& ar, const unsigned version) const {
+  ar & pages;
+  ar & valids;
+}
+
+template<bi::Location CL>
+template<class Archive>
+void bi::SparseCache<CL>::load(Archive& ar, const unsigned version) {
+  ar & pages;
+  ar & valids;
 }
 
 #endif

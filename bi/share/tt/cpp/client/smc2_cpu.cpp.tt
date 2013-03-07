@@ -15,6 +15,7 @@
 #include "bi/random/Random.hpp"
 #include "bi/method/SMC2.hpp"
 
+#include "bi/method/ParticleMarginalMetropolisHastings.hpp"
 [% IF client.get_named_arg('filter') == 'ekf' %]
 #include "bi/method/ExtendedKalmanFilter.hpp"
 [% ELSE %]
@@ -42,8 +43,8 @@
 #include "bi/method/Simulator.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/cache/SMC2Cache.hpp"
 #include "bi/buffer/SMC2NetCDFBuffer.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -104,16 +105,17 @@ int main(int argc, char* argv[]) {
     bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
-  /* output */
-  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
+  /* schedule */
+  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
 
+  /* output */
   SMC2NetCDFBuffer* bufOutput = NULL;
   if (ENABLE_OUTPUT && !OUTPUT_FILE.empty()) {
-      bufOutput = new SMC2NetCDFBuffer(m, NSAMPLES, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+      bufOutput = new SMC2NetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
 
   /* state and intermediate results */
-  ThetaParticle<model_type,LOCATION> s(P, Y);
+  ThetaParticle<model_type,LOCATION> s(P, sched.numOutputs());
   P = s.size(); // may change according to implementation
 
   /* simulator */
@@ -133,23 +135,23 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(N, P);
     }
-    MultinomialResampler base(ENABLE_SORT);
-    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    MultinomialResampler base(ENABLE_SORT, ESS_REL);
+    KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, ENABLE_SHRINK, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler resam(C);
+    MetropolisResampler resam(C, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT);
+    MultinomialResampler resam(ENABLE_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(ENABLE_SORT);
+    SystematicResampler resam(ENABLE_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT);
+    StratifiedResampler resam(ENABLE_SORT, ESS_REL);
     [% END %]
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'pf1' %]
-      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, ESS_REL)));
+      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam)));
     [% ELSIF client.get_named_arg('filter') == 'anpf' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -163,43 +165,55 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, ESS_REL, &stopper, BLOCK_P)));
+      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P)));
     [% ELSE %]
-      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, ESS_REL)));
+      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam)));
     [% END %]
   [% END %]
   
   /* theta-particles resampler */
   [% IF client.get_named_arg('with-mpi') %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler thetabase(C);
+    MetropolisResampler thetabase(C, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetabase;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetabase(ENABLE_SORT);
+    MultinomialResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetabase(ENABLE_SORT);
+    SystematicResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetabase(ENABLE_SORT);
+    StratifiedResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
     [% END %]
     DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase);
   [% ELSE %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler thetaresam(C);
+    MetropolisResampler thetaresam(C, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetaresam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetaresam(ENABLE_SORT);
+    MultinomialResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetaresam(ENABLE_SORT);
+    SystematicResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetaresam(ENABLE_SORT);
+    StratifiedResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
     [% END %]
   [% END %]
+  
+  /* adapter */
+  SMC2Adapter adapter;
+  if (ADAPTER.compare("local") == 0) {
+    adapter = LOCAL_ADAPTER;
+  } else if (ADAPTER.compare("global") == 0) {
+    adapter = GLOBAL_ADAPTER;
+  } else {
+    adapter = NO_ADAPTER;
+  }
      
   /* sampler */
-  BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory::create(m, filter));
-  BOOST_AUTO(sampler, SMC2Factory::create(m, pmmh, &thetaresam, bufOutput));
+  BOOST_AUTO(out, SMC2CacheFactory<LOCATION>::create(m, bufOutput));
+  BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory::create(m, filter, out));
+  BOOST_AUTO(sampler, SMC2Factory::create(m, pmmh, &thetaresam,
+      NMOVES, adapter, ADAPTER_SCALE, out));
 
   /* sample */
   [% IF client.get_named_arg('with-gperftools') %]
@@ -207,8 +221,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;
 
-  sampler->sample(rng, START_TIME, T, K, s, bufInit, NSAMPLES,
-      SAMPLE_ESS_REL, ENABLE_LOCAL_MOVE, NMOVES, LOCAL_MOVE_SCALE);
+  sampler->sample(rng, sched.begin(), sched.end(), s, bufInit, NSAMPLES);
   synchronize();
   
   /* output timing results */
@@ -220,7 +233,7 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   delete sampler;
-  //delete out;
+  delete out;
   delete filter;
   delete sim;
   delete obs;

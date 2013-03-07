@@ -10,6 +10,7 @@
 
 /**
  * @defgroup model Models
+ * Models.
  *
  *   @defgroup model_high High-level interface
  *   @ingroup model
@@ -19,13 +20,13 @@
  *   @ingroup model
  *   Low-level, static interface for constructing and querying models.
  *
- *     @defgroup model_trait Traits
- *     @ingroup model_low
- *     Node traits.
+ *   @defgroup model_trait Traits
+ *   @ingroup model_low
+ *   Node traits.
  *
- *     @defgroup model_typelist Type lists
- *     @ingroup model_low
- *     Node type lists.
+ *   @defgroup model_typelist Type lists
+ *   @ingroup model_low
+ *   Node type lists.
  *
  * @defgroup method Methods
  * Inference methods.
@@ -58,9 +59,6 @@
  *   as matrices of @c P rows, where each row gives a vector. Matrix
  *   arguments are passed as matrices with @c P times as many rows as usual,
  *   with rows of each of the @c P matrices interleaved.
- *
- *   @defgroup math_ode Ordinary differential equations
- *   @ingroup math
  *
  *   @defgroup math_rng Random number generation
  *   @ingroup math
@@ -101,9 +99,6 @@
  *   @ingroup io
  *
  *   @defgroup io_cache Caches
- *   @ingroup io
- *
- *   @defgroup io_mask Masks
  *   @ingroup io
  *
  * @defgroup concept Concepts

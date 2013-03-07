@@ -29,7 +29,8 @@ public:
   [% declare_action_static_function('maxlogdensity') %]
 };
 
-#include "bi/math/pi.hpp"
+#include "bi/pdf/functor.hpp"
+#include "bi/random/generic.hpp"
 
 [% sig_action_static_function('shape') %] {
   [% alias_dims(action) %]
@@ -52,8 +53,8 @@ public:
 
   shape(s, p, cox, pax, sh);
   scale(s, p, cox, pax, sc);
-  u = BI_REAL(1.0)/rng.gamma(sh, BI_REAL(1.0)/sc);
-
+  u = bi::inverse_gamma(rng, sh, sc);
+  
   x.template fetch<target_type>(s, p, ix) = u;
 }
 
@@ -65,8 +66,8 @@ public:
   
   BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
 
-  logZ = bi::lgamma(sh) - sh*bi::log(sc);
-  lp += (-sh - BI_REAL(1.0))*bi::log(xy) - sc/xy - logZ;
+  bi::inverse_gamma_log_density_functor<T1> f(sh, sc);
+  lp += f(xy);
 
   x.template fetch<target_type>(s, p, ix) = xy;
 }
@@ -80,8 +81,12 @@ public:
   BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
   
   [% IF shape.is_common && scale.is_common %]
-  lp += (sh + BI_REAL(1.0))*bi::log(sh + BI_REAL(1.0)) -
-      sh - BI_REAL(1.0) - bi::lgamma(sh) - bi::log(sc);
+  bi::inverse_gamma_log_density_functor<T1> f(sh, sc);
+  if (sh > BI_REAL(0.0) && sc > BI_REAL(0.0)) {
+	lp += f(sc/(sh + BI_REAL(1.0)));
+  } else {
+    lp = BI_REAL(1.0/0.0);
+  }
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]

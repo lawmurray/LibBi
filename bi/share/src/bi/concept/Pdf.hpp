@@ -31,7 +31,7 @@ struct Pdf {
    *
    * @tparam V2 Vector type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param[out] x \f$\mathbf{x} \sim p(X)\f$.
    */
   template<class V2>
@@ -42,7 +42,7 @@ struct Pdf {
    *
    * @tparam M2 Matrix type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param[out] X One sample is drawn into each row of @p X.
    */
   template<class M2>

@@ -19,7 +19,7 @@ class Random;
 /**
  * Kernel function to seed device random number generators.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param seed Seed.
  */
 CUDA_FUNC_GLOBAL void kernelSeeds(curandState* rng, const unsigned seed);
@@ -29,7 +29,7 @@ CUDA_FUNC_GLOBAL void kernelSeeds(curandState* rng, const unsigned seed);
  *
  * @tparam V1 Vector type.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param[out] x Vector to fill.
  * @param lower Lower bound.
  * @param upper Upper bound.
@@ -44,7 +44,7 @@ CUDA_FUNC_GLOBAL void kernelUniforms(curandState* rng, V1 x,
  *
  * @tparam V1 Vector type.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param[out] x Vector to fill.
  * @param mu Mean.
  * @param sigma Standard deviation.
@@ -59,7 +59,7 @@ CUDA_FUNC_GLOBAL void kernelGaussians(curandState* rng, V1 x,
  *
  * @tparam V1 Vector type.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param[out] x Vector to fill.
  * @param alpha Shape.
  * @param beta Scale.

@@ -10,13 +10,13 @@
 #include <iomanip>
 
 bi::AncestryCache::AncestryCache() :
-    particles(0, 0), size1(0) {
+    particles(0, 0), size1(0), numOccupied(0), q(0) {
   //
 }
 
 bi::AncestryCache::AncestryCache(const AncestryCache& o) :
     particles(o.particles), ancestors(o.ancestors), legacies(o.legacies), current(
-        o.current), size1(o.size1) {
+        o.current), size1(o.size1), numOccupied(o.numOccupied), q(o.q) {
   //
 }
 
@@ -31,8 +31,21 @@ bi::AncestryCache& bi::AncestryCache::operator=(const AncestryCache& o) {
   legacies = o.legacies;
   current = o.current;
   size1 = o.size1;
+  numOccupied = o.numOccupied;
+  q = o.q;
 
   return *this;
+}
+
+void bi::AncestryCache::swap(AncestryCache& o) {
+  particles.swap(o.particles);
+  ancestors.swap(o.ancestors);
+  legacies.swap(o.legacies);
+  current.swap(o.current);
+  std::swap(size1, o.size1);
+  std::swap(usecs, o.usecs);
+  std::swap(numOccupied, o.numOccupied);
+  std::swap(q, o.q);
 }
 
 void bi::AncestryCache::clear() {

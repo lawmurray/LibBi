@@ -142,12 +142,6 @@ protected:
    */
   real beta;
 
-  /**
-   * Log normalising term,
-   * \f$\log Z = \log\Gamma(\alpha) + \alpha\log \beta\f$.
-   */
-  real logZ;
-
 private:
   /**
    * Serialize.
@@ -228,7 +222,7 @@ void bi::InverseGammaPdf::densities(const M2 X, V2 p, const bool clear) {
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
-  inverse_gamma_densities(Z, alpha, beta, logZ, p, clear);
+  inverse_gamma_densities(Z, alpha, beta, p, clear);
 }
 
 template<class V2>
@@ -239,7 +233,7 @@ real bi::InverseGammaPdf::logDensity(const V2 x) {
   typedef typename V2::value_type T1;
 
   return thrust::transform_reduce(x.begin(), x.end(),
-      inverse_gamma_log_density_functor<T1>(alpha, beta, logZ), 0.0,
+      inverse_gamma_log_density_functor<T1>(alpha, beta), 0.0,
       thrust::plus<T1>());
 }
 
@@ -251,7 +245,7 @@ void bi::InverseGammaPdf::logDensities(const M2 X, V2 p, const bool clear) {
 
   typename sim_temp_matrix<M2>::type Z(X.size1(), X.size2());
   Z = X;
-  inverse_gamma_log_densities(Z, alpha, beta, logZ, p, clear);
+  inverse_gamma_log_densities(Z, alpha, beta, p, clear);
 }
 
 template<class V2>
@@ -276,17 +270,17 @@ inline const real& bi::InverseGammaPdf::scale() const {
 }
 
 inline void bi::InverseGammaPdf::init() {
-  logZ = lgamma(alpha) - alpha*log(beta);
+  //
 }
 
 template<class Archive>
 void bi::InverseGammaPdf::save(Archive& ar, const unsigned version) const {
-  ar & N & alpha & beta & logZ;
+  ar & N & alpha & beta;
 }
 
 template<class Archive>
 void bi::InverseGammaPdf::load(Archive& ar, const unsigned version) {
-  ar & N & alpha & beta & logZ;
+  ar & N & alpha & beta;
 }
 
 #endif

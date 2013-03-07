@@ -146,6 +146,11 @@ public:
   bool isFull() const;
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(ParticleMCMCCache<IO1,CL>& o);
+
+  /**
    * Clear cache.
    */
   void clear();
@@ -205,6 +210,24 @@ private:
    * Maximum number of samples to store in cache.
    */
   static const int NUM_SAMPLES = 4096 / sizeof(real);
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 
 /**
@@ -424,6 +447,16 @@ bool bi::ParticleMCMCCache<IO1,CL>::isFull() const {
 }
 
 template<class IO1, bi::Location CL>
+void bi::ParticleMCMCCache<IO1,CL>::swap(ParticleMCMCCache<IO1,CL>& o) {
+  llCache.swap(o.llCache);
+  lpCache.swap(o.lpCache);
+  parameterCache.swap(o.parameterCache);
+  trajectoryCache.swap(o.trajectoryCache);
+  std::swap(first, o.first);
+  std::swap(len, o.len);
+}
+
+template<class IO1, bi::Location CL>
 void bi::ParticleMCMCCache<IO1,CL>::clear() {
   llCache.clear();
   lpCache.clear();
@@ -465,6 +498,28 @@ void bi::ParticleMCMCCache<IO1,CL>::flush() {
       trajectoryCache[t]->flush();
     }
   }
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::ParticleMCMCCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & llCache;
+  ar & lpCache;
+  ar & parameterCache;
+  ar & trajectoryCache;
+  ar & first;
+  ar & len;
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::ParticleMCMCCache<IO1,CL>::load(Archive& ar, const unsigned version) {
+  ar & llCache;
+  ar & lpCache;
+  ar & parameterCache;
+  ar & trajectoryCache;
+  ar & first;
+  ar & len;
 }
 
 #endif

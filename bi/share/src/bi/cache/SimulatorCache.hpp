@@ -102,6 +102,11 @@ public:
   void writeState(const int t, const State<B,L>& s);
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(SimulatorCache<IO1,CL>& o);
+
+  /**
    * Clear cache.
    */
   void clear();
@@ -126,6 +131,24 @@ private:
    * Output buffer.
    */
   IO1* out;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 
 /**
@@ -250,6 +273,11 @@ void bi::SimulatorCache<IO1,CL>::writeState(const int t,
 }
 
 template<class IO1, bi::Location CL>
+void bi::SimulatorCache<IO1,CL>::swap(SimulatorCache<IO1,CL>& o) {
+  timeCache.swap(o.timeCache);
+}
+
+template<class IO1, bi::Location CL>
 void bi::SimulatorCache<IO1,CL>::clear() {
   timeCache.clear();
 }
@@ -265,6 +293,18 @@ void bi::SimulatorCache<IO1,CL>::flush() {
     out->writeTimes(0, timeCache.get(0, timeCache.size()));
   }
   timeCache.flush();
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::SimulatorCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & timeCache;
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::SimulatorCache<IO1,CL>::load(Archive& ar, const unsigned version) {
+  ar & timeCache;
 }
 
 #endif

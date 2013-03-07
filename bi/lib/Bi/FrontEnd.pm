@@ -63,7 +63,7 @@ use Bi::Visitor::InitialToParamTransformer;
 
 use Carp;
 use Carp::Assert;
-use Getopt::Long qw(:config pass_through no_auto_abbrev);
+use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Path;
 use IO::File;
 
@@ -115,35 +115,19 @@ Perform action according to command line.
 sub do {
     my $self = shift;
     
-    my $cmd = $self->{_cmd};
     eval {
         if ($self->{_help}) {
-           $self->help;
-        } elsif (!defined($cmd) || $cmd eq '') {
-            die("no command given\n");
+            unshift(@ARGV, $self->{_cmd});
+            $self->{_cmd} = 'help';
+        }
+        if (!defined($self->{_cmd}) || $self->{_cmd} eq '') {
+            die("no client given\n");
         } else {
             $self->client;
         }
     };
     if ($@) {
         die($@);
-    }
-}
-
-=item B<help>
-
-Display help.
-
-=cut
-sub help {
-    my $self = shift;    
-
-    if (defined $self->{_cmd}) {
-        # command-specific help
-        print "Command specific help\n";
-    } else {
-        # general help
-        print "General help\n";
     }
 }
 

@@ -8,31 +8,9 @@
 #ifndef BI_METHOD_SIMULATOR_HPP
 #define BI_METHOD_SIMULATOR_HPP
 
+#include "../state/Schedule.hpp"
 #include "../cache/SimulatorCache.hpp"
 #include "../state/State.hpp"
-#include "../misc/Markable.hpp"
-
-namespace bi {
-/**
- * %State of Simulator.
- */
-struct SimulatorState {
-  /**
-   * Constructor.
-   */
-  SimulatorState();
-
-  /**
-   * Time.
-   */
-  real t;
-};
-}
-
-bi::SimulatorState::SimulatorState() :
-    t(0.0) {
-  //
-}
 
 namespace bi {
 /**
@@ -44,13 +22,9 @@ namespace bi {
  * @tparam F Forcer type.
  * @tparam O Observer type.
  * @tparam IO1 Output type.
- *
- * @section Concepts
- *
- * #concept::Markable
  */
 template<class B, class F, class O, class IO1>
-class Simulator: public Markable<SimulatorState> {
+class Simulator {
 public:
   /**
    * Constructor.
@@ -116,19 +90,15 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
-   * @param[in,out] s State.
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
+   * @param[out] s State.
    * @param inInit Initialisation file.
-   *
-   * If an output buffer is given, it is filled with the state at time @p T,
-   * as well as at @p K equispaced times starting from time zero.
    */
   template<Location L, class IO2>
-  void simulate(Random& rng, const real t, const real T, const int K,
-      State<B,L>& s, IO2* inInit);
+  void simulate(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, State<B,L>& s, IO2* inInit);
 
   /**
    * Simulate deterministic model forward.
@@ -136,18 +106,15 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
-   * @param[in,out] s State.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
+   * @param[out] s State.
    * @param inInit Initialisation file.
-   *
-   * @see simulate()
    */
   template<Location L, class IO2>
-  void simulate(const real t, const real T, const int K, State<B,L>& s,
-      IO2* inInit);
-//@}
+  void simulate(const ScheduleIterator first, const ScheduleIterator last,
+      State<B,L>& s, IO2* inInit);
+  //@}
 
   /**
    * @name Low-level interface
@@ -157,32 +124,19 @@ public:
    */
   //@{
   /**
-   * Get the current time.
-   */
-  real getTime() const;
-
-  /**
-   * Set the current time.
-   *
-   * @param t The time.
-   * @param[out] s State.
-   */
-  template<Location L>
-  void setTime(const real t, State<B,L>& s);
-
-  /**
    * Initialise for stochastic simulation.
    *
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
-   * @param s State.
+   * @param[in,out] rng Random number generator.
+   * @param now Current step in time schedule.
+   * @param[out] s State.
    * @param inInit Initialisation file.
    */
   template<Location L, class IO2>
-  void init(Random& rng, const real t, State<B,L>& s, IO2* inInit = NULL);
+  void init(Random& rng, const ScheduleElement now, State<B,L>& s,
+      IO2* inInit = NULL);
 
   /**
    * Initialise for deterministic simulation.
@@ -190,27 +144,27 @@ public:
    * @tparam L Location.
    * @tparam IO2 Input type.
    *
-   * @param t Start time.
-   * @param s State.
+   * @param now Current step in time schedule.
+   * @param[out] s State.
    * @param inInit Initialisation file.
    */
   template<Location L, class IO2>
-  void init(const real t, State<B,L>& s, IO2* inInit = NULL);
+  void init(const ScheduleElement now, State<B,L>& s, IO2* inInit = NULL);
 
   /**
-   * Initialise for stochastic simulation, with fixed parameters and starting
-   * at time zero.
+   * Initialise for stochastic simulation, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
-   * @param rng Random number generator.
-   * @param t Start time.
+   * @param[in,out] rng Random number generator.
    * @param theta Parameters.
-   * @param s State.
+   * @param now Current step in time schedule.
+   * @param[out] s State.
    */
   template<Location L, class V1>
-  void init(Random& rng, const real t, const V1 theta, State<B,L>& s);
+  void init(Random& rng, const V1 theta, const ScheduleElement now,
+      State<B,L>& s);
 
   /**
    * Initialise for deterministic simulation, with fixed parameters and
@@ -219,27 +173,24 @@ public:
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
-   * @param t Start time.
    * @param theta Parameters.
-   * @param s State.
+   * @param now Current step in time schedule.
+   * @param[out] s State.
    */
   template<Location L, class V1>
-  void init(const real t, const V1 theta, State<B,L>& s);
+  void init(const V1 theta, const ScheduleElement now, State<B,L>& s);
 
   /**
    * Advance stochastic model forward.
    *
    * @tparam L Location.
    *
-   * @param rng Random number generator.
-   * @param T Maximum time to which to advance.
+   * @param[in,out] rng Random number generator.
+   * @param next Next step in time schedule.
    * @param[in,out] s State.
-   *
-   * The model is simulated forward to the soonest of @p T and the time of
-   * the next observation.
    */
   template<Location L>
-  void advance(Random& rng, const real T, State<B,L>& s);
+  void advance(Random& rng, const ScheduleElement next, State<B,L>& s);
 
   /**
    * Advance deterministic model forward.
@@ -247,44 +198,37 @@ public:
    * @see advance()
    */
   template<Location L>
-  void advance(const real T, State<B,L>& s);
+  void advance(const ScheduleElement next, State<B,L>& s);
 
   /**
    * Advance lookahead model forward.
    *
-   * @tparam L Location.
-   *
-   * @param rng Random number generator.
-   * @param T Maximum time to which to lookahead.
-   * @param[in,out] s State.
+   * @see advance()
    */
   template<Location L>
-  void lookahead(Random& rng, const real T, State<B,L>& s);
+  void lookahead(Random& rng, const ScheduleElement next, State<B,L>& s);
 
   /**
-   * Advance lookahead model forward.
+   * Advance deterministic lookahead model forward.
    *
-   * @tparam L Location.
-   *
-   * @param T Maximum time to which to lookahead.
-   * @param[in,out] s State.
+   * @see advance()
    */
   template<Location L>
-  void lookahead(const real T, State<B,L>& s);
+  void lookahead(const ScheduleElement next, State<B,L>& s);
 
   /**
-   * Simulate the observation model for the current time.
+   * Simulate the observation model.
    *
    * @tparam L Location.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
    */
   template<Location L>
   void observe(Random& rng, State<B,L>& s);
 
   /**
-   * Simulate the observation model for the current time.
+   * Simulate the observation model.
    *
    * @tparam L Location.
    *
@@ -294,7 +238,7 @@ public:
   void observe(State<B,L>& s);
 
   /**
-   * Output static state.
+   * Output static variables.
    *
    * @tparam L Location.
    *
@@ -304,41 +248,21 @@ public:
   void output0(const State<B,L>& s);
 
   /**
-   * Output state.
+   * Output dynamic variables.
    *
    * @tparam L Location.
    *
-   * @param k Time index.
+   * @param now Current step in time schedule.
    * @param s State.
    */
   template<Location L>
-  void output(const int k, const State<B,L>& s);
+  void output(const ScheduleElement now, const State<B,L>& s);
 
   /**
    * Clean up.
    */
   void term();
   //@}
-
-  /**
-   * @copydoc concept::Markable::mark()
-   */
-  void mark();
-
-  /**
-   * @copydoc concept::Markable::restore()
-   */
-  void restore();
-
-  /**
-   * @copydoc concept::Markable::top()
-   */
-  void top();
-
-  /**
-   * @copydoc concept::Markable::pop()
-   */
-  void pop();
 
 private:
   /**
@@ -360,15 +284,10 @@ private:
    * Output.
    */
   IO1* out;
-
-  /**
-   * State.
-   */
-  SimulatorState state;
 };
 
 /**
- * Factor for creating Simulator objects.
+ * Factory for creating Simulator objects.
  *
  * @ingroup method
  *
@@ -402,8 +321,6 @@ struct SimulatorFactory {
   }
 };
 }
-
-#include "misc.hpp"
 
 template<class B, class F, class O, class IO1>
 bi::Simulator<B,F,O,IO1>::Simulator(B& m, F* in, O* obs, IO1* out) :
@@ -443,406 +360,233 @@ inline void bi::Simulator<B,F,O,IO1>::setOutput(IO1* out) {
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
-void bi::Simulator<B,F,O,IO1>::simulate(Random& rng, const real t,
-    const real T, const int K, State<B,L>& s, IO2* inInit) {
-  real tk;
-  int k = 0, n = 0;
-
-  init(rng, t, s, inInit);
+void bi::Simulator<B,F,O,IO1>::simulate(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
+    IO2* inInit) {
+  ScheduleIterator iter = first;
+  init(rng, *iter, s, inInit);
   output0(s);
-  do {
-    /* time of next output */
-    tk = (k == K) ? T : t + (T - t) * k / K;
-
-    /* advance */
-    do {
-      advance(rng, tk, s);
-      output(n++, s);
-    } while (this->getTime() < tk);
-    ++k;
-  } while (k <= K);
+  output(*iter, s);
+  ++iter;
+  while (iter != last) {
+    advance(rng, *iter, s);
+    output(*iter, s);
+    ++iter;
+  }
   term();
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
-void bi::Simulator<B,F,O,IO1>::simulate(const real t, const real T,
-    const int K, State<B,L>& s, IO2* inInit) {
+void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
+    const ScheduleIterator last, State<B,L>& s, IO2* inInit) {
   // this implemention is (should be) the same as simulate() above, but
   // removing the rng argument from init() and advance()
-  real tk;
-  int k = 0, n = 0;
-
-  init(t, s, inInit);
+  ScheduleIterator iter = first;
+  init(s, *iter, inInit);
   output0(s);
-  do {
-    /* time of next output */
-    tk = (k == K) ? T : t + (T - t) * k / K;
-
-    /* advance */
-    do {
-      advance(tk, s);
-      output(n++, s);
-    } while (this->getTime() < tk);
-
-    ++k;
-  } while (k <= K);
+  output(*iter, s);
+  ++iter;
+  while (iter != last) {
+    advance(*iter, s);
+    output(*iter, s);
+    ++iter;
+  }
   term();
 }
-
-template<class B, class F, class O, class IO1>
-inline real bi::Simulator<B,F,O,IO1>::getTime() const {
-  return state.t;
-}
-
-template<class B, class F, class O, class IO1>
-template<bi::Location L>
-inline void bi::Simulator<B,F,O,IO1>::setTime(const real t, State<B,L>& s) {
-  state.t = t;
-  if (in != NULL) {
-    in->setTime(t, s);
-  }
-  if (obs != NULL) {
-    obs->setTime(t, s);
-  }
-}
-
+#include "../math/io.hpp"
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
-void bi::Simulator<B,F,O,IO1>::init(Random& rng, const real t, State<B,L>& s,
-    IO2* inInit) {
-  /* initialise statics */
+void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
+    State<B,L>& s, IO2* inInit) {
+  /* static inputs */
   if (in != NULL) {
     in->update0(s);
   }
 
+  /* parameters */
   m.parameterSample(rng, s);
   if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(PY_VAR));
-    s.get(P_VAR) = s.get(PY_VAR);
+    inInit->read0(P_VAR, s.get(P_VAR));
+    s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
 
+  /* dynamic inputs */
+  if (now.hasInput()) {
+    in->update(now.indexInput(), s);
+  }
+
+  /* state variable initial values */
   m.initialSamples(rng, s);
   if (inInit != NULL) {
-    inInit->read0(D_VAR, s.get(DY_VAR));
-    s.get(D_VAR) = s.get(DY_VAR);
+    inInit->read0(D_VAR, s.get(D_VAR));
+    s.get(DY_VAR) = s.get(D_VAR);
     m.initialSimulates(s);
   }
 
-  /* initialise dynamics according to starting time */
-  setTime(t, s);
-  if (inInit != NULL) {
-    inInit->setTime(t);
-    inInit->read(D_VAR, s.get(D_VAR));
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
   }
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
-void bi::Simulator<B,F,O,IO1>::init(const real t, State<B,L>& s,
+void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     IO2* inInit) {
-  /* initialise statics */
+  /* static inputs */
   if (in != NULL) {
     in->update0(s);
   }
 
+  /* parameters */
   m.parameterSimulate(s);
   if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(PY_VAR));
-    s.get(P_VAR) = s.get(PY_VAR);
+    inInit->read0(P_VAR, s.get(P_VAR));
+    s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
 
+  /* dynamic inputs */
+  if (now.hasInput()) {
+    in->update(now.indexInput(), s);
+  }
+
+  /* state variable initial values */
   m.initialSimulates(s);
   if (inInit != NULL) {
-    inInit->read0(D_VAR, s.get(DY_VAR));
-    s.get(D_VAR) = s.get(DY_VAR);
+    inInit->read0(D_VAR, s.get(D_VAR));
+    s.get(DY_VAR) = s.get(D_VAR);
     m.initialSimulates(s);
   }
 
-  /* initialise dynamics according to starting time */
-  setTime(t, s);
-  if (inInit != NULL) {
-    inInit->setTime(t);
-    inInit->read(D_VAR, s.get(D_VAR));
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
   }
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class V1>
-void bi::Simulator<B,F,O,IO1>::init(Random& rng, const real t, const V1 theta,
-    State<B,L>& s) {
+void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
+    const ScheduleElement now, State<B,L>& s) {
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
-  /* initialise statics */
+  /* static inputs */
   if (in != NULL) {
     in->update0(s);
   }
 
-  vec(s.get(PY_VAR)) = theta;
-  s.get(P_VAR) = s.get(PY_VAR);
+  /* dynamic inputs */
+  if (now.hasInput()) {
+    in->update(now.indexInput(), s);
+  }
+
+  /* parameters */
+  vec(s.get(P_VAR)) = theta;
+  s.get(PY_VAR) = s.get(P_VAR);
   m.parameterSimulate(s);
+
+  /* initial values */
   m.initialSamples(rng, s);
 
-  /* initialise dynamics */
-  setTime(t, s);
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
+  }
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class V1>
-void bi::Simulator<B,F,O,IO1>::init(const real t, const V1 theta, State<B,L>& s) {
+void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
+    State<B,L>& s) {
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
-  /* initialise statics */
+  /* static inputs */
   if (in != NULL) {
     in->update0(s);
   }
 
-  vec(s.get(PY_VAR)) = theta;
-  s.get(P_VAR) = s.get(PY_VAR);
+  /* parameters */
+  vec(s.get(P_VAR)) = theta;
+  s.get(PY_VAR) = s.get(P_VAR);
   m.parameterSimulate(s);
+
+  /* dynamic inputs */
+  if (now.hasInput()) {
+    in->update(now.indexInput(), s);
+  }
+
+  /* initial values */
   m.initialSimulates(s);
 
-  /* initialise dynamics */
-  setTime(t, s);
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
+  }
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
-void bi::Simulator<B,F,O,IO1>::advance(Random& rng, const real T,
+void bi::Simulator<B,F,O,IO1>::advance(Random& rng,
+    const ScheduleElement next, State<B,L>& s) {
+  if (next.hasInput()) {
+    in->update(next.indexInput(), s);
+  }
+  m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
+  if (next.hasObs()) {
+    obs->update(next.indexObs(), s);
+  }
+}
+
+template<class B, class F, class O, class IO1>
+template<bi::Location L>
+void bi::Simulator<B,F,O,IO1>::advance(const ScheduleElement next,
     State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(T >= state.t);
-
-  real ti = state.t, tj, tf, ty, td;
-
-  /* time of next input */
-  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
-    tf = in->getNextTime();
-  } else {
-    tf = BI_REAL(1.0/0.0);
-  }
-
-  /* time of next observation */
-  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
-    ty = obs->getNextTime();
-  } else {
-    ty = BI_REAL(1.0/0.0);
-  }
-
-  /* stopping time */
-  real stop = bi::min(ty, T);
-
-  do {
-    td = gt_step(ti, m.getDelta());
-    tj = bi::min(tf, bi::min(td, stop));
-
-    /* inputs */
-    if (stop > ti && ti >= tf) {
-      in->update(s);
-      if (in->hasNext() && in->getNextTime() > tf) {
-        tf = in->getNextTime();
-      } else {
-        tf = BI_REAL(1.0/0.0);
-      }
-    }
-
-    /* noise and state */
-    if (tj > ti) {
-      m.transitionSamples(rng, ti, tj, s);
-    }
-
-    /* observations */
-    if (tj >= ty) {
-      obs->update(s);
-      if (obs->hasNext() && obs->getNextTime() >= ty) {
-        ty = obs->getNextTime();
-      } else {
-        ty = BI_REAL(1.0/0.0);
-      }
-    }
-
-    ti = tj;
-  } while (ti < stop);
-  state.t = stop;
-}
-
-template<class B, class F, class O, class IO1>
-template<bi::Location L>
-void bi::Simulator<B,F,O,IO1>::advance(const real T, State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.transitionSimulates() rather than m.transitionSamples()
-  real ti = state.t, tj, tf, ty, td;
-
-  /* time of next input */
-  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
-    tf = in->getNextTime();
-  } else {
-    tf = BI_REAL(1.0/0.0);
+  if (next.hasInput()) {
+    in->update(next.indexInput(), s);
   }
-
-  /* time of next observation */
-  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
-    ty = obs->getNextTime();
-  } else {
-    ty = BI_REAL(1.0/0.0);
+  m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
+  if (next.hasObs()) {
+    obs->update(next.indexObs(), s);
   }
-
-  /* stopping time */
-  real stop = bi::min(ty, T);
-
-  do {
-    td = gt_step(ti, m.getDelta());
-    tj = bi::min(tf, bi::min(td, stop));
-
-    /* inputs */
-    if (stop > ti && ti >= tf) {
-      in->update(s);
-      if (in->hasNext() && in->getNextTime() > tf) {
-        tf = in->getNextTime();
-      } else {
-        tf = BI_REAL(1.0/0.0);
-      }
-    }
-
-    /* noise and state */
-    if (tj > ti) {
-      m.transitionSimulates(ti, tj, s);
-    }
-
-    /* observations */
-    if (tj >= ty) {
-      obs->update(s);
-      if (obs->hasNext() && obs->getTime() > ty) {
-        ty = obs->getTime();
-      } else {
-        ty = BI_REAL(1.0/0.0);
-      }
-    }
-
-    ti = tj;
-  } while (ti < stop);
-  state.t = stop;
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
-void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng, const real T,
-    State<B,L>& s) {
+void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng,
+    const ScheduleElement next, State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.lookaheadTransitionSamples() rather than m.transitionSamples()
-  real ti = state.t, tj, tf, ty, td;
-
-  /* time of next input */
-  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
-    tf = in->getNextTime();
-  } else {
-    tf = BI_REAL(1.0/0.0);
+  if (next.hasInput()) {
+    in->update(next.indexInput(), s);
   }
-
-  /* time of next observation */
-  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
-    ty = obs->getNextTime();
-  } else {
-    ty = BI_REAL(1.0/0.0);
+  m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
+  if (next.hasObs()) {
+    obs->update(next.indexObs(), s);
   }
-
-  /* stopping time */
-  real stop = bi::min(ty, T);
-
-  do {
-    td = gt_step(ti, m.getDelta());
-    tj = bi::min(tf, bi::min(td, stop));
-
-    /* inputs */
-    if (stop > ti && ti >= tf) {
-      in->update(s);
-      if (in->hasNext() && in->getNextTime() > tf) {
-        tf = in->getNextTime();
-      } else {
-        tf = BI_REAL(1.0/0.0);
-      }
-    }
-
-    /* noise and state */
-    if (tj > ti) {
-      m.lookaheadTransitionSamples(rng, ti, tj, s);
-    }
-
-    /* observations */
-    if (tj >= ty) {
-      obs->update(s);
-      if (obs->hasNext() && obs->getTime() > ty) {
-        ty = obs->getTime();
-      } else {
-        ty = BI_REAL(1.0/0.0);
-      }
-    }
-
-    ti = tj;
-  } while (ti < stop);
-  state.t = stop;
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
-void bi::Simulator<B,F,O,IO1>::lookahead(const real T, State<B,L>& s) {
+void bi::Simulator<B,F,O,IO1>::lookahead(const ScheduleElement next,
+    State<B,L>& s) {
   // this implementation is (should be) the same as advance() above, but
   // using m.lookaheadTransitionSimulates() rather than m.transitionSamples()
-  real ti = state.t, tj, tf, ty, td;
-
-  /* time of next input */
-  if (in != NULL && in->hasNext() && in->getNextTime() >= ti) {
-    tf = in->getNextTime();
-  } else {
-    tf = BI_REAL(1.0/0.0);
+  if (next.hasInput()) {
+    in->update(next.indexInput(), s);
   }
-
-  /* time of next observation */
-  if (obs != NULL && obs->hasNext() && obs->getNextTime() >= ti) {
-    ty = obs->getNextTime();
-  } else {
-    ty = BI_REAL(1.0/0.0);
+  m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
+  if (next.hasObs()) {
+    obs->update(next.indexObs(), s);
   }
-
-  /* stopping time */
-  real stop = bi::min(ty, T);
-
-  do {
-    td = gt_step(ti, m.getDelta());
-    tj = bi::min(tf, bi::min(td, stop));
-
-    /* inputs */
-    if (stop > ti && ti >= tf) {
-      in->update(s);
-      if (in->hasNext() && in->getNextTime() > tf) {
-        tf = in->getNextTime();
-      } else {
-        tf = BI_REAL(1.0/0.0);
-      }
-    }
-
-    /* noise and state */
-    if (tj > ti) {
-      m.lookaheadTransitionSimulates(ti, tj, s);
-    }
-
-    /* observations */
-    if (tj >= ty) {
-      obs->update(s);
-      if (obs->hasNext() && obs->getTime() > ty) {
-        ty = obs->getTime();
-      } else {
-        ty = BI_REAL(1.0/0.0);
-      }
-    }
-
-    ti = tj;
-  } while (ti < stop);
-  state.t = stop;
 }
 
 template<class B, class F, class O, class IO1>
@@ -867,60 +611,17 @@ void bi::Simulator<B,F,O,IO1>::output0(const State<B,L>& s) {
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
-void bi::Simulator<B,F,O,IO1>::output(const int k, const State<B,L>& s) {
-  if (out != NULL) {
-    out->writeTime(k, this->getTime());
-    out->writeState(k, s);
+void bi::Simulator<B,F,O,IO1>::output(const ScheduleElement now,
+    const State<B,L>& s) {
+  if (out != NULL && now.hasOutput()) {
+    out->writeTime(now.indexOutput(), now.getTime());
+    out->writeState(now.indexOutput(), s);
   }
 }
 
 template<class B, class F, class O, class IO1>
 void bi::Simulator<B,F,O,IO1>::term() {
   //
-}
-
-template<class B, class F, class O, class IO1>
-void bi::Simulator<B,F,O,IO1>::mark() {
-  Markable<SimulatorState>::mark(state);
-  if (in != NULL) {
-    in->mark();
-  }
-  if (obs != NULL) {
-    obs->mark();
-  }
-}
-
-template<class B, class F, class O, class IO1>
-void bi::Simulator<B,F,O,IO1>::restore() {
-  Markable<SimulatorState>::restore(state);
-  if (in != NULL) {
-    in->restore();
-  }
-  if (obs != NULL) {
-    obs->restore();
-  }
-}
-
-template<class B, class F, class O, class IO1>
-void bi::Simulator<B,F,O,IO1>::top() {
-  Markable<SimulatorState>::top(state);
-  if (in != NULL) {
-    in->top();
-  }
-  if (obs != NULL) {
-    obs->top();
-  }
-}
-
-template<class B, class F, class O, class IO1>
-void bi::Simulator<B,F,O,IO1>::pop() {
-  Markable<SimulatorState>::pop();
-  if (in != NULL) {
-    in->pop();
-  }
-  if (obs != NULL) {
-    obs->pop();
-  }
 }
 
 #endif

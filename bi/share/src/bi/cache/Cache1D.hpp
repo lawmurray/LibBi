@@ -83,6 +83,11 @@ public:
   void resize(const int size);
 
   /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(Cache1D<T1,CL>& o);
+
+  /**
    * Empty cache.
    */
   void empty();
@@ -92,6 +97,24 @@ private:
    * Pages.
    */
   vector_type pages;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 }
 
@@ -154,9 +177,29 @@ void bi::Cache1D<T1,CL>::resize(const int size) {
 }
 
 template<class T1, bi::Location CL>
+void bi::Cache1D<T1,CL>::swap(Cache1D<T1,CL>& o) {
+  Cache::swap(o);
+  pages.swap(o.pages);
+}
+
+template<class T1, bi::Location CL>
 void bi::Cache1D<T1,CL>::empty() {
   pages.resize(0);
   Cache::empty();
+}
+
+template<class T1, bi::Location CL>
+template<class Archive>
+void bi::Cache1D<T1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<Cache>(*this);
+  save_resizable_vector(ar, version, pages);
+}
+
+template<class T1, bi::Location CL>
+template<class Archive>
+void bi::Cache1D<T1,CL>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<Cache>(*this);
+  load_resizable_vector(ar, version, pages);
 }
 
 #endif

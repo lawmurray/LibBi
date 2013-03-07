@@ -228,8 +228,8 @@ void op_exclusive_scan(const V1 x, V2 y, const typename V1::value_type init,
  * @param op2 The binary functor used for the scan.
  */
 template<class V1, class V2, class UnaryFunctor, class BinaryFunctor>
-void op_inclusive_scan(const V1 x, V2 y, UnaryFunctor op1,
-    BinaryFunctor op2 = thrust::plus<typename V1::value_type>());
+void op_inclusive_scan(const V1 x, V2 y, UnaryFunctor op1, BinaryFunctor op2 =
+    thrust::plus<typename V1::value_type>());
 
 /**
  * Exclusive scan-sum.
@@ -595,6 +595,19 @@ void mul_elements(const V1 x1, const V2 x2, V3 y);
  */
 template<class V1, class V2, class V3>
 void div_elements(const V1 x1, const V2 x2, V3 y);
+
+/**
+ * Multiply vector by scalar and add to another vector. This operation is
+ * identical to the BLAS @c axpy operator, but is not limited to @c float and
+ * @c double types.
+ *
+ * @ingroup primitive_vector
+ *
+ * @see op_elements()
+ */
+template<class V1, class V2, class V3>
+void axpy_elements(const typename V1::value_type a, const V1 x1, const V2 x2,
+    V3 y);
 //@}
 
 /**
@@ -694,7 +707,8 @@ template<class V1, class UnaryFunctor, class BinaryFunctor>
 typename V1::value_type bi::op_reduce(const V1 x, UnaryFunctor op1,
     const typename V1::value_type init, BinaryFunctor op2) {
   if (x.inc() == 1) {
-    return thrust::transform_reduce(x.fast_begin(), x.fast_end(), op1, init, op2);
+    return thrust::transform_reduce(x.fast_begin(), x.fast_end(), op1, init,
+        op2);
   } else {
     return thrust::transform_reduce(x.begin(), x.end(), op1, init, op2);
   }
@@ -734,7 +748,8 @@ inline typename V1::value_type bi::min_reduce(const V1 x) {
 
   typedef typename V1::value_type T1;
   if (x.inc() == 1) {
-    return *thrust::min_element(x.fast_begin(), x.fast_end(), nan_less_functor<T1>());
+    return *thrust::min_element(x.fast_begin(), x.fast_end(),
+        nan_less_functor<T1>());
   } else {
     return *thrust::min_element(x.begin(), x.end(), nan_less_functor<T1>());
   }
@@ -747,7 +762,8 @@ inline typename V1::value_type bi::max_reduce(const V1 x) {
 
   typedef typename V1::value_type T1;
   if (x.inc() == 1) {
-    return *thrust::max_element(x.fast_begin(), x.fast_end(), nan_less_functor<T1>());
+    return *thrust::max_element(x.fast_begin(), x.fast_end(),
+        nan_less_functor<T1>());
   } else {
     return *thrust::max_element(x.begin(), x.end(), nan_less_functor<T1>());
   }
@@ -761,12 +777,16 @@ inline typename V1::value_type bi::amin_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   if (x.inc() == 1) {
-    BOOST_AUTO(iter, thrust::make_transform_iterator(x.fast_begin(), abs_functor<T1>()));
-    BOOST_AUTO(end, thrust::make_transform_iterator(x.fast_end(), abs_functor<T1>()));
+    BOOST_AUTO(iter,
+        thrust::make_transform_iterator(x.fast_begin(), abs_functor<T1>()));
+    BOOST_AUTO(end,
+        thrust::make_transform_iterator(x.fast_end(), abs_functor<T1>()));
     return *thrust::min_element(iter, end, nan_less_functor<T1>());
   } else {
-    BOOST_AUTO(iter, thrust::make_transform_iterator(x.begin(), abs_functor<T1>()));
-    BOOST_AUTO(end, thrust::make_transform_iterator(x.end(), abs_functor<T1>()));
+    BOOST_AUTO(iter,
+        thrust::make_transform_iterator(x.begin(), abs_functor<T1>()));
+    BOOST_AUTO(end,
+        thrust::make_transform_iterator(x.end(), abs_functor<T1>()));
     return *thrust::min_element(iter, end, nan_less_functor<T1>());
   }
 }
@@ -779,12 +799,16 @@ inline typename V1::value_type bi::amax_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   if (x.inc() == 1) {
-    BOOST_AUTO(iter, thrust::make_transform_iterator(x.fast_begin(), abs_functor<T1>()));
-    BOOST_AUTO(end, thrust::make_transform_iterator(x.fast_end(), abs_functor<T1>()));
+    BOOST_AUTO(iter,
+        thrust::make_transform_iterator(x.fast_begin(), abs_functor<T1>()));
+    BOOST_AUTO(end,
+        thrust::make_transform_iterator(x.fast_end(), abs_functor<T1>()));
     return *thrust::max_element(iter, end, nan_less_functor<T1>());
   } else {
-    BOOST_AUTO(iter, thrust::make_transform_iterator(x.begin(), abs_functor<T1>()));
-    BOOST_AUTO(end, thrust::make_transform_iterator(x.end(), abs_functor<T1>()));
+    BOOST_AUTO(iter,
+        thrust::make_transform_iterator(x.begin(), abs_functor<T1>()));
+    BOOST_AUTO(end,
+        thrust::make_transform_iterator(x.end(), abs_functor<T1>()));
     return *thrust::max_element(iter, end, nan_less_functor<T1>());
   }
 }
@@ -794,7 +818,11 @@ inline typename V1::value_type bi::sumexp_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = bi::exp(mx + bi::log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>())));
+  T1 result = bi::exp(
+      mx
+          + bi::log(
+              op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0,
+                  thrust::plus<T1>())));
 
   return result;
 }
@@ -804,7 +832,10 @@ inline typename V1::value_type bi::logsumexp_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = mx + bi::log(op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0, thrust::plus<T1>()));
+  T1 result = mx
+      + bi::log(
+          op_reduce(x, nan_minus_and_exp_functor<T1>(mx), 0.0,
+              thrust::plus<T1>()));
 
   return result;
 }
@@ -814,8 +845,11 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  T1 result = bi::exp(2.0*mx + bi::log(op_reduce(x,
-      nan_minus_exp_and_square_functor<T1>(mx), 0.0, thrust::plus<T1>())));
+  T1 result = bi::exp(
+      2.0 * mx
+          + bi::log(
+              op_reduce(x, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+                  thrust::plus<T1>())));
 
   return result;
 }
@@ -827,30 +861,36 @@ inline typename V1::value_type bi::ess_reduce(const V1 lws) {
 
   typedef typename V1::value_type T1;
 
-  T1 sum1, sum2, ess;
+  T1 mx = max_reduce(lws);
+  T1 sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
+  T1 sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+      thrust::plus<T1>());
 
-  sum1 = sumexp_reduce(lws);
-  sum2 = sumexpsq_reduce(lws);
-  ess = (sum1*sum1)/sum2;
-
-  return ess;
+  return (sum1 * sum1) / sum2;
 }
 
 template<class V1, class V2, class UnaryOperator, class BinaryOperator>
 void bi::op_exclusive_scan(const V1 x, V2 y, typename V1::value_type init,
     UnaryOperator op1, BinaryOperator op2) {
+  /* pre-conditions */
+  BI_ASSERT(x.size() == y.size());
+
   if (x.inc() == 1 && y.inc() == 1) {
     thrust::transform_exclusive_scan(x.fast_begin(), x.fast_end(),
         y.fast_begin(), op1, init, op2);
   } else {
-    thrust::transform_exclusive_scan(x.begin(), x.end(), y.begin(), op1,
-        init, op2);
+    thrust::transform_exclusive_scan(x.begin(), x.end(), y.begin(), op1, init,
+        op2);
   }
 }
 
 template<class V1, class V2, class UnaryOperator, class BinaryOperator>
 void bi::op_inclusive_scan(const V1 x, V2 y, UnaryOperator op1,
     BinaryOperator op2) {
+  /* pre-conditions */
+  BI_ASSERT(x.size() == y.size());
+
   if (x.inc() == 1 && y.inc() == 1) {
     thrust::transform_inclusive_scan(x.fast_begin(), x.fast_end(),
         y.fast_begin(), op1, op2);
@@ -888,7 +928,8 @@ inline typename V1::value_type bi::sumexpu_exclusive_scan(const V1 x, V2 y) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  op_exclusive_scan(x, y, 0.0, nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
+  op_exclusive_scan(x, y, 0.0, nan_minus_and_exp_functor<T1>(mx),
+      thrust::plus<T1>());
 
   return mx;
 }
@@ -898,13 +939,17 @@ inline typename V1::value_type bi::sumexpu_inclusive_scan(const V1 x, V2 y) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(x);
-  op_inclusive_scan(x, y, nan_minus_and_exp_functor<T1>(mx), thrust::plus<T1>());
+  op_inclusive_scan(x, y, nan_minus_and_exp_functor<T1>(mx),
+      thrust::plus<T1>());
 
   return mx;
 }
 
 template<class V1, class V2, class UnaryFunctor>
 inline void bi::op_elements(const V1 x, V2 y, UnaryFunctor op) {
+  /* pre-condition */
+  BI_ASSERT(x.size() == y.size());
+
   if (x.inc() == 1 && y.inc() == 1) {
     thrust::transform(x.fast_begin(), x.fast_end(), y.fast_begin(), op);
   } else {
@@ -948,22 +993,26 @@ inline void bi::log_elements(const V1 x, V2 y) {
 }
 
 template<class V1, class V2>
-inline void bi::addscal_elements(const V1 x, const typename V1::value_type a, V2 y) {
+inline void bi::addscal_elements(const V1 x, const typename V1::value_type a,
+    V2 y) {
   op_elements(x, y, add_constant_functor<typename V1::value_type>(a));
 }
 
 template<class V1, class V2>
-inline void bi::subscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+inline void bi::subscal_elements(V1 x, const typename V1::value_type a,
+    V2 y) {
   op_elements(x, y, sub_constant_functor<typename V1::value_type>(a));
 }
 
 template<class V1, class V2>
-inline void bi::mulscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+inline void bi::mulscal_elements(V1 x, const typename V1::value_type a,
+    V2 y) {
   op_elements(x, y, mul_constant_functor<typename V1::value_type>(a));
 }
 
 template<class V1, class V2>
-inline void bi::divscal_elements(V1 x, const typename V1::value_type a, V2 y) {
+inline void bi::divscal_elements(V1 x, const typename V1::value_type a,
+    V2 y) {
   op_elements(x, y, div_constant_functor<typename V1::value_type>(a));
 }
 
@@ -992,9 +1041,15 @@ inline void bi::seq_elements(V1 x, const typename V1::value_type init) {
 }
 
 template<class V1, class V2, class V3, class BinaryFunctor>
-inline void bi::op_elements(const V1 x1, const V2 x2, V3 y, BinaryFunctor op) {
+inline void bi::op_elements(const V1 x1, const V2 x2, V3 y,
+    BinaryFunctor op) {
+  /* pre-conditions */
+  BI_ASSERT(x1.size() == x2.size());
+  BI_ASSERT(x1.size() == y.size());
+
   if (x1.inc() == 1 && x2.inc() == 1 && y.inc() == 1) {
-    thrust::transform(x1.fast_begin(), x1.fast_end(), x2.fast_begin(), y.fast_begin(), op);
+    thrust::transform(x1.fast_begin(), x1.fast_end(), x2.fast_begin(),
+        y.fast_begin(), op);
   } else {
     thrust::transform(x1.begin(), x1.end(), x2.begin(), y.begin(), op);
   }
@@ -1018,6 +1073,12 @@ inline void bi::mul_elements(const V1 x1, const V2 x2, V3 y) {
 template<class V1, class V2, class V3>
 inline void bi::div_elements(const V1 x1, const V2 x2, V3 y) {
   op_elements(x1, x2, y, thrust::divides<typename V1::value_type>());
+}
+
+template<class V1, class V2, class V3>
+inline void bi::axpy_elements(const typename V1::value_type a, const V1 x1,
+    const V2 x2, V3 y) {
+  op_elements(x1, x2, y, axpy_functor<typename V1::value_type>(a));
 }
 
 template<class V1>
@@ -1083,7 +1144,8 @@ template<class V1>
 inline int bi::find(const V1 input, const typename V1::value_type y) {
 
   if (input.inc() == 1) {
-    return thrust::find(input.fast_begin(), input.fast_end(), y) - input.fast_begin();
+    return thrust::find(input.fast_begin(), input.fast_end(), y)
+        - input.fast_begin();
   } else {
     return thrust::find(input.begin(), input.end(), y) - input.begin();
   }
@@ -1093,7 +1155,8 @@ template<class V1>
 inline bool bi::equal(const V1 input1, const V1 input2) {
 
   if (input1.inc() == 1 && input2.inc() == 1) {
-    return thrust::equal(input1.fast_begin(), input1.fast_end(), input2.fast_begin());
+    return thrust::equal(input1.fast_begin(), input1.fast_end(),
+        input2.fast_begin());
   } else {
     return thrust::equal(input1.begin(), input1.end(), input2.begin());
   }

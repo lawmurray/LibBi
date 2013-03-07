@@ -311,7 +311,7 @@ void bi::ParticleMCMCNetCDFBuffer::readState(const VarType type, const int t,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {
@@ -369,7 +369,7 @@ void bi::ParticleMCMCNetCDFBuffer::writeState(const VarType type, const int t,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {

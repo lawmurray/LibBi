@@ -25,7 +25,7 @@ public:
   /**
    * Update.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param s State.
    * @param mask Mask.
    * @param pax Parents.

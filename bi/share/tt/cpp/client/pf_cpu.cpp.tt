@@ -38,7 +38,6 @@
 #include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/cache/SimulatorCache.hpp"
 #include "bi/cache/ParticleFilterCache.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"
@@ -101,35 +100,36 @@ int main(int argc, char* argv[]) {
     bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
-  /* output */
-  const int Y = (bufObs == NULL) ? K + 1 : bufObs->countTimes(START_TIME, T, K);
+  /* schedule */
+  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
 
+  /* output */
   [% IF client.get_named_arg('filter') == 'anpf' %]
   FlexiParticleFilterNetCDFBuffer* bufOutput = NULL;
   if (ENABLE_OUTPUT) {
-    bufOutput = new FlexiParticleFilterNetCDFBuffer(m, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+    bufOutput = new FlexiParticleFilterNetCDFBuffer(m, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
   [% ELSE %]
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
   if (ENABLE_OUTPUT) {
-    bufOutput = new ParticleFilterNetCDFBuffer(m, P, Y, append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+    bufOutput = new ParticleFilterNetCDFBuffer(m, P, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
   [% END %]
 
   /* resampler */
   [% IF client.get_named_arg('with-mpi') %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler base(C);
+    MetropolisResampler base(C, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler base;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler base(ENABLE_SORT);
+    MultinomialResampler base(ENABLE_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler base(ENABLE_SORT);
+    SystematicResampler base(ENABLE_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler base(ENABLE_SORT);
+    StratifiedResampler base(ENABLE_SORT, ESS_REL);
     [% END %]
-    DistributedResampler<BOOST_TYPEOF(base)> resam(&base);
+    DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL);
   [% ELSE %]
     [% IF client.get_named_arg('resampler') == 'kernel' %]
     real h;
@@ -138,18 +138,18 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(m.getDynSize(), P);
     }
-    StratifiedResampler base(ENABLE_SORT);
-    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    MultinomialResampler base(ENABLE_SORT, ESS_REL);
+    KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, ENABLE_SHRINK, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler resam(C);
+    MetropolisResampler resam(C, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT);
+    MultinomialResampler resam(ENABLE_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(ENABLE_SORT);
+    SystematicResampler resam(ENABLE_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT);
+    StratifiedResampler resam(ENABLE_SORT, ESS_REL);
     [% END %]
   [% END %]
   
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
 
   [% IF client.get_named_arg('filter') == 'pf1' %]
-  BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, ESS_REL, out)));
+  BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'anpf' %]
     /* stopper */
     [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -176,9 +176,9 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('stopper') == 'var' %]
     VarStopper stopper(REL_THRESHOLD, MAX_P);
     [% END %]
-  BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, ESS_REL, &stopper, BLOCK_P, out)));
+  BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, out)));
   [% ELSE %]
-  BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, ESS_REL, out)));
+  BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
   [% END %]
 
   [% IF client.get_named_arg('with-gperftools') %]
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   TicToc timer;
   
-  filter->filter(rng, START_TIME, T, K, s, bufInit);
+  filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
   synchronize();
   
   /* output timing results */

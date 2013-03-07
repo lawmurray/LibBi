@@ -20,7 +20,7 @@ namespace bi {
  * @tparam V3 Integer vector type.
  * @tparam PrePermute Do pre-permute step?
  *
- * @param rng Random number generators.
+ * @param[in,out] rng Random number generators.
  * @param lws Log-weights.
  * @param as[out] Ancestry.
  * @param B Number of steps to take.

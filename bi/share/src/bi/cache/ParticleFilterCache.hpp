@@ -13,6 +13,9 @@
 #include "AncestryCache.hpp"
 #include "../buffer/ParticleFilterNetCDFBuffer.hpp"
 
+#include "boost/serialization/split_member.hpp"
+#include "boost/serialization/base_object.hpp"
+
 namespace bi {
 /**
  * Cache for ParticleFilterNetCDFBuffer reads and writes, and efficiently
@@ -27,6 +30,8 @@ namespace bi {
 template<class IO1 = ParticleFilterNetCDFBuffer, Location CL = ON_HOST>
 class ParticleFilterCache: public SimulatorCache<IO1,CL> {
 public:
+  using SimulatorCache<IO1,CL>::writeState;
+
   /**
    * Vector type.
    */
@@ -87,19 +92,12 @@ public:
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * Read resample flag.
-   *
-   * @param t Time index.
-   *
-   * @return Was resampling performed at this time?
+   * @copydoc ParticleFilterNetCDFBuffer::readResample()
    */
   int readResample(const int t) const;
 
   /**
-   * Write resample flag.
-   *
-   * @param t Time index.
-   * @param r Was resampling performed at this time?
+   * @copydoc ParticleFilterNetCDFBuffer::writeResample()
    */
   void writeResample(const int t, const int& r);
 
@@ -115,7 +113,10 @@ public:
   template<class V1>
   void writeResamples(const int t, const V1 r);
 
-  void writeLL(const double ll);
+  /**
+   * @copydoc ParticleFilterNetCDFBuffer::writeLL()
+   */
+  void writeLL(const real ll);
 
   /**
    * @copydoc AncestryCache::readTrajectory()
@@ -137,6 +138,11 @@ public:
    */
   template<class B, Location L, class V1>
   void writeState(const int t, const State<B,L>& s, const V1 as);
+
+  /**
+   * Swap the contents of the cache with that of another.
+   */
+  void swap(ParticleFilterCache<IO1,CL>& o);
 
   /**
    * Clear cache.
@@ -173,6 +179,24 @@ private:
    * Output buffer.
    */
   IO1* out;
+
+  /**
+   * Serialize.
+   */
+  template<class Archive>
+  void save(Archive& ar, const unsigned version) const;
+
+  /**
+   * Restore from serialization.
+   */
+  template<class Archive>
+  void load(Archive& ar, const unsigned version);
+
+  /*
+   * Boost.Serialization requirements.
+   */
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+  friend class boost::serialization::access;
 };
 
 /**
@@ -315,7 +339,7 @@ void bi::ParticleFilterCache<IO1,CL>::writeResamples(const int t,
 }
 
 template<class IO1, bi::Location CL>
-inline void bi::ParticleFilterCache<IO1,CL>::writeLL(const double ll) {
+inline void bi::ParticleFilterCache<IO1,CL>::writeLL(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
   }
@@ -337,17 +361,25 @@ void bi::ParticleFilterCache<IO1,CL>::writeState(const int t,
 }
 
 template<class IO1, bi::Location CL>
+void bi::ParticleFilterCache<IO1,CL>::swap(ParticleFilterCache<IO1,CL>& o) {
+  SimulatorCache<IO1,CL>::swap(o);
+  ancestryCache.swap(o.ancestryCache);
+  resampleCache.swap(o.resampleCache);
+  logWeightsCache.swap(o.logWeightsCache);
+}
+
+template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::clear() {
+  SimulatorCache<IO1,CL>::clear();
   ancestryCache.clear();
   resampleCache.clear();
-  SimulatorCache<IO1,CL>::clear();
 }
 
 template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::empty() {
+  SimulatorCache<IO1,CL>::empty();
   ancestryCache.empty();
   resampleCache.empty();
-  SimulatorCache<IO1,CL>::empty();
 }
 
 template<class IO1, bi::Location CL>
@@ -358,6 +390,24 @@ void bi::ParticleFilterCache<IO1,CL>::flush() {
   //ancestryCache.flush();
   resampleCache.flush();
   SimulatorCache<IO1,CL>::flush();
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
+  ar & ancestryCache;
+  ar & resampleCache;
+  save_resizable_vector(ar, version, logWeightsCache);
+}
+
+template<class IO1, bi::Location CL>
+template<class Archive>
+void bi::ParticleFilterCache<IO1,CL>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
+  ar & ancestryCache;
+  ar & resampleCache;
+  load_resizable_vector(ar, version, logWeightsCache);
 }
 
 #endif

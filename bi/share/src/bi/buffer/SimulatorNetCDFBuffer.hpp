@@ -293,7 +293,7 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {
@@ -352,7 +352,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {

@@ -96,7 +96,7 @@ for a kernel density resampler (Liu & West 2001).
 
 =back
 
-=item C<--ess-rel> (default 1)
+=item C<--ess-rel> (default 0.5)
 
 Use effective sample size (ESS) resampling condition. Particles will only be
 resampled if ESS is below this proportion of C<P>.
@@ -209,7 +209,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'ess-rel',
       type => 'float',
-      default => 1.0
+      default => 0.5
     },
     {
       name => 'enable-sort',

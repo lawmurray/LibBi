@@ -136,7 +136,7 @@ void bi::OptimiserNetCDFBuffer::readState(const VarType type, const int k,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {
@@ -187,7 +187,7 @@ void bi::OptimiserNetCDFBuffer::writeState(const VarType type, const int k,
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = m.getVarStart(type, id);
+    start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {

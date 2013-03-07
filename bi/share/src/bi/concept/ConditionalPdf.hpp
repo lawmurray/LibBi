@@ -25,7 +25,7 @@ struct ConditionalPdf {
    * @tparam V1 Vector type.
    * @tparam V2 Vector type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param x1 \f$\mathbf{x}_1\f$.
    * @param[out] x2 \f$\mathbf{x}_2 \sim p(X_2\,|\,\mathbf{x}_1)\f$.
    */

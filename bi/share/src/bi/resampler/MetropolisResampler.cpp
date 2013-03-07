@@ -7,7 +7,8 @@
  */
 #include "MetropolisResampler.hpp"
 
-bi::MetropolisResampler::MetropolisResampler(const int B) : B(B) {
+bi::MetropolisResampler::MetropolisResampler(const int B, const double essRel) :
+    Resampler(essRel), B(B) {
   //
 }
 

@@ -42,7 +42,7 @@ public:
    *
    * @tparam M2 Matrix type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param K Number of components.
    * @param X Samples.
    * @param eps \f$\epsilon\f$ Threshold on relative likelihood change between
@@ -63,7 +63,7 @@ public:
    * @tparam M2 Matrix type.
    * @tparam V2 Vector type.
    *
-   * @param rng Random number generator.
+   * @param[in,out] rng Random number generator.
    * @param K Number of components.
    * @param X Samples.
    * @param y Weights.

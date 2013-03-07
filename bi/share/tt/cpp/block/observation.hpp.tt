@@ -10,7 +10,7 @@
 
 [%-create_block_typelist(block)-%]
 
-#include "bi/buffer/Mask.hpp"
+#include "bi/state/Mask.hpp"
 
 /**
  * Block: [% block.get_name %].

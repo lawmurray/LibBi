@@ -12,7 +12,7 @@ namespace bi {
 /**
  * Classic fourth order Runge-Kutta integrator.
  *
- * @ingroup math_ode
+ * @ingroup method_updater
  *
  * @tparam B Model type.
  * @tparam S Action type list.

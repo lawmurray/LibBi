@@ -64,6 +64,13 @@ public:
   template<class M1>
   void writeStd(const int t, const M1 S);
 
+  /**
+   * Write marginal log-likelihood estimate.
+   *
+   * @param ll Marginal log-likelihood estimate.
+   */
+  void writeLL(const real ll);
+
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -105,6 +112,11 @@ protected:
    * Square-root covariance variable.
    */
   NcVar* SVar;
+
+  /**
+   * Marginal log-likelihood estimate variable.
+   */
+  NcVar* llVar;
 };
 }
 

@@ -155,8 +155,28 @@ sub exec {
             die("cannot find '$name'\n");
         }
     } else {
-        print("General help\n");
+        $self->_general_help;
     }
+}
+
+sub _general_help {
+    my $self = shift;
+        print <<End;
+Usage: bi <client> [options]
+
+where <client> is one of:
+  * draw
+  * filter
+  * help
+  * optimise
+  * package
+  * rewrite
+  * sample
+  * simulate
+
+Type 'bi help <client>' for help on a particular client. For more information
+on using the help client type 'bi help help'.
+End
 }
 
 1;

@@ -18,7 +18,7 @@ namespace bi {
  * @tparam S Action type list.
  * @tparam T1 Scalar type.
  *
- * @param rng Random number generator.
+ * @param[in,out] rng Random number generator.
  * @param t1 Start time.
  * @param t2 End time.
  * @param[in,out] s State.

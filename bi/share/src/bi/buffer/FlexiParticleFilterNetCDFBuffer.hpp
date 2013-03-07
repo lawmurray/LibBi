@@ -77,6 +77,13 @@ public:
   template<class V1>
   void writeResamples(const int t, const V1 r);
 
+  /**
+   * Write marginal log-likelihood estimate.
+   *
+   * @param ll Marginal log-likelihood estimate.
+   */
+  void writeLL(const real ll);
+
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -102,6 +109,11 @@ protected:
    * Resampling variable.
    */
   NcVar* rVar;
+
+  /**
+   * Marginal log-likelihood estimate variable.
+   */
+  NcVar* llVar;
 };
 }
 
