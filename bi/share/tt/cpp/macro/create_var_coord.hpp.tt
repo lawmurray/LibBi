@@ -25,7 +25,7 @@ public:
   CUDA_FUNC_BOTH [% class_name %]([% FOREACH dim IN var.get_dims %]const int [% dim.get_name %][% loop.index %][% ", " UNLESS loop.last %][% END %]);
   [% END %]
 
-  [% IF var.num_dims > 1 %]
+  [% IF var.num_dims != 1 %]
   /**
    * Construct from serial index.
    *
@@ -127,7 +127,7 @@ inline [% class_name %]::[% class_name %]([% FOREACH dim IN var.get_dims %]const
 }
 [% END %]
 
-[% IF var.num_dims > 1 %]
+[% IF var.num_dims != 1 %]
 inline [% class_name %]::[% class_name %](const int ix) {
   setIndex(ix);
 }
