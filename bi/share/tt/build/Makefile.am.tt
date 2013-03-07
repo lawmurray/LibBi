@@ -65,7 +65,6 @@ libbi_a_SOURCES = \
   src/bi/buffer/SMC2NetCDFBuffer.cpp \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
   src/bi/buffer/SparseInputNetCDFBuffer.cpp \
-  src/bi/cache/AncestryCache.cpp \
   src/bi/cache/Cache.cpp \
   src/bi/host/shared_host.cpp \
   src/bi/host/math/cblas.cpp \

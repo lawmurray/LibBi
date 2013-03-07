@@ -164,7 +164,7 @@ private:
   /**
    * Ancestry cache.
    */
-  AncestryCache ancestryCache;
+  AncestryCache<CL> ancestryCache;
 
   /**
    * Resampling cache.

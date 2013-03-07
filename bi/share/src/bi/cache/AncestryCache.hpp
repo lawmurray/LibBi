@@ -24,7 +24,7 @@ namespace bi {
  *
  * @ingroup io_cache
  *
- * @tparam B Model type.
+ * @tparam CL Cache location.
  *
  * Particles are stored in a matrix with rows indexing particles and
  * columns indexing variables. Whenever particles for a new time are added,
@@ -37,8 +37,14 @@ namespace bi {
  * allocations and deallocations, which have dominated execution time in
  * previous implementations.
  */
+template<Location CL = ON_HOST>
 class AncestryCache {
 public:
+  /**
+   * Matrix type.
+   */
+  typedef typename loc_matrix<CL,real>::type matrix_type;
+
   /**
    * Constructor.
    */
@@ -47,12 +53,12 @@ public:
   /**
    * Shallow copy constructor.
    */
-  AncestryCache(const AncestryCache& o);
+  AncestryCache(const AncestryCache<CL>& o);
 
   /**
    * Deep assignment operator.
    */
-  AncestryCache& operator=(const AncestryCache& o);
+  AncestryCache<CL>& operator=(const AncestryCache<CL>& o);
 
   /**
    * Size of the cache (number of time points represented).
@@ -85,7 +91,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(AncestryCache& o);
+  void swap(AncestryCache<CL>& o);
 
   /**
    * Clear the cache.
@@ -171,7 +177,7 @@ private:
   /**
    * All cached particles. Rows index particles, columns index variables.
    */
-  host_matrix<real,-1,-1,-1,1> particles;
+  matrix_type particles;
 
   /**
    * Ancestry index. Each entry, corresponding to a row in @p particles,
@@ -243,12 +249,49 @@ private:
 #include "../math/serialization.hpp"
 #include "../primitive/vector_primitive.hpp"
 
-inline int bi::AncestryCache::size() const {
+#include <iomanip>
+
+template<bi::Location CL>
+bi::AncestryCache<CL>::AncestryCache() :
+    particles(0, 0), size1(0), maxLegacy(0), numOccupied(0), q(0) {
+  //
+}
+
+template<bi::Location CL>
+bi::AncestryCache<CL>::AncestryCache(const AncestryCache<CL>& o) :
+    particles(o.particles), ancestors(o.ancestors), legacies(o.legacies), current(
+        o.current), size1(o.size1), maxLegacy(0), numOccupied(o.numOccupied), q(
+        o.q) {
+  //
+}
+
+template<bi::Location CL>
+bi::AncestryCache<CL>& bi::AncestryCache<CL>::operator=(const AncestryCache<CL>& o) {
+  particles.resize(o.particles.size1(), o.particles.size2(), false);
+  ancestors.resize(o.ancestors.size(), false);
+  legacies.resize(o.legacies.size(), false);
+  current.resize(o.current.size(), false);
+
+  particles = o.particles;
+  ancestors = o.ancestors;
+  legacies = o.legacies;
+  current = o.current;
+  size1 = o.size1;
+  maxLegacy = o.maxLegacy;
+  numOccupied = o.numOccupied;
+  q = o.q;
+
+  return *this;
+}
+
+template<bi::Location CL>
+inline int bi::AncestryCache<CL>::size() const {
   return size1;
 }
 
+template<bi::Location CL>
 template<class M1, class V1>
-void bi::AncestryCache::prune(const M1 X, const V1 as, const bool r) {
+void bi::AncestryCache<CL>::prune(const M1 X, const V1 as, const bool r) {
   if (maxLegacy == 0 || (r/* && numSlots() - numNodes() < X.size1()*/)) {
     ++maxLegacy;
     numOccupied = 0;
@@ -265,8 +308,9 @@ void bi::AncestryCache::prune(const M1 X, const V1 as, const bool r) {
   }
 }
 
+template<bi::Location CL>
 template<class M1>
-void bi::AncestryCache::enlarge(const M1 X) {
+void bi::AncestryCache<CL>::enlarge(const M1 X) {
   int oldSize = particles.size1();
   int newSize = numOccupied + X.size1();
   if (newSize > oldSize) {
@@ -283,8 +327,44 @@ void bi::AncestryCache::enlarge(const M1 X) {
   BI_ASSERT(particles.size1() == legacies.size());
 }
 
+template<bi::Location CL>
+void bi::AncestryCache<CL>::swap(AncestryCache<CL>& o) {
+  particles.swap(o.particles);
+  ancestors.swap(o.ancestors);
+  legacies.swap(o.legacies);
+  current.swap(o.current);
+  std::swap(size1, o.size1);
+  std::swap(maxLegacy, o.maxLegacy);
+  std::swap(usecs, o.usecs);
+  std::swap(numOccupied, o.numOccupied);
+  std::swap(q, o.q);
+}
+
+template<bi::Location CL>
+void bi::AncestryCache<CL>::clear() {
+  legacies.clear();
+  current.resize(0, false);
+  size1 = 0;
+  maxLegacy = 0;
+  numOccupied = 0;
+  q = 0;
+}
+
+template<bi::Location CL>
+void bi::AncestryCache<CL>::empty() {
+  particles.resize(0, 0, false);
+  ancestors.resize(0, false);
+  legacies.resize(0, false);
+  current.resize(0, false);
+  size1 = 0;
+  maxLegacy = 0;
+  numOccupied = 0;
+  q = 0;
+}
+
+template<bi::Location CL>
 template<class M1>
-void bi::AncestryCache::readTrajectory(const int p, M1 X) const {
+void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
   /* pre-conditions */
   BI_ASSERT(X.size1() == particles.size2());
   BI_ASSERT(X.size2() >= size());
@@ -303,8 +383,9 @@ void bi::AncestryCache::readTrajectory(const int p, M1 X) const {
   }
 }
 
+template<bi::Location CL>
 template<class B, bi::Location L, class V1>
-void bi::AncestryCache::writeState(const int t, const State<B,L>& s,
+void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
     const V1 as, const bool r) {
   /* pre-condition */
   BI_ASSERT(t == this->size());
@@ -322,8 +403,9 @@ void bi::AncestryCache::writeState(const int t, const State<B,L>& s,
   }
 }
 
+template<bi::Location CL>
 template<class M1, class V1>
-void bi::AncestryCache::writeState(const M1 X, const V1 as, const bool r) {
+void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as, const bool r) {
   /* pre-conditions */
   BI_ASSERT(X.size1() == as.size());
   BI_ASSERT(!V1::on_device);
@@ -394,16 +476,76 @@ void bi::AncestryCache::writeState(const M1 X, const V1 as, const bool r) {
 #endif
 }
 
-inline int bi::AncestryCache::numSlots() const {
+template<bi::Location CL>
+void bi::AncestryCache<CL>::report() const {
+  int slots = numSlots();
+  int nodes = numNodes();
+  int freeBlocks = numFreeBlocks();
+  double largest = largestFreeBlock();
+  double frag;
+  if (slots == nodes) {
+    frag = 0.0;
+  } else {
+    frag = 1.0 - largest / (slots - nodes);
+  }
+
+  std::cerr << "AncestryCache: ";
+  std::cerr << slots << " slots, ";
+  std::cerr << nodes << " nodes, ";
+  std::cerr << freeBlocks << " free blocks, ";
+  std::cerr << std::setprecision(4) << frag << "% fragmentation, ";
+  std::cerr << usecs << " us last write.";
+  std::cerr << std::endl;
+}
+
+template<bi::Location CL>
+inline int bi::AncestryCache<CL>::numSlots() const {
   return particles.size1();
 }
 
-inline int bi::AncestryCache::numNodes() const {
+template<bi::Location CL>
+inline int bi::AncestryCache<CL>::numNodes() const {
   return numOccupied;
 }
 
+template<bi::Location CL>
+int bi::AncestryCache<CL>::numFreeBlocks() const {
+  int q, len = 0, blocks = 0;
+  for (q = 0; q < legacies.size(); ++q) {
+    if (legacies(q) < maxLegacy) {
+      ++len;
+    } else {
+      if (len > 0) {
+        ++blocks;
+      }
+      len = 0;
+    }
+  }
+  if (len > 0) {
+    ++blocks;
+  }
+  return blocks;
+}
+
+template<bi::Location CL>
+int bi::AncestryCache<CL>::largestFreeBlock() const {
+  int q, len = 0, maxLen = 0;
+  for (q = 0; q < legacies.size(); ++q) {
+    if (legacies(q) < maxLegacy) {
+      ++len;
+      if (len > maxLen) {
+        maxLen = len;
+      }
+    } else {
+      len = 0;
+    }
+  }
+  return maxLen;
+}
+
+template<bi::Location CL>
 template<class Archive>
-void bi::AncestryCache::save(Archive& ar, const unsigned version) const {
+void bi::AncestryCache<CL>::save(Archive& ar, const unsigned version) const {
   save_resizable_matrix(ar, version, particles);
   save_resizable_vector(ar, version, ancestors);
   save_resizable_vector(ar, version, legacies);
@@ -414,8 +556,9 @@ void bi::AncestryCache::save(Archive& ar, const unsigned version) const {
   ar & q;
 }
 
+template<bi::Location CL>
 template<class Archive>
-void bi::AncestryCache::load(Archive& ar, const unsigned version) {
+void bi::AncestryCache<CL>::load(Archive& ar, const unsigned version) {
   load_resizable_matrix(ar, version, particles);
   load_resizable_vector(ar, version, ancestors);
   load_resizable_vector(ar, version, legacies);
