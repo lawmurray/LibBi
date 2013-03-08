@@ -169,7 +169,7 @@ CUDA_FUNC_GLOBAL void bi::kernelDOPRI5(const T1 t1, const T1 t2, State<B,ON_DEVI
       } else {
         /* step was accepted */
         t += h; // slightly faster to do this here, saves headOfTraj check
-        h *= bi::min(facr, bi::max(facl, bi::exp(beta*logfacold + logsafe - logfac11))); // bound
+        h *= bi::min(facr, bi::max(facl, bi::exp(::beta*logfacold + logsafe - logfac11))); // bound
         logfacold = BI_REAL(0.5)*bi::log(bi::max(e2, BI_REAL(1.0e-8)));
       }
     }

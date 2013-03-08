@@ -2,8 +2,8 @@
  * @file
  *
  * Global variables, held in constant device memory, for ODE integrators.
- * Adapted form IntegratorT from Blake Ashby <bmashby@stanford.edu>, see
- * NonStiffIntegrator.
+ * Adapted from IntegratorT from Blake Ashby <bmashby@stanford.edu>, see
+ * NonStiffIntegrator there.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$

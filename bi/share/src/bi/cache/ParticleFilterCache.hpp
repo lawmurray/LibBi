@@ -33,11 +33,6 @@ public:
   using SimulatorCache<IO1,CL>::writeState;
 
   /**
-   * Vector type.
-   */
-  typedef typename temp_host_vector<real>::type vector_type;
-
-  /**
    * Constructor.
    *
    * @param out output buffer.
@@ -65,7 +60,7 @@ public:
    *
    * @return The most recent log-weights vector to be written to the cache.
    */
-  const vector_type getLogWeights() const;
+  const typename Cache1D<real,CL>::vector_reference_type getLogWeights() const;
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::readLogWeights()
@@ -138,7 +133,8 @@ public:
    * @param r Was resampling performed?
    */
   template<class B, Location L, class V1>
-  void writeState(const int t, const State<B,L>& s, const V1 as, const bool r);
+  void writeState(const int t, const State<B,L>& s, const V1 as,
+      const bool r);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -169,12 +165,12 @@ private:
   /**
    * Resampling cache.
    */
-  Cache1D<real,CL> resampleCache;
+  Cache1D<int,CL> resampleCache;
 
   /**
    * Most recent log-weights.
    */
-  vector_type logWeightsCache;
+  Cache1D<real,CL> logWeightsCache;
 
   /**
    * Output buffer.
@@ -243,11 +239,8 @@ bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(IO1* out) :
 template<class IO1, bi::Location CL>
 bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(
     const ParticleFilterCache<IO1,CL>& o) :
-    SimulatorCache<IO1,CL>(o),
-    ancestryCache(o.ancestryCache),
-    resampleCache(o.resampleCache),
-    logWeightsCache(o.logWeightsCache),
-    out(o.out) {
+    SimulatorCache<IO1,CL>(o), ancestryCache(o.ancestryCache), resampleCache(
+        o.resampleCache), logWeightsCache(o.logWeightsCache), out(o.out) {
   //
 }
 
@@ -255,8 +248,6 @@ template<class IO1, bi::Location CL>
 bi::ParticleFilterCache<IO1,CL>& bi::ParticleFilterCache<IO1,CL>::operator=(
     const ParticleFilterCache<IO1,CL>& o) {
   SimulatorCache<IO1,CL>::operator=(o);
-
-  logWeightsCache.resize(o.logWeightsCache.size(), false);
 
   ancestryCache = o.ancestryCache;
   resampleCache = o.resampleCache;
@@ -272,9 +263,9 @@ bi::ParticleFilterCache<IO1,CL>::~ParticleFilterCache() {
 }
 
 template<class IO1, bi::Location CL>
-const typename bi::ParticleFilterCache<IO1,CL>::vector_type bi::ParticleFilterCache<
+const typename bi::Cache1D<real,CL>::vector_reference_type bi::ParticleFilterCache<
     IO1,CL>::getLogWeights() const {
-  return logWeightsCache;
+  return logWeightsCache.get(0, logWeightsCache.size());
 }
 
 template<class IO1, bi::Location CL>
@@ -293,8 +284,8 @@ void bi::ParticleFilterCache<IO1,CL>::writeLogWeights(const int t,
   if (out != NULL) {
     out->writeLogWeights(t, lws);
   }
-  logWeightsCache.resize(lws.size(), false);
-  logWeightsCache = lws;
+  logWeightsCache.resize(lws.size());
+  logWeightsCache.set(0, lws.size(), lws);
 }
 
 template<class IO1, bi::Location CL>
@@ -395,8 +386,9 @@ void bi::ParticleFilterCache<IO1,CL>::flush() {
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
+void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar,
+    const unsigned version) const {
+  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
   ar & resampleCache;
   save_resizable_vector(ar, version, logWeightsCache);
@@ -404,8 +396,9 @@ void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar, const unsigned version) 
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::ParticleFilterCache<IO1,CL>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
+void bi::ParticleFilterCache<IO1,CL>::load(Archive& ar,
+    const unsigned version) {
+  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
   ar & resampleCache;
   load_resizable_vector(ar, version, logWeightsCache);

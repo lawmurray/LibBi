@@ -292,6 +292,9 @@ inline int bi::AncestryCache<CL>::size() const {
 template<bi::Location CL>
 template<class M1, class V1>
 void bi::AncestryCache<CL>::prune(const M1 X, const V1 as, const bool r) {
+  /* pre-conditions */
+  BI_ASSERT(!V1::on_device);
+
   if (maxLegacy == 0 || (r/* && numSlots() - numNodes() < X.size1()*/)) {
     ++maxLegacy;
     numOccupied = 0;
@@ -393,11 +396,10 @@ void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
   typedef typename temp_host_matrix<real>::type host_matrix_type;
   typedef typename temp_host_vector<int>::type host_vector_type;
 
-  if (L == ON_DEVICE || V1::on_device) {
-    const host_matrix_type X1(s.getDyn());
+  if (V1::on_device) {
     const host_vector_type as1(as);
     synchronize();
-    writeState(X1, as1, r);
+    writeState(s.getDyn(), as1, r);
   } else {
     writeState(s.getDyn(), as, r);
   }

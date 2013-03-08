@@ -78,6 +78,18 @@ public:
   void set(const int p, const T1& x);
 
   /**
+   * Set subrange of pages.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param p Starting index of range.
+   * @param len Length of range.
+   * @param x Range.
+   */
+  template<class V1>
+  void set(const int p, const int len, const V1 x);
+
+  /**
    * Resize cache.
    */
   void resize(const int size);
@@ -158,7 +170,7 @@ inline const typename bi::Cache1D<T1,CL>::vector_reference_type bi::Cache1D<
 }
 
 template<class T1, bi::Location CL>
-inline void bi::Cache1D<T1,CL>::set(const int p, const T1& x) {
+void bi::Cache1D<T1,CL>::set(const int p, const T1& x) {
   /* pre-condition */
   BI_ASSERT(p >= 0);
 
@@ -169,6 +181,22 @@ inline void bi::Cache1D<T1,CL>::set(const int p, const T1& x) {
   setDirty(p);
   setValid(p);
 }
+
+template<class T1, bi::Location CL>
+template<class V1>
+void bi::Cache1D<T1,CL>::set(const int p, const int len, const V1 x) {
+  /* pre-conditions */
+  BI_ASSERT(p >= 0);
+  BI_ASSERT(x.size() == len);
+
+  if (p + len > size()) {
+    resize(p + len);
+  }
+  subrange(pages, p, len) = x;
+  setDirty(p, len);
+  setValid(p, len);
+}
+
 
 template<class T1, bi::Location CL>
 void bi::Cache1D<T1,CL>::resize(const int size) {
