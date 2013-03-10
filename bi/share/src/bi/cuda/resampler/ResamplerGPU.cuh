@@ -10,6 +10,7 @@
 
 #include "ResamplerKernel.cuh"
 #include "../../primitive/vector_primitive.hpp"
+#include "../../primitive/matrix_primitive.hpp"
 #include "../../math/sim_temp_vector.hpp"
 
 template<class V1, class V2>
@@ -169,26 +170,6 @@ void bi::ResamplerGPU::postPermute(const V1 as, const V2 is, V3 cs) {
   Dg.x = (P + Db.x - 1)/Db.x;
 
   kernelResamplerPostPermute<<<Dg,Db>>>(as, is, cs);
-  CUDA_CHECK;
-}
-
-template<class V1, class M1>
-void bi::ResamplerGPU::copy(const V1 as, M1 X) {
-  /* pre-condition */
-  BI_ASSERT(as.size() <= X.size1());
-  BI_ASSERT(V1::on_device);
-  BI_ASSERT(M1::on_device);
-
-  const int P = as.size();
-  const int N = X.size2();
-
-  dim3 Dg, Db;
-  Db.x = bi::min(deviceIdealThreadsPerBlock(), P);
-  Dg.x = (P + Db.x - 1)/Db.x;
-  Db.y = 1;
-  Dg.y = N;
-
-  kernelResamplerCopy<<<Dg,Db>>>(as, X);
   CUDA_CHECK;
 }
 

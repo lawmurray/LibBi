@@ -152,21 +152,4 @@ void bi::ResamplerHost::permute(V1 as) {
   }
 }
 
-template<class V1, class M1>
-void bi::ResamplerHost::copy(const V1 as, M1 X) {
-  /* pre-condition */
-  BI_ASSERT(!V1::on_device);
-  BI_ASSERT(!M1::on_device);
-  BI_ASSERT(as.size() <= X.size1());
-
-  const int P = as.size();
-
-  #pragma omp parallel for
-  for (int p = 0; p < P; ++p) {
-    if (as(p) != p) {
-      row(X, p) = row(X, as(p));
-    }
-  }
-}
-
 #endif

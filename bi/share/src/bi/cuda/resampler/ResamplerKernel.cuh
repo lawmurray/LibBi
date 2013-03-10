@@ -74,18 +74,6 @@ template<class V1, class V2, class V3>
 CUDA_FUNC_GLOBAL void kernelResamplerPostPermute(const V1 as, const V2 is,
     V3 out);
 
-/**
- * ResamplerGPU::copy() kernel.
- *
- * @tparam V1 Integer vector type.
- * @tparam M1 Matrix type.
- *
- * @param as Ancestry.
- * @param[in,out] X Matrix to copy.
- */
-template<class V1, class M1>
-CUDA_FUNC_GLOBAL void kernelResamplerCopy(const V1 as, M1 X);
-
 }
 
 template<class V1, class V2>
@@ -175,17 +163,6 @@ CUDA_FUNC_GLOBAL void bi::kernelResamplerPostPermute(const V1 as, const V2 is,
      * or this would cause a race condition with the read of as(p)
      * above, so this cannot be done in-place */
     out(next) = a;
-  }
-}
-
-template<class V1, class M1>
-CUDA_FUNC_GLOBAL void bi::kernelResamplerCopy(const V1 as, M1 X) {
-  const int p = blockIdx.x*blockDim.x + threadIdx.x;
-  const int id = blockIdx.y*blockDim.y + threadIdx.y;
-
-  if (p < X.size1() && id < X.size2()/* && as(p) != p*/) {
-    // ^ extra condition above would destroy coalesced writes
-    X(p, id) = X(as(p), id);
   }
 }
 

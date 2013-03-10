@@ -203,11 +203,69 @@ void sum_columns(const M1 X, V1 y);
 template<class M1, class V1>
 void sum_rows(const M1 X, V1 y);
 
+/**
+ * Gather rows of matrix.
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map Map.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map, sets <tt>row(Y, i) = row(X, map[i])</tt>.
+ * Results are nondeterministic if @p X and @p Y are the same matrix, unless
+ * <tt>map[i] == i</tt> for all @c i.
+ */
+template<class V1, class M1, class M2>
+void gather_rows(const V1 as, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct gather_rows_impl {
+  template<class V1, class M1, class M2>
+  void func(const V1 as, const M1 X, M2 Y);
+};
+
+/**
+ * Scatter rows of matrix.
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map Map.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map, sets <tt>row(Y, map[i]) = row(X, i)</tt>.
+ * Results are nondeterministic if @p X and @p Y are the same matrix, unless
+ * <tt>map[i] == i</tt> for all @c i.
+ */
+template<class V1, class M1, class M2>
+void scatter_rows(const V1 map, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct scatter_rows_impl {
+  template<class V1, class M1, class M2>
+  void func(const V1 as, const M1 X, M2 Y);
+};
+
 }
 
 #include "repeated_range.hpp"
 #include "stuttered_range.hpp"
 #include "../math/sim_temp_vector.hpp"
+#include "../host/primitive/matrix_primitive.hpp"
+#ifdef __CUDACC__
+#include "../cuda/primitive/matrix_primitive.cuh"
+#endif
 
 #include "thrust/iterator/discard_iterator.h"
 
@@ -388,6 +446,28 @@ void bi::sum_rows(const M1 X, V1 y) {
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size2(), X.size1()));
 
   reduce_by_key(keys.begin(), keys.end(), X.begin(), discard, y.begin());
+}
+
+template<class V1, class M1, class M2>
+void bi::gather_rows(const V1 map, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map.size() <= Y.size1());
+  BI_ASSERT(X.size2() == Y.size2());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  gather_rows_impl<M2::location>::func(map, X, Y);
+}
+
+template<class V1, class M1, class M2>
+void bi::scatter_rows(const V1 map, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map.size() <= Y.size1());
+  BI_ASSERT(X.size2() == Y.size2());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  scatter_rows_impl<M2::location>::func(map, X, Y);
 }
 
 #endif

@@ -339,12 +339,6 @@ public:
    */
   template<class V1>
   static void permute(V1 as);
-
-  /**
-   * @copydoc Resampler::copy()
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 X);
 };
 
 /**
@@ -429,12 +423,6 @@ public:
    */
   template<class V1, class V2, class V3>
   static void postPermute(const V1 as, const V2 is, V3 cs);
-
-  /**
-   * @copydoc Resampler::copy()
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 s);
 };
 }
 
@@ -444,6 +432,7 @@ public:
 #endif
 
 #include "../primitive/vector_primitive.hpp"
+#include "../primitive/matrix_primitive.hpp"
 
 #include "thrust/inner_product.h"
 
@@ -518,11 +507,7 @@ void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
 
 template<class V1, class M1>
 void bi::Resampler::copy(const V1 as, M1 s) {
-  /* pre-condition */
-  BI_ASSERT(as.size() <= s.size1());
-
-  typedef typename boost::mpl::if_c<M1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::copy(as, s);
+  gather_rows(as, s, s);
 }
 
 template<class V1, class B, bi::Location L>
