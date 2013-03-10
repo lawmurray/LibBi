@@ -133,7 +133,7 @@ inline bool bi::Test::test(Random& rng) {
       typename temp_host_vector<int>::type vtemp(P);
       typename temp_host_vector<int>::type temp = vtemp.ref();
       temp = os;
-      bi::scatter(temp,ps,os);
+      bi::scatter(ps,temp,os);
     }
   }
 

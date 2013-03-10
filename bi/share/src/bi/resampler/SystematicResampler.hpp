@@ -318,9 +318,8 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
     if (W > 0) {
       T1 a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
-      bi::adjacent_difference(Os, os);
-      temp = os;
-      bi::scatter(temp, ps, os);
+      bi::adjacent_difference(Os, temp);
+      bi::scatter(ps, temp, os);
 
 #ifndef NDEBUG
       int m = sum_reduce(os);
@@ -364,9 +363,8 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
     if (W > 0) {
       T1 a = rng.uniform((T1)0.0, (T1)1.0);  // offset into strata
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
-      bi::adjacent_difference(Os, os);
-      temp = os;
-      bi::scatter(temp, ps, os);
+      bi::adjacent_difference(Os, temp);
+      bi::scatter(ps, temp, os);
 
 #ifndef NDEBUG
       int m = sum_reduce(os);
@@ -420,9 +418,8 @@ void bi::SystematicResampler::offspring(Random& rng, const V1 lws, V2 os,
       T1 a = n * c / W - strata;
 
       op_elements(Ws, Os, resample_cumulative_offspring<T1>(a, W, n));
-      bi::adjacent_difference(Os, os);
-      temp = os;
-      bi::scatter(temp, ps, os);
+      bi::adjacent_difference(Os, temp);
+      bi::scatter(ps, temp, os);
 
 #ifndef NDEBUG
       int m = sum_reduce(os);

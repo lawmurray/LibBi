@@ -320,9 +320,8 @@ void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
     T1 W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
       op(rng, Ws, Os, n);
-      bi::adjacent_difference(Os, os);
-      temp = os;  ///@todo Why copy and not just write straight into temp on above line?
-      bi::scatter(temp, ps, os);
+      bi::adjacent_difference(Os, temp);
+      bi::scatter(ps, temp, os);
 
 #ifndef NDEBUG
       int m = sum_reduce(os);
@@ -365,9 +364,8 @@ void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
     T1 W = *(Ws.end() - 1);  // sum of weights
     if (W > 0) {
       op(rng, Ws, Os, n);
-      bi::adjacent_difference(Os, os);
-      temp = os;
-      bi::scatter(temp, ps, os);
+      bi::adjacent_difference(Os, temp);
+      bi::scatter(ps, temp, os);
 
 #ifndef NDEBUG
       int m = sum_reduce(os);

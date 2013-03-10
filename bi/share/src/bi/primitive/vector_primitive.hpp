@@ -668,7 +668,7 @@ void gather(const V1 map, const V2 input, V3 result);
  * @see thrust::scatter()
  */
 template<class V1, class V2, class V3>
-void scatter(const V1 input, const V2 map, V3 result);
+void scatter(const V2 map, const V1 input, V3 result);
 
 /**
  * Adjacent difference.
@@ -1122,7 +1122,7 @@ inline void bi::gather(const V1 map, const V2 input, V3 result) {
 }
 
 template<class V1, class V2, class V3>
-inline void bi::scatter(const V1 input, const V2 map, V3 result) {
+inline void bi::scatter(const V2 map, const V1 input, V3 result) {
   if (map.inc() == 1 && input.inc() == 1 && result.inc() == 1) {
     thrust::scatter(input.fast_begin(), input.fast_end(), map.fast_begin(),
         result.fast_begin());

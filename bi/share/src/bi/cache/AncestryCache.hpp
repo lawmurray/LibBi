@@ -248,6 +248,7 @@ private:
 #include "../math/view.hpp"
 #include "../math/serialization.hpp"
 #include "../primitive/vector_primitive.hpp"
+#include "../primitive/matrix_primitive.hpp"
 
 #include <iomanip>
 
@@ -393,7 +394,6 @@ void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
   /* pre-condition */
   BI_ASSERT(t == this->size());
 
-  typedef typename temp_host_matrix<real>::type host_matrix_type;
   typedef typename temp_host_vector<int>::type host_vector_type;
 
   if (V1::on_device) {
@@ -439,36 +439,18 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as, const bool r) {
 
   /* write new particles */
   current.resize(P, false);
-  p = 0;
-  while (p < P) {
-    /* starting index of writable range */
-    if (q >= legacies.size()) {
-      q = 0;
-    }
+  for (p = 0; p < P; ++p) {
+    /* search for free slot for this particle */
     while (legacies(q) == maxLegacy) {
-      ++q;
-      if (q >= legacies.size()) {
-        q = 0;
-      }
+      q = (q + 1) % legacies.size();
     }
-
-    /* length of writable range */
-    len = 1;
-    while (p + len < P && q + len < legacies.size()
-        && legacies(q + len) < maxLegacy) {
-      ++len;
-    }
-
-    /* write */
-    numOccupied += len;
-    rows(particles, q, len) = rows(X, p, len);
-    subrange(ancestors, q, len) = subrange(newAs, p, len);
-    set_elements(subrange(legacies, q, len), maxLegacy);
-    seq_elements(subrange(current, p, len), q);
-
-    p += len;
-    q += len;
+    legacies(q) = maxLegacy;
+    current(p) = q;
+    q = (q + 1) % legacies.size();
   }
+  bi::scatter(current, newAs, ancestors);
+  bi::scatter_rows(current, X, particles);
+  numOccupied += P;
   ++size1;
 
 #ifdef ENABLE_DIAGNOSTICS
