@@ -87,10 +87,10 @@ AC_ARG_ENABLE([diagnostics],
 AC_ARG_ENABLE([gperftools],
      [  --enable-gperftools    enable gperftools profiler],
      [case "${enableval}" in
-       yes) gperftool=true ;;
-       no)  gperftool=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-gperftool]) ;;
-     esac],[gperftool=false])
+       yes) gperftools=true ;;
+       no)  gperftools=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-gperftools]) ;;
+     esac],[gperftools=false])
      
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
