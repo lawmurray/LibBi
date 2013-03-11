@@ -128,18 +128,18 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(N, P);
     }
-    MultinomialResampler base(ENABLE_SORT);
-    KernelResampler<StratifiedResampler> resam(&base, h, ENABLE_SHRINK);
+    MultinomialResampler base(WITH_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, WITH_SHRINK);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler resam(C);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT);
+    MultinomialResampler resam(WITH_SORT);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(ENABLE_SORT);
+    SystematicResampler resam(WITH_SORT);
     [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT);
+    StratifiedResampler resam(WITH_SORT);
     [% END %]
         
     /* particle filter */

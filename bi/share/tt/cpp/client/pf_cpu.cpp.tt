@@ -123,11 +123,11 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler base;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler base(ENABLE_SORT, ESS_REL);
+    MultinomialResampler base(WITH_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler base(ENABLE_SORT, ESS_REL);
+    SystematicResampler base(WITH_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler base(ENABLE_SORT, ESS_REL);
+    StratifiedResampler base(WITH_SORT, ESS_REL);
     [% END %]
     DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL);
   [% ELSE %]
@@ -138,18 +138,18 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(m.getDynSize(), P);
     }
-    MultinomialResampler base(ENABLE_SORT, ESS_REL);
-    KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, ENABLE_SHRINK, ESS_REL);
+    MultinomialResampler base(WITH_SORT, ESS_REL);
+    KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler resam(C, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT, ESS_REL);
+    MultinomialResampler resam(WITH_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(ENABLE_SORT, ESS_REL);
+    SystematicResampler resam(WITH_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT, ESS_REL);
+    StratifiedResampler resam(WITH_SORT, ESS_REL);
     [% END %]
   [% END %]
   

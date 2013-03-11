@@ -46,6 +46,16 @@ public:
   typedef typename loc_matrix<CL,real>::type matrix_type;
 
   /**
+   * Integer vector type.
+   */
+  typedef typename loc_temp_vector<CL,int>::type int_vector_type;
+
+  /**
+   * Integer vector type on host.
+   */
+  typedef typename temp_host_vector<int>::type host_int_vector_type;
+
+  /**
    * Constructor.
    */
   AncestryCache();
@@ -184,19 +194,19 @@ private:
    * gives the index of the row in @p particles which holds the ancestor of
    * that particle.
    */
-  host_vector<int,-1,1> ancestors;
+  host_int_vector_type ancestors;
 
   /**
    * Legacies. Each entry, corresponding to a row in @p particles, gives the
    * latest time at which that particle is known to have a descendant.
    */
-  host_vector<int,-1,1> legacies;
+  host_int_vector_type legacies;
 
   /**
    * Current time index. Each entry gives the index of a row in @p particles,
    * that it holds a particle for the current time.
    */
-  host_vector<int,-1,1> current;
+  host_int_vector_type current;
 
   /**
    * Size of the cache (number of time points represented).
@@ -296,6 +306,8 @@ void bi::AncestryCache<CL>::prune(const M1 X, const V1 as, const bool r) {
   /* pre-conditions */
   BI_ASSERT(!V1::on_device);
 
+  host_int_vector_type current1(current);
+
   if (maxLegacy == 0 || (r/* && numSlots() - numNodes() < X.size1()*/)) {
     ++maxLegacy;
     numOccupied = 0;
@@ -318,7 +330,7 @@ void bi::AncestryCache<CL>::enlarge(const M1 X) {
   int oldSize = particles.size1();
   int newSize = numOccupied + X.size1();
   if (newSize > oldSize) {
-    newSize = oldSize + X.size1()/*2 * bi::max(oldSize, X.size1())*/;
+    newSize = /*oldSize + X.size1()*/2 * bi::max(oldSize, X.size1());
     particles.resize(newSize, X.size2(), true);
     ancestors.resize(newSize, true);
     legacies.resize(newSize, true);
@@ -394,15 +406,9 @@ void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
   /* pre-condition */
   BI_ASSERT(t == this->size());
 
-  typedef typename temp_host_vector<int>::type host_vector_type;
-
-  if (V1::on_device) {
-    const host_vector_type as1(as);
-    synchronize();
-    writeState(s.getDyn(), as1, r);
-  } else {
-    writeState(s.getDyn(), as, r);
-  }
+  host_int_vector_type as1(as);
+  synchronize(V1::on_device);
+  writeState(s.getDyn(), as1, r);
 }
 
 template<bi::Location CL>
@@ -418,7 +424,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as, const bool r) {
 #endif
 
   const int P = X.size1();
-  typename temp_host_vector<int>::type newAs(P);
+  host_int_vector_type newAs(P);
   int p, len, a;
 
   /* update ancestors and legacies */
@@ -449,7 +455,8 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as, const bool r) {
     q = (q + 1) % legacies.size();
   }
   bi::scatter(current, newAs, ancestors);
-  bi::scatter_rows(current, X, particles);
+  int_vector_type current1(current);
+  bi::scatter_rows(current1, X, particles);
   numOccupied += P;
   ++size1;
 

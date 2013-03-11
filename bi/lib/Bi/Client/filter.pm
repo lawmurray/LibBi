@@ -160,7 +160,7 @@ minimum ESS,
 
 =over 4
 
-=item C<--enable-sort> (default on)
+=item C<--with-sort> (default off)
 
 Sort weights prior to resampling.
 
@@ -177,7 +177,7 @@ unit covariance for the construction of the kernel density estimate. If
 C<--b-abs> is used they are not. A value of zero in either case will result
 in a rule-of-thumb bandwidth.
 
-=item C<--enable-shrink> (default on)
+=item C<--with-shrink> (default on)
 
 True to shrink the kernel density estimate to preserve covariance
 (Liu & West 2001).
@@ -212,9 +212,9 @@ our @CLIENT_OPTIONS = (
       default => 0.5
     },
     {
-      name => 'enable-sort',
+      name => 'with-sort',
       type => 'bool',
-      default => 1
+      default => 0
     },
     {
       name => 'b-abs',
@@ -227,7 +227,7 @@ our @CLIENT_OPTIONS = (
       default => 1.0
     },
     {
-      name => 'enable-shrink',
+      name => 'with-shrink',
       type => 'bool',
       default => 1
     },

@@ -56,7 +56,8 @@ public:
   /**
    * Get number of rows.
    */
-  CUDA_FUNC_BOTH int size1() const {
+  CUDA_FUNC_BOTH
+  int size1() const {
     return rows;
   }
 
@@ -64,7 +65,8 @@ protected:
   /**
    * Set number of rows.
    */
-  CUDA_FUNC_BOTH void setSize1(const int rows) {
+  CUDA_FUNC_BOTH
+  void setSize1(const int rows) {
     this->rows = rows;
   }
 
@@ -110,7 +112,8 @@ public:
   /**
    * Get number of columns.
    */
-  CUDA_FUNC_BOTH int size2() const {
+  CUDA_FUNC_BOTH
+  int size2() const {
     return cols;
   }
 
@@ -118,7 +121,8 @@ protected:
   /**
    * Set number of cols.
    */
-  CUDA_FUNC_BOTH void setSize2(const int cols) {
+  CUDA_FUNC_BOTH
+  void setSize2(const int cols) {
     this->cols = cols;
   }
 
@@ -164,7 +168,8 @@ public:
   /**
    * Get lead.
    */
-  CUDA_FUNC_BOTH int lead() const {
+  CUDA_FUNC_BOTH
+  int lead() const {
     return ld;
   }
 
@@ -172,7 +177,8 @@ protected:
   /**
    * Set lead.
    */
-  CUDA_FUNC_BOTH void setLead(const int ld) {
+  CUDA_FUNC_BOTH
+  void setLead(const int ld) {
     this->ld = ld;
   }
 
@@ -213,8 +219,9 @@ public:
   /**
    * Shallow copy.
    */
-  CUDA_FUNC_BOTH void copy(const gpu_matrix_handle<T,size1_value,size2_value,
-      lead_value,inc_value>& o);
+  CUDA_FUNC_BOTH
+  void copy(
+      const gpu_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>& o);
 
   /**
    * Access element.
@@ -224,13 +231,14 @@ public:
    *
    * @return Value of element at (i,j).
    */
-  CUDA_FUNC_BOTH T& operator()(const size_type i, const size_type j);
+  CUDA_FUNC_BOTH
+  T& operator()(const size_type i, const size_type j);
 
   /**
    * @copydoc operator()(const size_type, const size_type)
    */
-  CUDA_FUNC_BOTH const T& operator()(const size_type i, const size_type j)
-  const;
+  CUDA_FUNC_BOTH
+  const T& operator()(const size_type i, const size_type j) const;
 
   /**
    * Check if two handles are the same.
@@ -253,18 +261,21 @@ public:
    * Swaps the underlying data between the two matrices, updating strides and
    * sizes as appropriate. This is a pointer swap, no data is copied.
    */
-  CUDA_FUNC_BOTH void swap(gpu_matrix_handle<T,size1_value,size2_value,
-      lead_value,inc_value>& o);
+  CUDA_FUNC_BOTH
+  void swap(
+      gpu_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>& o);
 
   /**
    * Can the matrix be turned into a vector with vec()?
    */
-  CUDA_FUNC_BOTH bool can_vec() const;
+  CUDA_FUNC_BOTH
+  bool can_vec() const;
 
   /**
    * Are elements of the matrix stored contiguously?
    */
-  CUDA_FUNC_BOTH bool contiguous() const;
+  CUDA_FUNC_BOTH
+  bool contiguous() const;
 
 };
 
@@ -342,7 +353,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 inline bool bi::gpu_matrix_handle<T,size1_value,size2_value,lead_value,
     inc_value>::can_vec() const {
-  return this->lead() == this->size1()*this->inc();
+  return this->lead() == this->size1() * this->inc();
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -368,8 +379,8 @@ namespace bi {
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
     int lead_value = -1, int inc_value = -1>
-class gpu_matrix_reference: public gpu_matrix_handle<T,
-    size1_value,size2_value,lead_value,inc_value> {
+class gpu_matrix_reference: public gpu_matrix_handle<T,size1_value,
+    size2_value,lead_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -399,9 +410,10 @@ public:
    * instantiation of gpu_matrix_reference in constant memory on device,
    * where only default constructors are supported.
    */
-  CUDA_FUNC_BOTH gpu_matrix_reference(T* data = NULL,
-      const size_type rows = 0, const size_type cols = 0,
-      const size_type lead = -1, const size_type inc = 1);
+  CUDA_FUNC_BOTH
+  gpu_matrix_reference(T* data = NULL, const size_type rows = 0,
+      const size_type cols = 0, const size_type lead = -1,
+      const size_type inc = 1);
 
   /**
    * Shallow copy constructor.
@@ -409,8 +421,10 @@ public:
    * @note This seems required by CUDA, or matrices passed as kernel
    * arguments are not copied correctly.
    */
-  CUDA_FUNC_BOTH gpu_matrix_reference(const gpu_matrix_reference<T,
-      size1_value,size2_value,lead_value,inc_value>& o);
+  CUDA_FUNC_BOTH
+  gpu_matrix_reference(
+      const gpu_matrix_reference<T,size1_value,size2_value,lead_value,
+          inc_value>& o);
 
   /**
    * Assignment operator.
@@ -418,7 +432,7 @@ public:
   CUDA_FUNC_HOST
   gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& operator=(
       const gpu_matrix_reference<T,size1_value,size2_value,lead_value,
-      inc_value>& o);
+          inc_value>& o);
 
   /**
    * Generic assignment operator.
@@ -434,58 +448,66 @@ public:
    *
    * @return Reference to same object.
    */
-  CUDA_FUNC_BOTH gpu_matrix_reference<T,size1_value,size2_value,lead_value,
-      inc_value>& ref();
+  CUDA_FUNC_BOTH
+  gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& ref();
 
   /**
    * Retrieve as reference.
    *
    * @return Reference to same object.
    */
-  CUDA_FUNC_BOTH const gpu_matrix_reference<T,size1_value,size2_value,
-      lead_value,inc_value>& ref() const;
+  CUDA_FUNC_BOTH
+  const gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& ref() const;
 
   /**
    * Column-major iterator to beginning of matrix.
    */
-  CUDA_FUNC_HOST iterator begin();
+  CUDA_FUNC_HOST
+  iterator begin();
 
   /**
    * @copydoc begin()
    */
-  CUDA_FUNC_HOST const_iterator begin() const;
+  CUDA_FUNC_HOST
+  const_iterator begin() const;
 
   /**
    * Column-major iterator to end of matrix.
    */
-  CUDA_FUNC_HOST iterator end();
+  CUDA_FUNC_HOST
+  iterator end();
 
   /**
    * @copydoc end()
    */
-  CUDA_FUNC_HOST const_iterator end() const;
+  CUDA_FUNC_HOST
+  const_iterator end() const;
 
   /**
    * Row-major iterator to beginning of matrix. Note that row-major iterators
    * stride through memory.
    */
-  CUDA_FUNC_HOST row_iterator row_begin();
+  CUDA_FUNC_HOST
+  row_iterator row_begin();
 
   /**
    * @copydoc row_begin()
    */
-  CUDA_FUNC_HOST const_row_iterator row_begin() const;
+  CUDA_FUNC_HOST
+  const_row_iterator row_begin() const;
 
   /**
    * Row-major iterator to end of matrix. Note that row-major iterators
    * stride through memory.
    */
-  CUDA_FUNC_HOST row_iterator row_end();
+  CUDA_FUNC_HOST
+  row_iterator row_end();
 
   /**
    * @copydoc row_end()
    */
-  CUDA_FUNC_HOST const_row_iterator row_end() const;
+  CUDA_FUNC_HOST
+  const_row_iterator row_end() const;
 
   /**
    * Set all entries to zero.
@@ -530,11 +552,10 @@ inline bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>:
   //BI_ASSERT(cols >= 0);
   //BI_ASSERT(inc >= 1);
   //BI_ASSERT(lead < 0 || lead >= rows*inc);
-
   this->setBuf(data);
   this->setSize1(rows);
   this->setSize2(cols);
-  this->setLead((lead < 0) ? rows*inc : lead);
+  this->setLead((lead < 0) ? rows * inc : lead);
   this->setInc(inc);
 }
 
@@ -552,21 +573,19 @@ bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& bi::gp
     const gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& o) {
   /* pre-conditions */
   //BI_ASSERT(this->size1() == o.size1() && this->size2() == o.size2());
-
   if (!same(o)) {
-    if (this->lead()*sizeof(T) <= CUDA_PITCH_LIMIT
-        && o.lead()*sizeof(T) <= CUDA_PITCH_LIMIT && this->inc() == 1
+    if (this->contiguous() && o.contiguous()) {
+      /* plain linear copy */
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+              this->lead()*this->size2()*sizeof(T), cudaMemcpyDeviceToDevice,
+              0));
+    } else if (this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
+        && o.lead() * sizeof(T) <= CUDA_PITCH_LIMIT && this->inc() == 1
         && o.inc() == 1) {
       /* pitched 2d copy */
       CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
               o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
               cudaMemcpyDeviceToDevice, 0));
-    } else if (this->lead() == this->size1() && o.lead() == o.size1()
-        && this->inc() == 1 && o.inc() == 1) {
-      /* plain linear copy */
-      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-              this->lead()*this->size2()*sizeof(T), cudaMemcpyDeviceToDevice,
-              0));
     } else {
       /* copy column-by-column */
       size_type i;
@@ -590,18 +609,17 @@ bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& bi::gp
   if (!this->same(o)) {
     cudaMemcpyKind kind =
         (M1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
-    if (this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
+    if (this->contiguous() && o.contiguous()) {
+      /* plain linear copy */
+      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
+              this->lead()*this->size2()*sizeof(T), kind, 0));
+    } else if (this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
         && o.lead() * sizeof(T) <= CUDA_PITCH_LIMIT && this->inc() == 1
         && o.inc() == 1) {
       /* pitched 2d copy */
       CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
               o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
               kind, 0));
-    } else if (this->lead() == this->size1() && o.lead() == o.size1()
-        && this->inc() == 1 && o.inc() == 1) {
-      /* plain linear copy */
-      CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-              this->lead()*this->size2()*sizeof(T), kind, 0));
     } else {
       /* copy column-by-column */
       size_type i;
@@ -791,8 +809,8 @@ namespace bi {
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
     int lead_value = -1, int inc_value = 1, class A = device_allocator<T> >
-class gpu_matrix: public gpu_matrix_reference<T,
-    size1_value,size2_value,lead_value,inc_value> {
+class gpu_matrix: public gpu_matrix_reference<T,size1_value,size2_value,
+    lead_value,inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -804,7 +822,8 @@ public:
   /**
    * Default constructor.
    */
-  CUDA_FUNC_HOST gpu_matrix();
+  CUDA_FUNC_HOST
+  gpu_matrix();
 
   /**
    * Constructor.
@@ -812,12 +831,14 @@ public:
    * @param rows Number of rows.
    * @param cols Number of cols.
    */
-  CUDA_FUNC_HOST gpu_matrix(const size_type rows, const size_type cols);
+  CUDA_FUNC_HOST
+  gpu_matrix(const size_type rows, const size_type cols);
 
   /**
    * Shallow copy constructor.
    */
-  CUDA_FUNC_BOTH gpu_matrix(
+  CUDA_FUNC_BOTH
+  gpu_matrix(
       const gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o);
 
   /**
@@ -829,14 +850,15 @@ public:
   /**
    * Destructor.
    */
-  CUDA_FUNC_HOST ~gpu_matrix();
+  CUDA_FUNC_HOST
+  ~gpu_matrix();
 
   /**
    * Assignment operator.
    */
-  CUDA_FUNC_HOST gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,
-      A>& operator=(const gpu_matrix<T,size1_value,size2_value,lead_value,
-      inc_value,A>& o);
+  CUDA_FUNC_HOST
+  gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& operator=(
+      const gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o);
 
   /**
    * Generic assignment operator.
@@ -844,8 +866,8 @@ public:
    * @tparam M1 Matrix type.
    */
   template<class M1>
-  CUDA_FUNC_HOST gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,
-      A>& operator=(const M1& o);
+  CUDA_FUNC_HOST gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& operator=(
+      const M1& o);
 
   /**
    * Resize matrix.
@@ -884,7 +906,7 @@ private:
    */
   bool own;
 
-  #ifndef __CUDA_ARCH__
+#ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -895,7 +917,7 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
+#endif
 
 };
 
@@ -905,7 +927,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::gpu_matrix() :
     own(true) {
-  //
+//
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -913,7 +935,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::gpu_matrix(
     const size_type rows, const size_type cols) :
     gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(NULL,
-    rows, cols, rows, 1), own(true) {
+        rows, cols, rows, 1), own(true) {
   /* pre-condition */
   BI_ASSERT(rows >= 0 && cols >= 0);
 
@@ -927,9 +949,9 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::gpu_matrix(
     const gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) :
     gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-    const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()),
-    own(false) {
-  //
+        const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()), own(
+        false) {
+//
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -938,12 +960,13 @@ template<class M1>
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::gpu_matrix(
     const M1 o) :
     gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-    const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()), own(
-    false) {
+        const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()), own(
+        false) {
   /* shallow copy is now done, do deep copy if necessary */
   if (!M1::on_device) {
-    T* ptr = (this->size1() * this->size2() > 0) ?
-        alloc.allocate(this->size1() * this->size2()) : NULL;
+    T* ptr =
+        (this->size1() * this->size2() > 0) ?
+            alloc.allocate(this->size1() * this->size2()) : NULL;
     this->setLead(this->size1());
     this->setInc(1);
     this->own = true;
@@ -955,7 +978,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::~gpu_matrix() {
   if (own) {
-    alloc.deallocate(this->buf(), this->lead()*this->size2());
+    alloc.deallocate(this->buf(), this->lead() * this->size2());
   }
 }
 
@@ -966,7 +989,7 @@ inline bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& bi::gpu
     const gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) {
   gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::operator=(
       static_cast<gpu_matrix_reference<T,size1_value,size2_value,lead_value,
-      inc_value> >(o));
+          inc_value> >(o));
   return *this;
 }
 
@@ -1004,9 +1027,9 @@ void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
           && this->inc() == 1) {
         /* pitched 2d copy */
         CUDA_CHECKED_CALL(cudaMemcpy2DAsync(ptr, rows*sizeof(T),
-            this->buf(), this->lead()*sizeof(T),
-            bi::min(rows, this->size1())*sizeof(T),
-            bi::min(cols, this->size2()), cudaMemcpyDeviceToDevice, 0));
+                this->buf(), this->lead()*sizeof(T),
+                bi::min(rows, this->size1())*sizeof(T),
+                bi::min(cols, this->size2()), cudaMemcpyDeviceToDevice, 0));
       } else if (rows == this->lead() && this->inc() == 1) {
         /* plain linear copy */
         CUDA_CHECKED_CALL(cudaMemcpyAsync(ptr, this->buf(),
@@ -1054,9 +1077,10 @@ template<class T, int size1_value, int size2_value, int lead_value,
 template<class Archive>
 void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::serialize(
     Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<
-      gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value> >(
-      *this);
+  ar
+      & boost::serialization::base_object
+          < gpu_matrix_reference<T,size1_value,size2_value,lead_value,
+              inc_value> > (*this);
 }
 #endif
 

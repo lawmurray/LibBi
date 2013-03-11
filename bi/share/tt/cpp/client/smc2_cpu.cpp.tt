@@ -135,18 +135,18 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(N, P);
     }
-    MultinomialResampler base(ENABLE_SORT, ESS_REL);
-    KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, ENABLE_SHRINK, ESS_REL);
+    MultinomialResampler base(WITH_SORT, ESS_REL);
+    KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, WITH_SHRINK, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler resam(C, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(ENABLE_SORT, ESS_REL);
+    MultinomialResampler resam(WITH_SORT, ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(ENABLE_SORT, ESS_REL);
+    SystematicResampler resam(WITH_SORT, ESS_REL);
     [% ELSE %]
-    StratifiedResampler resam(ENABLE_SORT, ESS_REL);
+    StratifiedResampler resam(WITH_SORT, ESS_REL);
     [% END %]
         
     /* particle filter */
@@ -178,11 +178,11 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetabase;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
+    MultinomialResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
+    SystematicResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetabase(ENABLE_SORT, SAMPLE_ESS_REL);
+    StratifiedResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
     [% END %]
     DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase);
   [% ELSE %]
@@ -191,11 +191,11 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetaresam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
+    MultinomialResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
+    SystematicResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetaresam(ENABLE_SORT, SAMPLE_ESS_REL);
+    StratifiedResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
     [% END %]
   [% END %]
   
