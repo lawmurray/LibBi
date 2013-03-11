@@ -386,6 +386,7 @@ void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
   BI_ASSERT(X.size2() >= size());
   BI_ASSERT(p >= 0 && p < current.size());
 
+  ///@todo Implement this with scatter, so that one kernel call on device
   if (size() > 0) {
     int a = current(p);
     int t = size() - 1;
