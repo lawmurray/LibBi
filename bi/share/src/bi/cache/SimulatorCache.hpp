@@ -53,7 +53,7 @@ public:
    *
    * @return The vector of all times.
    */
-  const typename Cache1D<real,CL>::vector_reference_type getTimes() const;
+  const typename Cache1D<real,ON_HOST>::vector_reference_type getTimes() const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::readTime()
@@ -125,7 +125,7 @@ private:
   /**
    * Time cache.
    */
-  Cache1D<real,CL> timeCache;
+  Cache1D<real,ON_HOST> timeCache;
 
   /**
    * Output buffer.
@@ -186,7 +186,8 @@ struct SimulatorCacheFactory {
 }
 
 template<class IO1, bi::Location CL>
-bi::SimulatorCache<IO1,CL>::SimulatorCache(IO1* out) : out(out) {
+bi::SimulatorCache<IO1,CL>::SimulatorCache(IO1* out) :
+    out(out) {
   //
 }
 
@@ -202,7 +203,8 @@ bi::SimulatorCache<IO1,CL>::~SimulatorCache() {
 }
 
 template<class IO1, bi::Location CL>
-bi::SimulatorCache<IO1,CL>& bi::SimulatorCache<IO1,CL>::operator=(const SimulatorCache<IO1,CL>& o) {
+bi::SimulatorCache<IO1,CL>& bi::SimulatorCache<IO1,CL>::operator=(
+    const SimulatorCache<IO1,CL>& o) {
   timeCache = o.timeCache;
   out = o.out;
 
@@ -210,7 +212,7 @@ bi::SimulatorCache<IO1,CL>& bi::SimulatorCache<IO1,CL>::operator=(const Simulato
 }
 
 template<class IO1, bi::Location CL>
-const typename bi::Cache1D<real,CL>::vector_reference_type bi::SimulatorCache<
+const typename bi::Cache1D<real,bi::ON_HOST>::vector_reference_type bi::SimulatorCache<
     IO1,CL>::getTimes() const {
   return timeCache.get(0, timeCache.size());
 }
@@ -297,7 +299,8 @@ void bi::SimulatorCache<IO1,CL>::flush() {
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::SimulatorCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
+void bi::SimulatorCache<IO1,CL>::save(Archive& ar,
+    const unsigned version) const {
   ar & timeCache;
 }
 

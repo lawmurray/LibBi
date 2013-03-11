@@ -330,7 +330,22 @@ void bi::AncestryCache<CL>::enlarge(const M1 X) {
   int oldSize = particles.size1();
   int newSize = numOccupied + X.size1();
   if (newSize > oldSize) {
-    newSize = /*oldSize + X.size1()*/2 * bi::max(oldSize, X.size1());
+    /*
+     * There are two heuristics that have been tried here:
+     *
+     * 1. newSize = oldSize + X.size1();
+     *
+     *      Conservative with memory, and makes some theoretical sense to
+     *      increase the number of slots linearly, but means more allocations,
+     *      and CUDA memory functions are slow.
+     *
+     * 2. newSize = 2*bi::max(oldSize, X.size1());
+     *
+     *      Fewer calls to slow CUDA memory functions, but more generous with
+     *      allocations, which may be problematic on GPUs, which typically
+     *      have memory sizes much smaller than main memory.
+     */
+    newSize = 2*bi::max(oldSize, X.size1());
     particles.resize(newSize, X.size2(), true);
     ancestors.resize(newSize, true);
     legacies.resize(newSize, true);
@@ -543,6 +558,7 @@ void bi::AncestryCache<CL>::save(Archive& ar, const unsigned version) const {
   save_resizable_vector(ar, version, legacies);
   save_resizable_vector(ar, version, current);
   ar & size1;
+  ar & maxLegacy;
   ar & usecs;
   ar & numOccupied;
   ar & q;
@@ -556,6 +572,7 @@ void bi::AncestryCache<CL>::load(Archive& ar, const unsigned version) {
   load_resizable_vector(ar, version, legacies);
   load_resizable_vector(ar, version, current);
   ar & size1;
+  ar & maxLegacy;
   ar & usecs;
   ar & numOccupied;
   ar & q;

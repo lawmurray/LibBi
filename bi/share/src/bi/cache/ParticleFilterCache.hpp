@@ -165,7 +165,7 @@ private:
   /**
    * Resampling cache.
    */
-  Cache1D<int,CL> resampleCache;
+  Cache1D<int,ON_HOST> resampleCache;
 
   /**
    * Most recent log-weights.
@@ -391,7 +391,7 @@ void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar,
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
   ar & resampleCache;
-  save_resizable_vector(ar, version, logWeightsCache);
+  ar & logWeightsCache;
 }
 
 template<class IO1, bi::Location CL>
@@ -401,7 +401,7 @@ void bi::ParticleFilterCache<IO1,CL>::load(Archive& ar,
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
   ar & resampleCache;
-  load_resizable_vector(ar, version, logWeightsCache);
+  ar & logWeightsCache;
 }
 
 #endif

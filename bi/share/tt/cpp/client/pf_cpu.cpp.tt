@@ -35,7 +35,6 @@
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
-#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/cache/ParticleFilterCache.hpp"

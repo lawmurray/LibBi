@@ -27,11 +27,6 @@ template<class IO1 = SMC2NetCDFBuffer, Location CL = ON_HOST>
 class SMC2Cache: public ParticleMCMCCache<IO1,CL> {
 public:
   /**
-   * Vector type.
-   */
-  typedef typename temp_host_vector<real>::type vector_type;
-
-  /**
    * Constructor.
    *
    * @tparam B Model type.

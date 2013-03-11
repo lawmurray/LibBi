@@ -18,7 +18,6 @@
 
 [% IF client.get_named_arg('filter') == 'ekf' %]
 #include "bi/method/ExtendedKalmanFilter.hpp"
-#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
 #include "bi/cache/KalmanFilterCache.hpp"
 [% ELSE %]
 [% IF client.get_named_arg('filter') == 'pf1' %]
@@ -46,7 +45,6 @@
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
 #include "bi/cache/ParticleMCMCCache.hpp"
-#include "bi/buffer/ParticleMCMCNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"

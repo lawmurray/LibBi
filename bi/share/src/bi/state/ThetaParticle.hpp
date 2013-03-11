@@ -24,12 +24,12 @@ public:
   /**
    * Vector type.
    */
-  typedef typename loc_vector<L,real>::type vector_type;
+  typedef typename loc_temp_vector<L,real>::type vector_type;
 
   /**
    * Integer vector type.
    */
-  typedef typename loc_vector<L,int>::type int_vector_type;
+  typedef typename loc_temp_vector<L,int>::type int_vector_type;
 
   /**
    * Constructor.
@@ -67,7 +67,7 @@ public:
   /**
    * Get output.
    */
-  ParticleFilterCache<>& getOutput();
+  ParticleFilterCache<ParticleFilterNetCDFBuffer,L>& getOutput();
 
   /**
    * Resize.
@@ -96,7 +96,7 @@ private:
   /**
    * Cache to store history.
    */
-  ParticleFilterCache<> cache;
+  ParticleFilterCache<ParticleFilterNetCDFBuffer,L> cache;
 
   /**
    * Serialize.
@@ -167,7 +167,7 @@ typename bi::ThetaParticle<B,L>::int_vector_type&
 }
 
 template<class B, bi::Location L>
-typename bi::ParticleFilterCache<>& bi::ThetaParticle<B,L>::getOutput() {
+typename bi::ParticleFilterCache<bi::ParticleFilterNetCDFBuffer,L>& bi::ThetaParticle<B,L>::getOutput() {
   return cache;
 }
 

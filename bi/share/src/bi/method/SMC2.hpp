@@ -521,9 +521,6 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1>
 void bi::SMC2<B,F,R,IO1>::output(
     const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws) {
-  typedef typename temp_host_vector<real>::type host_vector_type;
-  typedef typename temp_host_matrix<real>::type host_matrix_type;
-
   if (out != NULL) {
     pmmh->setOutput(out);
     for (int p = 0; p < thetas.size(); ++p) {

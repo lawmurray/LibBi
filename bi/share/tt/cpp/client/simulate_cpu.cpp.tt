@@ -17,7 +17,6 @@
 #include "bi/method/Simulator.hpp"
 #include "bi/cache/SimulatorCache.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/buffer/SimulatorNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
 
 #include <iostream>

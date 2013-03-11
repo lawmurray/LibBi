@@ -24,11 +24,6 @@ template<class IO1 = KalmanFilterNetCDFBuffer, Location CL = ON_HOST>
 class KalmanFilterCache: public SimulatorCache<IO1,CL> {
 public:
   /**
-   * Vector type.
-   */
-  typedef typename temp_host_vector<real>::type vector_type;
-
-  /**
    * Constructor.
    *
    * @param out output buffer.

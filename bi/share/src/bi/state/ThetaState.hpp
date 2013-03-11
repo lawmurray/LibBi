@@ -23,12 +23,17 @@ public:
   /**
    * Vector type.
    */
-  typedef host_vector<real> vector_type;
+  typedef typename loc_temp_vector<L,real>::type vector_type;
+
+  /**
+   * Host vector type.
+   */
+  typedef host_vector<real> host_vector_type;
 
   /**
    * Matrix type.
    */
-  typedef host_matrix<real> matrix_type;
+  typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
   /**
    * Constructor.
@@ -56,12 +61,12 @@ public:
   /**
    * Get current parameters.
    */
-  vector_type& getParameters1();
+  host_vector_type& getParameters1();
 
   /**
    * Get proposed parameters.
    */
-  vector_type& getParameters2();
+  host_vector_type& getParameters2();
 
   /**
    * Get log-likelihood of current parameters.
@@ -104,12 +109,12 @@ private:
   /**
    * Current parameter sample.
    */
-  vector_type theta1;
+  host_vector_type theta1;
 
   /**
    * Proposed parameter sample.
    */
-  vector_type theta2;
+  host_vector_type theta2;
 
   /**
    * Marginal log-likelihood of parameters.
@@ -208,12 +213,12 @@ typename bi::ThetaState<B,L>::matrix_type& bi::ThetaState<B,L>::getTrajectory() 
 }
 
 template<class B, bi::Location L>
-typename bi::ThetaState<B,L>::vector_type& bi::ThetaState<B,L>::getParameters1() {
+typename bi::ThetaState<B,L>::host_vector_type& bi::ThetaState<B,L>::getParameters1() {
   return theta1;
 }
 
 template<class B, bi::Location L>
-typename bi::ThetaState<B,L>::vector_type& bi::ThetaState<B,L>::getParameters2() {
+typename bi::ThetaState<B,L>::host_vector_type& bi::ThetaState<B,L>::getParameters2() {
   return theta2;
 }
 

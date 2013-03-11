@@ -45,7 +45,6 @@
 #include "bi/method/Observer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/cache/SMC2Cache.hpp"
-#include "bi/buffer/SMC2NetCDFBuffer.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"
 #ifdef ENABLE_MPI
@@ -123,10 +122,13 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
   BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs));
 
-  /* filter */
+  /* filter */ 
   [% IF client.get_named_arg('filter') == 'ekf' %]
-    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim)));
+    BOOST_AUTO(outFilter, KalmanFilterCacheFactory<LOCATION>::create());
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
   [% ELSE %]
+    BOOST_AUTO(outFilter, ParticleFilterCacheFactory<LOCATION>::create());
+
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]
     real h;
@@ -151,7 +153,7 @@ int main(int argc, char* argv[]) {
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'pf1' %]
-      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam)));
+      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, outFilter)));
     [% ELSIF client.get_named_arg('filter') == 'anpf' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -165,9 +167,9 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P)));
+      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
     [% ELSE %]
-      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam)));
+      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, outFilter)));
     [% END %]
   [% END %]
   
@@ -235,6 +237,7 @@ int main(int argc, char* argv[]) {
   delete sampler;
   delete out;
   delete filter;
+  delete outFilter;
   delete sim;
   delete obs;
   delete in;
