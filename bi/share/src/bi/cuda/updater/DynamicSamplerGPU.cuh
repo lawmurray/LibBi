@@ -34,7 +34,6 @@ public:
 }
 
 #include "DynamicSamplerKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -49,10 +48,8 @@ void bi::DynamicSamplerGPU<B,S>::samples(Random& rng, const T1 t1,
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
   if (N > 0) {
-    bind(s);
     kernelDynamicSampler<B,S><<<Dg,Db>>>(rng.devRngs, t1, t2, s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

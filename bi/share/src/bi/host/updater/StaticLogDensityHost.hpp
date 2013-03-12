@@ -38,10 +38,10 @@ public:
 
 #include "StaticLogDensityVisitorHost.hpp"
 #include "StaticLogDensityMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 template<class V1>
@@ -52,8 +52,6 @@ void bi::StaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, V1 lp) {
   typedef StaticLogDensityVisitorHost<B,S,PX,OX> ElementVisitor;
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
-
-  bind(s);
 
 #pragma omp parallel
   {
@@ -66,7 +64,6 @@ void bi::StaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s, V1 lp) {
       Visitor::accept(s, p, pax, x, lp(p));
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -82,9 +79,7 @@ void bi::StaticLogDensityHost<B,S>::logDensities(State<B,ON_HOST>& s,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(s, p, pax, x, lp(p));
-  unbind(s);
 }
 
 #endif

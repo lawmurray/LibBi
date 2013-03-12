@@ -31,7 +31,6 @@ public:
 }
 
 #include "SparseStaticSamplerKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -45,10 +44,8 @@ void bi::SparseStaticSamplerGPU<B,S>::update(Random& rng,
     Db.x = bi::min(P, deviceIdealThreadsPerBlock());
     Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
-    bind(s);
     kernelSparseStaticSampler<B,S><<<Dg,Db>>>(rng.devRngs, s, mask);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

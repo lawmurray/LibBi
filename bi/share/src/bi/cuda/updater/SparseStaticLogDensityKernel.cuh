@@ -38,7 +38,7 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticLogDensity(
 template<class B, class S, class V1>
 CUDA_FUNC_GLOBAL void bi::kernelSparseStaticLogDensity(State<B,ON_DEVICE> s,
     const Mask<ON_DEVICE> mask, V1 lp) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef SparseStaticLogDensityMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef SparseStaticLogDensityVisitorGPU<B,S,PX,OX> ElementVisitor;

@@ -39,10 +39,10 @@ public:
 
 #include "SparseStaticSamplerVisitorHost.hpp"
 #include "SparseStaticSamplerMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
@@ -54,8 +54,6 @@ void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
   typedef SparseStaticSamplerVisitorHost<B,S,PX,OX> ElementVisitor;
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
-
-  bind(s);
 
 #pragma omp parallel
   {
@@ -69,7 +67,6 @@ void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
       Visitor::accept(rng, s, mask, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -84,9 +81,7 @@ void bi::SparseStaticSamplerHost<B,S>::samples(Random& rng,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(rng.getHostRng(), s, mask, p, pax, x);
-  unbind(s);
 }
 
 #endif

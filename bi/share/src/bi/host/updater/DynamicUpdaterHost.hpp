@@ -33,10 +33,10 @@ public:
 
 #include "DynamicUpdaterVisitorHost.hpp"
 #include "DynamicUpdaterMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 #include "boost/mpl/if.hpp"
 
@@ -54,8 +54,6 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  bind(s);
-
 #pragma omp parallel
   {
     PX pax;
@@ -67,7 +65,6 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
       Visitor::accept(t1, t2, s, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -86,9 +83,7 @@ void bi::DynamicUpdaterHost<B,S>::update(const T1 t1, const T1 t2,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(t1, t2, s, p, pax, x);
-  unbind(s);
 }
 
 #endif

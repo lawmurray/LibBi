@@ -30,10 +30,10 @@ public:
 
 #include "StaticUpdaterVisitorHost.hpp"
 #include "StaticUpdaterMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
@@ -43,8 +43,6 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
   typedef StaticUpdaterVisitorHost<B,S,PX,OX> ElementVisitor;
   typedef typename boost::mpl::if_c<
       block_is_matrix<S>::value,MatrixVisitor,ElementVisitor>::type Visitor;
-
-  bind(s);
 
   #pragma omp parallel
   {
@@ -57,7 +55,6 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s) {
       Visitor::accept(s, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -71,9 +68,7 @@ void bi::StaticUpdaterHost<B,S>::update(State<B,ON_HOST>& s, const int p) {
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(s, p, pax, x);
-  unbind(s);
 }
 
 #endif

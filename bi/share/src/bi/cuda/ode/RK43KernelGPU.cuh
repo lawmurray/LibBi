@@ -34,7 +34,7 @@ CUDA_FUNC_GLOBAL void kernelRK43(const T1 t1, const T1 t2,
 
 template<class B, class S, class T1>
 CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE> s) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,shared<S> > PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,shared<S> > PX;
   typedef RK43VisitorGPU<B,S,S,real,PX,real> Visitor;
 
   /* sizes */

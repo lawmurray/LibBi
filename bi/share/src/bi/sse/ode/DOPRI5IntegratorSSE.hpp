@@ -44,8 +44,6 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   static const int N = block_size<S>::value;
   const int P = s.size();
 
-  bind(s);
-
   #pragma omp parallel
   {
     sse_real buf[11*N];
@@ -159,8 +157,6 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
       sse_shared_host_commit<B,S>(s, p);
     }
   }
-
-  unbind(s);
 }
 
 #endif

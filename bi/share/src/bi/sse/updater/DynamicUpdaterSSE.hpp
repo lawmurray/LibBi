@@ -30,7 +30,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../../host/bind.hpp"
 #include "../../host/updater/DynamicUpdaterVisitorHost.hpp"
 #include "../../host/updater/DynamicUpdaterMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
@@ -51,8 +50,6 @@ void bi::DynamicUpdaterSSE<B,S>::update(const T1 t1, const T1 t2,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  bind(s);
-
   #pragma omp parallel
   {
     int p;
@@ -64,7 +61,6 @@ void bi::DynamicUpdaterSSE<B,S>::update(const T1 t1, const T1 t2,
       Visitor::accept(t1, t2, s, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 #endif

@@ -32,7 +32,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../../host/bind.hpp"
 #include "../../host/updater/SparseStaticLogDensityVisitorHost.hpp"
 #include "../../host/updater/SparseStaticLogDensityMatrixVisitorHost.hpp"
 #include "../../state/Pa.hpp"
@@ -50,8 +49,6 @@ void bi::SparseStaticLogDensitySSE<B,S>::logDensities(State<B,ON_HOST>& s,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  bind(s);
-
   #pragma omp parallel
   {
     int p;
@@ -65,7 +62,6 @@ void bi::SparseStaticLogDensitySSE<B,S>::logDensities(State<B,ON_HOST>& s,
       Visitor::accept(mask, s, p, pax, x, *lp1);
     }
   }
-  unbind(s);
 }
 
 #endif

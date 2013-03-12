@@ -37,7 +37,7 @@ CUDA_FUNC_GLOBAL void kernelStaticSampler(curandState* rng,
 template<class B, class S>
 CUDA_FUNC_GLOBAL void bi::kernelStaticSampler(curandState* rng,
     State<B,ON_DEVICE> s) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef StaticSamplerMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef StaticSamplerVisitorGPU<B,S,PX,OX> ElementVisitor;

@@ -30,7 +30,7 @@ CUDA_FUNC_GLOBAL void kernelStaticUpdater(State<B,ON_DEVICE> s);
 
 template<class B, class S>
 CUDA_FUNC_GLOBAL void bi::kernelStaticUpdater(State<B,ON_DEVICE> s) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef StaticUpdaterMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef StaticUpdaterVisitorGPU<B,S,PX,OX> ElementVisitor;

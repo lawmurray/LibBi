@@ -36,7 +36,7 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticSampler(curandState* rng,
 template<class B, class S>
 CUDA_FUNC_GLOBAL void bi::kernelSparseStaticSampler(curandState* rng,
     State<B,ON_DEVICE> s, const Mask<ON_DEVICE> mask) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef SparseStaticSamplerMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef SparseStaticSamplerVisitorGPU<B,S,PX,OX> ElementVisitor;

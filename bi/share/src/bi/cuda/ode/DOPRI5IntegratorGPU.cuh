@@ -60,10 +60,8 @@ void bi::DOPRI5IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
         Db.x << " for device ODE integrator");
 
     /* launch */
-    bind(s);
     kernelDOPRI5<B,S,T1><<<Dg,Db,Ns>>>(t1, t2, s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

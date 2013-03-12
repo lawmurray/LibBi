@@ -32,7 +32,6 @@ public:
 }
 
 #include "StaticSamplerKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -45,10 +44,8 @@ void bi::StaticSamplerGPU<B,S>::samples(Random& rng, State<B,ON_DEVICE>& s) {
   Dg.x = (bi::min(P, deviceIdealThreads()) + Db.x - 1)/Db.x;
 
   if (N > 0) {
-    bind(s);
     kernelStaticSampler<B,S><<<Dg,Db>>>(rng.devRngs, s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

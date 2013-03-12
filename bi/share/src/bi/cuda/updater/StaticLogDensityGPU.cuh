@@ -29,7 +29,6 @@ public:
 }
 
 #include "StaticLogDensityKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -49,10 +48,8 @@ void bi::StaticLogDensityGPU<B,S>::logDensities(State<B,ON_DEVICE>& s,
   Dg.x = (P + Db.x - 1)/Db.x;
 
   if (N > 0) {
-    bind(s);
     kernelStaticLogDensity<B,S><<<Dg,Db>>>(s, lp);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

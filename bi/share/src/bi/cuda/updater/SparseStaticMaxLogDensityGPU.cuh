@@ -31,7 +31,6 @@ public:
 }
 
 #include "SparseStaticMaxLogDensityKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -49,10 +48,8 @@ void bi::SparseStaticMaxLogDensityGPU<B,S>::maxLogDensities(State<B,ON_DEVICE>& 
     Db.x = bi::min(deviceIdealThreadsPerBlock(), P); // over trajectories
     Dg.x = (P + Db.x - 1)/Db.x;
 
-    bind(s);
     kernelSparseStaticMaxLogDensity<B,S><<<Dg,Db>>>(s, mask, lp);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

@@ -33,7 +33,7 @@ template<class B, class S, class V1>
 CUDA_FUNC_GLOBAL void bi::kernelStaticMaxLogDensity(State<B,ON_DEVICE> s,
     V1 lp) {
   typedef typename V1::value_type T1;
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef StaticMaxLogDensityMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef StaticMaxLogDensityVisitorGPU<B,S,PX,OX> ElementVisitor;

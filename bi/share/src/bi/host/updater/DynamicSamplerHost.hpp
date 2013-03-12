@@ -41,10 +41,10 @@ public:
 
 #include "DynamicSamplerVisitorHost.hpp"
 #include "DynamicSamplerMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 template<class T1>
@@ -58,8 +58,6 @@ void bi::DynamicSamplerHost<B,S>::samples(Random& rng, const T1 t1,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  bind(s);
-
   #pragma omp parallel
   {
     PX pax;
@@ -72,7 +70,6 @@ void bi::DynamicSamplerHost<B,S>::samples(Random& rng, const T1 t1,
       Visitor::accept(rng1, t1, t2, s, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -89,9 +86,7 @@ void bi::DynamicSamplerHost<B,S>::samples(Random& rng, const T1 t1,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(rng.getHostRng(), t1, t2, s, p, pax, x);
-  unbind(s);
 }
 
 #endif

@@ -41,7 +41,7 @@ CUDA_FUNC_GLOBAL void kernelDynamicMaxLogDensity(const T1 t1, const T1 t2,
 template<class B, class S, class T1, class V1>
 CUDA_FUNC_GLOBAL void bi::kernelDynamicMaxLogDensity(const T1 t1, const T1 t2,
     State<B,ON_DEVICE> s, V1 lp) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef DynamicMaxLogDensityMatrixVisitorGPU<B,S,T1,PX,OX> MatrixVisitor;
   typedef DynamicMaxLogDensityVisitorGPU<B,S,T1,PX,OX> ElementVisitor;

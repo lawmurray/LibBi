@@ -60,10 +60,8 @@ void bi::RK43IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
         Db.x << " for device ODE integrator");
 
     /* launch */
-    bind(s);
     kernelRK43<B,S,T1><<<Dg,Db,Ns>>>(t1, t2, s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

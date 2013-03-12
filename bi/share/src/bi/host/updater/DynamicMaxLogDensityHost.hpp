@@ -38,10 +38,10 @@ public:
 
 #include "DynamicMaxLogDensityVisitorHost.hpp"
 #include "DynamicMaxLogDensityMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 template<class T1, class V1>
@@ -54,8 +54,6 @@ void bi::DynamicMaxLogDensityHost<B,S>::maxLogDensities(const T1 t1,
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
 
-  bind(s);
-
   #pragma omp parallel
   {
     PX pax;
@@ -67,7 +65,6 @@ void bi::DynamicMaxLogDensityHost<B,S>::maxLogDensities(const T1 t1,
       Visitor::accept(t1, t2, s, p, pax, x, lp(p));
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -83,9 +80,7 @@ void bi::DynamicMaxLogDensityHost<B,S>::maxLogDensities(const T1 t1,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(t1, t2, s, p, pax, x, lp(p));
-  unbind(s);
 }
 
 #endif

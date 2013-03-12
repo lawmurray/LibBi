@@ -37,10 +37,10 @@ public:
 
 #include "StaticSamplerVisitorHost.hpp"
 #include "StaticSamplerMatrixVisitorHost.hpp"
+#include "../host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../state/Ou.hpp"
 #include "../../traits/block_traits.hpp"
-#include "../bind.hpp"
 
 template<class B, class S>
 void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s) {
@@ -51,8 +51,6 @@ void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s) {
   typedef StaticSamplerVisitorHost<B,S,R1,PX,OX> ElementVisitor;
   typedef typename boost::mpl::if_c<block_is_matrix<S>::value,MatrixVisitor,
       ElementVisitor>::type Visitor;
-
-  bind(s);
 
 #pragma omp parallel
   {
@@ -66,7 +64,6 @@ void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s) {
       Visitor::accept(rng1, s, p, pax, x);
     }
   }
-  unbind(s);
 }
 
 template<class B, class S>
@@ -82,9 +79,7 @@ void bi::StaticSamplerHost<B,S>::samples(Random& rng, State<B,ON_HOST>& s,
 
   PX pax;
   OX x;
-  bind(s);
   Visitor::accept(rng.getHostRng(), s, p, pax, x);
-  unbind(s);
 }
 
 #endif

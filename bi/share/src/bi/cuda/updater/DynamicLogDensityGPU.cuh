@@ -30,7 +30,6 @@ public:
 }
 
 #include "DynamicLogDensityKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -52,10 +51,8 @@ void bi::DynamicLogDensityGPU<B,S>::logDensities(const T1 t1, const T1 t2,
   Dg.x = (P + Db.x - 1) / Db.x;
 
   if (N > 0) {
-    bind(s);
     kernelDynamicLogDensity<B,S><<<Dg,Db>>>(t1, t2, s, lp);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

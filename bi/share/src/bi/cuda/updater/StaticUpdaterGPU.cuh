@@ -28,7 +28,6 @@ public:
 }
 
 #include "StaticUpdaterKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -43,10 +42,8 @@ void bi::StaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s) {
   Dg.y = N;
 
   if (N > 0) {
-    bind(s);
     kernelStaticUpdater<B,S><<<Dg,Db>>>(s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

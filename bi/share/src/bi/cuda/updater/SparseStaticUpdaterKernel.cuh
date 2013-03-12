@@ -34,7 +34,7 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticUpdater(State<B,ON_DEVICE> s,
 template<class B, class S>
 CUDA_FUNC_GLOBAL void bi::kernelSparseStaticUpdater(State<B,ON_DEVICE> s,
     const Mask<ON_DEVICE> mask) {
-  typedef Pa<ON_DEVICE,B,constant,constant,global,global> PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
   typedef SparseStaticUpdaterMatrixVisitorGPU<B,S,PX,OX> MatrixVisitor;
   typedef SparseStaticUpdaterVisitorGPU<B,S,PX,OX> ElementVisitor;

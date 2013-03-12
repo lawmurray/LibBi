@@ -29,7 +29,6 @@ public:
 }
 
 #include "SparseStaticUpdaterKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -43,10 +42,8 @@ void bi::SparseStaticUpdaterGPU<B,S>::update(State<B,ON_DEVICE>& s,
     Db.x = bi::min(deviceIdealThreadsPerBlock(), P); // over trajectories
     Dg.x = (P + Db.x - 1)/Db.x;
 
-    bind(s);
     kernelSparseStaticUpdater<B,S><<<Dg,Db>>>(s, mask);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 

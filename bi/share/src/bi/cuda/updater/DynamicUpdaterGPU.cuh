@@ -29,7 +29,6 @@ public:
 }
 
 #include "DynamicUpdaterKernel.cuh"
-#include "../bind.cuh"
 #include "../device.hpp"
 
 template<class B, class S>
@@ -46,10 +45,8 @@ void bi::DynamicUpdaterGPU<B,S>::update(const T1 t1, const T1 t2,
   Dg.y = N;
 
   if (N > 0) {
-    bind(s);
     kernelDynamicUpdater<B,S,T1><<<Dg,Db>>>(t1, t2, s);
     CUDA_CHECK;
-    unbind(s);
   }
 }
 
