@@ -477,8 +477,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-
-  while (iter + 1 != last) {
+  ++iter;
+  while (iter != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -507,8 +507,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-
-  while (iter + 1 != last) {
+  ++iter;
+  while (iter != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -595,14 +595,15 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
-  bool r = resample(rng, *iter, s, lws, as);
+  bool r = false;
+  real ll = 0.0;
   do {
-    ++iter;
+    r = resample(rng, *(iter - 1), s, lws, as);
     predict(rng, *iter, s);
-  } while (!iter->hasOutput() && iter + 1 != last);
-  real ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
-
+    ll += correct(*iter, s, lws);
+    output(*iter, s, r, lws, as);
+    ++iter;
+  } while (iter != last && !(iter - 1)->hasObs());
   return ll;
 }
 

@@ -379,6 +379,7 @@ void bi::AncestryCache<CL>::insert(const M1 X, const V1 as) {
   int i;
 
   bi::gather(as, ls, bs);
+
   ls.resize(N, false);
 
   for (i = 0; i < N; ++i) {
@@ -389,8 +390,8 @@ void bi::AncestryCache<CL>::insert(const M1 X, const V1 as) {
     q = (q + 1) % Xs.size1();
   }
 
-  bi::scatter(ls, bs, this->as);
   int_vector_type ls1(ls);
+  bi::scatter(ls, bs, this->as);
   bi::scatter_rows(ls1, X, this->Xs);
   m += N;
 }
@@ -442,7 +443,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   if (m == 0) {
     init(X);
   } else {
-    int_vector_type os(X.size1());
+    host_int_vector_type os(X.size1());
     Resampler::ancestorsToOffspring(as, os);
 
     bi::scatter(ls, os, this->os);
@@ -479,6 +480,7 @@ void bi::AncestryCache<CL>::report() const {
 
 template<bi::Location CL>
 int bi::AncestryCache<CL>::numFreeBlocks() const {
+  ///@bug Incorrect, as doesn't discount leaf nodes with os(q) == 0
   int q, len = 0, blocks = 0;
   for (q = 0; q < os.size(); ++q) {
     if (os(q) == 0) {
@@ -498,6 +500,7 @@ int bi::AncestryCache<CL>::numFreeBlocks() const {
 
 template<bi::Location CL>
 int bi::AncestryCache<CL>::largestFreeBlock() const {
+  ///@bug Incorrect, as doesn't discount leaf nodes with os(q) == 0
   int q, len = 0, maxLen = 0;
   for (q = 0; q < os.size(); ++q) {
     if (os(q) == 0) {
