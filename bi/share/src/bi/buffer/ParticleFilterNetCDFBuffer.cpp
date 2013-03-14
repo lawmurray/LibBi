@@ -81,32 +81,6 @@ void bi::ParticleFilterNetCDFBuffer::map() {
       "Variable LL has " << llVar->num_dims() << " dimensions, should have 0");
 }
 
-int bi::ParticleFilterNetCDFBuffer::readResample(const int t) const {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  int r;
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable resamples");
-  ret = rVar->get(&r, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type reading variable resamples");
-
-  return r;
-}
-
-void bi::ParticleFilterNetCDFBuffer::writeResample(const int t,
-    const int& r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable resamples");
-  ret = rVar->put(&r, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable resamples");
-}
-
 void bi::ParticleFilterNetCDFBuffer::writeLL(const real ll) {
   BI_UNUSED NcBool ret;
   ret = llVar->put(&ll, 1);

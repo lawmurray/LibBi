@@ -238,7 +238,7 @@ public:
    * the components of the vector) is equal to the number of particles.
    */
   template<class V1>
-  void normalise(V1 lws);
+  static void normalise(V1 lws);
 
   /**
    * Is ESS-based condition triggered?

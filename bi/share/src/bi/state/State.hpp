@@ -541,6 +541,9 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return columns(Kdn.ref(), NP + NPX + NF, NP);
   case OY_VAR:
     return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  default:
+    BI_ASSERT(false);
+    return subrange(Xdn.ref(), 0, 0, 0, 0);
   }
 }
 
@@ -570,6 +573,9 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return columns(Kdn.ref(), NP + NPX + NF, NP);
   case OY_VAR:
     return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  default:
+    BI_ASSERT(false);
+    return subrange(Xdn.ref(), 0, 0, 0, 0);
   }
 }
 
@@ -654,6 +660,9 @@ inline real& bi::State<B,L>::getVar(const int p, const int ix) {
     return Kdn(0, NP + NPX + NF + start + ix);
   case OY_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  default:
+    BI_ASSERT(false);
+    return Xdn(this->p + p, 0);
   }
 }
 
@@ -686,6 +695,9 @@ inline const real& bi::State<B,L>::getVar(const int p, const int ix) const {
     return Kdn(0, NP + NPX + NF + start + ix);
   case OY_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  default:
+    BI_ASSERT(false);
+    return Xdn(this->p + p, 0);
   }
 }
 
@@ -718,6 +730,9 @@ inline real& bi::State<B,L>::getVarAlt(const int p, const int ix) {
     return Kdn(0, NP + NPX + NF + start + ix);
   case OY_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  default:
+    BI_ASSERT(false);
+    return Xdn(this->p + p, 0);
   }
 }
 
@@ -751,6 +766,9 @@ inline const real& bi::State<B,L>::getVarAlt(const int p,
     return Kdn(0, NP + NPX + NF + start + ix);
   case OY_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  default:
+    BI_ASSERT(false);
+    return Xdn(this->p + p, 0);
   }
 }
 

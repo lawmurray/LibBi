@@ -58,7 +58,7 @@ public:
 }
 
 [% sig_action_static_function('logdensity') %] {
-  T1 sh, sc, logZ;
+  T1 sh, sc;
     
   shape(s, p, cox, pax, sh);
   scale(s, p, cox, pax, sc);

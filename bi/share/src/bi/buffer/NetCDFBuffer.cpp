@@ -69,7 +69,6 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr,
 
   NcVar* ncVar;
   std::vector<const NcDim*> dims;
-  VarType type = var->getType();
   int i;
 
   if (hasDim("ns")) {
@@ -139,7 +138,6 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
       "File does not contain variable " << var->getOutputName());
 
   /* check dimensions */
-  VarType type = var->getType();
   Dim* dim;
   NcDim* ncDim;
   int i = 0, j = 0;

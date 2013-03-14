@@ -342,7 +342,7 @@ public:
    * @param as Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const ScheduleElement now, const State<B,L>& s, const int r,
+  void output(const ScheduleElement now, const State<B,L>& s, const bool r,
       const V1 lws, const V2 as);
 
   /**
@@ -466,8 +466,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
-  int r = 0;
-  real ll;
+  bool r = false;
+  real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int>::type as(P);
@@ -477,8 +477,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-  ++iter;
-  while (iter != last) {
+
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -496,8 +496,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different init() call
 
   const int P = s.size();
-  int r = 0;
-  real ll;
+  bool r = false;
+  real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int>::type as(P);
@@ -507,8 +507,8 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-  ++iter;
-  while (iter != last) {
+
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -526,7 +526,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different step() call
 
   const int P = s.size();
-  int r = 0;
+  bool r = false;
   real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
@@ -595,15 +595,14 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
-  int r;
-  real ll = 0.0;
+  bool r = resample(rng, *iter, s, lws, as);
   do {
-    r = resample(rng, *(iter - 1), s, lws, as);
-    predict(rng, *iter, s);
-    ll += correct(*iter, s, lws);
-    output(*iter, s, r, lws, as);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    predict(rng, *iter, s);
+  } while (!iter->hasOutput() && iter + 1 != last);
+  real ll = correct(*iter, s, lws);
+  output(*iter, s, r, lws, as);
+
   return ll;
 }
 
@@ -611,7 +610,7 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class M1, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
-  int r;
+  bool r = false;
   real ll = 0.0;
   do {
     r = resample(rng, *(iter - 1), s, lws, as);
@@ -653,14 +652,19 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  if (now.hasObs() && resam != NULL) {
+  bool r = now.hasObs() && resam != NULL && resam->isTriggered(lws);
+  if (r) {
     if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(m.observationMaxLogDensity(s));
+      resam->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
-    return resam->resample(rng, lws, as, s);
+    resam->resample(rng, lws, as, s);
   } else {
-    return false;
+    Resampler::normalise(lws);
+    seq_elements(as, 0);
   }
+  return r;
 }
 
 template<class B, class S, class R, class IO1>
@@ -671,14 +675,19 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  if (now.hasObs() && resam != NULL) {
+  bool r = now.hasObs() && resam != NULL && resam->isTriggered(lws);
+  if (r) {
     if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(m.observationMaxLogDensity(s));
+      resam->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
-    return resam->cond_resample(rng, a, a, lws, as, s);
+    resam->cond_resample(rng, a, a, lws, as, s);
   } else {
-    return false;
+    Resampler::normalise(lws);
+    seq_elements(as, 0);
   }
+  return r;
 }
 
 template<class B, class S, class R, class IO1>
@@ -692,12 +701,11 @@ void bi::ParticleFilter<B,S,R,IO1>::output0(const State<B,L>& s) {
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
-    const State<B,L>& s, const int r, const V1 lws, const V2 as) {
+    const State<B,L>& s, const bool r, const V1 lws, const V2 as) {
   if (out != NULL && now.hasOutput()) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
     out->writeState(k, s, as, r);
-    out->writeResample(k, r);
     out->writeLogWeights(k, lws);
   }
 }

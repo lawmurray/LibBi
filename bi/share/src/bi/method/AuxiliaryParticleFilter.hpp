@@ -296,7 +296,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
-  int r = 0;
+  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lw1s(P), lw2s(P);
@@ -356,7 +356,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different step() call
 
   const int P = s.size();
-  int r = 0;
+  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lw1s(P), lw2s(P);
@@ -408,7 +408,7 @@ template<bi::Location L, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lw1s, V1 lw2s, V2 as) {
-  int r;
+  bool r = false;
   real ll = 0.0;
   do {
     lookahead(rng, iter, last, s, lw1s, lw2s);
@@ -426,7 +426,7 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lw1s, V1 lw2s, V2 as) {
-  int r;
+  bool r = false;
   real ll = 0.0;
   do {
     lookahead(rng, iter, last, s, lw1s, lw2s);
@@ -493,14 +493,20 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw2s.size());
   BI_ASSERT(s.size() == lw1s.size());
 
-  if (now.hasObs() && this->getResam() != NULL) {
+  bool r = now.hasObs() && this->getResam() != NULL
+      && this->getResam()->isTriggered(lw1s);
+  if (r) {
     if (resampler_needs_max<R>::value) {
-      this->getResam()->setMaxLogWeight(2.0*this->m.observationMaxLogDensity(s));
+      this->getResam()->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
-    return this->getResam()->resample(rng, lw1s, lw2s, as, s);
+    this->getResam()->resample(rng, lw1s, lw2s, as, s);
   } else {
-    return false;
+    Resampler::normalise(lws);
+    seq_elements(as, 0);
   }
+  return r;
 }
 
 template<class B, class S, class R, class IO1>
@@ -513,14 +519,20 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw1s.size());
   BI_ASSERT(a >= 0 && a < lw1s.size());
 
-  if (now.hasObs() && this->getResam() != NULL) {
+  bool r = now.hasObs() && this->getResam() != NULL
+      && this->getResam()->isTriggered(lw1s);
+  if (r) {
     if (resampler_needs_max<R>::value) {
-      this->getResam()->setMaxLogWeight(this->m.observationMaxLogDensity(s));
+      this->getResam()->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
     this->getResam()->resample(rng, a, lw1s, lw2s, as, s);
   } else {
-    return false;
+    Resampler::normalise(lws);
+    seq_elements(as, 0);
   }
+  return r;
 }
 
 #endif

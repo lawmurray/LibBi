@@ -321,7 +321,7 @@ void bi::SparseInputNetCDFBuffer::readState(const int k, const VarType type,
   Var* var;
   NcVar* ncVar;
   int r, start, len;
-  for (r = 0; r < recDims.size(); ++r) {
+  for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] != NULL) {
       start = recStarts[k][r];
       len = recLens[k][r];
@@ -368,7 +368,7 @@ void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
   int r, start, len;
 
   /* sparse reads */
-  for (r = 0; r < recDims.size(); ++r) {
+  for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] == NULL) {
       BOOST_AUTO(range, modelVars.equal_range(r));
       BOOST_AUTO(iter, range.first);
@@ -468,7 +468,6 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
   typedef typename temp_host_vector<value_type>::type vector_type;
   typedef typename temp_host_matrix<value_type>::type matrix_type;
 
-  NcDim* ncDim;
   const int ndims = ncVar->num_dims();
   long offsets[ndims], counts[ndims];
   int j = 0;
@@ -542,7 +541,6 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
   typedef typename temp_host_vector<value_type>::type vector_type;
   typedef typename temp_host_matrix<value_type>::type matrix_type;
 
-  NcDim* ncDim;
   const int ndims = ncVar->num_dims();
   long offsets[ndims], counts[ndims];
   int j = 0;

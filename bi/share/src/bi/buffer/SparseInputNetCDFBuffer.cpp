@@ -21,7 +21,7 @@ void bi::SparseInputNetCDFBuffer::readMask(const int k, const VarType type,
 
   Var* var;
   int r, start, len;
-  for (r = 0; r < recDims.size(); ++r) {
+  for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] != NULL) {
       start = recStarts[k][r];
       len = recLens[k][r];
@@ -65,7 +65,7 @@ void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
   int r, start, len;
 
   /* sparse masks */
-  for (r = 0; r < recDims.size(); ++r) {
+  for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] == NULL) {
       BOOST_AUTO(range, modelVars.equal_range(r));
       BOOST_AUTO(iter, range.first);
@@ -103,7 +103,6 @@ void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
 void bi::SparseInputNetCDFBuffer::map() {
   NcDim* ncDim;
   NcVar* ncVar;
-  Dim* dim;
   Var* var;
   VarType type;
   int i, k, id;
@@ -193,9 +192,9 @@ void bi::SparseInputNetCDFBuffer::map() {
   /* preload random access tables */
   std::multimap<real,int> seq;
   std::vector<int> starts(recDims.size(), 0), lens(recDims.size(), 0);
-  real t, tnxt;
+  real tnxt;
 
-  for (k = 0; k < recDims.size(); ++k) {
+  for (k = 0; k < int(recDims.size()); ++k) {
     if (timeVars[k] != NULL) {
       /* initialise */
       readTime(timeVars[k], starts[k], &lens[k], &tnxt);

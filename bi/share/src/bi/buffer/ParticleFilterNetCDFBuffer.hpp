@@ -88,45 +88,6 @@ public:
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * Read resample flags.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param t Time index.
-   * @param[out] r Resampling flags from this time.
-   */
-  template<class V1>
-  void readResamples(const int t, V1 r) const;
-
-  /**
-   * Write resample flags.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param t Time index.
-   * @param r Resampling flags from this time.
-   */
-  template<class V1>
-  void writeResamples(const int t, const V1 r);
-
-  /**
-   * Read resample flag.
-   *
-   * @param t Time index.
-   *
-   * @return Was resampling performed at this time?
-   */
-  int readResample(const int t) const;
-
-  /**
-   * Write resample flag.
-   *
-   * @param t Time index.
-   * @param r Was resampling performed at this time?
-   */
-  void writeResample(const int t, const int& r);
-
-  /**
    * Write dynamic state and ancestors.
    *
    * @tparam B Model type.
@@ -278,52 +239,6 @@ void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t, const V1 a) {
     ret = aVar->put(a.buf(), 1, npDim->size());
   }
   BI_ASSERT_MSG(ret, "Inconvertible type writing variable ancestor");
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) const {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable resamples");
-
-  if (V1::on_device || r.inc() != 1) {
-    temp_vector_type r1(r.size());
-    ret = rVar->get(r1.buf(), r1.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable resamples");
-    r = r1;
-  } else {
-    ret = rVar->get(r.buf(), r.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable resamples");
-  }
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::writeResamples(const int t, const V1 r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable resamples");
-
-  if (V1::on_device || r.inc() != 1) {
-    temp_vector_type r1(r.size());
-    r1 = r;
-    synchronize(V1::on_device);
-    ret = rVar->put(r1.buf(), r1.size());
-  } else {
-    ret = rVar->put(r.buf(), r.size());
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable resamples");
 }
 
 template<class B, bi::Location L, class V1>

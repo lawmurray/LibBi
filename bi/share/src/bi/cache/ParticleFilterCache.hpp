@@ -87,28 +87,6 @@ public:
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * @copydoc ParticleFilterNetCDFBuffer::readResample()
-   */
-  int readResample(const int t) const;
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::writeResample()
-   */
-  void writeResample(const int t, const int& r);
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::readResamples()
-   */
-  template<class V1>
-  void readResamples(const int t, V1 r) const;
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::writeResamples()
-   */
-  template<class V1>
-  void writeResamples(const int t, const V1 r);
-
-  /**
    * @copydoc ParticleFilterNetCDFBuffer::writeLL()
    */
   void writeLL(const real ll);
@@ -161,11 +139,6 @@ private:
    * Ancestry cache.
    */
   AncestryCache<CL> ancestryCache;
-
-  /**
-   * Resampling cache.
-   */
-  Cache1D<int,ON_HOST> resampleCache;
 
   /**
    * Most recent log-weights.
@@ -239,8 +212,8 @@ bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(IO1* out) :
 template<class IO1, bi::Location CL>
 bi::ParticleFilterCache<IO1,CL>::ParticleFilterCache(
     const ParticleFilterCache<IO1,CL>& o) :
-    SimulatorCache<IO1,CL>(o), ancestryCache(o.ancestryCache), resampleCache(
-        o.resampleCache), logWeightsCache(o.logWeightsCache), out(o.out) {
+    SimulatorCache<IO1,CL>(o), ancestryCache(o.ancestryCache), logWeightsCache(
+        o.logWeightsCache), out(o.out) {
   //
 }
 
@@ -250,7 +223,6 @@ bi::ParticleFilterCache<IO1,CL>& bi::ParticleFilterCache<IO1,CL>::operator=(
   SimulatorCache<IO1,CL>::operator=(o);
 
   ancestryCache = o.ancestryCache;
-  resampleCache = o.resampleCache;
   logWeightsCache = o.logWeightsCache;
   out = o.out;
 
@@ -307,30 +279,6 @@ void bi::ParticleFilterCache<IO1,CL>::writeAncestors(const int t,
 }
 
 template<class IO1, bi::Location CL>
-int bi::ParticleFilterCache<IO1,CL>::readResample(const int t) const {
-  return resampleCache.get(t);
-}
-
-template<class IO1, bi::Location CL>
-void bi::ParticleFilterCache<IO1,CL>::writeResample(const int t,
-    const int& x) {
-  resampleCache.set(t, x);
-}
-
-template<class IO1, bi::Location CL>
-template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::readResamples(const int t, V1 x) const {
-  x = resampleCache.get(t, x.size());
-}
-
-template<class IO1, bi::Location CL>
-template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::writeResamples(const int t,
-    const V1 x) {
-  resampleCache.set(t, x.size(), x);
-}
-
-template<class IO1, bi::Location CL>
 inline void bi::ParticleFilterCache<IO1,CL>::writeLL(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
@@ -356,7 +304,6 @@ template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::swap(ParticleFilterCache<IO1,CL>& o) {
   SimulatorCache<IO1,CL>::swap(o);
   ancestryCache.swap(o.ancestryCache);
-  resampleCache.swap(o.resampleCache);
   logWeightsCache.swap(o.logWeightsCache);
 }
 
@@ -364,23 +311,17 @@ template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::clear() {
   SimulatorCache<IO1,CL>::clear();
   ancestryCache.clear();
-  resampleCache.clear();
 }
 
 template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::empty() {
   SimulatorCache<IO1,CL>::empty();
   ancestryCache.empty();
-  resampleCache.empty();
 }
 
 template<class IO1, bi::Location CL>
 void bi::ParticleFilterCache<IO1,CL>::flush() {
-  if (out != NULL) {
-    out->writeResamples(0, resampleCache.get(0, resampleCache.size()));
-  }
   //ancestryCache.flush();
-  resampleCache.flush();
   SimulatorCache<IO1,CL>::flush();
 }
 
@@ -390,7 +331,6 @@ void bi::ParticleFilterCache<IO1,CL>::save(Archive& ar,
     const unsigned version) const {
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
-  ar & resampleCache;
   ar & logWeightsCache;
 }
 
@@ -400,7 +340,6 @@ void bi::ParticleFilterCache<IO1,CL>::load(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & ancestryCache;
-  ar & resampleCache;
   ar & logWeightsCache;
 }
 

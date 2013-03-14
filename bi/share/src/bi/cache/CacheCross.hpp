@@ -177,7 +177,6 @@ inline void bi::CacheCross<T1,CL>::set(const int p, const V1 x) {
   /* pre-condition */
   BI_ASSERT(p >= 0 && p < size());
 
-  const int len = x.size();
   row(X, p) = x;
   setDirty(p, true);
   setValid(p, true);

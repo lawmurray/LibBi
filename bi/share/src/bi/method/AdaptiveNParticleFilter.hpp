@@ -276,7 +276,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter_impl(Random& rng,
     const bool conditional, M1* X) {
   const int totalObs = last->indexObs() - first->indexObs();
   const int P = s.size();
-  int r = 0;
+  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P);
@@ -304,7 +304,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter_impl(Random& rng,
     State<B,L>& s_1, M1 X, State<B,L>& s_2, real& ll1, real& ll2) {
   const int totalObs = last->indexObs() - first->indexObs();
   const int P = s_1.size();
-  int r_1 = 0, r_2 = 0;
+  bool r_1 = false, r_2 = false;
   real lr = 0.0;
 
   typename loc_temp_vector<L,real>::type lws_1(P);
@@ -356,7 +356,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
   BI_ERROR_MSG(false, "Not yet implemented");
 
 //  const int P = s_1.size();
-//  int r_1 = 0, r_2 = 0;
+//  bool r_1 = false, r_2 = false;
 //
 //  int maxParticles = stopper->getMaxParticles();
 //  typename loc_temp_vector<L,int>::type as_1_base(bi::max(maxParticles, P));
@@ -515,8 +515,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step_impl(Random& rng,
 
   int block = 0;
   real maxlw, ll = 0.0;
-  int r;
-  bool finished = false;
+  bool r = false, finished = false;
   BOOST_TYPEOF (iter)
   iter1;
 

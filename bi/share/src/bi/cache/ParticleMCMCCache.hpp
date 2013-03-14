@@ -291,7 +291,7 @@ bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>
 template<class IO1, bi::Location CL>
 bi::ParticleMCMCCache<IO1,CL>::~ParticleMCMCCache() {
   flush();
-  for (int t = 0; t < trajectoryCache.size(); ++t) {
+  for (int t = 0; t < int(trajectoryCache.size()); ++t) {
     delete trajectoryCache[t];
   }
 }
@@ -430,7 +430,7 @@ void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
     len = p - first + 1;
   }
 
-  if (trajectoryCache.size() < X.size2()) {
+  if (int(trajectoryCache.size()) < X.size2()) {
     trajectoryCache.resize(X.size2(), NULL);
   }
   for (int t = 0; t < X.size2(); ++t) {
@@ -461,7 +461,7 @@ void bi::ParticleMCMCCache<IO1,CL>::clear() {
   llCache.clear();
   lpCache.clear();
   parameterCache.clear();
-  for (int t = 0; t < trajectoryCache.size(); ++t) {
+  for (int t = 0; t < int(trajectoryCache.size()); ++t) {
     trajectoryCache[t]->clear();
   }
   first = 0;
@@ -493,7 +493,7 @@ void bi::ParticleMCMCCache<IO1,CL>::flush() {
     lpCache.flush();
     parameterCache.flush();
 
-    for (int t = 0; t < trajectoryCache.size(); ++t) {
+    for (int t = 0; t < int(trajectoryCache.size()); ++t) {
       out->writeState(t, first, trajectoryCache[t]->get(0, len));
       trajectoryCache[t]->flush();
     }

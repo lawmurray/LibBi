@@ -265,21 +265,21 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
   //^ tObs already merged into tOutputs above
 
   /* generate schedule */
-  for (elem.k = 0; elem.k < ts.size(); ++elem.k) {
+  for (elem.k = 0; elem.k < int(ts.size()); ++elem.k) {
     elem.t1 = elem.t2;
     elem.t2 = scaled2user(ts[elem.k]);
-    elem.bDelta = elem.k > 0 && elem.kDelta < tDeltas.size()
+    elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
         && tDeltas[elem.kDelta] == ts[elem.k - 1];
 
     // inputs update on half-open intervals (t, t+1], except for the first
     // input, which is on the closed interval [t, t+1]
-    elem.bInput = (elem.k > 0 && elem.kInput < tInputs.size()
+    elem.bInput = (elem.k > 0 && elem.kInput < int(tInputs.size())
         && tInputs[elem.kInput] == ts[elem.k - 1])
-        || (elem.k == 0 && tInputs.size() > 0 && tInputs[0] == ts[0]);
+        || (elem.k == 0 && int(tInputs.size()) > 0 && tInputs[0] == ts[0]);
 
-    elem.bOutput = elem.kOutput < tOutputs.size()
+    elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
-    elem.bObs = elem.kObs < tObs.size() && tObs[elem.kObs] == ts[elem.k];
+    elem.bObs = elem.kObs < int(tObs.size()) && tObs[elem.kObs] == ts[elem.k];
 
     elems.push_back(elem);
 

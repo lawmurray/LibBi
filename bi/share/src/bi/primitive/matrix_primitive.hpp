@@ -206,6 +206,8 @@ void sum_rows(const M1 X, V1 y);
 /**
  * Gather rows of matrix.
  *
+ * @ingroup primitive_matrix
+ *
  * @tparam V1 Integer vector type.
  * @tparam M1 Matrix type.
  * @tparam M2 Matrix type.
@@ -232,6 +234,8 @@ struct gather_rows_impl {
 
 /**
  * Scatter rows of matrix.
+ *
+ * @ingroup primitive_matrix
  *
  * @tparam V1 Integer vector type.
  * @tparam M1 Matrix type.

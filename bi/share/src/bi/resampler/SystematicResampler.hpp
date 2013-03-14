@@ -81,28 +81,28 @@ public:
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  bool resample(Random& rng, V1 lws, V2 as, O1& s)
+  void resample(Random& rng, V1 lws, V2 as, O1& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  bool resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s)
+  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
    */
   template<class V1, class V2, class V3, class O1>
-  bool resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s)
+  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s)
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  bool cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
+  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
       O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -184,7 +184,7 @@ protected:
 #include "thrust/for_each.h"
 
 template<class V1, class V2, class O1>
-bool bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
+void bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
@@ -192,72 +192,50 @@ bool bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
   const int P = lws.size();
   typename sim_temp_vector<V2>::type Os(P);
 
-  bool r = isTriggered(lws);
-  if (r) {
-    cumulativeOffspring(rng, lws, Os, P);
-    cumulativeOffspringToAncestorsPermute(Os, as);
-    lws.clear();
-    copy(as, s);
-  } else {
-    normalise(lws);
-    seq_elements(as, 0);
-  }
-  return r;
+  cumulativeOffspring(rng, lws, Os, P);
+  cumulativeOffspringToAncestorsPermute(Os, as);
+  lws.clear();
+  copy(as, s);
+
 }
 
 template<class V1, class V2, class V3, class O1>
-bool bi::SystematicResampler::resample(Random& rng, const V1 qlws, V2 lws,
+void bi::SystematicResampler::resample(Random& rng, const V1 qlws, V2 lws,
     V3 as, O1& s) throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(qlws.size() == lws.size());
 
-  /* typically faster on host, so copy to there */
   const int P = lws.size();
   typename sim_temp_vector<V3>::type Os(P);
 
-  bool r = isTriggered(lws);
-  if (r) {
-    cumulativeOffspring(rng, qlws, Os, P);
-    cumulativeOffspringToAncestorsPermute(Os, as);
-    correct(as, qlws, lws);
-    normalise(lws);
-    copy(as, s);
-  } else {
-    normalise(lws);
-    seq_elements(as, 0);
-  }
-  return r;
+  cumulativeOffspring(rng, qlws, Os, P);
+  cumulativeOffspringToAncestorsPermute(Os, as);
+  correct(as, qlws, lws);
+  normalise(lws);
+  copy(as, s);
 }
 
 template<class V1, class V2, class V3, class O1>
-bool bi::SystematicResampler::resample(Random& rng, const int a,
+void bi::SystematicResampler::resample(Random& rng, const int a,
     const V1 qlws, V2 lws, V3 as, O1& s)
         throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(qlws.size() == lws.size());
 
-  /* typically faster on host, so copy to there */
   const int P = lws.size();
   typename sim_temp_vector<V3>::type Os(P);
 
-  bool r = isTriggered(lws);
-  if (r) {
-    cumulativeOffspring(rng, qlws, Os, P - 1);
-    BOOST_AUTO(tail, subrange(Os, a, Os.size() - a));
-    addscal_elements(tail, 1, tail);
-    cumulativeOffspringToAncestorsPermute(Os, as);
-    correct(as, qlws, lws);
-    normalise(lws);
-    copy(as, s);
-  } else {
-    normalise(lws);
-    seq_elements(as, 0);
-  }
-  return r;
+  cumulativeOffspring(rng, qlws, Os, P - 1);
+  BOOST_AUTO(tail, subrange(Os, a, Os.size() - a));
+  addscal_elements(tail, 1, tail);
+  cumulativeOffspringToAncestorsPermute(Os, as);
+  correct(as, qlws, lws);
+  normalise(lws);
+  copy(as, s);
 }
 
 template<class V1, class V2, class O1>
-bool bi::SystematicResampler::cond_resample(Random& rng, const int ka,
+void bi::SystematicResampler::cond_resample(Random& rng, const int ka,
     const int k, V1 lws, V2 as, O1& s)
         throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
@@ -266,31 +244,24 @@ bool bi::SystematicResampler::cond_resample(Random& rng, const int ka,
   BI_ASSERT(ka >= 0 && ka < lws.size());
   BI_ASSERT(k == 0 && ka == 0);
 
-  bool r = isTriggered(lws);
-  if (r) {
-    const int P = lws.size();
-    typename sim_temp_vector<V2>::type Os(P);
+  const int P = lws.size();
+  typename sim_temp_vector<V2>::type Os(P);
 
-    int P2;
-    if (!sort) {
-      // change this?
-      P2 = 0;
-    } else {
-      P2 = s.size();
-    }
-    typename sim_temp_vector<V1>::type lws1(P2), Ws(P2);
-    typename sim_temp_vector<V2>::type ps(P2);
-
-    cumulativeOffspring(rng, lws, Os, P, ka, false, lws1, ps, Ws);
-    cumulativeOffspringToAncestorsPermute(Os, as);
-    BI_ASSERT(*(as.begin() + k) == ka);
-    copy(as, s);
-    lws.clear();
+  int P2;
+  if (!sort) {
+    // change this?
+    P2 = 0;
   } else {
-    normalise(lws);
-    seq_elements(as, 0);
+    P2 = s.size();
   }
-  return r;
+  typename sim_temp_vector<V1>::type lws1(P2), Ws(P2);
+  typename sim_temp_vector<V2>::type ps(P2);
+
+  cumulativeOffspring(rng, lws, Os, P, ka, false, lws1, ps, Ws);
+  cumulativeOffspringToAncestorsPermute(Os, as);
+  BI_ASSERT(*(as.begin() + k) == ka);
+  copy(as, s);
+  lws.clear();
 }
 
 template<class V1, class V2>

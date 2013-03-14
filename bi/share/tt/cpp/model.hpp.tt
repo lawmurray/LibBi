@@ -882,7 +882,7 @@ real [% class_name %]::[% toplevel | to_camel_case %]MaxLogDensity(bi::State<[% 
   const int size = s.size();
   s.setRange(p, 1);
   lp.clear();
-  [% toplevel | to_camel_case %]MaxLogDensity(s, mask, lp);
+  [% toplevel | to_camel_case %]MaxLogDensities(s, mask, lp);
   s.setRange(start, size);
   
   return *lp.begin();

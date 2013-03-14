@@ -66,18 +66,6 @@ public:
   void writeAncestors(const int t, const V1 a);
 
   /**
-   * @copydoc #concept::ParticleFilterBuffer::readResamples()
-   */
-  template<class V1>
-  void readResamples(const int t, V1 r);
-
-  /**
-   * @copydoc #concept::ParticleFilterBuffer::writeResamples()
-   */
-  template<class V1>
-  void writeResamples(const int t, const V1 r);
-
-  /**
    * Write marginal log-likelihood estimate.
    *
    * @param ll Marginal log-likelihood estimate.
@@ -228,53 +216,6 @@ void bi::FlexiParticleFilterNetCDFBuffer::writeAncestors(const int t,
     ret = aVar->put(a.buf(), len);
   }
   BI_ASSERT_MSG(ret, "Inconvertible type writing variable " << aVar->name());
-}
-
-template<class V1>
-void bi::FlexiParticleFilterNetCDFBuffer::readResamples(const int t, V1 r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << rVar->name());
-
-  if (V1::on_device || r.inc() != 1) {
-    temp_vector_type r1(r.size());
-    ret = rVar->get(r1.buf(), r1.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
-    r = r1;
-  } else {
-    ret = rVar->get(r.buf(), r.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
-  }
-}
-
-template<class V1>
-void bi::FlexiParticleFilterNetCDFBuffer::writeResamples(const int t,
-    const V1 r) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + r.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = rVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable " << rVar->name());
-
-  if (V1::on_device || r.inc() != 1) {
-    temp_vector_type r1(r.size());
-    r1 = r;
-    synchronize(V1::on_device);
-    ret = rVar->put(r1.buf(), r1.size());
-  } else {
-    ret = rVar->put(r.buf(), r.size());
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type reading variable " << rVar->name());
 }
 
 #endif
