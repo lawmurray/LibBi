@@ -421,7 +421,20 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
   m.initialSamples(rng, s);
   if (inInit != NULL) {
     inInit->read0(D_VAR, s.get(D_VAR));
+    inInit->read0(R_VAR, s.get(D_VAR));
+
+    BOOST_AUTO(iter,
+        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
+            now.getTime()));
+    if (iter != inInit->getTimes().end()) {
+      inInit->read(std::distance(inInit->getTimes().begin(), iter), D_VAR,
+          s.get(D_VAR));
+      inInit->read(std::distance(inInit->getTimes().begin(), iter), R_VAR,
+          s.get(R_VAR));
+    }
+
     s.get(DY_VAR) = s.get(D_VAR);
+    s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
 
@@ -457,7 +470,17 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
   m.initialSimulates(s);
   if (inInit != NULL) {
     inInit->read0(D_VAR, s.get(D_VAR));
+    inInit->read0(R_VAR, s.get(D_VAR));
+
+    BOOST_AUTO(&times, inInit->getTimes());
+    BOOST_AUTO(iter, std::find(times.begin(), times.end(), now.getTime()));
+    if (iter != times.end()) {
+      inInit->read(std::distance(times.begin(), iter), D_VAR, s.get(D_VAR));
+      inInit->read(std::distance(times.begin(), iter), R_VAR, s.get(R_VAR));
+    }
+
     s.get(DY_VAR) = s.get(D_VAR);
+    s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
 

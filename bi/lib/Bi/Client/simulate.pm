@@ -53,7 +53,7 @@ File to which to write output.
 
 Index along the C<ns> dimension of C<--init-file> to use.
 
-=item C<--init-np> (default 0)
+=item C<--init-np> (default -1)
 
 Index along the C<np> dimension of C<--init-file> to use.
 
@@ -61,7 +61,7 @@ Index along the C<np> dimension of C<--init-file> to use.
 
 Index along the C<ns> dimension of C<--input-file> to use.
 
-=item C<--input-np> (default 0)
+=item C<--input-np> (default -1)
 
 Index along the C<np> dimension of C<--input-file> to use.
 
@@ -69,7 +69,7 @@ Index along the C<np> dimension of C<--input-file> to use.
 
 Index along the C<ns> dimension of C<--obs-file> to use.
 
-=item C<--obs-np> (default 0)
+=item C<--obs-np> (default -1)
 
 Index along the C<np> dimension of C<--obs-file> to use.
 
@@ -121,7 +121,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'init-np',
       type => 'int',
-      default => 0
+      default => -1
     },
     {
       name => 'input-ns',
@@ -131,7 +131,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'input-np',
       type => 'int',
-      default => 0
+      default => -1
     },
     {
       name => 'obs-ns',
