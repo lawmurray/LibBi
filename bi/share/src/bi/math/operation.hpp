@@ -4,8 +4,6 @@
  * @author Lawrence Murray <lawrence.murray@csiro.au>
  * $Rev$
  * $Date$
- *
- * @todo Check synchronize() only used where necessary.
  */
 #ifndef BI_MATH_OPERATION_HPP
 #define BI_MATH_OPERATION_HPP
