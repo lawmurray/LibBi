@@ -27,8 +27,7 @@ CUDA_FUNC_GLOBAL void bi::kernel_gather_rows(const V1 map, const M1 X, M2 Y) {
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = blockIdx.y*blockDim.y + threadIdx.y;
 
-  if (p < map.size()/* && map(p) != p*/) {
-    // ^ the extra condition above destroys coalesced reads/writes
+  if (p < map.size()) {
     Y(p, id) = X(map(p), id);
   }
 }
@@ -38,8 +37,7 @@ CUDA_FUNC_GLOBAL void bi::kernel_scatter_rows(const V1 map, const M1 X, M2 Y) {
   const int p = blockIdx.x*blockDim.x + threadIdx.x;
   const int id = blockIdx.y*blockDim.y + threadIdx.y;
 
-  if (p < map.size()/* && map(p) != p*/) {
-    // ^ the extra condition above destroys coalesced reads/writes
+  if (p < map.size()) {
     Y(map(p), id) = X(p, id);
   }
 }

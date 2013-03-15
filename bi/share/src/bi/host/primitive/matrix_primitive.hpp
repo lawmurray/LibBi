@@ -32,10 +32,7 @@ template<class V1, class M1, class M2>
 void bi::gather_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X, M2 Y) {
 #pragma omp parallel for
   for (int p = 0; p < map.size(); ++p) {
-    int m = map(p);
-    if (m != p) {
-      row(Y, p) = row(X, m);
-    }
+    row(Y, p) = row(X, map(p));
   }
 }
 
@@ -44,10 +41,7 @@ void bi::scatter_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
 #pragma omp parallel for
   for (int p = 0; p < map.size(); ++p) {
-    int m = map(p);
-    if (m != p) {
-      row(Y, m) = row(X, p);
-    }
+    row(Y, map(p)) = row(X, p);
   }
 }
 
