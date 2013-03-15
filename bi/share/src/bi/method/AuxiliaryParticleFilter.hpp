@@ -307,8 +307,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->output0(s);
   ll = this->correct(*iter, s, lw2s);
   this->output(*iter, s, r, lw2s, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lw1s, lw2s, as);
   }
   this->term();
@@ -337,8 +336,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->output0(s);
   ll = this->correct(*iter, s, lw2s);
   this->output(*iter, s, r, lw2s, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lw1s, lw2s, as);
   }
   this->term();
@@ -368,8 +366,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->output0(s);
   ll = this->correct(*iter, s, lw2s);
   this->output(*iter, s, r, lw2s, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, X, lw1s, lw2s, as);
   }
   this->term();
@@ -408,16 +405,15 @@ template<bi::Location L, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lw1s, V1 lw2s, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  lookahead(rng, iter, last, s, lw1s, lw2s);
+  bool r = resample(rng, *iter, s, lw1s, lw2s, as);
   do {
-    lookahead(rng, iter, last, s, lw1s, lw2s);
-    r = resample(rng, *(iter - 1), s, lw1s, lw2s, as);
-    this->predict(rng, *iter, s);
-    ll += this->correct(*iter, s, lw2s);
-    this->output(*iter, s, r, lw2s, as);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    this->predict(rng, *iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  real ll = this->correct(*iter, s, lw2s);
+  this->output(*iter, s, r, lw2s, as);
+
   return ll;
 }
 
@@ -426,17 +422,16 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lw1s, V1 lw2s, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  lookahead(rng, iter, last, s, lw1s, lw2s);
+  bool r = resample(rng, *iter, s, lw1s, lw2s, as);
   do {
-    lookahead(rng, iter, last, s, lw1s, lw2s);
-    r = resample(rng, *(iter - 1), s, lw1s, lw2s, as);
-    this->predict(rng, *iter, s);
-    row(s.getDyn(), 0) = column(X, iter->indexOutput());
-    ll += this->correct(*iter, s, lw2s);
-    this->output(*iter, s, r, lw2s, as);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    this->predict(rng, *iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  row(s.getDyn(), 0) = column(X, iter->indexOutput());
+  real ll = this->correct(*iter, s, lw2s);
+  this->output(*iter, s, r, lw2s, as);
+
   return ll;
 }
 
@@ -445,9 +440,8 @@ template<bi::Location L, class V1>
 void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
     V1 lw1s, V1 lw2s) {
-  if (last->indexObs() > iter->indexObs()) {
-    /* one or more observations remain */
-    /* store current state */
+  if (last->indexObs() > (iter + 1)->indexObs()) {
+    /* one or more observations remain, lookahead to next */
     typename loc_temp_matrix<L,real>::type X(s.getDyn().size1(),
         s.getDyn().size2());
     X = s.getDyn();
@@ -455,10 +449,10 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     lw1s = lw2s;
     ScheduleIterator iter1 = iter;
     do {
-      lookaheadPredict(rng, *iter1, s);
-      lookaheadCorrect(*iter1, s, lw1s);
       ++iter1;
-    } while (!(iter1 - 1)->hasObs());
+      lookaheadPredict(rng, *iter1, s);
+    } while (!iter1->hasObs());
+    lookaheadCorrect(*iter1, s, lw1s);
 
     /* restore previous state */
     s.getDyn() = X;
@@ -498,12 +492,12 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(
-          m.observationMaxLogDensity(s,
-              sim->getObs()->getMask(now.indexObs())));
+          this->m.observationMaxLogDensity(s,
+              this->getSim()->getObs()->getMask(now.indexObs())));
     }
     this->getResam()->resample(rng, lw1s, lw2s, as, s);
   } else {
-    Resampler::normalise(lws);
+    Resampler::normalise(lw2s);
     seq_elements(as, 0);
   }
   return r;
@@ -524,12 +518,12 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(
-          m.observationMaxLogDensity(s,
-              sim->getObs()->getMask(now.indexObs())));
+          this->m.observationMaxLogDensity(s,
+              this->getSim()->getObs()->getMask(now.indexObs())));
     }
     this->getResam()->resample(rng, a, lw1s, lw2s, as, s);
   } else {
-    Resampler::normalise(lws);
+    Resampler::normalise(lw2s);
     seq_elements(as, 0);
   }
   return r;

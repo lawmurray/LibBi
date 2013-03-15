@@ -318,7 +318,6 @@ void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
     a = as(a);
     --t;
   } while (a != -1);
-  BI_ASSERT(t == -1);
 }
 
 template<bi::Location CL>

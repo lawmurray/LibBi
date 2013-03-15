@@ -344,8 +344,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, U, S1);
   output(*iter, s, U, S1);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(iter, last, s, U, S1);
   }
   term();
@@ -372,8 +371,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, U, S1);
   output(*iter, s, U, S1);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(iter, last, s, U, S1);
   }
   term();
@@ -445,13 +443,13 @@ template<class B, class S, class IO1>
 template<bi::Location L, class M1>
 real bi::ExtendedKalmanFilter<B,S,IO1>::step(ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, M1 U, M1 S1) {
-  real ll = 0.0;
   do {
-    predict(*iter, s, U, S1);
-    ll += correct(*iter, s, U, S1);
-    output(*iter, s, U, S1);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    predict(*iter, s, U, S1);
+  } while (iter + 1 != last && !iter->hasOutput());
+  real ll = correct(*iter, s, U, S1);
+  output(*iter, s, U, S1);
+
   return ll;
 }
 

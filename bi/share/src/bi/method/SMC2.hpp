@@ -333,8 +333,7 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
   /* init */
   evidence = init(rng, *iter, s, thetas, lws, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     evidence += step(rng, first, iter, last, s, thetas, lws, as);
   }
   output(thetas, lws);
@@ -404,14 +403,14 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
   GaussianPdf<host_vector_type,host_matrix_type> q(NP);  // proposal distro
 
   ess = resam->ess(lws);
-  r = (iter - 1)->hasObs() && resam->isTriggered(lws);
+  r = iter->hasObs() && resam->isTriggered(lws);
   if (r) {
     /* resample-move */
     adapt(thetas, lws, q);
-    resample(rng, *(iter - 1), lws, as, thetas);
-    acceptRate = rejuvenate(rng, first, iter, s, thetas, q);
+    resample(rng, *iter, lws, as, thetas);
+    acceptRate = rejuvenate(rng, first, iter + 1, s, thetas, q);
   }
-  report(*(iter - 1), ess, r, acceptRate);
+  report(*iter, ess, r, acceptRate);
 
   ScheduleIterator iter1;
   for (i = 0; i < thetas.size(); i++) {
@@ -533,7 +532,7 @@ void bi::SMC2<B,F,R,IO1>::output(
 template<class B, class F, class R, class IO1>
 void bi::SMC2<B,F,R,IO1>::report(const ScheduleElement now, const real ess,
     const bool r, const real acceptRate) {
-  std::cerr << now.indexObs() << ":\ttime " << now.getTime() << "\tESS "
+  std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
       << ess;
   if (r) {
     std::cerr << "\tresample-move with acceptance rate " << acceptRate;

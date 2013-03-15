@@ -181,6 +181,31 @@ public:
   void init(const V1 theta, const ScheduleElement now, State<B,L>& s);
 
   /**
+   * Advance stochastic model forward to time of next output, and output.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param[in,out] iter Current position in time schedule. Advanced on
+   * return.
+   * @param last End of time schedule.
+   * @param[in,out] s State.
+   */
+  template<Location L>
+  void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+      State<B,L>& s);
+
+  /**
+   * Advance deterministic model forward to time of next output, and output.
+   *
+   * @param[in,out] iter Current position in time schedule. Advanced on
+   * return.
+   * @param last End of time schedule.
+   * @param[in,out] s State.
+   */
+  template<Location L>
+  void step(ScheduleIterator& iter, const ScheduleIterator last,
+      State<B,L>& s);
+
+  /**
    * Advance stochastic model forward.
    *
    * @tparam L Location.
@@ -367,11 +392,8 @@ void bi::Simulator<B,F,O,IO1>::simulate(Random& rng,
   init(rng, *iter, s, inInit);
   output0(s);
   output(*iter, s);
-  ++iter;
-  while (iter != last) {
-    advance(rng, *iter, s);
-    output(*iter, s);
-    ++iter;
+  while (iter + 1 != last) {
+    step(rng, iter, last, s);
   }
   term();
 }
@@ -386,15 +408,12 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   init(s, *iter, inInit);
   output0(s);
   output(*iter, s);
-  ++iter;
-  while (iter != last) {
-    advance(*iter, s);
-    output(*iter, s);
-    ++iter;
+  while (iter + 1 != last) {
+    step(iter, last, s);
   }
   term();
 }
-#include "../math/io.hpp"
+
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
@@ -550,6 +569,28 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
   if (now.hasObs()) {
     obs->update(now.indexObs(), s);
   }
+}
+
+template<class B, class F, class O, class IO1>
+template<bi::Location L>
+void bi::Simulator<B,F,O,IO1>::step(Random& rng, ScheduleIterator& iter,
+    const ScheduleIterator last, State<B,L>& s) {
+  do {
+    ++iter;
+    advance(rng, *iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  output(*iter, s);
+}
+
+template<class B, class F, class O, class IO1>
+template<bi::Location L>
+void bi::Simulator<B,F,O,IO1>::step(ScheduleIterator& iter,
+    const ScheduleIterator last, State<B,L>& s) {
+  do {
+    ++iter;
+    advance(*iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  output(*iter, s);
 }
 
 template<class B, class F, class O, class IO1>

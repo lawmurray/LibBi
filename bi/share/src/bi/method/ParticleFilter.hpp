@@ -477,8 +477,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -507,8 +506,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
   term();
@@ -538,8 +536,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   output0(s);
   ll = correct(*iter, s, lws);
   output(*iter, s, r, lws, as);
-  ++iter;
-  while (iter != last) {
+  while (iter + 1 != last) {
     ll += step(rng, iter, last, s, X, lws, as);
   }
   term();
@@ -595,15 +592,14 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = resample(rng, *iter, s, lws, as);
   do {
-    r = resample(rng, *(iter - 1), s, lws, as);
-    predict(rng, *iter, s);
-    ll += correct(*iter, s, lws);
-    output(*iter, s, r, lws, as);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    predict(rng, *iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  real ll = correct(*iter, s, lws);
+  output(*iter, s, r, lws, as);
+
   return ll;
 }
 
@@ -611,16 +607,15 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class M1, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = resample(rng, *iter, s, lws, as);
   do {
-    r = resample(rng, *(iter - 1), s, lws, as);
-    predict(rng, *iter, s);
-    row(s.getDyn(), 0) = column(X, iter->indexOutput());
-    ll += correct(*iter, s, lws);
-    output(*iter, s, r, lws, as);
     ++iter;
-  } while (iter != last && !(iter - 1)->hasObs());
+    predict(rng, *iter, s);
+  } while (iter + 1 != last && !iter->hasOutput());
+  row(s.getDyn(), 0) = column(X, iter->indexOutput());
+  real ll = correct(*iter, s, lws);
+  output(*iter, s, r, lws, as);
+
   return ll;
 }
 
