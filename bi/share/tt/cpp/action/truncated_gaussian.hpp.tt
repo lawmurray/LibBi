@@ -108,7 +108,7 @@ public:
   [% ELSIF has_lower && !has_upper %]
   lower(s, p, cox, pax, mn);
   u = lower_truncated_gaussian(rng, mn, mu, sigma);
-  [% ELSIF !has_lower && !has_upper %]
+  [% ELSIF !has_lower && has_upper %]
   upper(s, p, cox, pax, mx);
   u = upper_truncated_gaussian(rng, mx, mu, sigma);
   [% ELSE %]
@@ -135,7 +135,7 @@ public:
   [% ELSIF has_lower && !has_upper %]
   lower(s, p, cox, pax, mn);
   inside = xy >= mn;
-  [% ELSIF !has_lower && !has_upper %]
+  [% ELSIF !has_lower && has_upper %]
   upper(s, p, cox, pax, mx);
   inside = xy <= mx;
   [% END %]

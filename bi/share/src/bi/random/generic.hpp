@@ -150,10 +150,12 @@ template<class R, class T1>
 T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
     const T1 sigma) {
   /* pre-conditions */
-  BI_ASSERT(upper > lower);
+  BI_ASSERT(upper >= lower);
 
   T1 u;
-  do {
+  if (upper == lower) {
+    u = upper;
+  } else do {
     u = rng.gaussian(mu, sigma);
   } while (u < lower || u > upper);
 
