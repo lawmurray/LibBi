@@ -5,28 +5,28 @@ simulation, filtering and smoothing for state estimation, and optimisation and
 sampling for parameter estimation.
 
 LibBi supports state-space models of the form:
-\begin{equation*}
+\begin{equation}\label{eqn:model}
 p(\mathbf{y}_{1:T},\mathbf{x}_{0:T},\boldsymbol{\theta}) =
 \underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
 \underbrace{p(\mathbf{x}_0|\boldsymbol{\theta})}_{\text{initial}}
 \prod_{t=1}^T
 \underbrace{p(\mathbf{x}_t|\mathbf{x}_{t-1},\boldsymbol{\theta})}_{\text{transition}}
 \underbrace{p(\mathbf{y}_t|\mathbf{x}_t,\boldsymbol{\theta})}_{\text{observation}}.
-\end{equation*}
+\end{equation}
 where $t = 1,\ldots,T$ indexes time, $\mathbf{y}_{1:T}$ are observations,
 $\mathbf{x}_{1:T}$ are state variables, and $\boldsymbol{\theta}$ are
 parameters.
 
-The model is hierarchically factored into four particular conditional
+The state-space model in (\ref{eqn:model}) consists of four conditional
 probability densities\index{probability\,density}:
 \begin{itemize}
-\item the parameter model, specifying the prior density over parameters,
-\item the initial condition model, specifying the prior density over initial
-  conditions, conditioned on the parameters,
-\item the transition model, specifying the transition density conditioned on
-  the parameters and previous state,
-\item the observation model, specifying the observation density conditioned on
-  the parameters and current state.
+\item the \emph{parameter} model, specifying the prior density over parameters,
+\item the \emph{initial} value model, specifying the prior density over the
+  initial value of state variables, conditioned on the parameters,
+\item the \emph{transition} model, specifying the transition density,
+  conditioned on the parameters and previous state,
+\item the \emph{observation} model, specifying the observation density,
+  conditioned on the parameters and current state.
 \end{itemize}
 Each of these is explicitly specified using the LibBi modelling
 language\seealso{See \secref{Models}{Models}}.
@@ -70,10 +70,10 @@ model PZ \{
     Z ~ log_normal(log(2.0), 0.1)
   \}
 
-  sub transition(delta = 1.0) \{
+  sub transition \{
     do \{
       alpha ~ normal(mu, sigma)
-    \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+    \} then ode \{
       P <- ode(alpha*P - c*P*Z)
       Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
     \}
@@ -85,16 +85,16 @@ model PZ \{
 \}
 \end{bicode}
 
-This would be saved in a file named \bitt{PZ.bi}. We can now consider
-performing various tasks with the LibBi command-line interface, the simplest of
-which is simulating from the model:
+This would be saved in a file named \bitt{PZ.bi}. Various tasks can now be
+performed with the LibBi command-line interface, the simplest of which is
+just simulating from the model:
 \begin{cmdcode}
 bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 \textbackslash
     --output-file results/simulate.nc
 \end{cmdcode}
 This command will simulate 128 trajectories of the model (\bitt{-P 128}), each
-of 365 days (\bitt{-T 365}), outputting the results to the NetCDF\index{NetCDF}
-file \bitt{results/simulate.nc} every day (\bitt{-K 365}).
+of 365 days (\bitt{-T 365}), outputting the results every day (\bitt{-K 365})
+to the NetCDF\index{NetCDF} file \bitt{results/simulate.nc}.
 
 \begin{tip}
 On the first occasion that a command is run, LibBi generates and compiles code
@@ -104,34 +104,39 @@ and execution time is noticeably shorter. Changes to some command-line options
 may also trigger a recompile.
 \end{tip}
 
+To play with this example further, download the \bitt{PZ} package from
+\url{www.libbi.org}. Inspect and run the \texttt{run.sh} script to get
+started.
+
 The \secref{Command_line_interface}{command-line interface} provides numerous
 other functionality, including filtering and smoothing the model with respect
-to data, and optimising or sampling its parameters.
-
-To play with this example further, download the \bitt{PZ} package from
-\url{www.libbi.org}. Inspect and execute the \texttt{run.sh} script to get
-started.
+to data, and optimising or sampling its parameters. The \clientref{help}
+command is particularly useful, and can be used to access the contents of the
+\secref{User_Reference}{User Reference} portion of this manual from the
+command line.
 
 \section{Getting started}\label{Getting_started}
 
-There is a standard file and directory structure for a LibBi project. Sticking
-to it ensures that your projects will be easy to share and distribute via
-LibBi packages. To set up the standard structure, create an empty directory
-somewhere, and from within that directory run:
+There is a standard file and directory structure for a LibBi project. Using it
+for your own projects ensures that they will be easy to share and distribute
+as a LibBi package. To set up the standard structure, create an empty
+directory somewhere, and from within that directory run:
 \begin{cmdcode}
 bi package --create --name \emph{Name}
 \end{cmdcode}
 replacing \bitt{\emph{Name}} with the name of your project.
 
 \begin{tip}
-By convention, names always begin with an uppercase letter, and multiple words
-are denoted using CamelCase. See the \secref{Style_guide}{Style guide} for
-more such conventions.
+By convention, names always begin with an uppercase letter, and all new words
+also begin with an uppercase letter, as in CamelCase. See the
+\secref{Style_guide}{Style guide} for more such conventions.
 \end{tip}
 
 Each of the files that are created contains some placeholder content that is
-intended to be modified. Following this guide, and looking at some existing
-examples, is a good way to proceed.
+intended to be modified. The most important file is the \bitt{MANIFEST} file,
+which includes the complete list of files that should be packaged for
+distribution. Following this guide, and looking at some existing examples, is
+a good way to proceed.
 
 The following command can be run at any time to validate that a project still
 conforms to the standard structure:
@@ -149,15 +154,15 @@ project files.
 
 \section{Models\label{Models}}
 
-Models for use with LibBi are specified in the LibBi modelling language. A
-model specification is put in a file with an extension of \bitt{*.bi}. Each
-such files will contain only a single model specification.
+Models are specified in the LibBi modelling language. A model specification is
+put in a file with an extension of \bitt{*.bi}. Each such file contains only a
+single model specification.
 
 A specification always starts with an outer \kwref{model} statement that
-declares and names the model. It then proceeds with declarations of dimensions
-and variables, followed by four \emph{top-level blocks} --
+declares and names the model. It then proceeds with declarations of constants,
+dimensions and variables, followed by four \emph{top-level blocks} --
 \blockref{parameter}, \blockref{initial}, \blockref{transition} and
-\blockref{observation} -- that describe the factors of the hierarchical model.
+\blockref{observation} -- that describe the factors of the state-space model.
 
 A suitable template is:
 \begin{bicode}
@@ -167,19 +172,19 @@ model \textsl{Name} \{
   // declare variables...
 
   sub parameter \{
-    // specify the parameter model
+    // specify the parameter model...
   \}
 
   sub initial \{
-    // specify the initial condition model
+    // specify the initial condition model...
   \}
 
   sub transition \{
-    // specify the transition model
+    // specify the transition model...
   \}
 
   sub observation \{
-    // specify the observation model
+    // specify the observation model...
   \}
 \}
 \end{bicode}
@@ -216,17 +221,13 @@ replacing \bitt{\emph{name}} with it. Inlines may be recursively nested.
 
 \seealso{See also \secref{dim}{\kwref{dim}}} Dimensions are used to construct
 vector\index{vector}, matrix\index{matrix} and
-higher-dimensional\index{higher\,dimensional} variables. Typically they have a
-spatial interpretation, for example a large 3-dimensional spatial
-model\index{spatial\,model} may declare dimensions \bitt{x}, \bitt{y} and
-\bitt{z}.
-
-Dimensions are declared using:
+higher-dimensional\index{higher\,dimensional} variables. Often, but not
+necessarily, they have a spatial interpretation; for example a large
+3-dimensional spatial model\index{spatial\,model} may declare dimensions
+\bitt{x}, \bitt{y} and \bitt{z}. Dimensions are declared using:
 \begin{bicode}
 dim \emph{name}(\emph{size})
 \end{bicode}
-This declares a dimension of name \bitt{\emph{name}} and size
-\bitt{\emph{size}}.
 
 \begin{tip}
 Because LibBi is primarily meant for state-space models, the time dimension is
@@ -235,8 +236,8 @@ special and not declared explicitly.
 
 \subsection{Variables\label{Variables}}
 
-\seealso{See also \secref{input}{\kwref{input}, \kwref{noise}, \kwref{obs},
-    \kwref{param} and \kwref{state}}} Variables are named and mutable
+\seealso{See also \secref{input}{\kwref{input}, \kwref{param}, \kwref{state},
+    \kwref{noise} and \kwref{obs}}} Variables are named and mutable
 scalar\index{scalar}, vector\index{vector}, matrix\index{matrix} or
 higher-dimensional\index{higher\,dimensional} objects.
 
@@ -246,12 +247,12 @@ A simple scalar variable is declared using:
 \end{bicode}
 where \bitt{\emph{type}} is one of:
 \begin{description}
-\item[\kwref{input}] for an observed variable that is set (and possibly changes
-  over time) according to input from a file,
+\item[\kwref{input}] for a variable with values that may or may
+  not change over time, but that are prescribed according to input from a
+  file,
 \item[\kwref{param}] for a latent variable that does not change over time,
 \item[\kwref{state}] for a latent variable that changes over time,
-\item[\kwref{noise}] for a latent variable that changes in time with no
-  autocorrelation in time,
+\item[\kwref{noise}] for a latent noise term that changes over time,
 \item[\kwref{obs}] for an observed variable that changes over time.
 \end{description}
 For example, for the equation of the state-space model in the
@@ -271,9 +272,8 @@ obs y
 
 A vector\index{vector}, matrix\index{matrix} or
 higher-dimensional\index{higher\,dimensional} variable is declared by listing
-the names of the \secref{Dimensions}{Dimensions} over which it should extend
-in a comma-separated list enclosed in square brackets, after the variable
-name. For example:
+the names of the \secref{Dimensions}{Dimensions} over which it extends,
+separated by commas, in square brackets after the variable name. For example:
 \begin{bicode}
 dim m(50)
 dim n(20)
@@ -281,7 +281,7 @@ dim n(20)
 state x[m,n]
 \end{bicode}
 declares a state variable \bitt{x}, which is a matrix\index{matrix} of size
-$50 \times 20$ declared over the dimensions \bitt{m} and \bitt{n}.
+$50 \times 20$.
 
 The declaration of a variable can also include various arguments that control,
 for example, whether or not it is included in output files. These are
@@ -293,8 +293,7 @@ state x[m,n](has_output = 0)
 \subsection{Actions\label{Actions}}
 
 Within each top-level block, a probability density is specified using
-\emph{actions}. If \bitt{x} is some variable already declared, an action
-takes the form:
+\emph{actions}. An action takes the form:
 \begin{bicode}
 x ~ \textsl{name}(\textsl{arguments}, ...)
 \end{bicode}
@@ -302,65 +301,87 @@ or
 \begin{bicode}
 x <- \textsl{name}(\textsl{arguments}, ...)
 \end{bicode}
+where \bitt{x} is some variable, referred to as the \emph{target}.
 
-The first form indicates that the (random) variable \bitt{x} is distributed
-according to the action given on the right. Such actions are usually, and
-unsurprisingly, named after common parametric distributions (e.g.
-\actionref{gaussian}, \actionref{gamma} and \actionref{uniform}).
+The first form, with the \bitt{\~{}} operator, indicates that the (random)
+variable \bitt{x} is distributed according to the action given on the
+right. Such actions usually correspond to parametric probability distributions
+(e.g.  \actionref{gaussian}, \actionref{gamma} and \actionref{uniform}).
 
-The second form indicates that the (deterministic) variable \bitt{x} should be
-assigned a value evaluated according to the action given on the right. Such
-actions may require the evaluation of a simple scalar\index{scalar},
-vector\index{vector} or matrix\index{matrix} expression, or may required more
-complicated processing, such as the numerical integration of ordinary
+The second form, with the \bitt{<-} operator, indicates that the
+(deterministic) variable \bitt{x} should be assigned the result of the action
+given on the right. Such actions might be simple scalar\index{scalar},
+vector\index{vector} or matrix\index{matrix} expressions, or may require more
+elaborate processing, such as for the numerical integration of ordinary
 differential equations\index{ordinary\,differential\,equations} (e.g. the
-\actionref{ode}) action).
+\actionref{ode} action).
 
-Actions support both \emph{named}\index{named\,arguments} and \emph{positional}
-arguments\index{positional\,arguments}, and this will be indicated in their
-documentation. Positional arguments are interpreted by the order given. For
-example
+Individual elements of a vector, matrix or higher-dimensional variable may be
+targeted using square brackets. Consider the following action giving the
+differential equation for a Lorenz '96 model:
 \begin{bicode}
-x ~ gaussian(0.0, 1.0)
+x[i] <- ode(x[i - 1]*(x[i + 1] - x[i - 2]) - x[i] + F)
+\end{bicode}
+If \bitt{x} is a vector of size $N$, the action should be interpreted as ``for
+each $i \in (0,\ldots,N-1)$, use the following differential equation''. The
+name \bitt{i} is an \emph{index}, considered declared on the left with local
+scope to the action, so that it may be used on the right. The name \bitt{i} is
+arbitrary, but must not match the name of a constant, inline or variable. It
+may match the name of a dimension, and indeed matching the name of the
+dimension with which the index is associated can be sensible.
+
+Elements of higher-dimensional variables may be targeted using multiple
+indices. For example, consider computing a Euclidean distance matrix \bitt{D}:
+\begin{bicode}
+D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
+\end{bicode}
+Indexed actions such as this are useful for more complicated transformations
+that either cannot be expressed in matrix\index{matrix} form, or that are
+contrived when expressed as such.
+
+Arguments to actions may be given with either \emph{positional}
+\index{positional\,arguments} or \emph{named}\index{named\,arguments} forms,
+or a mix of the two. Positional arguments are interpreted by the order
+given. For example
+\begin{bicode}
+x ~ gaussian(0.0, 2.0)
 \end{bicode}
 means that \bitt{x} is distributed according to the \actionref{gaussian}
 action with, by the definition of that action, mean $0.0$ and standard
-deviation $1.0$.
-
-The \actionref{gaussian} action also happens to support named arguments, so
-the following is equivalent:
+deviation $2.0$. The \actionref{gaussian} action also happens to support named
+arguments, so the following is equivalent:
 \begin{bicode}
-x ~ gaussian(mean = 0.0, std = 1.0)
+x ~ gaussian(mean = 0.0, std = 2.0)
 \end{bicode}
 The order of named arguments is unimportant, so the following is also
 equivalent:
 \begin{bicode}
-x ~ gaussian(std = 1.0, mean = 0.0)
+x ~ gaussian(std = 2.0, mean = 0.0)
 \end{bicode}
 
 Positional and named arguments may be mixed, but all positional arguments must
 appear before all named arguments. Thus, this is valid:
 \begin{bicode}
-x ~ gaussian(0.0, std = 1.0)
+x ~ gaussian(0.0, std = 2.0)
 \end{bicode}
 but these are not:
 \begin{bicode}
-x ~ gaussian(mean = 0.0, 1.0)
-x ~ gaussian(std = 1.0, 0.0)
+x ~ gaussian(mean = 0.0, 2.0)
+x ~ gaussian(std = 2.0, 0.0)
 \end{bicode}
-This avoids ambiguity.
+This avoids ambiguity in the syntax.
 
-Refer to the definition of a particular action to determine which arguments
-may be passed in positional, named or either form.
+The documentation for an action lists its arguments, and whether it may be
+used in named or positional form, or both.
 
 \subsection{Blocks}
 
-Some actions are more complicated and can be wrapped in \emph{blocks}. A
-good example is the \actionref{ode} action. This describes a single ordinary
-differential equation\index{ordinary\,differential\,equations}, which must be
-grouped with other actions that describe the other ordinary differential
-equations of the same system. The grouping is achieved by the \blockref{ode}
-block.
+Some actions are more complicated and can, or must, be wrapped in
+\emph{blocks}. A good example is the \actionref{ode} action. This describes a
+single ordinary differential
+equation\index{ordinary\,differential\,equations}. For a system with more than
+one such equation, this must be grouped with the actions that describe those
+other equations. The grouping is achieved with the \blockref{ode} block.
 
 Consider the following Lotka-Volterra-type\index{Lotka-Volterra} transition
 model:
@@ -372,54 +393,29 @@ sub transition \{
   \}
 \}
 \end{bicode}
-Here, the additional \blockref{ode} block combines the two actions into the
-one system of ordinary differential equations.
+Here, the \blockref{ode} block combines the two actions into the one system of
+ordinary differential equations.
 
-Note that every action is automatically wrapped in an appropriate enclosing
-block like this during processing. Indeed, in this case, the two
-\actionref{ode} actions will be implicitly wrapped in the one \blockref{ode}
-block anyway, so that explicitly doing so is unnecessary (but unharmful). Like
-actions, however, blocks can take arguments; explicitly giving the enclosing
-block permits arguments to be changed. In this case, the \blockref{ode} block
-has parameters to configure the numerical integrator used to simulate the
-differential system. These can be adjusted:
+Like actions, blocks can take arguments. The \blockref{ode} block has
+parameters to select and configure the algorithm used to numerically integrate
+the differential equations forward through time. If the defaults are
+inadequate, these might be set as follows:
 \begin{bicode}
 sub transition \{
-  sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+  sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'dopri5') \{
     P <- ode(alpha*P - c*P*Z)
     Z <- ode(e*c*P*Z - m_l*Z)
   \}
 \}
 \end{bicode}
-
-The top-level \blockref{transition} block, too, has an optional argument,
-giving the time-step for discrete-time parts of the system. While not too
-useful here given the continuous-time model, this argument can nevertheless be
-given:
-\begin{bicode}
-sub transition(delta = 1.0) \{
-  sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
-    P <- ode(alpha*P - c*P*Z)
-    Z <- ode(e*c*P*Z - m_l*Z)
-  \}
-\}
-\end{bicode}
-
-\begin{tip}
-The details of the implicit wrapping of actions by blocks should usually be
-unimportant, but to see precisely what transformations are being made to the
-model, use the \clientref{rewrite} command. This is particularly useful for
-debugging purposes when a model is not behaving as expected.
-\end{tip}
-
-Arguments, both positional and named, work for blocks as they do for actions.
+As for actions, both positional and named forms of arguments are supported.
 
 \subsection{The \bitt{do..then} clause\label{do_then}}
 
-It is assumed that all actions within the same block are independent, and can
-be evaluated concurrently. Where dependencies exist between actions, the
-\bitt{do..then} clause may be used to serialise actions so
-as to satisfy prerequisites:
+It is assumed that all actions within the same block are conditionally
+independent, so that they may be evaluated concurrently. Where dependencies
+exist between actions, the \bitt{do..then} clause may be used to serialise
+actions so as to satisfy prerequisites:
 \begin{bicode}
 do \{
   eps ~ gaussian(0.0, 1.0)
@@ -427,22 +423,33 @@ do \{
   x <- A*x + eps
 \}
 \end{bicode}
-Here, the variable \bitt{x} depends on the variable \bitt{eps} first being
-evaluated.
+Here, evaluating the variable \bitt{x} depends on first evaluating the
+variable \bitt{eps}.
 
 Any number of \bitt{then} parts may follow the initial \bitt{do}.
 
-Under the hood, LibBi assumes that it can evaluate actions within the same block
-in parallel, unless it is told otherwise. The \bitt{do..then} clause is the
-only way to tell it otherwise.
+\begin{tip}
+The blocks in a \bitt{do..then} clause often match up to
+the conditional probability densities of a Bayesian Hierarchical Model. For
+example the model $p(a,b,c) = p(a|b,c)p(b|c)p(c)$ might be structured:
+\begin{bicode}
+do \{
+  // action for c
+\} then \{
+  // action for b given c
+\} then \{
+  // action for a given b and c
+\}
+\end{bicode}
+\end{tip}
 
-Named blocks can be used in a \bitt{do..then} clause. The \bitt{do} or
-\bitt{then} keyword simply replaces the \bitt{sub} keyword, for example:
+Named blocks can be used in a \bitt{do..then} clause by giving the block name
+immediately after the \bitt{do} or \bitt{then} keyword. For example:
 \begin{bicode}
 sub transition(delta = 1.0) \{
   do \{
     alpha ~ normal(mu, sigma)
-  \} then ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'rk4') \{
+  \} then ode \{
     P <- ode(alpha*P - c*P*Z)
     Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
   \}
@@ -451,50 +458,29 @@ sub transition(delta = 1.0) \{
 
 \subsection{Expressions\label{Expressions}}
 
-LibBi supports expressions over scalars, vectors and matrices, as well as the
-special type \textit{element}, which requires some explanation. These are
-defined as follows:
+LibBi supports expressions over scalars, vectors, matrices and
+higher-dimensional variables:
 \begin{itemize}
-\item a \textit{scalar}\index{scalar} is a literal, constant or variable that
-  is not declared over any dimensions,
-\item a \textit{vector}\index{vector} is a variable declared over
-  exactly one dimension,
-\item a \textit{matrix}\index{matrix} is a variable declared over exactly two
-  dimensions,
-\item variables declared over three or more dimensions are not given a special
-  name,
-\item an \textit{element} is a reference to a single element of any
-  variable declared over one or more dimensions.
+\item A \textit{scalar}\index{scalar} is a literal, constant or variable that
+  is not declared over any dimensions.
+\item A \textit{vector}\index{vector} is a variable declared over
+  exactly one dimension.
+\item A \textit{matrix}\index{matrix} is a variable declared over exactly two
+  dimensions.
+\item Variables declared over three or more dimensions are not given a special
+  name.
 \end{itemize}
-
-The particular distinction of the element type in LibBi will be unfamiliar to
-most users. Syntactically, whenever square brackets are used to refer to a
-single element of a variable (e.g. \bitt{a[i]}), that symbol is of the
-element type.
-
-There are a few implications of these definitions that may not be immediately
-obvious (or intuitive):
-\begin{itemize}
-\item A variable declared over a single dimension of size one is considered a
-  vector, not a scalar. Any variable declared over more than one dimension,
-  where all of those dimensions have size one, is likewise not considered a
-  scalar. The reason for this is that the particular boundary conditions of
-  its dimensions may convey different behaviour to that of a scalar.
-
-\item An element, despite referring to a single value, is not a scalar! In
-  binary operations, elements may be paired with scalars, but not with vectors
-  or matrices. Scalars, on the other hand, may be paired with vectors and
-  matrices. The element syntax is, essentially, a concise means of describing
-  element-wise transformation kernels (element
-  expressions\index{element\,expression}) that are readily performed in
-  parallel.
-
-\end{itemize}
+Note that, by these definitions, a variable declared over a single dimension
+of size one is considered a vector, not a scalar. Any variable declared over
+more than one dimension, where all of those dimensions have size one, is
+likewise not considered a scalar. The reason for this is that the particular
+boundary conditions of those dimensions may convey different behaviour to that
+of a scalar.
 
 Special classes of expression are:
 \begin{itemize}
 \item A \textit{constant expression}\index{constant\,expression} is one that
-  can be evaluated at compile-time. It must be scalar, and may refer to
+  can be evaluated at compile time. It must be scalar, and may refer to
   literals, constants and inlines that expand to other constant expressions
   only.
 \item A \textit{static expression}\index{static\,expression} is one that does
@@ -504,78 +490,11 @@ Special classes of expression are:
   not depend on the state of a particular trajectory. It may refer to
   literals, constants, variables of type \kwref{param} or \kwref{input}, and
   inlines that expand to other common expressions only.
-\item An \textit{element expression}\index{element\,expression} is one that
-  references at least one element. It may refer to literals, constants,
-  scalars and elements only.
 \end{itemize}
-Note that a constant expression is a static expression, and a static
-expression is a common expression.
+Note from these definitions that a constant expression is a static expression,
+and a static expression is a common expression.
 
-Element expressions\index{element\,expression} are used for more complicated
-computations that cannot be expressed in matrix\index{matrix} form, or that
-when expressed as such become contrived.  They are appropriate when each
-element of the target variable can be expressed as a function of scalars
-and/or the elements of other variables.
-
-Consider the following example describing a Lorenz 96 model:
-\begin{bicode}
-dim x(size = 20, boundary = 'cyclic')
-param F
-state X[x]
-\(\ldots\)
-X[i] <- ode(X[i - 1]*(X[i + 1] - X[i - 2]) - X[i] + F)
-\end{bicode}
-
-Here, \bitt{X} is a vector variable declared along the \bitt{x}
-dimension. The final line is an \actionref{ode}
-action giving the derivative of the \bitt{i}th element of \bitt{X}. The
-presence of the element syntax \bitt{X[i]} is what makes this an element
-expression.
-
-The \textit{alias} \bitt{i} on the left-hand side is an arbitrary name for
-indexing along the dimension of \bitt{X}. Note the way in which \bitt{i}
-is used on the right-hand side to refer to other elements of the \bitt{X}
-vector. Indexing expressions that appear between square brackets, such as
-\bitt{[i + 1]}, \bitt{[i - 2]} and \bitt{[i]} above must be constant
-expressions\index{constant\,expression}. Note that, in this particular case,
-any such expressions that evaluate to outside the bounds of \bitt{X} will
-wrap around to the start or end of the vector, as the \bitt{x} dimension is
-declared with \bitt{boundary = 'cyclic'}.
-
-Consider another example:
-\begin{bicode}
-dim m(20)
-state D[m,m], x[m], y[m]
-\(\ldots\)
-D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
-\end{bicode}
-
-This computes the Euclidean distance
-matrix\index{matrix}\index{distance\,matrix} \bitt{D} between several points
-with coordinates given in the vectors\index{vector} \bitt{x} and
-\bitt{y}. This demonstrates how multiple indices, in this case \bitt{i} and
-\bitt{j}, may be used. The particular selection of \bitt{i} and \bitt{j} is
-again arbitrary; any name may be used.
-
-Element expressions\index{element\,expression} may use any
-scalar\index{scalar} operators and functions. All operands and arguments must
-be scalars or elements. Thus the following is not permitted:
-\begin{bicode}
-d[i] <- dot(x, y)
-\end{bicode}
-as \actionref{dot} is a vector action. One might consider expressing the same
-as:
-\begin{bicode}
-do \{
-  c <- dot(x,y)
-\} then \{
-  d[i] <- c
-\}
-\end{bicode}
-where the dot product is first stored in the scalar variable \bitt{c}, and
-then copied into each element of the vector \bitt{d}.
-
-\subsection{Operators\label{Operators}}
+%\subsection{Operators\label{Operators}}
 
 The following operators are supported in expressions:
 
@@ -591,7 +510,7 @@ Ternary operators: & \bitt{?:} \\
 \hline
 \end{tabular}\index{scalar}\index{vector}\index{matrix}\index{arithmetic}\index{operators}
 
-\subsection{Functions\label{Functions}}
+%\subsection{Functions\label{Functions}}
 
 The following functions are supported in expressions:
 
