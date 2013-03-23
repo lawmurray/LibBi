@@ -516,28 +516,25 @@ The following functions are supported in expressions:
 
 \noindent
 \begin{tabular}{p{\textwidth}}
-\hline
-\bitt{abs log nanlog exp nanexp max min sqrt pow mod ceil floor round gamma
-  lgamma sin cos tan asin acos atan atan2 sinh cosh tanh asinh acosh atanh
-  erf} \\
-\hline
+\hline \bitt{abs acos acosh asin asinh atan atan2 atanh ceil cos cosh erf exp
+  floor gamma lgamma log max min mod pow round sin sinh sqrt tan tanh}
+\\ \hline
 \end{tabular}\index{functions}
 
 \section{Input files\label{Input_files}}\index{data}\index{I/O}\index{input}
 
 Data\index{data} is input to\index{I/O} LibBi using NetCDF\index{NetCDF}
-files. The schema of input files is described in this section, the schema
-being the names of the dimensions and variables that are expected in such
-files.
+files. NetCDF uses the terminology \emph{variables} and \emph{dimensions} in
+describing file contents, which can cause some confusion with the use of the
+same terms in LibBi nomenclature. Usually the intent is clear from context;
+where it is not, the terms \emph{NetCDF variable/dimension} and \emph{model
+  variable/dimension} are used.
 
-The syntax \bitt{x[m,n]} is used to refer to a variable in a NetCDF file named
-\bitt{x}, defined across the dimensions named \bitt{m} and \bitt{n}. Note
-that, like LibBi, NetCDF uses the terminology \emph{variables} and
-\emph{dimensions}, which can cause some confusion. Context should clarify
-whether a reference is to a LibBi or NetCDF variable or dimension, however,
-and indeed in many cases the reference is to both -- most NetCDF variables in
-input and output files are simply representations of the LibBi variables of
-the same names.
+The schema of input files is described in this section. The schema is the
+structure of the NetCDF file with respect to the dimensions, variables and
+attributes that it may contain. The syntax \bitt{x[m,n]} is used to refer to a
+variable in a NetCDF file named \bitt{x}, defined across the dimensions named
+\bitt{m} and \bitt{n}.
 
 Input files take three forms:
 \begin{itemize}
@@ -550,56 +547,54 @@ Input files take three forms:
 \end{itemize}
 All of these use the same schema. That schema is quite flexible, allowing for
 the representation of both dense and sparse input. Sparsity may be in time or
-space. An example of the former is, in a discrete-time model, having a scalar
-\kwref{obs} variable that is not necessarily observed at all time steps. An
-example of the latter is, again in a discrete-time model, having a vector
-\kwref{obs} variable for which not all elements are necessarily observed at
-all time steps.
+space. Sparsity in time is, for example, having a discrete-time model with a
+scalar \kwref{obs} variable that is not necessary observed at all
+times. Sparsity in space is, for example, having a discrete-time model with a
+vector \kwref{obs} variable, for which not all of the elements are necessarily
+observed at all times.
 
-Each variable in the NetCDF file is associated with the variable of the same
-name in the model specification. Extraneous variables in the NetCDF file are
-ignored. Variables in the model specification which cannot be matched to a
-variable in the NetCDF file do not receive input from it.
-
-Each variable in the NetCDF file may be defined along the following
-dimensions, in the order given:
+Each model variable is associated with a NetCDF variable of the same
+name. Additional NetCDF variables may exist. Model variables which cannot be
+matched to a NetCDF variable of the same name do not receive input from the
+file. For \kwref{input} variables, this means that they will remain
+uninitialised. For spatially dense input, each such NetCDF variable may be
+defined along the following dimensions, in the order given:
 \begin{enumerate}
 \item Optionally, a dimension named \bitt{ns}, used to index multiple
   experiments set up in the same file. If not given for a variable, that
   variable is assumed to be the same for all experiments.
 \item Optionally, a time dimension (see below).
-\item Optionally, a number of dimensions with names matching those given in
-  the model specification.
+\item Optionally, a number of dimensions with names that match the model
+  dimensions along which the model variable is defined, ordered accordingly,
 \item Optionally, a dimension named \bitt{np}, used to index multiple
-  trajectories (or samples, or particles) of a variable. If not given for a
-  variable, the value of that variable is assumed to be the same for all
-  trajectories. Variables of type \kwref{param}, \kwref{input} and \kwref{obs}
-  may not use an \bitt{np} dimension, as by their nature they are meant to be
-  in common across all trajectories.
+  trajectories (instantiations, samples, particles) of a variable. If not
+  given for a variable, the value of that variable is assumed to be the same
+  for all trajectories. Variables of type \kwref{param}, \kwref{input} and
+  \kwref{obs} may not use an \bitt{np} dimension, as by their nature they are
+  meant to be in common across all trajectories.
 \end{enumerate}
 
-A variable given in the model specification may be represented either
-\emph{densely} or \emph{sparsely} across those dimensions. For a dense
-representation, use dimensions as in item 3 above. For a sparse
-representation, see \secref{Coordinate_variables}{Coordinate variables}.
+For spatially sparse input, see \secref{Coordinate_variables}{Coordinate
+  variables} below.
 
 \subsection{Time variables\label{Time_variables}}
 
-\emph{Time variables} are used to index time in a file. Each variable in the
-NetCDF file with a name beginning with ``time'' is assumed to be a time
-variable. Each such variable may be defined along the following dimensions, in
-the order given:
+\emph{Time variables} are used to index time in a file. Each NetCDF variable
+with a name beginning with ``time'' is assumed to be a time variable. Each
+such variable may be defined along the following dimensions, in the order
+given:
 \begin{enumerate}
 \item Optionally, the \bitt{ns} dimension.
 \item An arbitrarily named dimension.
 \end{enumerate}
 The latter dimension becomes a \emph{time
   dimension}\index{time\,dimension}. The time variable gives the time
-associated with each index of the time dimension, a sequence which must be
-monotonically non-decreasing. Other variables defined along the same time
-dimension become associated with the time variable. The time dimension thus
-indexes both the times at which these variables change, and the values that
-they assume. A variable may only be associated with one time dimension, and
+associated with each index of that time dimension, a sequence which must be
+monotonically non-decreasing. NetCDF variables that correspond to model
+variables, and that are defined along the same time dimension, become
+associated with the time variable. The time dimension thus enumerates both the
+times at which these variables change, and the values that they are to assume
+at those times. A variable may only be associated with one time dimension, and
 \texttt{param} variables may not be associated with one at all. If a variable
 is not defined across a time dimension, it is assumed to have the same value
 at all times.
@@ -607,10 +602,10 @@ at all times.
 Time variables and time dimensions are interpreted slightly differently for
 each of the input file types:
 \begin{enumerate}
-\item For an initialisation file, the starting time (given by the \bitt{-t}
-  command-line option, see \clientref{simulate}) is looked-up in each time
-  variable, and the corresponding record in each associated variable is used
-  for its initialisation.
+\item For an initialisation file, the starting time (given by the
+  \bitt{--start-time} command-line option, see \clientref{simulate}) is
+  looked-up in each time variable, and the corresponding record in each
+  associated variable is used for its initialisation.
 \item For input files, a time variable gives the times at which each
   associated variable changes in value. Each variable maintains its new
   value until the time of the next change.
@@ -669,7 +664,7 @@ our data set, and \bitt{y} with the actual observations. It may look something
 like this:
 
 \begin{cmdcode}
-time_y[nr]     y[nr,n]
+time_y[nr]            y[nr,n]
        0.0     6.75 3.34 3.45
        1.0     4.56 4.54 1.34
        2.0     9.45 3.43 1.65
@@ -682,25 +677,26 @@ time_y[nr]     y[nr,n]
 
 \subsection{Coordinate variables\label{Coordinate_variables}}
 
-\emph{Coordinate variables} are used for sparse indexing of model dimensions
-in a file. Each variable with a name beginning with ``coord'' is assumed to be
-a coordinate variable. Each such variable may be defined along the following
-dimensions, in the order given:
+\emph{Coordinate variables} are used for spatially sparse input. Each variable
+with a name beginning with ``coord'' is assumed to be a coordinate
+variable. Each such variable may be defined along the following dimensions, in
+the order given:
 \begin{enumerate}
 \item Optionally, the \bitt{ns} dimension.
-\item A time dimension or some other arbitrary dimension.
+\item A coordinate dimension (see below).
 \item Optionally, some arbitrary dimension.
 \end{enumerate}
-The second dimension becomes a \emph{coordinate
-  dimension}\index{coordinate\,dimension}, which may also be a time
-dimension. Other variables defined along the same coordinate dimension become
-associated with the coordinate variable. The coordinate variable gives the
-coordinate associated with each index along the coordinate dimension. The last
-dimension, if any, should have a length equal to the number of dimensions
-across which those other variables are defined. So, for example, if these
-variables are matrices, the last dimension should have a length of two. If the
-variables are vectors, so that they have only one dimension, the coordinate
-variable need not have this last dimension.
+The second dimension, the \emph{coordinate
+  dimension}\index{coordinate\,dimension}, may be a time dimension as
+well. NetCDF variables that correspond to model variables, and that are
+defined along the same coordinate dimension, become associated with the
+coordinate variable. The coordinate variable is used to indicate which
+elements of these variables are active. The last dimension, if any, should
+have a length equal to the number of dimensions across which these variables
+are defined. So, for example, if these variables are matrices, the last
+dimension should have a length of two. If the variables are vectors, so that
+they have only one dimension, the coordinate variable need not have this last
+dimension.
 
 %If a multidimensional variable is associated with a coordinate variable with
 %fewer components than the number of dimensions along which it is defined,
@@ -721,11 +717,12 @@ an observation file containing our data set, which consists of observations of
 \bitt{y} at various times, where at each time only a subset of the elements of
 \bitt{y} are observed. A valid NetCDF schema would be:
 \begin{itemize}
-\item a dimension named \bitt{nr}, to be our time dimension,
+\item a dimension named \bitt{nr}, to be both our time and coordinate
+  dimension,
 \item a variable named \bitt{time\_y}, defined along the dimension \bitt{nr},
   to be our time variable,
 \item a variable named \bitt{coord\_y}, defined along the dimension \bitt{nr},
-  to be out coordinate variable,
+  to be our coordinate variable,
 \item a variable named \bitt{y}, defined along the dimension \bitt{nr}, to
   contain the observations.
 \end{itemize}
@@ -734,7 +731,7 @@ our data set, \bitt{coord\_y} with the coordinate of each observation, and
 \bitt{y} with the observations themselves. It may look something like this:
 
 \begin{cmdcode}
-time_y[nr]    coord_y[nr]    y[nr,n]
+time_y[nr]   coord_y[nr]      y[nr]
        0.0             0       6.75
        0.0             1       3.34
        1.0             0       4.56
@@ -747,10 +744,11 @@ time_y[nr]    coord_y[nr]    y[nr,n]
        9.5             1       3.45
 \end{cmdcode}
 
-Note that, if \bitt{y} had $m > 1$ dimensions, the \bitt{coord\_y}
-variable would be defined along some additional, arbitrarily named dimension
-of size $m$ in the NetCDF file, and the values of \bitt{coord\_y} in the above
-table would be vectors.
+Note that each unique value in \bitt{time\_y} is repeated for as many
+coordinates as are active at that time. Also note that, if \bitt{y} had $m >
+1$ dimensions, the \bitt{coord\_y} variable would be defined along some
+additional, arbitrarily named dimension of size $m$ in the NetCDF file, so
+that the values of \bitt{coord\_y} in the above table would be vectors.
 \end{example}
 
 \subsection{Simulating models with input\label{Simulating_models_with_input}}
@@ -764,21 +762,16 @@ is that given by the \bitt{--init-file} command-line option, and the
 \item Any \kwref{input} variables in the input file that are not associated with
   a time variable are initialised by reading from the file.
 \item The \blockref{parameter} top-level block is sampled.
-\item Any \kwref{param} variables in the input file are overwritten by reading
-  from the file.
-\item Any static expressions extracted for precomputation are evaluated.
+\item Any \kwref{param} variables in the initialisation file are overwritten
+  by reading from the file.
 \item The \blockref{initial} top-level block is sampled.
-\item Any \kwref{state} variables in the input file are overwritten by reading
-  from the file.
+\item Any \kwref{state} variables in the initialisation file are overwritten
+  by reading from the file.
 \item The \blockref{transition} top-level block is sampled forward through
   time. Sampling stops at each time that an \kwref{input} variable is to
   change, according to the input file, at which point the \kwref{input}
   variable is updated and sampling of the \blockref{transition} block
-  continues. Continuous-time\index{continuous\,time} components of the
-  \blockref{transition} block (e.g. \actionref{ode} actions) are always
-  actioned. The remaining, discrete-time\index{discrete\,time} components, are
-  only actioned when the current time is an integer multiple of the time step
-  given by the \blockref{transition} block's \bitt{delta} argument.
+  continues.
 \end{enumerate}
 
 Note two important points in this procedure:
@@ -787,20 +780,22 @@ Note two important points in this procedure:
   time variable is initialised before anything else, whereas an \kwref{input}
   variable that is associated with a time variable is not initialised until
   simulation begins, even if the first entry of that variable indicates an
-  update at time zero.
-\item While the \blockref{parameter} and \blockref{initial} blocks are
+  update at time zero. This has implications as to which \kwref{input}
+  variables are, or are not, initialised at the time that the
+  \blockref{parameter} block is sampled.
+\item While the \blockref{parameter} and \blockref{initial} blocks are always
   sampled, the samples may be later overwritten from the initialisation
   file. Thus, the initialisation file need not contain a complete set of
-  variables in order to ensure that all variables are initialised before
-  simulation proceeds. This also ensures
-  \secref{Pseudorandom_reproducibility}{pseudorandom reproducibility}
-  regardless of the presence, or content, of the initialisation file.
+  variables, although behaviour is more intuitive if it does. This behaviour
+  also ensures \secref{Pseudorandom_reproducibility}{pseudorandom
+    reproducibility} regardless of the presence, or content, of the
+  initialisation file.
 \end{itemize}
 
 \section{Command-line interface\label{Command_line_interface}}\index{command\,line}
 
-Methods are applied to models via the command line interface of LibBi. Invoke LibBi
-via the command line as:
+Methods are applied to models via the command-line interface of LibBi. This is
+invoked using:
 \begin{cmdcode}
 bi \textit{command} \textit{options} ...
 \end{cmdcode}
@@ -809,8 +804,8 @@ where \bitt{\textit{command}} is any one of the following:
 \item[\clientref{simulate}] for simulating trajectories from a model,
 \item[\clientref{filter}] for filtering problems using the model and
   observations,
-\item[\clientref{smooth}] for smoothing problems using the model and
-  observations,
+%\item[\clientref{smooth}] for smoothing problems using the model and
+%  observations,
 \item[\clientref{optimise}] for parameter optimisation problems using the
   model and observations,
 \item[\clientref{sample}] for parameter sampling problems using the model and
@@ -840,30 +835,29 @@ A config file simply contains a list of command-line options just as they
 would be given on the command line itself. For readability, the command-line
 options may be spread over any number of lines, and end-of-line comments,
 preceded by \bitt{\#}, may appear. The contents of one config file may be
-nested in another by using the \bitt{@file.conf} syntax within that
-other. This can be useful in avoiding redundancy. For example, the
-\clientref{filter} command inherits all the options of \clientref{simulate},
-and the \clientref{sample} command inherits all the options of
-\clientref{filter}. In this case it may be useful to write a
-\bitt{simulate.conf} file that is nested within a \bitt{filter.conf} file,
-that is nested within a \bitt{sample.conf} file, so that the config files
-inherit options just as the commands do.
+nested in another by using the \bitt{@file.conf} syntax within a file. This
+can be useful to avoid redundancy. For example, the \clientref{filter} command
+inherits all the options of \clientref{simulate}, and the \clientref{sample}
+command inherits all the options of \clientref{filter}. In this case it may be
+useful to write a \bitt{simulate.conf} file that is nested within a
+\bitt{filter.conf} file, that is nested within a \bitt{sample.conf} file, so
+that common options need not be repeated within each file.
 
 \section{Output files}
 
-The schema of an output file depends on the program that produces it. These
+The schema of an output file depends on the command that produces it. These
 are related by strong conventions, however, and most schemas simply extend
-that of the \clientref{simulate} program. This section outlines each schema.
+that of the \clientref{simulate} command. This section outlines each schema.
 
 \begin{tip}
 If using OctBi or RBi for collating and visualising the output of LibBi, it
-may not be necessary to understand these schema, as they are encapsulated in
-higher-level functions.
+may be unnecessary to understand these schema, as they are encapsulated by
+the higher-level functions of these packages.
 \end{tip}
 
 \subsection{Simulation schema}
 
-This schema used by the \clientref{simulate} program. It consists of
+This schema is used by the \clientref{simulate} command. It consists of
 dimensions:
 \begin{itemize}
 \item \bitt{nr} indexing time,
@@ -884,7 +878,7 @@ And variables:
 
 \subsection{Particle filter schema}
 
-This schema is used by the \clientref{filter} program when a particle filter,
+This schema is used by the \clientref{filter} command when a particle filter,
 besides the adaptive particle filter, is chosen. It extends the simulation
 schema, with the following changes:
 \begin{itemize}
@@ -894,11 +888,8 @@ schema, with the following changes:
 
 The following variables are added:
 \begin{itemize}
-\item \bitt{logweight[nr,np]} giving the log-weights of each particle at each
-  time,
-\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time, and
-\item \bitt{resample[nr]} indicating whether or not resampling was performed
-  at each time.
+\item \bitt{logweight[nr,np]} giving the log-weights vector at each time, and
+\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time.
 \end{itemize}
 
 \begin{tip}
@@ -906,7 +897,7 @@ To draw a whole trajectory out of a file of the particle filter schema, begin
 at the last time, select a particle, and use the \bitt{ancestor} vector at
 each time to trace that particle's ancestry back through time. One cannot
 simply take a row from the matrix of a state variable to obtain a complete
-trajectory, as in the simulation schema.
+trajectory, as with the simulation schema.
 \end{tip}
 
 \subsection{Simulation ``flexi'' schema}
@@ -916,8 +907,9 @@ schema below extends it. The complication here is that the number of
 particles at each time can vary. The schema consists of the following
 dimensions:
 \begin{itemize}
-\item \bitt{np} indexing trajectories,
-\item \bitt{nrp} indexing both time and trajectories, and
+\item \bitt{nr} indexing time,
+\item \bitt{nrp} indexing both time and trajectories (an unlimited dimension),
+  and
 \item for each dimension \bitt{\emph{n}} in the model, a dimension
   \bitt{\emph{n}}.
 \end{itemize}
@@ -925,9 +917,9 @@ And variables:
 \begin{itemize}
 \item \bitt{time[nr]} giving the output times,
 \item \bitt{start[nr]} giving, for each time, the starting index along the
-  \bitt{nrp} dimension for particles associated with it,
-\item \bitt{len[nr]} giving, for each time, the number of particles associated
-  with it,
+  \bitt{nrp} dimension for particles associated with that time,
+\item \bitt{len[nr]} giving, for each time, the number of particles at that
+  time,
 \item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
   defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
   \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
@@ -938,38 +930,35 @@ And variables:
 
 \begin{tip}
 With the ``flexi'' schema, to read the contents of a variable at some time
-\bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
+index \bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
 dimension, beginning at index \bitt{start[\emph{t}]}.
 \end{tip}
 
 \subsection{Particle filter ``flexi'' schema}
 
-This scheme is used by the \clientref{filter} program when an adaptive
+This schema is used by the \clientref{filter} command when an adaptive
 particle filter is chosen. It extends the simulation ``flexi'' schema. The
 following variables are added:
 \begin{itemize}
-\item \bitt{logweight[nrp]} giving the log-weights of each particle at each
-  time,
-\item \bitt{ancestor[nrp]} giving the ancestry vector at each time, and
-\item \bitt{resample[nr]} indicating whether or not resampling was performed
-  at each time.
+\item \bitt{logweight[nrp]} giving the log-weights vector at each time, and
+\item \bitt{ancestor[nrp]} giving the ancestry vector at each time.
 \end{itemize}
 
 \subsection{Kalman filter schema}
 
-This schema is used by the \clientref{filter} program when a Kalman filter is
+This schema is used by the \clientref{filter} command when a Kalman filter is
 chosen. It extends the simulation schema, with the following changes:
 \begin{itemize}
 \item the \bitt{np} dimension is always of size 1, and
 \item variables that correspond to \kwref{state} and \kwref{noise} variables
-  in the model are now interpreted as containing the means of the filter
+  in the model are now interpreted as containing the mean of the filter
   density at each time.
 \end{itemize}
 
 The following dimensions are added:
 \begin{itemize}
-\item \bitt{nxcol} indexing columns of covariance matrices, and
-\item \bitt{nxrow} indexing rows of covariance matrices.
+\item \bitt{nxcol} indexing columns of matrices, and
+\item \bitt{nxrow} indexing rows of matrices.
 \end{itemize}
 
 The following variables are added:
@@ -984,11 +973,11 @@ The following variables are added:
 
 \subsection{Optimisation schema}
 
-This schema is used by the \clientref{optimise} program. It consists of
+This schema is used by the \clientref{optimise} command. It consists of
 dimensions:
 \begin{itemize}
-\item \texttt{ns} indexing iterations of the optimiser (an \emph{unlimited} or
-  \emph{record} dimension in NetCDF nomenclature).
+\item \texttt{ns} indexing iterations of the optimiser (an unlimited
+  dimension).
 \end{itemize}
 And variables:
 \begin{itemize}
@@ -1003,7 +992,7 @@ And variables:
 
 \subsection{PMCMC schema}
 
-This schema is used by the \clientref{sample} program when a PMCMC method is
+This schema is used by the \clientref{sample} command when a PMCMC method is
 chosen. It extends the simulation schema, with the following changes:
 \begin{itemize}
 \item the \bitt{np} dimension indexes samples, not trajectories, and
@@ -1016,7 +1005,7 @@ chosen. It extends the simulation schema, with the following changes:
 The following variables are added:
 \begin{itemize}
 \item \bitt{loglikelihood[np]} giving the log-likelihood estimate
-  $p(\mathbf{y}_{1:T}|\boldsymbol{\theta}^p)$ for each sample
+  $\hat{p}(\mathbf{y}_{1:T}|\boldsymbol{\theta}^p)$ for each sample
   $\boldsymbol{\theta}^p$, and
 \item \bitt{logprior[np]} giving the log-prior density
   $p(\boldsymbol{\theta}^p)$ of each sample $\boldsymbol{\theta}^p$.
@@ -1024,128 +1013,133 @@ The following variables are added:
 
 \subsection{SMC$^2$ schema}
 
-This schema is used by the \clientref{sample} program when an SMC$^2$ method
-is chosen. It extends the simulation schema, with the following changes:
+This schema is used by the \clientref{sample} command when an SMC$^2$ method
+is chosen. It extends the PMCMC schema, with the following additional
+variable:
 \begin{itemize}
-\item the \bitt{np} dimension indexes samples, not trajectories, and
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, there is a variable
-  \bitt{\emph{theta}[nr,\emph{m},...,\emph{n},np]} instead of
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]} (i.e. \kwref{param} variables are
-  defined over the \bitt{nr} and \bitt{np} dimensions also).
-\end{itemize}
-
-The following variables are added:
-\begin{itemize}
-\item \bitt{logweight[nr,np]} giving the log-weight of each $\theta$-particle
-  at each time,
-\item \bitt{numberx[nr,np]} giving the number of $x$-particles associated with
-  each $\theta$-particle at each time,
-\item \bitt{evidence[nr]} giving the incremental evidence at each time,
-\item \bitt{ess[nr]} giving the effective sample size of the $\theta$-particle
-  sample at each time, and
-\item \bitt{acceptancerate[nr]} giving the acceptance rate of the PMCMC
-  rejuvenation step performed at each time (will be zero if not performed).
+\item \bitt{logweight[np]} giving the log-weights vector of parameter samples.
 \end{itemize}
 
 \section{Performance guide\label{Performance guide}\index{performance}}
 
-One of the aims of LibBi is to alleviate you, the user, from performance
-considerations. Consequently, there is little scope in the modelling language
-for performance tuning, but little need either. Where you have some control is
-in compilation and I/O.
+One of the aims of LibBi is to alleviate the user from performance
+considerations as much as possible. Nevertheless, there is some scope to
+influence performance, particularly by ensuring that appropriate hardware
+resources are used, and by limiting I/O where possible.
 
-LibBi will do the following for you:
+\subsection{Precomputing}
+
+LibBi will:
 \begin{itemize}
-\item Precompute constant subexpressions.
-\item Precompute static subexpressions in the transition and observation
+\item precompute constant subexpressions, and
+\item precompute static subexpressions in the transition and observation
   models.
 \end{itemize}
-
-Reducing redundant or repetitious computations is thus unnecessary where these
-are constant or static subexpressions. For example, taking the square-root of
-a variance parameter need not be of concern:
+Reducing redundant or repetitious expressions is thus unnecessary where these
+are constant\index{constant\,expression} or
+static\index{static\,expression}. For example, taking the square-root of a
+variance parameter need not be of concern:
 \begin{bicode}
 param sigma2
 \(\ldots\)
 sub transition \{
-    epsilon ~ gaussian(mu, sqrt(sigma2))
-    \(\ldots\)
+  epsilon ~ gaussian(mu, sqrt(sigma2))
+  \(\ldots\)
 \}
 \end{bicode}
-Here, \bitt{sqrt(sigma2)} will be extracted and precomputed outside of the
-transition model -- \bitt{sigma2} is a parameter, and so
-\bitt{sqrt(sigma2)} a static expression.
+Here, \bitt{sqrt(sigma2)} is a static expression\index{static\,expression}
+that will be extracted and precomputed outside of the transition block.
 
-Use the \clientref{rewrite} command if you wish to inspect the transformations
-made to a model.
+\begin{tip}
+Use the \clientref{rewrite} command to inspect precisely which expressions
+have been extracted for precomputation.
+\end{tip}
 
-The following I/O and configuration issues are worth considering:
+\subsection{I/O}
+
+The following I/O options are worth considering to reduce the size of output
+files and so the time spent writing to them:
 \begin{itemize}
 \item When declaring a variable, use a \bitt{has\_output = 0} argument to omit
   it from output files if it will not be of interest.
+\item Enable \index{single\,precision} output files by using the
+  \bitt{--enable-single} command-line option. This will reduce write size by
+  up to a half. Note, however, that all computations are then performed in
+  single precision too, which may have significant numerical implications.
+\end{itemize}
 
-\item LibBi includes a great deal of in-code assertion
-  checking\index{assertion\,checking} to help ensure valid code
-  generation. These assertion checks are enabled by default, and it is
-  recommended that they remain so for test runs. Significant performance gains
-  can be realised by disabling these assertion checks with the
-  \bitt{--disable-assert} command-line option, and this is recommended for
-  production runs.
+\subsection{Configuration}
 
-\item \marginlabel{GPU} Experiment with the \bitt{--enable-cuda} command-line
-  option to make use of a CUDA-enabled GPU\index{GPU}. This will usually
-  improve performance when a sufficient number of model trajectories are to be
-  simulated.
+The following configuration options are worth considering:
+\begin{itemize}
+\item Internally, LibBi uses extensive assertion checking to catch programming
+  and code generation errors\index{assertion\,checking}. These assertion
+  checks are enabled by default, improving robustness at the expense of
+  performance. It is recommended that they remain enabled during model
+  development and small-scale testing, but that they are disabled for final
+  production runs. They can be disabled by adding the \bitt{--disable-assert}
+  command-line option.
 
-\item \marginlabel{SSE} Experiment with the \bitt{--enable-sse} command-line
+\item Experiment with the \bitt{--enable-cuda} command-line option to make use
+  of a CUDA-enabled GPU\index{GPU}\index{CUDA}. This should usually improve
+  performance, as long as a sufficient number of model trajectories are to be
+  simulated (typically upwards of 1024).
+
+\item Experiment with the \bitt{--enable-sse} command-line
   option to make use of CPU SSE instructions\index{SSE}\index{SIMD}. These can
   provide up to a two-fold (double precision) or four-fold (single precision)
   speed-up.
 
-\item \marginlabel{Multicore}\index{multithreading}\index{OpenMP} Experiment
-  with the \bitt{--threads} command-line option to set the number of CPU
-  threads. Typically there are depreciating returns as the number of threads
-  is increased, and beyond the number of CPU cores available performance will
-  be particularly poor. For CPUs with hyperthreading enabled, it is
-  recommended that the number of threads is no more than the number of
-  physical CPU cores, which may be half the default number of threads.
+\item \index{multithreading}\index{OpenMP} Experiment with the
+  \bitt{--threads} command-line option to set the number of CPU
+  threads. Typically there are depreciating gains as the number of threads is
+  increased, and beyond the number of physical CPU cores performance will
+  degrade significantly. For CPUs with hyperthreading enabled, it is
+  recommended that the number of threads is set to no more than the number of
+  physical CPU cores. This may be half the default number of threads.
 
-\item \marginlabel{Single precision} Experiment with using
-  single precision\index{single\,precision} by using the \bitt{--enable-single}
-  command-line option. Assuming numerical error is tolerable, this can offer
-  significant performance improvements, especially when used in combination
-  with the \bitt{--enable-cuda} or \bitt{--enable-sse} options.
+\item Experiment with using single precision\index{single\,precision} floating
+  point operations by using the \bitt{--enable-single} command-line
+  option. This can offer significant performance improvements (especially when
+  used in conjunction with the \bitt{--enable-cuda} and \bitt{--enable-sse}
+  options), but care should be taken to ensure that numerical error remains
+  tolerable. The use of single precision will also reduce memory consumption
+  by up to a half.
 
 \item Use optimised versions of libraries, especially the BLAS\index{BLAS} and
   LAPACK\index{LAPACK} libraries.
 
 \item Use the Intel C++ compiler\index{Intel\,compiler} if
-  available. Anecdotally, this tends to produce code that runs 10-20\% faster
-  than \bitt{gcc}\index{gcc}. The \bitt{configure} scripts for both LibBi and
-  client programs should automatically detect the Intel C++
-  compiler\index{compiler}, and use it if available.
+  available. Anecdotally, this tends to produce code that runs faster than
+  \bitt{gcc}\index{gcc}. The \bitt{configure} script should automatically
+  detect the Intel C++ compiler\index{compiler}, and use it if available. To
+  use the Intel Math Kernel Library as well, which is not automatically
+  detected, use the \bitt{--enable-mkl} command-line option.
 
 \end{itemize}
 
 \section{Style guide\label{Style_guide}}\index{style\,guide}
 
-The following naming conventions are recommended:
+The following conventions are used for LibBi model files:
 \begin{itemize}
 \item Model names are CamelCase, the first letter always capitalised.
 \item Action and block names are all lowercase, with multiple words separated
-  by '\_' (the underscore).
+  by underscores.
 \item Dimension and variable names should be consistent, where possible, with
   their counterparts in a description of the model as it might appear in a
   scientific paper. For example, single upper-case letters for the names of
   matrix\index{matrix} variables are appropriate, and standard symbols (rather
   than descriptive names) are encouraged. Greek letters should be written out
-  in full, the first letter capitalised for the capital version
+  in full, the first letter capitalised for the uppercase version
   (e.g. \bitt{gamma} and \bitt{Gamma}).
 \item Comments should be used liberally, with descriptions provided for all
   dimensions and variables in particular. Consider including units as part of
   the description, where relevant.
-\item Names ending in '\_' (the underscore) are intended for internal use
-  only, and so no such names should generally appear in a model specification.
+\item Names ending in an underscore are intended for internal use only. They
+  are not expected to be seen in a model file.
 \item Indent using two spaces, and do not use tabs.\index{indenting}
 \end{itemize}
+
+Finally, use the \clientref{package} command to set up the standard files and
+directory structure for a LibBi project. This will make your model and its
+associated files easy to distribute, and your results easy to reproduce.

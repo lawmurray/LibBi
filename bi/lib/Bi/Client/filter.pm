@@ -74,11 +74,11 @@ The type of resampler to use; one of:
 
 for a stratified resampler (Kitagawa 1996),
 
-=item * C<'systematic'>
+=item C<'systematic'>
 
 for a systematic (or 'deterministic stratified') resampler (Kitagawa 1996),
 
-=item * C<'multinomial'>
+=item C<'multinomial'>
 
 for a multinomial resampler,
 
@@ -98,8 +98,9 @@ for a kernel density resampler (Liu & West 2001).
 
 =item C<--ess-rel> (default 0.5)
 
-Use effective sample size (ESS) resampling condition. Particles will only be
-resampled if ESS is below this proportion of C<P>.
+Threshold for effective sample size (ESS) resampling trigger. Particles will
+only be resampled if ESS is below this proportion of C<P>. To always resample
+use C<--ess-rel 1>. To never resample use C<--ess-rel 0>.
 
 =back
 

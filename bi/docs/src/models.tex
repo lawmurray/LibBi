@@ -4,9 +4,9 @@ Declare a model.
 
 \subsubsection*{Synopsis\label{model_Synopsis}}
 \begin{bicode}
-    model \textsl{Name} \{
-      \(\ldots\)
-    \}
+model \textsl{Name} \{
+  \(\ldots\)
+\}
 \end{bicode}
 
 \subsubsection*{Description\label{model_Description}}
@@ -37,8 +37,8 @@ Declare a dimension.
 
 \subsubsection*{Synopsis\label{dim_Synopsis}}
 \begin{bicode}
-    dim \textsl{name}(100, 'cyclic')
-    dim \textsl{name}(size = 100, boundary = 'cyclic')
+dim \textsl{name}(100, 'cyclic')
+dim \textsl{name}(size = 100, boundary = 'cyclic')
 \end{bicode}
 
 
@@ -81,10 +81,10 @@ Declare an input, noise, observed, parameter or state variable.
 \subsubsection*{Synopsis\label{var_Synopsis}}
 
 \begin{bicode}
-    state x
-    state x[i]
-    state x(has_output = 0)
-    state x[i](has_output = 0)
+state x
+state x[i]
+state x(has_output = 0)
+state x[i](has_output = 0)
 \end{bicode}
 
 \subsubsection*{Description\label{var_Description}}
@@ -124,7 +124,7 @@ Declare a constant\index{constant}.
 
 \subsubsection*{Synopsis\label{const_Synopsis}}
 \begin{bicode}
-    const \textsl{name} = \textsl{constant_expression}
+const \textsl{name} = \textsl{constant_expression}
 \end{bicode}
 
 \subsubsection*{Description\label{const_description}}
@@ -143,7 +143,7 @@ Declare an inline expression\index{inline expression}.
 
 \subsubsection*{Synopsis\label{inline_synopsis}}
 \begin{bicode}
-    inline \textsl{name} = \textsl{expression}
+inline \textsl{name} = \textsl{expression}
 \end{bicode}
 
 \subsubsection*{Description\label{inline_description}}
