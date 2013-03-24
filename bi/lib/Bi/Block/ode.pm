@@ -1,6 +1,6 @@
 =head1 NAME
 
-ode - block for systems of ordinary differential equations.
+ode - system of ordinary differential equations.
 
 =head1 SYNOPSIS
 
@@ -19,7 +19,7 @@ ode - block for systems of ordinary differential equations.
 =head1 DESCRIPTION
 
 An C<ode> block is used to group multiple ordinary differential equations
-into the one system, and configure the numerical integrator used to simulate
+into one system, and configure the numerical integrator used to simulate
 them.
 
 An C<ode> block may not contain nested blocks, and may only contain
@@ -44,7 +44,7 @@ use Bi::Utility qw(find);
 
 =item C<alg> (position 0, default C<'rk43'>)
 
-The numerical integration algorithm to be used. Valid values are:
+The numerical integrator to use. Valid values are:
 
 =over 8
 
@@ -54,11 +54,11 @@ The classic order 4 Runge-Kutta with fixed step size.
 
 =item C<'dopri5'>
 
-An order 5(4) Dormand-Prince with adaptive step size control.
+An order 5(4) Dormand-Prince with adaptive step size.
 
 =item C<'rk43'>
 
-An order 4(3) low-storage Runge-Kutta with adaptive step size control.
+An order 4(3) low-storage Runge-Kutta with adaptive step size.
 
 =back
 

@@ -1,17 +1,18 @@
 =head1 NAME
 
-parameter - declare the proposal density over parameters.
+parameter - a proposal distribution over parameters.
 
 =head1 SYNOPSIS
 
     sub proposal_parameter {
-      ...
+      theta ~ gaussian(theta, 1.0)  // local proposal
+      theta ~ gaussian(0.0, 1.0)    // independent proposal
     }
     
 =head1 DESCRIPTION
 
-Use the C<proposal_parameter> block to specify the proposal density over the
-parameters of the model.
+This may be a local or independent proposal distribution, used by the
+C<sample> command.
 
 Actions in the C<proposal_parameter> block may only refer to variables of
 type C<input> and C<param>. They may only target variables of type C<param>.

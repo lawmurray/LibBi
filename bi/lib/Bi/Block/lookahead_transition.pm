@@ -1,7 +1,6 @@
 =head1 NAME
 
-lookahead_transition - declare a lookahead density to accompany the
-transition density.
+lookahead_transition - a transition distribution for lookahead operations.
 
 =head1 SYNOPSIS
 
@@ -11,21 +10,12 @@ transition density.
     
 =head1 DESCRIPTION
 
-Use the C<lookahead_transition> block to specify a lookahead density to
-accompany the transition density. This may be a deterministic or
-computationally cheaper version of the transition density, for example. It is
-used by methods such as the auxiliary particle filter. 
+This may be a deterministic, computationally cheaper or perhaps inflated
+version of the transition distribution. It is used by the auxiliary particle
+filter.
 
-Actions in the C<lookahead_transition> block may only target variables of
-type:
-
-=over 4
-
-=item * C<noise>, using the C<~> operator, referring only to variables of
-type C<param> and C<input>, and
-
-=item * C<state>, using the C<<-> operator, referring only to variables of
-type C<param>, C<input>, C<state> and C<noise>.
+Actions in the C<lookahead_transition> block may reference variables of any
+type, but may only target variables of type C<noise> and C<state>.
 
 =back
 

@@ -1,6 +1,6 @@
 =head1 NAME
 
-initial - declare the prior density over initial conditions.
+initial - the prior distribution over the initial values of state variables.
 
 =head1 SYNOPSIS
 
@@ -9,9 +9,6 @@ initial - declare the prior density over initial conditions.
     }
     
 =head1 DESCRIPTION
-
-Use the C<initial> block to specify the prior density over the initial
-conditions of the model.
 
 Actions in the C<initial> block may only refer to variables of type
 C<param>, C<input> and C<state>. They may only target variables of type

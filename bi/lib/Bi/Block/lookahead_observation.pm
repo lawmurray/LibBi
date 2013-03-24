@@ -1,7 +1,6 @@
 =head1 NAME
 
-lookahead_observation - declare a lookahead density to accompany the
-observation density.
+lookahead_observation - a likelihood function for lookahead operations.
 
 =head1 SYNOPSIS
 
@@ -11,15 +10,13 @@ observation density.
     
 =head1 DESCRIPTION
 
-Use the C<lookahead_observation> block to specify a lookahead density to
-accompany the observation density. This may be a deterministic,
-computationally cheaper or perhaps inflated version of the observation
-density, for example. It is used by methods such as the auxiliary particle
+This may be a deterministic, computationally cheaper or perhaps inflated
+version of the likelihood function. It is used by the auxiliary particle
 filter. 
 
 Actions in the C<lookahead_observation> block may only refer to variables
 of type C<param>, C<input> and C<state>. They may only target variables of
-type C<obs>, using the C<~> operator.
+type C<obs>.
 
 =cut
 

@@ -1,6 +1,6 @@
 =head1 NAME
 
-parameter - declare the prior density over parameters.
+parameter - the prior distribution over parameters.
 
 =head1 SYNOPSIS
 
@@ -9,9 +9,6 @@ parameter - declare the prior density over parameters.
     }
     
 =head1 DESCRIPTION
-
-Use the C<parameter> block to specify the prior density over the parameters
-of the model.
 
 Actions in the C<parameter> block may only refer to variables of type C<input>
 and C<param>. They may only target variables of type C<param>.
