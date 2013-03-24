@@ -67,7 +67,7 @@ sub visit {
             # matrix multiplication, translate to function
             if ($node->get_expr1->is_matrix) {
                 if ($node->get_expr2->is_vector) {
-                    $result = new Bi::Expression::Function('gemv', [ $node->get_expr1, $node->get_expr2 ]);
+                    $result = new Bi::Expression::Function('gemv_', [ $node->get_expr1, $node->get_expr2 ]);
                 }
             }
         } elsif ($node->get_op =~ /^\.(.*?)$/) {

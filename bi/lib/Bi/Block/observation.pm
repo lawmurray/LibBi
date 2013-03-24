@@ -13,7 +13,7 @@ observation - declare the observation density.
 Use the C<observation> block to specify the observation density of the model.
 
 Actions in the C<observation> block may only refer to variables of type
-C<param>, C<force> and C<state>. They may only target variables of type
+C<param>, C<input> and C<state>. They may only target variables of type
 C<obs>, using the C<~> operator.
 
 =cut

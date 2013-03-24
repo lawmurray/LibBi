@@ -10,7 +10,7 @@ gamma - gamma distribution.
 
 =head1 DESCRIPTION
 
-A C<gamma> action specifies a variate that is gamma distributed according to
+A C<gamma> action specifies that a variable is gamma distributed according to
 the given C<shape> and C<scale> parameters.
 
 =cut

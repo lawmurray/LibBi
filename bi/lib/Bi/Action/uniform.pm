@@ -1,6 +1,6 @@
 =head1 NAME
 
-uniform - uniform distribution on finite interval.
+uniform - uniform distribution.
 
 =head1 SYNOPSIS
 
@@ -10,8 +10,8 @@ uniform - uniform distribution on finite interval.
 
 =head1 DESCRIPTION
 
-A C<uniform> action specifies a variate that is uniformly distributed on a
-finite interval given by the bounds C<lower> and C<upper>.
+A C<uniform> action specifies that a variable is uniformly distributed on a
+finite and closed interval given by the bounds C<lower> and C<upper>.
 
 =cut
 

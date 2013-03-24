@@ -1,22 +1,22 @@
 =head1 NAME
 
-gemv - dense matrix-vector multiplication.
+gemv_ - dense matrix-vector multiplication.
 
 =head1 SYNOPSIS
 
     y <- A*x
-    y <- gemv(A, x)
-    y <- gemv(A = A, x = x)
+    y <- gemv_(A, x)
+    y <- gemv_(A = A, x = x)
 
 =head1 DESCRIPTION
 
-A C<gemv> action performs a dense matrix-vector multiplication. It need not
+A C<gemv_> action performs a dense matrix-vector multiplication. It need not
 be used explicitly: any sub-expression containing the C<*> operator between a
-matrix and vector is evaluated using C<gemv>.
+matrix and vector is evaluated using C<gemv_>.
 
 =cut
 
-package Bi::Action::gemv;
+package Bi::Action::gemv_;
 
 use base 'Bi::Model::Action';
 use warnings;
@@ -62,7 +62,7 @@ sub validate {
     my $x = $self->get_named_arg('x');
 
     if ($A->get_dims->[1]->get_size != $x->get_dims->[0]->get_size) {
-        die("incompatible dimension sizes in arguments to action 'gemv'");
+        die("incompatible dimension sizes in arguments to action 'gemv_'");
     } else {
         $self->set_dims([ $A->get_dims->[0] ]);
     }

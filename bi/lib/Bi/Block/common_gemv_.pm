@@ -18,14 +18,14 @@ sub validate {
     $self->process_args($BLOCK_ARGS);
     
     if ($self->num_blocks > 0) {
-        die("a 'common_gemv_' block may not contain sub-blocks\n");
+        die("a 'common_gemv_' block may not contain nested blocks\n");
     }
     if ($self->num_actions != 1) {
         die("a 'common_gemv_' block may only contain one action\n");
     }
     foreach my $action (@{$self->get_actions}) {
-        if ($action->get_name ne 'gemv') {
-            die("a 'common_gemv_' block may only contain 'gemv' actions\n");
+        if ($action->get_name ne 'gemv_') {
+            die("a 'common_gemv_' block may only contain 'gemv_' actions\n");
         }
     }
 }

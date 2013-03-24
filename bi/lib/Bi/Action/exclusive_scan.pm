@@ -1,6 +1,7 @@
 =head1 NAME
 
-exclusive_scan - exclusive scan (prefix sum, cumulative sum).
+exclusive_scan - exclusive scan primitive (also called prefix sum or
+cumulative sum).
 
 =head1 SYNOPSIS
 

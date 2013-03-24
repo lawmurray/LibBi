@@ -18,7 +18,7 @@ sub validate {
     $self->process_args($BLOCK_ARGS);
     
     if ($self->num_blocks > 0) {
-        die("a 'pdf_' block may not contain sub-blocks\n");
+        die("a 'pdf_' block may not contain nested blocks\n");
     }
 }
 

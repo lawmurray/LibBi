@@ -4,7 +4,8 @@ pdf - arbitrary probability density function.
 
 =head1 SYNOPSIS
 
-    x ~ some_expression
+    x ~ I<expression>
+    x ~ pdf(pdf = I<expression>, max_pdf = I<expression>)
 
 =head1 DESCRIPTION
 
@@ -30,7 +31,7 @@ use strict;
 
 An expression giving the probability density function.
 
-=item C<beta> (position 1, default inf)
+=item C<max_pdf> (position 1, default inf)
 
 An expression giving the maximum of the probability density function.
 

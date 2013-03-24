@@ -1,22 +1,26 @@
 =head1 NAME
 
-ode - ordinary differential equation (ODE) action.
+ode_ - ordinary differential equation (ODE) action.
 
 =head1 SYNOPSIS
 
-    x <- ode(expr)
-    x <- ode(dfdt = expr)
+    dx/dt = expr
+    x = ode_(expr)
+    x = ode_(dfdt = expr)
     
 =head1 DESCRIPTION
 
-An C<ode> action updates a variable via the numerical simulation of ODEs.
+An C<ode_> specifies an ordinary differential equation for the update of
+a variable via the numerical simulation of ODEs. It need not be used
+explicitly, any action using the C<dx/dt = ...> differential equation syntax
+automatically uses this action.
 
-An ode action may only be used within an L<ode> block, and may only be
+An C<ode_> action may only be used within an L<ode> block, and may only be
 applied to a scalar variable.
 
 =cut
 
-package Bi::Action::ode;
+package Bi::Action::ode_;
 
 use base 'Bi::Model::Action';
 use warnings;
@@ -60,7 +64,7 @@ sub validate {
 
 sub mean {
     my $self = shift;
-    return new Bi::Expression::Function('ode', [], {
+    return new Bi::Expression::Function('ode_', [], {
         'dfdt' => $self->get_named_arg('dfdt')->clone
     });
 }

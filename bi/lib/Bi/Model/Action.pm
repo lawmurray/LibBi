@@ -87,7 +87,7 @@ sub new {
         } elsif ($op eq '~') {
             $name = 'pdf';
         } elsif ($op eq '=') {
-            $name = 'ode';
+            $name = 'ode_';
         } else {
             die("unknown operator '$op'\n");
         }

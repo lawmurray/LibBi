@@ -10,7 +10,7 @@ inverse_gamma - inverse gamma distribution.
 
 =head1 DESCRIPTION
 
-An C<inverse_gamma> action specifies a variate that is inverse-gamma
+An C<inverse_gamma> action specifies that a variable is inverse-gamma
 distributed according to the given C<shape> and C<scale> parameters.
 
 =cut

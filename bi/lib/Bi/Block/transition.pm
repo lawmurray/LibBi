@@ -17,10 +17,10 @@ Actions in the C<transition> block may only target variables of type:
 =over 4
 
 =item * C<noise>, using the C<~> operator, referring only to variables of
-type C<param> and C<force>, and
+type C<param> and C<input>, and
 
 =item * C<state>, using the C<<-> operator, referring only to variables of
-type C<param>, C<force>, C<state> and C<noise>.
+type C<param>, C<input>, C<state> and C<noise>.
 
 =back
 

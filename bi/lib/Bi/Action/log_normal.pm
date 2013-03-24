@@ -1,11 +1,10 @@
 =head1 NAME
 
-log_normal - log-normal distribution, synonym of L<gaussian>, with
-the C<log> argument defaulting to true.
+log_normal - log-normal distribution, synonym of L<log_gaussian>.
 
 =head1 SEE ALSO
 
-L<gaussian>
+L<log_gaussian>
 
 =cut
 

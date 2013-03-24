@@ -18,7 +18,7 @@ density, for example. It is used by methods such as the auxiliary particle
 filter. 
 
 Actions in the C<lookahead_observation> block may only refer to variables
-of type C<param>, C<force> and C<state>. They may only target variables of
+of type C<param>, C<input> and C<state>. They may only target variables of
 type C<obs>, using the C<~> operator.
 
 =cut

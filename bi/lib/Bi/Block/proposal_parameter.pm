@@ -13,8 +13,8 @@ parameter - declare the proposal density over parameters.
 Use the C<proposal_parameter> block to specify the proposal density over the
 parameters of the model.
 
-Actions in the C<proposal_parameter> block may only target and refer to
-variables of type C<param>.
+Actions in the C<proposal_parameter> block may only refer to variables of
+type C<input> and C<param>. They may only target variables of type C<param>.
 
 =cut
 

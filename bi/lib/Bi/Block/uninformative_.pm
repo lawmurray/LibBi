@@ -18,7 +18,7 @@ sub validate {
     $self->process_args($BLOCK_ARGS);
        
     if ($self->num_blocks > 0) {
-        die("an 'uninformative_' block may not contain sub-blocks\n");
+        die("an 'uninformative_' block may not contain nested blocks\n");
     }
     foreach my $action (@{$self->get_actions}) {
         if ($action->get_name ne 'uninformative') {

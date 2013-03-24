@@ -10,7 +10,7 @@ truncated_gaussian - truncated Gaussian distribution.
 
 =head1 DESCRIPTION
 
-A C<truncated_gaussian> action specifies a variate that is distributed
+A C<truncated_gaussian> action specifies that a variable is distributed
 according to a Gaussian distribution with a closed lower and/or upper bound.
 
 For a one-sided truncation, simply omit the relevant C<lower> or C<upper>

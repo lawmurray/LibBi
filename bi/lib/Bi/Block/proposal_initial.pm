@@ -14,7 +14,8 @@ Use the C<proposal_initial> block to specify the proposal density over the
 initial conditions of the model.
 
 Actions in the C<proposal_initial> block may only refer to variables of
-type C<param> and C<state>. They may only target variables of type C<state>.
+type C<param>, C<input> and C<state>. They may only target variables of type
+C<state>.
 
 =cut
 

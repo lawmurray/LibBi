@@ -10,7 +10,7 @@ gaussian - Gaussian distribution.
 
 =head1 DESCRIPTION
 
-A C<gaussian> action specifies a variate that is Gaussian distributed
+A C<gaussian> action specifies that a variable is Gaussian distributed
 according to the given C<mean> and C<std> parameters.
 
 =cut
@@ -32,12 +32,6 @@ Mean.
 =item C<std> (position 1, default 1.0)
 
 Standard deviation.
-
-=item C<log> (default false)
-
-True for a log-normal distribution, false for a normal distribution. Must be
-a constant expression. For clarity, consider using the L<log_normal> or
-L<log_gaussian> actions rather than explicitly using this parameter.
 
 =back
 

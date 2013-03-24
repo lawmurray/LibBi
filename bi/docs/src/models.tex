@@ -11,11 +11,12 @@ model \textsl{Name} \{
 
 \subsubsection*{Description\label{model_Description}}
 
-A \bitt{model} statement is the outermost statement of a model specification,
-declaring and naming the model.
+A \bitt{model} statement declares and names a model, and encloses
+declarations of the constants, dimensions, variables, inlines and top-level
+blocks that specify that model.
 
-Immediately within the \bitt{model} statement, the following named top-level blocks should
-be used to specify the model:
+The following named top-level blocks are supported, and should usually be
+provided:
 \begin{itemize}
 \item \blockref{parameter}, specifying the prior density over parameters,
 \item \blockref{initial}, specifying the prior density over initial conditions,
@@ -23,10 +24,11 @@ be used to specify the model:
 \item \blockref{observation}, specifying the observation density.
 \end{itemize}
 
-The following named top-level blocks are optional, but may be required in order to use particular methods:
+The following named top-level blocks are supported, and may optionally be
+provided:
 \begin{itemize}
-\item \blockref{proposal_parameter}, specifying the proposal density over parameters,
-\item \blockref{proposal_initial}, specifying the proposal density over initial conditions,
+\item \blockref{proposal_parameter}, specifying a proposal density over parameters,
+\item \blockref{proposal_initial}, specifying a proposal density over initial conditions,
 \item \blockref{lookahead_transition}, specifying a lookahead density to accompany the transition density, and
 \item \blockref{lookahead_observation}, specifying a lookahead density to accompany the observation density.
 \end{itemize}
@@ -47,9 +49,9 @@ dim \textsl{name}(size = 100, boundary = 'cyclic')
 A \bitt{dim} statement declares a dimension with a given size and boundary
 condition.
 
-A \bitt{dim} statement may only be used at the top level of the model
-specification. Dimensions must be declared before any variables are declared
-along them.
+A \bitt{dim} statement may only be used at the top level of a \kwref{model}
+statement. A dimension must be declared before any variables that extend along
+it are declared.
 
 \subsubsection*{Arguments\label{dim_Arguments}}
 
@@ -69,7 +71,7 @@ No boundary condition.
 
 \item[\bitt{'cyclic'}]
 
-Cyclic boundary condition; all indices are taken modulo the \bitt{size} of
+Cyclic boundary condition; all indexing is taken modulo the \bitt{size} of
 the dimension.
 \end{description}
 \end{description}
@@ -81,20 +83,22 @@ Declare an input, noise, observed, parameter or state variable.
 \subsubsection*{Synopsis\label{var_Synopsis}}
 
 \begin{bicode}
-state x
-state x[i]
-state x(has_output = 0)
-state x[i](has_output = 0)
+state x                       // scalar variable
+state x[i]                    // vector variable
+state X[i,j]                  // matrix variable
+state X[i,j,k]                // higher-dimensional variable
+state X[i,j](has_output = 0)  // omit from output files
+state x, y, z                 // multiple variables
 \end{bicode}
 
 \subsubsection*{Description\label{var_Description}}
 
-Any of these statements declare a variable of the given type, along the list
-of dimensions given between the square brackets.
+Declares a variable of the given type, extending along the dimensions listed
+between the square brackets.
 
-These statements may only be used at the top level of the model
-specification. Dimensions along which a variable extends must be declared
-prior to the declaration of the variable.
+These statements may only be used at the top level of a \kwref{model}
+statement. Dimensions along which a variable extends must be declared
+prior to the declaration of the variable, using the \kwref{dim} statement.
 
 \subsubsection*{Arguments\label{var_Arguments}}
 
@@ -139,20 +143,23 @@ but always has global scope\index{scope}.
 
 \subsection{\bitt{inline}\label{inline}\index{inline}}
 
-Declare an inline expression\index{inline expression}.
+Declare an inline\index{inline expression}.
 
 \subsubsection*{Synopsis\label{inline_synopsis}}
 \begin{bicode}
 inline \textsl{name} = \textsl{expression}
+...
+x <- 2*\textsl{name}  // equivalent to x <- 2*(\textsl{expression})
 \end{bicode}
 
 \subsubsection*{Description\label{inline_description}}
 
-An \bitt{inline}\index{inline} statement declares an inline
-expression\index{inline expression}. The inline may then be used, by name, in
-other expressions, as long as it will not violate any constraints on those
-expressions (e.g. an inline expression named within a constant expression must
-itself be a constant expression).
+An \bitt{inline}\index{inline} statement declares an inline\index{inline
+  expression}, the value of which is an expression that will be substituted in
+place of any occurrence of the inline's name in other expressions. The inline
+may be used in any expression where it will not violate the constraints on
+that expression (e.g. an inline expression that refers to a \kwref{state}
+variable may not be used within a constant expression).
 
 An inline expression\index{inline expression} may be declared anywhere in a
 model specification, but always has global scope\index{scope}.

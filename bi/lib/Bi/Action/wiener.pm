@@ -1,6 +1,6 @@
 =head1 NAME
 
-wiener - wiener process increment action.
+wiener - wiener process.
 
 =head1 SYNOPSIS
 
@@ -10,8 +10,6 @@ wiener - wiener process increment action.
 
 A C<wiener> action specifies that a dynamic variable is distributed according
 to a Wiener process.
-
-A C<wiener> action may only be used within the L<transition> block.
 
 =cut
 

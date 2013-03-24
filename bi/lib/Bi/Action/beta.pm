@@ -10,7 +10,7 @@ beta - beta distribution.
 
 =head1 DESCRIPTION
 
-A C<beta> action specifies a variate that is beta distributed according to
+A C<beta> action specifies that a variable is beta distributed according to
 the given C<alpha> and C<beta> parameters.
 
 =cut

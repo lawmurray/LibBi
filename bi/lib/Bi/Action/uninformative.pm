@@ -8,12 +8,13 @@ uninformative - uninformative distribution.
 
 =head1 DESCRIPTION
 
-An C<uninformative> action indicates that a variable has an uninformative
+An C<uninformative> action specifies that a variable has an uninformative
 distribution.
 
-An C<uninformative> action may only be used within a L<parameter> block. The
-presence of any one such action will preclude sampling from the prior
-distribution, although densities will still be computable.
+The use of an C<uninformative> action in a block precludes sampling from that
+block, although densities may still be computed. If used in the L<parameter>
+or L<initial> block, a L<proposal_parameter> or L<proposal_initial> block
+should be used for the C<sample> command to work.
 
 =cut
 

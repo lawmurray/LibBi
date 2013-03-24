@@ -21,7 +21,7 @@ sub validate {
     my ($name, $action, $arg);
     
     if ($self->num_blocks > 0) {
-        die("a 'common_orthogonal_std_' block may not contain sub-blocks\n");
+        die("a 'common_orthogonal_std_' block may not contain nested blocks\n");
     }
     foreach $action (@{$self->get_actions}) {
         if ($action->get_name ne 'std_') {

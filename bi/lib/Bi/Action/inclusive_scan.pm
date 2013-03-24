@@ -1,6 +1,7 @@
 =head1 NAME
 
-inclusive_scan - inclusive scan (prefix sum, cumulative sum).
+inclusive_scan - inclusive scan primitive (also called prefix sum or
+cumulative sum).
 
 =head1 SYNOPSIS
 

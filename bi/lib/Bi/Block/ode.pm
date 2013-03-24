@@ -1,28 +1,29 @@
 =head1 NAME
 
-ode - block for control of ordinary differential equation actions.
+ode - block for systems of ordinary differential equations.
 
 =head1 SYNOPSIS
 
     ode(alg = 'rk43', h = 1.0, atoler = 1.0e-3, rtoler = 1.0e-3) {
-      x1 <- ode(...)
-      x2 <- ode(...)
+      dx/dt = ...
+      dy/dt = ...
       ...
     }
 
     ode('rk43', 1.0, 1.0e-3, 1.0e-3) {
-      x1 <- ode(...)
-      x2 <- ode(...)
+      dx/dt = ...
+      dy/dt = ...
       ...
     }
 
 =head1 DESCRIPTION
 
-An C<ode> block is used to group multiple L<ode> actions and configure the
-numerical integrator used to apply them.
+An C<ode> block is used to group multiple ordinary differential equations
+into the one system, and configure the numerical integrator used to simulate
+them.
 
-An ode block may only be used within a L<transition> block, may not contain
-nested blocks, and may only contain L<ode> actions.
+An C<ode> block may not contain nested blocks, and may only contain
+ordinary differential equation actions.
 
 =cut
 
@@ -109,6 +110,13 @@ sub validate {
     if ($alg ne 'rk4' && $alg ne 'dopri5' && $alg ne 'rk43') {
         die("unrecognised value '$alg' for argument 'alg' of block 'ode'\n");
     }
+    
+    foreach my $action (@{$self->get_actions}) {
+        if ($action->get_name ne 'ode_') {
+            die("an 'ode' block may only contain ordinary differential equation actions\n");
+        }
+    }
+    
 }
 
 sub add_extended_actions {
@@ -189,7 +197,7 @@ sub add_extended_actions {
 		        my $var = $model->get_jacobian_var($vars->[$l], $vars->[$j]);
 		        my @aliases = map { $_->clone } (@{$vars->[$l]->gen_aliases}, @{$action->get_target->get_aliases});
 		        my $target = new Bi::Model::Target($var, \@aliases);
-	            my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode', [ $expr ]));
+	            my $action = new Bi::Model::Action($id, $target, '<-', new Bi::Expression::Function('ode_', [ $expr ]));
 	            $self->push_action($action);
             }
         }

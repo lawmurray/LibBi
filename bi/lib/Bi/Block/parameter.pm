@@ -13,8 +13,8 @@ parameter - declare the prior density over parameters.
 Use the C<parameter> block to specify the prior density over the parameters
 of the model.
 
-Actions in the C<parameter> block may only target and refer to variables of
-type C<param>.
+Actions in the C<parameter> block may only refer to variables of type C<input>
+and C<param>. They may only target variables of type C<param>.
 
 =cut
 
