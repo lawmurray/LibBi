@@ -12,6 +12,7 @@ PARAM            \bparam\b
 PARAM_AUX        \bparam_aux_\b
 DO               \bdo\b
 THEN             \bthen\b
+DT               \bdt\b
 IDENTIFIER       [a-zA-Z_][a-zA-Z_0-9]*
 COMMENT_INLINE   \/\*(.|\n)*?\*\/
 COMMENT_EOL      \/\/.*

@@ -45,7 +45,7 @@ Target to which the action applies, as L<Bi::Model::Target> object.
 
 =item I<op>
 
-Operator of the action as a string, either '~', '<-' or undef. If undef,
+Operator of the action as a string, either '~', '<-', '=' or undef. If undef,
 the action is permitted to select its preferred operator.
 
 =item I<expr>
@@ -82,7 +82,15 @@ sub new {
         $args = $expr->get_args;
         $named_args = $expr->get_named_args;
     } else {
-        $name = ($op eq '<-') ? 'eval_' : 'pdf';
+        if ($op eq '<-') {
+            $name = 'eval_';
+        } elsif ($op eq '~') {
+            $name = 'pdf';
+        } elsif ($op eq '=') {
+            $name = 'ode';
+        } else {
+            die("unknown operator '$op'\n");
+        }
         $args = [ $expr ];
         $named_args = {};
     }

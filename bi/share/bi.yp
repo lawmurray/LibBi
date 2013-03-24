@@ -211,6 +211,7 @@ block_definition
     : do
     | distributed_as
     | set_to
+    | varies_as
     | const
     | inline
     | block
@@ -225,10 +226,20 @@ set_to
     : target SET_TO expression ';' { $_[0]->action($_[1], $_[2], $_[3]) }
     | target SET_TO expression     { $_[0]->action($_[1], $_[2], $_[3]) }
     ;
+    
+varies_as
+    : dtarget '=' expression ';' { $_[0]->action($_[1], $_[2], $_[3]) }
+    | dtarget '=' expression     { $_[0]->action($_[1], $_[2], $_[3]) }
+    ;
 
 target
     : IDENTIFIER '[' dim_aliases ']' { $_[0]->target($_[1], $_[3]) }
     | IDENTIFIER                     { $_[0]->target($_[1]) }
+    ;
+
+dtarget
+    : IDENTIFIER '[' dim_aliases ']' '/' DT { $_[0]->dtarget($_[1], $_[3]) }
+    | IDENTIFIER '/' DT                     { $_[0]->dtarget($_[1]) }
     ;
 
 /* the remaining rules pertain to expressions, and are adapted from the ANSI C

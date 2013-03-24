@@ -431,19 +431,6 @@ sub action {
     my $target = shift;
     my $op = shift;
     my $expr = shift;
-       
-    # check dimension aliases on right, noting that C<identifier> assumes
-    # that a symbol is a dimension alias if it can't recognise it as anything
-    # else
-    #my $alias;
-    #my $right_alias;
-    #my $right_aliases = $expr->get_aliases;
-    #RIGHT_ALIAS: foreach $right_alias (@$right_aliases) {
-    #    foreach $alias (@$aliases) {
-    #        next RIGHT_ALIAS if ($alias eq $right_alias->get_alias);
-    #    }
-    #    $self->_error("unrecognised name '" . $right_alias->get'");
-    #}
     
     # construct action
     my $action;
@@ -492,6 +479,24 @@ sub target {
     $self->set_target($target);
     
     return $target;	
+}
+
+=item B<dtarget>(I<name>, I<aliases>)
+
+Handle target of differential equation.
+
+=cut
+sub dtarget {
+    my $self = shift;
+    my $name = shift;
+    my $aliases = shift;
+    
+    if ($name !~ /^d/) {
+        $self->_error("do you mean 'd$name'?")
+    } else {
+        $name =~ s/^d//;
+        return $self->target($name, $aliases);
+    }
 }
 
 =item B<spec>(I<name>, I<dims>, I<props>)

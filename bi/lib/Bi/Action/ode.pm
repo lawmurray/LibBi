@@ -47,7 +47,10 @@ sub validate {
     my $self = shift;
     
     $self->process_args($ACTION_ARGS);
-    $self->ensure_op('<-');
+    
+    # check removed for backwards compatibility with model files written
+    # prior to introduction of differential equation syntax
+    #$self->ensure_op('=');
 
     $self->set_parent('ode');
     $self->set_can_combine(1);
