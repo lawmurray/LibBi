@@ -53,14 +53,6 @@
  *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
  *
- * @todo Need a locking system to ensure exclusive use of build directories.
- * Having a problem on cluster where multiple jobs are trying to build
- * simultaneously in the same directory and conflict with each other. Could,
- * for example, put a lock file in each directory to reserve it for a
- * particular process, then delete the file when that process is done with it.
- * If another process wants to use it, rather than waiting, it could simply
- * create a new directory with another name and work from there.
- *
  * @todo Tidy up output file variable names, perhaps precede internal
  * variables with the program or schema name, e.g. simulate.time,
  * filter.logweight etc.
