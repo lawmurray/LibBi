@@ -22,7 +22,7 @@ void bi::ResamplerHost::ancestorsToOffspring(const V1 as, V2 os) {
   }
 
   /* post-condition */
-  BI_ASSERT(sum_reduce(os) == P);
+  BI_ASSERT(sum_reduce(os) == as.size());
 }
 
 template<class V1, class V2>
