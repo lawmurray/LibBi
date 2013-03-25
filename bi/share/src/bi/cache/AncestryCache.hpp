@@ -378,20 +378,26 @@ void bi::AncestryCache<CL>::insert(const M1 X, const V1 as) {
   int i;
 
   bi::gather(as, ls, bs);
-
   ls.resize(N, false);
 
   for (i = 0; i < N; ++i) {
     while (this->os(q) > 0) {
-      q = (q + 1) % Xs.size1();
+      ++q;
+      if (q == Xs.size1()) {
+        q = 0;
+      }
     }
     ls(i) = q;
-    q = (q + 1) % Xs.size1();
+    ++q;
+    if (q == Xs.size1()) {
+      q = 0;
+    }
   }
 
   int_vector_type ls1(ls);
   bi::scatter(ls, bs, this->as);
   bi::scatter_rows(ls1, X, this->Xs);
+
   m += N;
 }
 
@@ -454,12 +460,12 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
     }
     insert(X, as);
   }
-
 #ifdef ENABLE_DIAGNOSTICS
   synchronize();
   usecs = clock.toc();
   report();
 #endif
+
 }
 
 template<bi::Location CL>

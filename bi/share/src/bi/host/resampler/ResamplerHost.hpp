@@ -16,13 +16,8 @@ void bi::ResamplerHost::ancestorsToOffspring(const V1 as, V2 os) {
   BI_ASSERT(!V1::on_device);
   BI_ASSERT(!V2::on_device);
 
-  const int P = as.size();
-
   os.clear();
-
-  #pragma omp parallel for
-  for (int p = 0; p < P; ++p) {
-    #pragma omp atomic
+  for (int p = 0; p < as.size(); ++p) {
     ++os(as(p));
   }
 
