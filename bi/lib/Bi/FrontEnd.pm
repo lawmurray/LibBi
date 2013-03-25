@@ -166,7 +166,7 @@ sub client {
     $client->process_args;
 
     # transform
-    if (defined $model) {
+    if (defined $model && $client->needs_transform) {
         $self->_report("Transforming model...");
         if ($client->get_named_arg('transform-param-to-state')) {
             Bi::Visitor::ParamToStateTransformer->evaluate($model);

@@ -48,11 +48,11 @@ types. If I<types> is not given, returns all variables, regardless of type.
 sub evaluate {
     my $class = shift;
     my $expr = shift;
-    my $types = [];
-    if (@_) {
-      $types = shift;
-    }
-    if (ref($types) ne 'ARRAY') {
+    my $types = shift;
+    
+    if (!defined $types) {
+        $types = [];
+    } elsif (ref($types) ne 'ARRAY') {
         $types = [ $types ];
     }
     
@@ -75,9 +75,9 @@ sub visit {
     my $node = shift;
     my $types = shift;
     my $vars = shift;
-    
+        
     if ($node->isa('Bi::Expression::VarIdentifier')) {
-        my $include = !@$types;
+        my $include = @$types == 0;
         foreach my $type (@$types) {
             if ($type eq $node->get_var->get_type) {
                 $include = 1;

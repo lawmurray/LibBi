@@ -53,6 +53,10 @@ sub is_cpp {
     return 0;
 }
 
+sub needs_transform {
+    return 0;
+}
+
 sub exec {
     my $self = shift;
     my $model = shift;

@@ -6,36 +6,28 @@
 ## $Date$
 -%]
 [%-
-shapes.const = 'box';
 shapes.param = 'circle';
-shapes.noise = 'diamond';
-shapes.input = 'box';
-shapes.obs = 'box';
-shapes.static = 'circle';
+shapes.noise = 'circle';
+shapes.input = 'circle';
+shapes.obs = 'circle';
 shapes.state = 'circle';
 
-styles.const = 'dashed';
-styles.param = 'filled';
-styles.noise = 'dashed';
+styles.param = 'dotted';
+styles.noise = 'filled';
 styles.input = 'filled';
 styles.obs = 'filled';
-styles.static = 'filled';
 styles.state = 'filled';
 
-colors.const = '#000000';
-colors.param = '#CC79A7';
+colors.param = '#000000';
 colors.noise = '#000000';
-colors.input = '#FF6666';
-colors.obs = '#FFCC33';
-colors.static = '#66EE77';
-colors.state = '#6677FF';
+colors.input = '#000000';
+colors.obs = '#000000';
+colors.state = '#000000';
 
-fillcolors.const = '#FFFFFF';
-fillcolors.param = '#FFA9D7';
+fillcolors.param = '#FFFFFF';
 fillcolors.noise = '#FFFFFF';
-fillcolors.input = '#FFBBBB';
-fillcolors.obs = '#FFEEAA';
-fillcolors.static = '#FFFFFF';
-fillcolors.state = '#BBCCFF';
+fillcolors.input = '#CCCCCC';
+fillcolors.obs = '#CCCCCC';
+fillcolors.state = '#FFFFFF';
 -%]
-block[% block.get_id %]_[% ref.to_dot %] [label="[% ref.to_ascii %]",shape="[% shapes.${ref.get_var.get_type} %]",style="[% styles.${ref.get_var.get_type} %]",color="[% colors.${ref.get_var.get_type} %]",fillcolor="[% fillcolors.${ref.get_var.get_type} %]"]
+[% ref.to_dot %] [label="[% ref.to_ascii %]",shape="[% shapes.${ref.get_var.get_type} %]",style="[% styles.${ref.get_var.get_type} %]",color="[% colors.${ref.get_var.get_type} %]",fillcolor="[% fillcolors.${ref.get_var.get_type} %]"]

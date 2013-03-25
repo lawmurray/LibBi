@@ -14,7 +14,7 @@ digraph model {
   nslimit=4.0;
   mclimit=4.0;
 
-[% FOREACH block IN model.get_blocks %]
-[%-INCLUDE block.dot.tt block = block FILTER indent(2) %]
+[% FOREACH name IN ['transition', 'observation'] %]
+[%-INCLUDE block.dot.tt block = model.get_block(name) FILTER indent(2) %]
 [%-END-%]
 }

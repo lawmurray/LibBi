@@ -487,21 +487,24 @@ sub get_inlines {
     return $consts;
 }
 
-=item B<get_vars>
+=item B<get_vars>(I<types>)
 
 Get all variables referenced in the action.
 
 =cut
 sub get_vars {
     my $self = shift;
+    my $types = shift;
+    
     my $vars = [];
     my $arg;
 
+    #push_unique($vars, $self->get_left->get_vars($types));
     foreach $arg (@{$self->get_args}) {
-        push_unique($vars, $arg->get_vars);
+        push_unique($vars, $arg->get_vars($types));
     }
     foreach $arg (values %{$self->get_named_args}) {
-        push_unique($vars, $arg->get_vars);
+        push_unique($vars, $arg->get_vars($types));
     }
     return $vars;
 }

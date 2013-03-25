@@ -204,6 +204,15 @@ sub needs_model {
     return 1;
 }
 
+=item B<needs_transform>
+
+Does this client need the model to be transformed?
+
+=cut
+sub needs_transform {
+    return 1;
+}
+
 =item B<get_params>
 
 Get formal parameters to be passed to the client program as a hashref. 

@@ -356,19 +356,38 @@ sub get_inlines {
     return $inlines;
 }
 
-=item B<get_vars>
+=item B<get_vars>(I<types>)
 
 Get all variables referenced in actions of the block.
 
 =cut
 sub get_vars {
     my $self = shift;
+    my $types = shift;
+    
     my $action;
     my $vars = [];
     
     foreach $action (@{$self->get_actions}) {
-      Bi::Utility::push_unique($vars, $action->get_left);
-      Bi::Utility::push_unique($vars, $action->get_vars);
+      Bi::Utility::push_unique($vars, $action->get_vars($types));
+    }
+    return $vars;
+}
+
+=item B<get_target_vars>(I<types>)
+
+Get all variables targeted in actions of the block.
+
+=cut
+sub get_target_vars {
+    my $self = shift;
+    my $types = shift;
+    
+    my $action;
+    my $vars = [];
+    
+    foreach $action (@{$self->get_actions}) {
+      Bi::Utility::push_unique($vars, $action->get_left->get_vars($types));
     }
     return $vars;
 }

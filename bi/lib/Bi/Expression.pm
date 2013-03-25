@@ -254,13 +254,7 @@ of strings, only variables of those types are returned.
 =cut
 sub get_vars {
     my $self = shift;
-    my $types = [];
-    if (@_) {
-      $types = shift;
-    }
-    if (ref($types) ne 'ARRAY') {
-        $types = [ $types ];
-    }
+    my $types = shift;
     
     return Bi::Visitor::GetVars->evaluate($self, $types);
 }
