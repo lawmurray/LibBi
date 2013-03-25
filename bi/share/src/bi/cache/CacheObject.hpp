@@ -152,9 +152,7 @@ template<class T1>
 template<class T2>
 void bi::CacheObject<T1>::set(const int p, const T2& x) {
   if (size() <= p) {
-    Cache::resize(p + 1);
-    pages.resize(p + 1);
-    pages[p] = new T1();
+    resize(bi::max(p + 1, 2*size()));
   }
   *pages[p] = x;
   setValid(p);
@@ -169,13 +167,20 @@ void bi::CacheObject<T1>::resize(const int size) {
   BI_ASSERT(size >= 0);
 
   int oldSize = this->size();
+  int i;
+
   if (size < oldSize) {
-    for (int i = size; i < pages.size(); ++i) {
+    for (i = size; i < pages.size(); ++i) {
       delete pages[i];
       pages[i] = NULL;
     }
   }
   pages.resize(size, NULL);
+  if (size > oldSize) {
+    for (i = oldSize; i < size; ++i) {
+      pages[i] = new T1();
+    }
+  }
   Cache::resize(size);
 }
 

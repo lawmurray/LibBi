@@ -175,7 +175,7 @@ void bi::Cache1D<T1,CL>::set(const int p, const T1& x) {
   BI_ASSERT(p >= 0);
 
   if (p >= size()) {
-    resize(p + 1);
+    resize(bi::max(p + 1, 2*size()));
   }
   *(pages.begin() + p) = x;
   setDirty(p);
@@ -190,7 +190,7 @@ void bi::Cache1D<T1,CL>::set(const int p, const int len, const V1 x) {
   BI_ASSERT(x.size() == len);
 
   if (p + len > size()) {
-    resize(p + len);
+    resize(bi::max(p + len, 2*size()));
   }
   subrange(pages, p, len) = x;
   setDirty(p, len);
