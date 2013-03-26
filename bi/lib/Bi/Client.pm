@@ -386,7 +386,10 @@ sub exec {
         unshift(@argv, "libtool --mode=execute gdb -q -ex run --args $builddir/" . $self->{_binary});
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
         unshift(@argv, "libtool --mode=execute valgrind --leak-check=full $builddir/" . $self->{_binary});
-    } elsif ($self->get_named_arg('with-mpi')) {
+    } else {
+        unshift(@argv, "$builddir/" . $self->{_binary});
+    }
+    if ($self->get_named_arg('with-mpi')) {
         my $np = '';
         if ($self->is_named_arg('mpi-np')) {
             $np .= " -np " . int($self->get_named_arg('mpi-np'));
@@ -394,11 +397,9 @@ sub exec {
         if ($self->is_named_arg('mpi-npernode')) {
         	$np .= " -npernode " . int($self->get_named_arg('mpi-npernode'));
         }
-        unshift(@argv, "mpirun$np $builddir/" . $self->{_binary});
-    } else {
-        unshift(@argv, "$builddir/" . $self->{_binary});
+        unshift(@argv, "mpirun$np ");
     }
-
+    
     my $cmd = join(' ', @argv);
     if ($self->{_verbose}) {
         print "$cmd\n";
