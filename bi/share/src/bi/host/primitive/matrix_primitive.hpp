@@ -30,11 +30,7 @@ struct scatter_rows_impl<ON_HOST> {
 
 template<class V1, class M1, class M2>
 void bi::gather_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X, M2 Y) {
-  #ifndef ENABLE_INTEL
   #pragma omp parallel for
-  // ^ Intel compiler 12.1.9.293 giving segmentation fault, p ends up greater
-  //   than map.size() for some iterations...
-  #endif
   for (int j = 0; j < X.size2(); ++j) {
     bi::gather(map, column(X, j), column(Y, j));
   }
@@ -43,11 +39,7 @@ void bi::gather_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X, M2 Y) {
 template<class V1, class M1, class M2>
 void bi::scatter_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
-  #ifndef ENABLE_INTEL
   #pragma omp parallel for
-  // ^ Intel compiler 12.1.9.293 giving segmentation fault, p ends up greater
-  //   than map.size() for some iterations...
-  #endif
   for (int j = 0; j < X.size2(); ++j) {
     bi::scatter(map, column(X, j), column(Y, j));
   }
