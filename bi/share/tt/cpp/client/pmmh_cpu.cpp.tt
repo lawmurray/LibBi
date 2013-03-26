@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
   synchronize();
  
   /* wrap up */
-  std::cout << sampler->getNumAccepted() << " of " <<
+  std::cerr << sampler->getNumAccepted() << " of " <<
       sampler->getNumSteps() << " proposals accepted" << std::endl;
 
   /* output timing results */

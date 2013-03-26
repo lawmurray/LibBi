@@ -69,6 +69,10 @@ int main(int argc, char* argv[]) {
   /* MPI init */
   #ifdef ENABLE_MPI
   boost::mpi::environment env(argc, argv);
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+  P /= size;
   #endif
   
   /* NetCDF init */

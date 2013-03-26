@@ -78,6 +78,8 @@ int main(int argc, char* argv[]) {
   boost::mpi::environment env(argc, argv);
   boost::mpi::communicator world;
   const int rank = world.rank();
+  const int size = world.size();
+  NSAMPLES /= size;
   #endif
   
   /* NetCDF init */
@@ -186,7 +188,7 @@ int main(int argc, char* argv[]) {
     [% ELSE %]
     StratifiedResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
     [% END %]
-    DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase);
+    DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase, SAMPLE_ESS_REL);
   [% ELSE %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
     MetropolisResampler thetaresam(C, SAMPLE_ESS_REL);
