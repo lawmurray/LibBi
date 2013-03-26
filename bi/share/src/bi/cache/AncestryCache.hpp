@@ -209,7 +209,7 @@ private:
   /**
    * Time taken for last write, in microseconds.
    */
-  int usecs;
+  long usecs;
 
   /**
    * Serialize.

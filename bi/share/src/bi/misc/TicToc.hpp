@@ -33,7 +33,7 @@ public:
    *
    * @return Number of microseconds since last call to tic().
    */
-  int toc();
+  long toc();
 
 private:
   /**
@@ -53,7 +53,7 @@ inline void bi::TicToc::tic() {
   gettimeofday(&start, NULL);
 }
 
-inline int bi::TicToc::toc() {
+inline long bi::TicToc::toc() {
   timeval end;
   gettimeofday(&end, NULL);
 
