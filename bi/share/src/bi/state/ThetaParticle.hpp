@@ -79,9 +79,9 @@ public:
 
 private:
   /**
-   * Incremental log-likelihood.
+   * Cache to store history.
    */
-  real incLogLikelihood;
+  ParticleFilterCache<ParticleFilterNetCDFBuffer,L> cache;
 
   /**
    * Log-weights of \f$x\f$-particles.
@@ -94,9 +94,9 @@ private:
   int_vector_type as;
 
   /**
-   * Cache to store history.
+   * Incremental log-likelihood.
    */
-  ParticleFilterCache<ParticleFilterNetCDFBuffer,L> cache;
+  real incLogLikelihood;
 
   /**
    * Serialize.
@@ -121,19 +121,19 @@ private:
 template<class B, bi::Location L>
 bi::ThetaParticle<B,L>::ThetaParticle(const int P, const int T) :
     ThetaState<B,L>(P, T),
-    incLogLikelihood(-1.0/0.0),
     lws(P),
-    as(P) {
+    as(P),
+    incLogLikelihood(-1.0/0.0) {
   //
 }
 
 template<class B, bi::Location L>
 bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
     ThetaState<B,L>(o),
-    incLogLikelihood(o.incLogLikelihood),
+    cache(o.cache),
     lws(o.lws),
     as(o.as),
-    cache(o.cache) {
+    incLogLikelihood(o.incLogLikelihood) {
   //
 }
 
@@ -141,10 +141,10 @@ template<class B, bi::Location L>
 bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
     const ThetaParticle<B,L>& o) {
   ThetaState<B,L>::operator=(o);
-  incLogLikelihood = o.incLogLikelihood;
+  cache = o.cache;
   lws = o.lws;
   as = o.as;
-  cache = o.cache;
+  incLogLikelihood = o.incLogLikelihood;
 
   return *this;
 }
@@ -182,24 +182,20 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
   ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
-  ar & incLogLikelihood;
-  ar & lws;
-  ar & as;
   ar & cache;
+  save_resizable_vector(ar, version, lws);
+  save_resizable_vector(ar, version, as);
+  ar & incLogLikelihood;
 }
 
 template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaParticle<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
-  ar & incLogLikelihood;
-
-  lws.resize(this->size());
-  as.resize(this->size());
-
-  ar & lws;
-  ar & as;
   ar & cache;
+  load_resizable_vector(ar, version, lws);
+  load_resizable_vector(ar, version, as);
+  ar & incLogLikelihood;
 }
 
 #endif

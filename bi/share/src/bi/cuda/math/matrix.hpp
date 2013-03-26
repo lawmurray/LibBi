@@ -13,11 +13,9 @@
 #include "../../primitive/strided_pitched_range.hpp"
 #include "../../primitive/cross_range.hpp"
 
-#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 #include "boost/serialization/array.hpp"
-#endif
 
 namespace bi {
 /**
@@ -516,7 +514,6 @@ public:
   void clear();
 
 private:
-#ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -534,8 +531,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-#endif
-
 };
 
 }
@@ -748,24 +743,15 @@ void bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::c
   }
 }
 
-#ifndef __CUDA_ARCH__
 template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 template<class Archive>
 void bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::save(
     Archive& ar, const unsigned version) const {
-  size_type rows = this->size1(), cols = this->size2(), i, j;
-
-  typename temp_host_matrix<T>::type tmp(rows, cols);
+  typename temp_host_matrix<T>::type tmp(this->size1(), this->size2());
   tmp = *this;
   synchronize();
-
-  ar & rows & cols;
-  for (j = 0; j < cols; ++j) {
-    for (i = 0; i < rows; ++i) {
-      ar & tmp(i, j);
-    }
-  }
+  ar & tmp;
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -773,20 +759,10 @@ template<class T, int size1_value, int size2_value, int lead_value,
 template<class Archive>
 void bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::load(
     Archive& ar, const unsigned version) {
-  size_type rows, cols, i, j;
-
-  ar & rows & cols;
-  BI_ASSERT(this->size1() == rows && this->size2() == cols);
-
-  typename temp_host_matrix<T>::type tmp(rows, cols);
-  for (j = 0; j < cols; ++j) {
-    for (i = 0; i < rows; ++i) {
-      ar & tmp(i, j);
-    }
-  }
+  typename temp_host_matrix<T>::type tmp(this->size1(), this->size2());
+  ar & tmp;
   *this = tmp;
 }
-#endif
 
 namespace bi {
 /**
@@ -906,7 +882,6 @@ private:
    */
   bool own;
 
-#ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -917,8 +892,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-#endif
-
 };
 
 }
@@ -1071,7 +1044,6 @@ void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::swap(
   std::swap(this->own, o.own);
 }
 
-#ifndef __CUDA_ARCH__
 template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 template<class Archive>
@@ -1082,6 +1054,5 @@ void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::serialize
           < gpu_matrix_reference<T,size1_value,size2_value,lead_value,
               inc_value> > (*this);
 }
-#endif
 
 #endif

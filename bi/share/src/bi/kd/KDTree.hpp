@@ -13,9 +13,7 @@
 #include "KDTreeNode.hpp"
 #include "MedianPartitioner.hpp"
 
-#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -124,7 +122,6 @@ private:
   static var_type* build(const M2 X, const V2 lw, S1 partitioner,
       const std::vector<int>& is, const int depth = 0);
 
-  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -142,7 +139,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
 };
 }
 

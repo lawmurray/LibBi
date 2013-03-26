@@ -211,7 +211,7 @@ template<class T1, bi::Location CL>
 template<class Archive>
 void bi::CacheCross<T1,CL>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<Cache>(*this);
-  save_resizable_matrix(ar, version, X);
+  load_resizable_matrix(ar, version, X);
 }
 
 #endif

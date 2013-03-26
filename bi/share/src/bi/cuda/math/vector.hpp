@@ -17,11 +17,9 @@
 #include "../../primitive/strided_range.hpp"
 #include "../../typelist/equals.hpp"
 
-#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 #include "boost/serialization/array.hpp"
-#endif
 
 #include "thrust/device_ptr.h"
 #include "thrust/iterator/detail/normal_iterator.h"
@@ -451,7 +449,6 @@ public:
   CUDA_FUNC_HOST void clear();
 
 private:
-  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -469,8 +466,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-  #endif
-
 };
 
 }
@@ -640,37 +635,24 @@ inline void bi::gpu_vector_reference<T,size_value,inc_value>::clear() {
   }
 }
 
-#ifndef __CUDA_ARCH__
 template<class T, int size_value, int inc_value>
 template<class Archive>
 void bi::gpu_vector_reference<T,size_value,inc_value>::save(Archive& ar,
     const unsigned version) const {
-  size_type size = this->size(), i;
-  typename temp_host_vector<T>::type tmp(size);
+  typename temp_host_vector<T>::type tmp(this->size());
   tmp = *this;
   synchronize();
-
-  ar & size;
-  for (i = 0; i < size; ++i) {
-    ar & tmp(i);
-  }
+  ar & tmp;
 }
 
 template<class T, int size_value, int inc_value>
 template<class Archive>
 void bi::gpu_vector_reference<T,size_value,inc_value>::load(Archive& ar,
     const unsigned version) {
-  size_type size, i;
-  ar & size;
-  //BI_ASSERT(this->size() == size);
-
-  typename temp_host_vector<T>::type tmp(size);
-  for (i = 0; i < size; ++i) {
-    ar & tmp(i);
-  }
+  typename temp_host_vector<T>::type tmp(this->size());
+  ar & tmp;
   *this = tmp;
 }
-#endif
 
 namespace bi {
 /**
@@ -780,7 +762,6 @@ private:
    */
   bool own;
 
-  #ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -791,7 +772,6 @@ private:
    * Boost.Serialization requirements.
    */
   friend class boost::serialization::access;
-  #endif
 };
 
 }
@@ -903,7 +883,6 @@ void bi::gpu_vector<T,size_value,inc_value,A>::swap(
   std::swap(this->own, o.own);
 }
 
-#ifndef __CUDA_ARCH__
 template<class T, int size_value, int inc_value, class A>
 template<class Archive>
 void bi::gpu_vector<T,size_value,inc_value,A>::serialize(Archive& ar,
@@ -911,6 +890,5 @@ void bi::gpu_vector<T,size_value,inc_value,A>::serialize(Archive& ar,
   ar & boost::serialization::base_object<
       gpu_vector_reference<T,size_value,inc_value> >(*this);
 }
-#endif
 
 #endif

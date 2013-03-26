@@ -37,7 +37,9 @@ struct temp_host_matrix {
   /**
    * Allocator type.
    *
-   * Note that, on host, pooled_allocator is slower than std::allocator.
+   * Note that, on host, pooled_allocator is slower than std::allocator. It
+   * is in avoiding calls to pinned_allocator (which internally calls
+   * cudaMallocHost) where there are some performance gains.
    */
   #ifdef ENABLE_CUDA
   typedef pipelined_allocator<pooled_allocator<pinned_allocator<T> > > allocator_type;

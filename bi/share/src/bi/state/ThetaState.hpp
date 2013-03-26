@@ -256,8 +256,13 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaState<B,L>::save(Archive& ar, const unsigned version) const {
   ar & boost::serialization::base_object<State<B,L> >(*this);
+  save_resizable_matrix(ar, version, X1);
+  save_resizable_vector(ar, version, theta1);
+  save_resizable_vector(ar, version, theta2);
   ar & logLikelihood;
+  ar & logLikelihood2;
   ar & logPrior;
+  ar & logPrior2;
   ar & logProposal1;
   ar & logProposal2;
 }
@@ -266,8 +271,13 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::ThetaState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object<State<B,L> >(*this);
+  load_resizable_matrix(ar, version, X1);
+  load_resizable_vector(ar, version, theta1);
+  load_resizable_vector(ar, version, theta2);
   ar & logLikelihood;
+  ar & logLikelihood2;
   ar & logPrior;
+  ar & logPrior2;
   ar & logProposal1;
   ar & logProposal2;
 }

@@ -16,9 +16,7 @@
 #include "../sse/math/scalar.hpp"
 #endif
 
-#ifndef __CUDA_ARCH__
 #include "boost/serialization/split_member.hpp"
-#endif
 
 namespace bi {
 /**
@@ -358,11 +356,6 @@ private:
   int P;
 
   /**
-   * Scaled time.
-   */
-  real t;
-
-  /**
    * Round up number of trajectories as required by implementation.
    *
    * @param P Minimum number of trajectories.
@@ -387,7 +380,6 @@ private:
   static const int NDX = B::NDX;
   static const int NPX = B::NPX;
 
-#ifndef __CUDA_ARCH__
   /**
    * Serialize.
    */
@@ -405,7 +397,6 @@ private:
    */
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
-#endif
 
 };
 }
@@ -418,13 +409,13 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
     Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
-    p(0), P(roundup(P)), t(0.0) {
+    p(0), P(roundup(P)) {
   clear();
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P), t(o.t) {
+    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   //
 }
 
@@ -432,7 +423,6 @@ template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  t = o.t;
 
   return *this;
 }
@@ -442,7 +432,6 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  t = o.t;
 
   return *this;
 }
@@ -901,27 +890,22 @@ int bi::State<B,L>::roundup(const int P) {
   return P1;
 }
 
-#ifndef __CUDA_ARCH__
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
+  save_resizable_matrix(ar, version, Xdn);
+  save_resizable_matrix(ar, version, Kdn);
+  ar & p;
   ar & P;
-
-  BOOST_AUTO(Xdn1, rows(Xdn, p, P));
-  ar & Xdn1;
-  ar & Kdn;
 }
 
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::load(Archive& ar, const unsigned version) {
+  load_resizable_matrix(ar, version, Xdn);
+  load_resizable_matrix(ar, version, Kdn);
+  ar & p;
   ar & P;
-  resize(P);
-
-  BOOST_AUTO(Xdn1, rows(Xdn, p, P));
-  ar & Xdn1;
-  ar & Kdn;
 }
-#endif
 
 #endif

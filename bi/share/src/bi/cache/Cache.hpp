@@ -8,7 +8,7 @@
 #ifndef BI_CACHE_CACHE_HPP
 #define BI_CACHE_CACHE_HPP
 
-#include "../math/matrix.hpp"
+#include "../math/vector.hpp"
 
 namespace bi {
 /**
