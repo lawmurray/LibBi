@@ -74,8 +74,8 @@ model PZ \{
     do \{
       alpha ~ normal(mu, sigma)
     \} then ode \{
-      P <- ode(alpha*P - c*P*Z)
-      Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
+      dP/dt = alpha*P - c*P*Z
+      dZ/dt = e*c*P*Z - m_l*Z - m_q*Z*Z
     \}
   \}
 
@@ -293,42 +293,47 @@ state x[m,n](has_output = 0)
 \subsection{Actions\label{Actions}}
 
 Within each top-level block, a probability density is specified using
-\emph{actions}. An action takes the form:
+\emph{actions}. Simple actions take one of three forms:
+\begin{bicode}
+x ~ \textsl{expression}
+x <- \textsl{expression}
+dx/dt = \textsl{expression}
+\end{bicode}
+where \bitt{x} is some variable, referred to as the \emph{target}. Named
+actions, available only for the first two forms, look like:
 \begin{bicode}
 x ~ \textsl{name}(\textsl{arguments}, ...)
-\end{bicode}
-or
-\begin{bicode}
 x <- \textsl{name}(\textsl{arguments}, ...)
 \end{bicode}
-where \bitt{x} is some variable, referred to as the \emph{target}.
 
 The first form, with the \bitt{\~{}} operator, indicates that the (random)
 variable \bitt{x} is distributed according to the action given on the
-right. Such actions usually correspond to parametric probability distributions
-(e.g.  \actionref{gaussian}, \actionref{gamma} and \actionref{uniform}).
+right. Such actions are usually named, and correspond to parametric
+probability distributions (e.g.  \actionref{gaussian}, \actionref{gamma} and
+\actionref{uniform}). If the action is not named, the expression on the right
+is assumed to be a probability density function.
 
 The second form, with the \bitt{<-} operator, indicates that the
 (deterministic) variable \bitt{x} should be assigned the result of the action
 given on the right. Such actions might be simple scalar\index{scalar},
-vector\index{vector} or matrix\index{matrix} expressions, or may require more
-elaborate processing, such as for the numerical integration of ordinary
-differential equations\index{ordinary\,differential\,equations} (e.g. the
-\actionref{ode} action).
+vector\index{vector} or matrix\index{matrix} expressions.
+
+The third form, with the \bitt{=} operator, is for expressing ordinary
+differential equations.
 
 Individual elements of a vector, matrix or higher-dimensional variable may be
 targeted using square brackets. Consider the following action giving the
-differential equation for a Lorenz '96 model:
+ordinary differential equation for a Lorenz '96 model:
 \begin{bicode}
-x[i] <- ode(x[i - 1]*(x[i + 1] - x[i - 2]) - x[i] + F)
+dx[i]/dt = x[i - 1]*(x[i + 1] - x[i - 2]) - x[i] + F
 \end{bicode}
 If \bitt{x} is a vector of size $N$, the action should be interpreted as ``for
-each $i \in (0,\ldots,N-1)$, use the following differential equation''. The
-name \bitt{i} is an \emph{index}, considered declared on the left with local
-scope to the action, so that it may be used on the right. The name \bitt{i} is
-arbitrary, but must not match the name of a constant, inline or variable. It
-may match the name of a dimension, and indeed matching the name of the
-dimension with which the index is associated can be sensible.
+each $i \in (0,\ldots,N-1)$, use the following ordinary differential
+equation''. The name \bitt{i} is an \emph{index}, considered declared on the
+left with local scope to the action, so that it may be used on the right. The
+name \bitt{i} is arbitrary, but must not match the name of a constant, inline
+or variable. It may match the name of a dimension, and indeed matching the
+name of the dimension with which the index is associated can be sensible.
 
 Elements of higher-dimensional variables may be targeted using multiple
 indices. For example, consider computing a Euclidean distance matrix \bitt{D}:
@@ -377,19 +382,18 @@ used in named or positional form, or both.
 \subsection{Blocks}
 
 Some actions are more complicated and can, or must, be wrapped in
-\emph{blocks}. A good example is the \actionref{ode} action. This describes a
-single ordinary differential
-equation\index{ordinary\,differential\,equations}. For a system with more than
-one such equation, this must be grouped with the actions that describe those
-other equations. The grouping is achieved with the \blockref{ode} block.
+\emph{blocks}. Good examples are systems of ordinary differential
+equations\index{ordinary\,differential\,equations}. Two or more equations must
+be grouped to form the complete system. The grouping is achieved with the
+\blockref{ode} block.
 
 Consider the following Lotka-Volterra-type\index{Lotka-Volterra} transition
 model:
 \begin{bicode}
 sub transition \{
   sub ode \{
-    P <- ode(alpha*P - c*P*Z)
-    Z <- ode(e*c*P*Z - m_l*Z)
+    dP/dt = alpha*P - c*P*Z
+    dZ/dt = e*c*P*Z - m_l*Z
   \}
 \}
 \end{bicode}
@@ -403,8 +407,8 @@ inadequate, these might be set as follows:
 \begin{bicode}
 sub transition \{
   sub ode(atoler = 1.0e-3, rtoler = 1.0e-3, alg = 'dopri5') \{
-    P <- ode(alpha*P - c*P*Z)
-    Z <- ode(e*c*P*Z - m_l*Z)
+    dP/dt = alpha*P - c*P*Z
+    dZ/dt = e*c*P*Z - m_l*Z
   \}
 \}
 \end{bicode}
@@ -450,8 +454,8 @@ sub transition(delta = 1.0) \{
   do \{
     alpha ~ normal(mu, sigma)
   \} then ode \{
-    P <- ode(alpha*P - c*P*Z)
-    Z <- ode(e*c*P*Z - m_l*Z - m_q*Z*Z)
+    dP/dt = alpha*P - c*P*Z
+    dZ/dt = e*c*P*Z - m_l*Z - m_q*Z*Z
   \}
 \}
 \end{bicode}
