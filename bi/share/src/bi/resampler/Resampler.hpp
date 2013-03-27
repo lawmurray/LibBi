@@ -522,18 +522,14 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
   BI_ASSERT(!V1::on_device);
 
-  /* Intel compiler doesn't like #pragma omp parallel for? */
-  #pragma omp parallel
-  {
-    int i, a;
-
-    #pragma omp for
-    for (i = 0; i < as.size(); ++i) {
-      a = as(i);
-      if (i != a) {
-        v[i]->resize(v[a]->size());
-        *v[i] = *v[a];
-      }
+  // don't use OpenMP for this, causing segfault with Intel compiler, and
+  // with CUDA, possibly due to different CUDA contexts with different
+  // threads playing with the resize and assignment
+  for (int i = 0; i < as.size(); ++i) {
+    int a = as(i);
+    if (i != a) {
+      v[i]->resize(v[a]->size(), false);
+      *v[i] = *v[a];
     }
   }
 }
