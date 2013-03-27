@@ -33,15 +33,15 @@ A standard project contains the following files:
 Contains a list of files, one per line, to be included when the project is
 packaged for distribution.
 
-=item C<README.txt>
+=item C<README>
 
 A description of the package.
 
-=item C<LICENSE.txt>
+=item C<LICENSE>
 
 The license of the package.
 
-=item C<VERSION.txt>
+=item C<VERSION>
 
 The version history of the package. Packages should be given a three-figure
 version number of the form C<x.y.z> where C<x> is the version number, C<y>
@@ -250,9 +250,9 @@ sub create {
     my @files = (
         'MANIFEST',
         'META',
-        'README.txt',
-        'LICENSE.txt',
-        'VERSION.txt',
+        'README',
+        'LICENSE',
+        'VERSION',
         'run.sh'
     );    
     foreach my $file (@files) {
@@ -306,25 +306,25 @@ sub validate {
         $self->_read_meta; # to check format
     }
 
-    # check README.txt
-    if (!-e 'README.txt') {
-        warn("No README.txt. Create a README.txt file documenting the package in a human-readable form.\n");
-    } elsif (!exists $manifest{'README.txt'}) {
-        warn("MANIFEST does not include README.txt.\n");
+    # check README
+    if (!-e 'README') {
+        warn("No README. Create a README file documenting the package in a human-readable form.\n");
+    } elsif (!exists $manifest{'README'}) {
+        warn("MANIFEST does not include README.\n");
     }
     
-    # check LICENSE.txt
-    if (!-e 'LICENSE.txt') {
-        warn("No LICENSE.txt. Create a LICENSE.txt file containing the distribution license (e.g. GPL or BSD) of the package.\n");
-    } elsif (!exists $manifest{'LICENSE.txt'}) {
-        warn("MANIFEST does not include LICENSE.txt.\n");
+    # check LICENSE
+    if (!-e 'LICENSE') {
+        warn("No LICENSE. Create a LICENSE file containing the distribution license (e.g. GPL or BSD) of the package.\n");
+    } elsif (!exists $manifest{'LICENSE'}) {
+        warn("MANIFEST does not include LICENSE.\n");
     }
 
-    # check VERSION.txt    
-    if (!-e 'VERSION.txt') {
-        warn("No VERSION.txt. Create a VERSION.txt file to document changes to the package in a human-readable form.\n");
-    } elsif (!exists $manifest{'VERSION.txt'}) {
-        warn("MANIFEST does not include VERSION.txt.\n");
+    # check VERSION    
+    if (!-e 'VERSION') {
+        warn("No VERSION. Create a VERSION file to document changes to the package in a human-readable form.\n");
+    } elsif (!exists $manifest{'VERSION'}) {
+        warn("MANIFEST does not include VERSION.\n");
     }
     
     # check run.sh

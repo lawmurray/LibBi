@@ -1,8 +1,8 @@
 MANIFEST
 META
-README.txt
-LICENSE.txt
-VERSION.txt
+README
+LICENSE
+VERSION
 run.sh
 [% name %].bi
 data
