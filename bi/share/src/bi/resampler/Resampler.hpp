@@ -522,12 +522,18 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
   BI_ASSERT(!V1::on_device);
 
-#pragma omp parallel for
-  for (int i = 0; i < as.size(); ++i) {
-    int a = as(i);
-    if (i != a) {
-      v[i]->resize(v[a]->size());
-      *v[i] = *v[a];
+  /* Intel compiler doesn't like #pragma omp parallel for? */
+  #pragma omp parallel
+  {
+    int i, a;
+
+    #pragma omp for
+    for (i = 0; i < as.size(); ++i) {
+      a = as(i);
+      if (i != a) {
+        v[i]->resize(v[a]->size());
+        *v[i] = *v[a];
+      }
     }
   }
 }
