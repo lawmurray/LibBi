@@ -254,11 +254,9 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
     /* transfer particle */
     if (rank == recvr) {
-      BOOST_AUTO(x, select(s, recvi));
-      reqs.push_back(world.irecv(sendr, tag, x));
+      reqs.push_back(world.irecv(sendr, tag, select(s, recvi)));
     } else if (rank == sendr) {
-      BOOST_AUTO(x, select(s, sendi));
-      reqs.push_back(world.isend(recvr, tag, x));
+      reqs.push_back(world.isend(recvr, tag, select(s, sendi)));
     }
     ++tag;
 
