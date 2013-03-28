@@ -77,8 +77,8 @@ private:
    * @return Particle.
    */
   template<class B, bi::Location L>
-  static typename bi::State<B,L>::vector_reference_type select(State<B,L>& s,
-      const int p);
+  static typename bi::State<B,L>::matrix_reference_type::vector_reference_type select(
+      State<B,L>& s, const int p);
 
   /**
    * Receive particle.
@@ -254,9 +254,11 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
     /* transfer particle */
     if (rank == recvr) {
-      reqs.push_back(world.irecv(sendr, tag, select(s, recvi)));
+      BOOST_AUTO(x, select(s, recvi));
+      reqs.push_back(world.irecv(sendr, tag, x));
     } else if (rank == sendr) {
-      reqs.push_back(world.isend(recvr, tag, select(s, sendi)));
+      BOOST_AUTO(x, select(s, sendi));
+      reqs.push_back(world.isend(recvr, tag, x));
     }
     ++tag;
 
@@ -276,8 +278,8 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
 template<class R>
 template<class B, bi::Location L>
-typename bi::State<B,L>::vector_reference_type bi::DistributedResampler<R>::select(
-    State<B,L>& s, const int p) {
+typename bi::State<B,L>::matrix_reference_type::vector_reference_type bi::DistributedResampler<
+    R>::select(State<B,L>& s, const int p) {
   return row(s.getDyn(), p);
 }
 

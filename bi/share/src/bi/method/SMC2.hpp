@@ -532,12 +532,21 @@ void bi::SMC2<B,F,R,IO1>::output(
 template<class B, class F, class R, class IO1>
 void bi::SMC2<B,F,R,IO1>::report(const ScheduleElement now, const real ess,
     const bool r, const real acceptRate) {
-  std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
-      << ess;
-  if (r) {
-    std::cerr << "\tresample-move with acceptance rate " << acceptRate;
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+#else
+  rank = 0;
+#endif
+
+  if (rank == 0) {
+    std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
+        << ess;
+    if (r) {
+      std::cerr << "\tresample-move with acceptance rate " << acceptRate;
+    }
+    std::cerr << std::endl;
   }
-  std::cerr << std::endl;
 }
 
 template<class B, class F, class R, class IO1>

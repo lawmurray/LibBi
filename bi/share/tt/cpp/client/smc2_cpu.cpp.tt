@@ -80,6 +80,9 @@ int main(int argc, char* argv[]) {
   const int rank = world.rank();
   const int size = world.size();
   NSAMPLES /= size;
+  #else
+  const int rank = 0;
+  const int size = 1;
   #endif
   
   /* NetCDF init */
@@ -223,13 +226,15 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
-  TicToc timer;
 
+  TicToc timer;
+  timer.sync();
+  timer.tic();
   sampler->sample(rng, sched.begin(), sched.end(), s, bufInit, NSAMPLES);
-  synchronize();
+  timer.sync();
   
   /* output timing results */
-  if (WITH_TIMING) {
+  if (WITH_TIMING && rank == 0) {
     std::cout << timer.toc() << std::endl;
   }
   #ifdef ENABLE_GPERFTOOLS
