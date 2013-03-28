@@ -536,7 +536,7 @@ void bi::SMC2<B,F,R,IO1>::report(const ScheduleElement now, const real ess,
   boost::mpi::communicator world;
   const int rank = world.rank();
 #else
-  rank = 0;
+  const int rank = 0;
 #endif
 
   if (rank == 0) {
