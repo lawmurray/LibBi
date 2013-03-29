@@ -1,6 +1,6 @@
 =head1 NAME
 
-optimise - frontend to optimisation client programs.
+optimise - optimise parameters of model.
 
 =head1 SYNOPSIS
 
