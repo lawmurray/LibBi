@@ -240,6 +240,12 @@ positionally (defaults to 0),
 
 =item I<default> giving a default value if the parameter is not supplied.
 
+=item I<deprecated> indicating whether or not the parameter is deprecated,
+and if so
+
+=item I<message> giving a message to display, suggesting an alternative
+option to the user, for example.
+
 =back
 
 =back
@@ -337,6 +343,13 @@ sub process_args {
             } elsif ($spec->{mandatory}) {
                 die("missing mandatory argument '" . $spec->{name} . "'\n");
             }
+        }
+    }
+    
+    # check deprecated arguments
+    foreach $spec (@$specs) {
+        if ($spec->{deprecated} && exists $args->{$spec->{name}}) {
+            warn($spec->{name} . " is deprecated, " . $spec->{message} . "\n");
         }
     }
     

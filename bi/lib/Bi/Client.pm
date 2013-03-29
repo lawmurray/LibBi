@@ -105,6 +105,30 @@ our @CLIENT_OPTIONS = (
       name => 'with-transform-initial-to-param',
       type => 'bool',
       default => 0
+    },
+    {
+      name => 'transform-extended',
+      type => 'bool',
+      deprecated => 1,
+      message => "use --with-transform-extended instead"
+    },
+    {
+      name => 'transform-param-to-state',
+      type => 'bool',
+      deprecated => 1,
+      message => "use --with-transform-param-to-state instead, and note that this is now enabled by default with the simulate command"
+    },
+    {
+      name => 'transform-obs-to-state',
+      type => 'bool',
+      deprecated => 1,
+      message => "use --with-transform-obs-to-state instead, and note that this is now enabled by default with the simulate command"
+    },
+    {
+      name => 'transform-initial-to-param',
+      type => 'bool',
+      deprecated => 1,
+      message => "use --with-transform-initial-to-param instead"
     }
 );
 
@@ -354,7 +378,13 @@ sub process_args {
     push(@args, @{$self->_load_options($self->get_exec_params, $self->{_exec_args})});
 
     GetOptions(@args) || die("could not read command line arguments\n");
-    
+
+    # check deprecated arguments
+    foreach $param (@{$self->get_params}) {
+        if ($param->{deprecated} && $self->is_named_arg($param->{name})) {
+            warn("--" . $param->{name} . " is deprecated, " . $param->{message} . "\n");
+        }
+    }    
     if (@ARGV) {
         die("unrecognised options '" . join(' ', @ARGV) . "'\n");
     }
