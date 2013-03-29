@@ -58,7 +58,7 @@ void bi::ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
           if (type == P_VAR) {
             vars[type][id] = createVar(var, false, true);
           } else {
-            vars[type][id] = createVar(var, true, true);
+            vars[type][id] = createVar(var, !var->getOutputOnce(), true);
           }
         }
       }

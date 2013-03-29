@@ -89,22 +89,20 @@ our @CLIENT_OPTIONS = (
       type => 'int',
     },
     {
-      name => 'transform-extended',
+      name => 'with-transform-extended',
       type => 'bool',
       default => 0
     },
     {
-      name => 'transform-param-to-state',
-      type => 'bool',
-      default => 0
+      name => 'with-transform-param-to-state',
+      type => 'bool'
     },
     {
-      name => 'transform-obs-to-state',
-      type => 'bool',
-      default => 0
+      name => 'with-transform-obs-to-state',
+      type => 'bool'
     },
     {
-      name => 'transform-initial-to-param',
+      name => 'with-transform-initial-to-param',
       type => 'bool',
       default => 0
     }
@@ -164,11 +162,19 @@ sub new {
     }
     bless $self, $class;
     
-    # override default gperftools output file
+    # default arguments dependent on client
     foreach my $param (@{$self->get_params}) {
     	if ($param->{name} eq 'gperftools-file') {
     		$param->{default} = "$cmd.prof";
     	}
+    }
+    if ($cmd eq 'simulate') {
+        if (!$self->is_named_arg('with-transform-param-to-state')) {
+            $self->set_named_arg('with-transform-param-to-state', 1);
+        }
+        if (!$self->is_named_arg('with-transform-obs-to-state')) {
+            $self->set_named_arg('with-transform-obs-to-state', 1);
+        }
     }
         
     # common arguments

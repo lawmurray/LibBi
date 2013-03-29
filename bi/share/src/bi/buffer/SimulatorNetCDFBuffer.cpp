@@ -61,7 +61,7 @@ void bi::SimulatorNetCDFBuffer::create(const long P, const long T) {
           if (type == P_VAR) {
             vars[type][id] = createVar(var, false, false);
           } else {
-            vars[type][id] = createVar(var, true, true);
+            vars[type][id] = createVar(var, !var->getOutputOnce(), true);
           }
         }
       }

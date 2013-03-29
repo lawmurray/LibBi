@@ -37,13 +37,17 @@ Include variable when doing input from a file?
 
 Include variable when doing output to a file?
 
-=item C<input_name> (default the same as the name of the variable)
+=item C<input_name> (default the same as variable name)
 
 Name to use for the variable in input files.
 
-=item C<output_name> (default the same as the name of the variable)
+=item C<output_name> (default the same as variable name)
 
 Name to use for the variable in output files.
+
+=item C<output_once> (default according to variable type)
+
+Output the variable only once, not at each time.
 
 =back
 
@@ -58,10 +62,13 @@ our $VAR_ARGS = [
         default => 1
     },
     {
-        name => 'input_name',
+        name => 'input_name'
     },
     {
-        name => 'output_name',
+        name => 'output_name'
+    },
+    {
+        name => 'output_once'
     }
 ];
 
@@ -109,10 +116,7 @@ sub new {
     $self->{_name} = $name;
     $self->{_type} = undef; # supplied by derived class
     $self->{_dims} = $dims;
-    
     bless $self, $class;
-   
-    $self->validate;
    
     return $self;
 }
@@ -249,6 +253,10 @@ sub validate {
     }
     if (!$self->is_named_arg('output_name')) {
         $self->set_named_arg('output_name', new Bi::Expression::StringLiteral($self->get_name));
+    }
+    if (!$self->is_named_arg('output_once')) {
+        my $once = int($self->get_type eq 'param' || $self->get_type eq 'param_aux_');
+        $self->set_named_arg('output_once', new Bi::Expression::Literal($once));
     }
 }
 

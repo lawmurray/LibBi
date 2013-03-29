@@ -35,6 +35,7 @@ sub new {
     my $self = Bi::Model::Var->new(@_);
     $self->{_type} = 'state_aux_';
     bless $self, $class;
+    $self->validate;
     return $self;
 }
 

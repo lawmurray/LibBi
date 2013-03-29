@@ -35,6 +35,7 @@ sub new {
     my $self = Bi::Model::Var->new(@_);
     $self->{_type} = 'noise';
     bless $self, $class;
+    $self->validate;
     return $self;
 }
 

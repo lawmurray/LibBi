@@ -273,7 +273,7 @@ sub process_args {
     my $filter = $self->get_named_arg('filter');
     my $binary;
     if ($filter eq 'ekf') {
-        $self->set_named_arg('transform-extended', 1);
+        $self->set_named_arg('with-transform-extended', 1);
         $binary = 'ekf';
     } else {
         $binary = 'pf';

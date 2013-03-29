@@ -57,6 +57,11 @@ public:
   const std::string& getOutputName() const;
 
   /**
+   * Should the variable be output only once, not at each time?
+   */
+  bool getOutputOnce() const;
+
+  /**
    * Get id of the variable.
    *
    * @return Id of the variable.
@@ -134,6 +139,11 @@ protected:
   std::string outputName;
 
   /**
+   * Output once only?
+   */
+  bool once;
+
+  /**
    * Type.
    */
   VarType type;
@@ -173,6 +183,7 @@ bi::Var::Var(const X& o) {
   this->name = o.getName();
   this->inputName = o.getInputName();
   this->outputName = o.getOutputName();
+  this->once = o.getOutputOnce();
   this->type = var_type<X>::value;
   this->id = var_id<X>::value;
   this->start = var_start<X>::value;
@@ -191,6 +202,10 @@ inline const std::string& bi::Var::getInputName() const {
 
 inline const std::string& bi::Var::getOutputName() const {
   return outputName;
+}
+
+inline bool bi::Var::getOutputOnce() const {
+  return once;
 }
 
 inline int bi::Var::getId() const {

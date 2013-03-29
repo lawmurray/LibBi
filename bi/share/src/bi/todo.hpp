@@ -31,7 +31,7 @@
  *
  * @todo Collapsed state-space model.
  *
- * @todo Log and logit transforms of parameters (e.g. --transform-*).
+ * @todo Log and logit transforms of parameters (e.g. --with-transform-*).
  * 
  * @todo Evidence estimation using PMCMC.
  *

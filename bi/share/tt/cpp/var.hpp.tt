@@ -73,6 +73,11 @@ public:
    * Should the variable be included in output files?
    */
   static bool hasOutput();
+  
+  /**
+   * Should the variable be output only once, not at every time?
+   */
+  static bool getOutputOnce();
 
   /**
    * Initialise dimensions. Called by Model::addVar() after construction.
@@ -159,6 +164,10 @@ inline bool [% class_name %]::hasInput() {
 
 inline bool [% class_name %]::hasOutput() {
   return [% var.get_named_arg('has_output').to_cpp %];
+}
+
+inline bool [% class_name %]::getOutputOnce() {
+  return [% var.get_named_arg('output_once').eval_const %];
 }
 
 template<class B>

@@ -168,15 +168,15 @@ sub client {
     # transform
     if (defined $model && $client->needs_transform) {
         $self->_report("Transforming model...");
-        if ($client->get_named_arg('transform-param-to-state')) {
+        if ($client->get_named_arg('with-transform-param-to-state')) {
             Bi::Visitor::ParamToStateTransformer->evaluate($model);
-        } elsif ($client->get_named_arg('transform-initial-to-param')) {
+        } elsif ($client->get_named_arg('with-transform-initial-to-param')) {
             Bi::Visitor::InitialToParamTransformer->evaluate($model);
         }
-        if ($client->get_named_arg('transform-obs-to-state')) {
+        if ($client->get_named_arg('with-transform-obs-to-state')) {
             Bi::Visitor::ObsToStateTransformer->evaluate($model);
         }
-        if ($client->get_named_arg('transform-extended')) {
+        if ($client->get_named_arg('with-transform-extended')) {
             Bi::Visitor::ExtendedTransformer->evaluate($model);
         }
     

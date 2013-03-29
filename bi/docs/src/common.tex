@@ -149,13 +149,13 @@ Number of processes per node when running under \bitt{mpirun}. Corresponds to
 
 \subsubsection{Model transformation options}
 \begin{description}
-\item[\bitt{--transform-extended}] (default off, enabled automatically when
+\item[\bitt{--with-transform-extended}] (default off, enabled automatically when
   required)
 
 Linearise the model and symbolically compute Jacobian expressions for use with
 the extended Kalman filter.
 
-\item[\bitt{--transform-param-to-state}] (default off)
+\item[\bitt{--with-transform-param-to-state}] (default off)
 
 Augment the state with parameters by interpreting \kwref{param} statements as
 \kwref{state}, merging the \blockref{parameter} top-level block into the
@@ -165,7 +165,7 @@ Augment the state with parameters by interpreting \kwref{param} statements as
 
 This is useful for joint state and parameter estimation using filters.
 
-\item[\bitt{--transform-obs-to-state}] (default off)
+\item[\bitt{--with-transform-obs-to-state}] (default off)
 
 Augment the state with observations by interpreting \kwref{obs} statements as
 \kwref{state}, merging the \kwref{observation} top-level block into the
@@ -175,7 +175,7 @@ block into the \blockref{lookahead_transition} top-level block.
 
 This is useful for producing simulated data sets from a model.
 
-\item[\bitt{--transform-initial-to-param}] (default off)
+\item[\bitt{--with-transform-initial-to-param}] (default off)
 
 Augment the parameters with the initial conditions of the state variables by
 adding a new \kwref{param} for each \kwref{state} variable to hold its initial

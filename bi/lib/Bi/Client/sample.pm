@@ -40,7 +40,7 @@ The type of sampler to use; one of:
 Particle marginal Metropolis-Hastings (PMMH). The proposal works according to
 the L<proposal_parameter> top-level block. If this is not defined,
 independent draws are taken from the L<proposal> top-level block instead. If
-C<--transform-initial-to-param> is on, the L<proposal_initial> top-level
+C<--with-transform-initial-to-param> is on, the L<proposal_initial> top-level
 block is used to make Metropolis-Hastings proposals over initial conditions
 also. If this is not defined, independent draws are taken from the L<initial>
 top-level block instead.

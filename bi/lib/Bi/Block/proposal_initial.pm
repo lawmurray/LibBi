@@ -13,7 +13,7 @@ variables.
 =head1 DESCRIPTION
 
 This may be a local or independent proposal distribution, used by the
-C<sample> command when the C<--transform-initial-to-param> option is
+C<sample> command when the C<--with-transform-initial-to-param> option is
 used.
 
 Actions in the C<proposal_initial> block may only refer to variables of

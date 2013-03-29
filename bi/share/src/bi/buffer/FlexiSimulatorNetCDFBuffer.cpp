@@ -67,6 +67,8 @@ void bi::FlexiSimulatorNetCDFBuffer::create(const long T) {
         if (var->hasOutput()) {
           if (type == P_VAR) {
             vars[type][id] = createVar(var, false, false);
+          } else if (var->getOutputOnce()) {
+            vars[type][id] = createVar(var, false, true);
           } else {
             vars[type][id] = createFlexiVar(var);
           }
