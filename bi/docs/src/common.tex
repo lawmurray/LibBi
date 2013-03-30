@@ -155,7 +155,8 @@ Number of processes per node when running under \bitt{mpirun}. Corresponds to
 Linearise the model and symbolically compute Jacobian expressions for use with
 the extended Kalman filter.
 
-\item[\bitt{--with-transform-param-to-state}] (default off)
+\item[\bitt{--with-transform-param-to-state}] (default on for simulate
+  command, off otherwise)
 
 Augment the state with parameters by interpreting \kwref{param} statements as
 \kwref{state}, merging the \blockref{parameter} top-level block into the
