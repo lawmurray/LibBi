@@ -16,9 +16,12 @@ void bi::RandomHost::seeds(Random& rng, const unsigned seed) {
   {
     #ifdef ENABLE_MPI
     boost::mpi::communicator world;
-    int s = seed + world.rank()*bi_omp_max_threads + bi_omp_tid;
+    const int rank = world.rank();
+    const int size = world.size();
+
+    int s = seed*size*bi_omp_max_threads + rank*bi_omp_max_threads + bi_omp_tid;
     #else
-    int s = seed + bi_omp_tid;
+    int s = seed*bi_omp_max_threads + bi_omp_tid;
     #endif
 
     rng.getHostRng().seed(s);

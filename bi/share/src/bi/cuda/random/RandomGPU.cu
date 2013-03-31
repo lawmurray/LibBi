@@ -16,7 +16,10 @@
 void bi::RandomGPU::seeds(Random& rng, const unsigned seed) {
   #ifdef ENABLE_MPI
   boost::mpi::communicator world;
-  int s = seed + 1e5*world.rank();
+  const int rank = world.rank();
+  const int size = world.size();
+
+  int s = seed*size + rank;
   #else
   int s = seed;
   #endif
