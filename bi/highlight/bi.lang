@@ -1,0 +1,39 @@
+
+Description="LibBi model files"
+
+Keywords={
+  {  Id=1,
+   List={"model", "sub", "do", "then"}
+  },
+  { Id=2,
+    List={"input", "param", "noise", "state", "obs", "param_aux_", "state_aux_", "dim", "const", "inline"}
+  },
+  { Id=3,
+    Regex=[[(?:sub|do|then)\s*(\w+)]]
+  },
+  { Id=4,
+    Regex=[[(\~|\=|\<\-)\s*(\w+)\s*\(]]
+  }
+}
+
+Strings = {
+  Delimiter=[["|']],
+  RawPrefix="R",
+}
+
+Comments = {
+   { Block=true,
+     Nested=false,
+     Delimiter = { [[\/\*]], [[\*\/]] }
+   },
+   {
+     Block=false,
+     Delimiter = { [[//]] }
+   }
+}
+
+IgnoreCase=false
+
+Operators=[[\(|\)|\[|\]|\{|\}|\,|\;|\.|\:|\&|\<|\>|\!|\=|\/|\*|\%|\+|\-|\~|\|\.\*|\.\/|\.\+|\.\-]]
+
+EnableIndentation=true
