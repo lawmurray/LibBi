@@ -149,6 +149,9 @@ sub client {
         my $parser = new Bi::Parser;
         $model = $parser->parse($fh);
         $fh->close;
+        if ($model->get_name . '.bi' ne $self->{_model_file}) {
+            warn("model name does not match model file name\n");
+        }
     }
     
     # generators etc
