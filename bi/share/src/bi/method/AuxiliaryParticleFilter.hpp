@@ -497,8 +497,8 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     }
     this->getResam()->resample(rng, lw1s, lw2s, as, s);
   } else {
-    Resampler::normalise(lw2s);
     seq_elements(as, 0);
+    Resampler::normalise(lw2s);
   }
   return r;
 }
@@ -523,8 +523,8 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     }
     this->getResam()->resample(rng, a, lw1s, lw2s, as, s);
   } else {
-    Resampler::normalise(lw2s);
     seq_elements(as, 0);
+    Resampler::normalise(lw2s);
   }
   return r;
 }

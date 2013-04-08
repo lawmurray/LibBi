@@ -109,16 +109,6 @@ public:
    * Report to stderr.
    */
   void report() const;
-
-  /**
-   * Number of free blocks (one or more continugous free slots) in the cache.
-   */
-  int numFreeBlocks() const;
-
-  /**
-   * Largest free block in the cache.
-   */
-  int largestFreeBlock() const;
   //@}
 
 private:
@@ -212,6 +202,16 @@ private:
   long usecs;
 
   /**
+   * Largest contiguous write in last insert.
+   */
+  int largest;
+
+  /**
+   * Range of last insert.
+   */
+  int range;
+
+  /**
    * Serialize.
    */
   template<class Archive>
@@ -243,13 +243,14 @@ private:
 
 template<bi::Location CL>
 bi::AncestryCache<CL>::AncestryCache() :
-    m(0), q(0), usecs(0) {
+    m(0), q(0), usecs(0), largest(0), range(0) {
   //
 }
 
 template<bi::Location CL>
 bi::AncestryCache<CL>::AncestryCache(const AncestryCache<CL>& o) :
-    Xs(o.Xs), as(o.as), os(o.os), ls(o.ls), m(o.m), q(o.q), usecs(o.usecs) {
+    Xs(o.Xs), as(o.as), os(o.os), ls(o.ls), m(o.m), q(o.q), usecs(o.usecs),
+    largest(o.largest), range(o.range) {
   //
 }
 
@@ -268,6 +269,8 @@ bi::AncestryCache<CL>& bi::AncestryCache<CL>::operator=(
   m = o.m;
   q = o.q;
   usecs = o.usecs;
+  largest = o.largest;
+  range = o.range;
 
   return *this;
 }
@@ -281,6 +284,8 @@ void bi::AncestryCache<CL>::swap(AncestryCache<CL>& o) {
   std::swap(m, o.m);
   std::swap(q, o.q);
   std::swap(usecs, o.usecs);
+  std::swap(largest, o.largest);
+  std::swap(range, o.range);
 }
 
 template<bi::Location CL>
@@ -290,6 +295,8 @@ void bi::AncestryCache<CL>::clear() {
   m = 0;
   q = 0;
   usecs = 0;
+  largest = 0;
+  range = 0;
 }
 
 template<bi::Location CL>
@@ -301,6 +308,8 @@ void bi::AncestryCache<CL>::empty() {
   m = 0;
   q = 0;
   usecs = 0;
+  largest = 0;
+  range = 0;
 }
 
 template<bi::Location CL>
@@ -346,6 +355,9 @@ void bi::AncestryCache<CL>::init(const M1 X) {
   set_elements(subrange(os, 0, N), 0);
   seq_elements(subrange(ls, 0, N), 0);
   m = N;
+  largest = N;
+  range = N;
+  q = 0;
 }
 
 template<bi::Location CL>
@@ -375,20 +387,30 @@ void bi::AncestryCache<CL>::insert(const M1 X, const V1 as) {
 
   const int N = X.size1();
   host_int_vector_type bs(N);
-  int i;
+  int i, sz;
 
   bi::gather(as, ls, bs);
   ls.resize(N, false);
+  largest = 0;
 
+  sz = 0;
+  range = 0;
   for (i = 0; i < N; ++i) {
     while (this->os(q) > 0) {
       ++q;
+      sz = 0;
+      ++range;
       if (q == Xs.size1()) {
         q = 0;
       }
     }
     ls(i) = q;
     ++q;
+    ++sz;
+    ++range;
+    if (sz > largest) {
+      largest = sz;
+    }
     if (q == Xs.size1()) {
       q = 0;
     }
@@ -420,11 +442,13 @@ void bi::AncestryCache<CL>::enlarge(const int N) {
    */
   int oldSize = Xs.size1();
   int newSize = oldSize + N;
+  //int newSize = 2*bi::max(oldSize, N);
 
   Xs.resize(newSize, Xs.size2(), true);
   as.resize(newSize, true);
   os.resize(newSize, true);
   subrange(os, oldSize, newSize - oldSize).clear();
+  q = oldSize;
 
   /* post-conditions */
   BI_ASSERT(Xs.size1() - m >= N);
@@ -465,59 +489,18 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   usecs = clock.toc();
   report();
 #endif
-
 }
 
 template<bi::Location CL>
 void bi::AncestryCache<CL>::report() const {
-  int freeBlocks = numFreeBlocks();
-  double largest = largestFreeBlock();
-  double frag = (Xs.size1() == m) ? 0.0 : 1.0 - (largest / (Xs.size1() - m));
+  double frag = 1.0 - double(largest)/range;
 
   std::cerr << "AncestryCache: ";
   std::cerr << Xs.size1() << " slots, ";
   std::cerr << m << " nodes, ";
-  std::cerr << freeBlocks << " free blocks, ";
   std::cerr << std::setprecision(4) << frag << " fragmentation, ";
   std::cerr << usecs << " us last write.";
   std::cerr << std::endl;
-}
-
-template<bi::Location CL>
-int bi::AncestryCache<CL>::numFreeBlocks() const {
-  ///@bug Incorrect, as doesn't discount leaf nodes with os(q) == 0
-  int q, len = 0, blocks = 0;
-  for (q = 0; q < os.size(); ++q) {
-    if (os(q) == 0) {
-      ++len;
-    } else {
-      if (len > 0) {
-        ++blocks;
-      }
-      len = 0;
-    }
-  }
-  if (len > 0) {
-    ++blocks;
-  }
-  return blocks;
-}
-
-template<bi::Location CL>
-int bi::AncestryCache<CL>::largestFreeBlock() const {
-  ///@bug Incorrect, as doesn't discount leaf nodes with os(q) == 0
-  int q, len = 0, maxLen = 0;
-  for (q = 0; q < os.size(); ++q) {
-    if (os(q) == 0) {
-      ++len;
-      if (len > maxLen) {
-        maxLen = len;
-      }
-    } else {
-      len = 0;
-    }
-  }
-  return maxLen;
 }
 
 template<bi::Location CL>
@@ -530,6 +513,8 @@ void bi::AncestryCache<CL>::save(Archive& ar, const unsigned version) const {
   ar & m;
   ar & q;
   ar & usecs;
+  ar & largest;
+  ar & range;
 }
 
 template<bi::Location CL>
@@ -542,6 +527,8 @@ void bi::AncestryCache<CL>::load(Archive& ar, const unsigned version) {
   ar & m;
   ar & q;
   ar & usecs;
+  ar & largest;
+  ar & range;
 }
 
 #endif

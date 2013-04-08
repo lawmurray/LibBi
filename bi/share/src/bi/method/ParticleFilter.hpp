@@ -648,21 +648,17 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r = false;
-  if (now.hasObs()) {
-    r = resam != NULL && resam->isTriggered(lws);
-    if (r) {
-      if (resampler_needs_max<R>::value) {
-        resam->setMaxLogWeight(
-            m.observationMaxLogDensity(s,
-                sim->getObs()->getMask(now.indexObs())));
-      }
-      resam->resample(rng, lws, as, s);
-    } else {
-      Resampler::normalise(lws);
+  bool r = now.hasObs() && resam != NULL && resam->isTriggered(lws);
+  if (r) {
+    if (resampler_needs_max<R>::value) {
+      resam->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
-  } else if (now.hasOutput()) {
+    resam->resample(rng, lws, as, s);
+  } else {
     seq_elements(as, 0);
+    Resampler::normalise(lws);
   }
   return r;
 }
@@ -675,21 +671,17 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r = false;
-  if (now.hasObs()) {
-    r = resam != NULL && resam->isTriggered(lws);
-    if (r) {
-      if (resampler_needs_max<R>::value) {
-        resam->setMaxLogWeight(
-            m.observationMaxLogDensity(s,
-                sim->getObs()->getMask(now.indexObs())));
-      }
-      resam->cond_resample(rng, a, a, lws, as, s);
-    } else {
-      Resampler::normalise(lws);
+  bool r = now.hasObs() && resam != NULL && resam->isTriggered(lws);
+  if (r) {
+    if (resampler_needs_max<R>::value) {
+      resam->setMaxLogWeight(
+          m.observationMaxLogDensity(s,
+              sim->getObs()->getMask(now.indexObs())));
     }
-  } else if (now.hasOutput()) {
+    resam->cond_resample(rng, a, a, lws, as, s);
+  } else {
     seq_elements(as, 0);
+    Resampler::normalise(lws);
   }
   return r;
 }
