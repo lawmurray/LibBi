@@ -107,6 +107,11 @@ sub new {
     	warn("SSE has been disabled, unsupported when CUDA also enabled\n");
     	$self->{_sse} = 0;
     }
+    
+    # enable mpirun automatically when --enable-mpi used
+    if ($self->{_mpi}) {
+        push(@ARGV, '--with-mpi');
+    }
 
     # work out name of build directory
     my @builddir = 'build';

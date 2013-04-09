@@ -79,6 +79,8 @@ our @CLIENT_OPTIONS = (
       name => 'with-mpi',
       type => 'bool',
       default => 0
+      # this is not usually set by users and is not documented, it is set
+      # in Bi::Builder when --enable-mpi is used
     },
     {
       name => 'mpi-np',
