@@ -27,33 +27,39 @@ following additional options:
 
 =over 4
 
-=item C<--optimiser> or C<--optimizer> (default C<'nm'>)
+=item C<--target> (default C<likelihood>)
+
+Optimisation target, one of:
+
+=over 8
+
+=item C<likelihood>
+
+Maximum likelihood estimation.
+
+=item C<posterior>
+
+Maximum I<a posteriori> estimation.
+
+=back
+
+=item C<--optimiser> or C<--optimizer> (default C<nm>)
 
 The optimisation method to use; one of:
 
 =over 8
 
-=item C<'nm'>
+=item C<nm>
 
 Nelder-Mead simplex method.
 
 =back
 
-=item C<--mode> (default C<'ml'>)
-
-Optimisation mode, one of:
-
-=over 8
-
-=item C<'ml'>
-
-Maximum likelihood estimation.
-
-=item C<'map'>
-
-Maximum I<a posteriori> estimation.
-
 =back
+
+=head2 Nelder-mead simplex method-specific options
+
+=over 4
 
 =item C<--simplex-size-real> (default 0.1)
 
@@ -83,7 +89,14 @@ our @CLIENT_OPTIONS = (
     {
       name => 'mode',
       type => 'string',
-      default => 'ml'
+      default => 'ml',
+      deprecated => 1,
+      message => 'use --target instead'  
+    },
+    {
+      name => 'target',
+      type => 'string',
+      default => 'likelihood'
     },
     {
       name => 'simplex-size-rel',

@@ -9,10 +9,75 @@ Bi::Builder - builds client programs on demand.
     my $client = 'simulate';  # or 'filter' or 'smooth' etc
     $builder->build($client);
 
-=head1 COMMAND LINE
+=head1 BUILD OPTIONS
 
-Options are read from the command line to control various aspects of the
-build. See the Bi user manual for details.
+Options prefixed with C<--enable> may be negated by replacing this with
+C<--disable>.
+
+=over 4
+
+=item C<--dry-gen> (default off)
+
+Do not (re)generate code.
+
+=item C<--dry-build> (default off)
+
+Do not build.
+
+=item C<--warn> (default off)
+
+Enable compiler warnings.
+
+=item C<--force> (default off)
+
+Force all build steps to be performed, even when determined to be not
+required. This is useful as a workaround of any faults in detecting
+changes, or when system headers or libraries change and recompilation or
+relinking is required.
+
+=item C<--enable-assert> (default on)
+
+Enable assertion checking (recommended for test runs, not recommended for
+production runs).
+
+=item C<--enable-extra-debug> (default off)
+
+Enable extra debugging options in compilation (recommended in conjunction with
+C<--with-gdb>).
+
+=item C<--enable-diagnostics> (default off)
+
+Enable diagnostic outputs to standard error.
+
+=item C<--enable-cuda> (default off)
+
+Enable CUDA device code.
+
+=item C<--enable-sse> (default off)
+
+Enable SSE host code.
+
+=item C<--enable-mkl> (default off)
+
+Enable Intel MKL code.
+
+=item C<--enable-mpi> (default off)
+
+Enable MPI code.
+
+=item C<--enable-vampir> (default off)
+
+Enable Vampir.
+
+=item C<--enable-single> (default off)
+
+Use single-precision floating point.
+
+=item C<--enable-gperftools> (default off)
+
+Enable the C<gperftools> compiler.
+
+=back
 
 =head1 METHODS
 
@@ -57,7 +122,6 @@ sub new {
         _builddir => '',
         _verbose => $verbose,
         _warn => 0,
-        _native => 0,
         _force => 0,
         _assert => 1,
         _cuda => 0,
@@ -66,7 +130,7 @@ sub new {
         _mpi => 0,
         _vampir => 0,
         _single => 0,
-        _extradebug => 0,
+        _extra_debug => 0,
         _diagnostics => 0,
         _gperftools => 0,
         _tstamps => {},
@@ -77,7 +141,6 @@ sub new {
     # command line options
     my @args = (
         'warn' => \$self->{_warn},
-        'native' => \$self->{_native},
         'force' => \$self->{_force},
         'enable-assert' => sub { $self->{_assert} = 1 },
         'disable-assert' => sub { $self->{_assert} = 0 },
@@ -93,8 +156,8 @@ sub new {
         'disable-vampir' => sub { $self->{_vampir} = 0 },
         'enable-single' => sub { $self->{_single} = 1 },
         'disable-single' => sub { $self->{_single} = 0 },
-        'enable-extradebug' => sub { $self->{_extradebug} = 1 },
-        'disable-extradebug' => sub { $self->{_extradebug} = 0 },
+        'enable-extra-debug' => sub { $self->{_extra_debug} = 1 },
+        'disable-extra-debug' => sub { $self->{_extra_debug} = 0 },
         'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
         'enable-gperftools' => sub { $self->{_gperftools} = 1 },
@@ -122,7 +185,7 @@ sub new {
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
-    push(@builddir, 'extradebug') if $self->{_extradebug};
+    push(@builddir, 'extradebug') if $self->{_extra_debug};
     push(@builddir, 'diagnostics') if $self->{_diagnostics};
     push(@builddir, 'gperftools') if $self->{_gperftools};
     
@@ -241,11 +304,11 @@ sub _configure {
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
-    $options .= $self->{_extradebug} ? ' --enable-extradebug' : ' --disable-extradebug';
+    $options .= $self->{_extra_debug} ? ' --enable-extra-debug' : ' --disable-extra-debug';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
-    if ($self->{_extradebug}) {
+    if ($self->{_extra_debug}) {
     	$cxxflags = '-O0 -g3 -fno-inline -D_GLIBCXX_DEBUG';
     }
 
@@ -256,9 +319,6 @@ sub _configure {
     if ($self->{_warn}) {
         $cxxflags .= " -Wall";
         $linkflags .= " -Wall";
-    }
-    if ($self->{_native}) {
-        $cxxflags .= " -march=native";
     }
 
     if ($self->{_force} ||

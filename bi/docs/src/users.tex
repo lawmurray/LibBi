@@ -87,14 +87,19 @@ model PZ \{
 
 This would be saved in a file named \bitt{PZ.bi}. Various tasks can now be
 performed with the LibBi command-line interface, the simplest of which is
-just simulating from the model:
+just sampling from the prior distribution of the model:
 \begin{cmdcode}
-bi simulate --model-file PZ.bi -P 128 -T 365 -K 365 \textbackslash
-    --output-file results/simulate.nc
+bi sample --target prior \textbackslash
+    --model-file PZ.bi \textbackslash
+    --nsamples 128 \textbackslash
+    --end-time 365 \textbackslash
+    --noutputs 365 \textbackslash
+    --output-file results/prior.nc
 \end{cmdcode}
-This command will simulate 128 trajectories of the model (\bitt{-P 128}), each
-of 365 days (\bitt{-T 365}), outputting the results every day (\bitt{-K 365})
-to the NetCDF\index{NetCDF} file \bitt{results/simulate.nc}.
+This command will sample 128 trajectories of the model (\bitt{--nsamples
+  128}), each of 365 days (\bitt{--end-time 365}), outputting the results
+every day (\bitt{--noutputs 365}) to the NetCDF\index{NetCDF} file
+\bitt{results/prior.nc}.
 
 \begin{tip}
 On the first occasion that a command is run, LibBi generates and compiles code
@@ -607,7 +612,7 @@ Time variables and time dimensions are interpreted slightly differently for
 each of the input file types:
 \begin{enumerate}
 \item For an initialisation file, the starting time (given by the
-  \bitt{--start-time} command-line option, see \clientref{simulate}) is
+  \bitt{--start-time} command-line option, see \clientref{filter}) is
   looked-up in each time variable, and the corresponding record in each
   associated variable is used for its initialisation.
 \item For input files, a time variable gives the times at which each
@@ -755,13 +760,14 @@ additional, arbitrarily named dimension of size $m$ in the NetCDF file, so
 that the values of \bitt{coord\_y} in the above table would be vectors.
 \end{example}
 
-\subsection{Simulating models with input\label{Simulating_models_with_input}}
+\subsection{Sampling models with input\label{Sampling_models_with_input}}
 
 The precise way in which input files and the model specification interact is
-best demonstrated in the steps taken to simulate a model. Computing densities
-is similar. The \emph{initialisation file} referred to in the proceeding steps
-is that given by the \bitt{--init-file} command-line option, and the
-\emph{input file} that given by \bitt{--input-file}.
+best demonstrated in the steps taken to sample a model's prior
+distribution. Computing densities is similar. The \emph{initialisation file}
+referred to in the proceeding steps is that given by the \bitt{--init-file}
+command-line option, and the \emph{input file} that given by
+\bitt{--input-file}.
 \begin{enumerate}
 \item Any \kwref{input} variables in the input file that are not associated with
   a time variable are initialised by reading from the file.
@@ -805,15 +811,14 @@ bi \textit{command} \textit{options} ...
 \end{cmdcode}
 where \bitt{\textit{command}} is any one of the following:
 \begin{description}
-\item[\clientref{simulate}] for simulating trajectories from a model,
 \item[\clientref{filter}] for filtering problems using the model and
   observations,
 %\item[\clientref{smooth}] for smoothing problems using the model and
 %  observations,
 \item[\clientref{optimise}] for parameter optimisation problems using the
   model and observations,
-\item[\clientref{sample}] for parameter sampling problems using the model and
-  observations,
+\item[\clientref{sample}] for parameter and state sampling problems using the
+  model and observations,
 \item[\clientref{package}] for creating projects and building packages for
   distribution,
 \item[\clientref{help}] for accessing online help,
@@ -840,18 +845,16 @@ would be given on the command line itself. For readability, the command-line
 options may be spread over any number of lines, and end-of-line comments,
 preceded by \bitt{\#}, may appear. The contents of one config file may be
 nested in another by using the \bitt{@file.conf} syntax within a file. This
-can be useful to avoid redundancy. For example, the \clientref{filter} command
-inherits all the options of \clientref{simulate}, and the \clientref{sample}
-command inherits all the options of \clientref{filter}. In this case it may be
-useful to write a \bitt{simulate.conf} file that is nested within a
-\bitt{filter.conf} file, that is nested within a \bitt{sample.conf} file, so
-that common options need not be repeated within each file.
+can be useful to avoid redundancy. For example, the \clientref{sample} command
+inherits all the options of \clientref{filter}. In this case it may be useful
+to write a \bitt{filter.conf} file that is nested within a \bitt{sample.conf}
+file, so that options need not be repeated.
 
 \section{Output files}
 
-The schema of an output file depends on the command that produces it. These
-are related by strong conventions, however, and most schemas simply extend
-that of the \clientref{simulate} command. This section outlines each schema.
+The schema of an output file depends on the command that produces it and the
+options given to that command. These are related by strong conventions and
+inherited structure, however. This section outlines each schema.
 
 \begin{tip}
 If using OctBi or RBi for collating and visualising the output of LibBi, it
@@ -861,8 +864,9 @@ the higher-level functions of these packages.
 
 \subsection{Simulation schema}
 
-This schema is used by the \clientref{simulate} command. It consists of
-dimensions:
+This schema is used by the \clientref{sample} command when the \bitt{target}
+option is set to \bitt{prior}, \bitt{joint} or \bitt{prediction}. It consists
+of dimensions:
 \begin{itemize}
 \item \bitt{nr} indexing time,
 \item \bitt{np} indexing trajectories, and

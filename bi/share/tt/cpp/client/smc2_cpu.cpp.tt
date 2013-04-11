@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
   NcError ncErr(NcError::silent_nonfatal);
   
   /* bi init */
-  bi_init(THREADS);
+  bi_init(NTHREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* schedule */
-  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
   /* output */
   SMC2NetCDFBuffer* bufOutput = NULL;
@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
   }
 
   /* state and intermediate results */
-  ThetaParticle<model_type,LOCATION> s(P, sched.numOutputs());
-  P = s.size(); // may change according to implementation
+  ThetaParticle<model_type,LOCATION> s(NPARTICLES, sched.numOutputs());
+  NPARTICLES = s.size(); // may change according to implementation
 
   /* simulator */
   BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs));
 
   /* filter */ 
-  [% IF client.get_named_arg('filter') == 'ekf' %]
+  [% IF client.get_named_arg('filter') == 'kalman' %]
     BOOST_AUTO(outFilter, KalmanFilterCacheFactory<LOCATION>::create());
     BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
   [% ELSE %]
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
     if (B_ABS > 0.0) {
       h = B_ABS;
     } else {
-      h = B_REL*hopt(N, P);
+      h = B_REL*hopt(m.getDynSize(), NPARTICLES);
     }
     MultinomialResampler base(WITH_SORT, ESS_REL);
     KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, WITH_SHRINK, ESS_REL);
@@ -157,12 +157,12 @@ int main(int argc, char* argv[]) {
     [% END %]
         
     /* particle filter */
-    [% IF client.get_named_arg('filter') == 'pf1' %]
+    [% IF client.get_named_arg('filter') == 'lookahead' %]
       BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, outFilter)));
-    [% ELSIF client.get_named_arg('filter') == 'anpf' %]
+    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
-      Stopper stopper(P);
+      Stopper stopper(NPARTICLES);
       [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
       SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
       [% ELSIF client.get_named_arg('stopper') == 'miness' %]

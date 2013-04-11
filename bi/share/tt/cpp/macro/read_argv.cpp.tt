@@ -18,12 +18,14 @@
   
   [% TYPES = { 'int' => 'int', 'float' => 'real', 'bool' => 'bool', 'string' => 'std::string' } %]
   [%-FOREACH param IN client.get_params %]
+  [% IF !param.exists('deprecated') || !param.deprecated %]
   [% TYPES.${param.type} %] [% param.name.replace('-', '_') | upper-%]
   [%-IF param.exists('default')-%]
   [%-IF param.type == 'string'-%]
   = std::string("[% param.default %]")
   [%-ELSE-%]
   = [%-param.default-%]
+  [%-END-%]
   [%-END-%]
   [%-END-%];
   [%-END %]
@@ -45,6 +47,7 @@
     if (optarg) {
       switch (c) {
       [%-FOREACH param IN client.get_params-%]
+      [% IF !param.exists('deprecated') || !param.deprecated %]
       [%-IF param.name.length > 1 %]
       case [% param.name.replace('-', '_') | upper %]_ARG:
       [%-ELSE %]
@@ -61,6 +64,7 @@
         [%-END %]
         break;
       [%-END %]
+      [%-END-%]
       }
     }
   } while (c != -1);

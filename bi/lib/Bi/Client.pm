@@ -9,9 +9,169 @@ Bi::Client - generic client program.
     $client->process_args;
     $client->exec;  # if successful, never returns
 
-=head1 COMMAND LINE
+=head1 RUN OPTIONS
 
-Common command line options are documented in the developer guide.
+Options prefixed with C<--with> may be negated by replacing this with
+C<--without>.
+
+=over 4
+
+=item C<--dry-run>
+
+Do not run.
+
+=item C<--seed> (default special)
+
+Pseudorandom number generator seed. The default is randomly drawn based on
+Perl's C<rand()> function and passed to the compiled program before
+execution.
+
+=item C<--nthreads I<N>> (default 0)
+
+Run with C<N> threads. If zero, the number of threads used is the
+default for OpenMP on the platform.
+
+=item C<--with-timing> (default off)
+
+Enable timings.
+
+=item C<--with-output> (default on)
+
+Enable output.
+
+=item C<--with-gdb> (default off)
+
+Run within the C<gdb> debugger.
+
+=item C<--with-valgrind> (default off)
+
+Run within C<valgrind>.
+
+=item C<--with-cuda-gdb> (default off)
+
+Run within the C<cuda-gdb> debugger.
+
+=item C<--with-cuda-memcheck> (default off)
+
+Run within C<cuda-memcheck>.
+
+=item C<--gperftools-file> (default special)
+
+Output file to use under C<--enable-gperftools>.
+The default is C<I<command>.prof>.
+
+=item C<--mpi-np>
+
+Number of processes when running under C<mpirun>. Corresponds to C<-np>
+option to C<mpirun>
+
+=item C<--mpi-npernode>
+
+Number of processes per node when running under C<mpirun>. Corresponds to
+C<-npernode> option to C<mpirun>.
+
+=back
+
+=head1 COMMON OPTIONS
+
+The options in this section are common across all client programs.
+
+=head2 Input/output options
+
+=over 4
+
+=item C<--model-file>
+
+The C<*.bi> model specification file.
+
+=item C<--init-file>
+
+File from which to initialise parameters and initial conditions.
+
+=item C<--input-file>
+
+File from which to read inputs.
+
+=item C<--obs-file>
+
+File from which to read observations.
+
+=item C<--output-file> (default C<results/I<command>.nc>)
+
+File to which to write output.
+
+=item C<--init-ns> (default 0)
+
+Index along the C<ns> dimension of C<--init-file> to use.
+
+=item C<--init-np> (default -1)
+
+Index along the C<np> dimension of C<--init-file> to use.
+
+=item C<--input-ns> (default 0)
+
+Index along the C<ns> dimension of C<--input-file> to use.
+
+=item C<--input-np> (default -1)
+
+Index along the C<np> dimension of C<--input-file> to use.
+
+=item C<--obs-ns> (default 0)
+
+Index along the C<ns> dimension of C<--obs-file> to use.
+
+=item C<--obs-np> (default -1)
+
+Index along the C<np> dimension of C<--obs-file> to use.
+
+=back
+
+=head2 Model transformations
+
+=over 4
+
+=item C<--with-transform-extended> (default off, enabled automatically when
+required)
+
+Linearise the model and symbolically compute Jacobian expressions for use with
+the extended Kalman filter.
+
+=item C<--with-transform-param-to-state> (default off, enabled automatically
+when required)
+
+Augment the state with parameters by interpreting  statements as
+, merging the C<parameter> top-level block into the
+C<initial> top-level block, and merging the
+C<proposal_parameter> top-level block into the
+C<proposal_initial> top-level block.
+
+This is useful for joint state and parameter estimation using filters.
+
+=item C<--with-transform-obs-to-state> (default off)
+
+Augment the state with observations by interpreting  statements as
+, merging the  top-level block into the
+C<transition>, C<initial> and C<proposal_initial>
+top-level blocks, and merging the C<lookahead_observation> top-level
+block into the C<lookahead_transition> top-level block.
+
+This is useful for producing simulated data sets from a model.
+
+=item C<--with-transform-initial-to-param> (default off)
+
+Augment the parameters with the initial conditions of the state variables by
+adding a new  for each  variable to hold its initial
+value, merging the C<initial> top-level block into the
+C<parameter> top-level block, merging the C<proposal_initial>
+top-level block into the C<proposal_parameter> top-level block, and
+replacing both the C<proposal_parameter> and
+C<proposal_initial> top-level blocks with $\delta$-masses.
+
+This is useful for treating the initial conditions as parameters in sampling
+schemes such as PMCMC and SMC$^2$. Note that the transformation is semantic,
+not substantial.
+
+=back
 
 =cut
 
@@ -23,6 +183,8 @@ use strict;
 use Carp::Assert;
 use Cwd qw(abs_path);
 use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
+use File::Spec;
+use File::Path;
 
 # options specific to execution
 our @EXEC_OPTIONS = (
@@ -51,12 +213,58 @@ our @EXEC_OPTIONS = (
 # options to pass to client program
 our @CLIENT_OPTIONS = (
     {
+      name => 'init-file',
+      type => 'string'
+    },
+    {
+      name => 'input-file',
+      type => 'string'
+    },
+    {
+      name => 'obs-file',
+      type => 'string'
+    },
+    {
+      name => 'output-file',
+      type => 'string'
+    },
+    {
+      name => 'init-ns',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'init-np',
+      type => 'int',
+      default => -1
+    },
+    {
+      name => 'input-ns',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'input-np',
+      type => 'int',
+      default => -1
+    },
+    {
+      name => 'obs-ns',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'obs-np',
+      type => 'int',
+      default => -1
+    },
+    {
       name => 'seed',
       type => 'int',
       default => 0
     },
     {
-      name => 'threads',
+      name => 'nthreads',
       type => 'int',
       default => 0
     },
@@ -108,6 +316,8 @@ our @CLIENT_OPTIONS = (
       type => 'bool',
       default => 0
     },
+    
+    # deprecations
     {
       name => 'transform-extended',
       type => 'bool',
@@ -131,7 +341,13 @@ our @CLIENT_OPTIONS = (
       type => 'bool',
       deprecated => 1,
       message => "use --with-transform-initial-to-param instead"
-    }
+    },
+    {
+      name => 'threads',
+      type => 'int',
+      deprecated => 1,
+      message => 'use --nthreads instead'
+    },
 );
 
 =head1 METHODS
@@ -181,6 +397,9 @@ sub new {
     };
     
     # look up appropriate class name
+    if ($cmd eq 'simulate') {
+        die("the 'simulate' command is deprecated, use the 'sample' command and add '--target prior' instead\n");
+    }
     $class = "Bi::Client::$cmd";
     unless (eval("require $class")) {
         $class = "Bi::Test::$cmd";
@@ -189,11 +408,6 @@ sub new {
     bless $self, $class;
     
     # default arguments dependent on client
-    foreach my $param (@{$self->get_params}) {
-    	if ($param->{name} eq 'gperftools-file') {
-    		$param->{default} = "$cmd.prof";
-    	}
-    }
     if ($cmd eq 'simulate') {
         if (!$self->is_named_arg('with-transform-param-to-state')) {
             $self->set_named_arg('with-transform-param-to-state', 1);
@@ -299,16 +513,16 @@ sub is_named_arg {
     return exists $self->get_args->{$name} && defined $self->get_args->{$name};
 }
 
-=item B<is_named_exec_arg>(I<name>)
+=item B<delete_named_arg>(I<name>)
 
-Is there a named argument of name I<name>?
+Delete the named argument of name I<name>.
 
 =cut
-sub is_named_exec_arg {
+sub delete_named_arg {
     my $self = shift;
     my $name = shift;
     
-    return exists $self->get_exec_args->{$name} && defined $self->get_exec_args->{$name};
+    delete $self->get_args->{$name};
 }
 
 =item B<get_named_arg>(I<name>)
@@ -334,6 +548,30 @@ sub set_named_arg {
     my $value = shift;
     
     $self->get_args->{$name} = $value;
+}
+
+=item B<is_named_exec_arg>(I<name>)
+
+Is there a named argument of name I<name>?
+
+=cut
+sub is_named_exec_arg {
+    my $self = shift;
+    my $name = shift;
+    
+    return exists $self->get_exec_args->{$name} && defined $self->get_exec_args->{$name};
+}
+
+=item B<delete_named_exec_arg>(I<name>)
+
+Delete the named argument of name I<name>.
+
+=cut
+sub delete_named_exec_arg {
+    my $self = shift;
+    my $name = shift;
+    
+    delete $self->get_exec_args->{$name};
 }
 
 =item B<get_named_exec_arg>(I<name>)
@@ -382,11 +620,17 @@ sub process_args {
     foreach $param (@{$self->get_params}) {
         if ($param->{deprecated} && $self->is_named_arg($param->{name})) {
             warn("--" . $param->{name} . " is deprecated, " . $param->{message} . "\n");
+            $self->delete_named_arg($param->{name});
         }
-    }    
+    }
     if (@ARGV) {
         die("unrecognised options '" . join(' ', @ARGV) . "'\n");
     }
+    
+    # create output file directory if necessary
+    my ($vol, $dir, $file) = File::Spec->splitpath($self->get_named_arg('output-file'));
+    $dir = File::Spec->catpath($vol, $dir);
+    mkpath($dir);
 }
 
 =item B<exec>
@@ -459,7 +703,12 @@ sub _load_options {
 	my @args;
 	
 	foreach $param (@$params) {
-        if (defined $param->{default}) {
+	    if ($param->{name} eq 'seed') {
+	        # special case for random number seed, putting this in the
+	        # default field means that the C++ code for reading command-line
+	        # options changes each call, forcing a recompile
+	        $args->{$param->{name}} = int(rand(2**31 - 1));
+	    } elsif (defined $param->{default}) {
             $args->{$param->{name}} = $param->{default};
         }
         if ($param->{type} eq 'bool') {

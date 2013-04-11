@@ -25,41 +25,67 @@ following additional options:
 
 =over 4
 
-=item C<--nsamples> (default 1)
+=item C<--target> (default C<posterior>)
 
-Number of parameter samples to draw.
-
-=item C<--sampler> (default C<'pmmh'>)
-
-The type of sampler to use; one of:
+The target distribution to sample; one of:
 
 =over 8
 
-=item C<'pmmh'>
+=item C<prior>
 
-Particle marginal Metropolis-Hastings (PMMH). The proposal works according to
-the L<proposal_parameter> top-level block. If this is not defined,
-independent draws are taken from the L<proposal> top-level block instead. If
-C<--with-transform-initial-to-param> is on, the L<proposal_initial> top-level
-block is used to make Metropolis-Hastings proposals over initial conditions
-also. If this is not defined, independent draws are taken from the L<initial>
-top-level block instead.
+To sample from the prior distribution.
 
-=item C<'smc2'>
+=item C<joint>
+
+To sample from the joint distribution. This is equivalent to
+C<--target prior --with-transform-obs-to-state>.
+
+=item C<posterior>
+
+To sample from the posterior distribution. Use C<--obs-file> to provide
+observations.
+
+=item C<prediction>
+
+To sample forward in time from a given initial state. Use C<--init-file> to
+set the initial state. The C<--init-file> may be, for example, the output
+file of a previous sampling of the posterior distribution, to perform a
+posterior prediction.
+
+=back
+
+=item C<--sampler> (default C<pmmh>)
+
+The type of sampler to use for C<--target posterior>; one of:
+
+=over 8
+
+=item C<pmmh>
+
+Particle marginal Metropolis-Hastings (PMMH).
+
+=item C<smc2>
 
 Sequential Monte Carlo Squared (SMC^2).
 
 =back
 
-=item C<--conditional-pf>
+=item C<--nsamples> (default 1)
 
-...
-
-=item C<--joint-adaptation>
-
-...
+Number of parameter samples to draw.
 
 =back
+
+For PMMH, the proposal works according to the L<proposal_parameter> top-level
+block in the model. If this is not defined, independent draws are taken from
+the L<parameter> top-level block instead. If
+C<--with-transform-initial-to-param> is used, the L<proposal_initial>
+top-level block is used to make Metropolis-Hastings proposals over initial
+conditions also. If this is not defined, independent draws are taken from the
+L<initial> top-level block instead.
+
+For SMC^2, the same blocks are used as proposals for rejuvenation steps,
+unless one of the adaptation strategies is enabled below.
 
 =head2 SMC2-specific options
 
@@ -74,21 +100,21 @@ Number of PMMH steps to perform after resampling.
 ESS threshold triggering resampling steps. Parameter samples will only be
 resampled if ESS is below this proportion of C<--nsamples>.
 
-=item C<--adapter> (default 'none')
+=item C<--adapter> (default none)
 
 Adaptation strategy for rejuvenation proposals:
 
 =over 8
 
-=item C<'none'>
+=item C<none>
 
 No adaptation.
 
-=item C<'local'>
+=item C<local>
 
 Local proposal adaptation.
 
-=item C<'global'>
+=item C<global>
 
 Global proposal adaptation.
 
@@ -104,14 +130,19 @@ proposal standard deviation relative to the global sample standard deviation.
 =cut
 our @CLIENT_OPTIONS = (
     {
-      name => 'nsamples',
-      type => 'int',
-      default => 1
+      name => 'target',
+      type => 'string',
+      default => 'posterior'
     },
     {
       name => 'sampler',
       type => 'string',
       default => 'pmmh'
+    },
+    {
+      name => 'nsamples',
+      type => 'int',
+      default => 1
     },
     {
       name => 'conditional-pf',
@@ -156,9 +187,19 @@ sub process_args {
     my $self = shift;
 
     $self->Bi::Client::filter::process_args(@_);
+    
+    # work out client program
+    my $target = $self->get_named_arg('target');
     my $sampler = $self->get_named_arg('sampler');
+    my $filter = $self->get_named_arg('filter');
     my $binary;
-    if ($sampler eq 'smc2') {
+    
+    if ($target eq 'prior' || $target eq 'prediction') {
+        $binary = 'simulate';
+    } elsif ($target eq 'joint') {
+        $binary = 'simulate';
+        $self->set_named_arg('with-transform-obs-to-state', 1);
+    } elsif ($sampler eq 'smc2') {
         $binary = 'smc2';
     } else {
         $binary = 'pmmh';

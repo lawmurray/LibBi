@@ -8,34 +8,49 @@ filter - frontend to filtering client programs.
     
 =head1 INHERITS
 
-L<Bi::Client::simulate>
+L<Bi::Client>
 
 =cut
 
 package Bi::Client::filter;
 
-use base 'Bi::Client::simulate';
+use base 'Bi::Client';
 use warnings;
 use strict;
 
 =head1 OPTIONS
 
-The C<filter> program inherits all options from C<simulate>, and permits the
-following additional options:
+The C<filter> program permits the following additional options:
 
 =over 4
 
-=item C<--filter> (default C<'pf'>)
+=item C<--start-time> (default 0.0)
+
+Start time.
+
+=item C<--end-time> (default 0.0)
+
+End time.
+
+=item C<--noutputs> (default 0)
+
+Number of dense output times. The state is always output at time
+C<--end-time> and at all observation times in C<--obs-file>. This argument
+gives the number of additional, equispaced times at which to output. With
+C<--end-time T> and C<--noutputs K>, for each C<k> in <0,...,K-1>,
+the state will be output at time C<T*k/K>.
+
+=item C<--filter> (default C<bootstrap>)
 
 The type of filter to use; one of:
 
 =over 8
 
-=item C<'pf'> or C<'pf0'>
+=item C<bootstrap>
 
 Bootstrap particle filter,
 
-=item C<'pf1'>
+=item C<lookahead>
 
 Auxiliary particle filter with lookahead. The lookahead operates by advancing
 each particle according to the L<lookahead_transition> top-level block, and
@@ -44,12 +59,14 @@ former is not defined, the L<transition> top-level block will be used
 instead. If the latter is not defined, the L<observation> top-level block will
 be used instead.
 
-=item C<'anpf'>
+=for comment
+=item C<adaptive>
 
+=for comment
 Bootstrap particle filter with adaptive number of particles at each time
 step.
 
-=item C<'ekf'>
+=item C<kalman>
 
 Extended Kalman filter.
 
@@ -64,37 +81,9 @@ particle filter type:
 
 =over 4
 
-=item C<--resampler> (default C<'systematic'>)
+=item C<--nparticles> (default 1)
 
-The type of resampler to use; one of:
-
-=over 8
-
-=item C<'stratified'>
-
-for a stratified resampler (Kitagawa 1996),
-
-=item C<'systematic'>
-
-for a systematic (or 'deterministic stratified') resampler (Kitagawa 1996),
-
-=item C<'multinomial'>
-
-for a multinomial resampler,
-
-=item C<'metropolis'>
-
-for a Metropolis resampler (Murray 2011),
-
-=item C<'rejection'>
-
-for a rejection resampler, or
-
-=item C<'kernel'>
-
-for a kernel density resampler (Liu & West 2001).
-
-=back
+Number of particles to use.
 
 =item C<--ess-rel> (default 0.5)
 
@@ -102,58 +91,38 @@ Threshold for effective sample size (ESS) resampling trigger. Particles will
 only be resampled if ESS is below this proportion of C<P>. To always resample
 use C<--ess-rel 1>. To never resample use C<--ess-rel 0>.
 
-=back
 
-=head2 Adaptive particle filter-specific options
+=item C<--resampler> (default C<systematic>)
 
-The following additional options are available when C<--filter> is set to
-C<'anpf'>:
-
-=over 4
-
-=item C<--stopper> (default 'miness')
-
-The stopping criterion to use; one of:
+The type of resampler to use; one of:
 
 =over 8
 
-=item C<'deterministic'>
+=item C<stratified>
 
-fixed number of particles,
+for a stratified resampler (Kitagawa 1996),
 
-=item C<'sumofweights'>
+=item C<systematic>
 
-sum of weights,
+for a systematic (or 'deterministic stratified') resampler (Kitagawa 1996),
 
-=item C<'miness'>
+=item C<multinomial>
 
-minimum ESS,
+for a multinomial resampler,
 
-=item C<'stddev'>
+=item C<metropolis>
 
-...
+for a Metropolis resampler (Murray 2011),
 
-=item C<'var'>
+=item C<rejection>
 
-...
+for a rejection resampler, or
+
+=item C<kernel>
+
+for a kernel density resampler (Liu & West 2001).
 
 =back
-
-=item C<--rel-threshold>
-
-...
-
-=item C<--block-P>
-
-...
-
-=item C<--min-ess-rel>
-
-...
-
-=item C<--max-P>
-
-...
 
 =back
 
@@ -195,22 +164,97 @@ Number of steps to take.
 
 =back
 
+=begin comment
+=head2 Adaptive particle filter-specific options
+
+The following additional options are available when C<--filter> is set to
+C<'anpf'>:
+
+=over 4
+
+=item C<--stopper> (default miness)
+
+The stopping criterion to use; one of:
+
+=over 8
+
+=item C<deterministic>
+
+fixed number of particles,
+
+=item C<sumofweights>
+
+sum of weights,
+
+=item C<miness>
+
+minimum ESS,
+
+=item C<stddev>
+
+...
+
+=item C<var>
+
+...
+
+=back
+
+=item C<--rel-threshold>
+
+...
+
+=item C<--block-P>
+
+...
+
+=item C<--min-ess-rel>
+
+...
+
+=item C<--max-P>
+
+...
+
+=back
+=end comment
+
 =cut
 our @CLIENT_OPTIONS = (
+    {
+      name => 'start-time',
+      type => 'float',
+      default => 0.0
+    },
+    {
+      name => 'end-time',
+      type => 'float',
+      default => 0.0
+    },
+    {
+      name => 'noutputs',
+      type => 'int',
+      default => 0
+    },
     {
       name => 'filter',
       type => 'string',
       default => 'pf'
     },
     {
-      name => 'resampler',
-      type => 'string',
-      default => 'systematic'
+      name => 'nparticles',
+      type => 'int',
+      default => 1
     },
     {
       name => 'ess-rel',
       type => 'float',
       default => 0.5
+    },
+    {
+      name => 'resampler',
+      type => 'string',
+      default => 'systematic'
     },
     {
       name => 'with-sort',
@@ -256,20 +300,39 @@ our @CLIENT_OPTIONS = (
       name => 'max-P',
       type => 'int',
       default => 32768
+    },
+    
+    # deprecations
+    {
+      name => 'P',
+      type => 'int',
+      deprecated => 1,
+      message => 'use --nparticles or --nsamples instead'
+    },
+    {
+      name => 'T',
+      type => 'int',
+      deprecated => 1,
+      message => 'use --end-time instead'
+    },
+    {
+      name => 'K',
+      type => 'int',
+      deprecated => 1,
+      message => 'use --noutputs instead'
     }
 );
 
 sub init {
     my $self = shift;
 
-    Bi::Client::simulate::init($self);
     push(@{$self->{_params}}, @CLIENT_OPTIONS);
 }
 
 sub process_args {
     my $self = shift;
 
-    $self->Bi::Client::simulate::process_args(@_);
+    $self->Bi::Client::process_args(@_);
     my $filter = $self->get_named_arg('filter');
     my $binary;
     if ($filter eq 'ekf') {

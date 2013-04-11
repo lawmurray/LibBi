@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
   NcError ncErr(NcError::silent_nonfatal);
   
   /* bi init */
-  bi_init(THREADS);
+  bi_init(NTHREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -57,8 +57,8 @@ int main(int argc, char* argv[]) {
   model_type m;
 
   /* state */
-  State<model_type,LOCATION> s(P);
-  P = s.size(); // may change according to implementation
+  State<model_type,LOCATION> s(NSAMPLES);
+  NSAMPLES = s.size(); // may change according to implementation
   
   /* inputs */
   SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
@@ -73,12 +73,12 @@ int main(int argc, char* argv[]) {
   }
 
   /* schedule */
-  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
   /* output */
   SimulatorNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new SimulatorNetCDFBuffer(m, P, sched.numOutputs(), OUTPUT_FILE,
+    bufOutput = new SimulatorNetCDFBuffer(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE,
         NetCDFBuffer::REPLACE);
   }
 

@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   NcError ncErr(NcError::silent_nonfatal);
   
   /* bi init */
-  bi_init(THREADS);
+  bi_init(NTHREADS);
 
   /* model */
   model_type m;
@@ -61,9 +61,7 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* state and intermediate results */
-  P = 1; // force for Kalman filter
-  State<model_type,LOCATION> s(P);
-  P = s.size(); // may change according to implementation
+  State<model_type,LOCATION> s(1);
 
   /* inputs */
   SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
@@ -78,12 +76,12 @@ int main(int argc, char* argv[]) {
   }
 
   /* schedule */
-  Schedule sched(m, START_TIME, T, K, bufInput, bufObs);
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
   /* output */
   KalmanFilterNetCDFBuffer* bufOutput;
   if (WITH_OUTPUT) {
-    bufOutput = new KalmanFilterNetCDFBuffer(m, P, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
+    bufOutput = new KalmanFilterNetCDFBuffer(m, 1, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
     bufOutput = NULL;
   }
