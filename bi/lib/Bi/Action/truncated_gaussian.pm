@@ -72,6 +72,7 @@ sub validate {
     my $self = shift;
     
     $self->process_args($ACTION_ARGS);
+    $self->set_name('truncated_gaussian'); # synonyms exist, standardise name
     $self->ensure_op('~');
     $self->ensure_scalar('mean');
     $self->ensure_scalar('std');
