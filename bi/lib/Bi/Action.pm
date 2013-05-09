@@ -172,6 +172,11 @@ sub set_left {
     assert ($left->isa('Bi::Expression::VarIdentifier')) if DEBUG;
     
     $self->{_left} = $left;
+    
+    # set default aliases if they haven't been set already
+    if (@{$self->get_aliases} == 0) {
+    	$self->set_aliases($left->get_var->gen_aliases);
+    }
 }
 
 =item B<get_op>
