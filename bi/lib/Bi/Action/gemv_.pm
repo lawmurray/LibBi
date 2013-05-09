@@ -18,7 +18,7 @@ matrix and vector is evaluated using C<gemv_>.
 
 package Bi::Action::gemv_;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -53,6 +53,7 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('<-');
     $self->ensure_matrix('A');
@@ -61,10 +62,10 @@ sub validate {
     my $A = $self->get_named_arg('A');
     my $x = $self->get_named_arg('x');
 
-    if ($A->get_dims->[1]->get_size != $x->get_dims->[0]->get_size) {
+    if ($A->get_shape->[1] != $x->get_shape->[0]) {
         die("incompatible dimension sizes in arguments to action 'gemv_'");
     } else {
-        $self->set_dims([ $A->get_dims->[0] ]);
+        $self->set_shape([ $A->get_shape->[0] ]);
     }
 
     if ($A->is_common) {

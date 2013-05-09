@@ -20,14 +20,6 @@
  *   @ingroup model
  *   Low-level, static interface for constructing and querying models.
  *
- *   @defgroup model_trait Traits
- *   @ingroup model_low
- *   Node traits.
- *
- *   @defgroup model_typelist Type lists
- *   @ingroup model_low
- *   Node type lists.
- *
  * @defgroup method Methods
  * Inference methods.
  *
@@ -38,6 +30,22 @@
  *   @defgroup method_updater Updaters
  *   @ingroup method
  *   Lower level components of methods.
+ *
+ * @defgroup state State
+ *
+ *   @defgroup state_host Host memory bindings
+ *   @ingroup state
+ *
+ *   @defgroup state_gpu Device memory bindings
+ *   @ingroup state
+ *
+ * @defgroup io I/O
+ *
+ *   @defgroup io_buffer Buffers
+ *   @ingroup io
+ *
+ *   @defgroup io_cache Caches
+ *   @ingroup io
  *
  * @defgroup math Math
  *
@@ -85,21 +93,7 @@
  *
  * @defgroup kd kd trees
  *
- * @defgroup state State
- *
- *   @defgroup state_host Host memory bindings
- *   @ingroup state
- *
- *   @defgroup state_gpu Device memory bindings
- *   @ingroup state
- *
- * @defgroup io I/O
- *
- *   @defgroup io_buffer Buffers
- *   @ingroup io
- *
- *   @defgroup io_cache Caches
- *   @ingroup io
+ * @defgroup typelist Type lists
  *
  * @defgroup concept Concepts
  *

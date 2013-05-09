@@ -18,11 +18,13 @@ L<Bi::ArgHandler>
 
 package Bi::Model::Dim;
 
-use base 'Bi::ArgHandler';
+use parent 'Bi::Node', 'Bi::ArgHandler';
 use warnings;
 use strict;
 
 use Carp::Assert;
+
+our $_next_dim_id = 0;
 
 our $DIM_ARGS = [
   {
@@ -33,7 +35,7 @@ our $DIM_ARGS = [
   {
     name => 'boundary',
     positional => 1,
-    default => "'none'"
+    default => 'none'
   }
 ];
 
@@ -45,7 +47,7 @@ Constructor.
 
 =item I<name>
 
-Name of the dimension.
+Name of the dimension. If undefined a unique name is generated.
 
 =item I<args>
 
@@ -66,47 +68,41 @@ sub new {
     my $args = shift;
     my $named_args = shift;
 
+    my $id = $_next_dim_id++;
     my $self = new Bi::ArgHandler($args, $named_args);
-    $self->{_id} = -1;
-    $self->{_name} = $name;
+    $self->{_id} = $id;
+    $self->{_name} = (defined $name) ? $name : sprintf("dim_%d_", $id);
 
     bless $self, $class;
 
     $self->validate;
-   
     return $self;
 }
 
-1;
+=item B<clone>
+
+Return a clone of the object.
+
+=cut
+sub clone {
+    my $self = shift;
+
+    my $clone = Bi::ArgHandler::clone($self);
+    $clone->{_id} = $_next_dim_id++;
+    $clone->{_name} = $self->get_name;
+    
+    bless $clone, ref($self);
+    return $clone;
+}
 
 =item B<get_id>
 
-Get the id of the dimension (-1 until assigned to a L<Bi::Model>).
+Get the id of the dimension.
 
 =cut
 sub get_id {
     my $self = shift;
     return $self->{_id};
-}
-
-=item B<set_id>
-
-Set the id of the dimension.
-
-=over 4
-
-=item I<id>
-
-Id of the dimension.
-
-=back
-
-=cut
-sub set_id {
-    my $self = shift;
-    my $id = shift;
-    
-    $self->{_id} = $id;
 }
 
 =item B<get_name>
@@ -127,6 +123,41 @@ Get the size of the dimension.
 sub get_size {
     my $self = shift;
     return $self->get_named_arg('size')->eval_const;
+}
+
+=item B<gen_index>
+
+Generate index for this dimension, for use in
+L<Bi::Expression::VarIdentifier> objects.
+
+=cut
+sub gen_index {
+    my $self = shift;
+
+    return new Bi::Expression::Index(new Bi::Expression::DimAliasIdentifier($self));
+}
+
+=item B<gen_range>
+
+Generate range for this dimension, for use in
+L<Bi::Expression::VarIdentifier> objects.
+
+=cut
+sub gen_range {
+	my $self = shift;
+	
+	return new Bi::Expression::Range(new Bi::Expression::IntegerLiteral(0), new Bi::Expression::IntegerLiteral($self->get_size - 1));
+}
+
+=item B<gen_alias>
+
+Generate alias for this dimension, for use in L<Bi::Action> objects.
+
+=cut
+sub gen_alias {
+	my $self = shift;
+	
+	return new Bi::Model::DimAlias(undef, new Bi::Expression::Range(new Bi::Expression::IntegerLiteral(0), new Bi::Expression::IntegerLiteral($self->get_size - 1)));
 }
 
 =item B<validate>
@@ -150,8 +181,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
+    $self = $visitor->visit_before($self, @args);
     Bi::ArgHandler::accept($self, $visitor, @args);
-    return $visitor->visit($self, @args);
+    
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -163,6 +196,8 @@ sub equals {
     
     return ref($obj) eq ref($self) && $self->get_name eq $obj->get_name;
 }
+
+1;
 
 =back
 

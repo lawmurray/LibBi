@@ -16,12 +16,8 @@
  * @todo * (L) Custom block/action. Bi C++ interface for writing custom functions
  * in Bi files.
  *
- * @todo * (All) Example models for release. Look at POMP?
- *
  * @todo Test suite (list of bi commands that can be run to test
  * changes). Regression tests.
- *
- * @todo * (P) Output trajectories with SMC^2.
  *
  * @todo Swap GPU memory into host memory, swap host memory to disk.
  *
@@ -67,4 +63,11 @@
  *
  * @todo Consider removing noise variables, or keep "noise" keyword for
  * semantics only, but treat as state variable internally.
+ *
+ * @todo Sparse updaters not working with ranges on left of actions.
+ *
+ * @todo In Coord classes, might want to keep serial index as member
+ * attribute, as cox.index() is used rather than ix argument in put_output
+ * macro now (needed for range support), which means the serial index is
+ * being recomputed.
  */

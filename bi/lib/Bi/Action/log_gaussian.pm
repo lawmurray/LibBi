@@ -17,7 +17,7 @@ Gaussian distributed according to the given C<mean> and C<std> parameters.
 
 package Bi::Action::log_gaussian;
 
-use base 'Bi::Action::gaussian';
+use parent 'Bi::Action::gaussian';
 
 =head1 PARAMETERS
 

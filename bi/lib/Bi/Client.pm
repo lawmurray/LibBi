@@ -11,8 +11,8 @@ Bi::Client - generic client program.
 
 =head1 RUN OPTIONS
 
-Options prefixed with C<--with> may be negated by replacing this with
-C<--without>.
+Options that start with C<--with-> may be negated by instead starting them
+with C<--without->.
 
 =over 4
 
@@ -20,11 +20,9 @@ C<--without>.
 
 Do not run.
 
-=item C<--seed> (default special)
+=item C<--seed> (default automatic)
 
-Pseudorandom number generator seed. The default is randomly drawn based on
-Perl's C<rand()> function and passed to the compiled program before
-execution.
+Pseudorandom number generator seed.
 
 =item C<--nthreads I<N>> (default 0)
 
@@ -55,19 +53,19 @@ Run within the C<cuda-gdb> debugger.
 
 Run within C<cuda-memcheck>.
 
-=item C<--gperftools-file> (default special)
+=item C<--gperftools-file> (default automatic)
 
-Output file to use under C<--enable-gperftools>.
-The default is C<I<command>.prof>.
+Output file to use under C<--enable-gperftools>. The default is
+C<I<command>.prof>.
 
 =item C<--mpi-np>
 
-Number of processes when running under C<mpirun>. Corresponds to C<-np>
+Number of processes under C<--enable-mpi>, corresponding to the C<-np>
 option to C<mpirun>
 
 =item C<--mpi-npernode>
 
-Number of processes per node when running under C<mpirun>. Corresponds to
+Number of processes per node under C<--enable-mpi>. Corresponds to the
 C<-npernode> option to C<mpirun>.
 
 =back
@@ -82,7 +80,7 @@ The options in this section are common across all client programs.
 
 =item C<--model-file>
 
-The C<*.bi> model specification file.
+File containing the model specification.
 
 =item C<--init-file>
 
@@ -96,9 +94,9 @@ File from which to read inputs.
 
 File from which to read observations.
 
-=item C<--output-file> (default C<results/I<command>.nc>)
+=item C<--output-file> (default automatic)
 
-File to which to write output.
+File to which to write output. The default is C<results/I<command>.nc>.
 
 =item C<--init-ns> (default 0)
 
@@ -106,13 +104,16 @@ Index along the C<ns> dimension of C<--init-file> to use.
 
 =item C<--init-np> (default -1)
 
-Index along the C<np> dimension of C<--init-file> to use.
+Index along the C<np> dimension of C<--init-file> to use. -1 indicates that,
+rather than initialising all state variables identically, the C<np> dimension
+is used to initialise them all differently. The size of the C<np> dimension
+must be at least the number of samples.
 
 =item C<--input-ns> (default 0)
 
 Index along the C<ns> dimension of C<--input-file> to use.
 
-=item C<--input-np> (default -1)
+=item C<--input-np> (default 0)
 
 Index along the C<np> dimension of C<--input-file> to use.
 
@@ -120,7 +121,7 @@ Index along the C<np> dimension of C<--input-file> to use.
 
 Index along the C<ns> dimension of C<--obs-file> to use.
 
-=item C<--obs-np> (default -1)
+=item C<--obs-np> (default 0)
 
 Index along the C<np> dimension of C<--obs-file> to use.
 
@@ -130,46 +131,28 @@ Index along the C<np> dimension of C<--obs-file> to use.
 
 =over 4
 
-=item C<--with-transform-extended> (default off, enabled automatically when
-required)
+=item C<--with-transform-extended> (default automatic)
 
-Linearise the model and symbolically compute Jacobian expressions for use with
-the extended Kalman filter.
+Transform the model for use with the extended Kalman filter. This includes
+symbolically deriving Jacobian expressions.
 
-=item C<--with-transform-param-to-state> (default off, enabled automatically
-when required)
+=item C<--with-transform-param-to-state> (default automatic)
 
-Augment the state with parameters by interpreting  statements as
-, merging the C<parameter> top-level block into the
-C<initial> top-level block, and merging the
-C<proposal_parameter> top-level block into the
-C<proposal_initial> top-level block.
+Treat parameters as state variables. This is useful for joint state and
+parameter estimation using filters.
 
-This is useful for joint state and parameter estimation using filters.
+=item C<--with-transform-obs-to-state> (default automatic)
 
-=item C<--with-transform-obs-to-state> (default off)
-
-Augment the state with observations by interpreting  statements as
-, merging the  top-level block into the
-C<transition>, C<initial> and C<proposal_initial>
-top-level blocks, and merging the C<lookahead_observation> top-level
-block into the C<lookahead_transition> top-level block.
-
-This is useful for producing simulated data sets from a model.
+Treat observed variables as state variables. This is useful for producing
+simulated data sets from a model.
 
 =item C<--with-transform-initial-to-param> (default off)
 
-Augment the parameters with the initial conditions of the state variables by
-adding a new  for each  variable to hold its initial
-value, merging the C<initial> top-level block into the
-C<parameter> top-level block, merging the C<proposal_initial>
-top-level block into the C<proposal_parameter> top-level block, and
-replacing both the C<proposal_parameter> and
-C<proposal_initial> top-level blocks with $\delta$-masses.
-
-This is useful for treating the initial conditions as parameters in sampling
-schemes such as PMCMC and SMC$^2$. Note that the transformation is semantic,
-not substantial.
+Augment the parameters of the model with the initial values of state
+variables. This is useful when sampling from the posterior distribution.
+Treating initial values as parameters means that they are sampled using local
+Metropolis-Hastings moves rather than by importance sampling, which may be
+beneficial if a good importance proposal cannot be devised.
 
 =back
 
@@ -246,7 +229,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'input-np',
       type => 'int',
-      default => -1
+      default => 0
     },
     {
       name => 'obs-ns',
@@ -256,7 +239,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'obs-np',
       type => 'int',
-      default => -1
+      default => 0
     },
     {
       name => 'seed',
@@ -328,13 +311,13 @@ our @CLIENT_OPTIONS = (
       name => 'transform-param-to-state',
       type => 'bool',
       deprecated => 1,
-      message => "use --with-transform-param-to-state instead, and note that this is now enabled by default with the simulate command"
+      message => "use --with-transform-param-to-state instead"
     },
     {
       name => 'transform-obs-to-state',
       type => 'bool',
       deprecated => 1,
-      message => "use --with-transform-obs-to-state instead, and note that this is now enabled by default with the simulate command"
+      message => "use --with-transform-obs-to-state instead"
     },
     {
       name => 'transform-initial-to-param',
@@ -406,13 +389,6 @@ sub new {
         eval("require $class") || die("don't know what to do with command '$cmd'\n");
     }
     bless $self, $class;
-    
-    # default arguments dependent on client
-    if ($cmd eq 'simulate') {
-        if (!$self->is_named_arg('with-transform-param-to-state')) {
-            $self->set_named_arg('with-transform-param-to-state', 1);
-        }
-    }
         
     # common arguments
     $self->init;

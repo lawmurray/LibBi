@@ -23,7 +23,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../sse_shared_host.hpp"
 #include "../math/function.hpp"
 #include "../math/control.hpp"
 #include "../../host/ode/RK4VisitorHost.hpp"
@@ -39,21 +38,19 @@ void bi::RK4IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   BI_ASSERT(t1 < t2);
 
   typedef host_vector_reference<sse_real> vector_reference_type;
-  typedef Pa<ON_HOST,B,host,host,sse_host,sse_shared_host<S> > PX;
+  typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
   typedef RK4VisitorHost<B,S,S,real,PX,sse_real> Visitor;
   static const int N = block_size<S>::value;
   const int P = s.size();
 
   #pragma omp parallel
   {
-    sse_real buf[6*N]; // use of dynamic array faster than heap allocation
+    sse_real buf[5*N]; // use of dynamic array faster than heap allocation
     vector_reference_type x0(buf, N);
     vector_reference_type x1(buf + N, N);
     vector_reference_type x2(buf + 2*N, N);
     vector_reference_type x3(buf + 3*N, N);
     vector_reference_type x4(buf + 4*N, N);
-    vector_reference_type shared(buf + 5*N, N);
-    sseSharedHostState = &shared;
 
     real t, h;
     int p;
@@ -61,9 +58,6 @@ void bi::RK4IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < P; p += BI_SSE_SIZE) {
-      /* initialise shared memory from global memory */
-      sse_shared_host_init<B,S>(s, p);
-
       t = t1;
       h = h_h0;
 
@@ -79,26 +73,23 @@ void bi::RK4IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
             break;
           }
         }
-        x0 = *sseSharedHostState;
+        sse_host_load<B,S>(s, p, x0);
 
         /* stages */
         Visitor::stage1(t, h, s, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf());
-        sseSharedHostState->swap(x1);
+        sse_host_store<B,S>(s, p, x1);
 
         Visitor::stage2(t, h, s, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf());
-        sseSharedHostState->swap(x2);
+        sse_host_store<B,S>(s, p, x2);
 
         Visitor::stage3(t, h, s, p, pax, x0.buf(), x3.buf(), x4.buf());
-        sseSharedHostState->swap(x3);
+        sse_host_store<B,S>(s, p, x3);
 
         Visitor::stage4(t, h, s, p, pax, x0.buf(), x4.buf());
-        sseSharedHostState->swap(x4);
+        sse_host_store<B,S>(s, p, x4);
 
         t += h;
       }
-
-      /* write from shared back to global memory */
-      sse_shared_host_commit<B,S>(s, p);
     }
   }
 }

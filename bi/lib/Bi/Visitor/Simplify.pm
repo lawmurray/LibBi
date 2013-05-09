@@ -19,7 +19,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::Simplify;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -48,16 +48,16 @@ sub evaluate {
     return $expr->accept($self);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of expression tree.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     
-if ($node->isa('Bi::Expression::BinaryOperator')) {
+    if ($node->isa('Bi::Expression::BinaryOperator')) {
         if ($node->get_op eq '+') {
             if ($node->get_expr1->is_const && $node->get_expr1->eval_const == 0.0) {
                 $node = $node->get_expr2;

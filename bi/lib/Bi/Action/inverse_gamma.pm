@@ -17,7 +17,7 @@ distributed according to the given C<shape> and C<scale> parameters.
 
 package Bi::Action::inverse_gamma;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -29,7 +29,7 @@ use strict;
 
 Shape parameter of the distribution.
 
-=item C<upper> (position 1, default 1.0)
+=item C<scale> (position 1, default 1.0)
 
 Scale parameter of the distribution.
 
@@ -52,6 +52,7 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('~');
     $self->ensure_scalar('shape');
@@ -76,7 +77,7 @@ sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = @{$mean->get_vars};
+    my @refs = @{$mean->get_all_var_refs};
     my @J = map { $mean->d($_) } @refs;
 
     return (\@J, \@refs);

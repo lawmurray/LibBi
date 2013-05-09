@@ -24,7 +24,7 @@ struct push_back_list_impl {
 /**
  * Push value onto back of a type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  * @tparam X A list type.

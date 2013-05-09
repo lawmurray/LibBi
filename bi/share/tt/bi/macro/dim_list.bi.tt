@@ -7,10 +7,10 @@
 -%]
 
 [%-MACRO dim_list(var) BLOCK-%]
-[%-'[' IF var.num_dims-%]
+[%-'[' IF var.get_dims.size-%]
 [%-FOREACH dim IN var.get_dims-%]
 [%-dim.get_name-%]
 [%-IF !loop.last %],[% END-%]
 [%-END-%]
-[%-']' IF var.num_dims-%]
+[%-']' IF var.get_dims.size-%]
 [%-END-%]

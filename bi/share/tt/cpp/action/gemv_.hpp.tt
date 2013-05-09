@@ -27,8 +27,8 @@ public:
 #include "bi/math/view.hpp"
 
 [% sig_action_static_matrix_function('simulate') %] {
-  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_name %]>(s, p)), [% A.get_var.get_dims.0.get_size %], [% A.get_var.get_dims.1.get_size %]));
-  BOOST_AUTO(b, pax.template fetch<Var[% x.get_var.get_name %]>(s, p));
+  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), [% A.get_var.get_dims.0.get_size %], [% A.get_var.get_dims.1.get_size %]));
+  BOOST_AUTO(b, pax.template fetch<Var[% x.get_var.get_id %]>(s, p));
   BOOST_AUTO(c, x.template fetch<target_type>(s, p));
   
   bi::gemv(A, b, c);

@@ -1,6 +1,6 @@
 =head1 NAME
 
-optimize - optimize parameters of model, synonym of C<optimise>.
+optimize - optimization of the parameters of a model.
 
 =head1 SEE ALSO
 
@@ -10,7 +10,7 @@ L<optimise>
 
 package Bi::Client::optimize;
 
-use base 'Bi::Client::optimise';
+use parent 'Bi::Client::optimise';
 
 1;
 

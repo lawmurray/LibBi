@@ -22,7 +22,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::IsConst;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -54,12 +54,12 @@ sub evaluate {
     return $arg;
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $arg = shift;
@@ -68,6 +68,8 @@ sub visit {
         $$arg = 0;
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         $$arg = 0;
+    } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
+    	$$arg = 0;
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
         $$arg = $node->get_inline->get_expr->is_const;
     }

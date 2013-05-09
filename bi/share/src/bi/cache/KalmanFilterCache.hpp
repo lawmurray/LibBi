@@ -46,16 +46,84 @@ public:
   KalmanFilterCache<IO1,CL>& operator=(const KalmanFilterCache<IO1,CL>& o);
 
   /**
-   * @copydoc KalmanFilterNetCDFBuffer::readStd()
+   * Read predicted mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] mu1 Mean.
    */
-  template<class M1>
-  void readStd(const int t, M1 S);
+  template<class V1>
+  void readPredictedMean(const int k, V1 mu1) const;
 
   /**
-   * @copydoc KalmanFilterNetCDFBuffer::writeStd()
+   * Write predicted mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] mu1 Mean.
+   */
+  template<class V1>
+  void writePredictedMean(const int k, V1 mu1);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::readPredictedStd()
    */
   template<class M1>
-  void writeStd(const int t, const M1 S);
+  void readPredictedStd(const int k, M1 U1);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::writePredictedStd()
+   */
+  template<class M1>
+  void writePredictedStd(const int k, const M1 U1);
+
+  /**
+   * Read corrected mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] mu2 Mean.
+   */
+  template<class V1>
+  void readCorrectedMean(const int k, V1 mu2) const;
+
+  /**
+   * Write corrected mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] mu2 Mean.
+   */
+  template<class V1>
+  void writeCorrectedMean(const int k, V1 mu2);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::readCorrectedStd()
+   */
+  template<class M1>
+  void readCorrectedStd(const int k, M1 U2);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::writeCorrectedStd()
+   */
+  template<class M1>
+  void writeCorrectedStd(const int k, const M1 U2);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::readCross()
+   */
+  template<class M1>
+  void readCross(const int k, M1 C);
+
+  /**
+   * @copydoc KalmanFilterNetCDFBuffer::writeCross()
+   */
+  template<class M1>
+  void writeCross(const int k, const M1 C);
 
   /**
    * @copydoc KalmanFilterNetCDFBuffer::writeLL()
@@ -89,6 +157,41 @@ public:
   void flush();
 
 private:
+  /**
+   * Vector type for caches.
+   */
+  typedef host_vector<real> vector_type;
+
+  /**
+   * Matrix type for caches.
+   */
+  typedef host_matrix<real> matrix_type;
+
+  /**
+   * Predicted mean cache.
+   */
+  CacheObject<vector_type> mu1Cache;
+
+  /**
+   * Cholesky factor of predicted covariance matrix cache.
+   */
+  CacheObject<matrix_type> U1Cache;
+
+  /**
+   * Corrected mean cache.
+   */
+  CacheObject<vector_type> mu2Cache;
+
+  /**
+   * Cholesky factor of corrected covariance matrix cache.
+   */
+  CacheObject<matrix_type> U2Cache;
+
+  /**
+   * Across-time covariance cache.
+   */
+  CacheObject<matrix_type> CCache;
+
   /**
    * Output buffer.
    */
@@ -156,7 +259,8 @@ bi::KalmanFilterCache<IO1,CL>::KalmanFilterCache(IO1* out) :
 template<class IO1, bi::Location CL>
 bi::KalmanFilterCache<IO1,CL>::KalmanFilterCache(
     const KalmanFilterCache<IO1,CL>& o) :
-    SimulatorCache<IO1,CL>(o), out(o.out) {
+    SimulatorCache<IO1,CL>(o), mu1Cache(o.mu1Cache), U1Cache(o.U1Cache), mu2Cache(
+        o.mu2Cache), U2Cache(o.U2Cache), CCache(o.CCache), out(o.out) {
   //
 }
 
@@ -165,6 +269,11 @@ bi::KalmanFilterCache<IO1,CL>& bi::KalmanFilterCache<IO1,CL>::operator=(
     const KalmanFilterCache<IO1,CL>& o) {
   SimulatorCache<IO1,CL>::operator=(o);
   out = o.out;
+  mu1Cache = o.mu1Cache;
+  U1Cache = o.U1Cache;
+  mu2Cache = o.mu2Cache;
+  U2Cache = o.U2Cache;
+  CCache = o.CCache;
 
   return *this;
 }
@@ -175,18 +284,113 @@ bi::KalmanFilterCache<IO1,CL>::~KalmanFilterCache() {
 }
 
 template<class IO1, bi::Location CL>
-template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readStd(const int k, M1 S) {
+template<class V1>
+void bi::KalmanFilterCache<IO1,CL>::readPredictedMean(const int k,
+    V1 mu1) const {
+  mu1 = mu1Cache.get(k);
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::KalmanFilterCache<IO1,CL>::writePredictedMean(const int k,
+    const V1 mu1) {
+  if (!mu1Cache.isValid(k)) {
+    vector_type tmp;
+    mu1Cache.set(k, tmp);
+    mu1Cache.get(k).resize(mu1.size(), false);
+  }
+  mu1Cache.set(k, mu1);
+
   if (out != NULL) {
-    out->readStd(k, S);
+    out->writePredictedMean(k, mu1);
   }
 }
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::writeStd(const int k, const M1 S) {
+void bi::KalmanFilterCache<IO1,CL>::readPredictedStd(const int k, M1 U1) {
+  U1 = U1Cache.get(k);
+}
+
+template<class IO1, bi::Location CL>
+template<class M1>
+void bi::KalmanFilterCache<IO1,CL>::writePredictedStd(const int k,
+    const M1 U1) {
+  if (!U1Cache.isValid(k)) {
+    matrix_type tmp;
+    U1Cache.set(k, tmp);
+    U1Cache.get(k).resize(U1.size1(), U1.size2(), false);
+  }
+  U1Cache.set(k, U1);
+
   if (out != NULL) {
-    out->writeStd(k, S);
+    out->writePredictedStd(k, U1);
+  }
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::KalmanFilterCache<IO1,CL>::readCorrectedMean(const int k,
+    V1 mu2) const {
+  mu2 = mu2Cache.get(k);
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::KalmanFilterCache<IO1,CL>::writeCorrectedMean(const int k,
+    const V1 mu2) {
+  if (!mu2Cache.isValid(k)) {
+    vector_type tmp;
+    mu2Cache.set(k, tmp);
+    mu2Cache.get(k).resize(mu2.size(), false);
+  }
+  mu2Cache.set(k, mu2);
+
+  if (out != NULL) {
+    out->writeCorrectedMean(k, mu2);
+  }
+}
+
+template<class IO1, bi::Location CL>
+template<class M1>
+void bi::KalmanFilterCache<IO1,CL>::readCorrectedStd(const int k, M1 U2) {
+  U2 = U2Cache.get(k);
+}
+
+template<class IO1, bi::Location CL>
+template<class M1>
+void bi::KalmanFilterCache<IO1,CL>::writeCorrectedStd(const int k,
+    const M1 U2) {
+  if (!U2Cache.isValid(k)) {
+    matrix_type tmp;
+    U2Cache.set(k, tmp);
+    U2Cache.get(k).resize(U2.size1(), U2.size2(), false);
+  }
+  U2Cache.set(k, U2);
+
+  if (out != NULL) {
+    out->writeCorrectedStd(k, U2);
+  }
+}
+
+template<class IO1, bi::Location CL>
+template<class M1>
+void bi::KalmanFilterCache<IO1,CL>::readCross(const int k, M1 C) {
+  C = CCache.get(k);
+}
+
+template<class IO1, bi::Location CL>
+template<class M1>
+void bi::KalmanFilterCache<IO1,CL>::writeCross(const int k, const M1 C) {
+  if (!CCache.isValid(k)) {
+    matrix_type tmp;
+    CCache.set(k, tmp);
+    CCache.get(k).resize(C.size1(), C.size2(), false);
+  }
+  CCache.set(k, C);
+
+  if (out != NULL) {
+    out->writeCross(k, C);
   }
 }
 
@@ -221,22 +425,35 @@ void bi::KalmanFilterCache<IO1,CL>::empty() {
 template<class IO1, bi::Location CL>
 void bi::KalmanFilterCache<IO1,CL>::flush() {
   SimulatorCache<IO1,CL>::flush();
+  mu1Cache.flush();
+  U1Cache.flush();
+  mu2Cache.flush();
+  U2Cache.flush();
+  CCache.flush();
 }
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::KalmanFilterCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
-
-  //
+void bi::KalmanFilterCache<IO1,CL>::save(Archive& ar,
+    const unsigned version) const {
+  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
+  ar & mu1Cache;
+  ar & U1Cache;
+  ar & mu2Cache;
+  ar & U2Cache;
+  ar & CCache;
 }
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::KalmanFilterCache<IO1,CL>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<SimulatorCache<IO1,CL> >(*this);
-
-  //
+void bi::KalmanFilterCache<IO1,CL>::load(Archive& ar,
+    const unsigned version) {
+  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
+  ar & mu1Cache;
+  ar & U1Cache;
+  ar & mu2Cache;
+  ar & U2Cache;
+  ar & CCache;
 }
 
 #endif

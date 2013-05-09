@@ -1,12 +1,14 @@
 =head1 NAME
 
-optimise - optimise parameters of model.
+optimise - optimisation of the parameters of a model.
 
 =head1 SYNOPSIS
 
     bi optimise ...
     
-Note that C<optimize> may be used as an alternative spelling of C<optimise>.
+    bi optimize ...
+
+Alternative spellings are supported.
 
 =head1 INHERITS
 
@@ -16,20 +18,20 @@ L<Bi::Client::filter>
 
 package Bi::Client::optimise;
 
-use base 'Bi::Client::filter';
+use parent 'Bi::Client::filter';
 use warnings;
 use strict;
 
 =head1 OPTIONS
 
-The C<optimise> program inherits all options from L<filter>, and permits the
+The C<optimise> command inherits all options from L<filter>, and permits the
 following additional options:
 
 =over 4
 
 =item C<--target> (default C<likelihood>)
 
-Optimisation target, one of:
+Optimisation target; one of:
 
 =over 8
 
@@ -89,7 +91,6 @@ our @CLIENT_OPTIONS = (
     {
       name => 'mode',
       type => 'string',
-      default => 'ml',
       deprecated => 1,
       message => 'use --target instead'  
     },

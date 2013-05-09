@@ -27,23 +27,6 @@ namespace bi {
   };
 
   /**
-   * Cholesky downdate failed (matrix not positive definite).
-   */
-  struct CholeskyDowndateException {
-    /**
-     * Constructor.
-     */
-    CholeskyDowndateException(const int info) : info(info) {
-      //
-    }
-
-    /**
-     * Info return by ch1dn().
-     */
-    int info;
-  };
-
-  /**
    * Particle filter degenerated.
    */
   struct ParticleFilterDegeneratedException {

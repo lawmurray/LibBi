@@ -28,7 +28,7 @@ struct back_impl {
 /**
  * Get the last item of a type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

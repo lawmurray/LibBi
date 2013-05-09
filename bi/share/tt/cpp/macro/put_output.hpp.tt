@@ -7,5 +7,5 @@
 -%]
 [%-MACRO put_output(expr) BLOCK-%]
 /* compute and output */
-x.template fetch<target_type>(s, p, ix) = [% expr.to_cpp %];
+x.template fetch<target_type>(s, p, cox.index()) = [% expr.to_cpp %];
 [%-END-%]

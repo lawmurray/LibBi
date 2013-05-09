@@ -645,7 +645,7 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
     if (filtermode == CONDITIONED && bi::exp(s.getLogPrior1()) > 0) {
       try {
         s.getLogLikelihood1() = filter->filter(rng, first, last,
-            s.getParameters1(), s, s.getTrajectory());
+            s.getParameters1(), s);
       } catch (CholeskyException e) {
         throw ConditionalParticleFilterException();
       } catch (ParticleFilterDegeneratedException e) {

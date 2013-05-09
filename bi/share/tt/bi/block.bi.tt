@@ -6,11 +6,17 @@
 ## $Date$
 PROCESS macro/arg_list.bi.tt
 -%]
-sub [% block.get_name %][% arg_list(block) %] { // Block[% block.get_id %]
-[% FOREACH action IN block.get_actions %]
-[%-INCLUDE action.bi.tt FILTER indent(2)-%]
+[% IF block.get_top_level %]sub [% END %][% IF block.is_named %][% block.get_name %][% END %][% arg_list(block) %] { // Block[% block.get_id %]
+[% INCLUDE const.bi.tt FILTER indent(2) FOREACH const IN block.get_consts-%]
+[% INCLUDE inline.bi.tt FILTER indent(2) FOREACH inline IN block.get_inlines-%]
+[% INCLUDE dim.bi.tt FILTER indent(2) FOREACH dim IN block.get_dims-%]
+[% INCLUDE var.bi.tt FILTER indent(2) FOREACH var IN block.get_vars-%]
+
+[%-FOREACH child IN block.get_children-%]
+[%-IF child.get_type == 'action'-%]
+[%-INCLUDE action.bi.tt action = child FILTER indent(2)-%]
+[%-ELSE-%]
+[%-INCLUDE block.bi.tt block = child FILTER indent(2)-%]
 [%-END-%]
-[% FOREACH block IN block.get_blocks %]
-[%-INCLUDE block.bi.tt FILTER indent(2)-%]
 [%-END-%]
 }

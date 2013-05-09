@@ -16,11 +16,17 @@ according to a Gaussian distribution with a closed lower and/or upper bound.
 For a one-sided truncation, simply omit the relevant C<lower> or C<upper>
 argument.
 
+The current implementation uses a naive rejection sampling with the full
+Gaussian distribution used as a proposal. The rejection rate is simply the
+area under the Gaussian curve between C<lower> and C<upper>. If this is
+significantly less than one, the rejection rate will be high, and performance
+slow.
+
 =cut
 
 package Bi::Action::truncated_gaussian;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -71,6 +77,7 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->set_name('truncated_gaussian'); # synonyms exist, standardise name
     $self->ensure_op('~');

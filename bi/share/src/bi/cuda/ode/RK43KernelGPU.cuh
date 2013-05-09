@@ -34,12 +34,13 @@ CUDA_FUNC_GLOBAL void kernelRK43(const T1 t1, const T1 t2,
 
 template<class B, class S, class T1>
 CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE> s) {
-  typedef Pa<ON_DEVICE,B,global,global,global,shared<S> > PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef RK43VisitorGPU<B,S,S,real,PX,real> Visitor;
 
   /* sizes */
   const int P = s.size();
   const int N = block_size<S>::value;
+  const int ND = B::ND;
 
   /* indices */
   const int i = threadIdx.y; // variable index
@@ -48,14 +49,13 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
   const int r = threadIdx.x; // trajectory index in shared memory
 
   /* shared memory */
-  real* __restrict__ xs = shared_mem;
-  real* __restrict__ ts = xs + N*blockDim.x;
-  real* __restrict__ hs = ts + blockDim.x;
-  real* __restrict__ e2s = hs + blockDim.x;
-  real* __restrict__ logfacolds = e2s + blockDim.x;
+  real* ts = shared_mem;
+  real* hs = ts + blockDim.x;
+  real* e2s = hs + blockDim.x;
+  real* logfacolds = e2s + blockDim.x;
 
   /* refs for this thread */
-  real& x = xs[q];
+  real& x = shared_init_visitor<B,S,S>::accept(s, p, i);//xs[q];
   real& t = ts[r];
   real& h = hs[r];
   real& e2 = e2s[r];
@@ -78,15 +78,15 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
   real r1, r2, old, err;
 
   int n = 0;
-  shared_init<B,S>(s, p, i);
+  //shared_init<B,S>(s, p, i);
   old = x;
   r1 = x;
 
   do {
     if (headOfTraj) {
-      if (BI_REAL(0.1)*bi::abs(h) <= bi::abs(t)*uround) {
+      //if (BI_REAL(0.1)*bi::abs(h) <= bi::abs(t)*uround) {
         // step size too small
-      }
+      //}
       if (t + BI_REAL(1.01)*h - t2 > BI_REAL(0.0)) {
         h = t2 - t;
       }
@@ -179,10 +179,10 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
       #ifdef ENABLE_RIPEN
       if (p + Q < P) {
         /* write result for this trajectory */
-        shared_commit<B,S>(s, p, i);
+        //shared_commit<B,S>(s, p, i);
 
         /* read starting state for next trajectory */
-        shared_init<B,S>(s, p + Q, i);
+        //shared_init<B,S>(s, p + Q, i);
 
         old = x;
         r1 = x;
@@ -207,7 +207,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
   } while (!done && n < nsteps);
 
   /* commit back to global memory */
-  shared_commit<B,S>(s, p, i);
+  //shared_commit<B,S>(s, p, i);
 }
 
 #endif

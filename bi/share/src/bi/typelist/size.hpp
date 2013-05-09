@@ -22,7 +22,7 @@ struct size_impl {
 /**
  * Number of nodes in type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

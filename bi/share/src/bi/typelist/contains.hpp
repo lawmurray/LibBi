@@ -25,7 +25,7 @@ struct contains_impl {
 /**
  * Does type list contain type?
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  * @ptaram X A type.

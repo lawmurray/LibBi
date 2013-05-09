@@ -6,7 +6,7 @@ pdf_ - block for univariate pdf actions.
 
 package Bi::Block::pdf_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 
@@ -17,7 +17,7 @@ sub validate {
     
     $self->process_args($BLOCK_ARGS);
     
-    if ($self->num_blocks > 0) {
+    if (@{$self->get_blocks} > 0) {
         die("a 'pdf_' block may not contain nested blocks\n");
     }
 }

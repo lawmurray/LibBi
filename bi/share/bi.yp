@@ -1,17 +1,8 @@
 %%
 
-top_levels
-    : top_level
-    | top_levels top_level
-    ;
-
-top_level
-    : model
-    ;
-
 model
-    : MODEL spec '{' model_definitions '}' { $_[0]->model($_[2], $_[4]) }
-    | MODEL spec '{' '}'                   { $_[0]->model($_[2]) }
+    : MODEL spec block_start model_definitions block_end { $_[0]->model($_[2]) }
+    | MODEL spec block_start block_end                   { $_[0]->model($_[2]) }
     ;
 
 spec
@@ -23,7 +14,8 @@ spec
     ;
 
 array_spec
-    : IDENTIFIER '[' dim_args ']' '(' positional_args ',' named_args ')' { $_[0]->spec($_[1], $_[3], $_[6], $_[8]) }
+    : spec
+    | IDENTIFIER '[' dim_args ']' '(' positional_args ',' named_args ')' { $_[0]->spec($_[1], $_[3], $_[6], $_[8]) }
     | IDENTIFIER '[' dim_args ']' '(' positional_args ')'                { $_[0]->spec($_[1], $_[3], $_[6]) }
     | IDENTIFIER '[' dim_args ']' '(' named_args ')'                     { $_[0]->spec($_[1], $_[3], [], $_[6]) }
     | IDENTIFIER '[' dim_args ']' '(' ')'                                { $_[0]->spec($_[1], $_[3]) }
@@ -49,31 +41,25 @@ named_arg
     ;
 
 model_definitions
-    : model_definitions model_definition { $_[0]->append($_[1], $_[2]) }
-    | model_definition                   { $_[0]->append($_[1]) }
+    : model_definitions model_definition
+    | model_definition
     ;
 
 model_definition
     : dim
-    | state
-    | state_aux
-    | noise
-    | input
-    | obs
-    | param
-    | param_aux
+    | var
     | const
     | inline
-    | top_block
+    | top_level
     ;
     
 dim
-    : DIM dim_declarations { $_[2] }
+    : DIM dim_declarations
     ;
 
 dim_declarations
-    : dim_declarations ',' dim_declaration { $_[0]->append($_[1], $_[3]) }
-    | dim_declaration                      { $_[0]->append($_[1]) }
+    : dim_declarations ',' dim_declaration
+    | dim_declaration
     ;
     
 dim_declaration
@@ -82,12 +68,12 @@ dim_declaration
     ;
 
 const
-    : CONST const_declarations { $_[2] }
+    : CONST const_declarations
     ;
 
 const_declarations
-    : const_declarations ',' const_declaration { $_[0]->append($_[1], $_[3]) }
-    | const_declaration                        { $_[0]->append($_[1]) }
+    : const_declarations ',' const_declaration
+    | const_declaration
     ;
     
 const_declaration
@@ -96,12 +82,12 @@ const_declaration
     ;
 
 inline
-    : INLINE inline_declarations { $_[2] }
+    : INLINE inline_declarations
     ;
 
 inline_declarations
-    : inline_declarations ',' inline_declaration { $_[0]->append($_[1], $_[3]) }
-    | inline_declaration                         { $_[0]->append($_[1]) }
+    : inline_declarations ',' inline_declaration
+    | inline_declaration
     ;
     
 inline_declaration
@@ -109,49 +95,112 @@ inline_declaration
     | IDENTIFIER '=' expression     { $_[0]->inline($_[1], $_[3]) }
     ;
 
+var
+    : state
+    | state_aux
+    | noise
+    | input
+    | obs
+    | param
+    | param_aux
+    ;
+    
 state
-    : STATE var_declarations ';' { $_[0]->state($_[2]) }
-    | STATE var_declarations     { $_[0]->state($_[2]) }
+    : STATE state_declarations
+    ;
+    
+state_declarations
+    : state_declarations ',' state_declaration
+    | state_declaration
+    ;
+
+state_declaration
+    : array_spec ';' { $_[0]->var('state', $_[1]) }
+    | array_spec     { $_[0]->var('state', $_[1]) }
     ;
 
 state_aux
-    : STATE_AUX var_declarations ';' { $_[0]->state_aux($_[2]) }
-    | STATE_AUX var_declarations     { $_[0]->state_aux($_[2]) }
+    : STATE_AUX state_aux_declarations
+    ;
+
+state_aux_declarations
+    : state_aux_declarations ',' state_aux_declaration
+    | state_aux_declaration
+    ;
+
+state_aux_declaration
+    : array_spec ';' { $_[0]->var('state_aux_', $_[1]) }
+    | array_spec     { $_[0]->var('state_aux_', $_[1]) }
     ;
 
 noise
-    : NOISE var_declarations ';' { $_[0]->noise($_[2]) }
-    | NOISE var_declarations     { $_[0]->noise($_[2]) }
+    : NOISE noise_declarations
+    ;
+
+noise_declarations
+    : noise_declarations ',' noise_declaration
+    | noise_declaration
+    ;
+
+noise_declaration
+    : array_spec ';' { $_[0]->var('noise', $_[1]) }
+    | array_spec     { $_[0]->var('noise', $_[1]) }
     ;
 
 input
-    : INPUT var_declarations ';' { $_[0]->input($_[2]) }
-    | INPUT var_declarations     { $_[0]->input($_[2]) }
+    : INPUT input_declarations
+    ;
+    
+input_declarations
+    : input_declarations ',' input_declaration
+    | input_declaration
+    ;
+
+input_declaration
+    : array_spec ';' { $_[0]->var('input', $_[1]) }
+    | array_spec     { $_[0]->var('input', $_[1]) }
     ;
 
 obs
-    : OBS var_declarations ';' { $_[0]->obs($_[2]) }
-    | OBS var_declarations     { $_[0]->obs($_[2]) }
+    : OBS obs_declarations
+    ;
+
+obs_declarations
+    : obs_declarations ',' obs_declaration
+    | obs_declaration
+    ;
+
+obs_declaration
+    : array_spec ';' { $_[0]->var('obs', $_[1]) }
+    | array_spec     { $_[0]->var('obs', $_[1]) }
     ;
 
 param
-    : PARAM var_declarations ';' { $_[0]->param($_[2]) }
-    | PARAM var_declarations     { $_[0]->param($_[2]) }
+    : PARAM param_declarations
+    ;
+
+param_declarations
+    : param_declarations ',' param_declaration
+    | param_declaration
+    ;
+
+param_declaration
+    : array_spec ';' { $_[0]->var('param', $_[1]) }
+    | array_spec     { $_[0]->var('param', $_[1]) }
     ;
 
 param_aux
-    : PARAM_AUX var_declarations ';' { $_[0]->param_aux($_[2]) }
-    | PARAM_AUX var_declarations     { $_[0]->param_aux($_[2]) }
+    : PARAM_AUX param_aux_declarations
     ;
 
-var_declarations
-    : var_declarations ',' var_declaration { $_[0]->append($_[1], $_[3]) }
-    | var_declaration                      { $_[1] }
+param_aux_declarations
+    : param_aux_declarations ',' param_aux_declaration
+    | param_aux_declaration
     ;
-    
-var_declaration
-    : array_spec
-    | spec
+
+param_aux_declaration
+    : array_spec ';' { $_[0]->var('param_aux_', $_[1]) }
+    | array_spec     { $_[0]->var('param_aux_', $_[1]) }
     ;
     
 dim_args
@@ -186,50 +235,64 @@ index_arg
     | expression ':' expression  { $_[0]->range($_[1], $_[3]) }
     ;
 
-top_block
-    : SUB block  { $_[0]->commit_block($_[2]) }
+top_level
+    : SUB block { $_[0]->top_level($_[2]) }
     ;
 
 do
     : DO block      { $_[0]->commit_block($_[2]) }
-    | do THEN block { $_[0]->append($_[1], $_[0]->commit_block($_[3])) }
+    | do THEN block { $_[0]->commit_block($_[3]) }
     ;
 
 block 
-    : spec '{' block_definitions '}' { $_[0]->block($_[1], $_[3]) }
-    | spec '{' '}'                   { $_[0]->block($_[1]) }
-    | '{' block_definitions '}'      { $_[0]->block(undef, $_[2]) }
-    | '{' '}'                        { $_[0]->block() }
+    : spec block_start block_definitions block_end { $_[0]->block($_[1]) }
+    | spec block_start block_end                   { $_[0]->block($_[1]) }
+    | block_start block_definitions block_end      { $_[0]->block() }
+    | block_start block_end                        { $_[0]->block() }
+    ;
+
+block_start
+    : '{' { $_[0]->push_block }
+    ;
+    
+block_end
+    : '}'
     ;
 
 block_definitions
-    : block_definitions block_definition { $_[0]->append($_[1], $_[2]) }
-    | block_definition                   { $_[0]->append($_[1]) }
+    : block_definitions block_definition
+    | block_definition
     ;
 
 block_definition
     : do
-    | distributed_as
-    | set_to
-    | varies_as
     | const
     | inline
+    | dim
+    | var
+    | action
     | block
     ;
 
+action
+    : distributed_as
+    | set_to
+    | varies_as
+    ;
+
 distributed_as
-    : target '~' expression ';' { $_[0]->action($_[1], $_[2], $_[3]) }
-    | target '~' expression     { $_[0]->action($_[1], $_[2], $_[3]) }
+    : target '~' expression ';' { $_[0]->action($_[2], $_[3]) }
+    | target '~' expression     { $_[0]->action($_[2], $_[3]) }
     ;
 
 set_to
-    : target SET_TO expression ';' { $_[0]->action($_[1], $_[2], $_[3]) }
-    | target SET_TO expression     { $_[0]->action($_[1], $_[2], $_[3]) }
+    : target SET_TO expression ';' { $_[0]->action($_[2], $_[3]) }
+    | target SET_TO expression     { $_[0]->action($_[2], $_[3]) }
     ;
     
 varies_as
-    : dtarget '=' expression ';' { $_[0]->action($_[1], $_[2], $_[3]) }
-    | dtarget '=' expression     { $_[0]->action($_[1], $_[2], $_[3]) }
+    : dtarget '=' expression ';' { $_[0]->action($_[2], $_[3]) }
+    | dtarget '=' expression     { $_[0]->action($_[2], $_[3]) }
     ;
 
 target
@@ -279,13 +342,19 @@ cast_expression
 /*  | '(' TYPE_NAME ')' cast_expression { $_[0]->expression(@_[1..$#_]) }*/
     ;
 
+pow_expression
+    : cast_expression
+    | pow_expression POW_OP cast_expression      { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | pow_expression ELEM_POW_OP cast_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    ;
+
 multiplicative_expression
-    : cast_expression                                       { $_[1] }
-    | multiplicative_expression '*' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
-    | multiplicative_expression ELEM_MUL_OP cast_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
-    | multiplicative_expression '/' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
-    | multiplicative_expression ELEM_DIV_OP cast_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
-/*  | multiplicative_expression '%' cast_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }*/
+    : pow_expression                                       { $_[1] }
+    | multiplicative_expression '*' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression ELEM_MUL_OP pow_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression '/' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression ELEM_DIV_OP pow_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression '%' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
     ;
 
 additive_expression

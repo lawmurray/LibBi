@@ -11,7 +11,7 @@ L<truncated_gaussian>
 
 package Bi::Action::truncated_normal;
 
-use base 'Bi::Action::truncated_gaussian';
+use parent 'Bi::Action::truncated_gaussian';
 
 1;
 

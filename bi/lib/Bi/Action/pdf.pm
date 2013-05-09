@@ -19,7 +19,7 @@ using C<pdf>.
 
 package Bi::Action::pdf;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -53,6 +53,7 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('~');
     $self->ensure_scalar('pdf');

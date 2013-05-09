@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::UnaryOperator;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -105,16 +105,6 @@ sub get_expr {
     return $self->{_expr};
 }
 
-=item B<num_dims>
-
-Get the dimensionality of the expression.
-
-=cut
-sub num_dims {
-    my $self = shift;
-    return $self->get_expr->num_dims;
-}
-
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -125,9 +115,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
+    $self = $visitor->visit_before($self, @args);
     $self->{_expr} = $self->get_expr->accept($visitor, @args);
 
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -148,10 +139,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

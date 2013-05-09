@@ -48,7 +48,7 @@ public:
    *
    * @return Page.
    */
-  const T1& get(const int p) const;
+  T1& get(const int p) const;
 
   /**
    * Write page.
@@ -141,7 +141,7 @@ bi::CacheObject<T1>& bi::CacheObject<T1>::operator=(const CacheObject<T1>& o) {
 }
 
 template<class T1>
-inline const T1& bi::CacheObject<T1>::get(const int p) const {
+inline T1& bi::CacheObject<T1>::get(const int p) const {
   /* pre-condition */
   BI_ASSERT(isValid(p));
 

@@ -16,7 +16,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::ObsToStateTransformer;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -46,54 +46,39 @@ sub evaluate {
     my $self = {};
     bless $self, $class;
 
-    my $observation_block = $model->get_block('observation')->clone($model);
-    $observation_block->set_name('eval_');
-    $observation_block->set_commit(1);
-    
-    my $lookahead_observation_block = $model->get_block('lookahead_observation')->clone($model);
-    $lookahead_observation_block->set_name('eval_');
-    $lookahead_observation_block->set_commit(1);
-    
-    $model->accept($self, $model, $observation_block, $lookahead_observation_block);
+    my $observation_block = $model->get_block('observation');
+    my $transition_block = $model->get_block('transition');
+    my $initial_block = $model->get_block('initial');
+
+    my $lookahead_observation_block = $model->get_block('lookahead_observation');
+    my $lookahead_transition_block = $model->get_block('lookahead_transition');
+
+    # moves the contents of the 'observation' block to the end of both the
+    # 'transition' and 'initial' blocks
+    $transition_block->push_children($observation_block->clone->get_children);
+    $initial_block->push_children($observation_block->clone->get_children);
+    $observation_block->clear;
+
+    # move the contents of the 'lookahead_observation' block to the end of
+    # the 'lookahead_transition' block
+    $lookahead_transition_block->push_children($lookahead_observation_block->get_children);
+    $lookahead_observation_block->clear;
+        
+    # change obs variables to state variables    
+    $model->accept($self);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of model.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
-    my $model = shift;    
-    my $observation_block = shift;
-    my $lookahead_observation_block = shift;
 
-    if ($node->isa('Bi::Model::Obs')) {
-        # replace with state variable
-        $node = new Bi::Model::State($node->get_name, $node->get_dims,
-            $node->get_args, $node->get_named_args);
-    } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-    	if ($node->get_var->get_type eq 'obs') {
-    		my $name = $node->get_var->get_name;
-    		$node->set_var($model->get_var($name));
-    	} 
-    } elsif ($node->isa('Bi::Model::Block')) {
-        if ($node->get_name eq 'observation' || $node->get_name eq 'lookahead_observation') {
-            $node->clear;
-        } elsif ($node->get_name eq 'transition' || $node->get_name eq 'initial' || $node->get_name eq 'proposal_initial') {
-            $node->sink_actions($model);
-            if ($node->num_blocks > 0) {
-                $node->get_block($node->num_blocks - 1)->set_commit(1);
-            }
-            $node->push_block($observation_block->clone($model));
-        } elsif ($node->get_name eq 'lookahead_transition') {
-            $node->sink_actions($model);
-            if ($node->num_blocks > 0) {
-                $node->get_block($node->num_blocks - 1)->set_commit(1);
-            }
-            $node->push_block($lookahead_observation_block);
-        }
+    if ($node->isa('Bi::Model::Var') && $node->get_type eq 'obs') {
+        $node->set_type('state');
     }
     return $node;
 }

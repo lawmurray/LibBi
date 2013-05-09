@@ -20,7 +20,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::ToPerl;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -55,12 +55,12 @@ sub evaluate {
     return pop(@$args);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of expression tree.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $args = shift;
@@ -85,13 +85,13 @@ sub visit {
         my $expr = pop(@$args);
         $str = '(' . $expr . ')';
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
-        $node->get_inline->get_expr->accept($self, $args);
+        $node->get_inline->get_expr->get_expr->accept($self, $args);
         my $expr = pop(@$args);
         $str = '(' . $expr . ')';
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         $str = '$' . $node->get_var->get_name;
-        if ($node->num_indexes) {
-            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
+        if (@{$node->get_indexes}) {
+            my @indexes = splice(@$args, -@{$node->get_indexes}, scalar(@{$node->get_indexes}));
             $str .= '_' . join('_', @indexes);
         }
     } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
@@ -99,7 +99,7 @@ sub visit {
     } elsif ($node->isa('Bi::Expression::Literal') || $node->isa('Bi::Expression::IntegerLiteral')) {
         $str = $node->get_value;
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
-        $str = $node->get_value;
+        $str = '"' . $node->get_value . '"';
     } elsif ($node->isa('Bi::Expression::Index')) {
     	my @exprs = pop(@$args);
         $str = $exprs[0];

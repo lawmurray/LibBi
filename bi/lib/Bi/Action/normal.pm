@@ -10,7 +10,7 @@ L<gaussian>
 
 package Bi::Action::normal;
 
-use base 'Bi::Action::gaussian';
+use parent 'Bi::Action::gaussian';
 
 1;
 

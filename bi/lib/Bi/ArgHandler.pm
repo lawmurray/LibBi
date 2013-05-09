@@ -329,9 +329,10 @@ sub process_args {
     
     # check mandatory arguments and apply defaults
     foreach $spec (@$specs) {
-        if (!exists $args->{$spec->{name}}) {
+        if (!exists $args->{$spec->{name}} || !defined $args->{$spec->{name}}) {
             if (exists $spec->{default}) {
                 my $literal;
+                
                 if (is_integer($spec->{default})) {
                     $literal = new Bi::Expression::IntegerLiteral($spec->{default});
                 } elsif (is_number($spec->{default})) {
@@ -443,7 +444,7 @@ sub ensure_num_dims {
     my $name = shift;
     my $num = shift;
     
-    if (!(!$self->is_named_arg($name) || $self->get_named_arg($name)->num_dims <= $num)) {
+    if (!(!$self->is_named_arg($name) || @{$self->get_named_arg($name)->get_shape} <= $num)) {
         my $action = $self->get_name;
         my $plural = '';
         if ($num == 1) {
@@ -508,10 +509,10 @@ sub is_number {
     
     # regexps are taken from bi.lex
     my $res = 0;
-    $res = $res || $value =~ /[0-9]+[Ee][+-]?[0-9]+/;
-    $res = $res || $value =~ /[0-9]+\.[0-9]*([Ee][+-]?[0-9]+)?/;
-    $res = $res || $value =~ /[0-9]*\.[0-9]+([Ee][+-]?[0-9]+)?/;
-    $res = $res || $value =~ /[0-9]+/;
+    $res = $res || $value =~ /^[0-9]+[Ee][+-]?[0-9]+$/;
+    $res = $res || $value =~ /^[0-9]+\.[0-9]*([Ee][+-]?[0-9]+)?$/;
+    $res = $res || $value =~ /^[0-9]*\.[0-9]+([Ee][+-]?[0-9]+)?$/;
+    $res = $res || $value =~ /^[0-9]+$/;
     
     return $res;
 }
@@ -524,7 +525,7 @@ Is I<value> an integer?
 sub is_integer {
     my $value = shift;
     
-    return $value =~ /[0-9]+/;
+    return $value =~ /^[0-9]+$/;
 }
 
 1;

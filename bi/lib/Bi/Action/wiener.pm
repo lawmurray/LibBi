@@ -8,14 +8,16 @@ wiener - wiener process.
 
 =head1 DESCRIPTION
 
-A C<wiener> action specifies that a dynamic variable is distributed according
-to a Wiener process.
+A C<wiener> action specifies that a variable is an increment of a Wiener
+process: Gaussian distributed with mean zero and variance C<tj - ti>,
+where C<ti> is the starting time, and C<tj> the ending time, of the current
+time interval
 
 =cut
 
 package Bi::Action::wiener;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -24,6 +26,7 @@ our $ACTION_ARGS = [];
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('~');
     $self->set_parent('wiener_');
@@ -31,7 +34,7 @@ sub validate {
 
 sub mean {
     # mean is always zero
-    return Bi::Expression::Literal(0.0);
+    return new Bi::Expression::Literal(0.0);
 }
 
 sub jacobian {

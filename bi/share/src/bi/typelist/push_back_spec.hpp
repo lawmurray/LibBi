@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Push spec onto back of a type list. Used by append.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T1 A type list.
  * @tparam T2 A type list.

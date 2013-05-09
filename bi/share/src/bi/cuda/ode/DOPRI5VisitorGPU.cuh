@@ -91,7 +91,7 @@ private:
   typedef typename front<S2>::type front;
   typedef typename pop_front<S2>::type pop_front;
   typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
   typedef DOPRI5Stage<front,T1,B,ON_DEVICE,coord_type,PX,T2> stage;
   typedef DOPRI5VisitorGPU<B,S1,pop_front,T1,PX,T2> visitor;

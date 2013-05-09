@@ -17,7 +17,7 @@ Bi::Utility - utility functions.
 
 package Bi::Utility;
 
-use base 'Exporter';
+use parent 'Exporter';
 use warnings;
 use strict;
 

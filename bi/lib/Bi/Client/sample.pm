@@ -1,10 +1,14 @@
 =head1 NAME
 
-sample - frontend to sampling client programs.
+sample - sample the prior, joint or posterior distribution.
 
 =head1 SYNOPSIS
 
-    bi sample ...
+    bi sample --target prior ...
+    
+    bi sample --target joint ...
+    
+    bi sample --target posterior ...
     
 =head1 INHERITS
 
@@ -14,13 +18,13 @@ L<Bi::Client::filter>
 
 package Bi::Client::sample;
 
-use base 'Bi::Client::filter';
+use parent 'Bi::Client::filter';
 use warnings;
 use strict;
 
 =head1 OPTIONS
 
-The C<sample> program inherits all options from C<filter>, and permits the
+The C<sample> command inherits all options from C<filter>, and permits the
 following additional options:
 
 =over 4
@@ -48,9 +52,10 @@ observations.
 =item C<prediction>
 
 To sample forward in time from a given initial state. Use C<--init-file> to
-set the initial state. The C<--init-file> may be, for example, the output
-file of a previous sampling of the posterior distribution, to perform a
-posterior prediction.
+set the initial state, and this initial state determines the interpretation
+of the prediction. For example, the C<--init-file> may be the output
+file of a previous sampling of the posterior distribution, in which case the
+result is a posterior prediction.
 
 =back
 
@@ -70,12 +75,6 @@ Sequential Monte Carlo Squared (SMC^2).
 
 =back
 
-=item C<--nsamples> (default 1)
-
-Number of parameter samples to draw.
-
-=back
-
 For PMMH, the proposal works according to the L<proposal_parameter> top-level
 block in the model. If this is not defined, independent draws are taken from
 the L<parameter> top-level block instead. If
@@ -85,7 +84,13 @@ conditions also. If this is not defined, independent draws are taken from the
 L<initial> top-level block instead.
 
 For SMC^2, the same blocks are used as proposals for rejuvenation steps,
-unless one of the adaptation strategies is enabled below.
+unless one of the adaptation strategies below is enabled.
+
+=item C<--nsamples> (default 1)
+
+Number of samples to draw.
+
+=back
 
 =head2 SMC2-specific options
 
@@ -97,8 +102,10 @@ Number of PMMH steps to perform after resampling.
 
 =item C<--sample-ess-rel> (default 0.5)
 
-ESS threshold triggering resampling steps. Parameter samples will only be
-resampled if ESS is below this proportion of C<--nsamples>.
+Threshold for effective sample size (ESS) resampling trigger. Parameter
+particles will only be resampled if ESS is below this proportion of
+C<--nsamples>. To always resample, use C<--sample-ess-rel 1>. To never
+resample, use C<--sample-ess-rel 0>.
 
 =item C<--adapter> (default none)
 
@@ -196,9 +203,14 @@ sub process_args {
     
     if ($target eq 'prior' || $target eq 'prediction') {
         $binary = 'simulate';
+        if (!$self->is_named_arg('with-transform-param-to-state')) {
+	        $self->set_named_arg('with-transform-param-to-state', 1);
+        }
     } elsif ($target eq 'joint') {
         $binary = 'simulate';
-        $self->set_named_arg('with-transform-obs-to-state', 1);
+        if (!$self->is_named_arg('with-transform-obs-to-state')) {
+            $self->set_named_arg('with-transform-obs-to-state', 1);
+        }
     } elsif ($sampler eq 'smc2') {
         $binary = 'smc2';
     } else {

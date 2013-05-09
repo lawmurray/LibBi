@@ -17,7 +17,7 @@ architectures.
 
 package Bi;
 
-use base 'Exporter';
+use parent 'Exporter';
 use warnings;
 use strict;
 

@@ -11,7 +11,6 @@
 [%-PROCESS macro/create_action_typetree.hpp.tt-%]
 [%-PROCESS macro/create_block_typedef.hpp.tt-%]
 [%-PROCESS macro/create_block_typelist.hpp.tt-%]
-[%-PROCESS macro/create_var_coord.hpp.tt-%]
 [%-PROCESS macro/declare_action_function.hpp.tt-%]
 [%-PROCESS macro/declare_action_matrix_function.hpp.tt-%]
 [%-PROCESS macro/declare_block_function.hpp.tt-%]

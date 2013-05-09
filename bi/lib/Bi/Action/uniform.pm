@@ -17,7 +17,7 @@ finite and closed interval given by the bounds C<lower> and C<upper>.
 
 package Bi::Action::uniform;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -68,6 +68,7 @@ sub make_range {
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     
     $self->ensure_op('~');
@@ -93,7 +94,7 @@ sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = @{$mean->get_vars};
+    my @refs = @{$mean->get_all_var_refs};
     my @J = map { $mean->d($_) } @refs;
 
     return (\@J, \@refs);

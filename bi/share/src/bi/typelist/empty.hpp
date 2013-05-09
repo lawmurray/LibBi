@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Is type list empty?
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

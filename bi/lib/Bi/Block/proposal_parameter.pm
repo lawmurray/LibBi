@@ -21,17 +21,9 @@ type C<input> and C<param>. They may only target variables of type C<param>.
 
 package Bi::Block::proposal_parameter;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block::parameter';
 use warnings;
 use strict;
-
-our $BLOCK_ARGS = [];
-
-sub validate {
-    my $self = shift;
-    
-    $self->process_args($BLOCK_ARGS);
-}
 
 1;
 

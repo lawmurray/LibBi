@@ -16,7 +16,7 @@ namespace bi {
 /**
  * Pop first spec of a type list. Used by append.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

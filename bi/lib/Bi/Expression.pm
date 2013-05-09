@@ -14,6 +14,7 @@ Bi::Expression - arithmetic or conditional expression.
 
 package Bi::Expression;
 
+use parent 'Bi::Node';
 use warnings;
 use strict;
 use overload
@@ -39,15 +40,11 @@ use Bi::Expression::TernaryOperator;
 use Bi::Expression::UnaryOperator;
 use Bi::Expression::VarIdentifier;
 use Bi::Expression::Vector;
-
-use Bi::Visitor::GetConsts;
-use Bi::Visitor::GetInlines;
-use Bi::Visitor::GetVars;
-use Bi::Visitor::GetDims;
-use Bi::Visitor::GetAliases;
+use Bi::Visitor::GetNodesOfType;
 use Bi::Visitor::EvalConst;
 use Bi::Visitor::IsElement;
 use Bi::Visitor::IsConst;
+use Bi::Visitor::IsStatic;
 use Bi::Visitor::IsBasic;
 use Bi::Visitor::ToSymbolic;
 use Bi::Visitor::Simplify;
@@ -73,17 +70,7 @@ or can be evaluated at runtime given only the values of parameters.
 sub is_static {
     my $self = shift;
     
-    my $vars = $self->get_vars;
-    my $var;
-    my $type;
-    
-    foreach $var (@$vars) {
-        $type = $var->get_var->get_type; 
-        if ($type ne 'param' && $type ne 'param_aux_') {
-            return 0;
-        }
-    }
-    return 1;
+    return Bi::Visitor::IsStatic->evaluate($self);
 }
 
 =item B<is_common>
@@ -96,7 +83,7 @@ of parameters and input variables.
 sub is_common {
     my $self = shift;
     
-    my $vars = $self->get_vars;
+    my $vars = $self->get_all_var_refs;
     my $var;
     my $type;
     
@@ -117,7 +104,7 @@ Is this a scalar expression?
 sub is_scalar {
     my $self = shift;
     
-    return $self->num_dims == 0;
+    return scalar(@{$self->get_shape}) == 0;
 }
 
 =item B<is_vector>
@@ -128,7 +115,7 @@ Is this a vector expression?
 sub is_vector {
     my $self = shift;
     
-    return $self->num_dims == 1;
+    return scalar(@{$self->get_shape}) == 1;
 }
 
 =item B<is_matrix>
@@ -139,7 +126,7 @@ Is this a matrix expression?
 sub is_matrix {
     my $self = shift;
     
-    return $self->num_dims == 2;
+    return scalar(@{$self->get_shape}) == 2;
 }
 
 =item B<is_element>
@@ -151,6 +138,17 @@ sub is_element {
     my $self = shift;
     
     return Bi::Visitor::IsElement->evaluate($self);
+}
+
+=item B<is_basic>
+
+Is this a basic expression?
+
+=cut
+sub is_basic {
+    my $self = shift;
+
+    return Bi::Visitor::IsBasic->evaluate($self);
 }
 
 =item B<is_zero>
@@ -187,133 +185,15 @@ sub eval_const {
     return Bi::Visitor::EvalConst->evaluate($self);    
 }
 
-=item B<num_consts>
+=item B<get_shape>
 
-Number of constants referenced in the expression.
+Get the shape of the expression result, as an array ref of sizes.
 
 =cut
-sub num_consts {
+sub get_shape {
     my $self = shift;
     
-    return scalar(@{Bi::Visitor::GetConsts->evaluate($self)});
-}
-
-=item B<get_consts>
-
-Get all constants referenced in the expression, as a list of
-L<Bi::Expression::ConstIdentifier> objects.
-
-=cut
-sub get_consts {
-    my $self = shift;
-    
-    return Bi::Visitor::GetConsts->evaluate($self);
-}
-
-=item B<num_inlines>
-
-Number of inlines referenced in the expression.
-
-=cut
-sub num_inlines {
-    my $self = shift;
-    
-    return scalar(@{Bi::Visitor::GetInlines->evaluate($self)});
-}
-
-=item B<get_inlines>
-
-Get all inlines referenced in the expression, as a list of
-L<Bi::Expression::InlineIdentifier> objects.
-
-=cut
-sub get_inlines {
-    my $self = shift;
-    
-    return Bi::Visitor::GetInlines->evaluate($self);
-}
-
-=item B<num_vars>
-
-Number of variables referenced in the expression.
-
-=cut
-sub num_vars {
-    my $self = shift;
-
-    return scalar(@{Bi::Visitor::GetVars->evaluate($self)});
-}
-
-=item B<get_vars>(I<types>)
-
-Get all variables referenced in the expression, as a list of
-L<Bi::Expression::VarIdentifier> objects. If I<types> is given as a string,
-only variables of that type are returned. If I<types> is given as an array ref
-of strings, only variables of those types are returned.
-
-=cut
-sub get_vars {
-    my $self = shift;
-    my $types = shift;
-    
-    return Bi::Visitor::GetVars->evaluate($self, $types);
-}
-
-=item B<num_dims>
-
-Number of dimensions along which the result of the expression is defined.
-
-=cut
-sub num_dims {
-    my $self = shift;
-    
-    return scalar(@{$self->get_dims});
-}
-
-=item B<get_dims>
-
-Get all dimensions along which the result of the expression extends, as a
-list of L<Bi::Expression::Dim> objects.
-
-=cut
-sub get_dims {
-    my $self = shift;
-    
-    return Bi::Visitor::GetDims->evaluate($self);
-}
-
-=item B<num_aliases>
-
-Number of dimension aliases used in the expression.
-
-=cut
-sub num_aliases {
-    my $self = shift;
-    
-    return scalar(@{Bi::Visitor::GetAliases->evaluate($self)});
-}
-
-=item B<get_aliases>
-
-Get all dimension aliases used in the expression, as
-L<Bi::Expression::DimAliasIdentifier> objects.
-
-=cut
-sub get_aliases {
-    my $self = shift;
-    
-    return Bi::Visitor::GetAliases->evaluate($self);
-}
-
-=item B<is_basic>
-
-Is this a basic expression?
-
-=cut
-sub is_basic {
-    my $self = shift;
-
-    return Bi::Visitor::IsBasic->evaluate($self);
+    return [];
 }
 
 =item B<d>(I<ident>)
@@ -346,25 +226,7 @@ sub simplify {
     return Bi::Visitor::Simplify->evaluate($self);
 }
 
-=item B<_op_map>
-
-Map operand for overloaded operator.
-
-=cut
-sub _op_map {
-    my $self = shift;
-    my $operand = shift;
-    
-    if ($operand->isa('Bi::Expression')) {
-        return $operand;
-    } elsif (ref($operand) eq 'STRING') {
-        return new Bi::Expression::StringLiteral($operand);
-    } else {
-        return new Bi::Expression::Literal($operand);
-    }
-}
-
-=item B<_op_binarys>
+=item B<_op_binary>
 
 Overloaded binary operator.
 
@@ -376,7 +238,8 @@ sub _op_binary {
     my $op = shift;
 
     my $expr;
-    $other = $self->_op_map($other);
+    $self = _op_map($self);
+    $other = _op_map($other);
     if ($swap) {
         $expr = new Bi::Expression::BinaryOperator($other, $op, $self);
     } else {
@@ -399,6 +262,31 @@ sub _op_mul {
 
 sub _op_div {
     return _op_binary(@_, '/');
+}
+
+=back
+
+=head2 CLASS METHODS
+
+=over 4
+
+=item B<_op_map>(I<operand>)
+
+Map operand for overloaded operator.
+
+=cut
+sub _op_map {
+    my $operand = shift;
+    
+    if (!defined $operand) {
+    	return new Bi::Expression::Literal(0);
+    } elsif (ref($operand) && $operand->isa('Bi::Expression')) {
+        return $operand;
+    } elsif (ref($operand) eq 'STRING') {
+        return new Bi::Expression::StringLiteral($operand);
+    } else {
+    	return new Bi::Expression::Literal($operand);
+    }
 }
 
 1;

@@ -35,10 +35,9 @@ public:
 
 }
 
+#include "../host/ode/DOPRI5IntegratorHost.hpp"
 #ifdef ENABLE_SSE
 #include "../sse/ode/DOPRI5IntegratorSSE.hpp"
-#else
-#include "../host/ode/DOPRI5IntegratorHost.hpp"
 #endif
 #ifdef __CUDACC__
 #include "../cuda/ode/DOPRI5IntegratorGPU.cuh"
@@ -53,7 +52,11 @@ void bi::DOPRI5Integrator<B,S>::update(const T1 t1, const T1 t2,
 
   if (bi::abs(t2 - t1) > 0.0) {
     #ifdef ENABLE_SSE
-    DOPRI5IntegratorSSE<B,S,T1>::update(t1, t2, s);
+    if (s.size() % BI_SSE_SIZE == 0) {
+      DOPRI5IntegratorSSE<B,S,T1>::update(t1, t2, s);
+    } else {
+      DOPRI5IntegratorHost<B,S,T1>::update(t1, t2, s);
+    }
     #else
     DOPRI5IntegratorHost<B,S,T1>::update(t1, t2, s);
     #endif

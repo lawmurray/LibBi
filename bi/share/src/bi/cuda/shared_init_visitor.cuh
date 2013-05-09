@@ -26,7 +26,7 @@ public:
    * @param p Trajectory id.
    * @param i Variable id.
    */
-  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s,
+  static CUDA_FUNC_DEVICE real& accept(State<B,ON_DEVICE>& s,
       const int p, const int i);
 };
 
@@ -38,7 +38,7 @@ public:
 template<class B, class S1>
 class shared_init_visitor<B,S1,empty_typelist> {
 public:
-  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s,
+  static CUDA_FUNC_DEVICE real& accept(State<B,ON_DEVICE>& s,
       const int p, const int i) {
     //
   }
@@ -51,19 +51,20 @@ public:
 #include "../traits/target_traits.hpp"
 
 template<class B, class S1, class S2>
-inline void bi::shared_init_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
+inline real& bi::shared_init_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
     const int p, const int i) {
   typedef typename front<S2>::type front;
   typedef typename pop_front<S2>::type pop_front;
   typedef typename front::target_type target_type;
+  typedef typename front::coord_type coord_type;
 
-  const int size = target_size<target_type>::value;
+  const int size = action_size<front>::value;
 
   if (i < size) {
-    shared<S1>::template fetch<B,target_type>(s, p, i) = global::fetch<B,
-        target_type>(s, p, i);
+    coord_type cox(i);
+    return global::template fetch<B,target_type>(s, p, cox.index());
   } else {
-    shared_init_visitor<B,S1,pop_front>::accept(s, p, i - size);
+    return shared_init_visitor<B,S1,pop_front>::accept(s, p, i - size);
   }
 }
 

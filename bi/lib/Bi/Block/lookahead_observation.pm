@@ -22,17 +22,9 @@ type C<obs>.
 
 package Bi::Block::lookahead_observation;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block::observation';
 use warnings;
 use strict;
-
-our $BLOCK_ARGS = [];
-
-sub validate {
-    my $self = shift;
-    
-    $self->process_args($BLOCK_ARGS);
-}
 
 1;
 

@@ -13,10 +13,9 @@ package - create and validate projects, build packages for distribution.
 =head1 DESCRIPTION
 
 LibBi prescribes a standard structure for a project's model, configuration,
-data and other files, and a standard format for packaging all of these. This
-is useful for distribution, but is also motivated by the principle of
-reproducible research: the standard format includes provision for executable
-scripts that reproduce the results of a study.
+data and other files, and a standard format for packaging these.
+The former assists with collaboration and reproducible research, the
+latter with distribution.
 
 The C<package> command provides facilities for creating a new LibBi project
 with the standard file and directory structure, and bundling such a project
@@ -28,74 +27,122 @@ A standard project contains the following files:
 
 =over 4
 
-=item C<MANIFEST>
-
-Contains a list of files, one per line, to be included when the project is
-packaged for distribution.
-
 =item C<README>
 
-A description of the package.
-
-=item C<LICENSE>
-
-The license of the package.
-
-=item C<VERSION>
-
-The version history of the package. Packages should be given a three-figure
-version number of the form C<x.y.z> where C<x> is the version number, C<y>
-the major revision number and C<z> the minor revision number. The version
-number would typically be implemented after an overhaul of the package, the
-major revision number after the addition of new functionality, and the minor
-revision number after bug fixes or corrections. When a number is incremented,
-those numbers on the right should be reset to zero. The first version number
-of a working package should be C<1.0.0>. If a package is incomplete, only
-partially working or being tested, the version number may be C<0.y.z>.
+A description of the package. This would typically be the first file that a
+new user looks at.
 
 =item C<*.bi>
 
-Model files, usually only one and given the same name as the package, i.e.
-C<I<Name>.bi>, containing a model specification beginning
-C<model I<Name> { ...>.
+Model files.
 
-=item C<*.conf>
+=item C<init.sh>
 
-Configuration files, usually named after the client program with which they
-are to be used, e.g. C<simulate.conf>, C<filter.conf> etc.
+A shell script that may be run to create any derived files. A common task is
+to call C<bi sample --target joint ...> to simulate a data set for testing
+purposes.
 
 =item C<run.sh>
 
 A shell script that may be run to reproduce the results of the project.
+Common tasks are to call C<bi sample --target prior ...> to sample from the
+prior distribution, and C<bi sample --target posterior ...> to sample from the
+posterior distribution. While a user may not necessarily run this script
+directly, it should at least give them an idea of what the project is set up
+to do, and what commands they might expect to work. After the C<README> file,
+this would typically be the second file that a new user looks at.
+
+=item C<*.conf>
+
+Configuration files. Common files are C<prior.conf>, C<posterior.conf>,
+C<filter.conf> and C<optimise.conf>, containing command-line options for
+typical commands.
+
+=item C<config.conf>
+
+A particular configuration file where, by convention, a user can set any
+platform-specific build and run options (such as C<--enable-cuda> and
+C<--nthreads>). Any LibBi commands in the C<init.sh> and C<run.sh> scripts
+should include this configuration file to bring in the user's own options
+(e.g. C<bi sample @config.conf ...>).
 
 =item C<data/>
 
-Contains data files that are passed to LibBi using the C<--init-file>,
-C<--input-file> and C<--obs-file> command-line options.
+Directory containing data files that are passed to LibBi using the
+C<--init-file>, C<--input-file> and C<--obs-file> command-line options.
 
 =item C<results/>
 
-Typically empty, but the C<--output-file> command-line option should be used
-to write files to this directory.
+Directory containing results files created from LibBi using the
+C<--output-file> command-line option.
 
 =back
 
-A project may contain any additional files, and these may be listed in the
-C<MANIFEST> file for distribution. Commonly included are C<Octave>, C<MATLAB>
-or C<R> scripts for collating and plotting results, for example.
-
 =head2 A standard package
+
+The following additional files are used for the packaging of a project:
+
+=over 4
+
+=item C<MANIFEST>
+
+A list of files, one per line, to be included in the package.
+
+=item C<LICENSE>
+
+The license governing distribution of the package.
+
+=item C<VERSION>
+
+The version history of the package. Packages should be given a three-figure
+version number of the form C<x.y.z>, where C<x> is the version number, C<y>
+the major revision number and C<z> the minor revision number. The version
+number would typically be incremented after an overhaul of the package, the
+major revision number after the addition of new functionality, and the minor
+revision number after bug fixes or corrections. When a number is incremented,
+those numbers on the right should be reset to zero. The first version number
+of a working package should be C<1.0.0>. If a package is incomplete, only
+partially working or being tested, the version number may be zero.
+
+=back 
+
+A project may contain any additional files, and these may be listed in the
+C<MANIFEST> file for distribution. Commonly included are Octave, MATLAB
+or R scripts for collating and plotting results, for example.
 
 A standard package is simply a gzipped TAR archive with a file name of
 C<I<Name>-I<Version>.tar.gz>. Extracting the archive produces a directory
 with a name of C<I<Name>-I<Version>>, within which are all of those files
 listed in the C<MANIFEST> file of the project.
 
+=head2 Version control
+
+Under version control, all project files with the exception of the following
+would be included:
+
+=over 4
+
+=item * Any files in the C<results/> directory. These can be large, and at any
+rate are derived files that a user should be able to reproduce for
+themselves, perhaps with the C<run.sh> script.
+
+=item * The C<results/> directory itself. This is always created automatically
+when used in the C<--output-file> command-line option, and so its inclusion
+is unnecessary. Moreover, it is common to
+create a C<results> symlink to another directory where output files should
+be written, particularly in a cluster environment where various network file
+systems are available. Inclusion of the C<results/> directory in a version
+control system becomes a nuisance in such cases.
+
+=back
+
+These files would also not typically be included in the package C<MANIFEST>.
+
 =cut
 
 package Bi::Client::package;
 
-use base 'Bi::Client', 'Bi::Gen';
+use parent 'Bi::Client', 'Bi::Gen';
 use warnings;
 use strict;
 
@@ -113,7 +160,8 @@ The following options are supported:
 =item C<--create>
 
 Set up the current working directory as a LibBi project. This creates all the
-standard files for a LibBi package with placeholder contents.
+standard files for a LibBi package with placeholder contents. It will prompt
+to overwrite existing files.
 
 =item C<--validate>
 
@@ -121,9 +169,9 @@ Validate the current working directory as a LibBi project.
 
 =item C<--build>
 
-Validate and build the current working directory as a LibBi project. This
-produces a C<Model-x.y.z.tar.gz> file in the current working directory for
-distribution.
+Validate the current working directory as a LibBi project and build the
+package. This produces a C<Model-x.y.z.tar.gz> file in the current working
+directory for distribution.
 
 =back
 
@@ -139,7 +187,7 @@ Name of the package.
 
 Version number of the package.
 
-=item C<--description> (default '')
+=item C<--description>
 
 One sentence description of the package.
 
@@ -253,7 +301,9 @@ sub create {
         'README',
         'LICENSE',
         'VERSION',
-        'run.sh'
+        'run.sh',
+        'init.sh',
+        'config.conf'
     );    
     foreach my $file (@files) {
         if (!-e $file || $self->_yesno_prompt("$file already exists, overwrite?")) {
@@ -266,7 +316,6 @@ sub create {
     
     # create directories
     mkdir('data');
-    mkdir('results');
 }
 
 =item C<validate>
@@ -326,7 +375,7 @@ sub validate {
     } elsif (!exists $manifest{'VERSION'}) {
         warn("MANIFEST does not include VERSION.\n");
     }
-    
+
     # check run.sh
     if (!-e 'run.sh') {
         warn("No run.sh. Consider creating a run.sh script containing a few calls to LibBi for producing some meaningful experimental results from the package.\n");
@@ -334,6 +383,11 @@ sub validate {
         if (!exists $manifest{'run.sh'}) {
             warn("MANIFEST does not include run.sh.\n");
         }
+    }
+
+    # check config.conf
+    if (!-e 'config.conf') {
+        warn("No config.conf. Consider creating a config.conf file where a user can put platform-specific configuration options.\n");
     }
     
     # check for things that might be missing from manifest

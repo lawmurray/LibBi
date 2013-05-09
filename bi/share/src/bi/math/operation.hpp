@@ -95,13 +95,15 @@ void matrix_scal(typename M1::value_type alpha, M1 X);
  * of variables \f$\{X_1,X_2\}\f$, \f$|X_1| = M\f$, \f$|X_2| = N\f$. For a
  * sample \f$\mathbf{x}_2\f$, computes \f$p(X_1|\mathbf{x}_2)\f$.
  *
- * @param p1 \f$\boldsymbol{\mu}\f$; marginal mean of variables in first
- * partition.
- * @param p2 \f$p(X_2)\f$; marginal of variables in second partition.
- * @param C Cross-covariance matrix between \f$X_1\f$ and \f$X_2\f$, %size
- * \f$M \times N\f$.
+ * @param[in,out] mu1 \f$\boldsymbol{\mu}_1\f$; mean of first partition.
+ * @param[in,out] U1 \f$\mathbf{U}_1\f$; Cholesky factor of covariance matrix
+ * of first partition.
+ * @param mu2 \f$\boldsymbol{\mu}_2\f$; mean of second partition.
+ * @param U2 \f$\mathbf{U}_2\f$; Cholesky factor of covariance matrix of
+ * second partition.
+ * @param C \f$\mathbf{C} = \mathbf{U}_1\mathbf{U}_{12}\f$; Cross-covariance
+ * matrix between \f$X_1\f$ and \f$X_2\f$, %size \f$M \times N\f$.
  * @param x2 \f$\mathbf{x}_2\f$.
- * @param[out] p3 \f$p(X_1|\mathbf{x}_2)\f$.
  */
 template<class V1, class M1, class V2, class M2, class M3, class V3>
 void condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2, const M3 C,
@@ -173,7 +175,7 @@ struct ch1up_impl {
  * @see dch1dn, sch1dn of qrupdate.
  */
 template<class M1, class M2, class V2>
-void chkdn(M1 U, M2 A, V2 b) throw (CholeskyDowndateException);
+void chkdn(M1 U, M2 A, V2 b) throw (CholeskyException);
 
 /**
  * Rank-1 downdate of upper triangular Cholesky factor.
@@ -183,7 +185,7 @@ void chkdn(M1 U, M2 A, V2 b) throw (CholeskyDowndateException);
  * @see dch1dn, sch1dn of qrupdate.
  */
 template<class M1, class V1, class V2>
-void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
+void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyException);
 
 /**
  * @internal
@@ -191,7 +193,7 @@ void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
 template<Location L, class T1>
 struct ch1dn_impl {
   template<class M1, class V1, class V2>
-  static void func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
+  static void func(M1 U, V1 a, V2 b) throw (CholeskyException);
 };
 
 //@}
@@ -707,6 +709,8 @@ inline void bi::matrix_scal(const typename M1::value_type alpha, M1 X) {
   }
 }
 
+#include "../math/io.hpp"
+
 template<class V1, class M1, class V2, class M2, class M3, class V3>
 void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
     const M3 C, const V3 x2) {
@@ -715,7 +719,7 @@ void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
   BI_ASSERT(U2.size1() == U2.size2());
   BI_ASSERT(mu1.size() == U1.size1());
   BI_ASSERT(mu2.size() == U2.size1());
-  BI_ASSERT(C.size1() == mu1.size1() && C.size2() == mu2.size1());
+  BI_ASSERT(C.size1() == mu1.size() && C.size2() == mu2.size());
 
   typename sim_temp_vector<V1>::type z2(mu2.size()), b(mu1.size());
   typename sim_temp_matrix<M1>::type K(mu1.size(), mu2.size());
@@ -723,28 +727,36 @@ void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
   /**
    * Compute gain matrix:
    *
-   * \f[\mathbf{K} = \mathbf{U}_{1}\mathbf{U}_{12}\mathbf{U}_2^{-T}.\f]
+   * \f[\mathbf{K} = \mathbf{C}\mathbf{U}_2^{-1}.\f]
    */
   K = C;
-  trsm(1.0, U2, K, 'R', 'U', 'T');
+  trsm(1.0, U2, K, 'R', 'U');
 
   /**
    * Update mean:
    *
-   * \f[\boldsymbol{\mu}_1 \gets \boldsymbol{\mu}_1 + \mathbf{K}\mathbf{U}_2^{-1}(\mathbf{x}_2 - \boldsymbol{\mu}_2).\f]
+   * \f[\boldsymbol{\mu}_1 \gets \boldsymbol{\mu}_1 + \mathbf{K}\mathbf{U}_2^{-T}(\mathbf{x}_2 - \boldsymbol{\mu}_2).\f]
    */
-  z2 = x2;
-  axpy(-1.0, mu2, z2);
-  trsv(U2, mu1,'U');
+  sub_elements(x2, mu2, z2);
+  trsv(U2, z2, 'U', 'T');
   gemv(1.0, K, z2, 1.0, mu1);
 
   /**
    * Update Cholesky factor of covariance using downdate, noting:
    *
-   * \f[\mathbf{U}_1\mathbf{U}_1^T = \mathbf{U}_{xx}\mathbf{U}_{xx}^T -
+   * \f[\mathbf{U}_1^T\mathbf{U}_1 \gets \mathbf{U}_{1}^T\mathbf{U}_{1} -
    * \mathbf{K}\mathbf{K}^T.\f]
    */
-  chkdn(U1, K, b);
+  if (K.size2() < U1.size2()) {
+    chkdn(U1, K, b);
+  } else {
+    typename sim_temp_matrix<M1>::type Sigma1(U1.size1(), U1.size2());
+    Sigma1.clear();
+    syrk(1.0, U1, 0.0, Sigma1, 'U', 'T');
+    syrk(-1.0, K, 1.0, Sigma1, 'U', 'N');
+
+    chol(Sigma1, U1);
+  }
 }
 
 template<class V1, class M1, class V2, class M2, class M3, class V4,
@@ -821,7 +833,7 @@ void bi::ch1up(M1 U, V1 a, V2 b) {
 }
 
 template<class M1, class M2, class V2>
-void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyDowndateException) {
+void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyException) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
     ch1dn(U, column(A,j), b);
@@ -829,7 +841,7 @@ void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyDowndateException) {
 }
 
 template<class M1, class V1, class V2>
-void bi::ch1dn(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
+void bi::ch1dn(M1 U, V1 a, V2 b) throw (CholeskyException) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;

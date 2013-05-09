@@ -6,5 +6,5 @@
 ## $Date$
 -%]
 [%-MACRO get_var(expr) BLOCK-%]
-s.template getVar<Var[% expr.get_var.get_name %]>()
+s.template getVar<Var[% expr.get_var.get_id %]>()
 [%-END-%]

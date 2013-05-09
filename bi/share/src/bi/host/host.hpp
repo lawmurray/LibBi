@@ -162,7 +162,37 @@ struct host {
       const int ix);
 };
 
+/**
+ * Load targets from state into contiguous vector.
+ *
+ * @tparam B Model type.
+ * @tparam S Action type list.
+ * @tparam V1 Vector type.
+ *
+ * @param s State.
+ * @param p Trajectory id.
+ * @param[out] x Vector.
+ */
+template<class B, class S, class V1>
+void host_load(State<B,ON_HOST>& s, const int p, V1 x);
+
+/**
+ * Store targets from contiguous vector into state.
+ *
+ * @tparam B Model type.
+ * @tparam S Action type list.
+ *
+ * @param s[out] State.
+ * @param p Trajectory id.
+ * @param x Vector.
+ */
+template<class B, class S, class V1>
+void host_store(State<B,ON_HOST>& s, const int p, const V1 x);
+
 }
+
+#include "host_load_visitor.hpp"
+#include "host_store_visitor.hpp"
 
 template<class B, class X>
 inline bi::host::vector_reference_type bi::host::fetch(State<B,ON_HOST>& s,
@@ -225,6 +255,16 @@ template<class B, class X>
 inline const real& bi::host::fetch_alt(const State<B,ON_HOST>& s, const int p,
     const int ix) {
   return s.template getVarAlt<X>(p, ix);
+}
+
+template<class B, class S, class V1>
+inline void bi::host_load(State<B,ON_HOST>& s, const int p, V1 x) {
+  host_load_visitor<B,S,S>::accept(s, p, x);
+}
+
+template<class B, class S, class V1>
+inline void bi::host_store(State<B,ON_HOST>& s, const int p, const V1 x) {
+  host_store_visitor<B,S,S>::accept(s, p, x);
 }
 
 #endif

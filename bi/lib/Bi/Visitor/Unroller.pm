@@ -20,7 +20,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::Unroller;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -47,146 +47,94 @@ sub evaluate {
     $model->accept($self, $model, []);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $model = shift;
     my $actions = shift;
     
-    my $result = $node;
-    my $name;
-    my $dims;
-    my $class;
-    my $tmp;
-    my $target;
-    my $ident;
-    my $action;
-    my $arg;
-    my $i;
-
+    my @results;
+    
     if ($node->isa('Bi::Expression::Function')) {        
-        if (!$node->is_math) {            
-            # create new action from subexpression
-            $action = new Bi::Model::Action($model->next_action_id,
-                    undef, undef, $node);
-
+        if (!$node->is_math) {
+            # can't unroll element expressions
             if ($node->is_element) {
-                die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
-            }
-            if (!$action->can_nest) {
-                die("action '" . $action->get_name . "' cannot be nested, resolve with do..then clause\n");
+                die("cannot unroll action '" . $node->get_name . "' with element expressions\n");
             }
 
-            # insert intermediate variable
-            $tmp = $self->_create_temp_var($model, $node, $node->get_dims);
-
-            # create reference to this new variable
-            $target = new Bi::Model::Target($tmp);
-            $ident = new Bi::Expression::VarIdentifier($tmp);
-            
-            # and unroll
-            $action->set_target($target);
-            $result = $ident;
+            my $action = $self->_unroll_expr($model, $node);
+            $node = $action->get_left->clone;
             push(@$actions, $action);
         }
-    } elsif ($node->isa('Bi::Model::Block') && scalar(@$actions)) {
-        # construct equivalent of do..then clause for all actions that need
-        # to be inserted        
-        my $block = new Bi::Model::Block($model->next_block_id);
-        $block->set_actions([(@$actions)]);
-        $block->set_commit(1);
-        
-        $node->sink_actions($model);
-        @$actions = ();
-        $block->accept($self, $model, $actions);
-        $node->unshift_block($block);
-    } elsif ($node->isa('Bi::Model::Action')) {
+        push(@results, $node);
+    } elsif ($node->isa('Bi::Action')) {
         if ($node->unroll_args) {
             # write arguments to intermediate variables first
-            for ($i = 0; $i > $node->num_args; ++$i) {
-                $arg = $node->get_args->[$i];
-                if (!$arg->is_const && !$arg->is_basic) {                    
-                    # create new action from subexpression
-                    $action = new Bi::Model::Action($model->next_action_id,
-                            undef, undef, $arg);
-
-                    if ($arg->is_element) {
-                        die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
-                    }
-                    
-                    # insert intermediate variable
-                    $tmp = $self->_create_temp_var($model, $arg, $action->get_var->get_dims);
-                    
-                    # create reference to this new variable
-                    $target = new Bi::Model::Target($tmp);
-                    $ident = new Bi::Expression::VarIdentifier($tmp);
-                
-                    # and unroll
-                    $action->set_target($target);
-                    $node->get_args->[$i] = $ident;
+            for (my $i = 0; $i > $node->num_args; ++$i) {
+                my $arg = $node->get_args->[$i];
+                if (!$arg->is_const && !$arg->is_basic) {
+                    my $action = $self->_unroll_expr($model, $arg);
+                    $node->get_args->[$i] = $action->get_left->clone;
                     push(@$actions, $action);
                 }
             }
-            foreach $name (keys %{$node->get_named_args}) {
-                $arg = $node->get_named_args->{$name};
+            foreach my $name (keys %{$node->get_named_args}) {
+                my $arg = $node->get_named_args->{$name};
                 if (!$arg->is_const && !$arg->is_basic) {
-                    # create new action from subexpression
-                    $action = new Bi::Model::Action($model->next_action_id,
-                            undef, undef, $arg);
-
-                    if ($arg->is_element) {
-                        die("cannot unroll action '" . $action->get_name . "' with element expressions, resolve with do..then clause\n")
-                    }
-                    
-                    # insert intermediate variable
-                    $tmp = $self->_create_temp_var($model, $arg, $action->get_var->get_dims);
-                    
-                    # create reference to this new variable
-                    $target = new Bi::Model::Target($tmp);
-                    $ident = new Bi::Expression::VarIdentifier($tmp);
-                
-                    # and unroll
-                    $action->set_target($target);
-                    $node->get_named_args->{$name} = $ident;
+                    my $action = $self->_unroll_expr($model, $arg);
+                    $node->get_named_args->{$name} = $action->get_left->clone;
                     push(@$actions, $action);
                 }
             }
         }
+        push(@$actions, $node);
+        push(@results, @$actions);
+        @$actions = ();
+    } else {
+        push(@results, $node);
     }
-        
-    return $result;
+
+    return @results[0..$#results];
+    # ^ not sure why the slice is necessary, but 'return @results' doesn't
+    # work, something to do with list vs scalar context perhaps?
 }
 
-=item B<_create_temp_var>(I<model>, I<expr>, I<dims>)
+=item B<_unroll_expr>(I<model>, I<expr>)
 
 =cut
-sub _create_temp_var {
+sub _unroll_expr {
     my $self = shift;
     my $model = shift;
     my $expr = shift;
-    my $dims = shift;
-    
-    my $name = $model->tmp_var;
-    my $named_args = {
+
+    # temporary variable to hold expression result
+    my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';
+    my $var = new Bi::Model::Var($type, undef, [], [], {
         'has_input' => new Bi::Expression::IntegerLiteral(0),
         'has_output' => new Bi::Expression::IntegerLiteral(0)
-    };
-    my $class;
+    });
+    $model->push_var($var);
+
+    # action to evaluate expression
+    my $left = new Bi::Expression::VarIdentifier($var);
+    my $right = $expr->clone; 
     
-    if ($expr->is_static || $expr->is_common) {
-        $class = 'Bi::Model::ParamAux';                       
-    } else {
-        $class = 'Bi::Model::StateAux';
+    my $action = new Bi::Action;
+    $action->set_left($left);
+    $action->set_op('<-');
+    $action->set_right($right);
+    $action->validate;
+    
+    if (!$action->can_nest) {
+        die("action '" . $action->get_name . "' cannot be nested, it must appear on a line of its own\n");
     }
-    my $tmp = $class->new($name, $dims, [], $named_args);
-    $model->add_var($tmp);
-            
-    return $tmp;
+    
+    return $action;
 }
 
 1;

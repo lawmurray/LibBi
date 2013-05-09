@@ -47,12 +47,11 @@ void bi::DynamicLogDensityVisitorHost<B,S,PX,OX>::accept(const T1 t1,
     T2& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
   int ix = 0;
   coord_type cox;
-  while (ix < target_size<target_type>::value) {
+  while (ix < action_size<front>::value) {
     front::logDensities(t1, t2, s, p, ix, cox, pax, x, lp);
     ++cox;
     ++ix;

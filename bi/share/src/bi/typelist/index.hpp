@@ -25,7 +25,7 @@ struct index_impl {
 /**
  * Index of first occurrence of type in type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  * @ptaram X A type.

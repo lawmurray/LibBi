@@ -22,7 +22,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::IsElement;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -54,12 +54,12 @@ sub evaluate {
     return pop @$args;
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $args = shift;
@@ -78,7 +78,7 @@ sub visit {
         } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
             $num_args = 1;
         } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-            $num_args = $node->num_indexes;
+            $num_args = scalar(@{$node->get_indexes});
         }
 
         if ($num_args) {

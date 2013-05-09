@@ -33,10 +33,12 @@ LE_OP            <=
 GE_OP            >=
 EQ_OP            ==
 NE_OP            \!=
+POW_OP           \*\*
 ELEM_MUL_OP      \.\*
 ELEM_DIV_OP      \.\/
 ELEM_ADD_OP      \.\+
 ELEM_SUB_OP      \.\-
+ELEM_POW_OP      \.\*\*
 OP               [;,:=()\[\]\{\}&!~\-+*\/%<>\^|?]
 NEW_LINE         \n
 OTHER            .

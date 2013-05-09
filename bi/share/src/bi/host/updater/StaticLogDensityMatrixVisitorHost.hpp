@@ -46,7 +46,6 @@ void bi::StaticLogDensityMatrixVisitorHost<B,S,PX,OX>::accept(
     State<B,ON_HOST>& s, const int p, const PX& pax, OX& x, T1& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   front::logDensities(s, p, pax, x, lp);
   StaticLogDensityMatrixVisitorHost<B,pop_front,PX,OX>::accept(s, p, pax, x,

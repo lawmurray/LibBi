@@ -61,7 +61,6 @@ inline void bi::DynamicUpdaterMatrixVisitorGPU<B,S,T1,PX,OX>::accept(
     const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   if (i == 0) {
     front::simulates(t1, t2, s, p, pax, x);

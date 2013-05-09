@@ -77,7 +77,9 @@ NcVar* bi::NetCDFBuffer::createVar(const Var* var, const bool nr,
   if (nr && hasDim("nr")) {
     dims.push_back(mapDim("nr"));
   }
-  for (i = 0; i < var->getNumDims(); ++i) {
+  for (i = var->getNumDims() - 1; i >= 0; --i) {
+    /* note that matrices are column major, but NetCDF stores row-major, so
+     * need to reverse dimensions for contiguous transactions */
     dims.push_back(mapDim(var->getDim(i)->getName().c_str()));
   }
   if (np && hasDim("np")) {
@@ -107,7 +109,7 @@ NcVar* bi::NetCDFBuffer::createFlexiVar(const Var* var) {
   if (hasDim("ns")) {
     dims.push_back(mapDim("ns"));
   }
-  for (i = 0; i < var->getNumDims(); ++i) {
+  for (i = var->getNumDims() - 1; i >= 0; --i) {
     dims.push_back(mapDim(var->getDim(i)->getName().c_str()));
   }
   if (hasDim("nrp")) {
@@ -155,7 +157,7 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
   }
 
   /* variable dimensions */
-  for (j = 0; j < var->getNumDims(); ++j, ++i) {
+  for (j = var->getNumDims() - 1; j >= 0; --j, ++i) {
     dim = var->getDim(j);
     ncDim = ncVar->get_dim(i);
     BI_ERROR_MSG(ncDim == mapDim(dim->getName().c_str()), "Dimension " << i <<
@@ -178,4 +180,20 @@ NcVar* bi::NetCDFBuffer::mapVar(const Var* var) {
 
 void bi::NetCDFBuffer::clear() {
   //
+}
+
+void bi::NetCDFBuffer::readScalar(NcVar* var, const int k, real& x) const {
+  BI_UNUSED NcBool ret;
+  ret = var->set_cur(k);
+  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << var->name());
+  ret = var->get(&x, 1);
+  BI_ASSERT_MSG(ret, "Inconvertible type reading " << var->name());
+}
+
+void bi::NetCDFBuffer::writeScalar(NcVar* var, const int k, const real& x) {
+  BI_UNUSED NcBool ret;
+  ret = var->set_cur(k);
+  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << var->name());
+  ret = var->put(&x, 1);
+  BI_ASSERT_MSG(ret, "Inconvertible type writing " << var->name());
 }

@@ -6,7 +6,7 @@ common_gemv_ - optimisation block for L<gemv> actions when matrix is common.
 
 package Bi::Block::common_gemv_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 
@@ -17,10 +17,10 @@ sub validate {
     
     $self->process_args($BLOCK_ARGS);
     
-    if ($self->num_blocks > 0) {
+    if (@{$self->get_blocks} > 0) {
         die("a 'common_gemv_' block may not contain nested blocks\n");
     }
-    if ($self->num_actions != 1) {
+    if (@{$self->get_actions} != 1) {
         die("a 'common_gemv_' block may only contain one action\n");
     }
     foreach my $action (@{$self->get_actions}) {

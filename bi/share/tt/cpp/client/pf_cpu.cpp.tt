@@ -13,7 +13,7 @@
 
 #include "bi/kd/kde.hpp"
 #include "bi/random/Random.hpp"
-[% IF client.get_named_arg('filter') == 'kalman' %]
+[% IF client.get_named_arg('filter') == 'lookahead' %]
 #include "bi/method/AuxiliaryParticleFilter.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
 #include "bi/method/AdaptiveNParticleFilter.hpp"
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
   /* filter */
   BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
 
-  [% IF client.get_named_arg('filter') == 'kalman' %]
+  [% IF client.get_named_arg('filter') == 'lookahead' %]
   BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
     /* stopper */

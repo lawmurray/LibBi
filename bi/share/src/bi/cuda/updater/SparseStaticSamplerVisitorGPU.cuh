@@ -60,7 +60,7 @@ inline void bi::SparseStaticSamplerVisitorGPU<B,S,PX,OX>::accept(
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
   typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
   const int Q = gridDim.x*blockDim.x; // number of threads
   const int id = var_id<target_type>::value;

@@ -15,7 +15,7 @@
  *
  * Open type tree.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name to assign to the type tree.
  */
@@ -27,7 +27,7 @@
  *
  * Position leaf node in currently open type tree.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c single Single type.
@@ -41,7 +41,7 @@
  *
  * Combine two nodes into parent node.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c left Left child.
@@ -57,7 +57,7 @@
  *
  * Close type tree.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 #define END_TYPETREE() type; \
 };
@@ -67,7 +67,7 @@
  *
  * Retrieve previously defined type tree.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name of the type tree.
  */

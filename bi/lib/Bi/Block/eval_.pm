@@ -6,7 +6,7 @@ eval- - scalar expression block.
 
 package Bi::Block::eval_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 

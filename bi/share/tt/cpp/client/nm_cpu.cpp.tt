@@ -105,6 +105,9 @@ int main(int argc, char* argv[]) {
     bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
+  /* schedule */
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
+
   /* output */
   OptimiserNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
@@ -182,7 +185,7 @@ int main(int argc, char* argv[]) {
   #endif
   TicToc timer;
   
-  optimiser->optimise(rng, START_TIME, END_TIME, NOUTPUTS, s, bufInit, SIMPLEX_SIZE_REL, STOP_STEPS, STOP_SIZE);
+  optimiser->optimise(rng, sched.begin(), sched.end(), s, bufInit, SIMPLEX_SIZE_REL, STOP_STEPS, STOP_SIZE);
   synchronize();
 
   /* output timing results */

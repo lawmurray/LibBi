@@ -47,7 +47,6 @@ void bi::DynamicSamplerMatrixVisitorHost<B,S,R1,PX,OX>::accept(R1& rng,
     const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   front::samples(rng, t1, t2, s, p, pax, x);
   DynamicSamplerMatrixVisitorHost<B,pop_front,R1,PX,OX>::accept(rng, t1, t2,

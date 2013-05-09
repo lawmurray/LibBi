@@ -63,10 +63,9 @@ inline void bi::DynamicUpdaterVisitorGPU<B,S,T1,PX,OX>::accept(const T1 t1,
     const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
-  const int size = var_size < target_type > ::value;
+  const int size = action_size<front>::value;
 
   if (i < size) {
     coord_type cox(i);

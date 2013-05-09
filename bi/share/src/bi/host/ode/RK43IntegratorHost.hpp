@@ -39,7 +39,6 @@ public:
 #include "RK43VisitorHost.hpp"
 #include "IntegratorConstants.hpp"
 #include "../host.hpp"
-#include "../shared_host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
@@ -54,7 +53,7 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
   BI_ASSERT(t1 < t2);
 
   typedef host_vector_reference<real> vector_reference_type;
-  typedef Pa<ON_HOST,B,host,host,host,shared_host<S> > PX;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
   typedef RK43VisitorHost<B,S,S,real,PX,real> Visitor;
 
   static const int N = block_size<S>::value;
@@ -62,13 +61,11 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
   #pragma omp parallel
   {
-    real buf[5*N]; // use of dynamic array faster than heap allocation
+    real buf[4*N]; // use of dynamic array faster than heap allocation
     vector_reference_type r1(buf, N);
     vector_reference_type r2(buf + N, N);
     vector_reference_type err(buf + 2*N, N);
     vector_reference_type old(buf + 3*N, N);
-    vector_reference_type shared(buf + 4*N, N);
-    sharedHostState = &shared;
 
     real t, h, e, e2, logfacold, logfac11, fac;
     int n, id, p;
@@ -76,14 +73,11 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < P; ++p) {
-      /* initialise shared memory from global memory */
-      shared_host_init<B,S>(s, p);
-
       t = t1;
       h = h_h0;
       logfacold = bi::log(BI_REAL(1.0e-4));
       n = 0;
-      old = *sharedHostState;
+      host_load<B,S>(s, p, old);
       r1 = old;
 
       /* integrate */
@@ -101,20 +95,21 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
         /* stages */
         Visitor::stage1(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sharedHostState = r1;
+        host_store<B,S>(s, p, r1);
 
         Visitor::stage2(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sharedHostState = r2;
+        host_store<B,S>(s, p, r2);
 
         Visitor::stage3(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sharedHostState = r1;
+        host_store<B,S>(s, p, r1);
 
         Visitor::stage4(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sharedHostState = r2;
+        host_store<B,S>(s, p, r2);
 
         Visitor::stage5(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sharedHostState = r1;
+        host_store<B,S>(s, p, r1);
 
+        /* compute error */
         e2 = BI_REAL(0.0);
         for (id = 0; id < N; ++id) {
           e = err(id)*h/(h_atoler + h_rtoler*bi::max(bi::abs(old(id)), bi::abs(r1(id))));
@@ -131,7 +126,7 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
         } else {
           /* reject */
           r1 = old;
-          *sharedHostState = old;
+          host_store<B,S>(s, p, old);
         }
 
         /* compute next step size */
@@ -151,9 +146,6 @@ void bi::RK43IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
         ++n;
       }
-
-      /* write from shared back to global memory */
-      shared_host_commit<B,S>(s, p);
     }
   }
 }

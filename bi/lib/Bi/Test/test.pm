@@ -21,7 +21,7 @@ our @CLIENT_OPTIONS = ();
 
 package Bi::Client::test;
 
-use base 'Bi::Client';
+use parent 'Bi::Client';
 use warnings;
 use strict;
 

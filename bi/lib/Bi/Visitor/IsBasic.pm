@@ -22,7 +22,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::IsBasic;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -54,12 +54,12 @@ sub evaluate {
     return $arg;
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $arg = shift;

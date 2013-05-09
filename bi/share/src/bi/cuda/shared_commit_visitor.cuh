@@ -56,12 +56,14 @@ inline void bi::shared_commit_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
   typedef typename front<S2>::type front;
   typedef typename pop_front<S2>::type pop_front;
   typedef typename front::target_type target_type;
+  typedef typename front::coord_type coord_type;
 
-  const int size = target_size<target_type>::value;
+  const int size = action_size<front>::value;
 
   if (i < size) {
-    global::fetch<B,target_type>(s, p, i) =
-        shared<S1>::template fetch<B,target_type>(s, p, i);
+    coord_type cox(i);
+    global::fetch<B,target_type>(s, p, cox.index()) =
+        shared<S1>::template fetch<B,target_type>(s, p, cox.index());
   } else {
     shared_commit_visitor<B,S1,pop_front>::accept(s, p, i - size);
   }

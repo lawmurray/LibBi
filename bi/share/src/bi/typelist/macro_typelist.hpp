@@ -26,7 +26,7 @@ struct EmptyTypeList {
  *
  * Empty type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 #define EMPTY_TYPELIST EmptyTypeList::type::type
 
@@ -35,7 +35,7 @@ struct EmptyTypeList {
  *
  * Open type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name to assign to the type list.
  */
@@ -47,7 +47,7 @@ struct EmptyTypeList {
  *
  * Open templated type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name to assign to the type list definition.
  * @arg Remaining variadic arguments specify template types.
@@ -62,7 +62,7 @@ struct EmptyTypeList {
  *
  * Add single type to currently open type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c single Single type.
@@ -76,7 +76,7 @@ struct EmptyTypeList {
  *
  * Add templated single type to currently open templated type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c single Single type.
@@ -90,7 +90,7 @@ struct EmptyTypeList {
  *
  * Add compound type to currently open type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c type Compound type.
@@ -104,7 +104,7 @@ struct EmptyTypeList {
  *
  * Add compound type to currently open templated type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c reps Number of times to repeat this type.
  * @arg @c type Compound type.
@@ -118,7 +118,7 @@ struct EmptyTypeList {
  *
  * Close type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 #define END_TYPELIST() type; \
 };
@@ -128,7 +128,7 @@ struct EmptyTypeList {
  *
  * Close templated type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 #define END_TYPELIST_TEMPLATE() type; \
 };
@@ -138,7 +138,7 @@ struct EmptyTypeList {
  *
  * Retrieve previously defined type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name of the type list.
  */
@@ -149,7 +149,7 @@ struct EmptyTypeList {
  *
  * Retrieve previously defined templated type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @arg @c name Name of the type list.
  * @arg Remaining variadic arguments are to accommodate template types

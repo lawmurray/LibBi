@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::InlineIdentifier;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -84,7 +84,8 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    return $visitor->visit($self, @args);
+    $self = $visitor->visit_before($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -103,10 +104,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

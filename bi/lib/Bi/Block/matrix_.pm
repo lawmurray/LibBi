@@ -11,7 +11,7 @@ actions into separate blocks from scalar actions.
 
 package Bi::Block::matrix_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 

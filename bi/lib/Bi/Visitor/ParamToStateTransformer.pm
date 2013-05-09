@@ -16,7 +16,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::ParamToStateTransformer;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -46,48 +46,36 @@ sub evaluate {
     my $self = {};
     bless $self, $class;
 
-    my $parameter_block = $model->get_block('parameter')->clone($model);
-    $parameter_block->set_name('eval_');
-    $parameter_block->set_commit(1);
+    my $parameter_block = $model->get_block('parameter');
+    my $initial_block = $model->get_block('initial');
+    my $proposal_parameter_block = $model->get_block('proposal_parameter');
+    my $proposal_initial_block = $model->get_block('proposal_initial');
+
+    # move the contents of the 'parameter' block to the end of the 'initial'
+    # block    
+    $initial_block->unshift_children($parameter_block->get_children);
+    $parameter_block->clear;
     
-    my $proposal_parameter_block = $model->get_block('proposal_parameter')->clone($model);
-    $proposal_parameter_block->set_name('eval_');
-    $proposal_parameter_block->set_commit(1);
+    # move the contents of the 'proposal_parameter' block to the end of the
+    # 'proposal_initial' block
+    $proposal_initial_block->unshift_children($proposal_parameter_block->get_children);    
+    $proposal_parameter_block->clear;
     
-    $model->accept($self, $model, $parameter_block, $proposal_parameter_block);
+    # change param variables to state variables    
+    $model->accept($self);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of model.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
-    my $model = shift;    
-    my $parameter_block = shift;
-    my $proposal_parameter_block = shift;
 
-    if ($node->isa('Bi::Model::Param')) {
-        # replace with state variable
-        $node = new Bi::Model::State($node->get_name, $node->get_dims,
-            $node->get_args, $node->get_named_args);
-    } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-    	if ($node->get_var->get_type eq 'param') {
-    		my $name = $node->get_var->get_name;
-    		$node->set_var($model->get_var($name));
-    	} 
-    } elsif ($node->isa('Bi::Model::Block')) {
-        if ($node->get_name eq 'parameter' || $node->get_name eq 'proposal_parameter') {
-            $node->clear;
-        } elsif ($node->get_name eq 'initial') {
-            $node->sink_actions($model);
-            $node->unshift_block($parameter_block);
-        } elsif ($node->get_name eq 'proposal_initial') {
-            $node->sink_actions($model);
-            $node->unshift_block($proposal_parameter_block);
-        }
+    if ($node->isa('Bi::Model::Var') && $node->get_type eq 'param') {
+        $node->set_type('state');
     }
     return $node;
 }

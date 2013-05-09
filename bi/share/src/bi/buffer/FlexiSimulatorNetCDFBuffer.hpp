@@ -287,7 +287,7 @@ void bi::FlexiSimulatorNetCDFBuffer::readState(const VarType type,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
@@ -325,7 +325,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
 
   Var* var;
   host_vector<long> offsets, counts;
-  int start, len, offset, size, id, j;
+  int start, len, offset, size, id, i, j;
   BI_UNUSED NcBool ret;
 
   /* write offset and length */
@@ -348,7 +348,7 @@ void bi::FlexiSimulatorNetCDFBuffer::writeState(const VarType type,
       offsets.resize(ncVar->num_dims(), false);
       counts.resize(ncVar->num_dims(), false);
 
-      for (j = 0; j < var->getNumDims(); ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }

@@ -16,7 +16,7 @@ of the first C<i> elements of C<x>.
 
 package Bi::Action::inclusive_scan;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -42,12 +42,13 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('<-');
     $self->ensure_vector('x');
 
     my $x = $self->get_named_arg('x');
-    $self->set_dims([ $x->get_dims->[0] ]);
+    $self->set_shape($x->get_shape);
 
     $self->set_parent('matrix_');
     $self->set_is_matrix(1);

@@ -15,7 +15,7 @@ L<Bi::ArgHandler>
 
 I<Bi::Model::Spec> is used to temporarily store a name and associated
 properties during parsing. These will be subsumed into a L<Bi::Model>,
-L<Bi::Model::Var>, L<Bi::Model::Dim>, L<Bi::Model::Block> or
+L<Bi::Model::Var>, L<Bi::Model::Dim>, L<Bi::Block> or
 other object before the completion of the process.
 
 =head1 METHODS
@@ -26,7 +26,7 @@ other object before the completion of the process.
 
 package Bi::Model::Spec;
 
-use base 'Bi::ArgHandler';
+use parent 'Bi::ArgHandler';
 use warnings;
 use strict;
 

@@ -14,11 +14,14 @@ Bi::Model::Const - constant.
 
 package Bi::Model::Const;
 
+use parent 'Bi::Node';
 use warnings;
 use strict;
 
 use Carp::Assert;
 use Bi::Expression;
+
+our $_next_const_id = 0;
 
 =item B<new>(I<name>, I<expr>)
 
@@ -28,7 +31,7 @@ Constructor.
 
 =item I<name>
 
-Name of the constant.
+Name of the constant. If undefined a unique name is generated.
 
 =item I<expr>
 
@@ -45,8 +48,10 @@ sub new {
     my $name = shift;
     my $expr = shift;
 
+    my $id = $_next_const_id++;
     my $self = {
-        _name => $name,
+        _id => $id,
+        _name => (defined $name) ? $name : sprintf("const_%d_", $id),
         _expr => $expr
     };
     bless $self, $class;
@@ -54,6 +59,34 @@ sub new {
     $self->validate;
    
     return $self;
+}
+
+=item B<clone>
+
+Return a clone of the object.
+
+=cut
+sub clone {
+    my $self = shift;
+    
+    my $clone = {
+        _id => $_next_const_id++,
+        _name => $self->get_name,
+        _expr => $self->get_expr->clone
+    };
+    
+    bless $clone, ref($self);
+    return $clone;
+}
+
+=item B<get_id>
+
+Get the id of the constant.
+
+=cut
+sub get_id {
+    my $self = shift;
+    return $self->{_id};
 }
 
 =item B<get_name>
@@ -99,8 +132,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
+    $self = $visitor->visit_before($self, @args);
     $self->{_expr} = $self->get_expr->accept($visitor, @args);
-    return $visitor->visit($self, @args);
+    
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)

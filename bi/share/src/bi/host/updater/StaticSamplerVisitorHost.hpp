@@ -43,12 +43,11 @@ void bi::StaticSamplerVisitorHost<B,S,R1,PX,OX>::accept(R1& rng,
     State<B,ON_HOST>& s, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
   int ix = 0;
   coord_type cox;
-  while (ix < target_size<target_type>::value) {
+  while (ix < action_size<front>::value) {
     front::samples(rng, s, p, ix, cox, pax, x);
     ++cox;
     ++ix;

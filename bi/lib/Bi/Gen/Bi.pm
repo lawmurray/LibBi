@@ -20,7 +20,7 @@ L<Bi::Gen>
 
 package Bi::Gen::Bi;
 
-use base 'Bi::Gen';
+use parent 'Bi::Gen';
 use warnings;
 use strict;
 
@@ -28,9 +28,6 @@ use Carp::Assert;
 use File::Spec;
 
 use Bi qw(share_file share_dir);
-use Bi::Gen;
-use Bi::Model;
-use Bi::Expression;
 use Bi::Visitor::ToAscii;
 
 =item B<new>

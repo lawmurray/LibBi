@@ -20,7 +20,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::GetDims;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -51,25 +51,25 @@ sub evaluate {
     return $dims;
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of expression tree.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $dims = shift;
     
     my $sub_dims = [];
     if ($node->isa('Bi::Expression::VarIdentifier')) {
-    	if ($node->num_indexes == 0) {
+    	if (@{$node->get_indexes} == 0) {
 	        $sub_dims = $node->get_var->get_dims;
     	    @$dims = @$sub_dims;
     	}
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
         $node->get_inline->accept($self, $dims);
-    } elsif ($node->isa('Bi::Model::Action')) {
+    } elsif ($node->isa('Bi::Action')) {
         $sub_dims = $node->get_dims;
         @$dims = @$sub_dims;
     }

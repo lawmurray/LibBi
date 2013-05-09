@@ -16,7 +16,7 @@ is evaluated using C<eval_>.
 
 package Bi::Action::eval_;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -44,13 +44,14 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('<-');
     $self->set_parent('eval_');
     $self->set_can_combine(1);
     $self->set_can_nest(1);
     $self->set_unroll_args(0);
-    $self->set_dims($self->get_named_arg('expr')->get_dims);
+    $self->set_shape($self->get_named_arg('expr')->get_shape);
 }
 
 sub mean {
@@ -66,10 +67,10 @@ sub jacobian {
     my $self = shift;
     
     my $expr = $self->get_named_arg('expr');
-    my @refs = @{$expr->get_vars};
-    my @J = map { $expr->d($_) } @refs;
+    my @refs = @{$expr->get_all_var_refs};
+    my @Js = map { $expr->d($_) } @refs;
 
-    return (\@J, \@refs);
+    return (\@Js, \@refs);
 }
 
 1;

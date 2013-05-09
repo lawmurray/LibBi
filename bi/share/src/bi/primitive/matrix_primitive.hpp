@@ -217,11 +217,10 @@ void sum_rows(const M1 X, V1 y);
  * @param[out] Y Output matrix.
  *
  * For each element @c i of @p map, sets <tt>row(Y, i) = row(X, map[i])</tt>.
- * Results are nondeterministic if @p X and @p Y are the same matrix, unless
- * <tt>map[i] == i</tt> for all @c i.
+ * Results can be nondeterministic if @p X and @p Y are the same matrix.
  */
 template<class V1, class M1, class M2>
-void gather_rows(const V1 as, const M1 X, M2 Y);
+void gather_rows(const V1 map, const M1 X, M2 Y);
 
 /**
  * @internal
@@ -229,7 +228,67 @@ void gather_rows(const V1 as, const M1 X, M2 Y);
 template<Location L>
 struct gather_rows_impl {
   template<class V1, class M1, class M2>
-  void func(const V1 as, const M1 X, M2 Y);
+  void func(const V1 map, const M1 X, M2 Y);
+};
+
+/**
+ * Gather columns of matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map Map.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map, sets <tt>column(Y, i) =
+ * column(X, map[i])</tt>. Results can be nondeterministic if @p X and @p Y
+ * are the same matrix.
+ */
+template<class V1, class M1, class M2>
+void gather_columns(const V1 map, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct gather_columns_impl {
+  template<class V1, class M1, class M2>
+  void func(const V1 map, const M1 X, M2 Y);
+};
+
+/**
+ * Gather rows and columns of matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map1 Map on rows.
+ * @param map2 Map on columns.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map1 and @c j of @p map2, sets <tt>Y(i, j) =
+ * X(map[i], map[j])</tt>. Results can be nondeterministic if @p X and @p Y
+ * are the same matrix.
+ */
+template<class V1, class V2, class M1, class M2>
+void gather_matrix(const V1 map1, const V2 map2, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct gather_matrix_impl {
+  template<class V1, class V2, class M1, class M2>
+  void func(const V1 map1, const V2 map2, const M1 X, M2 Y);
 };
 
 /**
@@ -246,8 +305,7 @@ struct gather_rows_impl {
  * @param[out] Y Output matrix.
  *
  * For each element @c i of @p map, sets <tt>row(Y, map[i]) = row(X, i)</tt>.
- * Results are nondeterministic if @p X and @p Y are the same matrix, unless
- * <tt>map[i] == i</tt> for all @c i.
+ * Results can be nondeterministic if @p X and @p Y are the same matrix.
  */
 template<class V1, class M1, class M2>
 void scatter_rows(const V1 map, const M1 X, M2 Y);
@@ -258,7 +316,67 @@ void scatter_rows(const V1 map, const M1 X, M2 Y);
 template<Location L>
 struct scatter_rows_impl {
   template<class V1, class M1, class M2>
-  void func(const V1 as, const M1 X, M2 Y);
+  void func(const V1 map, const M1 X, M2 Y);
+};
+
+/**
+ * Scatter columns of matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map Map.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map, sets <tt>column(Y, map[i]) =
+ * column(X, i)</tt>. Results can be nondeterministic if @p X and @p Y are
+ * the same matrix.
+ */
+template<class V1, class M1, class M2>
+void scatter_columns(const V1 map, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct scatter_columns_impl {
+  template<class V1, class M1, class M2>
+  void func(const V1 map, const M1 X, M2 Y);
+};
+
+/**
+ * Scatter rows and columns of matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam V1 Integer vector type.
+ * @tparam V2 Integer vector type.
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param map1 Map on rows.
+ * @param map2 Map on columns.
+ * @param X Input matrix.
+ * @param[out] Y Output matrix.
+ *
+ * For each element @c i of @p map, sets <tt>Y(map[i], map[j]) =
+ * X(i, j)</tt>. Results can be nondeterministic if @p X and @p Y are
+ * the same matrix.
+ */
+template<class V1, class V2, class M1, class M2>
+void scatter_matrix(const V1 map1, const V2 map2, const M1 X, M2 Y);
+
+/**
+ * @internal
+ */
+template<Location L>
+struct scatter_matrix_impl {
+  template<class V1, class V2, class M1, class M2>
+  void func(const V1 map1, const V2 map2, const M1 X, M2 Y);
 };
 
 }
@@ -275,7 +393,7 @@ struct scatter_rows_impl {
 
 template<class M1>
 inline void bi::matrix_set_elements(M1 X, const typename M1::value_type value) {
-  if (X.size1() == X.lead()) {
+  if (X.contiguous()) {
     set_elements(vec(X), value);
   } else {
     thrust::fill(X.begin(), X.end(), value);
@@ -464,6 +582,29 @@ void bi::gather_rows(const V1 map, const M1 X, M2 Y) {
 }
 
 template<class V1, class M1, class M2>
+void bi::gather_columns(const V1 map, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map.size() <= Y.size2());
+  BI_ASSERT(X.size1() == Y.size1());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  gather_columns_impl<M2::location>::func(map, X, Y);
+}
+
+template<class V1, class V2, class M1, class M2>
+void bi::gather_matrix(const V1 map1, const V2 map2, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map1.size() <= Y.size1());
+  BI_ASSERT(map2.size() <= Y.size2());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(V2::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  gather_matrix_impl<M2::location>::func(map1, map2, X, Y);
+}
+
+template<class V1, class M1, class M2>
 void bi::scatter_rows(const V1 map, const M1 X, M2 Y) {
   /* pre-conditions */
   BI_ASSERT(map.size() <= Y.size1());
@@ -472,6 +613,29 @@ void bi::scatter_rows(const V1 map, const M1 X, M2 Y) {
   BI_ASSERT(M1::location == M2::location);
 
   scatter_rows_impl<M2::location>::func(map, X, Y);
+}
+
+template<class V1, class M1, class M2>
+void bi::scatter_columns(const V1 map, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map.size() <= Y.size2());
+  BI_ASSERT(X.size1() == Y.size1());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  scatter_columns_impl<M2::location>::func(map, X, Y);
+}
+
+template<class V1, class V2, class M1, class M2>
+void bi::scatter_matrix(const V1 map1, const V2 map2, const M1 X, M2 Y) {
+  /* pre-conditions */
+  BI_ASSERT(map1.size() <= X.size1());
+  BI_ASSERT(map2.size() <= X.size2());
+  BI_ASSERT(V1::location == M2::location);
+  BI_ASSERT(V2::location == M2::location);
+  BI_ASSERT(M1::location == M2::location);
+
+  scatter_matrix_impl<M2::location>::func(map1, map2, X, Y);
 }
 
 #endif

@@ -268,7 +268,7 @@ std::pair<int,NcVar*> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
     ++j;
   } else if (j < ncVar->num_dims()) {
     /* check for model dimensions */
-    for (i = 0; i < var->getNumDims() && j < ncVar->num_dims(); ++i, ++j) {
+    for (i = var->getNumDims() - 1; i >= 0 && j < ncVar->num_dims(); --i, ++j) {
       dim = var->getDim(i);
       ncDim = ncVar->get_dim(j);
 
@@ -277,7 +277,7 @@ std::pair<int,NcVar*> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
       BI_ERROR_MSG(k < 0 || coordVars[k] == NULL,
           "Variable " << ncVar->name() << " has both dense and sparse definitions");
     }
-    BI_ERROR_MSG(i == var->getNumDims(),
+    BI_ERROR_MSG(i == -1,
         "Variable " << ncVar->name() << " is missing one or more dimensions");
 
     /* check again for np dimension */

@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::IntegerLiteral;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -67,15 +67,6 @@ sub get_value {
     return $self->{_value};
 }
 
-=item B<num_dims>
-
-Get the dimensionality of the expression.
-
-=cut
-sub num_dims {
-    return 0;
-}
-
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -86,7 +77,8 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    return $visitor->visit($self, @args);
+    $self = $visitor->visit_before($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -106,10 +98,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

@@ -1,6 +1,6 @@
 =head1 NAME
 
-filter - frontend to filtering client programs.
+filter - filtering tasks.
 
 =head1 SYNOPSIS
 
@@ -14,13 +14,13 @@ L<Bi::Client>
 
 package Bi::Client::filter;
 
-use base 'Bi::Client';
+use parent 'Bi::Client';
 use warnings;
 use strict;
 
 =head1 OPTIONS
 
-The C<filter> program permits the following additional options:
+The C<filter> command permits the following options:
 
 =over 4
 
@@ -37,7 +37,7 @@ End time.
 Number of dense output times. The state is always output at time
 C<--end-time> and at all observation times in C<--obs-file>. This argument
 gives the number of additional, equispaced times at which to output. With
-C<--end-time T> and C<--noutputs K>, for each C<k> in <0,...,K-1>,
+C<--end-time T> and C<--noutputs K>, then for each C<k> in C<0,...,K-1>,
 the state will be output at time C<T*k/K>.
 
 =item C<--filter> (default C<bootstrap>)
@@ -68,7 +68,13 @@ step.
 
 =item C<kalman>
 
-Extended Kalman filter.
+Extended Kalman filter. Jacobian terms are determined by symbolic
+manipulations. There are some limitations to these manipulations at present,
+so that some models cannot be handled. An error message will be given
+in these cases.
+
+Setting C<--filter kalman> automatically enables the 
+C<--with-transform-extended> option.
 
 =back
 
@@ -88,8 +94,8 @@ Number of particles to use.
 =item C<--ess-rel> (default 0.5)
 
 Threshold for effective sample size (ESS) resampling trigger. Particles will
-only be resampled if ESS is below this proportion of C<P>. To always resample
-use C<--ess-rel 1>. To never resample use C<--ess-rel 0>.
+only be resampled if ESS is below this proportion of C<--nparticles>. To
+always resample, use C<--ess-rel 1>. To never resample, use C<--ess-rel 0>.
 
 
 =item C<--resampler> (default C<systematic>)
@@ -116,7 +122,7 @@ for a Metropolis resampler (Murray 2011),
 
 =item C<rejection>
 
-for a rejection resampler, or
+for a rejection resampler (Murray, Lee & Jacob 2013), or
 
 =item C<kernel>
 
@@ -311,7 +317,7 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'T',
-      type => 'int',
+      type => 'float',
       deprecated => 1,
       message => 'use --end-time instead'
     },
@@ -335,7 +341,7 @@ sub process_args {
     $self->Bi::Client::process_args(@_);
     my $filter = $self->get_named_arg('filter');
     my $binary;
-    if ($filter eq 'ekf') {
+    if ($filter eq 'kalman') {
         $self->set_named_arg('with-transform-extended', 1);
         $binary = 'ekf';
     } else {

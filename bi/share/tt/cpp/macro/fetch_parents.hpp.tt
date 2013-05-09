@@ -6,34 +6,43 @@
 ## $Date$
 -%]
 [%-MACRO fetch_parents(expr) BLOCK %]
-  [%-IF expr.num_consts > 0 %]
+  [%-IF expr.get_all_const_refs.size > 0 %]
   /* constants */
-  [% FOREACH ref IN expr.get_consts %]
-  BOOST_AUTO([% ref.to_cpp %], [% ref.get_const.get_expr.to_cpp %]);
+  [% FOREACH ref IN expr.get_all_const_refs %]
+  const BOOST_AUTO([% ref.to_cpp %], [% ref.get_const.get_expr.to_cpp %]);
   [%-END-%]
   [%-END %]
   
-  [%-IF expr.num_vars > 0 %]
+  [%-IF expr.get_all_var_refs.size > 0 %]
   /* variables */
-  [% FOREACH ref IN expr.get_vars %]
+  [% FOREACH ref IN expr.get_all_var_refs %]
   [% IF action.is_matrix %]
-  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_expr.get_name %]>(s, p));
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_expr.get_name %]>(s, p));
   [% ELSIF ref.get_indexes.size > 0 %]
-  Coord[% ref.get_var.get_name %] cox[% loop.index %]([% FOREACH index IN ref.get_indexes %][% index.get_expr.to_cpp %][% ',' UNLESS loop.last %][% END %]);
-  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p, cox[% loop.index %].index()));
-  [% ELSIF ref.get_var.num_dims > 0 %]
-  Coord[% ref.get_var.get_name %] cox[% loop.index %](cox.index());
-  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p, cox[% loop.index %].index()));
+  const VarCoord[% ref.get_var.get_id %] cox[% loop.index %](
+  [%-un = 0-%]
+  [%-FOREACH index IN ref.get_indexes-%]
+  [%-IF index.is_index-%]
+  [%-index.get_expr.to_cpp-%]
+  [%-ELSE-%]
+  un[% un; un = un + 1 %]
+  [%-END-%]
+  [%-',' UNLESS loop.last-%]
+  [%-END-%]);
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, cox[% loop.index %].index()));
+  [% ELSIF ref.get_var.get_dims.size > 0 %]
+  const VarCoord[% ref.get_var.get_id %] cox[% loop.index %](cox.index());
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, cox[% loop.index %].index()));
   [% ELSE %]
-  BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_name %]>(s, p, 0));
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, 0));
   [%-END-%]
   [%-END-%]
   [%-END %]
 
-  [%-IF expr.num_inlines > 0 %]
+  [%-IF expr.get_all_inline_refs.size > 0 %]
   /* inlines */
-  [% FOREACH ref IN expr.get_inlines %]
-  BOOST_AUTO([% ref.to_cpp %], [% ref.get_inline.get_expr.to_cpp %]);
+  [% FOREACH ref IN expr.get_all_inline_refs %]
+  const BOOST_AUTO([% ref.to_cpp %], [% ref.get_inline.get_expr.to_cpp %]);
   [%-END-%]
   [%-END %]
 [%-END %]

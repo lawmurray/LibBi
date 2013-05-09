@@ -107,6 +107,11 @@ public:
   void swap(SimulatorCache<IO1,CL>& o);
 
   /**
+   * Size of the cache.
+   */
+  int size() const;
+
+  /**
    * Clear cache.
    */
   void clear();
@@ -218,13 +223,13 @@ bi::SimulatorCache<IO1,CL>& bi::SimulatorCache<IO1,CL>::operator=(
 }
 
 template<class IO1, bi::Location CL>
-const typename bi::Cache1D<real,bi::ON_HOST>::vector_reference_type bi::SimulatorCache<
+inline const typename bi::Cache1D<real,bi::ON_HOST>::vector_reference_type bi::SimulatorCache<
     IO1,CL>::getTimes() const {
   return timeCache.get(0, len);
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::readTime(const int t, real& x) const {
+inline void bi::SimulatorCache<IO1,CL>::readTime(const int t, real& x) const {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t < len);
 
@@ -232,7 +237,7 @@ void bi::SimulatorCache<IO1,CL>::readTime(const int t, real& x) const {
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::writeTime(const int t, const real& x) {
+inline void bi::SimulatorCache<IO1,CL>::writeTime(const int t, const real& x) {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t <= len);
 
@@ -244,7 +249,7 @@ void bi::SimulatorCache<IO1,CL>::writeTime(const int t, const real& x) {
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::SimulatorCache<IO1,CL>::readTimes(const int t, V1 x) const {
+inline void bi::SimulatorCache<IO1,CL>::readTimes(const int t, V1 x) const {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t + x.size() <= len);
 
@@ -253,7 +258,7 @@ void bi::SimulatorCache<IO1,CL>::readTimes(const int t, V1 x) const {
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::SimulatorCache<IO1,CL>::writeTimes(const int t, const V1 x) {
+inline void bi::SimulatorCache<IO1,CL>::writeTimes(const int t, const V1 x) {
   /* pre-condition */
   BI_ASSERT(t >= 0 && t <= len);
 
@@ -265,7 +270,7 @@ void bi::SimulatorCache<IO1,CL>::writeTimes(const int t, const V1 x) {
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
-void bi::SimulatorCache<IO1,CL>::readParameters(State<B,L>& s) const {
+inline void bi::SimulatorCache<IO1,CL>::readParameters(State<B,L>& s) const {
   /* pre-conditions */
   BI_ASSERT(out != NULL);
 
@@ -274,7 +279,7 @@ void bi::SimulatorCache<IO1,CL>::readParameters(State<B,L>& s) const {
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
-void bi::SimulatorCache<IO1,CL>::writeParameters(const State<B,L>& s) {
+inline void bi::SimulatorCache<IO1,CL>::writeParameters(const State<B,L>& s) {
   if (out != NULL) {
     out->writeParameters(s);
   }
@@ -282,7 +287,7 @@ void bi::SimulatorCache<IO1,CL>::writeParameters(const State<B,L>& s) {
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
-void bi::SimulatorCache<IO1,CL>::readState(const int t, State<B,L>& s) const {
+inline void bi::SimulatorCache<IO1,CL>::readState(const int t, State<B,L>& s) const {
   /* pre-conditions */
   BI_ASSERT(out != NULL);
 
@@ -291,7 +296,7 @@ void bi::SimulatorCache<IO1,CL>::readState(const int t, State<B,L>& s) const {
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
-void bi::SimulatorCache<IO1,CL>::writeState(const int t,
+inline void bi::SimulatorCache<IO1,CL>::writeState(const int t,
     const State<B,L>& s) {
   if (out != NULL) {
     out->writeState(t, s);
@@ -299,25 +304,30 @@ void bi::SimulatorCache<IO1,CL>::writeState(const int t,
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::swap(SimulatorCache<IO1,CL>& o) {
+inline void bi::SimulatorCache<IO1,CL>::swap(SimulatorCache<IO1,CL>& o) {
   timeCache.swap(o.timeCache);
   std::swap(len, o.len);
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::clear() {
+inline int bi::SimulatorCache<IO1,CL>::size() const {
+  return len;
+}
+
+template<class IO1, bi::Location CL>
+inline void bi::SimulatorCache<IO1,CL>::clear() {
   timeCache.clear();
   len = 0;
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::empty() {
+inline void bi::SimulatorCache<IO1,CL>::empty() {
   timeCache.empty();
   len = 0;
 }
 
 template<class IO1, bi::Location CL>
-void bi::SimulatorCache<IO1,CL>::flush() {
+inline void bi::SimulatorCache<IO1,CL>::flush() {
   if (out != NULL) {
     out->writeTimes(0, getTimes());
   }

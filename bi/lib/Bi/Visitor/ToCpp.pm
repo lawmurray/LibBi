@@ -20,7 +20,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::ToCpp;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -51,12 +51,12 @@ sub evaluate {
     return pop(@$args);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of expression tree.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $args = shift;
@@ -77,8 +77,8 @@ sub visit {
         $str = $node->get_inline->get_name . '_';
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
         $str = $node->get_var->get_name . '_';
-        if ($node->num_indexes) {
-            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
+        if (@{$node->get_indexes}) {
+            my @indexes = splice(@$args, -@{$node->get_indexes}, scalar(@{$node->get_indexes}));
             $str .= join('_', @indexes);
         }
         $str .= '_';
@@ -95,7 +95,7 @@ sub visit {
         $str = _encode16($exprs[0]);
     } elsif ($node->isa('Bi::Expression::Range')) {
         my @exprs = splice(@$args, -2);
-        $str = "($exprs[0]:$exprs[1])";
+        $str = _encode16("($exprs[0]:$exprs[1])");
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
         $str = '(' . $exprs[0] . ' ?' . $exprs[1] . ' : ' . $exprs[2] . ')';

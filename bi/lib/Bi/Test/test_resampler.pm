@@ -14,7 +14,7 @@ L<Bi::Client>
 
 package Bi::Test::test_resampler;
 
-use base 'Bi::Client';
+use parent 'Bi::Client';
 use warnings;
 use strict;
 

@@ -43,7 +43,6 @@ void bi::StaticSamplerMatrixVisitorHost<B,S,R1,PX,OX>::accept(R1& rng,
     State<B,ON_HOST>& s, const int p, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   front::samples(rng, s, p, pax, x);
   StaticSamplerMatrixVisitorHost<B,pop_front,R1,PX,OX>::accept(rng, s, p, pax,

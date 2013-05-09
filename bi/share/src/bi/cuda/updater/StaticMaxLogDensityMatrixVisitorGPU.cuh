@@ -63,7 +63,6 @@ inline void bi::StaticMaxLogDensityMatrixVisitorGPU<B,S,PX,OX>::accept(State<B,O
     const int i, const PX& pax, OX& x, T1& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   if (i == 0) {
     front::maxLogDensities(s, p, pax, x, lp);

@@ -9,7 +9,17 @@
   /**
    * Target type.
    */
-  typedef Var[% action.get_left.get_var.get_name %] target_type;
+  typedef Var[% action.get_left.get_var.get_id %] target_type;
+
+  /**
+   * Coordinate type.
+   */
+  typedef ActionCoord[% action.get_id %] coord_type;
+
+  /**
+   * Size of the action.
+   */
+  static const int SIZE = [% action.get_size %];
 
   /**
    * Is this a matrix action?

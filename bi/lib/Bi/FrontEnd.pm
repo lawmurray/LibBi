@@ -49,8 +49,6 @@ use strict;
 
 use Bi::Builder;
 use Bi::Parser;
-use Bi::Model;
-use Bi::Gen::Dot;
 use Bi::Gen::Cpp;
 use Bi::Gen::Build;
 use Bi::Gen::Doxyfile;

@@ -12,7 +12,7 @@ namespace bi {
 /**
  * Type equality check.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam X A type.
  * @ptaram Y A type.

@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Runtime functions for type lists.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam TS Type list.
  */

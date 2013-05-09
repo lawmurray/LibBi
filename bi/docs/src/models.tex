@@ -43,15 +43,15 @@ dim \textsl{name}(100, 'cyclic')
 dim \textsl{name}(size = 100, boundary = 'cyclic')
 \end{bicode}
 
-
 \subsubsection*{Description\label{dim_Description}}
 
 A \bitt{dim} statement declares a dimension with a given size and boundary
 condition.
 
-A \bitt{dim} statement may only be used at the top level of a \kwref{model}
-statement. A dimension must be declared before any variables that extend along
-it are declared.
+A dimension\index{dimension} may be declared anywhere in a model
+specification. Its scope is restricted to the block in which it is
+declared\index{scope}. A dimension must be declared before any variables that
+extend along it are declared.
 
 \subsubsection*{Arguments\label{dim_Arguments}}
 
@@ -96,9 +96,11 @@ state x, y, z                 // multiple variables
 Declares a variable of the given type, extending along the dimensions listed
 between the square brackets.
 
-These statements may only be used at the top level of a \kwref{model}
-statement. Dimensions along which a variable extends must be declared
-prior to the declaration of the variable, using the \kwref{dim} statement.
+A variable\index{variable} may be declared anywhere in a model
+specification. Its scope is restricted to the block in which it is
+declared\index{scope}. Dimensions along which a variable extends must be
+declared prior to the declaration of the variable, using the \kwref{dim}
+statement.
 
 \subsubsection*{Arguments\label{var_Arguments}}
 
@@ -139,8 +141,9 @@ value of which is evaluated using the given constant
 expression\index{constant\,expression}. The constant may then be used, by
 name, in other expressions.
 
-A constant\index{constant} may be declared anywhere in a model specification,
-but always has global scope\index{scope}.
+A constant\index{constant} may be declared anywhere in a model
+specification. Its scope is restricted to the block in which it is
+declared\index{scope}.
 
 \subsection{\bitt{inline}\label{inline}\index{inline}}
 
@@ -163,4 +166,5 @@ that expression (e.g. an inline expression that refers to a \kwref{state}
 variable may not be used within a constant expression).
 
 An inline expression\index{inline expression} may be declared anywhere in a
-model specification, but always has global scope\index{scope}.
+model specification. Its scope is restricted to the block in which it is
+declared\index{scope}.

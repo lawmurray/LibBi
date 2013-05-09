@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::Function;
 
-use base 'Bi::ArgHandler', 'Bi::Expression';
+use parent 'Bi::ArgHandler', 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -88,9 +88,26 @@ sub get_name {
     return $self->{_name};
 }
 
+=item B<is_action>
+
+Is the function a named action? This simply checks the function's name
+against the list of all actions. Some uses can only be distinguished
+by context (e.g. C<gamma>).
+
+=cut
+sub is_action {
+    my $self = shift;
+    
+    my $name = $self->get_name;
+    my $class = "Bi::Action::$name";
+    (eval ("require $class") && return 1) || return 0;
+}
+
 =item B<is_math>
 
-Is the function a math function?
+Is the function a math function? This simply checks the function's name
+against the list of all math functions. Some uses can only be distinguished
+by context (e.g. C<gamma>).
 
 =cut
 sub is_math {
@@ -139,9 +156,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
+    $self = $visitor->visit_before($self, @args);
     Bi::ArgHandler::accept($self, $visitor, @args);
 
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -161,10 +179,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

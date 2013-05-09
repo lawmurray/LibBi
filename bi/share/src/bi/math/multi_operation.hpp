@@ -106,7 +106,7 @@ void multi_matrix_scal(const int P, typename M1::value_type alpha, M1 X);
  * @ingroup math_multi_op
  */
 template<class V1, class M1, class V2, class M2, class M3, class V3>
-void multi_condition(const int P, const V1 mu1, const M1 U1, const V2 mu2, const M2 U2,
+void multi_condition(const int P, V1 mu1, M1 U1, const V2 mu2, const M2 U2,
     const M3 C, const V3 x2);
 
 /**
@@ -144,7 +144,7 @@ struct multi_ch1up_impl {
  * @ingroup math_multi_op
  */
 template<class M1, class M2, class V2>
-void multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyDowndateException);
+void multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException);
 
 /**
  * Multiple #ch1dn.
@@ -152,7 +152,7 @@ void multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyDowndateException
  * @ingroup math_multi_op
  */
 template<class M1, class V1, class V2>
-void multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
+void multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyException);
 
 /**
  * @internal
@@ -160,7 +160,7 @@ void multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyDowndateException
 template<Location L, class T1>
 struct multi_ch1dn_impl {
   template<class M1, class V1, class V2>
-  static void func(const int P, M1 U, V1 a, V2 b) throw (CholeskyDowndateException);
+  static void func(const int P, M1 U, V1 a, V2 b) throw (CholeskyException);
 };
 
 //@}
@@ -636,7 +636,7 @@ void bi::multi_condition(const int P, V1 mu1, M1 U1, const V2 mu2, const M2 U2,
    * \f[\mathbf{K} = \mathbf{U}_{1}\mathbf{U}_{12}\mathbf{U}_2^{-T}.\f]
    */
   K = C;
-  multi_trsm(P, 1.0, U2, K, 'R', 'U', 'T');
+  multi_trsm(P, 1.0, U2, K, 'R', 'U');
 
   /**
    * Update mean:
@@ -645,7 +645,7 @@ void bi::multi_condition(const int P, V1 mu1, M1 U1, const V2 mu2, const M2 U2,
    */
   set_rows(reshape(vector_as_column_matrix(z2), P, z2.size()/P), x2);
   axpy(-1.0, mu2, z2);
-  multi_trsv(P, U2, z2, 'U');
+  multi_trsv(P, U2, z2, 'U', 'T');
   multi_gemv(P, 1.0, K, z2, 1.0, mu1);
 
   /**
@@ -683,7 +683,7 @@ void bi::multi_ch1up(const int P, M1 U, V1 a, V2 b) {
 }
 
 template<class M1, class M2, class V2>
-void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyDowndateException) {
+void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
     multi_ch1dn(P, U, column(A,j), b);
@@ -691,7 +691,7 @@ void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyDowndateExcep
 }
 
 template<class M1, class V1, class V2>
-void bi::multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
+void bi::multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyException) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;

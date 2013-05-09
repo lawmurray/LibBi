@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::Range;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -48,6 +48,9 @@ sub new {
     my $start = shift;
     my $end = shift;
     
+    assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
+    assert(!defined $end || $end->isa('Bi::Expression')) if DEBUG;
+    
     my $self = {
         _start => $start,
         _end => $end,
@@ -55,6 +58,24 @@ sub new {
     bless $self, $class;
 
     return $self;
+}
+
+=item B<is_index>
+
+Is this an index?
+
+=cut
+sub is_index {
+    return 0;
+}
+
+=item B<is_range>
+
+Is this a range?
+
+=cut
+sub is_range {
+    return 1;
 }
 
 =item B<clone>
@@ -65,7 +86,10 @@ Return a clone of the object.
 sub clone {
     my $self = shift;
     
-    my $clone = { %$self };
+    my $clone = {
+    	_start => $self->get_start->clone,
+    	_end => $self->get_end->clone
+    };
     bless $clone, ref($self);
     
     return $clone; 
@@ -81,6 +105,16 @@ sub get_start {
     return $self->{_start};
 }
 
+=item B<has_start>
+
+Is there a starting index?
+
+=cut
+sub has_start {
+    my $self = shift;
+    return defined $self->{_start};
+}
+
 =item B<get_end>
 
 Get the ending index.
@@ -89,6 +123,16 @@ Get the ending index.
 sub get_end {
     my $self = shift;
     return $self->{_end};
+}
+
+=item B<has_end>
+
+Is there an ending index?
+
+=cut
+sub has_end {
+    my $self = shift;
+    return defined $self->{_end};
 }
 
 =item B<accept>(I<visitor>, ...)
@@ -101,10 +145,15 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self->{_start} = $self->get_start->accept($visitor, @args);
-    $self->{_end} = $self->get_end->accept($visitor, @args);
+    $self = $visitor->visit_before($self, @args);
+    if ($self->has_start) {
+        $self->{_start} = $self->get_start->accept($visitor, @args);
+    }
+    if ($self->has_end) {
+        $self->{_end} = $self->get_end->accept($visitor, @args);
+    }
     
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -125,10 +174,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

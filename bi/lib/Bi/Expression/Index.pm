@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::Index;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -42,6 +42,8 @@ Returns the new object.
 sub new {
     my $class = shift;
     my $expr = shift;
+    
+    assert(defined $expr) if DEBUG;
     
     my $self = {
         _expr => $expr
@@ -75,6 +77,24 @@ sub get_expr {
     return $self->{_expr};
 }
 
+=item B<is_index>
+
+Is this an index?
+
+=cut
+sub is_index {
+    return 1;
+}
+
+=item B<is_range>
+
+Is this a range?
+
+=cut
+sub is_range {
+    return 0;
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -85,9 +105,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
+    $self = $visitor->visit_before($self, @args);
     $self->{_expr} = $self->get_expr->accept($visitor, @args);
     
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -107,10 +128,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

@@ -19,7 +19,7 @@ L<Bi::Expression>
 
 package Bi::Expression::VarIdentifier;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -54,7 +54,7 @@ sub new {
     assert (defined $var && $var->isa('Bi::Model::Var')) if DEBUG;
     
     assert(!defined($indexes) || ref($indexes) eq 'ARRAY');
-    assert(!defined($indexes) || scalar(@$indexes) == 0 || scalar(@$indexes) == $var->num_dims) if DEBUG;
+    assert(!defined($indexes) || scalar(@$indexes) == 0 || scalar(@$indexes) == scalar(@{$var->get_dims})) if DEBUG;
     map { assert($_->isa('Bi::Expression::Index') || $_->isa('Bi::Expression::Range')) if DEBUG } @$indexes;
 
     if (!defined $indexes) {
@@ -131,31 +131,11 @@ sub set_indexes {
     
     # pre-conditions
     assert(!defined($indexes) || ref($indexes) eq 'ARRAY');
-    assert(!defined($indexes) || scalar(@$indexes) == 0 || scalar(@$indexes) == $self->get_var->num_dims) if DEBUG;
-    map { assert($_->isa('Bi::Expression::Index' || $_->isa('Bi::Expression::Range'))) if DEBUG } @$indexes;   
+    assert(!defined($indexes) || scalar(@$indexes) == 0 || scalar(@$indexes) == scalar(@{$self->get_var->get_dims})) if DEBUG;
+    
+    map { assert($_->isa('Bi::Expression::Index') || $_->isa('Bi::Expression::Range')) } @$indexes if DEBUG;   
     
     $self->{_indexes} = $indexes;
-}
-
-=item B<num_dims>
-
-Get the dimensionality of the expression.
-
-=cut
-sub num_dims {
-    my $self = shift;
-
-    return $self->get_var->num_dims - $self->num_indexes;
-}
-
-=item B<num_indexes>
-
-The number of indexes.
-
-=cut
-sub num_indexes {
-    my $self = shift;
-    return scalar(@{$self->get_indexes});
 }
 
 =item B<trivial_index>
@@ -184,9 +164,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
+    $self = $visitor->visit_before($self, @args);
     @{$self->{_indexes}} = map { $_->accept($visitor, @args) } @{$self->get_indexes};
 
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -207,10 +188,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

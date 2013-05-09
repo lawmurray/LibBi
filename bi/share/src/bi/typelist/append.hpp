@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Append two type lists.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T1 A type list.
  * @tparam T2 A type list.

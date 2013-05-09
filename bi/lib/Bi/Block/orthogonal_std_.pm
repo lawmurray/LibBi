@@ -7,7 +7,7 @@ orthogonal covariance matrix.
 
 package Bi::Block::orthogonal_std_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 
@@ -20,7 +20,7 @@ sub validate {
     
     my ($name, $action, $arg);
     
-    if ($self->num_blocks > 0) {
+    if (@{$self->get_blocks} > 0) {
         die("an 'orthogonal_std_' block may not contain nested blocks\n");
     }
     foreach $action (@{$self->get_actions}) {

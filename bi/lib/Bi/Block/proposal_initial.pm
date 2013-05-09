@@ -24,17 +24,9 @@ C<state>.
 
 package Bi::Block::proposal_initial;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block::initial';
 use warnings;
 use strict;
-
-our $BLOCK_ARGS = [];
-
-sub validate {
-    my $self = shift;
-    
-    $self->process_args($BLOCK_ARGS);
-}
 
 1;
 

@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::BinaryOperator;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -110,20 +110,6 @@ sub get_expr2 {
     return $self->{_expr2};
 }
 
-=item B<num_dims>
-
-Get the dimensionality of the expression.
-
-=cut
-sub num_dims {
-    my $self = shift;
-    
-    my $n1 = $self->get_expr1->num_dims;
-    my $n2 = $self->get_expr2->num_dims;
-    
-    return ($n1 > $n2) ? $n1 : $n2;
-}
-
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -134,10 +120,11 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
+    $self = $visitor->visit_before($self, @args);
     $self->{_expr1} = $self->get_expr1->accept($visitor, @args);
     $self->{_expr2} = $self->get_expr2->accept($visitor, @args);
     
-    return $visitor->visit($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -159,10 +146,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-Bi::Expression
 
 =head1 AUTHOR
 

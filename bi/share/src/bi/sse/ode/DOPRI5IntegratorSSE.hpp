@@ -23,7 +23,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../sse_shared_host.hpp"
 #include "../math/function.hpp"
 #include "../math/control.hpp"
 #include "../../host/ode/DOPRI5VisitorHost.hpp"
@@ -39,14 +38,14 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   BI_ASSERT(t1 < t2);
 
   typedef host_vector_reference<sse_real> vector_reference_type;
-  typedef Pa<ON_HOST,B,host,host,sse_host,sse_shared_host<S> > PX;
+  typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
   typedef DOPRI5VisitorHost<B,S,S,real,PX,sse_real> Visitor;
   static const int N = block_size<S>::value;
   const int P = s.size();
 
   #pragma omp parallel
   {
-    sse_real buf[11*N];
+    sse_real buf[10*N];
     vector_reference_type x0(buf, N);
     vector_reference_type x1(buf + N, N);
     vector_reference_type x2(buf + 2*N, N);
@@ -57,8 +56,6 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
     vector_reference_type err(buf + 7*N, N);
     vector_reference_type k1(buf + 8*N, N);
     vector_reference_type k7(buf + 9*N, N);
-    vector_reference_type shared(buf + 10*N, N);
-    sseSharedHostState = &shared;
 
     sse_real e, e2;
     real t, h, logfacold, logfac11, fac, e2max;
@@ -68,16 +65,12 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < P; p += BI_SSE_SIZE) {
-
-      /* initialise shared memory from global memory */
-      sse_shared_host_init<B,S>(s, p);
-
       t = t1;
       h = h_h0;
       logfacold = bi::log(BI_REAL(1.0e-4));
       k1in = false;
       n = 0;
-      x0 = *sseSharedHostState;
+      sse_host_load<B,S>(s, p, x0);
 
       /* integrate */
       while (t < t2 && n < h_nsteps) {
@@ -95,19 +88,19 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
         /* stages */
         Visitor::stage1(t, h, s, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), k1.buf(), err.buf(), k1in);
         k1in = true; // can reuse from previous iteration in future
-        sseSharedHostState->swap(x1);
+        sse_host_store<B,S>(s, p, x1);
 
         Visitor::stage2(t, h, s, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sseSharedHostState->swap(x2);
+        sse_host_store<B,S>(s, p, x2);
 
         Visitor::stage3(t, h, s, p, pax, x0.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sseSharedHostState->swap(x3);
+        sse_host_store<B,S>(s, p, x3);
 
         Visitor::stage4(t, h, s, p, pax, x0.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sseSharedHostState->swap(x4);
+        sse_host_store<B,S>(s, p, x4);
 
         Visitor::stage5(t, h, s, p, pax, x0.buf(), x5.buf(), x6.buf(), err.buf());
-        sseSharedHostState->swap(x5);
+        sse_host_store<B,S>(s, p, x5);
 
         Visitor::stage6(t, h, s, p, pax, x0.buf(), x6.buf(), err.buf());
 
@@ -133,7 +126,7 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
           x0.swap(x6);
           k1.swap(k7);
         }
-        *sseSharedHostState = x0;
+        sse_host_store<B,S>(s, p, x0);
 
         /* compute next step size */
         if (t < t2) {
@@ -152,9 +145,6 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
         ++n;
       }
-
-      /* write from shared back to global memory */
-      sse_shared_host_commit<B,S>(s, p);
     }
   }
 }

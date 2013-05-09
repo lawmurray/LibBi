@@ -11,15 +11,18 @@ transition - the transition distribution.
 =head1 DESCRIPTION
 
 Actions in the C<transition> block may reference variables of any
-type, but may only target variables of type C<noise> and C<state>.
+type except C<obs>, but may only target variables of type C<noise> and
+C<state>.
 
 =cut
 
 package Bi::Block::transition;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
+
+use Bi::Utility qw(contains);
 
 =head1 PARAMETERS
 
@@ -48,6 +51,29 @@ sub validate {
     $self->process_args($BLOCK_ARGS);
     if (!$self->get_named_arg('delta')->is_const) {
         die("argument 'delta' to block 'transition' must be a constant expression\n");
+    }
+    
+    my $name = $self->get_name;
+    my $actions = $self->get_all_actions;
+    foreach my $action (@$actions) {
+        my $op = $action->get_op;
+        my $var_name = $action->get_left->get_var->get_name;
+        my $type = $action->get_left->get_var->get_type;
+        
+        if ($op eq '~' && $type ne 'noise') {
+            warn("variable '$var_name' is of type '$type'; only 'noise' variables should appear on the left side of '~' actions in the '$name' block.\n");
+        } elsif ($op eq '<-' && !contains(['state', 'state_aux_'], $type)) {
+            warn("variable '$var_name' is of type '$type'; only 'state' variables should appear on the left side of '<-' actions in the '$name' block.\n");
+        } elsif ($op eq '=' && !contains(['state', 'state_aux_'], $type)) {
+            warn("variable '$var_name' is of type '$type'; only 'state' variables should appear on the left side of '=' actions in the '$name' block.\n");
+        }
+        
+        my $refs = $action->get_right_var_refs;
+        foreach my $ref (@$refs) {
+            if ($ref->get_var->get_type eq 'obs') {
+                warn("variable '$var_name' is of type '$type'; 'obs' variables should not appear on the right side of actions in the '$name' block.\n");
+            }
+        }
     }
 }
 

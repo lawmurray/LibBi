@@ -24,7 +24,7 @@ namespace bi {
 /**
  * Object-oriented type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T typelist.
  */

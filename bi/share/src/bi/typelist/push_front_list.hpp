@@ -25,7 +25,7 @@ struct push_front_list_impl {
 /**
  * Push value onto front of a type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  * @tparam X A scalar type.

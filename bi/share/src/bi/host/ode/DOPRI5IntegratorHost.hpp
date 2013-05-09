@@ -35,7 +35,6 @@ public:
 #include "DOPRI5VisitorHost.hpp"
 #include "IntegratorConstants.hpp"
 #include "../host.hpp"
-#include "../shared_host.hpp"
 #include "../../state/Pa.hpp"
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
@@ -49,7 +48,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
   BI_ASSERT(t1 < t2);
 
   typedef host_vector_reference<real> vector_reference_type;
-  typedef Pa<ON_HOST,B,host,host,host,shared_host<S> > PX;
+  typedef Pa<ON_HOST,B,host,host,host,host> PX;
   typedef DOPRI5VisitorHost<B,S,S,real,PX,real> Visitor;
 
   static const int N = block_size<S>::value;
@@ -57,7 +56,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
   #pragma omp parallel
   {
-    real buf[11*N]; // use of dynamic array faster than heap allocation
+    real buf[10*N]; // use of dynamic array faster than heap allocation
     vector_reference_type x0(buf, N);
     vector_reference_type x1(buf + N, N);
     vector_reference_type x2(buf + 2*N, N);
@@ -68,8 +67,6 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
     vector_reference_type err(buf + 7*N, N);
     vector_reference_type k1(buf + 8*N, N);
     vector_reference_type k7(buf + 9*N, N);
-    vector_reference_type shared(buf + 10*N, N);
-    sharedHostState = &shared;
 
     real t, h, e, e2, logfacold, logfac11, fac;
     int n, id, p;
@@ -78,15 +75,12 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < P; ++p) {
-      /* initialise shared memory from global memory */
-      shared_host_init<B,S>(s, p);
-
       t = t1;
       h = h_h0;
       logfacold = bi::log(BI_REAL(1.0e-4));
       k1in = false;
       n = 0;
-      x0 = *sharedHostState;
+      host_load<B,S>(s, p, x0);
 
       /* integrate */
       while (t < t2 && n < h_nsteps) {
@@ -95,7 +89,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
         }
         if (t + BI_REAL(1.01)*h - t2 > BI_REAL(0.0)) {
           h = t2 - t;
-          if (h <= 0.0) {
+          if (h <= BI_REAL(0.0)) {
             t = t2;
             break;
           }
@@ -104,25 +98,24 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
         /* stages */
         Visitor::stage1(t, h, s, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), k1.buf(), err.buf(), k1in);
         k1in = true; // can reuse from previous iteration in future
-        sharedHostState->swap(x1);
+        host_store<B,S>(s, p, x1);
 
         Visitor::stage2(t, h, s, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sharedHostState->swap(x2);
+        host_store<B,S>(s, p, x2);
 
         Visitor::stage3(t, h, s, p, pax, x0.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sharedHostState->swap(x3);
+        host_store<B,S>(s, p, x3);
 
         Visitor::stage4(t, h, s, p, pax, x0.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
-        sharedHostState->swap(x4);
+        host_store<B,S>(s, p, x4);
 
         Visitor::stage5(t, h, s, p, pax, x0.buf(), x5.buf(), x6.buf(), err.buf());
-        sharedHostState->swap(x5);
+        host_store<B,S>(s, p, x5);
 
         Visitor::stage6(t, h, s, p, pax, x0.buf(), x6.buf(), err.buf());
 
         /* compute error */
         Visitor::stageErr(t, h, s, p, pax, x0.buf(), x6.buf(), k7.buf(), err.buf());
-
         e2 = 0.0;
         for (id = 0; id < N; ++id) {
           e = err(id)*h/(h_atoler + h_rtoler*bi::max(bi::abs(x0(id)), bi::abs(x6(id))));
@@ -137,7 +130,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
           x0.swap(x6);
           k1.swap(k7);
         }
-        *sharedHostState = x0;
+        host_store<B,S>(s, p, x0);
 
         /* compute next step size */
         if (t < t2) {
@@ -156,9 +149,6 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
         ++n;
       }
-
-      /* write from shared back to global memory */
-      shared_host_commit<B,S>(s, p);
     }
   }
 }

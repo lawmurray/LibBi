@@ -20,7 +20,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::Standardiser;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -47,22 +47,23 @@ sub evaluate {
     $model->accept($self);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $result = $node;
     
-    if ($node->isa('Bi::Expression::UnaryOperator')) {
-        if ($node->get_op eq "'") {
-            # transpose operator, translate to function
-            $result = new Bi::Expression::Function('transpose', [ $node->get_expr ]);
-        }
-    } elsif ($node->isa('Bi::Expression::BinaryOperator')) {
+    #if ($node->isa('Bi::Expression::UnaryOperator')) {
+    #    if ($node->get_op eq "'") {
+    #        # transpose operator, translate to function
+    #        $result = new Bi::Expression::Function('transpose', [ $node->get_expr ]);
+    #    }
+    #} els
+    if ($node->isa('Bi::Expression::BinaryOperator')) {
         if ($node->get_op eq '*') {
             # matrix multiplication, translate to function
             if ($node->get_expr1->is_matrix) {
@@ -73,6 +74,14 @@ sub visit {
         } elsif ($node->get_op =~ /^\.(.*?)$/) {
             # convert element-wise op back to standard scalar ops
             $node->set_op($1);
+        }
+        
+        if ($node->get_op eq '**') {
+        	# power operator, translate to pow() function
+        	$result = new Bi::Expression::Function('pow', [ $node->get_expr1, $node->get_expr2 ]);
+        } elsif ($node->get_op eq '%') {
+        	# modulus operator, translate to mod() function
+        	$result = new Bi::Expression::Function('mod', [ $node->get_expr1, $node->get_expr2 ]);
         }
     }
     

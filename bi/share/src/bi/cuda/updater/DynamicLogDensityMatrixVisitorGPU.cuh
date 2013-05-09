@@ -65,7 +65,6 @@ inline void bi::DynamicLogDensityMatrixVisitorGPU<B,S,T1,PX,OX>::accept(
     const PX& pax, OX& x, T2& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   if (i == 0) {
     front::logDensities(t1, t2, s, p, pax, x, lp);

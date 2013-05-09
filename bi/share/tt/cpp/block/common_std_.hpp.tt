@@ -7,8 +7,8 @@
 %]
 
 [%-
-std = block.get_action.get_named_arg('std');
-target = block.get_action.get_left;
+std = block.get_actions.0.get_named_arg('std');
+target = block.get_actions.0.get_left;
 -%]
 
 [%-PROCESS block/misc/header.hpp.tt-%]

@@ -22,7 +22,7 @@ applied to a scalar variable.
 
 package Bi::Action::ode_;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -50,6 +50,7 @@ our $ACTION_ARGS = [
 sub validate {
     my $self = shift;
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     
     # check removed for backwards compatibility with model files written
@@ -64,9 +65,8 @@ sub validate {
 
 sub mean {
     my $self = shift;
-    return new Bi::Expression::Function('ode_', [], {
-        'dfdt' => $self->get_named_arg('dfdt')->clone
-    });
+    return new Bi::Expression::Function('ode_',
+        [ $self->get_named_arg('dfdt')->clone ]);
 }
 
 sub std {
@@ -77,7 +77,7 @@ sub jacobian {
     my $self = shift;
     
     my $expr = $self->get_named_arg('dfdt');
-    my @refs = @{$expr->get_vars};
+    my @refs = @{$expr->get_all_var_refs};
     my @J = map { $expr->d($_) } @refs;
     
     return (\@J, \@refs);

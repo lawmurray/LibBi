@@ -3,7 +3,8 @@ META
 README
 LICENSE
 VERSION
+init.sh
 run.sh
 [% name %].bi
+config.conf
 data
-results

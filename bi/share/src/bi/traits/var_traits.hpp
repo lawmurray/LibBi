@@ -133,7 +133,7 @@ struct alt_type<O_VAR> {
  *
  * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct var_id {
@@ -145,7 +145,7 @@ struct var_id {
  *
  * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct var_size {
@@ -157,7 +157,7 @@ struct var_size {
  *
  * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct var_start {
@@ -169,7 +169,7 @@ struct var_start {
  *
  * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct var_num_dims {
@@ -181,7 +181,7 @@ struct var_num_dims {
  *
  * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct var_type {
@@ -191,9 +191,9 @@ struct var_type {
 /**
  * State (dynamic) variable trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_d_var {
@@ -203,9 +203,9 @@ struct is_d_var {
 /**
  * State (dynamic) auxiliary variable trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_dx_var {
@@ -215,9 +215,9 @@ struct is_dx_var {
 /**
  * Noise (random) variable trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_r_var {
@@ -227,9 +227,9 @@ struct is_r_var {
 /**
  * Input (forcing) variable trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_f_var {
@@ -239,9 +239,9 @@ struct is_f_var {
 /**
  * Observation trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_o_var {
@@ -251,9 +251,9 @@ struct is_o_var {
 /**
  * Parameter trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_p_var {
@@ -263,9 +263,9 @@ struct is_p_var {
 /**
  * Auxiliary parameter trait.
  *
- * @ingroup model_trait
+ * @ingroup model_low
  *
- * @tparam X Node type.
+ * @tparam X Variable type.
  */
 template<class X>
 struct is_px_var {

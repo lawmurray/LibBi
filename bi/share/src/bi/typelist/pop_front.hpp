@@ -27,7 +27,7 @@ struct pop_front_impl {
 /**
  * Remove the front item of a type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

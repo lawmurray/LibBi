@@ -2,18 +2,6 @@
 
 Bi::Expression::Vector - vector of expressions.
 
-=head1 SYNOPSIS
-
-    use Bi::Expression::Vector;
-    $A = new Bi::Expression::Matrix(4, 3);
-    $b = new Bi::Expression::Vector(3);
-    $c = new Bi::Expression::Vector(3);
-    
-    $c = $A*$b;  # basic operators are overloaded
-    
-    $expr = $c->get(0,0);
-    $c->set(0, 0, $val);
-
 =head1 INHERITS
 
 L<Bi::Matrix>
@@ -26,7 +14,7 @@ L<Bi::Matrix>
 
 package Bi::Expression::Vector;
 
-use base 'Bi::Expression::Matrix';
+use parent 'Bi::Expression::VectorReference';
 use warnings;
 use strict;
 
@@ -43,44 +31,56 @@ sub new {
     
     assert ($size >= 0) if DEBUG;
 
-    my $self = new Bi::Expression::Matrix($size, 1);
+    my $self = new Bi::Expression::VectorReference([], 0, $size);    
     bless $self, $class;
+    
+    $self->clear;
+    
     return $self;
 }
 
-=item B<size>
+=item B<clone>
 
-The size of the vector.
+Return a clone of the object.
 
 =cut
-sub size {
+sub clone {
     my $self = shift;
-    return $self->num_rows
+    
+    my $clone = {
+        _data => [],
+        _start1 => $self->{_start1},
+        _size1 => $self->{_size1},
+        _start2 => $self->{_start2},
+        _size2 => $self->{_size2},
+        _lead => $self->{_lead}
+    };
+    bless $clone, ref($self);
+
+    # copy data too
+    for (my $i = 0; $i < $clone->size1; ++$i) {
+        $clone->set($i, $self->get($i)->clone);
+    }
+
+    return $clone;
 }
 
-=item B<get>(I<i>)
+=item B<swap>
 
-Get an element.
-
-=cut
-sub get {
-    my $self = shift;
-    my $i = shift;
-
-    return Bi::Expression::Matrix::get($self, $i, 0);
-}
-
-=item B<set>(I<i>, I<val>)
-
-Set an element.
+Swap contents of vector with another vector.
 
 =cut
-sub set {
+sub swap {
     my $self = shift;
-    my $i = shift;
-    my $val = shift;
-
-    Bi::Expression::Matrix::set($self, $i, 0, $val);
+    my $other = shift;
+    
+    assert ($other->isa('Bi::Expression::Vector')) if DEBUG;
+    
+    my $self_data = $self->get_data;
+    my $other_data = $other->get_data;
+    
+    $self->{_data} = $other_data;
+    $other->{_data} = $self_data;
 }
 
 1;

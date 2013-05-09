@@ -47,7 +47,6 @@ void bi::DynamicMaxLogDensityMatrixVisitorHost<B,S,PX,OX>::accept(
     const PX& pax, OX& x, T2& lp) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   front::maxLogDensities(t1, t2, s, p, pax, x, lp);
   DynamicMaxLogDensityMatrixVisitorHost<B,pop_front,PX,OX>::accept(t1, t2,

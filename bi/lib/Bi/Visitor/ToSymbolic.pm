@@ -23,7 +23,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::ToSymbolic;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -174,12 +174,12 @@ sub symb2expr {
     return $expr;
 }
 
-=item B<visit>(I<node>, I<args>)
+=item B<visit_after>(I<node>, I<args>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $args = shift;
@@ -216,35 +216,27 @@ sub visit {
         }
         $symb = new Math::Symbolic::Operator($name, @symbs);
     } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
-        my $name = $node->get_const->get_name;
-        $self->_substitute($name, $node);
+        my $name = $self->_substitute($node);
         $symb = new Math::Symbolic::Variable($name);
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
-        if ($node->is_const) {
-        my $name = $node->get_inline->get_name;
-        $self->_substitute($name, $node);
-        $symb = new Math::Symbolic::Variable($name);
-        } else {
-            $symb = $self->expr2symb($node->get_inline->get_expr);
-        }
+        $symb = $self->expr2symb($node->get_inline->get_expr);
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-        my $name = $node->get_var->get_name;
-        if ($node->num_indexes) {
-            my @indexes = splice(@$args, -$node->num_indexes, $node->num_indexes);
-            $name .= '_' . join('_', @indexes);
-        }
-        $self->_substitute($name, $node);
+        my $name = $self->_substitute($node);
         $symb = new Math::Symbolic::Variable($name);
     } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
         $symb = $node->get_alias->get_name;
     } elsif ($node->isa('Bi::Expression::Literal')) {
         $symb = new Math::Symbolic::Constant($node->get_value);
+    } elsif ($node->isa('Bi::Expression::IntegerLiteral')) {
+        $symb = new Math::Symbolic::Constant($node->get_value);
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
         die("cannot convert string literals to symbolic\n");
     } elsif ($node->isa('Bi::Expression::Index')) {
-    	die("cannot convert element expressions to symbolic\n");
+        pop(@$args);
+    	# handled by owning Bi::Expression::VarIdentifier
     } elsif ($node->isa('Bi::Expression::Range')) {
-        die("cannot convert ranges to symbolic\n");
+        pop(@$args);
+    	# handled by owning Bi::Expression::VarIdentifier
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         die('cannot convert ternary operator ?: to symbolic');
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
@@ -259,61 +251,52 @@ sub visit {
         die("unrecognised node in expression, type " . ref($node));
     }
     
-    push(@$args, $symb);
+    if (defined $symb) {
+        push(@$args, $symb);
+    }
+    
     return $node;
 }
 
-=item B<_substitute>(I<subst>, I<ident>)
+=item B<_substitute>(I<expr>)
 
-Set substitute name for identifier.
-
-=over 4
-
-=item I<subst> String giving the substitute alphanumeric name.
-
-=item I<ident> The identifier to substitute, as
-L<Bi::Expression::ConstIdentifier>, L<Bi::Expression::InlineIdentifier> or
-L<Bi::Expression::VarIdentifier> object.
-
-=back
-
-No return value.
+Replace an expression with a unique name. If a name for the same
+expression has already been generated, it is returned, otherwise a new name
+is generated.
 
 =cut
 sub _substitute {
     my $self = shift;
-    my $subst = shift;
-    my $ident = shift;
+    my $expr = shift;
     
-    assert ($ident->isa('Bi::Expression::ConstIdentifier') ||
-            $ident->isa('Bi::Expression::VarIdentifier') ||
-            $ident->isa('Bi::Expression::InlineIdentifier')) if DEBUG;
-            
-    $self->{_substitutes}->{$subst} = $ident;
+    my @names = keys %{$self->{_substitutes}};
+    my @exprs = values %{$self->{_substitutes}};
+    my $i;
+    for ($i = 0; $i < @exprs; ++$i) {
+        if ($exprs[$i]->equals($expr)) {
+            return $names[$i];
+        }
+    }
+    
+    # not found
+    my $name = "var$i";
+    $self->{_substitutes}->{$name} = $expr;
+
+    return $name;
 }
 
-=item B<_recover>(I<substr>)
+=item B<_recover>(I<name>)
 
-Recover identifier from substitute name.
-
-=over 4
-
-=item I<subst> String giving the substitute alphanumeric name.
-
-=back
-
-Return the identifier for the substitute name, as
-L<Bi::Expression::ConstIdentifier>, L<Bi::Expression::InlineIdentifier> or
-L<Bi::Expression::VarIdentifier> object.
+Recover expression from substituted name.
 
 =cut
 sub _recover {
     my $self = shift;
-    my $subst = shift;
+    my $name = shift;
     
-    assert (exists $self->{_substitutes}->{$subst}) if DEBUG;
+    assert (exists $self->{_substitutes}->{$name}) if DEBUG;
     
-    return $self->{_substitutes}->{$subst};
+    return $self->{_substitutes}->{$name};
 }
 
 1;

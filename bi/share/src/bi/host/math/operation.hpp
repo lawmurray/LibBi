@@ -24,7 +24,7 @@ struct ch1up_impl<ON_HOST,T1> {
 template<class T1>
 struct ch1dn_impl<ON_HOST,T1> {
   template<class M1, class V1, class V2>
-  static void func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) ;
+  static void func(M1 U, V1 a, V2 b) throw (CholeskyException) ;
 };
 
 /**
@@ -213,13 +213,13 @@ void bi::ch1up_impl<bi::ON_HOST,T1>::func(M1 U, V1 a, V2 b) {
 
 template<class T1>
 template<class M1, class V1, class V2>
-void bi::ch1dn_impl<bi::ON_HOST,T1>::func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
+void bi::ch1dn_impl<bi::ON_HOST,T1>::func(M1 U, V1 a, V2 b) throw (CholeskyException) {
   int n = a.size();
   int ld = U.lead();
   int info;
   qrupdate_ch1dn<T1>::func(&n, U.buf(), &ld, a.buf(), b.buf(), &info);
   if (info != 0) {
-    throw CholeskyDowndateException(info);
+    throw CholeskyException(info);
   }
 }
 

@@ -38,6 +38,30 @@ sub new {
     return $self;
 }
 
+=item B<visit_before>(I<node>, ...)
+
+Visit a node before visiting its children
+
+=cut
+sub visit_before {
+    my $self = shift;
+    my $node = shift;
+    
+    return $node;
+}
+
+=item B<visit_after>(I<node>, ...)
+
+Visit a node after visiting its children
+
+=cut
+sub visit_after {
+    my $self = shift;
+    my $node = shift;
+    
+    return $node;
+}
+
 1;
 
 =back

@@ -46,9 +46,9 @@ private:
   bi_ode_set(H, ATOLER, RTOLER);
 
   /* integrate */  
-  [% IF block.get_named_arg('alg').eval_const == 'rk4' %]
+  [% IF block.get_named_arg('alg').eval_const == 'RK4' %]
   bi::RK4Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);
-  [% ELSIF block.get_named_arg('alg').eval_const == 'dopri5' %]
+  [% ELSIF block.get_named_arg('alg').eval_const == 'RK5(4)' %]
   bi::DOPRI5Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);
   [% ELSE %]
   bi::RK43Integrator<[% model_class_name %],action_typelist>::update(t1, t2, s);

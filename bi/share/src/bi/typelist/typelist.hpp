@@ -12,7 +12,7 @@ namespace bi {
 /**
  * Categories of types in type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 enum typelist_marker {
   /**
@@ -29,7 +29,7 @@ enum typelist_marker {
 /**
  * Empty type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  */
 struct empty_typelist {
   //
@@ -38,7 +38,7 @@ struct empty_typelist {
 /**
  * Type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam M Marker.
  * @tparam N Repetitions.

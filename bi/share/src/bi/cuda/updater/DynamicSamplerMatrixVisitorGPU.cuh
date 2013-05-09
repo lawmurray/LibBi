@@ -61,7 +61,6 @@ inline void bi::DynamicSamplerMatrixVisitorGPU<B,S,T1,PX,OX>::accept(RngGPU& rng
     const T1 t1, const T1 t2, State<B,ON_DEVICE>& s, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
 
   const int Q = gridDim.x * blockDim.x;  // number of threads
   int p = blockIdx.x * blockDim.x + threadIdx.x;

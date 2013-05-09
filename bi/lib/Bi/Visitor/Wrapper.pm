@@ -20,9 +20,13 @@ L<Bi::Visitor>
 
 package Bi::Visitor::Wrapper;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
+
+use Graph;
+use Carp::Assert;
+use Bi::Utility qw(set_intersect push_unique);
 
 =item B<evaluate>(I<model>)
 
@@ -39,75 +43,84 @@ sub evaluate {
     my $class = shift;
     my $model = shift;
 
-    my $self = new Bi::Visitor; 
-    $self->{_model} = $model;    
+    my $self = new Bi::Visitor;
     bless $self, $class;
     
-    $model->accept($self);
+    foreach my $topblock (@{$model->get_children}) {
+        _wrap($topblock);
+    }
 }
 
-=item B<get_model>
-
-Get the model.
+=item B<_wrap>
 
 =cut
-sub get_model {
-    my $self = shift;
-    return $self->{_model};
-}
-
-=item B<visit>(I<node>)
-
-Visit node.
-
-=cut
-sub visit {
-    my $self = shift;
+sub _wrap {
     my $node = shift;
-    
-    my $result = $node;
-    my $subblock;
-    my $action;
-    my $name;
 
-    my @actions; # actions that remain in this block
-    my @optim_blocks; # new sub-blocks to insert
-    my @optim_actions; # actions to add to each of these sub-blocks
-    my $i;
-    
-    if ($node->isa('Bi::Model::Block')) {
-        ACTION: foreach $action (@{$node->get_actions}) {
-            if (!defined($action->get_parent) || $action->get_parent eq $node->get_name) {
-                # can stay in this block
-                push(@actions, $action);
-                next ACTION;
-            } elsif ($action->can_combine) {
-                # search for another block to add this to
-                for ($i = 0; $i < scalar(@optim_blocks); ++$i) {
-                    if ($optim_blocks[$i] eq $action->get_parent) {
-                        # add to existing block
-                        push(@{$optim_actions[$i]}, $action);
-                        next ACTION;
-                    }
-                }
-            }
-
-            # add to new block
-            push(@optim_blocks, $action->get_parent);
-            push(@optim_actions, [ $action ]);
-        }
-    
-        # now actually create all that
-        $node->set_actions(\@actions);
-        for ($i = 0; $i < @optim_blocks; ++$i) {
-            $subblock = new Bi::Model::Block($self->get_model->next_block_id,
-                $optim_blocks[$i], [], {}, $optim_actions[$i], []);
-               
-            push(@{$node->get_blocks}, $subblock);
-        }
+    # recurse
+    foreach my $child (@{$node->get_blocks}) {
+        _wrap($child);
     }
 
-    return $result;
+    # build directed graph to represent dependencies between children
+    my $graph = new Graph(directed => 1, refvertexed => 1);
+    foreach my $child (@{$node->get_children}) {
+        my @vertices = $graph->vertices;
+        $graph->add_vertex($child);
+
+        my $right_vars = $child->get_all_right_vars;
+        foreach my $vertex (@vertices) {
+            my $left_vars = $vertex->get_all_left_vars;
+            if (@{set_intersect($right_vars, $left_vars)} > 0) {
+                $graph->add_edge($vertex, $child);
+            }
+        }
+    }
+    $node->set_children([]);    
+    
+    # wrap actions in blocks, combining where there are no dependencies
+    while ($graph->vertices > 0) {
+        # children for which all dependencies are satisfied, heuristic is to
+        # handle them in the order given in the model specification
+        my @vertices = sort { $a->get_id <=> $b->get_id }
+                $graph->predecessorless_vertices;
+
+        # handle the first child with satisfied dependencies
+        my $block;
+        my $vertex = $vertices[0];
+        if ($vertex->isa('Bi::Block')) {
+            # is a block already
+            $block = $vertex;
+            $node->push_child($block);
+        } else {
+            # is an action
+            assert($vertex->isa('Bi::Action')) if DEBUG;
+            
+            if (defined $node->get_name && $node->get_name eq $vertex->get_parent) {
+                # already in block of preferred parent type
+                $block = $node;
+                $node->push_child($vertex);
+            } else {
+                # wrap in block of preferred parent type
+                $block = new Bi::Block;
+                $block->set_name($vertex->get_parent);
+                $block->push_child($vertex);
+                $node->push_child($block);
+            }
+        }
+        $graph->delete_vertex($vertex);
+        
+        # greedily add any other children with satisfied dependneices to this
+        # block, if it is of their preferred parent type
+        foreach $vertex (@vertices[1..$#vertices]) {
+            if ($vertex->isa('Bi::Action') &&
+                    $vertex->get_parent eq $block->get_name) {
+                $block->push_child($vertex);
+                $graph->delete_vertex($vertex);
+            }
+        }
+        $block->validate;
+    }
 }
 
 1;

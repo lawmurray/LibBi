@@ -25,7 +25,6 @@ public:
    *
    * @tparam D Dimension type, derived from Dim.
    *
-   * @param name Name of the dimension.
    * @param o Object of derived type. This is a dummy to allow calling of
    * the constructor without explicit template arguments.
    *
@@ -33,7 +32,7 @@ public:
    * interface.
    */
   template<class D>
-  Dim(const std::string& name, const D& o);
+  Dim(const D& o);
 
   /**
    * Get name of the dimension.
@@ -77,8 +76,8 @@ protected:
 #include "../misc/assert.hpp"
 
 template<class D>
-bi::Dim::Dim(const std::string& name, const D& o) {
-  this->name = name;
+bi::Dim::Dim(const D& o) {
+  this->name = o.getName();
   this->id = dim_id<D>::value;
   this->size = dim_size<D>::value;
 }

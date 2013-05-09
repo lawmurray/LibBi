@@ -31,9 +31,7 @@ use Bi::Model;
 use Bi::Visitor::Simplify;
 use Bi::Visitor::Unroller;
 use Bi::Visitor::Wrapper;
-use Bi::Visitor::Resolver;
 use Bi::Visitor::StaticExtractor;
-use Bi::Visitor::StaticEvaluator;
 use Bi::Visitor::StaticReplacer;
     
 =item B<new>(I<model>)
@@ -70,12 +68,10 @@ sub optimise {
 
     my $model = $self->{_model};
         
-    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model);
-    my $actions = Bi::Visitor::StaticEvaluator->evaluate($model, $extracts);
-    Bi::Visitor::StaticReplacer->evaluate($model, $actions);
+    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);    
+    Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);
     
     Bi::Visitor::Unroller->evaluate($model);
-    Bi::Visitor::Resolver->evaluate($model);
     Bi::Visitor::Wrapper->evaluate($model);
 }
 

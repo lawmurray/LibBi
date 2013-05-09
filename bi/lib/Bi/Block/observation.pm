@@ -18,7 +18,7 @@ C<obs>.
 
 package Bi::Block::observation;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 
@@ -28,6 +28,21 @@ sub validate {
     my $self = shift;
     
     $self->process_args($BLOCK_ARGS);
+    
+    my $name = $self->get_name;
+    my $actions = $self->get_all_actions;
+    foreach my $action (@$actions) {
+        my $op = $action->get_op;
+        my $var_name = $action->get_left->get_var->get_name;
+        my $type = $action->get_left->get_var->get_type;
+        
+        if ($op ne '~') {
+            warn("only '~' actions should appear in the '$name' block.\n");
+        } elsif ($type ne 'obs') {
+            warn("variable '$var_name' is of type '$type'; only variables of type 'obs' should appear on the left side of actions in the '$name' block.\n");
+        }
+    }
+    
 }
 
 1;

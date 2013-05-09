@@ -1,29 +1,32 @@
 =head1 NAME
 
-help - look up online help for action, block or client.
+help - look up online help for an action, block or command.
 
 =head1 SYNOPSIS
 
     bi help I<name>
+    
     bi help I<name> --action
+    
     bi help I<name> --block
-    bi help I<name> --client
+    
+    bi help I<name> --command
 
 =head1 DESCRIPTION
 
 The C<help> command is used to access documentation from the command line.
 This documentation is the same as that provided in the user reference.
 
-C<I<name>> gives the name of any action, block or client. The documentation
-for the respective action, block or client is presented. Ambiguities (e.g.
+C<I<name>> gives the name of any action, block or command. The documentation
+for the respective action, block or command is presented. Ambiguities (e.g.
 actions and blocks with the same name) are resolved via a prompt, or by
-using any of the C<--action>, C<--block> or C<--client> options.
+using any of the C<--action>, C<--block> or C<--command> options.
 
 =cut
 
 package Bi::Client::help;
 
-use base 'Bi::Client';
+use parent 'Bi::Client';
 use warnings;
 use strict;
 
@@ -44,9 +47,9 @@ explicitly search for an action.
 
 explicitly search for a block.
 
-=item C<--client>
+=item C<--command>
 
-explicitly search for a client.
+explicitly search for a command.
 
 =back
 
@@ -62,7 +65,7 @@ our @CLIENT_OPTIONS = (
       type => 'bool'
     },
     {
-      name => 'client',
+      name => 'command',
       type => 'bool'
     }
 );
@@ -105,20 +108,20 @@ sub exec {
         # include all types...
         my $include_action = 1;
         my $include_block = 1;
-        my $include_client = 1;
+        my $include_command = 1;
         
         # ...unless there is one or more explicit qualifiers
         if ($self->is_named_arg('action') || $self->is_named_arg('block') ||
-            $self->is_named_arg('client')) {
+            $self->is_named_arg('command')) {
             $include_action = $self->is_named_arg('action');
             $include_block = $self->is_named_arg('block');
-            $include_client = $self->is_named_arg('client');
+            $include_command = $self->is_named_arg('command');
         }
         
         # search
         my $have_action = 0;
         my $have_block = 0;
-        my $have_client = 0;
+        my $have_command = 0;
         my $class;
 
         if ($include_action) {
@@ -135,11 +138,11 @@ sub exec {
                 $class = $block;
             }
         }
-        if ($include_client) {
-            $have_client = 1;
-            my $client = "Bi::Client::$name";
-            if (eval("require $client")) {
-                $class = $client;
+        if ($include_command) {
+            $have_command = 1;
+            my $command = "Bi::Client::$name";
+            if (eval("require $command")) {
+                $class = $command;
             }
         }
 
@@ -162,9 +165,9 @@ sub exec {
 sub _general_help {
     my $self = shift;
         print <<End;
-Usage: bi <client> [options]
+Usage: bi <command> [options]
 
-where <client> is one of:
+where <command> is one of:
   * draw
   * filter
   * help
@@ -174,8 +177,8 @@ where <client> is one of:
   * sample
   * simulate
 
-Type 'bi help <client>' for help on a particular client. For more information
-on using the help client type 'bi help help'.
+Type 'bi help <command>' for help on a particular command. For more information
+on using the help command type 'bi help help'.
 End
 }
 

@@ -24,7 +24,7 @@ struct ch1up_impl<ON_DEVICE,T1> {
 template<class T1>
 struct ch1dn_impl<ON_DEVICE,T1> {
   template<class M1, class V1, class V2>
-  static void func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) ;
+  static void func(M1 U, V1 a, V2 b) throw (CholeskyException) ;
 };
 
 /**
@@ -210,7 +210,7 @@ void bi::ch1up_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) {
 
 template<class T1>
 template<class M1, class V1, class V2>
-void bi::ch1dn_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) throw (CholeskyDowndateException) {
+void bi::ch1dn_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) throw (CholeskyException) {
   BI_ERROR_MSG(false, "ch1dn not implemented for device");
 }
 

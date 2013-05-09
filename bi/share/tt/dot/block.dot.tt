@@ -15,8 +15,8 @@ subgraph cluster_block[% block.get_id %] {
   color="#000000";
 [% END %]
 
-[%-FOREACH ref IN block.get_target_vars(['input', 'param', 'noise', 'state', 'obs']) %]
-[%-INCLUDE ref.dot.tt FILTER indent(2) %]
+[%-FOREACH action IN block.get_actions-%]
+[%-INCLUDE var.dot.tt var = action.get_left.get_var FILTER indent(2) %]
 [%-END-%]
 
 [%-FOREACH subblock IN block.get_blocks %]

@@ -52,7 +52,7 @@ public:
    * @param[out] lws Log-weights.
    */
   template<class V1>
-  void readLogWeights(const int t, V1 lws) const;
+  void readLogWeights(const int t, V1 lws);
 
   /**
    * Write particle log-weights.
@@ -74,7 +74,7 @@ public:
    * @param[out] a Ancestry.
    */
   template<class V1>
-  void readAncestors(const int t, V1 a) const;
+  void readAncestors(const int t, V1 a);
 
   /**
    * Write particle ancestors.
@@ -134,111 +134,34 @@ protected:
    */
   NcVar* rVar;
 
-	/**
+  /**
    * Marginal log-likelihood estimate variable.
    */
   NcVar* llVar;
 };
 }
 
-#include "../math/temp_vector.hpp"
-
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::readLogWeights(const int t,
-    V1 lws) const {
-  /* pre-conditions */
-  BI_ASSERT(lws.size() == npDim->size());
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = lwVar->set_cur(t, 0);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable logweight");
-
-  if (V1::on_device || lws.inc() != 1) {
-    temp_vector_type lws1(lws.size());
-    ret = lwVar->get(lws1.buf(), 1, npDim->size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable logweight");
-    lws = lws1;
-  } else {
-    ret = lwVar->get(lws.buf(), 1, npDim->size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable logweight");
-  }
+    V1 lws) {
+  readVector(lwVar, t, lws);
 }
 
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const int t,
     const V1 lws) {
-  /* pre-conditions */
-  BI_ASSERT(lws.size() == npDim->size());
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = lwVar->set_cur(t, 0);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable logweight");
-
-  if (V1::on_device || lws.inc() != 1) {
-    temp_vector_type lws1(lws.size());
-    lws1 = lws;
-    synchronize(V1::on_device);
-    ret = lwVar->put(lws1.buf(), 1, npDim->size());
-  } else {
-    ret = lwVar->put(lws.buf(), 1, npDim->size());
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable logweight");
+  writeVector(lwVar, t, lws);
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 a) const {
-  /* pre-conditions */
-  BI_ASSERT(a.size() == npDim->size());
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = aVar->set_cur(t, 0);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading variable ancestor");
-
-  if (V1::on_device || a.inc() != 1) {
-    temp_vector_type a1(a.size());
-    ret = aVar->get(a1.buf(), 1, npDim->size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable ancestor");
-    a = a1;
-  } else {
-    ret = aVar->get(a.buf(), 1, npDim->size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading variable ancestor");
-  }
+void bi::ParticleFilterNetCDFBuffer::readAncestors(const int t, V1 as) {
+  readVector(aVar, t, as);
 }
 
 template<class V1>
-void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t, const V1 a) {
-  /* pre-conditions */
-  BI_ASSERT(a.size() == npDim->size());
-  BI_ASSERT(t >= 0 && t < nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = aVar->set_cur(t, 0);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing variable ancestor");
-
-  if (V1::on_device || a.inc() != 1) {
-    temp_vector_type a1(a.size());
-    a1 = a;
-    synchronize(V1::on_device);
-    ret = aVar->put(a1.buf(), 1, npDim->size());
-  } else {
-    ret = aVar->put(a.buf(), 1, npDim->size());
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable ancestor");
+void bi::ParticleFilterNetCDFBuffer::writeAncestors(const int t,
+    const V1 as) {
+  writeVector(aVar, t, as);
 }
 
 template<class B, bi::Location L, class V1>

@@ -18,7 +18,7 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class KalmanFilterNetCDFBuffer : public SimulatorNetCDFBuffer {
+class KalmanFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -43,26 +43,114 @@ public:
       const std::string& file, const FileMode mode = READ_ONLY);
 
   /**
-   * Read Cholesky factor of covariance matrix.
+   * Read predicted mean.
    *
-   * @tparam M1 Matrix type.
+   * @tparam V1 Vector type.
    *
-   * @param t Time index.
-   * @param[out] S Matrix.
+   * @param k Time index.
+   * @param[out] mu1 Vector.
    */
-  template<class M1>
-  void readStd(const int t, M1 S);
+  template<class V1>
+  void readPredictedMean(const int k, V1 mu1) const;
 
   /**
-   * Write Cholesky factor of covariance matrix.
+   * Write predicted mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param mu1 Vector.
+   */
+  template<class V1>
+  void writePredictedMean(const int k, const V1 mu1);
+
+  /**
+   * Read Cholesky factor of predicted covariance.
    *
    * @tparam M1 Matrix type.
    *
-   * @param t Time index.
-   * @param S Matrix.
+   * @param k Time index.
+   * @param[out] U1 Matrix.
    */
   template<class M1>
-  void writeStd(const int t, const M1 S);
+  void readPredictedStd(const int k, M1 U1) const;
+
+  /**
+   * Write Cholesky factor of predicted covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param U1 Matrix.
+   */
+  template<class M1>
+  void writePredictedStd(const int k, const M1 U1);
+
+  /**
+   * Read corrected mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] mu2 Vector.
+   */
+  template<class V1>
+  void readCorrectedMean(const int k, V1 mu2) const;
+
+  /**
+   * Write corrected mean.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param mu2 Vector.
+   */
+  template<class V1>
+  void writeCorrectedMean(const int k, const V1 mu2);
+
+  /**
+   * Read Cholesky factor of corrected covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param[out] U2 Matrix.
+   */
+  template<class M1>
+  void readCorrectedStd(const int k, M1 U2) const;
+
+  /**
+   * Write Cholesky factor of corrected covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param U2 Matrix.
+   */
+  template<class M1>
+  void writeCorrectedStd(const int k, const M1 U2);
+
+  /**
+   * Read across-time covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param[out] C Matrix.
+   */
+  template<class M1>
+  void readCross(const int k, M1 C) const;
+
+  /**
+   * Write across-time covariance.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param C Matrix.
+   */
+  template<class M1>
+  void writeCross(const int k, const M1 C);
 
   /**
    * Write marginal log-likelihood estimate.
@@ -109,9 +197,29 @@ protected:
   NcDim* nxrowDim;
 
   /**
-   * Square-root covariance variable.
+   * Predicted mean variable.
    */
-  NcVar* SVar;
+  NcVar* mu1Var;
+
+  /**
+   * Cholesky factor of predicted covariance variable.
+   */
+  NcVar* U1Var;
+
+  /**
+   * Corrected mean variable.
+   */
+  NcVar* mu2Var;
+
+  /**
+   * Cholesky factor of corrected covariance variable.
+   */
+  NcVar* U2Var;
+
+  /**
+   * Across-time covariance variable.
+   */
+  NcVar* CVar;
 
   /**
    * Marginal log-likelihood estimate variable.
@@ -120,57 +228,65 @@ protected:
 };
 }
 
+#include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
 
-template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readStd(const int k, M1 S) {
-  /* pre-condition */
-  BI_ASSERT(S.size1() == M && S.size2() == M);
+template<class V1>
+void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const int k,
+    V1 mu1) const {
+  readVector(mu1Var, k, mu1);
+}
 
-  typedef typename M1::value_type temp_value_type;
-  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
-
-  long offsets[] = { k, 0, 0 };
-  long counts[] = { 1, M, M };
-  BI_UNUSED NcBool ret;
-
-  ret = SVar->set_cur(offsets);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << SVar->name());
-
-  if (M1::on_device || !S.contiguous()) {
-    temp_matrix_type S1 (S.size1(), S.size2());
-    ret = SVar->get(S1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << SVar->name());
-    S = S1;
-  } else {
-    ret = SVar->get(S.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << SVar->name());
-  }
+template<class V1>
+void bi::KalmanFilterNetCDFBuffer::writePredictedMean(const int k,
+    const V1 mu1) {
+  writeVector(mu1Var, k, mu1);
 }
 
 template<class M1>
-void bi::KalmanFilterNetCDFBuffer::writeStd(const int k, const M1 S) {
-  /* pre-conditions */
-  BI_ASSERT(S.size1() == M && S.size2() == S.size1());
+void bi::KalmanFilterNetCDFBuffer::readPredictedStd(const int k,
+    M1 U1) const {
+  readMatrix(U1Var, k, U1);
+}
 
-  typedef typename M1::value_type temp_value_type;
-  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+template<class M1>
+void bi::KalmanFilterNetCDFBuffer::writePredictedStd(const int k,
+    const M1 U1) {
+  writeMatrix(U1Var, k, U1);
+}
 
-  long offsets[] = { k, 0, 0 };
-  long counts[] = { 1, M, M };
-  BI_UNUSED NcBool ret;
+template<class V1>
+void bi::KalmanFilterNetCDFBuffer::readCorrectedMean(const int k,
+    V1 mu2) const {
+  readVector(mu2Var, k, mu2);
+}
 
-  ret = SVar->set_cur(offsets);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << SVar->name());
-  if (M1::on_device || !S.contiguous()) {
-    temp_matrix_type S1(S.size1(), S.size2());
-    S1 = S;
-    synchronize(M1::on_device);
-    ret = SVar->put(S1.buf(), counts);
-  } else {
-    ret = SVar->put(S.buf(), counts);
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type writing " << SVar->name());
+template<class V1>
+void bi::KalmanFilterNetCDFBuffer::writeCorrectedMean(const int k,
+    const V1 mu2) {
+  writeVector(mu2Var, k, mu2);
+}
+
+template<class M1>
+void bi::KalmanFilterNetCDFBuffer::readCorrectedStd(const int k,
+    M1 U2) const {
+  readMatrix(U2Var, k, U2);
+}
+
+template<class M1>
+void bi::KalmanFilterNetCDFBuffer::writeCorrectedStd(const int k,
+    const M1 U2) {
+  writeMatrix(U2Var, k, U2);
+}
+
+template<class M1>
+void bi::KalmanFilterNetCDFBuffer::readCross(const int k, M1 C) const {
+  readMatrix(CVar, k, C);
+}
+
+template<class M1>
+void bi::KalmanFilterNetCDFBuffer::writeCross(const int k, const M1 C) {
+  writeMatrix(CVar, k, C);
 }
 
 #endif

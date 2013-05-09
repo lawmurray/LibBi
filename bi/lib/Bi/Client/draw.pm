@@ -1,25 +1,24 @@
 =head1 NAME
 
-draw - visualise a model specification as a directed graph.
+draw - draw a model as a directed graph.
 
 =head1 SYNOPSIS
 
-    bi draw --model-file I<model.bi> > I<model.dot>
-    dot -Tpdf -o I<model.pdf> I<model.dot>
+    bi draw --model-file I<Model>.bi > I<Model>.dot
+    dot -Tpdf -o I<Model>.pdf I<Model>.dot
 
 =head1 DESCRIPTION
 
 The C<draw> command takes a model specification and outputs a directed graph
-that visualises the model. It is useful for validation and debugging
-purposes. The output is in the format of a DOT script. It will need to be
-processed by the C<dot> program in order to create an image (see example
-above).
+to visualise the model. It is useful for validation and debugging
+purposes. The output is a C<dot> script that can be processed by the C<dot>
+program to create a figure.
 
 =cut
 
 package Bi::Client::draw;
 
-use base 'Bi::Client';
+use parent 'Bi::Client';
 use warnings;
 use strict;
 

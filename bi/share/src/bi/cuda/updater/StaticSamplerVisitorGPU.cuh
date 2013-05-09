@@ -58,11 +58,10 @@ inline void bi::StaticSamplerVisitorGPU<B,S,PX,OX>::accept(
     RngGPU& rng, State<B,ON_DEVICE>& s, const PX& pax, OX& x) {
   typedef typename front<S>::type front;
   typedef typename pop_front<S>::type pop_front;
-  typedef typename front::target_type target_type;
-  typedef typename target_type::coord_type coord_type;
+  typedef typename front::coord_type coord_type;
 
   const int Q = gridDim.x*blockDim.x; // number of threads
-  const int size = var_size<target_type>::value;
+  const int size = action_size<front>::value;
   int p, ix;
   coord_type cox;
 

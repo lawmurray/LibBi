@@ -16,7 +16,7 @@ template<class T1>
 struct multi_ch1dn_impl<ON_HOST,T1> {
   template<class M1, class V1, class V2>
   static void func(const int P, M1 U, V1 a, V2 b)
-      throw (CholeskyDowndateException);
+      throw (CholeskyException);
 };
 
 /**
@@ -99,7 +99,7 @@ struct multi_potrf_impl<ON_HOST,T1> {
 template<class T1>
 template<class M1, class V1, class V2>
 void bi::multi_ch1dn_impl<bi::ON_HOST,T1>::func(const int P, M1 Us, V1 as, V2 bs)
-    throw (CholeskyDowndateException) {
+    throw (CholeskyException) {
   #pragma omp parallel
   {
     typename sim_temp_matrix<M1>::type U(Us.size1()/P, Us.size2());

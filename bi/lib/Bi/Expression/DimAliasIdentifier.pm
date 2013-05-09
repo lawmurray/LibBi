@@ -18,7 +18,7 @@ L<Bi::Expression>
 
 package Bi::Expression::DimAliasIdentifier;
 
-use base 'Bi::Expression';
+use parent 'Bi::Expression';
 use warnings;
 use strict;
 
@@ -61,7 +61,9 @@ Return a clone of the object.
 sub clone {
     my $self = shift;
     
-    my $clone = { %$self };
+    my $clone = {
+    	_alias => $self->get_alias
+    };
     bless $clone, ref($self);
     
     return $clone; 
@@ -77,16 +79,6 @@ sub get_alias {
     return $self->{_alias};
 }
 
-=item B<num_dims>
-
-Number of dimensions (always zero).
-
-=cut
-sub num_dims {
-    my $self = shift;
-    return 0;
-}
-
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
@@ -97,7 +89,8 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    return $visitor->visit($self, @args);
+    $self = $visitor->visit_before($self, @args);
+    return $visitor->visit_after($self, @args);
 }
 
 =item B<equals>(I<obj>)
@@ -117,10 +110,6 @@ sub equals {
 1;
 
 =back
-
-=head1 SEE ALSO
-
-L<Bi::Expression>
 
 =head1 AUTHOR
 

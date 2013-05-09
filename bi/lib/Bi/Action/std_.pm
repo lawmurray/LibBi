@@ -5,7 +5,7 @@ intrinsic variability.
 
 =head1 SYNOPSIS
 
-    S_x_x_ ~ std_(S)
+    Q_x_x_ ~ std_(expr)
 
 =head1 DESCRIPTION
 
@@ -16,7 +16,7 @@ A C<std_> action is used to specify the intrinsic variability of a variable
 
 package Bi::Action::std_;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -24,7 +24,7 @@ use strict;
 
 =over 4
 
-=item C<std> (position 0, default 1.0)
+=item C<std> (position 0, mandatory)
 
 For a univariate or i.i.d. distribution, a scalar giving the standard
 deviation. For a multivariate distribution of independent variables, a vector
@@ -39,19 +39,20 @@ our $ACTION_ARGS = [
   {
     name => 'std',
     positional => 1,
-    default => 1.0
+    mandatory => 1
   }
 ];
 
 sub validate {
     my $self = shift;
-        
+
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('<-');
 
-    my $const_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_const;
-    my $common_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_common;
-    my $vector_std = !$self->is_named_arg('std') || $self->get_named_arg('std')->is_scalar || $self->get_named_arg('std')->is_vector;
+    my $const_std = $self->get_named_arg('std')->is_const;
+    my $common_std = $self->get_named_arg('std')->is_common;
+    my $vector_std = $self->get_named_arg('std')->is_scalar || $self->get_named_arg('std')->is_vector;
 
     if ($const_std) {
         $self->set_parent('const_std_');

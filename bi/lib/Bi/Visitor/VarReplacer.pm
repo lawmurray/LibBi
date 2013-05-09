@@ -19,7 +19,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::VarReplacer;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -34,7 +34,7 @@ Evaluate.
 
 =item I<block>
 
-L<Bi::Model::Block> object in which to replace variables.
+L<Bi::Block> object in which to replace variables.
 
 =item I<from>
 
@@ -55,7 +55,7 @@ sub evaluate {
     my $from = shift;
     my $to = shift;
     
-    assert ($block->isa('Bi::Model::Block')) if DEBUG;
+    assert ($block->isa('Bi::Block')) if DEBUG;
     assert ($from->isa('Bi::Model::Var')) if DEBUG;
     assert ($to->isa('Bi::Model::Var')) if DEBUG;
 
@@ -65,12 +65,12 @@ sub evaluate {
     $block->accept($self, $from, $to);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $from = shift;

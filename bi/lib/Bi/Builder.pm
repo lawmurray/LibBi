@@ -11,55 +11,57 @@ Bi::Builder - builds client programs on demand.
 
 =head1 BUILD OPTIONS
 
-Options prefixed with C<--enable> may be negated by replacing this with
-C<--disable>.
+Options that start with C<--enable-> may be negated by instead starting them
+with C<--disable->.
 
 =over 4
 
 =item C<--dry-gen> (default off)
 
-Do not (re)generate code.
+Do not generate code.
 
 =item C<--dry-build> (default off)
 
 Do not build.
 
-=item C<--warn> (default off)
+=item C<--force> (default off)
+
+Force all build steps to be performed, even when determined not to be
+required.
+
+=item C<--enable-warnings> (default off)
 
 Enable compiler warnings.
 
-=item C<--force> (default off)
-
-Force all build steps to be performed, even when determined to be not
-required. This is useful as a workaround of any faults in detecting
-changes, or when system headers or libraries change and recompilation or
-relinking is required.
-
 =item C<--enable-assert> (default on)
 
-Enable assertion checking (recommended for test runs, not recommended for
-production runs).
+Enable assertion checking. This is recommended for test runs, but not for
+production runs.
 
 =item C<--enable-extra-debug> (default off)
 
-Enable extra debugging options in compilation (recommended in conjunction with
-C<--with-gdb>).
+Enable extra debugging options in compilation. This is recommended along with
+C<--with-gdb> or C<--with-cuda-gdb> when debugging.
 
 =item C<--enable-diagnostics> (default off)
 
 Enable diagnostic outputs to standard error.
 
+=item C<--enable-single> (default off)
+
+Use single-precision floating point.
+
 =item C<--enable-cuda> (default off)
 
-Enable CUDA device code.
+Enable CUDA code.
 
 =item C<--enable-sse> (default off)
 
-Enable SSE host code.
+Enable SSE code.
 
 =item C<--enable-mkl> (default off)
 
-Enable Intel MKL code.
+Enable Intel MKL.
 
 =item C<--enable-mpi> (default off)
 
@@ -67,15 +69,11 @@ Enable MPI code.
 
 =item C<--enable-vampir> (default off)
 
-Enable Vampir.
-
-=item C<--enable-single> (default off)
-
-Use single-precision floating point.
+Enable Vampir profiling.
 
 =item C<--enable-gperftools> (default off)
 
-Enable the C<gperftools> compiler.
+Enable C<gperftools> profiling.
 
 =back
 
@@ -121,8 +119,8 @@ sub new {
     my $self = {
         _builddir => '',
         _verbose => $verbose,
-        _warn => 0,
         _force => 0,
+        _warnings => 0,
         _assert => 1,
         _cuda => 0,
         _sse => 0,
@@ -140,8 +138,9 @@ sub new {
     
     # command line options
     my @args = (
-        'warn' => \$self->{_warn},
         'force' => \$self->{_force},
+        'enable-warnings' => sub { $self->{_warnings} = 1 },
+        'disable-warnings' => sub { $self->{_warnings} = 0 },
         'enable-assert' => sub { $self->{_assert} = 1 },
         'disable-assert' => sub { $self->{_assert} = 0 },
         'enable-cuda' => sub { $self->{_cuda} = 1 },
@@ -316,7 +315,7 @@ sub _configure {
         $options .= ' > configure.log 2>&1'; 
     }
             
-    if ($self->{_warn}) {
+    if ($self->{_warnings}) {
         $cxxflags .= " -Wall";
         $linkflags .= " -Wall";
     }

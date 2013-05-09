@@ -8,6 +8,7 @@
 #ifndef BI_METHOD_NELDERMEADOPTIMISER_HPP
 #define BI_METHOD_NELDERMEADOPTIMISER_HPP
 
+#include "../state/Schedule.hpp"
 #include "../state/State.hpp"
 #include "../math/gsl.hpp"
 
@@ -77,9 +78,7 @@ struct NelderMeadOptimiserParams {
   Random* rng;
   State<B,L>* s;
   F* filter;
-  real t;
-  real T;
-  int K;
+  ScheduleIterator first, last;
 };
 
 /**
@@ -155,9 +154,8 @@ public:
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
    * @param[in,out] s State.
    * @param inInit Initialisation file.
    * @param simplexSizeRel Size of simplex relative to each dimension.
@@ -167,9 +165,10 @@ public:
    * Note that @p s should be initialised with a starting state.
    */
   template<Location L, class IO2>
-  void optimise(Random& rng, const real t, const real T, const int K,
-      State<B,L>& s, IO2* inInit = NULL, const real simplexSizeRel = 0.1,
-      const int stopSteps = 100, const real stopSize = 1.0e-4);
+  void optimise(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, State<B,L>& s, IO2* inInit = NULL,
+      const real simplexSizeRel = 0.1, const int stopSteps = 100,
+      const real stopSize = 1.0e-4);
   //@}
 
   /**
@@ -186,16 +185,16 @@ public:
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
-   * @param t Start time.
-   * @param T End time.
-   * @param K Number of dense output points.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
    * @param s State.
    * @param inInit Initialisation file.
    * @param simplexSizeRel Size of simplex relative to each dimension.
    */
   template<Location L, class IO2>
-  void init(Random& rng, const real t, const real T, const int K,
-      State<B,L>& s, IO2* inInit, const real simplexSizeRel = 0.1);
+  void init(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, State<B,L>& s, IO2* inInit,
+      const real simplexSizeRel = 0.1);
 
   /**
    * Perform one iteration step of optimiser.
@@ -333,11 +332,12 @@ void bi::NelderMeadOptimiser<B,F,IO1>::setOutput(IO1* out) {
 
 template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
-void bi::NelderMeadOptimiser<B,F,IO1>::optimise(Random& rng, const real t,
-    const real T, const int K, State<B,L>& s, IO2* inInit,
-    const real simplexSizeRel, const int stopSteps, const real stopSize) {
+void bi::NelderMeadOptimiser<B,F,IO1>::optimise(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
+    IO2* inInit, const real simplexSizeRel, const int stopSteps,
+    const real stopSize) {
   int k = 0;
-  init(rng, t, T, K, s, inInit, simplexSizeRel);
+  init(rng, first, last, s, inInit, simplexSizeRel);
   while (k < stopSteps && !hasConverged(stopSize)) {
     step();
     report(k);
@@ -349,11 +349,11 @@ void bi::NelderMeadOptimiser<B,F,IO1>::optimise(Random& rng, const real t,
 
 template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
-void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng, const real t,
-    const real T, const int K, State<B,L>& s, IO2* inInit,
-    const real simplexSizeRel) {
+void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
+    IO2* inInit, const real simplexSizeRel) {
   /* first run of filter to get everything initialised properly */
-  filter->filter(rng, t, t, 0, s, inInit);
+  filter->filter(rng, first, last, s, inInit);
 
   /* initialise state vector */
   BOOST_AUTO(x, gsl_vector_reference(state.x));
@@ -369,9 +369,8 @@ void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng, const real t,
   params->rng = &rng;
   params->s = &s;
   params->filter = filter;
-  params->t = t;
-  params->T = T;
-  params->K = K;
+  params->first = first;
+  params->last = last;
 
   /* function */
   gsl_multimin_function* f = new gsl_multimin_function();  ///@todo Leaks
@@ -433,7 +432,7 @@ double bi::NelderMeadOptimiser<B,F,IO1>::ml(const gsl_vector* x,
 
   /* evaluate */
   try {
-    real ll = p->filter->filter(*p->rng, p->t, p->T, p->K,
+    real ll = p->filter->filter(*p->rng, p->first, p->last,
         gsl_vector_reference(x), *p->s);
     return -ll;
   } catch (CholeskyException e) {
@@ -449,23 +448,21 @@ double bi::NelderMeadOptimiser<B,F,IO1>::map(const gsl_vector* x,
     void* params) {
   typedef NelderMeadOptimiserParams<B,L,F> param_type;
   param_type* p = reinterpret_cast<param_type*>(params);
-  typename temp_host_vector<real>::type lp(1);
-  lp.clear();
 
   int P = p->s->size();
   p->s->resize(1, true);
 
   /* initialise */
   vec(p->s->get(PY_VAR)) = gsl_vector_reference(x);
-  p->m->parameterLogDensities(*p->s, lp);
+  real lp = p->m->parameterLogDensity(*p->s);
   p->s->resize(P, true);
 
   /* evaluate */
-  if (bi::is_finite(lp(0))) {
+  if (bi::is_finite(lp)) {
     try {
-      real ll = p->filter->filter(*p->rng, p->t, p->T, p->K,
+      real ll = p->filter->filter(*p->rng, p->first, p->last,
           gsl_vector_reference(x), *p->s);
-      return -(ll + lp(0));
+      return -(ll + lp);
     } catch (CholeskyException e) {
       return GSL_NAN;
     }

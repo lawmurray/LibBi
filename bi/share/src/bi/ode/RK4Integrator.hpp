@@ -34,10 +34,9 @@ public:
 
 }
 
+#include "../host/ode/RK4IntegratorHost.hpp"
 #ifdef ENABLE_SSE
 #include "../sse/ode/RK4IntegratorSSE.hpp"
-#else
-#include "../host/ode/RK4IntegratorHost.hpp"
 #endif
 #ifdef __CUDACC__
 #include "../cuda/ode/RK4IntegratorGPU.cuh"
@@ -52,7 +51,11 @@ void bi::RK4Integrator<B,S>::update(const T1 t1, const T1 t2,
 
   if (bi::abs(t2 - t1) > 0.0) {
     #ifdef ENABLE_SSE
-    RK4IntegratorSSE<B,S,T1>::update(t1, t2, s);
+    if (s.size() % BI_SSE_SIZE == 0) {
+      RK4IntegratorSSE<B,S,T1>::update(t1, t2, s);
+    } else {
+      RK4IntegratorHost<B,S,T1>::update(t1, t2, s);
+    }
     #else
     RK4IntegratorHost<B,S,T1>::update(t1, t2, s);
     #endif

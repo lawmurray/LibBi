@@ -7,7 +7,7 @@ that are constant expressions.
 
 package Bi::Block::const_std_;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block';
 use warnings;
 use strict;
 
@@ -18,10 +18,10 @@ sub validate {
     
     $self->process_args($BLOCK_ARGS);
     
-    if ($self->num_blocks > 0) {
+    if (@{$self->get_blocks} > 0) {
         die("a 'const_std_' block may not contain nested blocks\n");
     }
-    if ($self->num_actions != 1) {
+    if (@{$self->get_actions} != 1) {
         die("a 'const_std_' block may only contain one action\n");
     }
 

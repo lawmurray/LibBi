@@ -47,40 +47,40 @@ public:
   /**
    * Read time.
    *
-   * @param t Index of record.
-   * @param[out] x Time.
+   * @param k Index of record.
+   * @param[out] t Time.
    */
-  void readTime(const int t, real& x) const;
+  void readTime(const int k, real& t) const;
 
   /**
    * Write time.
    *
-   * @param t Index of record.
-   * @param x Time.
+   * @param k Index of record.
+   * @param t Time.
    */
-  void writeTime(const int t, const real& x);
+  void writeTime(const int k, const real& t);
 
   /**
    * Read times.
    *
    * @tparam V1 Vector type.
    *
-   * @param t Index of first record.
-   * @param[out] x Times.
+   * @param k Index of first record.
+   * @param[out] ts Times.
    */
   template<class V1>
-  void readTimes(const int t, V1 x) const;
+  void readTimes(const int k, V1 ts) const;
 
   /**
    * Write times.
    *
    * @tparam V1 Vector type.
    *
-   * @param t Index of first record.
-   * @param x Times.
+   * @param k Index of first record.
+   * @param ts Times.
    */
   template<class V1>
-  void writeTimes(const int t, const V1 x);
+  void writeTimes(const int k, const V1 ts);
 
   /**
    * Write static parameters.
@@ -110,11 +110,11 @@ public:
    * @tparam B Model type.
    * @tparam L Location.
    *
-   * @param t Time index.
+   * @param k Time index.
    * @param[out] s State.
    */
   template<class B, Location L>
-  void readState(const int t, State<B,L>& s) const;
+  void readState(const int k, State<B,L>& s) const;
 
   /**
    * Write dynamic state.
@@ -122,11 +122,11 @@ public:
    * @tparam B Model type.
    * @tparam L Location.
    *
-   * @param t Time index.
+   * @param k Time index.
    * @param s State.
    */
   template<class B, Location L>
-  void writeState(const int t, const State<B,L>& s);
+  void writeState(const int k, const State<B,L>& s);
 
 protected:
   /**
@@ -153,12 +153,12 @@ protected:
    * @tparam M1 Matrix type.
    *
    * @param type Variable type.
-   * @param t Time index.
+   * @param k Time index.
    * @param[out] s State. Rows index trajectories, columns variables of the
    * given type.
    */
   template<class M1>
-  void readState(const VarType type, const int t, M1 X) const;
+  void readState(const VarType type, const int k, M1 X) const;
 
   /**
    * Write state.
@@ -166,12 +166,12 @@ protected:
    * @tparam M1 Matrix type.
    *
    * @param type Variable type.
-   * @param t Time index.
+   * @param k Time index.
    * @param s State. Rows index trajectories, columns variables of the given
    * type.
    */
   template<class M1>
-  void writeState(const VarType type, const int t, const M1 X);
+  void writeState(const VarType type, const int k, const M1 X);
 
   /**
    * Model.
@@ -209,49 +209,13 @@ protected:
 #include "../math/temp_matrix.hpp"
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::readTimes(const int t, V1 x) const {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + x.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = tVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << tVar->name());
-
-  if (V1::on_device || x.inc() != 1) {
-    temp_vector_type x1(x.size());
-    ret = tVar->get(x1.buf(), x1.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << tVar->name());
-    x = x1;
-  } else {
-    ret = tVar->get(x.buf(), x.size());
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << tVar->name());
-  }
+void bi::SimulatorNetCDFBuffer::readTimes(const int k, V1 ts) const {
+  read1d(tVar, k, ts);
 }
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::writeTimes(const int t, const V1 x) {
-  /* pre-condition */
-  BI_ASSERT(t >= 0 && t + x.size() <= nrDim->size());
-
-  typedef typename V1::value_type temp_value_type;
-  typedef typename temp_host_vector<temp_value_type>::type temp_vector_type;
-
-  BI_UNUSED NcBool ret;
-  ret = tVar->set_cur(t);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << tVar->name());
-
-  if (V1::on_device || x.inc() != 1) {
-    temp_vector_type x1(x.size());
-    x1 = x;
-    synchronize(V1::on_device);
-    ret = tVar->put(x1.buf(), x1.size());
-  } else {
-    ret = tVar->put(x.buf(), x.size());
-  }
-  BI_ASSERT_MSG(ret, "Inconvertible type writing " << tVar->name());
+void bi::SimulatorNetCDFBuffer::writeTimes(const int k, const V1 ts) {
+  write1d(tVar, k, ts);
 }
 
 template<class B, bi::Location L>
@@ -265,16 +229,16 @@ void bi::SimulatorNetCDFBuffer::writeParameters(const State<B,L>& s) {
 }
 
 template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::readState(const int t, State<B,L>& s) const {
-  readState(R_VAR, t, s.get(R_VAR));
-  readState(D_VAR, t, s.get(D_VAR));
+void bi::SimulatorNetCDFBuffer::readState(const int k, State<B,L>& s) const {
+  readState(R_VAR, k, s.get(R_VAR));
+  readState(D_VAR, k, s.get(D_VAR));
 }
 
 template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::writeState(const int t,
+void bi::SimulatorNetCDFBuffer::writeState(const int k,
     const State<B,L>& s) {
-  writeState(R_VAR, t, s.get(R_VAR));
-  writeState(D_VAR, t, s.get(D_VAR));
+  writeState(R_VAR, k, s.get(R_VAR));
+  writeState(D_VAR, k, s.get(D_VAR));
 }
 
 template<class M1>
@@ -310,7 +274,7 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
         counts[j] = 1;
         ++j;
       }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
@@ -369,7 +333,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
         counts[j] = 1;
         ++j;
       }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }

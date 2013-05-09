@@ -17,7 +17,7 @@ according to the given C<mean> and C<std> parameters.
 
 package Bi::Action::gaussian;
 
-use base 'Bi::Model::Action';
+use parent 'Bi::Action';
 use warnings;
 use strict;
 
@@ -60,6 +60,7 @@ sub validate {
     # gets inherited by Bi::Action::log_gaussian etc.
     $ACTION_ARGS->[2]->{default} = int(ref($self) =~ /^Bi\:\:Action\:\:log/);
     
+    Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->set_name('gaussian'); # synonyms exist, standardise name
     $self->ensure_op('~');
@@ -101,8 +102,11 @@ sub jacobian {
     my $self = shift;
 
     my $mean = $self->mean;
-    my @refs = @{$mean->get_vars};
+    my @refs = @{$mean->get_all_var_refs};
     my @J = map { $mean->d($_) } @refs;
+    
+    push(@refs, $self->get_left);
+    push(@J, new Bi::Expression::Literal(1.0));
 
     return (\@J, \@refs);
 }

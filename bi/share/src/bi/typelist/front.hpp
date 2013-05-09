@@ -27,7 +27,7 @@ struct front_impl {
 /**
  * Get the first item of a type list.
  *
- * @ingroup model_typelist
+ * @ingroup typelist
  *
  * @tparam T A type list.
  */

@@ -23,7 +23,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../sse_shared_host.hpp"
 #include "../math/function.hpp"
 #include "../math/control.hpp"
 #include "../../host/ode/RK43VisitorHost.hpp"
@@ -39,20 +38,18 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   BI_ASSERT(t1 < t2);
 
   typedef host_vector_reference<sse_real> vector_reference_type;
-  typedef Pa<ON_HOST,B,host,host,sse_host,sse_shared_host<S> > PX;
+  typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
   typedef RK43VisitorHost<B,S,S,real,PX,sse_real> Visitor;
   static const int N = block_size<S>::value;
   const int P = s.size();
 
   #pragma omp parallel
   {
-    sse_real buf[5*N]; // use of dynamic array faster than heap allocation
+    sse_real buf[4*N]; // use of dynamic array faster than heap allocation
     vector_reference_type r1(buf, N);
     vector_reference_type r2(buf + N, N);
     vector_reference_type err(buf + 2*N, N);
     vector_reference_type old(buf + 3*N, N);
-    vector_reference_type shared(buf + 4*N, N);
-    sseSharedHostState = &shared;
 
     sse_real e, e2;
     real t, h, logfacold, logfac11, fac, e2max;
@@ -61,14 +58,11 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
     #pragma omp for
     for (p = 0; p < P; p += BI_SSE_SIZE) {
-      /* initialise shared memory from global memory */
-      sse_shared_host_init<B,S>(s, p);
-
       t = t1;
       h = h_h0;
       logfacold = bi::log(BI_REAL(1.0e-4));
       n = 0;
-      old = *sseSharedHostState;
+      sse_host_load<B,S>(s, p, old);
       r1 = old;
 
       /* integrate */
@@ -86,19 +80,19 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
         /* stages */
         Visitor::stage1(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sseSharedHostState = r1;
+        sse_host_store<B,S>(s, p, r1);
 
         Visitor::stage2(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sseSharedHostState = r2;
+        sse_host_store<B,S>(s, p, r2);
 
         Visitor::stage3(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sseSharedHostState = r1;
+        sse_host_store<B,S>(s, p, r1);
 
         Visitor::stage4(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sseSharedHostState = r2;
+        sse_host_store<B,S>(s, p, r2);
 
         Visitor::stage5(t, h, s, p, pax, r1.buf(), r2.buf(), err.buf());
-        *sseSharedHostState = r1;
+        sse_host_store<B,S>(s, p, r1);
 
         /* determine largest error among trajectories */
         e2 = BI_REAL(0.0);
@@ -122,7 +116,7 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
         } else {
           /* reject */
           r1 = old;
-          *sseSharedHostState = old;
+          sse_host_store<B,S>(s, p, old);
         }
 
         /* compute next step size */
@@ -142,9 +136,6 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
         ++n;
       }
-
-      /* write from shared back to global memory */
-      sse_shared_host_commit<B,S>(s, p);
     }
   }
 }

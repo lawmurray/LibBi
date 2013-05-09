@@ -15,7 +15,8 @@ version of the transition distribution. It is used by the auxiliary particle
 filter.
 
 Actions in the C<lookahead_transition> block may reference variables of any
-type, but may only target variables of type C<noise> and C<state>.
+type except C<obs>, but may only target variables of type C<noise> and
+C<state>.
 
 =back
 
@@ -23,23 +24,9 @@ type, but may only target variables of type C<noise> and C<state>.
 
 package Bi::Block::lookahead_transition;
 
-use base 'Bi::Model::Block';
+use parent 'Bi::Block::transition';
 use warnings;
 use strict;
-
-our $BLOCK_ARGS = [
-  {
-    name => 'delta',
-    positional => 1,
-    default => 1.0
-  }
-];
-
-sub validate {
-    my $self = shift;
-    
-    $self->process_args($BLOCK_ARGS);
-}
 
 1;
 

@@ -6,7 +6,8 @@ Bi::Visitor::StaticExtractor - visitor for extracting static subexpressions.
 
     use Bi::Visitor::StaticExtractor;
     
-    my $extracts = Bi::Visitor::StaticExtractor->evaluate($model);
+    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);
+    Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);
 
 =head1 INHERITS
 
@@ -20,18 +21,21 @@ L<Bi::Visitor>
 
 package Bi::Visitor::StaticExtractor;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
+
 use List::Util qw(reduce);
+use Carp::Assert;
 
 use Bi::Utility qw(unique);
 
 =item B<evaluate>(I<model>)
 
-Evaluate.
-
-Returns array ref of static subexpressions that can be extracted.
+Constructs actions to perform precomputation of extracted static
+subexpressions, inserts these into model, and returns two array refs: the
+second gives the extracted expressions, and the first the variable references
+to replace them with.
 
 =cut
 sub evaluate {
@@ -41,6 +45,7 @@ sub evaluate {
     my $self = new Bi::Visitor; 
     bless $self, $class;
 
+    # extract expressions
     my $statics = [];
     my $extracts = [];    
     foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
@@ -49,60 +54,105 @@ sub evaluate {
     $extracts = unique($extracts);
     @$extracts = map { ($_->is_const || $_->isa('Bi::Expression::VarIdentifier')) ? () : $_ } @$extracts;
 
-    return $extracts;
+    # insert actions
+    my $lefts = [];
+    my $rights = [];
+    my $action = new Bi::Action;
+    $action->set_op('<-');
+    
+    foreach my $extract (@$extracts) {
+        my $var = new Bi::Model::Var('param_aux_');
+        $model->push_var($var);
+        
+        my $left = new Bi::Expression::VarIdentifier($var);
+        my $right = $extract;
+        
+        push(@$lefts, $left);
+        push(@$rights, $right);
+        
+        $action->set_left($left);
+        $action->set_right($right);
+        $action->validate;
+
+        $model->get_block('parameter')->push_child($action->clone);        
+        $model->get_block('proposal_parameter')->push_child($action->clone);
+    }
+    
+    return ($lefts, $rights);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $statics = shift;
     my $extracts = shift;
     
-    my $is_static = 1;
+    my $is_static = 0;
     my $num_statics = 0;
     
-    if ($node->isa('Bi::Model::Action')) {
+    if ($node->isa('Bi::Action')) {
         my $num_args = $node->num_args + $node->num_named_args;
         my @statics = splice(@$statics, -$num_args, $num_args);
         $is_static = 0;
-        $num_statics = reduce { $a + $b } 0, @statics;
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::BinaryOperator')) {
         my @statics = splice(@$statics, -2);
-        $is_static = reduce { $a && $b } @statics;
-        $num_statics = reduce { $a + $b } @statics;
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::Function')) {
         my $num_args = $node->num_args + $node->num_named_args;
         my @statics = splice(@$statics, -$num_args, $num_args);
-        $is_static = reduce { $a && $b } 1, @statics;
-        $num_statics = reduce { $a + $b } 0, @statics;
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::InlineIdentifier')) {
         $is_static = $node->get_inline->get_expr->is_static;
+    } elsif ($node->isa('Bi::Expression::Index')) {
+    	my $num_args = 1;
+    	my @statics = splice(@$statics, -$num_args, $num_args);
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
+    } elsif ($node->isa('Bi::Expression::Index')) {
+    	my $num_args = 1;
+    	my @statics = splice(@$statics, -$num_args, $num_args);
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
+    } elsif ($node->isa('Bi::Expression::Range')) {
+    	my $num_args = 2;
+    	my @statics = splice(@$statics, -$num_args, $num_args);
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::VarIdentifier')) {
-        my @statics = splice(@$statics, -$node->num_indexes, $node->num_indexes);
-        $is_static = reduce { $a && $b } $node->is_static, @statics;
-        $num_statics = reduce { $a + $b } 0, @statics;
+        my @statics = splice(@$statics, -@{$node->get_indexes}, scalar(@{$node->get_indexes}));
+        $is_static = reduce { $a && $b } ($node->is_static, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @statics = splice(@$statics, -3);
-        $is_static = reduce { $a && $b } @statics;
-        $num_statics = reduce { $a + $b } @statics;
+        $is_static = reduce { $a && $b } (1, @statics);
+        $num_statics = reduce { $a + $b } (0, @statics);
     } elsif ($node->isa('Bi::Expression::UnaryOperator')) {
         $is_static = pop(@$statics);
         $num_statics = $is_static;
-    } elsif (!$node->isa('Bi::Expression')) {
-        $is_static = 0;
+    } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
+        $is_static = 1;
+    } elsif ($node->isa('Bi::Expression::Literal')) {
+        $is_static = 1;
+    } elsif ($node->isa('Bi::Expression::IntegerLiteral')) {
+        $is_static = 1;
+    } elsif ($node->isa('Bi::Expression::StringLiteral')) {
+        $is_static = 1;
     }
     
-    $is_static = $is_static && !$node->is_element;
     push(@$statics, $is_static);
     if ($is_static) {
         if ($num_statics > 0) {
             splice(@$extracts, -$num_statics, $num_statics, $node);
         } else {
+        	assert($node->is_static) if DEBUG;
             push(@$extracts, $node);
         }
     }

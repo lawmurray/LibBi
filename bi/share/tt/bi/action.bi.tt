@@ -7,7 +7,7 @@
 PROCESS macro/arg_list.bi.tt
 -%]
 
-[%-action.get_target.get_var.get_name-%]
-[%-IF action.get_target.num_aliases-%]
-[[% FOREACH alias IN action.get_target.get_aliases %][% IF alias.has_name %][% alias.get_name %][% END %][% IF alias.has_start %]=[% alias.get_start %][% IF alias.has_end %]:[% alias.get_end %][% END %][% END %][% IF !loop.last %],[% END %][% END %]]
-[%-END-%] [% action.get_op %] [% IF action.get_name == 'eval' %][% action.get_named_arg('expr').to_bi %][% ELSE %][% action.get_name %][% arg_list(action) %][% END %] // Action[% action.get_id %]
+[%-action.get_left.get_var.get_name-%]
+[%-IF action.get_aliases.size-%]
+[[% FOREACH alias IN action.get_aliases %][% IF alias.has_name %][% alias.get_name %][% IF alias.has_range %]=[% END %][% END %][% IF alias.has_range %][% alias.get_range.to_bi %][% END %][% IF !loop.last %],[% END %][% END %]]
+[%-END-%] [% action.get_op %] [% action.get_name %][% arg_list(action) %] // Action[% action.get_id %]

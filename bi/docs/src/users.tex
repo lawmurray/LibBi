@@ -6,12 +6,12 @@ sampling for parameter estimation.
 
 LibBi supports state-space models of the form:
 \begin{equation}\label{eqn:model}
-p(\mathbf{y}_{1:T},\mathbf{x}_{0:T},\boldsymbol{\theta}) =
-\underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
+\underbrace{p(\mathbf{y}_{1:T},\mathbf{x}_{0:T},\boldsymbol{\theta})}_{\text{joint}} =
+\underbrace{\underbrace{p(\boldsymbol{\theta})}_{\text{parameter}}
 \underbrace{p(\mathbf{x}_0|\boldsymbol{\theta})}_{\text{initial}}
-\prod_{t=1}^T
-\underbrace{p(\mathbf{x}_t|\mathbf{x}_{t-1},\boldsymbol{\theta})}_{\text{transition}}
-\underbrace{p(\mathbf{y}_t|\mathbf{x}_t,\boldsymbol{\theta})}_{\text{observation}}.
+\left(\prod_{t=1}^T
+\underbrace{p(\mathbf{x}_t|\mathbf{x}_{t-1},\boldsymbol{\theta})}_{\text{transition}}\right)}_{\text{prior}}
+\underbrace{\left(\prod_{t=1}^T \underbrace{p(\mathbf{y}_t|\mathbf{x}_t,\boldsymbol{\theta})}_{\text{observation}}\right)}_{\text{likelihood}}.
 \end{equation}
 where $t = 1,\ldots,T$ indexes time, $\mathbf{y}_{1:T}$ are observations,
 $\mathbf{x}_{1:T}$ are state variables, and $\boldsymbol{\theta}$ are
@@ -71,9 +71,8 @@ model PZ \{
   \}
 
   sub transition \{
-    do \{
-      alpha ~ normal(mu, sigma)
-    \} then ode \{
+    alpha ~ normal(mu, sigma)
+    ode \{
       dP/dt = alpha*P - c*P*Z
       dZ/dt = e*c*P*Z - m_l*Z - m_q*Z*Z
     \}
@@ -236,7 +235,8 @@ dim \emph{name}(\emph{size})
 
 \begin{tip}
 Because LibBi is primarily meant for state-space models, the time dimension is
-special and not declared explicitly.
+special and not declared explicitly. Consider that, for continuous-time
+models, time is not readily represented by a dimension of a finite size.
 \end{tip}
 
 \subsection{Variables\label{Variables}}
@@ -419,52 +419,6 @@ sub transition \{
 \end{bicode}
 As for actions, both positional and named forms of arguments are supported.
 
-\subsection{The \bitt{do..then} clause\label{do_then}}
-
-It is assumed that all actions within the same block are conditionally
-independent, so that they may be evaluated concurrently. Where dependencies
-exist between actions, the \bitt{do..then} clause may be used to serialise
-actions so as to satisfy prerequisites:
-\begin{bicode}
-do \{
-  eps ~ gaussian(0.0, 1.0)
-\} then \{
-  x <- A*x + eps
-\}
-\end{bicode}
-Here, evaluating the variable \bitt{x} depends on first evaluating the
-variable \bitt{eps}.
-
-Any number of \bitt{then} parts may follow the initial \bitt{do}.
-
-\begin{tip}
-The blocks in a \bitt{do..then} clause often match up to
-the conditional probability densities of a Bayesian Hierarchical Model. For
-example the model $p(a,b,c) = p(a|b,c)p(b|c)p(c)$ might be structured:
-\begin{bicode}
-do \{
-  // action for c
-\} then \{
-  // action for b given c
-\} then \{
-  // action for a given b and c
-\}
-\end{bicode}
-\end{tip}
-
-Named blocks can be used in a \bitt{do..then} clause by giving the block name
-immediately after the \bitt{do} or \bitt{then} keyword. For example:
-\begin{bicode}
-sub transition(delta = 1.0) \{
-  do \{
-    alpha ~ normal(mu, sigma)
-  \} then ode \{
-    dP/dt = alpha*P - c*P*Z
-    dZ/dt = e*c*P*Z - m_l*Z - m_q*Z*Z
-  \}
-\}
-\end{bicode}
-
 \subsection{Expressions\label{Expressions}}
 
 LibBi supports expressions over scalars, vectors, matrices and
@@ -510,9 +464,9 @@ The following operators are supported in expressions:
 \noindent
 \begin{tabular}{lr}
 \hline
-Scalar/vector/matrix arithmetic operators: & \bitt{+ - * / \% \^{}} \\
-Element-wise vector/matrix operators:  & \bitt{.+ .- .* ./ .\% .\^{}} \\
-Bitshift operators: & \bitt{<< >>} \\
+Scalar/vector/matrix arithmetic operators: & \bitt{+ - * / \% **} \\
+Element-wise vector/matrix operators:  & \bitt{.+ .- .* ./ .\% .**} \\
+%Bitshift operators: & \bitt{<< >>} \\
 Comparison operators: & \bitt{== != < <= > >= } \\
 Logical operators: & \bitt{\&\& ||} \\
 Ternary operators: & \bitt{?:} \\
@@ -971,7 +925,7 @@ The following dimensions are added:
 
 The following variables are added:
 \begin{itemize}
-\item \bitt{S\_[nr,nxcol,nxrow]} containing the upper-triangular Cholesky
+\item \bitt{U\_[nr,nxcol,nxrow]} containing the upper-triangular Cholesky
   factor of the covariance matrix of the filter density at each time.
 \item For each \kwref{noise} and \kwref{state} variable \bitt{\emph{x}}, a
   variable \bitt{index.\emph{x}} giving the index of the first row (and

@@ -20,7 +20,7 @@ L<Bi::Gen>
 
 package Bi::Gen::Cpp;
 
-use base 'Bi::Gen';
+use parent 'Bi::Gen';
 use warnings;
 use strict;
 
@@ -77,18 +77,25 @@ sub gen {
         $self->process_templates('model', { 'model' => $model }, $out);
 
         # dimensions
-        foreach my $dim (@{$model->get_dims}) {
+        foreach my $dim (@{$model->get_all_dims}) {
             $self->process_dim($model, $dim);
         }   
         
         # variables
-        foreach my $var (@{$model->get_vars}) {
+        foreach my $var (@{$model->get_all_vars}) {
             $self->process_var($model, $var);
         }    
     
         # blocks
-        foreach my $block (@{$model->get_blocks}) {
-            $self->process_block($model, $block);
+        foreach my $block (@{$model->get_all_blocks}) {
+            if ($block != $model) {
+                $self->process_block($model, $block);
+            }
+        }
+
+        # actions
+        foreach my $action (@{$model->get_all_actions}) {
+            $self->process_action($model, $action);
         }
     }
         
@@ -112,7 +119,7 @@ sub process_dim {
     my $dim = shift;
 
     my $template = 'dim';
-    my $out = File::Spec->catfile('src', 'model', 'dim', 'Dim' . $dim->get_name);
+    my $out = File::Spec->catfile('src', 'model', 'dim', 'Dim' . $dim->get_id);
     $self->process_templates($template, { 'dim' => $dim, 'model' => $model }, $out);   
 }
 
@@ -127,7 +134,11 @@ sub process_var {
     my $var = shift;
 
     my $template = 'var';
-    my $out = File::Spec->catfile('src', 'model', 'var', 'Var' . $var->get_name);
+    my $out = File::Spec->catfile('src', 'model', 'var', 'Var' . $var->get_id);
+    $self->process_templates($template, { 'var' => $var, 'model' => $model }, $out);    
+
+    $template = 'var_coord';
+    $out = File::Spec->catfile('src', 'model', 'var', 'VarCoord' . $var->get_id);
     $self->process_templates($template, { 'var' => $var, 'model' => $model }, $out);    
 }
 
@@ -143,8 +154,7 @@ sub process_block {
 
     my $template;
     my $out;
-    my $subblock;
-    my $action;
+    my $child;
 
     if (defined($block->get_name)) {
         $template = File::Spec->catfile('block', lc($block->get_name));
@@ -152,22 +162,11 @@ sub process_block {
             die("don't know what to do with block '" . $block->get_name . "'\n");
         }
     } else {
-        $template = File::Spec->catfile('block', 'eval_');
+        die("unnamed block\n");
     }
     
-    # block     
     $out = File::Spec->catfile('src', 'model', 'block', 'Block' . $block->get_id);
     $self->process_templates($template, { 'block' => $block, 'model' => $model }, $out);
-
-    # sub-blocks
-    foreach $subblock (@{$block->get_blocks}) {
-        $self->process_block($model, $subblock);
-    }   
-    
-    # actions
-    foreach $action (@{$block->get_actions}) {
-        $self->process_action($model, $action);
-    }
 }
 
 =item B<process_action>(I<action>)
@@ -185,17 +184,19 @@ sub process_action {
 
     if (defined($action->get_name)) {
         $template = File::Spec->catfile('action',  lc($action->get_name));
+        if (!$self->is_template("$template.hpp.tt")) {
+            die("don't know what to do with action '" . $action->get_name . "'\n");
+        }
     } else {
-        $template = File::Spec->catfile('action', 'eval_');
+        die("unnamed action\n");
     }
 
     $out = File::Spec->catfile('src', 'model', 'action', 'Action' . $action->get_id);
-    if ($self->is_template("$template.hpp.tt")) {
-        $self->process_templates($template, { 'action' => $action, 'model' => $model }, $out);
-    } else {
-        $template = File::Spec->catfile('action', 'default');
-        $self->process_templates($template, { 'action' => $action, 'model' => $model }, $out);
-    }
+    $self->process_templates($template, { 'action' => $action, 'model' => $model }, $out);
+
+    $template = 'action_coord';
+    $out = File::Spec->catfile('src', 'model', 'action', 'ActionCoord' . $action->get_id);
+    $self->process_templates($template, { 'action' => $action, 'model' => $model }, $out);
 }
 
 =item B<process_client>(I<model>, I<client>)
@@ -323,9 +324,9 @@ sub to_typetree {
     if ($size == 0) {
         $str = "NULL_NODE\n";
     } elsif ($size == 1) {
-        if ($types->[0]->isa('Bi::Model::Action')) {
+        if ($types->[0]->isa('Bi::Action')) {
             $class_name = 'Action' . $types->[0]->get_id;
-        } elsif ($types->[0]->isa('Bi::Model::Block')) {
+        } elsif ($types->[0]->isa('Bi::Block')) {
             $class_name = 'Block' . $types->[0]->get_id;
         } else {
             assert ($types->[0]->isa('Bi::Model::Var')) if DEBUG;

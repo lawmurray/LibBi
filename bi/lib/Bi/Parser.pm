@@ -1,6 +1,6 @@
 =head1 NAME
 
-Bi::Parser - parse Bi source file and construct model.
+Bi::Parser - parse LibBi model specification and construct model.
 
 =head1 SYNOPSIS
 
@@ -20,7 +20,7 @@ Parse::Bi Parse::Lex
 
 package Bi::Parser;
 
-use base 'Parse::Bi';
+use parent 'Parse::Bi';
 use warnings;
 use strict;
 
@@ -32,6 +32,7 @@ use File::Spec;
 use Parse::Bi;
 use Parse::Lex;
 use Bi::Model;
+use Bi::Model::Spec;
 use Bi::Expression;
 use Bi::Visitor::Standardiser;
 
@@ -60,16 +61,16 @@ Constructor.
 sub new {
     my $class = shift;
 
-    my $self = Parse::Bi->new();
-    my $lexer = Parse::Lex->new(@LEX_TOKENS);
-    my $model = new Bi::Model;
+    my $self = new Parse::Bi;
+    my $lexer = new Parse::Lex(@LEX_TOKENS);
     
     $lexer->skip('\s+'); # skips whitespace
     $self->YYData->{DATA} = $lexer;
-    $self->{_model} = $model;
-    $self->{_target} = undef;
+    $self->{_model} = undef; # model, will be set by end of parse
+    $self->{_action} = undef; # current action, used for in-scope aliases
+    $self->{_blocks} = [];  # stack of blocks, used for other in-scopes
 
-    bless $self, $class;
+    bless $self, $class;    
     return $self;
 }
 
@@ -86,9 +87,14 @@ sub parse {
     if ($fh) {
         $self->YYData->{DATA}->from($fh);
     }
+    
+    # error and warning handlers
+  	local $SIG{__DIE__} = sub { $self->_error(@_) };
+   	local $SIG{__WARN__} = sub { $self->_warn(@_) };
+    
     $self->YYParse(yylex => \&_parse_lexer, yyerror => \&_parse_error);
     #, yydebug => 0x1F);
-    
+        
     return $self->get_model;
 }
 
@@ -102,26 +108,50 @@ sub get_model {
     return $self->{_model};
 }
 
-=item B<get_target>
+=item B<get_action>
 
-Get the target of the last encountered action.
+Get the action being constructed by the parser.
 
 =cut
-sub get_target {
+sub get_action {
 	my $self = shift;
-	return $self->{_target};
+	return $self->{_action};
 }
 
-=item B<set_target>(I<target>)
+=item B<top_block>
 
-Set the target of the last encountered action.
+Get the block on top of the stack.
 
 =cut
-sub set_target {
-	my $self = shift;
-	my $target = shift;
-	
-	$self->{_target} = $target;
+sub top_block {
+    my $self = shift;
+    
+    my $n = scalar(@{$self->{_blocks}}) - 1;
+    my $block = $self->{_blocks}->[$n];
+    
+    return $block;
+}
+
+=item B<push_block>
+
+Push a new block onto the stack.
+
+=cut
+sub push_block {
+    my $self = shift;
+
+    push(@{$self->{_blocks}}, new Bi::Block);
+}
+
+=item B<pop_block>
+
+Pop a block from the top of the stack, and return it.
+
+=cut
+sub pop_block {
+    my $self = shift;
+        
+    my $block = pop(@{$self->{_blocks}});
 }
 
 =back
@@ -130,7 +160,7 @@ sub set_target {
 
 =over 4
 
-=item B<model>(I<spec>, I<defs>)
+=item B<model>(I<spec>)
 
 Handle model specification.
 
@@ -138,154 +168,25 @@ Handle model specification.
 sub model {
     my $self = shift;
     my $spec = shift;
-    my $defs = shift;
-    
-    my $def;
-    my $blocks = [];
-    my $consts = [];
-    my $inlines = [];
-    foreach $def (@$defs) {
-        if (ref($def)) {
-            if ($def->isa('Bi::Model::Block')) {
-                push(@$blocks, $def);
-            } elsif ($def->isa('Bi::Model::Const')) {
-                push(@$consts, $def);
-            } elsif ($def->isa('Bi::Model::Inline')) {
-                push(@$inlines, $def);
-            }
-        } else {
-            # ignore, must be part of a comment
-        }
+
+    # bless the last remaining block into a model
+    my $model = $self->pop_block;
+    bless $model, 'Bi::Model';
+
+    my $name;
+    my $args = [];
+    my $named_args = {};
+    if (defined($spec)) {
+        $name = $spec->get_name;
+        $args = $spec->get_args;
+        $named_args = $spec->get_named_args;
     }
-
-    $self->get_model->init($spec->get_name, $spec->get_args, $spec->get_named_args, $blocks, $consts, $inlines);
-}
-
-=item B<dim>(I<spec>)
-
-Handle dimension specification.
-
-=cut
-sub dim {
-    my $self = shift;
-    my $spec = shift;
-
-    my $dim = Bi::Model::Dim->new($spec->get_name, $spec->get_args, $spec->get_named_args);
-
-    $self->get_model->add_dim($dim);
+    $model->set_name($name);
+    $model->set_args($args);
+    $model->set_named_args($named_args);
+    $model->validate;
     
-    return $dim;
-}
-
-=item B<vars>(I<specs>, I<class>)
-
-Handle variable specifications.
-
-=cut
-sub vars {
-    my $self = shift;
-    my $specs = shift;
-    my $class = shift;
-    
-    my $spec;
-    my $var;
-    my $vars = [];
-    
-    if (ref($specs) ne 'ARRAY') {
-        $specs = [ $specs ];
-    }    
-    foreach $spec (@$specs) {
-        $var = $class->new($spec->get_name, $spec->get_dims, $spec->get_args,
-            $spec->get_named_args);
-        $self->get_model->add_var($var);
-        $self->append($vars, $var);
-    }
-    
-    return $vars;
-}
-
-=item B<state>(I<specs>)
-
-Handle state variable specification.
-
-=cut
-sub state {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::State');
-}
-
-=item B<state_aux>(I<specs>)
-
-Handle state auxiliary variable specification.
-
-=cut
-sub state_aux {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::StateAux');
-}
-
-=item B<noise>(I<specs>)
-
-Handle noise variable specification.
-
-=cut
-sub noise {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::Noise');
-}
-
-=item B<input>(I<specs>)
-
-Handle input specification.
-
-=cut
-sub input {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::Input');
-}
-
-=item B<obs>(I<specs>)
-
-Handle obs specification.
-
-=cut
-sub obs {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::Obs');
-}
-
-=item B<param>(I<specs>)
-
-Handle param specification.
-
-=cut
-sub param {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::Param');
-}
-
-=item B<param_aux>(I<specs>)
-
-Handle auxiliary parameter specification.
-
-=cut
-sub param_aux {
-    my $self = shift;
-    my $specs = shift;
-    
-    return $self->vars($specs, 'Bi::Model::ParamAux');
+    $self->{_model} = $model;
 }
 
 =item B<const>(I<name>, I<expr>)
@@ -298,10 +199,26 @@ sub const {
     my $name = shift;
     my $expr = shift;
 
-    my $const = Bi::Model::Const->new($name, $expr);
-    $self->get_model->add_const($const);
-    
-    return $const;
+    if ($self->top_block->is_const($name)) {
+        die("constant '$name' conflicts with constant of same name in same scope.\n");
+    } elsif ($self->top_block->is_inline($name)) {
+        die("constant '$name' conflicts with inline of same name in same scope.\n");
+    } elsif ($self->top_block->is_dim($name)) {
+        die("constant '$name' conflicts with dimension of same name in same scope.\n");
+    } elsif ($self->top_block->is_var($name)) {
+        die("constant '$name' conflicts with variable of same name in same scope.\n");
+    } elsif ($self->_is_const($name)) {
+        warn("constant '$name' masks earlier declaration of constant of same name.\n");
+    } elsif ($self->_is_inline($name)) {
+        warn("constant '$name' masks earlier declaration of inline of same name.\n");
+    } elsif ($self->_is_dim($name)) {
+        warn("constant '$name' masks earlier declaration of dimension of same name.\n");
+    } elsif ($self->_is_var($name)) {
+        warn("constant '$name' masks earlier declaration of variable of same name.\n");
+    }
+
+    my $const = new Bi::Model::Const($name, $expr);
+    $self->top_block->push_const($const);
 }
 
 =item B<inline>(I<name>, I<expr>)
@@ -314,10 +231,93 @@ sub inline {
     my $name = shift;
     my $expr = shift;
 
-    my $inline = Bi::Model::Inline->new($name, $expr);
-    $self->get_model->add_inline($inline);
+    if ($self->top_block->is_const($name)) {
+        die("inline '$name' conflicts with constant of same name in same scope.\n");
+    } elsif ($self->top_block->is_inline($name)) {
+        die("inline '$name' conflicts with inline of same name in same scope.\n");
+    } elsif ($self->top_block->is_dim($name)) {
+        die("inline '$name' conflicts with dimension of same name in same scope.\n");
+    } elsif ($self->top_block->is_var($name)) {
+        die("inline '$name' conflicts with variable of same name in same scope.\n");
+    } elsif ($self->_is_const($name)) {
+        warn("inline '$name' masks earlier declaration of constant of same name.\n");
+    } elsif ($self->_is_inline($name)) {
+        warn("inline '$name' masks earlier declaration of inline of same name.\n");
+    } elsif ($self->_is_dim($name)) {
+        warn("inline '$name' masks earlier declaration of dimension of same name.\n");
+    } elsif ($self->_is_var($name)) {
+        warn("inline '$name' masks earlier declaration of variable of same name.\n");
+    }
+
+    my $inline = new Bi::Model::Inline($name, $expr);
+    $self->top_block->push_inline($inline);
+}
+
+=item B<dim>(I<spec>)
+
+Handle dimension specification.
+
+=cut
+sub dim {
+    my $self = shift;
+    my $spec = shift;
+
+    my $name = $spec->get_name;
+    if ($self->top_block->is_const($name)) {
+        die("dimension '$name' conflicts with constant of same name in same scope.\n");
+    } elsif ($self->top_block->is_inline($name)) {
+        die("dimension '$name' conflicts with inline of same name in same scope.\n");
+    } elsif ($self->top_block->is_dim($name)) {
+        die("dimension '$name' conflicts with dimension of same name in same scope.\n");
+    } elsif ($self->top_block->is_var($name)) {
+        die("dimension '$name' conflicts with variable of same name in same scope.\n");
+    } elsif ($self->_is_const($name)) {
+        warn("dimension '$name' masks earlier declaration of constant of same name.\n");
+    } elsif ($self->_is_inline($name)) {
+        warn("dimension '$name' masks earlier declaration of inline of same name.\n");
+    } elsif ($self->_is_dim($name)) {
+        warn("dimension '$name' masks earlier declaration of dimension of same name.\n");
+    } elsif ($self->_is_var($name)) {
+        warn("dimension '$name' masks earlier declaration of variable of same name.\n");
+    }
+
+    my $dim = new Bi::Model::Dim($spec->get_name, $spec->get_args,
+        $spec->get_named_args);
+    $self->top_block->push_dim($dim);
+}
+
+=item B<var>(I<type>, I<spec>)
+
+Handle variable specification.
+
+=cut
+sub var {
+    my $self = shift;
+    my $type = shift;
+    my $spec = shift;
     
-    return $inline;
+    my $name = $spec->get_name;
+    if ($self->top_block->is_const($name)) {
+        die("variable '$name' conflicts with constant of same name in same scope.\n");
+    } elsif ($self->top_block->is_inline($name)) {
+        die("variable '$name' conflicts with inline of same name in same scope.\n");
+    } elsif ($self->top_block->is_dim($name)) {
+        die("variable '$name' conflicts with dimension of same name in same scope.\n");
+    } elsif ($self->top_block->is_var($name)) {
+        die("variable '$name' conflicts with variable of same name in same scope.\n");
+    } elsif ($self->_is_const($name)) {
+        warn("variable '$name' masks earlier declaration of constant of same name.\n");
+    } elsif ($self->_is_inline($name)) {
+        warn("variable '$name' masks earlier declaration of inline of same name.\n");
+    } elsif ($self->_is_dim($name)) {
+        warn("variable '$name' masks earlier declaration of dimension of same name.\n");
+    } elsif ($self->_is_var($name)) {
+        warn("variable '$name' masks earlier declaration of variable of same name.\n");
+    }
+        
+    my $var = new Bi::Model::Var($type, $spec->get_name, $spec->get_dims,
+         $spec->get_args, $spec->get_named_args);
+    $self->top_block->push_var($var);
 }
 
 =item B<positional_arg>(I<arg>)
@@ -353,39 +353,8 @@ Handle block specification.
 sub block {
     my $self = shift;
     my $spec = shift;
-    my $defs = shift;
 
-    my $item;
-    my $actions = [];
-    my $blocks = [];
-    my $consts = [];
-    my $inlines = [];
-    foreach $item (@$defs) {
-        if (ref($item)) {
-            if ($item->isa('Bi::Model::Block')) {
-                push(@$blocks, $item);
-            } elsif ($item->isa('Bi::Model::Action')) {
-                push(@$actions, $item);
-            } elsif ($item->isa('Bi::Model::Const')) {
-                push(@$consts, $item);
-            } elsif ($item->isa('Bi::Model::Inline')) {
-                push(@$inlines, $item);
-            }
-        } else {
-            # ignore, must be part of a comment
-        }
-    }
-
-    if (@$actions && @$blocks) {
-        # discourage user from mixing blocks and loose actions at the same
-        # level
-        if (@$actions == 1) {
-            $self->_warn('action outside block');
-        } else {
-            $self->_warn('actions outside block');
-        }
-    }
-
+    my $block = $self->pop_block;
     my $name;
     my $args = [];
     my $named_args = {};
@@ -395,12 +364,14 @@ sub block {
         $named_args = $spec->get_named_args;
     }
 
-    my $block;
-    eval {
-        $block = Bi::Model::Block->new($self->get_model->next_block_id, $name, $args, $named_args, $actions, $blocks, $consts, $inlines);
-    };
-    if ($@) {
-        $self->_error($@);
+    $block->set_name($name);
+    $block->set_args($args);
+    $block->set_named_args($named_args);
+    $block->validate;
+    
+    my $top_block = $self->top_block;
+    if (defined $top_block) {
+        $top_block->push_child($block);
     }
     
     return $block;
@@ -408,17 +379,29 @@ sub block {
 
 =item B<commit_block>(I<block>)
 
-Tag I<block> in C<do..then> clause, or top-level block, as requiring a commit
-after execution. 
+(B<deprecated> along with do..then statement)
+
+Tag I<block> in C<do..then> statement, or top-level block, as requiring a
+commit after execution. 
 
 =cut
 sub commit_block {
     my $self = shift;
     my $block = shift;
     
-    $block->set_commit(1);
+    warn("the do..then statement is deprecated, actions are now executed sequentially in the order given, or in parallel but equivalent to the order given.\n");
+}
+
+=item B<top_level>(I<block>)
+
+Tag top-level block.
+
+=cut
+sub top_level {
+    my $self = shift;
+    my $block = shift;
     
-    return $block;
+    $block->set_top_level(1);
 }
 
 =item B<action>(I<name>, I<aliases>, I<op>, I<expr>)
@@ -428,26 +411,23 @@ Handle action specification.
 =cut
 sub action {
     my $self = shift;
-    my $target = shift;
     my $op = shift;
     my $expr = shift;
+
+    my $action = $self->get_action;    
+    $action->set_op($op);
+    $action->set_right($expr);
+    $action->validate;
     
-    # construct action
-    my $action;
-    eval {
-        $action = new Bi::Model::Action($self->get_model->next_action_id,
-            $target, $op, $expr);
-    };
-    if ($@) {
-        $self->_error($@);
-    }
+    $self->top_block->push_child($action);
+    $self->{_action} = undef;
     
     return $action;
 }
 
 =item B<target>(I<name>, I<aliases>)
 
-Handle target.
+Handle target of an action.
 
 =cut
 sub target {
@@ -460,25 +440,26 @@ sub target {
     }
     
     # check variable
-    my $var;
-    if ($self->get_model->is_var($name)) {
-        $var = $self->get_model->get_var($name);
-    } else {
-        $self->_error("no such variable '$name'");
+    my $var = $self->_get_var($name);
+    if (!defined $var) {
+        die("no such variable '$name'\n");
     }
     
     # check dimension aliases on left
     my $num_aliases = scalar(@$aliases);
-    my $num_dims = $var->num_dims;
+    my $num_dims = scalar(@{$var->get_dims});
     if ($num_aliases > $num_dims) {
         my $plural = ($num_dims == 1) ? '' : 's';
-        $self->_error("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased");
+        die("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased\n");
     }
-
-    my $target = new Bi::Model::Target($var, $aliases);
-    $self->set_target($target);
     
-    return $target;	
+    my @indexes = map { new Bi::Expression::Index(new Bi::Expression::DimAliasIdentifier($_)) } @$aliases;
+    my $left = new Bi::Expression::VarIdentifier($var, \@indexes);
+    
+    my $action = new Bi::Action;
+    $action->set_aliases($aliases);
+    $action->set_left($left);
+    $self->{_action} = $action;
 }
 
 =item B<dtarget>(I<name>, I<aliases>)
@@ -492,10 +473,10 @@ sub dtarget {
     my $aliases = shift;
     
     if ($name !~ /^d/) {
-        $self->_error("do you mean 'd$name'?")
+        die("do you mean 'd$name'?\n")
     } else {
         $name =~ s/^d//;
-        return $self->target($name, $aliases);
+        $self->target($name, $aliases);
     }
 }
 
@@ -516,28 +497,29 @@ sub spec {
         %named_args = @$named_args;
     }
     
-    return Bi::Model::Spec->new($name, $dims, $args, \%named_args);
+    return new Bi::Model::Spec($name, $dims, $args, \%named_args);
 }
 
 =item B<dim_arg>(I<name>)
 
-Handle variable dimension argument.
+Handle a dimension argument of a variable.
 
 =cut
 sub dim_arg {
     my $self = shift;
     my $name = shift;
     
-    if ($self->get_model->is_dim($name)) {
-        return $self->get_model->get_dim($name);
+    my $dim = $self->_get_dim($name);
+    if (defined $dim) {
+        return $dim;
     } else {
-        $self->_error("no such dimension '$name'");
+        die("no such dimension '$name'\n");
     }
 }
 
 =item B<dim_alias>(I<name>, I<start>, I<end>)
 
-Handle action dimension alias.
+Handle a dimension alias of an action.
 
 =cut
 sub dim_alias {
@@ -547,16 +529,22 @@ sub dim_alias {
     my $end = shift;
 
     if (defined $name) {
-        if ($self->get_model->is_var($name)) {
-            $self->_error("variable name '$name' cannot be used as dimension alias");
-        } elsif ($self->get_model->is_const($name)) {
-            $self->_error("constant name '$name' cannot be used as dimension alias");
-        } elsif ($self->get_model->is_inline($name)) {
-            $self->_error("inline expression name '$name' cannot be used as dimension alias");
+        if ($self->_is_var($name)) {
+            die("variable name '$name' cannot be used as dimension alias\n");
+        } elsif ($self->_is_const($name)) {
+            die("constant name '$name' cannot be used as dimension alias\n");
+        } elsif ($self->_is_inline($name)) {
+            die("inline expression name '$name' cannot be used as dimension alias\n");
         }
     }
+    my $range = undef;
+    if (defined $start) {
+        $range = new Bi::Expression::Range($start, $end);
+    } else {
+        assert (!defined $end) if DEBUG;
+    }
     
-    return new Bi::Model::DimAlias($name, $start, $end);
+    return new Bi::Model::DimAlias($name, $range);
 }
 
 =item B<dim_range>(I<name>)
@@ -593,7 +581,7 @@ sub literal {
     my $self = shift;
     my $value = shift;
     
-    return Bi::Expression::Literal->new($value);
+    return new Bi::Expression::Literal($value);
 }
 
 =item B<integer_literal>(I<value>)
@@ -605,7 +593,7 @@ sub integer_literal {
     my $self = shift;
     my $value = shift;
     
-    return Bi::Expression::IntegerLiteral->new($value);
+    return new Bi::Expression::IntegerLiteral($value);
 }
 
 =item B<string_literal>(I<value>)
@@ -617,7 +605,9 @@ sub string_literal {
     my $self = shift;
     my $value = shift;
     
-    return Bi::Expression::StringLiteral->new($value);
+    $value = eval($value);  # gets rid of escapes, quotes etc
+    
+    return new Bi::Expression::StringLiteral($value);
 }
 
 =item B<identifier>(I<name>, I<indexes>)
@@ -631,45 +621,44 @@ sub identifier {
     my $indexes = shift;
     my $ranges = shift;
     
-    if ($self->get_model->is_const($name)) {
+    if ($self->_is_const($name)) {
         if (defined($indexes) || defined($ranges)) {
-            $self->_error("constant '$name' is scalar");
+            die("constant '$name' is scalar\n");
         }
-        return new Bi::Expression::ConstIdentifier($self->get_model->get_const($name));
-    } elsif ($self->get_model->is_inline($name)) {
+        return new Bi::Expression::ConstIdentifier($self->_get_const($name));
+    } elsif ($self->_is_inline($name)) {
         if (defined($indexes) || defined($ranges)) {
-            $self->_error("inline expression '$name' is scalar");
+            die("inline expression '$name' is scalar\n");
         }
-        return new Bi::Expression::InlineIdentifier($self->get_model->get_inline($name));
-    } elsif ($self->get_model->is_var($name)) {
-        my $var = $self->get_model->get_var($name);
-        if (defined($indexes) && @$indexes > 0 && @$indexes != $var->num_dims) {
-            my $plural1 = ($var->num_dims == 1) ? '' : 's';
+        return new Bi::Expression::InlineIdentifier($self->_get_inline($name));
+    } elsif ($self->_is_var($name)) {
+        my $var = $self->_get_var($name);
+        if (defined($indexes) && @$indexes > 0 && @$indexes != @{$var->get_dims}) {
+            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
             my $plural2 = (@$indexes == 1) ? '' : 's'; 
-            $self->_error("variable '" . $name . "' extends along " .
-                $var->num_dims . " dimension$plural1, but " . scalar(@$indexes) .
-                " index$plural2 given");
+            die("variable '" . $name . "' extends along " .
+                scalar(@{$var->get_dims}) . " dimension$plural1, but " . scalar(@$indexes) .
+                " index$plural2 given\n");
         }
-        if (defined($ranges) && @$ranges > 0 && @$ranges != $var->num_dims) {
-            my $plural1 = ($var->num_dims == 1) ? '' : 's';
+        if (defined($ranges) && @$ranges > 0 && @$ranges != @{$var->get_dims}) {
+            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
             my $plural2 = (@$ranges == 1) ? '' : 's'; 
-            $self->_error("variable '" . $name . "' extends along " .
-                $var->num_dims . " dimension$plural1, but " . scalar(@$ranges) .
-                " range$plural2 given");
+            die("variable '" . $name . "' extends along " .
+                @{$var->get_dims} . " dimension$plural1, but " . scalar(@$ranges) .
+                " range$plural2 given\n");
         }
         return new Bi::Expression::VarIdentifier($var, $indexes, $ranges);
     } elsif (defined($indexes) || defined($ranges)) {
-        $self->_error("no variable, constant or inline expression named '$name'");
-    } elsif (defined $self->get_target) {
-    	my $target = $self->get_target;
-    	my $alias = $target->get_alias($name);
+        die("no variable, constant or inline expression named '$name'\n");
+    } elsif (defined $self->get_action) {
+    	my $alias = $self->get_action->get_alias($name);
     	if (defined $alias) {
     		return new Bi::Expression::DimAliasIdentifier($alias);
     	} else {
-            $self->_error("no variable, constant, inline expression or dimension alias named '$name'");
+            die("no variable, constant, inline expression or dimension alias named '$name'\n");
     	}
     } else {
-        $self->_error("no variable, constant, inline expression or dimension alias named '$name'");
+        die("no variable, constant, inline expression or dimension alias named '$name'\n");
     }
 }
 
@@ -700,7 +689,7 @@ sub range {
 
 =item B<function>(I<name>, I<args>)
 
-Handle function use in expression.
+Handle function in expression.
 
 =cut
 sub function {
@@ -714,7 +703,7 @@ sub function {
         %named_args = @$named_args;
     }
 
-    return Bi::Expression::Function->new($name, $args, \%named_args);
+    return new Bi::Expression::Function($name, $args, \%named_args);
 }
 
 =item B<parens>(I<expr>)
@@ -739,7 +728,7 @@ sub unary_operator {
     my $op = shift;
     my $expr = shift;
     
-    return Bi::Expression::UnaryOperator->new($op, $expr);
+    return new Bi::Expression::UnaryOperator($op, $expr);
 }
 
 =item B<binary_operator>(I<expr1>, I<op>, I<expr2>)
@@ -753,7 +742,7 @@ sub binary_operator {
     my $op = shift;
     my $expr2 = shift;
     
-    return Bi::Expression::BinaryOperator->new($expr1, $op, $expr2);
+    return new Bi::Expression::BinaryOperator($expr1, $op, $expr2);
 }
 
 =item B<ternary_operator>(I<expr1>, I<op1>, I<expr2>, I<op2>, I<expr3>)
@@ -769,15 +758,47 @@ sub ternary_operator {
     my $op2 = shift;
     my $expr3 = shift;
     
-    if ($expr1->num_dims > 0) {
-        $self->_error("conditional in ternary operator must be scalar");
+    if (@{$expr1->get_shape} > 0) {
+        die("conditional in ternary operator must be scalar\n");
     }    
-    return Bi::Expression::TernaryOperator->new($expr1, $op1, $expr2, $op2, $expr3);
+    return new Bi::Expression::TernaryOperator($expr1, $op1, $expr2, $op2, $expr3);
 }
 
 =back
 
-=head2 Utility methods
+=head2 State handling
+
+=over 4
+
+=item B<push_scope>(I<item>)
+
+Create and push a new scope onto the stack, initialised with I<item>.
+
+=cut
+sub push_scope {
+    my $self = shift;
+    my $item = shift;    
+}
+
+=item B<pop_scope>
+
+Pop a scope from the stack.
+
+=cut
+sub pop_scope {
+    my $self = shift;
+    
+}
+
+=item B<add_to_scope>(I<item>)
+
+Add an item to the current scope.
+
+=cut
+sub add_to_scope {
+    my $self = shift;
+    my $item = shift;
+}
 
 =item B<append>(I<list>, I<value>)
 
@@ -809,6 +830,139 @@ sub append {
 =head2 Internal methods
 
 =over 4
+
+=item B<_is_const>(I<name>)
+
+Is there a constant called I<name> in the current scope?
+
+=cut
+sub _is_const {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_is_item($name, \&Bi::Block::is_const);
+}
+
+=item B<_get_const>(I<name>)
+
+Get the constant called I<name> in the current scope, or undef if no such
+constant exists.
+
+=cut
+sub _get_const {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_get_item($name, \&Bi::Block::get_const);
+}
+
+=item B<_is_inline>(I<name>)
+
+Is there an inline expression called I<name> in the current scope?
+
+=cut
+sub _is_inline {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_is_item($name, \&Bi::Block::is_inline);
+}
+
+=item B<_get_inline>(I<name>)
+
+Get the inline expression called I<name> in the current scope, or undef if no
+such inline expression exists.
+
+=cut
+sub _get_inline {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_get_item($name, \&Bi::Block::get_inline);
+}
+
+=item B<_is_dim>(I<name>)
+
+Is there a dimension called I<name> in the current scope?
+
+=cut
+sub _is_dim {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_is_item($name, \&Bi::Block::is_dim);
+}
+
+=item B<_get_dim>(I<name>)
+
+Get the dimension called I<name> in the current scope, or undef if no
+such dimension exists.
+
+=cut
+sub _get_dim {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_get_item($name, \&Bi::Block::get_dim);
+}
+
+=item B<_is_var>(I<name>)
+
+Is there a variable called I<name> in the current scope?
+
+=cut
+sub _is_var {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_is_item($name, \&Bi::Block::is_var);
+}
+
+=item B<_get_var>(I<name>)
+
+Get the variable called I<name> in the current scope, or undef if no
+such variable exists.
+
+=cut
+sub _get_var {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_get_item($name, \&Bi::Block::get_var);
+}
+
+=item B<_is_item>(I<name>, I<subref>)
+
+=cut
+sub _is_item {
+    my $self = shift;
+    my $name = shift;
+    my $subref = shift;
+    
+    my $result = 0;
+    foreach my $block (reverse @{$self->{_blocks}}) {
+        $result = $result || &$subref($block, $name);
+    }
+    return $result;
+}
+
+=item B<_is_item>(I<name>, I<subref>)
+
+=cut
+sub _get_item {
+    my $self = shift;
+    my $name = shift;
+    my $subref = shift;
+    
+    my $result = undef;
+    foreach my $block (reverse @{$self->{_blocks}}) {
+        $result = &$subref($block, $name);
+        if (defined $result) {
+            return $result;
+        }
+    }
+    return $result;
+}
 
 =item B<_parse_lexer>
 
@@ -877,9 +1031,9 @@ sub _error {
             
     # tidy up message
     chomp $msg;
-    $msg =~ s/^Error: //;
-    $msg = "Error (line $line): $msg";
-
+    if ($msg !~ /^Error/) {
+        $msg = "Error (line $line): $msg";
+    }
 	die("$msg\n");
 }
 

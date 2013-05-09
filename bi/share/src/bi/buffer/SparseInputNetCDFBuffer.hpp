@@ -497,8 +497,12 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
 
   /* np dimension */
   if (j < ndims && npDim != NULL && ncVar->get_dim(j) == npDim) {
-    if (np >= 0) {
-      BI_ASSERT(np + X.size1() <= npDim->size());
+    if (npDim->size() == 1) {
+      /* special case, often occurring with simulated data sets */
+      offsets[j] = 0;
+      counts[j] = 1;
+    } else if (np >= 0) {
+      BI_ASSERT(np < npDim->size());
       offsets[j] = np;
       counts[j] = 1;
     } else {
@@ -604,7 +608,7 @@ void bi::SparseInputNetCDFBuffer::serialiseCoords(const Var* var, const M1 C,
 
   ixs.clear();
   int j, size = 1;
-  for (j = var->getNumDims() - 1; j >= 0; --j) {
+  for (j = 0; j < var->getNumDims(); ++j) {
     axpy_elements(size, row(C, j), ixs, ixs);
     size *= var->getDim(j)->getSize();
   }

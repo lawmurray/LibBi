@@ -19,7 +19,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::TargetReplacer;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -32,7 +32,7 @@ Evaluate.
 
 =over 4
 
-=item I<block> L<Bi::Model::Block> object.
+=item I<block> L<Bi::Block> object.
 
 =back
 
@@ -51,20 +51,20 @@ sub evaluate {
     $block->accept($self, $from, $to);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
     my $from = shift;
     my $to = shift;
     
-    if ($node->isa('Bi::Model::Action')) {
+    if ($node->isa('Bi::Action')) {
         if ($node->get_left->get_var->equals($from)) {
-            $node->get_target->set_var($to);
+            $node->get_left->set_var($to);
         }
     }
     

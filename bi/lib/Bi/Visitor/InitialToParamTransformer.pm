@@ -16,7 +16,7 @@ L<Bi::Visitor>
 
 package Bi::Visitor::InitialToParamTransformer;
 
-use base 'Bi::Visitor';
+use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
@@ -49,82 +49,64 @@ sub evaluate {
     my $self = {};
     bless $self, $class;
 
-    my $initial_block = $model->get_block('initial')->clone($model);
-    $initial_block->set_name('eval_');
-    $initial_block->set_commit(1);
-    
-    my $proposal_initial_block = $model->get_block('proposal_initial')->clone($model);
-    $proposal_initial_block->set_name('eval_');
-    $proposal_initial_block->set_commit(1);
-        
-    # create params to hold initial conditions
-    my $state;
-    my $param;
-    foreach $state (@{$model->get_vars('state')}) {
-        my $name = $state->get_name . "_0_";
-        my @dims = @{$state->get_dims};
-        my @args = @{$state->get_args};
-        my %named_args = %{$state->get_named_args};
-        $named_args{'has_input'} = new Bi::Expression::IntegerLiteral(1);
-        $named_args{'has_output'} = new Bi::Expression::IntegerLiteral(0);
-        $named_args{'input_name'} = new Bi::Expression::StringLiteral($state->get_name);
-        $named_args{'output_name'} = new Bi::Expression::StringLiteral($name);
-        
-        $param = new Bi::Model::Param($name, \@dims, \@args, \%named_args);
-        $model->add_var($param);
-        
-        Bi::Visitor::TargetReplacer->evaluate($initial_block, $state, $param);
-        Bi::Visitor::TargetReplacer->evaluate($proposal_initial_block, $state, $param);
+    my $parameter_block = $model->get_block('parameter');
+    my $initial_block = $model->get_block('initial');
+    my $proposal_parameter_block = $model->get_block('proposal_parameter');
+    my $proposal_initial_block = $model->get_block('proposal_initial');
 
-        Bi::Visitor::VarReplacer->evaluate($initial_block, $state, $param);
-        Bi::Visitor::VarReplacer->evaluate($proposal_initial_block, $state, $param);
+    # move the contents of the 'initial' block to the end of the 'parameter'
+    # block
+    $parameter_block->push_children($initial_block->get_children);
+    $initial_block->clear;
+
+    # move the contents of the 'proposal_initial' block to the end of the
+    # 'proposal_parameter' block
+    $proposal_parameter_block->push_children($proposal_initial_block->get_children);
+    $proposal_initial_block->clear;
+   
+    foreach my $state (@{$model->get_all_vars('state')}) {
+        # create a param variable to hold the initial value of this state
+        # variable
+        my $param = $state->clone;
+        $param->set_name($state->get_name . "_0_");
+        $param->set_type('param');
+        $param->set_named_arg('has_input', new Bi::Expression::IntegerLiteral(1));
+        $param->set_named_arg('has_output', new Bi::Expression::IntegerLiteral(0));
+        $param->set_named_arg('input_name', new Bi::Expression::StringLiteral($state->get_name));
+        $param->set_named_arg('output_name', new Bi::Expression::StringLiteral($param->get_name));
+        $model->push_var($param);
+
+        # replace the state variable with the param variable in the
+        # 'parameter' and 'proposal_parameter' blocks
+        Bi::Visitor::TargetReplacer->evaluate($parameter_block, $state, $param);
+        Bi::Visitor::TargetReplacer->evaluate($proposal_parameter_block, $state, $param);
+        Bi::Visitor::VarReplacer->evaluate($parameter_block, $state, $param);
+        Bi::Visitor::VarReplacer->evaluate($proposal_parameter_block, $state, $param);
+
+        # insert actions into the 'initial' and 'proposal_initial' blocks to
+        # copy the param variables into the state variables
+        my $action = new Bi::Action;
+        my $left = new Bi::Expression::VarIdentifier($state);
+        my $right = new Bi::Expression::VarIdentifier($param);
+        $action->set_left($left);
+        $action->set_op('<-');
+        $action->set_right($right);
+        $action->validate;
+        
+        $initial_block->push_child($action->clone);
+        $proposal_initial_block->push_child($action->clone);
     }
-    
-    $model->accept($self, $model, $initial_block, $proposal_initial_block);
 }
 
-=item B<visit>(I<node>)
+=item B<visit_after>(I<node>)
 
 Visit node of model.
 
 =cut
-sub visit {
+sub visit_after {
     my $self = shift;
     my $node = shift;
-    my $model = shift;
-    my $initial_block = shift;
-    my $proposal_initial_block = shift;
-
-    if ($node->isa('Bi::Model::Block')) {
-        if ($node->get_name eq 'parameter') {
-            $node->sink_actions($model);
-	    if ($node->num_blocks > 0) {
-		$node->get_block($node->num_blocks - 1)->set_commit(1);
-	    }
-	    $node->push_block($initial_block);
-        } elsif ($node->get_name eq 'proposal_parameter') {
-            $node->sink_actions($model);
-	    if ($node->num_blocks > 0) {
-		$node->get_block($node->num_blocks - 1)->set_commit(1);
-	    }
-	    $node->push_block($proposal_initial_block);
-        } elsif ($node->get_name eq 'initial' || $node->get_name eq 'proposal_initial') {
-            # replace with dirac functions
-            my $state;
-            my $param;
-            my $action;
-            
-            $node->clear;            
-            foreach $state (@{$model->get_vars('state')}) {
-                $param = $model->get_var($state->get_name . '_0_');
-                $action = new Bi::Model::Action($model->next_action_id,
-                    new Bi::Model::Target($state), '<-',
-                    new Bi::Expression::VarIdentifier($param));
-                $node->push_action($action);
-            }
-            
-        }
-    }
+    
     return $node;
 }
 

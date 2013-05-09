@@ -328,7 +328,7 @@ void bi::ParticleMCMCNetCDFBuffer::readState(const VarType type, const int t,
         counts[j] = 1;
         ++j;
       }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }
@@ -386,7 +386,7 @@ void bi::ParticleMCMCNetCDFBuffer::writeState(const VarType type, const int t,
         counts[j] = 1;
         ++j;
       }
-      for (i = 0; i < var->getNumDims(); ++i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
         offsets[j] = 0;
         counts[j] = ncVar->get_dim(j)->size();
       }

@@ -140,78 +140,75 @@ struct shared: public global {
 #include "shared_init_visitor.cuh"
 #include "shared_commit_visitor.cuh"
 #include "../traits/block_traits.hpp"
+#include "../traits/var_traits.hpp"
 
 template<class B, class S>
 inline void bi::shared_init(State<B,ON_DEVICE>& s, const int p, const int i) {
-  shared_init_visitor<B,S,S>::accept(s, p, i);
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
+
+  for (int j = threadIdx.y; j < B::ND; j += blockDim.y) {
+    shared_mem[j*Q + q] = s.get(D_VAR)(p, j);
+  }
+  //shared_init_visitor<B,S,S>::accept(s, p, i);
 }
 
 template<class B, class S>
 inline void bi::shared_commit(State<B,ON_DEVICE>& s, const int p,
     const int i) {
-  shared_commit_visitor<B,S,S>::accept(s, p, i);
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
+
+  for (int j = threadIdx.y; j < B::ND; j += blockDim.y) {
+    s.get(D_VAR)(p, j) = shared_mem[j*Q + q];
+  }
+  //shared_commit_visitor<B,S,S>::accept(s, p, i);
 }
 
 template<class S>
 template<class B, class X>
 typename bi::shared<S>::vector_reference_type bi::shared<S>::fetch(
     State<B,ON_DEVICE>& s, const int p) {
-  if (block_contains_target<S,X>::value) {
-    const int start = target_start<S,X>::value;
-    const int size = target_size<X>::value;
-    const int Q = blockDim.x;
-    const int q = threadIdx.x;
+  const int start = var_start<X>::value;
+  const int size = var_size<X>::value;
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
 
-    return vector_reference_type(shared_mem + Q * start + q, size, Q);
-  } else {
-    return global::template fetch<B,X>(s, p);
-  }
+  return vector_reference_type(shared_mem + Q * start + q, size, Q);
 }
 
 template<class S>
 template<class B, class X>
 typename bi::shared<S>::vector_reference_type bi::shared<S>::fetch(
     const State<B,ON_DEVICE>& s, const int p) {
-  if (block_contains_target<S,X>::value) {
-    const int start = target_start<S,X>::value;
-    const int size = target_size<X>::value;
-    const int Q = blockDim.x;
-    const int q = threadIdx.x;
+  const int start = var_start<X>::value;
+  const int size = var_size<X>::value;
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
 
-    return vector_reference_type(shared_mem + Q * start + q, size, Q);
-  } else {
-    return global::template fetch<B,X>(s, p);
-  }
+  return vector_reference_type(shared_mem + Q * start + q, size, Q);
 }
 
 template<class S>
 template<class B, class X>
 real& bi::shared<S>::fetch(State<B,ON_DEVICE>& s, const int p,
     const int ix) {
-  if (block_contains_target<S,X>::value) {
-    const int start = target_start<S,X>::value;
-    const int Q = blockDim.x;
-    const int q = threadIdx.x;
+  const int start = var_start<X>::value;
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
 
-    return shared_mem[Q * (start + ix) + q];
-  } else {
-    return global::template fetch<B,X>(s, p, ix);
-  }
+  return shared_mem[Q * (start + ix) + q];
 }
 
 template<class S>
 template<class B, class X>
 const real& bi::shared<S>::fetch(const State<B,ON_DEVICE>& s, const int p,
     const int ix) {
-  if (block_contains_target<S,X>::value) {
-    const int start = target_start<S,X>::value;
-    const int Q = blockDim.x;
-    const int q = threadIdx.x;
+  const int start = var_start<X>::value;
+  const int Q = blockDim.x;
+  const int q = threadIdx.x;
 
-    return shared_mem[Q * (start + ix) + q];
-  } else {
-    return global::template fetch<B,X>(s, p, ix);
-  }
+  return shared_mem[Q * (start + ix) + q];
 }
 
 #endif

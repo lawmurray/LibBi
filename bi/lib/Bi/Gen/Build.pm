@@ -20,7 +20,7 @@ L<Bi::Gen>
 
 package Bi::Gen::Build;
 
-use base 'Bi::Gen';
+use parent 'Bi::Gen';
 use warnings;
 use strict;
 
