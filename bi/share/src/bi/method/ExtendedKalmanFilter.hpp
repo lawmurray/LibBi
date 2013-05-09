@@ -556,18 +556,6 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
   subrange(U1, 0, NR, NR, ND) = subrange(s.getF(), 0, NR, NR, ND);
   trmm(1.0, subrange(U1, 0, NR, 0, NR), subrange(U1, 0, NR, NR, ND));
 
-  matrix_type super(2*M, 2*M), super2(2*M, 2*M), Ux(M, M);
-  super.clear();
-  subrange(super, 0, M, 0, M) = U2;
-  subrange(super, 0, M, M, M) = C;
-  subrange(super, M, M, M, M) = U1;
-
-  super2.clear();
-  syrk(1.0, super, 0.0, super2, 'U', 'T');
-
-  Ux.clear();
-  chol(subrange(super2, M, M, M, M), Ux);
-
   /* predicted covariance */
   matrix_type Sigma(M, M);
   Sigma.clear();
@@ -579,11 +567,6 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
 
   /* Cholesky factor of predicted covariance */
   chol(Sigma, U1);
-
-//  std::cerr << C << std::endl;
-//  std::cerr << "-------" << std::endl;
-//  std::cerr << subrange(super2, 0, M, M, M) << std::endl;
-//  std::cerr << "==========" << std::endl;
 
   /* reset Jacobian, as it has now been multiplied in */
   ident(s.getF());

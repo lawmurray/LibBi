@@ -709,8 +709,6 @@ inline void bi::matrix_scal(const typename M1::value_type alpha, M1 X) {
   }
 }
 
-#include "../math/io.hpp"
-
 template<class V1, class M1, class V2, class M2, class M3, class V3>
 void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
     const M3 C, const V3 x2) {
