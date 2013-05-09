@@ -11,7 +11,7 @@
 #include "../../misc/assert.hpp"
 
 extern "C" {
-#ifdef ENABLE_MKL
+#ifdef HAVE_MKL_CBLAS_H
 #include "mkl_cblas.h"
 #elif HAVE_CBLAS_H
 #include "cblas.h"

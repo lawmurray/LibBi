@@ -43,15 +43,6 @@ AC_ARG_ENABLE([sse],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-sse]) ;;
      esac],[sse=false])
 
-AC_ARG_ENABLE([mkl],
-     [  --enable-mkl            use Intel MKL],
-     [case "${enableval}" in
-       yes) mkl=true ;;
-       no)  mkl=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-mkl]) ;;
-     esac],[mkl=false])
-AM_CONDITIONAL([ENABLE_MKL], [test x$mkl = xtrue])
-
 AC_ARG_ENABLE([mpi],
      [  --enable-mpi            use MPI code],
      [case "${enableval}" in
@@ -155,11 +146,9 @@ AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required library not found])])
 
 # Intel MKL if available, needing special treatment given multiple libs...
-if test x$mkl = xtrue; then
-	AC_SEARCH_LIBS([mkl_blas_dgemv], [mkl_intel mkl_intel_lp64], [], [], [-lmkl_sequential -lmkl_core])
-	AC_CHECK_LIB([mkl_sequential], [mkl_blas_dgemv], [], [], [-lmkl_core])
-	AC_CHECK_LIB([mkl_core], [mkl_blas_dgemv], [], [])
-fi
+AC_SEARCH_LIBS([mkl_blas_dgemv], [mkl_intel mkl_intel_lp64], [], [], [-lmkl_sequential -lmkl_core])
+AC_CHECK_LIB([mkl_sequential], [mkl_blas_dgemv], [], [], [-lmkl_core])
+AC_CHECK_LIB([mkl_core], [mkl_blas_dgemv], [], [])
 
 # atlas if available, may be required later
 AC_CHECK_LIB([atlas], [main], [], [])
@@ -200,14 +189,9 @@ AC_HEADER_ASSERT
 AC_CHECK_HEADER([netcdfcpp.h], [], \
     AC_MSG_ERROR([required NetCDF C++ interface header not found]), [-])
 
-if test x$mkl = xtrue; then
-	AC_CHECK_HEADER([mkl_cblas.h], [], \
-	    AC_MSG_ERROR([header not found (required with --enable-mkl)]), [-])
-else
-	AC_CHECK_HEADERS([cblas.h gsl/gsl_cblas.h], [], [], [-])
-	if test x$ac_cv_header_cblas_h = xfalse && x$ac_cv_header_gsl_gsl_cblas_h = xfalse; then
-	    AC_MSG_ERROR([required header not found])
-	fi
+AC_CHECK_HEADERS([mkl_cblas.h cblas.h gsl/gsl_cblas.h], [], [], [-])
+if test x$ac_cv_header_mkl_cblas_h = xfalse && test x$ac_cv_header_cblas_h = xfalse && x$ac_cv_header_gsl_gsl_cblas_h = xfalse; then
+    AC_MSG_ERROR([required header not found])
 fi
 
 AC_CHECK_HEADERS([\
@@ -278,7 +262,6 @@ AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
-AM_CONDITIONAL([ENABLE_MKL], [test x$mkl = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])

@@ -59,10 +59,6 @@ Enable CUDA code.
 
 Enable SSE code.
 
-=item C<--enable-mkl> (default off)
-
-Enable Intel MKL.
-
 =item C<--enable-mpi> (default off)
 
 Enable MPI code.
@@ -124,7 +120,6 @@ sub new {
         _assert => 1,
         _cuda => 0,
         _sse => 0,
-        _mkl => 0,
         _mpi => 0,
         _vampir => 0,
         _single => 0,
@@ -147,8 +142,6 @@ sub new {
         'disable-cuda' => sub { $self->{_cuda} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
         'disable-sse' => sub { $self->{_sse} = 0 },
-        'enable-mkl' => sub { $self->{_mkl} = 1 },
-        'disable-mkl' => sub { $self->{_mkl} = 0 },
         'enable-mpi' => sub { $self->{_mpi} = 1 },
         'disable-mpi' => sub { $self->{_mpi} = 0 },
         'enable-vampir' => sub { $self->{_vampir} = 1 },
@@ -180,7 +173,6 @@ sub new {
     push(@builddir, 'assert') if $self->{_assert};
     push(@builddir, 'cuda') if $self->{_cuda};
     push(@builddir, 'sse') if $self->{_sse};
-    push(@builddir, 'mkl') if $self->{_mkl};
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
@@ -299,7 +291,6 @@ sub _configure {
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
-    $options .= $self->{_mkl} ? ' --enable-mkl' : ' --disable-mkl';
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
