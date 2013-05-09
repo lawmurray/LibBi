@@ -43,10 +43,10 @@ void bi::RK4IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     Dg.x = bi::min((P + Db.x - 1)/Db.x, maxDgx);
     Db.y = N;
     Dg.y = 1;
-    Ns = Db.x*Db.y*sizeof(real);
+    Ns = 0;
 
     BI_ERROR_MSG(P % Db.x == 0, "Number of trajectories must be multiple of " <<
-        Db.x << " for device ODE integrator");
+        Db.x << " for CUDA ODE integrator");
 
     /* launch */
     kernelRK4<B,S,T1><<<Dg,Db,Ns>>>(t1, t2, s);

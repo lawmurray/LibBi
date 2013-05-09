@@ -5,41 +5,41 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CUDA_SHAREDCOMMITVISITOR_HPP
-#define BI_CUDA_SHAREDCOMMITVISITOR_HPP
+#ifndef BI_CUDA_GLOBALLOADVISITOR_HPP
+#define BI_CUDA_GLOBALLOADVISITOR_HPP
 
 namespace bi {
 /**
- * Visitor for committing shared memory.
+ * Visitor for initialising shared memory.
  *
  * @tparam B Model type.
  * @tparam S1 Action type list, giving variables in shared memory.
  * @tparam S2 Action type list.
  */
 template<class B, class S1, class S2>
-class shared_commit_visitor {
+class global_load_visitor {
 public:
   /**
-   * Commit shared memory.
+   * Initialise shared memory.
    *
    * @param[out] s State.
    * @param p Trajectory id.
    * @param i Variable id.
    */
-  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p,
-      const int i);
+  static CUDA_FUNC_DEVICE real& accept(State<B,ON_DEVICE>& s,
+      const int p, const int i);
 };
 
 /**
  * @internal
  *
- * Base case of shared_commit_visitor.
+ * Base case of global_load_visitor.
  */
 template<class B, class S1>
-class shared_commit_visitor<B,S1,empty_typelist> {
+class global_load_visitor<B,S1,empty_typelist> {
 public:
-  static CUDA_FUNC_DEVICE void accept(State<B,ON_DEVICE>& s, const int p,
-      const int i) {
+  static CUDA_FUNC_DEVICE real& accept(State<B,ON_DEVICE>& s,
+      const int p, const int i) {
     //
   }
 };
@@ -51,7 +51,7 @@ public:
 #include "../traits/target_traits.hpp"
 
 template<class B, class S1, class S2>
-inline void bi::shared_commit_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
+inline real& bi::global_load_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
     const int p, const int i) {
   typedef typename front<S2>::type front;
   typedef typename pop_front<S2>::type pop_front;
@@ -62,10 +62,9 @@ inline void bi::shared_commit_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,
 
   if (i < size) {
     coord_type cox(i);
-    global::fetch<B,target_type>(s, p, cox.index()) =
-        shared<S1>::template fetch<B,target_type>(s, p, cox.index());
+    return global::template fetch<B,target_type>(s, p, cox.index());
   } else {
-    shared_commit_visitor<B,S1,pop_front>::accept(s, p, i - size);
+    return global_load_visitor<B,S1,pop_front>::accept(s, p, i - size);
   }
 }
 

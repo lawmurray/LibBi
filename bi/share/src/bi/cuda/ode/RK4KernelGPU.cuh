@@ -35,21 +35,18 @@ CUDA_FUNC_GLOBAL void kernelRK4(const T1 t1, const T1 t2,
 template<class B, class S, class T1>
 CUDA_FUNC_GLOBAL void bi::kernelRK4(const T1 t1, const T1 t2,
     State<B,ON_DEVICE> s) {
-  typedef Pa<ON_DEVICE,B,global,global,global,shared<S> > PX;
+  typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef RK4VisitorGPU<B,S,S,real,PX,real> Visitor;
 
   /* indices */
   const int i = threadIdx.y;  // variable index
   const int p = blockIdx.x * blockDim.x + threadIdx.x;  // trajectory index
-  const int q = i * blockDim.x + threadIdx.x;  // shared memory index
 
   /* shared memory */
-  real* __restrict__ xs = shared_mem;
-  real& x = xs[q];
+  real& x = global_load_visitor<B,S,S>::accept(s, p, i);
   PX pax;
 
   /* initialise */
-  shared_init<B,S>(s, p, i);
   real t = t1, h = h0, x0 = x, x1, x2, x3, x4;
   __syncthreads();
 
@@ -86,9 +83,6 @@ CUDA_FUNC_GLOBAL void bi::kernelRK4(const T1 t1, const T1 t2,
     x0 = x4;
     t += h;
   }
-
-  /* commit back to global memory */
-  shared_commit<B,S>(s, p, i);
 }
 
 #endif

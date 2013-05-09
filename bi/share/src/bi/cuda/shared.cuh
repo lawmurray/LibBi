@@ -137,8 +137,8 @@ struct shared: public global {
 
 }
 
-#include "shared_init_visitor.cuh"
-#include "shared_commit_visitor.cuh"
+#include "global_load_visitor.cuh"
+#include "global_store_visitor.cuh"
 #include "../traits/block_traits.hpp"
 #include "../traits/var_traits.hpp"
 
@@ -150,7 +150,7 @@ inline void bi::shared_init(State<B,ON_DEVICE>& s, const int p, const int i) {
   for (int j = threadIdx.y; j < B::ND; j += blockDim.y) {
     shared_mem[j*Q + q] = s.get(D_VAR)(p, j);
   }
-  //shared_init_visitor<B,S,S>::accept(s, p, i);
+  //global_load_visitor<B,S,S>::accept(s, p, i);
 }
 
 template<class B, class S>
@@ -162,7 +162,7 @@ inline void bi::shared_commit(State<B,ON_DEVICE>& s, const int p,
   for (int j = threadIdx.y; j < B::ND; j += blockDim.y) {
     s.get(D_VAR)(p, j) = shared_mem[j*Q + q];
   }
-  //shared_commit_visitor<B,S,S>::accept(s, p, i);
+  //global_store_visitor<B,S,S>::accept(s, p, i);
 }
 
 template<class S>

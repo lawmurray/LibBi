@@ -45,26 +45,25 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
   /* indices */
   const int i = threadIdx.y; // variable index
   const int p = blockIdx.x*blockDim.x + threadIdx.x; // trajectory index
-  const int q = i*blockDim.x + threadIdx.x; // shared memory index
-  const int r = threadIdx.x; // trajectory index in shared memory
+  const int q = threadIdx.x; // trajectory index in block
 
   /* shared memory */
-  real* ts = shared_mem;
-  real* hs = ts + blockDim.x;
-  real* e2s = hs + blockDim.x;
-  real* logfacolds = e2s + blockDim.x;
+  real* __restrict__ ts = shared_mem;
+  real* __restrict__ hs = ts + blockDim.x;
+  real* __restrict__ e2s = hs + blockDim.x;
+  real* __restrict__ logfacolds = e2s + blockDim.x;
+  CUDA_VAR_SHARED bool done;
 
   /* refs for this thread */
-  real& x = shared_init_visitor<B,S,S>::accept(s, p, i);//xs[q];
-  real& t = ts[r];
-  real& h = hs[r];
-  real& e2 = e2s[r];
-  real& logfacold = logfacolds[r];
+  real& x = global_load_visitor<B,S,S>::accept(s, p, i);
+  real& t = ts[q];
+  real& h = hs[q];
+  real& e2 = e2s[q];
+  real& logfacold = logfacolds[q];
   PX pax;
 
   /* flags */
   const bool headOfTraj = i == 0; // head thread for own trajectory
-  CUDA_VAR_SHARED bool done;
 
   /* initialise */
   if (headOfTraj) {
@@ -78,18 +77,12 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
   real r1, r2, old, err;
 
   int n = 0;
-  //shared_init<B,S>(s, p, i);
   old = x;
   r1 = x;
 
   do {
-    if (headOfTraj) {
-      //if (BI_REAL(0.1)*bi::abs(h) <= bi::abs(t)*uround) {
-        // step size too small
-      //}
-      if (t + BI_REAL(1.01)*h - t2 > BI_REAL(0.0)) {
-        h = t2 - t;
-      }
+    if (headOfTraj && t + BI_REAL(1.01)*h - t2 > BI_REAL(0.0)) {
+      h = t2 - t;
     }
     __syncthreads();
 
@@ -166,48 +159,15 @@ CUDA_FUNC_GLOBAL void bi::kernelRK43(const T1 t1, const T1 t2, State<B,ON_DEVICE
 
     /* check if we're done */
     /* have tried with warp vote, slower */
-    #ifdef ENABLE_RIPEN
-    const int Q = blockDim.x*gridDim.x; // no. simultaneous trajectories
-    #endif
     done = true;
     __syncthreads();
-    if (t < t2) {
-      if (headOfTraj) {
-        done = false;
-      }
-    } else {
-      #ifdef ENABLE_RIPEN
-      if (p + Q < P) {
-        /* write result for this trajectory */
-        //shared_commit<B,S>(s, p, i);
-
-        /* read starting state for next trajectory */
-        //shared_init<B,S>(s, p + Q, i);
-
-        old = x;
-        r1 = x;
-        n = 0;
-      }
-      #endif
-    }
-    __syncthreads();
-
-    #ifdef ENABLE_RIPEN
-    if (headOfTraj && t >= t2 && p + Q < P) { // moved after __syncthreads() for p update
-      t = t1;
-      h = h0;
-      logfacold = bi::log(BI_REAL(1.0e-4));
-      p += Q;
+    if (headOfTraj && t < t2) {
       done = false;
     }
     __syncthreads();
-    #endif
 
     ++n;
   } while (!done && n < nsteps);
-
-  /* commit back to global memory */
-  //shared_commit<B,S>(s, p, i);
 }
 
 #endif
