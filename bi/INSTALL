@@ -12,7 +12,7 @@ Requirements
 
 The following non-standard Perl modules are required:
 
-Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex File::Slurp
+Template Graph Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex File::Slurp
 File::ShareDir Getopt::ArgvFile
 
 These can be installed using the "cpan" program available on most systems.
