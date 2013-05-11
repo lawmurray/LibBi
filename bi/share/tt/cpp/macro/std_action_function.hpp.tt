@@ -10,7 +10,7 @@
     [% IF function == 'sample' %]
     simulates(s);
     [% ELSIF function == 'simulate' %]
-    x.template fetch<target_type>(s, p, ix) = pax.template fetch_alt<target_type>(s, p, ix);
+    x.template fetch<target_type>(s, p, cox.index()) = pax.template fetch_alt<target_type>(s, p, cox.index());
     [% ELSIF function == 'logdensity' %]
     simulates(s);
     [% ELSIF function == 'maxlogdensity' %]
@@ -42,7 +42,7 @@
     [% IF function == 'sample' %]
     simulates(s, mask);
     [% ELSIF function == 'simulate' %]
-    x.template fetch<target_type>(s, p, ix) = pax.template fetch_alt<target_type>(s, p, ix);
+    x.template fetch<target_type>(s, p, cox.index()) = pax.template fetch_alt<target_type>(s, p, cox.index());
     [% ELSIF function == 'logdensity' %]
     simulates(s, mask);
     [% ELSIF function == 'maxlogdensity' %]

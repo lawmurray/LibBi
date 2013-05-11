@@ -63,7 +63,7 @@ public:
   upper(s, p, cox, pax, mx);
   u = rng.uniform(mn, mx);
     
-  x.template fetch<target_type>(s, p, ix) = u;
+  x.template fetch<target_type>(s, p, cox.index()) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
@@ -72,20 +72,20 @@ public:
   lower(s, p, cox, pax, mn);
   upper(s, p, cox, pax, mx);
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   if (xy >= mn && xy <= mx) {
     lp += -bi::log(mx - mn);
   } else {
     lp = BI_REAL(-1.0)/BI_REAL(0.0);
   }
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
   T1 rn;
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
   
   [% IF range.is_common %]
   range(s, p, cox, pax, rn);
@@ -94,7 +94,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

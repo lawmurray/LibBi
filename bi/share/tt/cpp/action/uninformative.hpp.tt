@@ -28,13 +28,13 @@ public:
 }
 
 [% sig_action_static_function('logdensity') %] {
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
-  x.template fetch<target_type>(s, p, ix) = xy;
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
-  x.template fetch<target_type>(s, p, ix) = xy;
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

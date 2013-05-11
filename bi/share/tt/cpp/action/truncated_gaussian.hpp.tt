@@ -115,7 +115,7 @@ public:
   u = rng.gaussian(mu, sigma);
   [% END %]
 
-  x.template fetch<target_type>(s, p, ix) = u;
+  x.template fetch<target_type>(s, p, cox.index()) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
@@ -126,7 +126,7 @@ public:
   std(s, p, cox, pax, sigma);
   z(s, p, cox, pax, Z);
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   [% IF has_lower && has_upper %]
   lower(s, p, cox, pax, mn);
@@ -146,13 +146,13 @@ public:
     lp = BI_REAL(-1.0)/BI_REAL(0.0);
   }
   
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
   T1 sigma, Z;
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
   
   [%# not a tight bound unless lower < mu < upper, but a bound nonetheless %]
   [% IF std.is_common && (!has_lower || lower.is_common) && (!has_upper || upper.is_common) %]
@@ -163,7 +163,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
   
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

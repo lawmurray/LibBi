@@ -55,7 +55,7 @@ public:
   
   u = bi::beta(rng, a, b);
   
-  x.template fetch<target_type>(s, p, ix) = u;
+  x.template fetch<target_type>(s, p, cox.index()) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
@@ -64,13 +64,13 @@ public:
   alpha(s, p, cox, pax, a);
   beta(s, p, cox, pax, b);
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
   lp += (a - BI_REAL(1.0))*bi::log(xy) +
       (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - xy) - logZ;
 
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
   
 [% sig_action_static_function('maxlogdensity') %] {
@@ -79,7 +79,7 @@ public:
   alpha(s, p, cox, pax, a);
   beta(s, p, cox, pax, b);
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   [% IF alpha.is_common >= 1.0 && beta.is_common %]
   if (a >= BI_REAL(1.0) && b >= BI_REAL(1.0)) {
@@ -94,7 +94,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
   
 [%-PROCESS action/misc/footer.hpp.tt-%]

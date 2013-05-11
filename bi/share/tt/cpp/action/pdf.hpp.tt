@@ -34,8 +34,8 @@ public:
 
 [% sig_action_static_function('logdensity') %] {
   /* write x <- x' first, as then x = x' for pdf */
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
-  x.template fetch<target_type>(s, p, ix) = xy;
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 
   [% alias_dims(action) %]
   [% fetch_parents(pdf) %]
@@ -45,8 +45,8 @@ public:
 
 [% sig_action_static_function('maxlogdensity') %] {
   /* write x <- x' first, as then x = x' for pdf */
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
-  x.template fetch<target_type>(s, p, ix) = xy;
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 
   [% alias_dims(action) %]
   [% fetch_parents(max_pdf) %]

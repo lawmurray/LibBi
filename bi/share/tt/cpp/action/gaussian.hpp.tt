@@ -59,7 +59,7 @@ public:
   u = rng.gaussian(mu, sigma);
   [% END %]
     
-  x.template fetch<target_type>(s, p, ix) = u;
+  x.template fetch<target_type>(s, p, cox.index()) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
@@ -68,20 +68,20 @@ public:
   mean(s, p, cox, pax, mu);
   std(s, p, cox, pax, sigma);
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   [% IF log %]
   lp += BI_REAL(-0.5)*bi::pow((bi::log(xy) - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma*xy);
   [% ELSE %]
   lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
   [% END %]
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
   T1 sigma;
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
   
   [% IF std.is_common && (action.get_left.is_common || !log) %]
   std(s, p, cox, pax, sigma);
@@ -94,7 +94,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
   
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

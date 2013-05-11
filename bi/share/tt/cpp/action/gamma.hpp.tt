@@ -54,7 +54,7 @@ public:
   scale(s, p, cox, pax, sc);
   u = rng.gamma(sh, sc);
     
-  x.template fetch<target_type>(s, p, ix) = u;
+  x.template fetch<target_type>(s, p, cox.index()) = u;
 }
 
 [% sig_action_static_function('logdensity') %] {
@@ -63,12 +63,12 @@ public:
   shape(s, p, cox, pax, sh);
   scale(s, p, cox, pax, sc);
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
 
   bi::gamma_log_density_functor<T1> f(sh, sc);
   lp += f(xy);
 
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
@@ -77,7 +77,7 @@ public:
   shape(s, p, cox, pax, sh);
   scale(s, p, cox, pax, sc);
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, ix));
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
     
   [% IF shape.is_common && scale.is_common %]
   bi::gamma_log_density_functor<T1> f(sh, sc);
@@ -90,7 +90,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, ix) = xy;
+  x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]
