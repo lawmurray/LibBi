@@ -21,6 +21,7 @@
 
 #include "bi/model/Var.hpp"
 #include "bi/cuda/cuda.hpp"
+#include "bi/math/scalar.hpp"
 
 [% FOREACH dim IN var.get_dims.unique-%]
 #include "../dim/Dim[% dim.get_id %].hpp"

@@ -18,6 +18,7 @@
 #define LIBBI_[% class_name | upper %]_HPP
 
 #include "bi/model/Dim.hpp"
+#include "bi/math/scalar.hpp"
 
 /**
  * Dimension: [% dim.get_id %].
