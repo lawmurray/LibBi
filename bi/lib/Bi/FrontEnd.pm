@@ -119,10 +119,9 @@ sub do {
             $self->{_cmd} = 'help';
         }
         if (!defined($self->{_cmd}) || $self->{_cmd} eq '') {
-            die("no client given\n");
-        } else {
-            $self->client;
+            $self->{_cmd} = 'help';
         }
+        $self->client;
     };
     if ($@) {
         die($@);
