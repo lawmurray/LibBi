@@ -87,7 +87,7 @@ sub visit_after {
     } elsif ($node->isa('Bi::Expression::Literal')) {
         $str = 'BI_REAL(' . $node->get_value . ')'; 
     } elsif ($node->isa('Bi::Expression::IntegerLiteral')) {
-        $str = $node->get_value;
+        $str = 'BI_REAL(' . $node->get_value . ')'; 
     } elsif ($node->isa('Bi::Expression::StringLiteral')) {
         $str = '"' . $node->get_value . '"';
     } elsif ($node->isa('Bi::Expression::Index')) {
