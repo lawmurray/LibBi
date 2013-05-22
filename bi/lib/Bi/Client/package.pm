@@ -4,11 +4,11 @@ package - create and validate projects, build packages for distribution.
 
 =head1 SYNOPSIS
 
-    bi package --create
+    libbi package --create
 
-    bi package --validate
+    libbi package --validate
 
-    bi package --build
+    libbi package --build
 
 =head1 DESCRIPTION
 
@@ -39,15 +39,15 @@ Model files.
 =item C<init.sh>
 
 A shell script that may be run to create any derived files. A common task is
-to call C<bi sample --target joint ...> to simulate a data set for testing
+to call C<libbi sample --target joint ...> to simulate a data set for testing
 purposes.
 
 =item C<run.sh>
 
 A shell script that may be run to reproduce the results of the project.
-Common tasks are to call C<bi sample --target prior ...> to sample from the
-prior distribution, and C<bi sample --target posterior ...> to sample from the
-posterior distribution. While a user may not necessarily run this script
+Common tasks are to call C<libbi sample --target prior ...> to sample from the
+prior distribution, and C<libbi sample --target posterior ...> to sample from
+the posterior distribution. While a user may not necessarily run this script
 directly, it should at least give them an idea of what the project is set up
 to do, and what commands they might expect to work. After the C<README> file,
 this would typically be the second file that a new user looks at.
@@ -64,7 +64,7 @@ A particular configuration file where, by convention, a user can set any
 platform-specific build and run options (such as C<--enable-cuda> and
 C<--nthreads>). Any LibBi commands in the C<init.sh> and C<run.sh> scripts
 should include this configuration file to bring in the user's own options
-(e.g. C<bi sample @config.conf ...>).
+(e.g. C<libbi sample @config.conf ...>).
 
 =item C<data/>
 

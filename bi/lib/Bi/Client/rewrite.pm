@@ -5,7 +5,7 @@ and optimisations.
 
 =head1 SYNOPSIS
 
-    bi rewrite --model-file I<Model>.bi
+    libbi rewrite --model-file I<Model>.bi
 
 =head1 DESCRIPTION
 

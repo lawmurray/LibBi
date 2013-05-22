@@ -4,7 +4,7 @@ draw - draw a model as a directed graph.
 
 =head1 SYNOPSIS
 
-    bi draw --model-file I<Model>.bi > I<Model>.dot
+    libbi draw --model-file I<Model>.bi > I<Model>.dot
     dot -Tpdf -o I<Model>.pdf I<Model>.dot
 
 =head1 DESCRIPTION

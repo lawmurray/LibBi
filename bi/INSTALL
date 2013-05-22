@@ -95,12 +95,12 @@ then within cpan:
 Finally, either install LibBi as a Perl module as in the generic instructions
 above, or run it directly from a local directory with:
 
-    /path/to/bi/script/bi ...
+    /path/to/bi/script/libbi ...
 
 You can add /path/to/bi/script to your PATH variable in ~/.bashrc also, after
 which you can just use the following from any directory:
 
-    bi ...
+    libbi ...
 
 
 Specific instructions for Mac OS X
@@ -171,9 +171,9 @@ are set.
 Finally, either install LibBi as a Perl module as in the generic instructions
 above, or run it directly from a local directory with:
 
-    /path/to/bi/script/bi ...
+    /path/to/bi/script/libbi ...
 
 You can add /path/to/bi/script to your PATH variable in ~/.profile also, after
 which you can just use the following from any directory:
 
-    bi ...
+    libbi ...

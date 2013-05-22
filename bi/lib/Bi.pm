@@ -38,7 +38,7 @@ sub share_file {
     
     my $share_file = File::Spec->catfile($Bin, '..', 'share', $file);
     if (!-e $share_file || !-f $share_file) {
-        $share_file = dist_file('Bi', $file);
+        $share_file = dist_file('LibBi', $file);
         if (!-e $share_file || !-f $share_file) {
             die("could not find shared file $file\n");
         }
@@ -58,7 +58,7 @@ sub share_dir {
     
     my $share_dir = File::Spec->catdir($Bin, '..', 'share', $dir);
     if (!-e $share_dir || !-d $share_dir) {
-        $share_dir = File::Spec->catdir(dist_dir('Bi'), $dir);
+        $share_dir = File::Spec->catdir(dist_dir('LibBi'), $dir);
         if (!-e $share_dir || !-d $share_dir) {
             die('could not find shared directory $dir\n')
         }

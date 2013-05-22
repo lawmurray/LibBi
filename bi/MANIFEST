@@ -137,6 +137,7 @@ Makefile.PL
 MakeParser.PL
 README
 script/bi
+script/libbi
 share/autogen.sh
 share/bi.lex
 share/bi.yp

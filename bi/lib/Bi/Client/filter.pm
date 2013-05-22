@@ -4,7 +4,7 @@ filter - filtering tasks.
 
 =head1 SYNOPSIS
 
-    bi filter ...
+    libbi filter ...
     
 =head1 INHERITS
 

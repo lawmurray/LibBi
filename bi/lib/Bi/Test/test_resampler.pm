@@ -4,7 +4,7 @@ test_resampler - test resamplers.
 
 =head1 SYNOPSIS
 
-    bi test_resampler ...
+    libbi test_resampler ...
 
 =head1 INHERITS
 

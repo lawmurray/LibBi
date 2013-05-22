@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Bi::FrontEnd - frontend to bi functionality.
+Bi::FrontEnd - frontend to LibBi functionality.
 
 =head1 SYNOPSIS
 
@@ -15,11 +15,11 @@ Bi::FrontEnd - frontend to bi functionality.
 C<Bi::FrontEnd> is controlled from the command line. The command line should
 take the form:
 
-    bi I<command> I<options>
+    libbi I<command> I<options>
 
 or:
 
-    bi I<options>
+    libbi I<options>
 
 where C<command> is the command to run. The following options are
 supported at this level, additional arguments depend on the client program:
@@ -152,7 +152,7 @@ sub client {
     }
     
     # generators etc
-    my $dirname = (defined $model) ? $model->get_name : 'Bi';
+    my $dirname = (defined $model) ? $model->get_name : 'LibBi';
     my $builder = new Bi::Builder($dirname, $self->{_verbose});
     my $cpp = new Bi::Gen::Cpp($builder->get_dir);
     my $build = new Bi::Gen::Build($builder->get_dir);

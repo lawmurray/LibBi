@@ -4,7 +4,7 @@ test - frontend to test client programs.
 
 =head1 SYNOPSIS
 
-    bi test ...
+    libbi test ...
 
 =head1 INHERITS
 

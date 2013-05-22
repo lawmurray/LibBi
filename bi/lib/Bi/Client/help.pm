@@ -4,13 +4,13 @@ help - look up online help for an action, block or command.
 
 =head1 SYNOPSIS
 
-    bi help I<name>
+    libbi help I<name>
     
-    bi help I<name> --action
+    libbi help I<name> --action
     
-    bi help I<name> --block
+    libbi help I<name> --block
     
-    bi help I<name> --command
+    libbi help I<name> --command
 
 =head1 DESCRIPTION
 
@@ -165,7 +165,7 @@ sub exec {
 sub _general_help {
     my $self = shift;
         print <<End;
-Usage: bi <command> [options]
+Usage: libbi <command> [options]
 
 where <command> is one of:
   * draw
@@ -175,10 +175,9 @@ where <command> is one of:
   * package
   * rewrite
   * sample
-  * simulate
 
-Type 'bi help <command>' for help on a particular command. For more information
-on using the help command type 'bi help help'.
+Type 'libbi help <command>' for help on a particular command. For more
+information on using the help command type 'libbi help help'.
 End
 }
 

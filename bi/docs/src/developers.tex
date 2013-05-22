@@ -35,7 +35,7 @@ these files take effect immediately.
 
 \subsection{Obtaining the source code}
 
-Bi is available via Subversion at
+LibBi is available via Subversion at
 \href{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
 would typically check out a working copy of the \bitt{trunk} directory:
 \begin{cmdcode}
@@ -52,7 +52,7 @@ svn copy -m 'Created branch for...' \textbackslash
   https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
 \end{cmdcode}
 and then checking out a working copy of the branch instead. While the trunk
-should contain a working version of Bi at all times, branches need
+should contain a working version of LibBi at all times, branches need
 not. Regular commits to branches are thus encouraged, even of unfinished code
 or code that does not yet compile and run correctly. Note that you may like to
 copy only a particular subdirectory of the trunk into a branch, rather than
@@ -86,10 +86,10 @@ The following may also be useful if developing OctBi:
 All of these plugins may be installed via the \textsf{Help > Install New Software...}
 menu item in Eclipse, in each case entering the update site URL.
 
-With Subclipse installed, Bi may be checked out of the Subversion repository
+With Subclipse installed, LibBi may be checked out of the Subversion repository
 as a separate project in Eclipse. Use the \textsf{File > New > Other...} menu
 item and select the \textsf{SVN > Checkout Projects from SVN} item from the
-list. Enter the URL of the Bi Subversion repository trunk (or of a branch),
+list. Enter the URL of the LibBi Subversion repository trunk (or of a branch),
 then select one or more of the subdirectories to check these out as Eclipse
 projects.
 
@@ -167,7 +167,7 @@ To add a block:
 \item Choose a name for the block.
 \item Create a Perl module \bitt{Bi::Block::\textit{name}} in the
   file \bitt{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
-  ``CamelCase'' naming conventions should be ignored in favour of Bi block
+  ``CamelCase'' naming conventions should be ignored in favour of LibBi block
   naming conventions here.
 \item Create a new TT template
   \bitt{gen/src/tt/block/\textit{name}.hpp.tt}. When rendered, the template
@@ -184,7 +184,7 @@ To add an action:
 \item Choose a name for the action.
 \item Create a Perl module \bitt{Bi::Action::\textit{name}} in the
   file \bitt{gen/src/Bi/Action/\textit{name}.pm}. Note that Perl module
-  ``CamelCase'' naming conventions should be ignored in favour of Bi action
+  ``CamelCase'' naming conventions should be ignored in favour of LibBi action
   naming conventions here.
 \item If necessary, create a new TT template
   \bitt{gen/src/tt/action/\textit{name}.hpp.tt}. During rendering, the
@@ -202,7 +202,7 @@ To add a client:
   should be added. For an existing client, edit the corresponding Perl module
   \bitt{src/Bi/Client/\textit{name}.pm}. For a new client, choose a name
   and create a new Perl module \bitt{src/Bi/Client/\textit{name}.pm}. Again,
-  Bi client naming conventions should be favoured over Perl module naming
+  LibBi client naming conventions should be favoured over Perl module naming
   conventions.
 \item Consider whether an existing template can be modified or a new template
   should be created. For an existing template, edit the corresponding template
