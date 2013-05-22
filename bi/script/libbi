@@ -2,14 +2,14 @@
 
 =head1 NAME
 
-bi - frontend to bi functionality.
+libbi - frontend to LibBi functionality.
 
 =head1 SYNOPSIS
 
-    bi I<command> I<options...>
+    libbi I<command> I<options...>
 
-    bi @I<options_file>
-    bi I<command> @I<options_file>
+    libbi @I<options_file>
+    libbi I<command> @I<options_file>
 
 =head1 METHODS
 
