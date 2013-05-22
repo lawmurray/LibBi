@@ -22,12 +22,12 @@ The following packages are required:
 
   * a C++ compiler,
   * GNU Autotools: autoconf and automake <www.gnu.org/software/>,
-  * Thrust 1.6 or later <thrust.github.com/>,
+  * Thrust 1.6 or later <thrust.github.com>,
   * NetCDF 4.0.1 or later <www.unidata.ucar.edu/software/netcdf/>,
-  * QRUpdate <qrupdate.sourceforge.net/>,
+  * QRUpdate <qrupdate.sourceforge.net>,
   * GNU Scientific Library <www.gnu.org/software/gsl/>,
   * Boost 1.43 or later, specifically Boost.Random and Boost.TypeOf
-    <www.boost.org/>,
+    <www.boost.org>,
   * a BLAS implementation <www.netlib.org/blas/>,
   * a LAPACK implementation <www.netlib.org/lapack/>.
 
@@ -37,13 +37,13 @@ and headers of these libraries; often the headers are available via separate
 
 For GPU support, the following additional packages are required:
 
-  * CUDA 5.0 or later (including CUBLAS and CURAND) <www.nvidia.com/cuda>,
+  * CUDA 5.0 or later (including CUBLAS and CURAND) <www.nvidia.com/cuda/>,
   * MAGMA 1.2.1 or later <icl.cs.utk.edu/magma/>.
 
 For MPI support, the following additional packages are required:
 
   * An MPI implementation,
-  * Boost.MPI and Boost.Serialization <www.boost.org/>.
+  * Boost.MPI and Boost.Serialization <www.boost.org>.
 
 The following packages are optional for building documentation and visualising
 models:

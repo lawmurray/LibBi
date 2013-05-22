@@ -1,7 +1,8 @@
-Bi README file
+LibBi README file
 ------------------------------------------------------------------------------
 
-The Bi ("Bayesian inference") package.
+The LibBi package (nominally "Library for Bayesian inference", pronounced
+"Libby").
 
 
 Installation
@@ -17,14 +18,14 @@ Documentation of all Perl modules is available via perldoc, e.g.:
 
 perldoc lib/Bi/Model.pm
 
-The user manual may be built, from the base directory of Bi, using the command:
+The user manual may be built, from the base directory of LibBi, using the
+command:
 
 perl MakeDocs.PL
 
-The HTML version of the manual may then be accessed at
-docs/html/index.htm, and the LaTeX version at docs/tex/index.pdf
+The manual may then be accessed at docs/pdf/index.pdf.
 
-Source code documentation for may be built using doxygen with the following
+Source code documentation may be built using doxygen with the following
 command:
 
 doxygen
