@@ -31,80 +31,100 @@ modifying the code generator to produce the client code that will use this.
 When developing LibBi, it is recommended that you do not install it in the
 usual manner as a system-wide Perl module. The recommended approach is to set
 up a local directory with the LibBi files in such a way that modifications to
-these files take effect immediately.
+these files take effect immediately without additional system-wide
+installation steps.
 
 \subsection{Obtaining the source code}
 
-LibBi is available via Subversion at
-\href{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}{https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi}. You
-would typically check out a working copy of the \bitt{trunk} directory:
+LibBi is hosted on GitHub at
+\href{https://github.com/libbi/LibBi}{https://github.com/libbi/LibBi}. It is
+recommended that you sign up for an account on GitHub and fork the repository
+there into your own account. You can then clone the repository to your local
+machine with:
 \begin{cmdcode}
-svn co https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk
+git clone https://github.com/username/LibBi.git
 \end{cmdcode}
+You should then add the original LibBi repository upstream:
+\begin{cmdcode}
+cd LibBi
+git remote add upstream https://github.com/libbi/LibBi.git
+\end{cmdcode}
+after which the following command will pull in changes committed to the main
+repository by other developers:
+\begin{cmdcode}
+git fetch upstream
+\end{cmdcode}
+To contribute your work back to the main LibBi repository, you can use the
+\emph{Pull Request} feature of GitHub.
 
-For any endeavours that may temporarily break functionality, working on a
-branch, rather than the main trunk, is essential. A branch can be created by
-copying the trunk into an appropriately named subdirectory of the
-\bitt{branches} directory:
-\begin{cmdcode}
-svn copy -m 'Created branch for...' \textbackslash
-  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/trunk \textbackslash
-  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
-\end{cmdcode}
-and then checking out a working copy of the branch instead. While the trunk
-should contain a working version of LibBi at all times, branches need
-not. Regular commits to branches are thus encouraged, even of unfinished code
-or code that does not yet compile and run correctly. Note that you may like to
-copy only a particular subdirectory of the trunk into a branch, rather than
-the whole directory.
-
-Once modifications are complete, a branch can be merged back into a working
-copy of the trunk:
-\begin{cmdcode}
-svn merge --reintegrate \textbackslash
-  https://svnserv.csiro.au/svn/css/modelling/bgc/code/bi/branches/branch_name
-\end{cmdcode}
-and then the working copy of the trunk committed.
+Similar instructions apply to working with OctBi and RBi, which are held in
+separate repositories under \href{https://github.com/libbi}{https://github.com/libbi}.
 
 \subsection{Using Eclipse\label{Using_Eclipse}}
 
-LibBi is set up to use the Eclipse IDE. From a vanilla install of the Eclipse
-IDE for C/C++ (available at
-\href{http://www.eclipse.org}{http://www.eclipse.org}), a number of additional
-plugins are supported, and recommended. These are, along with the URLs of their
-update sites:
+LibBi is set up to use the Eclipse IDE
+(\href{http://www.eclipse.org}{http://www.eclipse.org}). From a vanilla
+install of the Eclipse IDE for C/C++, a number of additional plugins are
+supported, and recommended. These are, along with the URLs of their update
+sites:
 \begin{itemize}
-\item Subclipse (Subversion integration) \href{http://subclipse.tigris.org/update}{http://subclipse.tigris.org/update\_1.8.x} (change 1.8 according to your Subversion version),
 \item Eclox (Doxygen integration) \href{http://download.gna.org/eclox/update}{http://download.gna.org/eclox/update},
 \item EPIC (Perl integration) \href{http://e-p-i-c.sf.net/updates/testing}{http://e-p-i-c.sf.net/updates/testing}, and
 \item Perl Template Toolkit Editor \href{http://perleclipse.com/TTEditor/UpdateSite}{http://perleclipse.com/TTEditor/UpdateSite}.
 \end{itemize}
-The following may also be useful if developing OctBi:
-\begin{itemize}
-  \item Matclipse (MATLAB support) \href{http://matclipse.eclipselabs.org.codespot.com/git.update}{http://matclipse.eclipselabs.org.codespot.com/git.update}.
-\end{itemize}
 All of these plugins may be installed via the \textsf{Help > Install New Software...}
 menu item in Eclipse, in each case entering the update site URL.
 
-With Subclipse installed, LibBi may be checked out of the Subversion repository
-as a separate project in Eclipse. Use the \textsf{File > New > Other...} menu
-item and select the \textsf{SVN > Checkout Projects from SVN} item from the
-list. Enter the URL of the LibBi Subversion repository trunk (or of a branch),
-then select one or more of the subdirectories to check these out as Eclipse
-projects.
+The EGit plugin is bundled with all later versions of Eclipse and can be used
+to obtain LibBi from GitHub. Use the \textsf{File > Import...} menu item, then
+\textsf{Git > Projects from Git}, \textsf{URI}, and enter the URL of your
+forked repository on GitHub. Follow the prompts from there.
 
-\marginlabel{Code style file}
-\index{style\,guide} A custom code style is available in the
-\bitt{custom\_code\_style.xml} file, and should be used. This may be loaded
-via the \textsf{Window > Preferences} dialog, using the \textsf{Import...}
-button under \textsf{C/C++ > Code Style}.
+\index{style\,guide} A custom code style is available
+in the \bitt{eclipse/custom\_code\_style.xml} file, and custom code templates
+in \bitt{eclipse/custom\_code\_templates.xml}. These can be installed via the
+\textsf{Window > Preferences} dialog, using the \textsf{Import...} buttons
+under \textsf{C/C++ > Code Style > Formatter} and \textsf{C/C++ > Code Style >
+  Code Templates}, respectively. With these installed, \textsf{Ctrl + Shift +
+  F} in an editor window automatically applies the prescribed style.
 
-\subsection{Using another development environment}
+%%%%
+\section{Building documentation}
 
-It is not necessary to use Eclipse to develop LibBi. Any text editor will
-do. You are asked, however, to pay particular attention to maintaining the
-appropriate coding style, particularly with regard to
-indenting\index{indenting}.
+The user manual can be built, from the base directory of LibBi, using the
+command:
+\begin{cmdcode}
+perl MakeDocs.PL
+\end{cmdcode}
+You will need \LaTeX\ installed. The manual will be built in PDF format at
+\bitt{docs/pdf/index.pdf}.
+
+The Perl components of LibBi are documented using POD (``Plain Old
+Documentation''), as is conventional for Perl modules. The easiest way to
+inspect this is on the command line, using, e.g.
+\begin{cmdcode}
+perldoc lib/Bi/Model.pm
+\end{cmdcode}
+A PDF or HTML build of Perl module documentation is not yet available.
+
+The C++ components of LibBi are documented using Doxygen. HTML documentation
+can be built by running \bitt{doxygen} in the base directory of LibBi, and
+opening the \bitt{docs/dev/html/index.html} file in a browser.
+
+%%%%
+\section{Building releases}
+
+LibBi is packaged as a Perl module. The steps for producing a new release are:
+\begin{enumerate}
+\item Update \bitt{VERSION.md}.
+\item Update \bitt{MANIFEST} by removing the current file, running \bitt{perl
+  MakeManifest.PL} and inspecting the results. Extraneous files that should
+  not be distributed in a release are eliminated via regular expressions in
+  the \bitt{MANIFEST.SKIP} file.
+\item Run \bitt{perl Makefile.PL} followed by \bitt{make dist}.
+\end{enumerate}
+On GitHub, the last step is eliminated in favour of tagging the repository
+with version numbers and having archives automatically built by the service.
 
 %%%%
 \section{Developing the code generator}
@@ -126,13 +146,8 @@ its preferred block type, the action will be implicitly wrapped in it anyway.
 For example, take the model specification:
 \begin{bicode}
 sub transition \{
-  do \{
-    x <- a*x + b
-    y <- c*y + d
-  \} then \{
-    x ~ uniform(x - 1.0, x + 1.0)
-    y ~ gaussian(y, 1.0)
-  \}
+  x ~ uniform(x - 1.0, x + 1.0)
+  y ~ gaussian(y, 1.0)
 \}
 \end{bicode}
 The \actionref{uniform} and \actionref{gaussian} actions prefer different
@@ -140,17 +155,12 @@ parent block types. These additional block types will be inserted, to give the
 equivalent of the user having specified:
 \begin{bicode}
 sub transition \{
-  do \{
-    x <- a*x + b
-    y <- c*y + d
-  \} then \{
-    sub uniform_ \{
-      x ~ uniform(x - 1.0, x + 1.0)
-    \}
-    sub gaussian_ \{
-      y ~ gaussian(y, 1.0)
-    \}
-  \}  
+  sub uniform_ \{
+    x ~ uniform(x - 1.0, x + 1.0)
+  \}
+  sub gaussian_ \{
+    y ~ gaussian(y, 1.0)
+  \}
 \}
 \end{bicode}
 
@@ -166,11 +176,11 @@ To add a block:
 \begin{enumerate}
 \item Choose a name for the block.
 \item Create a Perl module \bitt{Bi::Block::\textit{name}} in the
-  file \bitt{gen/src/Bi/Block/\textit{name}.pm}. Note that Perl module
+  file \bitt{lib/Bi/Block/\textit{name}.pm}. Note that Perl module
   ``CamelCase'' naming conventions should be ignored in favour of LibBi block
   naming conventions here.
 \item Create a new TT template
-  \bitt{gen/src/tt/block/\textit{name}.hpp.tt}. When rendered, the template
+  \bitt{share/tt/cpp/block/\textit{name}.hpp.tt}. When rendered, the template
   will be passed a single variable named \bitt{block}, which is an object of
   the class created in the previous step.
 \end{enumerate}
@@ -183,11 +193,11 @@ To add an action:
 \begin{enumerate}
 \item Choose a name for the action.
 \item Create a Perl module \bitt{Bi::Action::\textit{name}} in the
-  file \bitt{gen/src/Bi/Action/\textit{name}.pm}. Note that Perl module
+  file \bitt{lib/Bi/Action/\textit{name}.pm}. Note that Perl module
   ``CamelCase'' naming conventions should be ignored in favour of LibBi action
   naming conventions here.
 \item If necessary, create a new TT template
-  \bitt{gen/src/tt/action/\textit{name}.hpp.tt}. During rendering, the
+  \bitt{share/tt/cpp/action/\textit{name}.hpp.tt}. During rendering, the
   template will be passed a single variable named \bitt{action}, which is an
   object of the class created in the previous step. This template is not
   required; the template of the containing block may generate all the
@@ -200,40 +210,27 @@ To add a client:
 \begin{enumerate}
 \item Consider whether an existing client can be modified or a new client
   should be added. For an existing client, edit the corresponding Perl module
-  \bitt{src/Bi/Client/\textit{name}.pm}. For a new client, choose a name
-  and create a new Perl module \bitt{src/Bi/Client/\textit{name}.pm}. Again,
+  \bitt{lib/Bi/Client/\textit{name}.pm}. For a new client, choose a name
+  and create a new Perl module \bitt{lib/Bi/Client/\textit{name}.pm}. Again,
   LibBi client naming conventions should be favoured over Perl module naming
   conventions.
 \item Consider whether an existing template can be modified or a new template
   should be created. For an existing template, edit the corresponding template
-  in \bitt{tt/cpp/client/\textit{template}.cpp.tt}. For a new template:
+  in \bitt{share/tt/cpp/client/\textit{template}.cpp.tt}. For a new template:
 \begin{enumerate}
-\item Create files \bitt{tt/cpp/client/\textit{template}.cpp.tt} and
-  \bitt{tt/cpp/client/\textit{template}.cu.tt}. Note that the second
+\item Create files \bitt{share/tt/cpp/client/\textit{template}.cpp.tt} and
+  \bitt{share/tt/cpp/client/\textit{template}.cu.tt}. Note that the second
   typically only needs to \bitt{\#include} the former, the \bitt{*.cu}
   file extension is merely needed for a CUDA-enabled compile.
 \item Modify the Perl module to select this template for use where
   appropriate.
 \item Add the template name to the list given at the top of
-  \bitt{tt/build/Makefile.am.tt} to ensure that a build fule is generated
+  \bitt{share/tt/build/Makefile.am.tt} to ensure that a build fule is generated
   for it.
 \end{enumerate}
 \end{enumerate}
 
 \subsection{Designing an extension\label{Designing_an_extension}}
-
-Given that there are no particular requirements on actions other than those
-imposed by your own containing block class, there is considerable flexibility
-in designing block and action behaviour. This section provides some guidance
-as to best practice.
-
-It is recommended that most logic is written in blocks, rather than
-actions. This allows multiple actions to be combined where doing so will
-improve performance (e.g. minimising the number of kernel launches on a GPU
-device, and maximising parallelism). Note that, unless otherwise specified,
-arguments to an action are unrolled and evaluated prior to any calls to the
-action and its containing block. All arguments are thus passed as the
-variables holding the evaluated result.
 
 Complex C++ code should form part of the library, rather than being included
 in TT templates. The C++ code generated by templates should typically be
@@ -254,9 +251,17 @@ module created for them, in standard Perl POD. Likewise, parameters for
 actions and blocks, and command-line options for clients, are enumerated in
 these. The idea of this is to keep implementation and documentation together.
 
-POD documentation in these modules is automatically converted to LaTeX and
+POD documentation in these modules is automatically converted to \LaTeX\ and
 incorporated in the \secref{User_Reference}{User Reference} section of this
 manual.
+
+\subsection{Developing the language\label{Developing_the_language}}\index{language}
+
+The LibBi modelling language is specified in the files \bitt{share/bi.lex}
+(for the lexer) and \bitt{share/bi.yp} (for the parser). The latter file makes
+extensive callbacks to the \bitt{Bi::Parser} module. After either of the two
+files are modified, the automatically-generated \bitt{Parse::Bi} module must
+be rebuilt by running \bitt{perl MakeParser.PL}.
 
 \subsection{Style guide\label{Developer_style_guide}}\index{style\,guide}
 
@@ -387,8 +392,8 @@ integer):
 \begin{itemize}
 \item \bitt{B} for the model type,
 \item \bitt{Tn} for scalar types,
-\item \bitt{Vn} for matrix types,
-\item \bitt{Mn} for vector types,
+\item \bitt{Vn} for vector types,
+\item \bitt{Mn} for matrix types,
 \item \bitt{Qn} for pdf types,
 \item \bitt{S} for type lists,
 \item \bitt{L} for location (host or device),

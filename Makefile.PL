@@ -2,16 +2,16 @@ use inc::Module::Install;
 
 # metadata
 name 'LibBi';
-abstract 'Bayesian inference for state-space models, including sequential
-Monte Carlo (SMC), particle Markov chain Monte Carlo (PMCMC) and SMC^2 methods
-on multithreaded, graphics processing unit (GPU) and distributed memory
-architectures.';
+abstract 'LibBi is used for state-space modelling and Bayesian inference on
+modern computer hardware, including multi-core CPUs, many-core GPUs (graphics
+processing units) and distributed-memory clusters.';
 author 'Lawrence Murray <lawrence.murray@csiro.au>';
 version '1.0.0';
 license 'gpl';
 
 # dependencies
 requires 'Template' => 2.24;
+requires 'Graph' => 0.94;
 requires 'Math::Symbolic' => 0.606;
 requires 'Carp::Assert' => 0.20;
 requires 'Parse::Yapp' => 0.0;
@@ -26,7 +26,7 @@ install_script 'script/bi';
 install_share 'share';
 
 # ignores
-makemaker_args(PL_FILES => { 'MakeParser.PL' => '/lib/Parse/Bi.pm' });
+makemaker_args(PL_FILES => { 'MakeParser.PL' => 'lib/Parse/Bi.pm' });
 no_index 'docs';
 
 WriteAll;

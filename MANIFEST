@@ -4,6 +4,7 @@ docs/src/index.tex
 docs/src/models.tex
 docs/src/users.tex
 Doxyfile
+inc/Module/Install.pm
 INSTALL.md
 lib/Bi.pm
 lib/Bi/Action.pm
