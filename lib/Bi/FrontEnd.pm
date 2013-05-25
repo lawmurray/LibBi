@@ -58,6 +58,8 @@ use Bi::Visitor::ExtendedTransformer;
 use Bi::Visitor::ParamToStateTransformer;
 use Bi::Visitor::ObsToStateTransformer;
 use Bi::Visitor::InitialToParamTransformer;
+use Bi::Visitor::IteratedFilteringTransformer;
+use Bi::Visitor::IteratedSmoothingTransformer;
 
 use Carp;
 use Carp::Assert;
@@ -179,10 +181,18 @@ sub client {
         if ($client->get_named_arg('with-transform-extended')) {
             Bi::Visitor::ExtendedTransformer->evaluate($model);
         }
-    
+        if ($client->get_named_arg('with-transform-iterated-filtering')) {
+            Bi::Visitor::IteratedFilteringTransformer->evaluate($model);
+        }
+        if ($client->get_named_arg('with-transform-iterated-smoothing')) {
+            Bi::Visitor::IteratedSmoothingTransformer->evaluate($model);
+        }
+
         # optimise
-        my $optimiser = new Bi::Optimiser($model);
-        $optimiser->optimise;
+        if ($client->get_named_arg('with-transform-optimise')){
+            my $optimiser = new Bi::Optimiser($model);
+            $optimiser->optimise;
+        }
     
         # doxygen
         my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);

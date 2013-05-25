@@ -1,6 +1,8 @@
 ~$
 \.svn
+\.git
 \.Bi
+\.LibBi
 \.#MANIFEST.SKIP
 \.includepath
 \.project
@@ -19,3 +21,4 @@
 ^META.yml$
 ^MYMETA.json$
 ^MYMETA.yml$
+^_site

@@ -299,6 +299,21 @@ our @CLIENT_OPTIONS = (
       type => 'bool',
       default => 0
     },
+    {
+      name => 'with-transform-iterated-filtering',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-transform-iterated-smoothing',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-transform-optimise',
+      type => 'bool',
+      default => 1
+    },
     
     # deprecations
     {

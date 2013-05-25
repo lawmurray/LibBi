@@ -27,11 +27,6 @@ A standard project contains the following files:
 
 =over 4
 
-=item C<README>
-
-A description of the package. This would typically be the first file that a
-new user looks at.
-
 =item C<*.bi>
 
 Model files.
@@ -49,7 +44,7 @@ Common tasks are to call C<libbi sample --target prior ...> to sample from the
 prior distribution, and C<libbi sample --target posterior ...> to sample from
 the posterior distribution. While a user may not necessarily run this script
 directly, it should at least give them an idea of what the project is set up
-to do, and what commands they might expect to work. After the C<README> file,
+to do, and what commands they might expect to work. After the C<README.md> file,
 this would typically be the second file that a new user looks at.
 
 =item C<*.conf>
@@ -92,17 +87,25 @@ A list of files, one per line, to be included in the package.
 
 The license governing distribution of the package.
 
-=item C<VERSION>
+=item C<README.md>
 
-The version history of the package. Packages should be given a three-figure
-version number of the form C<x.y.z>, where C<x> is the version number, C<y>
-the major revision number and C<z> the minor revision number. The version
-number would typically be incremented after an overhaul of the package, the
-major revision number after the addition of new functionality, and the minor
-revision number after bug fixes or corrections. When a number is incremented,
-those numbers on the right should be reset to zero. The first version number
-of a working package should be C<1.0.0>. If a package is incomplete, only
-partially working or being tested, the version number may be zero.
+A description of the package. This would typically be the first file that a
+new user looks at. It should be formatted in Markdown, with YAML front-matter
+giving the name, author, version and description of the package.
+
+=item C<VERSION.md>
+
+The version history of the package. It should be formatted in Markdown.
+
+Packages should be given a three-figure version number of the form C<x.y.z>,
+where C<x> is the version number, C<y> the major revision number and C<z>
+the minor revision number. The version number would typically be incremented
+after an overhaul of the package, the major revision number after the
+addition of new functionality, and the minor revision number after bug fixes
+or corrections. When a number is incremented, those numbers on the right
+should be reset to zero. The first version number of a working package
+should be C<1.0.0>. If a package is incomplete, only partially working or
+being tested, the version number may be zero.
 
 =back 
 
@@ -296,11 +299,10 @@ sub create {
         'description' => $description
     };
     my @files = (
+        'README.md',
+        'VERSION.md',
         'MANIFEST',
-        'META',
-        'README',
         'LICENSE',
-        'VERSION',
         'run.sh',
         'init.sh',
         'config.conf'
@@ -345,21 +347,11 @@ sub validate {
         }
     }
 
-    # check META
-    if (!-e 'META') {
-        warn("No META. Create a META file containing the name, version and a description of the package for automated use. It should have the following format:\nName: Name of the package\nVersion: Version number of the package\nDescription: Description of the package.\n");
-    } else {
-        if (!exists $manifest{'META'}) {
-            warn("MANIFEST does not include META.\n");
-        }
-        $self->_read_meta; # to check format
-    }
-
-    # check README
-    if (!-e 'README') {
-        warn("No README. Create a README file documenting the package in a human-readable form.\n");
-    } elsif (!exists $manifest{'README'}) {
-        warn("MANIFEST does not include README.\n");
+    # check README.md
+    if (!-e 'README.md') {
+        warn("No README.md. Create a README.md file documenting the package in Markdown format with YAML frontmatter.\n");
+    } elsif (!exists $manifest{'README.md'}) {
+        warn("MANIFEST does not include README.md.\n");
     }
     
     # check LICENSE
@@ -369,11 +361,11 @@ sub validate {
         warn("MANIFEST does not include LICENSE.\n");
     }
 
-    # check VERSION    
-    if (!-e 'VERSION') {
-        warn("No VERSION. Create a VERSION file to document changes to the package in a human-readable form.\n");
-    } elsif (!exists $manifest{'VERSION'}) {
-        warn("MANIFEST does not include VERSION.\n");
+    # check VERSION.md    
+    if (!-e 'VERSION.md') {
+        warn("No VERSION.md. Create a VERSION.md file to document changes to the package in Markdown format.\n");
+    } elsif (!exists $manifest{'VERSION.md'}) {
+        warn("MANIFEST does not include VERSION.md.\n");
     }
 
     # check run.sh
@@ -440,7 +432,8 @@ sub _read_manifest {
 
 =item C<_read_meta>()
 
-Reads in the C<META> files and returns it as a hashref.
+Reads in the front-matter of the C<README.md> file and returns it as a
+hashref.
 
 =cut
 sub _read_meta {
@@ -449,20 +442,27 @@ sub _read_meta {
     my $line;
     my $key;
     my $lineno = 1;
+    my $on = 0;
 
-    open(META, 'META') || die("could not open META.\n");
-    while ($line = <META>) {
+    open(README, 'README.md') || die("could not open README.md\n");
+    while ($line = <README>) {
+    	if ($lineno == 1 && $line !~ /^-{3,}/) {
+ 			warn("README.md is missing front-matter.");
+ 			last;
+    	} elsif ($line =~ /^-{3,}/) {
+    		last;
+    	}
         if ($line =~ /^(\w+): *(.*?)$/) {
             $key = lc($1);
             $meta->{$key} = $2;
         } elsif (defined $key) {
             $meta->{$key} .= $line;
         } else {
-            warn("Line $lineno of META is unrecognised.");
+            warn("Line $lineno of README.md is unrecognised.");
         }
         ++$lineno;
     }
-    close META;
+    close README;
     
     return $meta;
 }

@@ -1,0 +1,11 @@
+---
+name: [% name %]
+version: [% version %]
+author: [% author %]
+description: [% description %]
+---
+
+LibBi package: [% name %]
+=========================
+
+[% description %]

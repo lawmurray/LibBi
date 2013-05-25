@@ -1,8 +1,7 @@
 MANIFEST
-META
-README
+README.md
+VERSION.md
 LICENSE
-VERSION
 init.sh
 run.sh
 [% name %].bi
