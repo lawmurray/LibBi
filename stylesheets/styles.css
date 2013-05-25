@@ -38,7 +38,7 @@ a {
 }
 
 a small {
-  font-size:11px;
+  font-size:10pt;
   color:#777;
   margin-top:-0.6em;
   display:block;
@@ -58,8 +58,8 @@ blockquote {
 
 code, pre {
   font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
-  color:#333;
-  font-size:11pt;
+  color:#000;
+  font-size:12pt;
 }
 
 pre {
@@ -104,7 +104,7 @@ header ul {
   padding:0;
 }
 
-header ul.buttons {
+ul.buttons {
   list-style:none;
   height:40px;
   
@@ -124,16 +124,20 @@ header ul.buttons {
   width:180px;
 }
 
-header ul.buttons li {
+header p.acknowledgements {
+  line-height:1;
+}
+
+ul.buttons li {
   width:89px;
   float:left;
   border-right:1px solid #d2d2d2;
   height:40px;
 }
 
-header ul.buttons a {
+ul.buttons a {
   line-height:1;
-  font-size:11px;
+  font-size:10pt;
   color:#999;
   display:block;
   text-align:center;
@@ -146,7 +150,7 @@ strong {
   font-weight:700;
 }
 
-header ul.buttons li + li {
+ul.buttons li + li {
   border-right:none;
   width:89px;
 }
@@ -161,8 +165,8 @@ header ul.buttons li + li {
   width:89px;
 }*/
 
-header ul.buttons a strong {
-  font-size:14px;
+ul.buttons a strong {
+  font-size:12pt;
   display:block;
   color:#222;
 }
@@ -174,7 +178,7 @@ section {
 }
 
 small {
-  font-size:11px;
+  font-size:10pt;
 }
 
 hr {

@@ -1,6 +1,8 @@
 {% include header.html %}
 
-<h3>{{ page.title }}</h3>
+<h2>{{ page.title }}</h2>
+
+<p>posted by <strong>{{ page.author }}</strong> on <strong>{{ page.date | date_to_string }}</strong></p>
 
 {{ content }}
 
