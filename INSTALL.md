@@ -127,7 +127,7 @@ Install Perl modules:
 
 then within cpan:
 
-    install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
+    install Template Graph Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
         File::Slurp File::ShareDir Getopt::ArgvFile
 
 Finally, install LibBi as in the generic instructions above.
@@ -170,7 +170,7 @@ Now install the required Perl modules:
 
 then within cpan:
 
-    install Template Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
+    install Template Graph Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
         File::Slurp File::ShareDir Getopt::ArgvFile
 
 It is important that you do this *after* installing the MacPorts dependencies
