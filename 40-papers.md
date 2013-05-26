@@ -5,7 +5,8 @@ menu: Papers
 permalink: papers.html
 ---
 
-## Papers
+Papers
+======
 
 Please cite the following paper if you use LibBi:
 

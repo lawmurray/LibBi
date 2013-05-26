@@ -1,0 +1,15 @@
+{% include header.html %}
+
+<h1>{{ page.name }} package</h1>
+
+<ul class="buttons">
+  <li><a href="{{ page.download-url }}">Download <strong>TAR Ball</strong></a></li>
+  <li><a href="{{ page.github-url }}">View On <strong>GitHub</strong></a></li>
+</ul>
+<p><small>Version <strong>{{ page.version }}</strong> by <a href="mailto:{{ page.email }}">{{ page.author }}</a></small></p>
+
+<p>{{ page.description }}</p>
+
+{{ content }}
+
+{% include footer.html %}

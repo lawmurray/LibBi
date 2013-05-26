@@ -5,14 +5,17 @@ menu: Getting started
 permalink: getting-started.html
 ---
 
-## Getting started
+Getting started
+===============
 
-### Download
+Download
+--------
 
 Use the button on the left to download the latest version. The download is the
 same for all platforms.
 
-### Install
+Install
+-------
 
 LibBi runs on Linux, and on Mac OS X with dependencies installed from the
 [MacPorts](http://www.macports.org) project. It has not been tried on Windows;
@@ -20,23 +23,38 @@ LibBi runs on Linux, and on Mac OS X with dependencies installed from the
 get it running there the contribution of installation instructions would be
 appreciated.
 
-Installation instructions are in the `INSTALL` file of the distribution.
+Installation instructions are in the `INSTALL.md` file of the distribution.
 
-LibBi itself simply installs as a Perl module. The trick, however, is that the
-C++ code it generates to run your models has a number of dependencies. If
-these are not installed you will get errors much like this the first time you
-run LibBi:
-
-> Error: ./configure failed with return code 1, see
-> .Model/build_assert/configure.log and .Model/build_assert/config.log for
-> details
-
-You should bring up the `configure.log` file mentioned. This is the output of
-the usual `configure` script run when building software with a GNU Autotools
-build system. You will be able to determine the missing dependency from there.
-
-### Running
+Run
+---
 
 The [introductory paper](/papers) is a good place to start, followed by the
 [user manual](/documentation). The examples in the introductory paper are
-[available](/examples), along with others, for you to download and run.
+available [here](/packages/Windkessel.html) and
+[here](/packages/Lorenz96.html), along with [others](/examples.html), for you
+to download and run.
+
+Share
+-----
+
+LibBi provides a packaging system for bundling model specifications and input
+files. If you have a package to share please contact <a
+href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. It can be readily
+added to the <a href="/examples.html">Examples</a> page via GitHub.
+
+Develop
+-------
+
+Contributions to LibBi can take many forms:
+
+* Expanding language support, e.g. with new probability distributions.
+* Adding new inference methods.
+* Adding new hardware support.
+* Better integrating LibBi with software such as R, MATLAB, GNU Octave and
+  Julia.
+* Supporting Windows.
+
+If you are interested in getting involved in the development of LibBi, please
+contact <a href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. The
+[user manual](/documentation) also contains a developer guide to help you get
+started.

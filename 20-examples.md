@@ -5,5 +5,7 @@ menu: Examples
 permalink: examples.html
 ---
 
-## Examples
+Examples
+========
 
+{% include packages.html %}

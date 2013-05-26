@@ -145,11 +145,6 @@ ul.buttons a {
   height:40px;
 }
 
-strong {
-  color:#222;
-  font-weight:700;
-}
-
 ul.buttons li + li {
   border-right:none;
   width:89px;
@@ -179,6 +174,7 @@ section {
 
 small {
   font-size:10pt;
+  color: #777;
 }
 
 hr {

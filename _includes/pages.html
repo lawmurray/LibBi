@@ -1,8 +1,10 @@
 <ul>
   {% assign sorted_pages = site.pages | sort:"name" %}
   {% for page in sorted_pages %}
+    {% if page.layout == "page" or page.layout == "index" %}
     <li>
       <a href="{{ page.url }}">{% if page.menu %}{{ page.menu }}{% else %}{{ page.title }}{% endif %}</a>
     </li>
+    {% endif %}
   {% endfor %}
 </ul>

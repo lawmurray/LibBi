@@ -5,7 +5,8 @@ menu: FAQ
 permalink: faq.html
 ---
 
-## Frequently asked questions
+Frequently asked questions
+==========================
 
 ### What's in a name?
 
