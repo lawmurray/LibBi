@@ -1,7 +1,8 @@
 MANIFEST
+LICENSE
+META.yml
 README.md
 VERSION.md
-LICENSE
 init.sh
 run.sh
 [% name %].bi

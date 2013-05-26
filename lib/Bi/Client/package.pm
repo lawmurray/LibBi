@@ -9,6 +9,8 @@ package - create and validate projects, build packages for distribution.
     libbi package --validate
 
     libbi package --build
+    
+    libbi package --webify
 
 =head1 DESCRIPTION
 
@@ -87,11 +89,16 @@ A list of files, one per line, to be included in the package.
 
 The license governing distribution of the package.
 
+=item C<META.yml>
+
+Meta data of the package. It should be formatted in YAML, giving the name,
+author, version and description of the package. See that produced by
+C<libbi package --create> as a guide.
+
 =item C<README.md>
 
 A description of the package. This would typically be the first file that a
-new user looks at. It should be formatted in Markdown, with YAML front-matter
-giving the name, author, version and description of the package.
+new user looks at. It should be formatted in Markdown.
 
 =item C<VERSION.md>
 
@@ -153,6 +160,7 @@ use Bi qw(share_file share_dir);
 use Bi::Gen::Bi;
 
 use Archive::Tar;
+use File::Slurp;
 
 =head1 OPTIONS
 
@@ -176,6 +184,12 @@ Validate the current working directory as a LibBi project and build the
 package. This produces a C<Model-x.y.z.tar.gz> file in the current working
 directory for distribution.
 
+=item C<--webify>
+
+Create a file for publishing the package on a Jekyl website (such as
+www.libbi.org). This produces a C<Model.md> file in the current working
+directory.
+
 =back
 
 =head2 Package creation-specific options
@@ -185,14 +199,6 @@ directory for distribution.
 =item C<--name> (default 'Untitled')
 
 Name of the package.
-
-=item C<--version> (default '1.0.0')
-
-Version number of the package.
-
-=item C<--description>
-
-One sentence description of the package.
 
 =back
 
@@ -218,21 +224,15 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
+      name => 'webify',
+      type => 'bool',
+      default => 0
+    },
+    {
       name => 'name',
       type => 'string',
       default => 'Untitled'
-    },
-    {
-      name => 'version',
-      type => 'string',
-      default => '1.0.0'
-    },
-    {
-      name => 'description',
-      type => 'string',
-      default => ''
-    }
-    
+    },    
 );
 
 sub init {
@@ -265,6 +265,9 @@ sub exec {
         $self->validate;
         $self->build;
     }
+    if ($self->get_named_arg('webify')) {
+        $self->webify;
+    }
 }
 
 sub needs_model {
@@ -284,25 +287,17 @@ sub create {
     if ($name !~ /^[A-Z]/ || $name =~ /_/) {
         warn("Package name should be in CamelCase.\n");
     }
-    
-    my $version = $self->get_named_arg('version');
-    if ($version !~ /^\d+\.\d+\.\d+$/) {
-        warn("Package version should be in the form x.y.z.\n");
-    }
-    
-    my $description = $self->get_named_arg('description');
-    
+        
     # create files
     my $meta = {
-        'name' => $name,
-        'version' => $version,
-        'description' => $description
+        'name' => $name
     };
     my @files = (
-        'README.md',
-        'VERSION.md',
         'MANIFEST',
         'LICENSE',
+        'META.yml',
+        'README.md',
+        'VERSION.md',
         'run.sh',
         'init.sh',
         'config.conf'
@@ -347,20 +342,33 @@ sub validate {
         }
     }
 
-    # check README.md
-    if (!-e 'README.md') {
-        warn("No README.md. Create a README.md file documenting the package in Markdown format with YAML frontmatter.\n");
-    } elsif (!exists $manifest{'README.md'}) {
-        warn("MANIFEST does not include README.md.\n");
-    }
-    
     # check LICENSE
     if (!-e 'LICENSE') {
         warn("No LICENSE. Create a LICENSE file containing the distribution license (e.g. GPL or BSD) of the package.\n");
     } elsif (!exists $manifest{'LICENSE'}) {
         warn("MANIFEST does not include LICENSE.\n");
     }
-
+    
+    # check META.yml
+    if (!-e 'META.yml') {
+        warn("No META.yml. Create a META.yml file containing the meta-data of the package in YAML format.\n");
+    } else {
+        if (!exists $manifest{'META.yml'}) {
+            warn("MANIFEST does not include META.yml.\n");
+        }
+        my $meta = $self->_read_meta;
+        if (exists $meta->{version} && $meta->{version} !~ /^\d+\.\d+\.\d+$/) {
+            warn("Package version should be in the form x.y.z.\n");
+        }
+    }
+    
+    # check README.md
+    if (!-e 'README.md') {
+        warn("No README.md. Create a README.md file documenting the package in Markdown format.\n");
+    } elsif (!exists $manifest{'README.md'}) {
+        warn("MANIFEST does not include README.md.\n");
+    }
+    
     # check VERSION.md    
     if (!-e 'VERSION.md') {
         warn("No VERSION.md. Create a VERSION.md file to document changes to the package in Markdown format.\n");
@@ -414,6 +422,39 @@ sub build {
     $tar->write("$package.tar.gz", COMPRESS_GZIP);
 }
 
+=item C<webify>
+
+Create a markdown file for publishing as website with Jekyll.
+
+=cut
+sub webify {
+    my $self = shift;
+    
+    my $name = $self->_read_meta->{name};
+    my $file = "$name.md";
+
+    my $meta = read_file('META.yml');
+    my $readme = read_file('README.md');
+    chomp $meta;
+    chomp $readme;
+    
+    # remove first heading from README.md contents
+    $readme =~ s/^(.*?)\n={3,}\n*//m;
+    
+    my $webpage = <<End;
+---
+layout: package
+$meta
+---
+
+$readme
+End
+
+    if (!-e $file || $self->_yesno_prompt("$file already exists, overwrite?")) {
+        write_file($file, $webpage);
+    }
+}
+
 =item C<_read_manifest>()
 
 Reads in the C<MANIFEST> file and returns a list of all files included.
@@ -422,7 +463,7 @@ Reads in the C<MANIFEST> file and returns a list of all files included.
 sub _read_manifest {
     my $self = shift;
     
-    open(MANIFEST, 'MANIFEST') || die("could not open MANIFEST.\n");
+    open(MANIFEST, 'MANIFEST') || die("Could not open MANIFEST.\n");
     my @manifest = <MANIFEST>;
     close MANIFEST;
     chomp(@manifest);
@@ -444,25 +485,20 @@ sub _read_meta {
     my $lineno = 1;
     my $on = 0;
 
-    open(README, 'README.md') || die("could not open README.md\n");
-    while ($line = <README>) {
-    	if ($lineno == 1 && $line !~ /^-{3,}/) {
- 			warn("README.md is missing front-matter.");
- 			last;
-    	} elsif ($line =~ /^-{3,}/) {
-    		last;
-    	}
+    # TODO: Use YAML or YAML::Tiny module
+    open(META, 'META.yml') || die("Could not open META.yml\n");
+    while ($line = <META>) {
         if ($line =~ /^(\w+): *(.*?)$/) {
             $key = lc($1);
             $meta->{$key} = $2;
         } elsif (defined $key) {
             $meta->{$key} .= $line;
         } else {
-            warn("Line $lineno of README.md is unrecognised.");
+            warn("Line $lineno of META.yml is unrecognised.");
         }
         ++$lineno;
     }
-    close README;
+    close META;    
     
     return $meta;
 }

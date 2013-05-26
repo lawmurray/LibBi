@@ -1,5 +1,5 @@
 /**
- * [% description %]
+ * [% name %] model.
  */
 model [% name %] {
   // declare constants...
