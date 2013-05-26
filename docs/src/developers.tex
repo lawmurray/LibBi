@@ -1,50 +1,50 @@
 \section{Introduction}
 
-LibBi consists of a few different components\index{components}:
+LibBi consists of two major components\index{components}:
 \begin{itemize}
-\item A \emph{library} which provides classes and functions for simulation,
-  filtering, smoothing, optimising and sampling from state-space models, as
-  well as auxiliary functionality such as memory management, I/O, numerical
-  computing etc. It is written in C++ using a generic programming paradigm.
-\item A \emph{code generator} which parses the LibBi modelling language,
-  contructs and optimises an internal model representation, and generates C++
-  code for compilation against the library. In addition it generates a GNU
-  Autotools build system and various client programs for common tasks.
-\item A \emph{command-line interface} which hides the code generation,
-  compilation and linking procedures behind a simple interface for users.
-\item Packages for common statistical software, such as \emph{OctBi} for GNU
-  Octave and \emph{RBi} for R, that allow querying, collation and
-  visualisation of results output by LibBi.
-\end{itemize}.
+\item A \emph{library} that provides classes and functions for simulation,
+  filtering, smoothing, optimising and sampling state-space models, as well as
+  auxiliary functionality such as memory management, I/O, numerical computing
+  etc. It is written in C++ using a generic programming paradigm.
+\item A \emph{code generator} that parses the LibBi modelling language,
+  constructs and optimises an internal model representation, and generates C++
+  code for compilation against the library. It also includes the command-line
+  interface through which the user interacts with LibBi. It is written in Perl
+  using an object-oriented paradigm.
+\end{itemize}
+
+Related projects might also be considered components. These include
+\emph{OctBi} for GNU Octave and \emph{RBi} for R. Both allow the querying,
+collation and visualisation of results output by LibBi.
 
 Developing LibBi involves adding or modifying functionality in one or more of
-these major components\index{components}. A typical exercise is adding block
-and action types to the code generator to introduce new features, such as
-support for additional probability density
-functions\index{probability\,density}. This may also involve implementing new
-functionality in the library that these blocks and actions can use. Another
-common task is adding a new inference method to the library, then adding or
-modifying the code generator to produce the client code that will use this.
+these components\index{components}. A typical exercise is adding block and
+action types to the code generator to introduce new features, such as support
+for additional probability density functions\index{probability\,density}. This
+may also involve implementing new functionality in the library that these
+blocks and actions can use. Another common task is adding a new inference
+method to the library, then adding or modifying the code generator to produce
+the client code to call it.
 
 \section{Setting up a development environment}
 
 When developing LibBi, it is recommended that you do not install it in the
-usual manner as a system-wide Perl module. The recommended approach is to set
-up a local directory with the LibBi files in such a way that modifications to
-these files take effect immediately without additional system-wide
-installation steps.
+usual manner as a system-wide Perl module. The recommended approach is to work
+from a local clone of the LibBi Git repository. This way modifications take
+effect immediately without additional installation steps, and changes are
+easily committed back to the repository.
 
 \subsection{Obtaining the source code}
 
 LibBi is hosted on GitHub at
 \href{https://github.com/libbi/LibBi}{https://github.com/libbi/LibBi}. It is
 recommended that you sign up for an account on GitHub and fork the repository
-there into your own account. You can then clone the repository to your local
-machine with:
+there into your own account. You can then clone your forked repository to your
+local machine with:
 \begin{cmdcode}
 git clone https://github.com/username/LibBi.git
 \end{cmdcode}
-You should then add the original LibBi repository upstream:
+You should immediately add the original LibBi repository upstream:
 \begin{cmdcode}
 cd LibBi
 git remote add upstream https://github.com/libbi/LibBi.git
@@ -58,7 +58,15 @@ To contribute your work back to the main LibBi repository, you can use the
 \emph{Pull Request} feature of GitHub.
 
 Similar instructions apply to working with OctBi and RBi, which are held in
-separate repositories under \href{https://github.com/libbi}{https://github.com/libbi}.
+separate repositories under
+\href{https://github.com/libbi}{https://github.com/libbi}.
+
+When running the command \bitt{libbi}, you will want to make sure that you are
+calling the version in the Git repository that you have just created. The
+easiest way to do this is to add the \bitt{LibBi/script} directory to your
+\bitt{\$PATH} variable. LibBi will find the other files itself (it uses the
+base directory of the \bitt{libbi} script to determine the location of other
+files).
 
 \subsection{Using Eclipse\label{Using_Eclipse}}
 
@@ -73,7 +81,7 @@ sites:
 \item Perl Template Toolkit Editor \href{http://perleclipse.com/TTEditor/UpdateSite}{http://perleclipse.com/TTEditor/UpdateSite}.
 \end{itemize}
 All of these plugins may be installed via the \textsf{Help > Install New Software...}
-menu item in Eclipse, in each case entering the update site URL.
+menu item in Eclipse, in each case entering the update site URL given above.
 
 The EGit plugin is bundled with all later versions of Eclipse and can be used
 to obtain LibBi from GitHub. Use the \textsf{File > Import...} menu item, then
@@ -91,13 +99,14 @@ under \textsf{C/C++ > Code Style > Formatter} and \textsf{C/C++ > Code Style >
 %%%%
 \section{Building documentation}
 
-The user manual can be built, from the base directory of LibBi, using the
+This user manual can be built, from the base directory of LibBi, using the
 command:
 \begin{cmdcode}
 perl MakeDocs.PL
 \end{cmdcode}
 You will need \LaTeX\ installed. The manual will be built in PDF format at
-\bitt{docs/pdf/index.pdf}.
+\bitt{docs/pdf/index.pdf}. Documentation of all actions, blocks and clients is
+extracted from their respective Perl modules as part of this process.
 
 The Perl components of LibBi are documented using POD (``Plain Old
 Documentation''), as is conventional for Perl modules. The easiest way to
@@ -105,10 +114,10 @@ inspect this is on the command line, using, e.g.
 \begin{cmdcode}
 perldoc lib/Bi/Model.pm
 \end{cmdcode}
-A PDF or HTML build of Perl module documentation is not yet available.
+A PDF or HTML build of the Perl module documentation is not yet available.
 
 The C++ components of LibBi are documented using Doxygen. HTML documentation
-can be built by running \bitt{doxygen} in the base directory of LibBi, and
+can be built by running \bitt{doxygen} in the base directory of LibBi, then
 opening the \bitt{docs/dev/html/index.html} file in a browser.
 
 %%%%
@@ -234,15 +243,15 @@ To add a client:
 
 Complex C++ code should form part of the library, rather than being included
 in TT templates. The C++ code generated by templates should typically be
-limited to arranging for a few function calls into LibBi, where most of the
-work will be done.
+limited to arranging for a few function calls into the library, where most of
+the implementation is done.
 
 When writing templates for client programs, consider that it is advantageous
-for the user that they can change command line arguments without the C++ code
-changing, and thus triggering a recompile. This can be achieved by writing
-runtime checks on command-line options in C++ rather than code generation-time
-checks in TT templates. This need not be taken to the extreme, however: clear
-and simple template code is preferred over convoluted C++!
+for the user that they can change command-line options without the C++ code
+changing, so as to avoid a recompile. This can be achieved by writing runtime
+checks on command-line options in C++ rather than code generation-time checks
+in TT templates. This need not be taken to the extreme, however: clear and
+simple template code is preferred over convoluted C++!
 
 \subsection{Documenting an extension\label{Documenting_an_extension}}
 
@@ -266,7 +275,7 @@ be rebuilt by running \bitt{perl MakeParser.PL}.
 \subsection{Style guide\label{Developer_style_guide}}\index{style\,guide}
 
 Further to the \secref{Style_guide}{style guide} for users, the
-following additional recommended pertain to developers:
+following additional recommendations pertain to developers:
 \begin{itemize}
 \item Action, block, client and argument names are all lowercase, with
   multiple words separated by '\_' (the underscore). Uppercase may be used in
@@ -303,7 +312,7 @@ Note that not all \bitt{*.hpp} headers can be safely included in \bitt{*.cu}
 files either, due to CUDA compiler limitations, particularly those headers
 that further include Boost headers which make extensive use of
 templates. Efforts have been made to quarantine such incidences from the CUDA
-compiler, but mileage may vary.
+compiler, and support is improving, but mileage may vary.
 
 \subsection{Pseudorandom reproducibility\label{Pseudorandom_reproducibility}}\index{pseudorandom\,number\,generation}
 
@@ -338,6 +347,11 @@ for (int i = 0; i < N; ++i) \{
   \(\ldots\)
 \}
 \end{cppcode}
+
+\begin{tip}
+To avoid this particular case, static scheduling is enabled by default. You
+should not override this with dynamic scheduling in an OpenMP loop.
+\end{tip}
 
 A more subtle consideration is the conditional generation of
 variates. Consider the following code, evaluating a
