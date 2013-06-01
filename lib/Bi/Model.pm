@@ -30,11 +30,18 @@ use Bi::Model::Dim;
 use Bi::Model::Var;
 use Bi::Utility qw(find);
 
+our @BLOCKS = (
+    'parameter',
+    'initial',
+    'transition',
+    'observation'
+);
+
 our %MAP_BLOCKS = (
-	'lookahead_transition'  => 'transition',
-	'lookahead_observation' => 'observation',
 	'proposal_parameter'    => 'parameter',
-	'proposal_initial'      => 'initial'
+	'proposal_initial'      => 'initial',
+	'lookahead_transition'  => 'transition',
+	'lookahead_observation' => 'observation'
 );
 
 =item B<new>
@@ -50,6 +57,7 @@ sub new {
 	$self->{_name} = undef;
 
 	bless $self, $class;
+	
 	return $self;
 }
 
@@ -350,15 +358,19 @@ sub validate {
 	my $block;
 
 	# complete top-level blocks
+	foreach $name (@BLOCKS) {
+	    if (!$self->is_block($name)) {
+	        $block = new Bi::Block;
+	        $block->set_name($name);
+	        $block->validate;
+	        $self->push_child($block);
+	    }
+	}
 	foreach $name (keys %MAP_BLOCKS) {
-		if (!$self->is_block($MAP_BLOCKS{$name})) {
-			$block = new Bi::Block;
-			$block->set_name($name);
-			$self->push_child($block);
-		}
 		if (!$self->is_block($name)) {
 			$block = $self->get_block($MAP_BLOCKS{$name})->clone;
 			$block->set_name($name);
+			$block->validate;
 			$self->push_child($block);
 		}
 	}
