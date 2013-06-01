@@ -58,17 +58,13 @@ Number of weight vector sizes to use.
 
 Number of trials on each combination of parameters and sizes.
 
-=item C<--enable-sort> (default on)
+=item C<--with-sort> (default on)
 
 Sort weights prior to resampling.
 
 =item C<-C> (default 0)
 
 Number of steps to take for Metropolis resampler.
-
-=item C<--output-file> (mandatory)
-
-File to which to write output.
 
 =back
 
@@ -95,7 +91,7 @@ our @CLIENT_OPTIONS = (
       default => 100
     },
     {
-      name => 'enable-sort',
+      name => 'with-sort',
       type => 'bool',
       default => 1
     },
@@ -103,10 +99,6 @@ our @CLIENT_OPTIONS = (
       name => 'C',
       type => 'int',
       default => 0
-    },
-    {
-      name => 'output-file',
-      type => 'string'
     }
 );
 

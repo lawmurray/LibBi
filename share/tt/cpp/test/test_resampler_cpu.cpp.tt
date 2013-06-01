@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   NcError ncErr(NcError::verbose_fatal);
   
   /* bi init */
-  bi_init(THREADS);
+  bi_init(NTHREADS);
 
   /* random number generator */
   Random rng(SEED);
@@ -72,11 +72,11 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
   RejectionResampler resam;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler resam(ENABLE_SORT);
+  MultinomialResampler resam(WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-  SystematicResampler resam(ENABLE_SORT);
+  SystematicResampler resam(WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler resam(ENABLE_SORT);
+  StratifiedResampler resam(WITH_SORT);
   [% END %]
 
   /* buffers for weight-sets and results */
@@ -100,9 +100,9 @@ int main(int argc, char* argv[]) {
   f.samples(rng, x);
   
   /* test */
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
-  [% END %]
+  #endif
   TicToc timer;
   int z, p, rep, time;
   real sqerr;
@@ -194,9 +194,9 @@ int main(int argc, char* argv[]) {
   PVar->put(actualPs.buf(), PS);
   zVar->put(zs.buf(), ZS);
 
-  [% IF client.get_named_arg('with-gperftools') %]
+  #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
-  [% END %]
+  #endif
   
   /* clean up */
   out->sync();

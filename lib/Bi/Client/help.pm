@@ -141,8 +141,11 @@ sub exec {
         if ($include_command) {
             $have_command = 1;
             my $command = "Bi::Client::$name";
+            my $test = "Bi::Test::$name";
             if (eval("require $command")) {
                 $class = $command;
+            } elsif (eval("require $test")) {
+                $class = $test;
             }
         }
 
