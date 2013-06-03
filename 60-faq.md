@@ -46,8 +46,9 @@ later versions of the software.
 
 ### How is LibBi licensed?
 
-LibBi is licensed under the CSIRO Open Source Software License (GPL). This is
-the full text of the GPL version 2 with some additional provisions.
+LibBi is licensed under the [CSIRO Open Source Software License
+(GPL)](https://github.com/libbi/LibBi/blob/master/LICENSE). This is the full
+text of the GPL version 2 with some additional provisions.
 
 ### How can I cite LibBi?
 
@@ -74,5 +75,3 @@ direction in future, however.
 
 We are not aware of other software packages in this space that have the same
 high performance computing orientation as LibBi.
-
-This paper, which introduces LibBi, elaborates more on the differences.
