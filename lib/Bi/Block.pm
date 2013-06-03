@@ -76,7 +76,7 @@ sub clone {
     $clone->{_inlines} = $self->get_inlines;
     $clone->{_dims} = $self->get_dims;
     $clone->{_vars} = $self->get_vars;
-    $clone->{_children} = $self->get_children;
+    $clone->{_children} = [ map { $_->clone } @{$self->get_children} ];
     
     bless $clone, ref($self);
     return $clone; 
