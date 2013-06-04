@@ -334,6 +334,22 @@ public:
   CUDA_FUNC_BOTH
   const matrix_reference_type getR() const;
 
+  /**
+   * Round up number of trajectories as required by implementation.
+   *
+   * @param P Minimum number of trajectories.
+   *
+   * @return Number of trajectories.
+   *
+   * The following rules are applied:
+   *
+   * @li for @p L on device, @p P must be either less than 32, or a
+   * multiple of 32, and
+   * @li for @p L on host with SSE enabled, @p P must be zero, one or a
+   * multiple of four (single precision) or two (double precision).
+   */
+  static CUDA_FUNC_BOTH int roundup(const int P);
+
 private:
   /**
    * Storage for dense non-shared variables.
@@ -354,22 +370,6 @@ private:
    * Number of trajectories.
    */
   int P;
-
-  /**
-   * Round up number of trajectories as required by implementation.
-   *
-   * @param P Minimum number of trajectories.
-   *
-   * @return Number of trajectories.
-   *
-   * The following rules are applied:
-   *
-   * @li for @p L on device, @p P must be either less than 32, or a
-   * multiple of 32, and
-   * @li for @p L on host with SSE enabled, @p P must be zero, one or a
-   * multiple of four (single precision) or two (double precision).
-   */
-  static CUDA_FUNC_BOTH int roundup(const int P);
 
   /* net sizes, for convenience */
   static const int NR = B::NR;

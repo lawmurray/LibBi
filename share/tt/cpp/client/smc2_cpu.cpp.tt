@@ -112,15 +112,16 @@ int main(int argc, char* argv[]) {
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
+  /* state and intermediate results */
+  ThetaParticle<model_type,LOCATION> s(NPARTICLES, sched.numOutputs());
+  NPARTICLES = s.size(); // may change according to implementation
+  NSAMPLES = State<model_type,LOCATION>::roundup(NSAMPLES); // so that number of samples for later prediction is of correct multiple
+
   /* output */
   SMC2NetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
       bufOutput = new SMC2NetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
-
-  /* state and intermediate results */
-  ThetaParticle<model_type,LOCATION> s(NPARTICLES, sched.numOutputs());
-  NPARTICLES = s.size(); // may change according to implementation
 
   /* simulator */
   BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));

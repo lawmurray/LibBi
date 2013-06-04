@@ -102,12 +102,6 @@ int main(int argc, char* argv[]) {
   
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
-  
-  /* outputs */
-  ParticleMCMCNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-      bufOutput = new ParticleMCMCNetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-  }
 
   /* state and intermediate results */
   [% IF client.get_named_arg('filter') == 'kalman' %]
@@ -115,6 +109,13 @@ int main(int argc, char* argv[]) {
   [% END %]
   ThetaState<model_type,LOCATION> s(NPARTICLES, sched.numOutputs());
   NPARTICLES = s.size(); // may change according to implementation
+  NSAMPLES = State<model_type,LOCATION>::roundup(NSAMPLES); // so that number of samples for later prediction is of correct multiple
+  
+  /* outputs */
+  ParticleMCMCNetCDFBuffer* bufOutput = NULL;
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
+      bufOutput = new ParticleMCMCNetCDFBuffer(m, NSAMPLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+  }
 
   /* simulator */
   BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
