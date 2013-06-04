@@ -80,13 +80,14 @@ int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, con
   BI_ASSERT(X1.size1() == as1.size());
 
   const int N = X1.size1();
-  typename temp_gpu_vector<int>::type Z(os.size()), bs(N), seq(N);
+  typename temp_gpu_vector<int>::type Z(os.size()), bs(N);
 
-  seq_elements(seq, 0);
+  BOOST_AUTO(seq, thrust::make_counting_iterator(0));
+
   bi::gather(as1, ls, bs);
   ls.resize(N, false);
   zero_inclusive_scan(os, Z);
-  bi::upper_bound(Z, seq, ls);
+  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
   bi::scatter(ls, bs, as);
   bi::scatter_rows(ls, X1, X);
 
