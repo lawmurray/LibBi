@@ -40,11 +40,6 @@ public:
   typedef typename loc_temp_vector<CL,int>::type int_vector_type;
 
   /**
-   * Integer vector type on host.
-   */
-  typedef typename temp_host_vector<int>::type host_int_vector_type;
-
-  /**
    * Constructor.
    */
   AncestryCache();
@@ -149,7 +144,7 @@ private:
   void enlarge(const int N);
 
   /**
-   * Host implementation of writeState().
+   * Implementation of writeState().
    *
    * @tparam M1 Host matrix type.
    * @tparam V1 Host vector type.
@@ -172,19 +167,19 @@ private:
    * particle, or -1 if the particle is of the first generation, and so has
    * no ancestor.
    */
-  host_int_vector_type as;
+  int_vector_type as;
 
   /**
    * Offspring. Each entry, corresponding to a row in @p Xs, gives the
    * number of surviving children of that particle.
    */
-  host_int_vector_type os;
+  int_vector_type os;
 
   /**
    * Leaves. Each entry indicates a row in @p Xs that holds a particle of the
    * youngest generation.
    */
-  host_int_vector_type ls;
+  int_vector_type ls;
 
   /**
    * Number of surviving nodes in the cache.
@@ -200,16 +195,6 @@ private:
    * Time taken for last write, in microseconds.
    */
   long usecs;
-
-  /**
-   * Largest contiguous write in last insert.
-   */
-  int largest;
-
-  /**
-   * Range of last insert.
-   */
-  int range;
 
   /**
    * Serialize.
@@ -231,6 +216,11 @@ private:
 };
 }
 
+#include "../host/cache/AncestryCacheHost.hpp"
+#ifdef __CUDACC__
+#include "../cuda/cache/AncestryCacheGPU.cuh"
+#endif
+
 #include "../resampler/Resampler.hpp"
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
@@ -243,14 +233,13 @@ private:
 
 template<bi::Location CL>
 bi::AncestryCache<CL>::AncestryCache() :
-    m(0), q(0), usecs(0), largest(0), range(0) {
+    m(0), q(0), usecs(0) {
   //
 }
 
 template<bi::Location CL>
 bi::AncestryCache<CL>::AncestryCache(const AncestryCache<CL>& o) :
-    Xs(o.Xs), as(o.as), os(o.os), ls(o.ls), m(o.m), q(o.q), usecs(o.usecs),
-    largest(o.largest), range(o.range) {
+    Xs(o.Xs), as(o.as), os(o.os), ls(o.ls), m(o.m), q(o.q), usecs(o.usecs) {
   //
 }
 
@@ -269,8 +258,6 @@ bi::AncestryCache<CL>& bi::AncestryCache<CL>::operator=(
   m = o.m;
   q = o.q;
   usecs = o.usecs;
-  largest = o.largest;
-  range = o.range;
 
   return *this;
 }
@@ -284,8 +271,6 @@ void bi::AncestryCache<CL>::swap(AncestryCache<CL>& o) {
   std::swap(m, o.m);
   std::swap(q, o.q);
   std::swap(usecs, o.usecs);
-  std::swap(largest, o.largest);
-  std::swap(range, o.range);
 }
 
 template<bi::Location CL>
@@ -295,8 +280,6 @@ void bi::AncestryCache<CL>::clear() {
   m = 0;
   q = 0;
   usecs = 0;
-  largest = 0;
-  range = 0;
 }
 
 template<bi::Location CL>
@@ -308,8 +291,6 @@ void bi::AncestryCache<CL>::empty() {
   m = 0;
   q = 0;
   usecs = 0;
-  largest = 0;
-  range = 0;
 }
 
 template<bi::Location CL>
@@ -320,11 +301,11 @@ void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
   BI_ASSERT(p >= 0 && p < ls.size());
 
   ///@todo Implement this with scatter, so that one kernel call on device
-  int a = ls(p);
+  int a = *(ls.begin() + p);
   int t = X.size2() - 1;
   do {
     column(X, t) = row(Xs, a);
-    a = as(a);
+    a = *(as.begin() + a);
     --t;
   } while (a != -1);
 }
@@ -333,9 +314,7 @@ template<bi::Location CL>
 template<class B, bi::Location L, class V1>
 void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
     const V1 as, const bool r) {
-  host_int_vector_type as1(as);
-  synchronize(V1::on_device);
-  writeState(s.getDyn(), as1, r);
+  writeState(s.getDyn(), as, r);
 }
 
 template<bi::Location CL>
@@ -355,72 +334,33 @@ void bi::AncestryCache<CL>::init(const M1 X) {
   set_elements(subrange(os, 0, N), 0);
   seq_elements(subrange(ls, 0, N), 0);
   m = N;
-  largest = N;
-  range = N;
   q = 0;
 }
 
 template<bi::Location CL>
 void bi::AncestryCache<CL>::prune() {
-  int i, j;
-
-  for (i = 0; i < ls.size(); ++i) {
-    j = ls(i);
-    while (this->os(j) == 0) {
-      --m;
-      j = as(j);
-      if (j >= 0) {
-        --this->os(j);
-      } else {
-        break;
-      }
-    }
-  }
+#ifdef __CUDACC__
+  typedef typename boost::mpl::if_c<CL == ON_DEVICE,
+  AncestryCacheGPU,
+  AncestryCacheHost>::type impl;
+#else
+  typedef AncestryCacheHost impl;
+#endif
+  m -= impl::prune(this->as, this->os, this->ls);
 }
 
 template<bi::Location CL>
 template<class M1, class V1>
 void bi::AncestryCache<CL>::insert(const M1 X, const V1 as) {
-  /* pre-condition */
-  BI_ASSERT(X.size1() == as.size());
-  BI_ASSERT(Xs.size1() - m >= X.size1());
-
-  const int N = X.size1();
-  host_int_vector_type bs(N);
-  int i, sz;
-
-  bi::gather(as, ls, bs);
-  ls.resize(N, false);
-  largest = 0;
-
-  sz = 0;
-  range = 0;
-  for (i = 0; i < N; ++i) {
-    while (this->os(q) > 0) {
-      ++q;
-      sz = 0;
-      ++range;
-      if (q == Xs.size1()) {
-        q = 0;
-      }
-    }
-    ls(i) = q;
-    ++q;
-    ++sz;
-    ++range;
-    if (sz > largest) {
-      largest = sz;
-    }
-    if (q == Xs.size1()) {
-      q = 0;
-    }
-  }
-
-  int_vector_type ls1(ls);
-  bi::scatter(ls, bs, this->as);
-  bi::scatter_rows(ls1, X, this->Xs);
-
-  m += N;
+#ifdef __CUDACC__
+  typedef typename boost::mpl::if_c<CL == ON_DEVICE,
+  AncestryCacheGPU,
+  AncestryCacheHost>::type impl;
+#else
+  typedef AncestryCacheHost impl;
+#endif
+  q = impl::insert(this->Xs, this->as, this->os, this->ls, q, X, as);
+  m += X.size1();
 }
 
 template<bi::Location CL>
@@ -472,7 +412,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   if (m == 0) {
     init(X);
   } else {
-    host_int_vector_type os(X.size1());
+    int_vector_type os(X.size1());
     Resampler::ancestorsToOffspring(as, os);
 
     bi::scatter(ls, os, this->os);
@@ -493,12 +433,9 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
 
 template<bi::Location CL>
 void bi::AncestryCache<CL>::report() const {
-  double frag = 1.0 - double(largest)/range;
-
   std::cerr << "AncestryCache: ";
   std::cerr << Xs.size1() << " slots, ";
   std::cerr << m << " nodes, ";
-  std::cerr << std::setprecision(4) << frag << " fragmentation, ";
   std::cerr << usecs << " us last write.";
   std::cerr << std::endl;
 }
@@ -513,8 +450,6 @@ void bi::AncestryCache<CL>::save(Archive& ar, const unsigned version) const {
   ar & m;
   ar & q;
   ar & usecs;
-  ar & largest;
-  ar & range;
 }
 
 template<bi::Location CL>
@@ -527,8 +462,6 @@ void bi::AncestryCache<CL>::load(Archive& ar, const unsigned version) {
   ar & m;
   ar & q;
   ar & usecs;
-  ar & largest;
-  ar & range;
 }
 
 #endif

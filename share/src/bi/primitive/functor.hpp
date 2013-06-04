@@ -193,6 +193,18 @@ struct nonzero_functor : public std::unary_function<T,T> {
 /**
  * @ingroup primitive_functor
  *
+ * One if input is zero, zero if input is not.
+ */
+template<typename T>
+struct zero_functor : public std::unary_function<T,T> {
+  CUDA_FUNC_BOTH T operator()(const T &x) const {
+    return (x == static_cast<T>(0)) ? 1 : 0;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
  * \f$kx\f$; constant multiply unary function.
  */
 template<typename T>

@@ -65,6 +65,16 @@ template<class V1>
 int count_reduce(const V1 x);
 
 /**
+ * Count zeros reduction.
+ *
+ * @ingroup primitive_vector
+ *
+ * @see op_reduce
+ */
+template<class V1>
+int zero_reduce(const V1 x);
+
+/**
  * Sum-of-squares reduction
  *
  * @ingroup primitive_vector
@@ -287,6 +297,35 @@ void count_exclusive_scan(const V1 x, V2 y);
  */
 template<class V1, class V2>
 void count_inclusive_scan(const V1 x, V2 y);
+
+/**
+ * Exclusive scan-count of zero elements.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ * @param init Initial value of the scan.
+ */
+template<class V1, class V2>
+void zero_exclusive_scan(const V1 x, V2 y);
+
+/**
+ * Inclusive scan-count of zero elements.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector
+ * @param[out] y Output vector.
+ */
+template<class V1, class V2>
+void zero_inclusive_scan(const V1 x, V2 y);
 
 /**
  * Sum-exp exclusive scan, unnormalised.
@@ -651,6 +690,16 @@ template<class V1, class V2, class V3>
 void lower_bound(const V1 values, const V2 query, V3 result);
 
 /**
+ * Upper bound.
+ *
+ * @ingroup primitive_vector
+ *
+ * @see thrust::upper_bound()
+ */
+template<class V1, class V2, class V3>
+void upper_bound(const V1 values, const V2 query, V3 result);
+
+/**
  * Gather.
  *
  * @ingroup primitive_vector
@@ -724,6 +773,12 @@ template<class V1>
 inline int bi::count_reduce(const V1 x) {
   typedef typename V1::value_type T1;
   return op_reduce(x, nonzero_functor<T1>(), 0, thrust::plus<int>());
+}
+
+template<class V1>
+inline int bi::zero_reduce(const V1 x) {
+  typedef typename V1::value_type T1;
+  return op_reduce(x, zero_functor<T1>(), 0, thrust::plus<int>());
 }
 
 template<class V1>
@@ -924,6 +979,18 @@ inline void bi::count_inclusive_scan(const V1 x, V2 y) {
 }
 
 template<class V1, class V2>
+inline void bi::zero_exclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_exclusive_scan(x, y, 0, zero_functor<T1>());
+}
+
+template<class V1, class V2>
+inline void bi::zero_inclusive_scan(const V1 x, V2 y) {
+  typedef typename V1::value_type T1;
+  op_inclusive_scan(x, y, zero_functor<T1>(), thrust::plus<T1>());
+}
+
+template<class V1, class V2>
 inline typename V1::value_type bi::sumexpu_exclusive_scan(const V1 x, V2 y) {
   typedef typename V1::value_type T1;
 
@@ -1107,6 +1174,17 @@ inline void bi::lower_bound(const V1 values, const V2 query, V3 result) {
         query.fast_begin(), query.fast_end(), result.fast_begin());
   } else {
     thrust::lower_bound(values.begin(), values.end(), query.begin(),
+        query.end(), result.begin());
+  }
+}
+
+template<class V1, class V2, class V3>
+inline void bi::upper_bound(const V1 values, const V2 query, V3 result) {
+  if (values.inc() == 1 && query.inc() == 1 && result.inc() == 1) {
+    thrust::upper_bound(values.fast_begin(), values.fast_end(),
+        query.fast_begin(), query.fast_end(), result.fast_begin());
+  } else {
+    thrust::upper_bound(values.begin(), values.end(), query.begin(),
         query.end(), result.begin());
   }
 }
