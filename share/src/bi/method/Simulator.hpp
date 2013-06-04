@@ -414,6 +414,8 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   term();
 }
 
+#include "../math/io.hpp"
+
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
@@ -446,16 +448,17 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
         std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
             now.getTime()));
     if (iter != inInit->getTimes().end()) {
-      inInit->read(std::distance(inInit->getTimes().begin(), iter), D_VAR,
-          s.get(D_VAR));
-      inInit->read(std::distance(inInit->getTimes().begin(), iter), R_VAR,
-          s.get(R_VAR));
+      int k = std::distance(inInit->getTimes().begin(), iter);
+      inInit->read(k, D_VAR, s.get(D_VAR));
+      inInit->read(k, R_VAR, s.get(R_VAR));
     }
 
     s.get(DY_VAR) = s.get(D_VAR);
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
+
+  std::cerr << rows(s.get(D_VAR), 0, 4) << std::endl;
 
   /* observations */
   if (now.hasObs()) {
@@ -489,7 +492,7 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
   m.initialSimulates(s);
   if (inInit != NULL) {
     inInit->read0(D_VAR, s.get(D_VAR));
-    inInit->read0(R_VAR, s.get(D_VAR));
+    inInit->read0(R_VAR, s.get(R_VAR));
 
     BOOST_AUTO(&times, inInit->getTimes());
     BOOST_AUTO(iter, std::find(times.begin(), times.end(), now.getTime()));
