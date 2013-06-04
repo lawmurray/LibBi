@@ -151,8 +151,12 @@ sub set_name {
     # morph to appropriate class for name
 	my $class = 'Bi::Block';
 	if (defined $name) {
-	    $class = "Bi::Block::$name";
-        eval ("require $class") || die("don't know what to do with block '$name'\n");
+	    if ($name !~ /^\w+$/) {
+	    	die("don't know what to do with block '$name'\n");
+	    } else {
+	    	$class = "Bi::Block::$name";
+	        eval("require $class") || die("don't know what to do with block '$name'\n");
+	    }
 	}
     bless $self, $class;
 

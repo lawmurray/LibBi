@@ -265,8 +265,15 @@ sub set_name {
     my $name = shift;
     
     # morph to appropriate class for name
-    my $class = "Bi::Action::$name";
-    eval ("require $class") || die("don't know what to do with action '$name'\n");
+    my $class = 'Bi::Action';
+	if (defined $name) {
+	    if ($name !~ /^\w+$/) {
+	    	die("don't know what to do with action '$name'\n");
+	    } else {
+	    	$class = "Bi::Action::$name";
+	        eval("require $class") || die("don't know what to do with action '$name'\n");
+	    }
+	}
     bless $self, $class;
     
     $self->{_name} = $name;

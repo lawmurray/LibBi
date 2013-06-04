@@ -397,6 +397,8 @@ sub new {
     # look up appropriate class name
     if ($cmd eq 'simulate') {
         die("the 'simulate' command is deprecated, use the 'sample' command and add '--target prior' instead\n");
+    } elsif ($cmd !~ /^\w+$/) {
+    	die("don't know what to do with command '$cmd'\n");
     }
     $class = "Bi::Client::$cmd";
     unless (eval("require $class")) {
