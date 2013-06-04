@@ -414,8 +414,6 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   term();
 }
 
-#include "../math/io.hpp"
-
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
@@ -457,8 +455,6 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
-
-  std::cerr << rows(s.get(D_VAR), 0, 4) << std::endl;
 
   /* observations */
   if (now.hasObs()) {
