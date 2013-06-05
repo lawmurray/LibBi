@@ -83,7 +83,6 @@ int bi::AncestryCacheHost::insert(M1 X, V1 as, V1 os, V1 ls, const int start,
   BI_ASSERT(X1.size1() == as1.size());
 
   typedef typename temp_host_vector<int>::type host_int_vector_type;
-  typedef typename loc_temp_vector<M2::location,int>::type int_vector_type;
 
   const int N = X1.size1();
   host_int_vector_type bs(N);
@@ -109,9 +108,8 @@ int bi::AncestryCacheHost::insert(M1 X, V1 as, V1 os, V1 ls, const int start,
     }
   }
 
-  int_vector_type ls1(ls);
   bi::scatter(ls, bs, as);
-  bi::scatter_rows(ls1, X1, X);
+  bi::scatter_rows(ls, X1, X);
 
   return q;
 }

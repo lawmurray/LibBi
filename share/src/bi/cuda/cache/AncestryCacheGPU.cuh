@@ -67,7 +67,7 @@ int bi::AncestryCacheGPU::prune(V1 as, V1 os, V1 ls) {
   Db.x = bi::min(deviceIdealThreadsPerBlock(), N);
   Dg.x = (N + Db.x - 1)/Db.x;
 
-  kernelAncestryCachePrune<V1,BOOST_TYPEOF(numRemoved)><<<Dg,Db>>>(as, os, ls, numRemoved);
+  kernelAncestryCachePrune<<<Dg,Db>>>(as, os, ls, numRemoved);
   CUDA_CHECK;
 
   return sum_reduce(numRemoved);
@@ -87,10 +87,12 @@ int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, con
   bi::gather(as1, ls, bs);
   ls.resize(N, false);
 
+  /* first fit */
 //  zero_inclusive_scan(os, Z);
 //  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
 //  int q = 0;
 
+  /* next fit */
   int q = start, len, numAlloc, maxAlloc, numDone = 0;
   do {
     /* determine subrange to search */
@@ -106,7 +108,6 @@ int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, con
 
     /* allocate slots */
     thrust::upper_bound(z.fast_begin(), z.fast_end(), seq, seq + numAlloc, ls.fast_begin() + numDone);
-
     addscal_elements(subrange(ls, numDone, numAlloc), q, subrange(ls, numDone, numAlloc));
 
     numDone += numAlloc;
