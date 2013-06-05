@@ -301,11 +301,15 @@ void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
   BI_ASSERT(p >= 0 && p < ls.size());
 
   ///@todo Implement this with scatter, so that one kernel call on device
+
+  typename temp_host_vector<int>::type as1(as);
+  synchronize(as.on_device);
+
   int a = *(ls.begin() + p);
   int t = X.size2() - 1;
   do {
     column(X, t) = row(Xs, a);
-    a = *(as.begin() + a);
+    a = as1(a);
     --t;
   } while (a != -1);
 }

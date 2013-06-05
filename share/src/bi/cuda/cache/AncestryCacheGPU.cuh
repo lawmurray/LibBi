@@ -86,12 +86,40 @@ int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, con
 
   bi::gather(as1, ls, bs);
   ls.resize(N, false);
-  zero_inclusive_scan(os, Z);
-  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
+
+//  zero_inclusive_scan(os, Z);
+//  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
+//  int q = 0;
+
+  int q = start, len, numAlloc, maxAlloc, numDone = 0;
+  do {
+    /* determine subrange to search */
+    len = bi::min(Z.size(), os.size() - q);
+
+    /* count up free slots in this subrange */
+    BOOST_AUTO(z, subrange(Z, 0, len));
+    zero_inclusive_scan(subrange(os, q, len), z);
+
+    /* number of free slots to allocate in this subrange */
+    maxAlloc = *(z.end() - 1);
+    numAlloc = bi::min(maxAlloc, N - numDone);
+
+    /* allocate slots */
+    thrust::upper_bound(z.fast_begin(), z.fast_end(), seq, seq + numAlloc, ls.fast_begin() + numDone);
+
+    addscal_elements(subrange(ls, numDone, numAlloc), q, subrange(ls, numDone, numAlloc));
+
+    numDone += numAlloc;
+    q += z.size();
+    if (q >= os.size()) {
+      q = 0;
+    }
+  } while (numDone < N);
+
   bi::scatter(ls, bs, as);
   bi::scatter_rows(ls, X1, X);
 
-  return 0;
+  return q;
 }
 
 #endif
