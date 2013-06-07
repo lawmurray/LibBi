@@ -28,9 +28,9 @@ Installation instructions are in the `INSTALL.md` file of the distribution.
 Run
 ---
 
-The [introductory paper](/papers) is a good place to start, followed by the
-[user manual](/documentation). The examples in the introductory paper are
-available [here](/packages/Windkessel.html) and
+The [introductory paper](/docs/LibBi-Intro.pdf) is a good place to start,
+followed by the [manual](/docs/LibBi-Manual.pdf). The examples in the
+introductory paper are available [here](/packages/Windkessel.html) and
 [here](/packages/Lorenz96.html), along with [others](/examples.html), for you
 to download and run.
 
@@ -56,5 +56,5 @@ Contributions to LibBi can take many forms:
 
 If you are interested in getting involved in the development of LibBi, please
 contact <a href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. The
-[user manual](/documentation) also contains a developer guide to help you get
-started.
+[manual](/docs/LibBi-Manual.pdf) also contains a developer guide to help
+you get started.

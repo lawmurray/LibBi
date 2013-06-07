@@ -4,9 +4,12 @@
 
 <h2>News</h2>
 
+<ul>
 {% for post in site.posts %}
-  <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
-  <p>{{ post.excerpt }}</p>
+  <li>
+  <a href="{{ post.url }}">{{ post.title }}</a>
+  {{ post.excerpt | strip_html }} <strong>{{ post.date | date_to_string }}</strong><br/></li>
 {% endfor %}
+</ul>
 
 {% include footer.html %}

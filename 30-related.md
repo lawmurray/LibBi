@@ -12,7 +12,7 @@ OctBi
 -----
 
 <ul class="buttons">
-  <li><a href="https://github.com/libbi/OctBi/tarball/master">Download <strong>TAR Ball</strong></a></li>
+  <li><a href="https://github.com/libbi/OctBi/archive/master.tar.gz">Download <strong>TAR Ball</strong></a></li>
   <li><a href="https://github.com/libbi/OctBi">View On <strong>GitHub</strong></a></li>
 </ul>
 
@@ -28,7 +28,7 @@ RBi
 ---
 
 <ul class="buttons">
-  <li><a href="https://github.com/libbi/RBi/tarball/master">Download <strong>TAR Ball</strong></a></li>
+  <li><a href="https://github.com/libbi/RBi/archive/master.tar.gz">Download <strong>TAR Ball</strong></a></li>
   <li><a href="https://github.com/libbi/RBi">View On <strong>GitHub</strong></a></li>
 </ul>
 

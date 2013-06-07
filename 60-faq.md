@@ -37,8 +37,9 @@ community, the software was released under an open source licence in June
 2013.
 
 The main developer is Lawrence Murray. Other suspects in the abovementioned
-project are John Parslow, Noel Cressie, Eddy Campbell and Emlyn Jones (see
-[this paper](http://www.esajournals.org/doi/abs/10.1890/12-0312.1), also on
+project are John Parslow, Noel Cressie, Eddy Campbell, Nugzar Margvelashvili
+and Emlyn Jones (see [this
+paper](http://www.esajournals.org/doi/abs/10.1890/12-0312.1), preprint also on
 [arXiv](http://arxiv.org/abs/1211.1717)). Emlyn Jones in particular suffered
 through the earliest versions of the software. Pierre Jacob and Anthony Lee
 have both made significant contributions. Dan Pagendam has suffered through
@@ -54,7 +55,8 @@ text of the GPL version 2 with some additional provisions.
 
 Please cite the following paper:
 
-Murray, L.M. (2013) Bayesian state-space modelling on high-performance hardware using LibBi.
+L. M. Murray, Bayesian state-space modelling on high-performance hardware
+using LibBi, 2013. [\[full text\]](/docs/LibBi-Intro.pdf)
 
 ### Why can't I just use BUGS, or JAGS, or Stan, or something else?
 
