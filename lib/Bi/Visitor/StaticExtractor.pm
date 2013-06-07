@@ -75,7 +75,6 @@ sub evaluate {
         $action->validate;
 
         $model->get_block('parameter')->push_child($action->clone);        
-        $model->get_block('proposal_parameter')->push_child($action->clone);
     }
     
     return ($lefts, $rights);
