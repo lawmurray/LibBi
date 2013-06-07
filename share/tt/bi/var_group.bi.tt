@@ -1,0 +1,3 @@
+
+// Variable group [% var_group.get_name %]
+[% INCLUDE var.bi.tt FOREACH var IN var_group.get_vars-%]

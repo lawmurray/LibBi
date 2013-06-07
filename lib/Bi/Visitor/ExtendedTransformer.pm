@@ -387,13 +387,13 @@ sub _add_vars {
     my $start = $model->get_size('state_aux_');
     my $rows = $model->get_size($types1);
     my $size = 0;
-        
-    my $A_vars = new Bi::Expression::Matrix(scalar(@$vars1), scalar(@$vars2));
     
+    my $group = new Bi::Model::VarGroup('state_aux_', $prefix);
+    my $A_vars = new Bi::Expression::Matrix(scalar(@$vars1), scalar(@$vars2));
     for (my $j = 0; $j < @$vars2; ++$j) {
    	    my $var2 = $vars2->[$j];   	    
         my $A_var = $model->add_column_var($prefix, $rows, $var2);
-        $model->push_var($A_var);
+        $group->push_var($A_var);
         $size += $A_var->get_size;
 
         my $offset = 0;
@@ -405,8 +405,7 @@ sub _add_vars {
             $offset += $len;
         }
     }
-    $model->set_named_arg("${prefix}_start_", new Bi::Expression::Literal($start));
-    $model->set_named_arg("${prefix}_size_", new Bi::Expression::Literal($size));
+    $model->push_var_group($group);
     
     return $A_vars;
 }

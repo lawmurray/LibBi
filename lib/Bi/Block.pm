@@ -54,6 +54,7 @@ sub new {
     $self->{_inlines} = [];
     $self->{_dims} = [];
     $self->{_vars} = [];
+    $self->{_var_groups} = [];
     $self->{_children} = [];
 
     bless $self, $class;    
@@ -76,6 +77,7 @@ sub clone {
     $clone->{_inlines} = $self->get_inlines;
     $clone->{_dims} = $self->get_dims;
     $clone->{_vars} = $self->get_vars;
+    $clone->{_var_groups} = $self->get_var_groups;
     $clone->{_children} = [ map { $_->clone } @{$self->get_children} ];
     
     bless $clone, ref($self);
@@ -94,6 +96,7 @@ sub clear {
     $self->{_inlines} = [];
     $self->{_dims} = [];
     $self->{_vars} = [];
+    $self->{_var_groups} = [];
     $self->{_children} = [];
 }
 
@@ -236,6 +239,8 @@ sub push_const {
     my $self = shift;
     my $const = shift;
     
+    assert ($const->isa('Bi::Model::Const')) if DEBUG;
+    
     push(@{$self->get_consts}, $const);
 }
 
@@ -288,6 +293,8 @@ Add an inline expression.
 sub push_inline {
     my $self = shift;
     my $inline = shift;
+
+    assert ($inline->isa('Bi::Model::Inline')) if DEBUG;
     
     push(@{$self->get_inlines}, $inline);
 }
@@ -367,6 +374,8 @@ sub push_dim {
     my $self = shift;
     my $dim = shift;
     
+    assert ($dim->isa('Bi::Model::Dim')) if DEBUG;
+    
     push(@{$self->get_dims}, $dim);
 }
 
@@ -443,10 +452,64 @@ sub push_var {
     my $self = shift;
     my $var = shift;
     
+    assert ($var->isa('Bi::Model::Var')) if DEBUG;
+    
     push(@{$self->get_vars}, $var);
 }
 
 =back
+
+=head2 Variable groups
+
+=over 4
+
+=item B<get_var_groups>
+
+Get variable groups.
+
+=cut
+sub get_var_groups {
+    my $self = shift;
+    return $self->{_var_groups};
+}
+
+=item B<get_var_group>(I<name>)
+
+Get the variable group called I<name>, or undef if it does not exist.
+
+=cut
+sub get_var_group {
+    my $self = shift;
+    my $name = shift;
+
+    return $self->_get_item($self->get_var_groups, $name);
+}
+
+=item B<is_var_group>(I<name>)
+
+Is there a variable group called I<name>?
+
+=cut
+sub is_var_group {
+    my $self = shift;
+    my $name = shift;
+    
+    return $self->_is_item($self->get_var_groups, $name);
+}
+
+=item B<push_var_group>(I<group>)
+
+Add a variable group.
+
+=cut
+sub push_var_group {
+    my $self = shift;
+    my $group = shift;
+    
+    assert ($group->isa('Bi::Model::VarGroup')) if DEBUG;
+    
+    push(@{$self->get_var_groups}, $group);
+}
 
 =head2 Children (actions and blocks)
 
@@ -630,6 +693,7 @@ sub accept {
     @{$self->{_inlines}} = map { $_->accept($visitor, @args) } @{$self->get_inlines};
     @{$self->{_dims}} = map { $_->accept($visitor, @args) } @{$self->get_dims};
     @{$self->{_vars}} = map { $_->accept($visitor, @args) } @{$self->get_vars};
+    @{$self->{_var_groups}} = map { $_->accept($visitor, @args) } @{$self->get_var_groups};
     
     # visiting each child may return zero or more children, map works here
     @{$self->{_children}} = map { $_->accept($visitor, @args) } @{$self->get_children};

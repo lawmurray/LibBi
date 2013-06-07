@@ -179,7 +179,7 @@ sub get_type {
     return $self->{_type};
 }
 
-=item B<set_type>
+=item B<set_type>(I<type>)
 
 Set the type of the variable. 
 
@@ -343,7 +343,7 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    return ref($obj) eq ref($self) && $self->get_name eq $obj->get_name;
+    return ref($obj) eq ref($self) && $self->get_id == $obj->get_id;
 }
 
 1;

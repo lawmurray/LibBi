@@ -183,7 +183,7 @@ sub get_all_aliases {
 
 =item B<get_all_vars>(I<types>)
 
-Get all variables referenced in the hierarchy, as an array ref of
+Get all variables in the hierarchy, as an array ref of
 L<Bi::Model::Var> objects. If I<types> is given as a string,
 only variables of that type are returned. If I<types> is given as an array ref
 of strings, only variables of those types are returned. If I<types> is not
@@ -247,6 +247,35 @@ sub get_all_right_vars {
     } elsif ($node->isa('Bi::Block')) {
         foreach my $child (@{$node->get_children}) {
             push_unique($results, $child->get_all_right_vars);
+        }
+    }
+    return $results;
+}
+
+=item B<get_all_var_groups>(I<types>)
+
+Get all variable groups in the hierarchy, as an array ref of
+L<Bi::Model::VarGroup> objects. If I<types> is given as a string,
+only variable groups of that type are returned. If I<types> is given as an
+array ref of strings, only variable groups of those types are returned. If
+I<types> is not given, all variable groups are returned.
+
+=cut
+sub get_all_var_groups {
+    my $self = shift;
+    my $types = shift;
+
+    my $vars = Bi::Visitor::GetNodesOfType->evaluate($self, 'Bi::Model::VarGroup');
+    my $results;
+    
+    if (!defined $types) {
+        $results = $vars;
+    } else {
+        if (ref($types) ne 'ARRAY') {
+            $types = [ $types ];
+        }
+        foreach my $type (@$types) {
+            push(@$results, map { ($_->get_type eq $type) ? $_ : () } @$vars);
         }
     }
     return $results;

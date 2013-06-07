@@ -25,6 +25,10 @@
 #include "var/Var[% var.get_id %].hpp"
 [% END-%]
 
+[% FOREACH var_group IN model.get_all_var_groups-%]
+#include "var/VarGroup[% var_group.get_name %].hpp"
+[% END-%]
+
 #include "bi/model/Model.hpp"
 #include "bi/state/State.hpp"
 #include "bi/state/Mask.hpp"
@@ -591,46 +595,6 @@ private:
 [% FOREACH block IN model.get_blocks-%]
 #include "block/Block[% block.get_id %].hpp"
 [% END-%]
-
-[% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
-inline int [% class_name %]::getFStart() {
-  return [% model.get_named_arg('F_start_').eval_const %];
-}
-
-inline int [% class_name %]::getFSize() {
-  return [% model.get_named_arg('F_size_').eval_const %];
-}
-[% END %]
-
-[% IF model.is_named_arg('G_start_') && model.is_named_arg('G_size_') %]
-inline int [% class_name %]::getGStart() {
-  return [% model.get_named_arg('G_start_').eval_const %];
-}
-
-inline int [% class_name %]::getGSize() {
-  return [% model.get_named_arg('G_size_').eval_const %];
-}
-[% END %]
-
-[% IF model.is_named_arg('Q_start_') && model.is_named_arg('Q_size_') %]
-inline int [% class_name %]::getQStart() {
-  return [% model.get_named_arg('Q_start_').eval_const %];
-}
-
-inline int [% class_name %]::getQSize() {
-  return [% model.get_named_arg('Q_size_').eval_const %];
-}
-[% END %]
-
-[% IF model.is_named_arg('R_start_') && model.is_named_arg('R_size_') %]
-inline int [% class_name %]::getRStart() {
-  return [% model.get_named_arg('R_start_').eval_const %];
-}
-
-inline int [% class_name %]::getRSize() {
-  return [% model.get_named_arg('R_size_').eval_const %];
-}
-[% END %]
 
 [% IF model.is_block('transition') %]
 inline real [% class_name %]::getDelta() {

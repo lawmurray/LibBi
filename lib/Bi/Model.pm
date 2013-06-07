@@ -28,6 +28,7 @@ use Bi::Model::Const;
 use Bi::Model::Inline;
 use Bi::Model::Dim;
 use Bi::Model::Var;
+use Bi::Model::VarGroup;
 use Bi::Utility qw(find);
 
 our @BLOCKS = (
@@ -137,7 +138,7 @@ skipped. These guarantees are not provided by L<Bi::Model::Dim::get_id>.
 sub get_dim_id {
 	my $self = shift;
 	my $dim  = shift;
-
+	
 	return find($self->get_all_dims, $dim);
 }
 
@@ -182,7 +183,6 @@ Get the starting index of variable I<var> among those of its type. This is
 the sum of the sizes of all preceding variables.
 
 =cut
-
 sub get_var_start {
 	my $self = shift;
 	my $var  = shift;
@@ -199,6 +199,25 @@ sub get_var_start {
 	}
 
 	return $start;
+}
+
+=item B<get_var_group_start>(I<group>)
+
+Get the starting index of variable group I<group> among those of its type.
+This is simply the starting index of the first variable in the group, or
+zero if the group is empty.
+
+=cut
+sub get_var_group_start {
+	my $self = shift;
+	my $group  = shift;
+	
+    my $vars = $group->get_vars;
+    if (@$vars) {
+        return $self->get_var_start($vars->[0]);
+    } else {
+        return 0;
+    }
 }
 
 =item B<get_pair_var>(I<prefix>, I<var1>, I<var2>)
@@ -262,7 +281,7 @@ sub add_column_var {
 	my $name = sprintf('%s_%s_', $prefix, $var2->get_name);
 	my $row_dim = $self->lookup_dim($rows);
 	my $dims = [ $row_dim, @{ $var2->get_dims } ];
-		
+
 	my $named_args = {
 		'has_input'  => new Bi::Expression::IntegerLiteral(0),
 		'has_output' => new Bi::Expression::IntegerLiteral(0)

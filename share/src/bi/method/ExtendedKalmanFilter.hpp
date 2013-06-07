@@ -446,10 +446,15 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
     IO2* inInit) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
-  ident(s.getF());
-  s.getQ().clear();
-  s.getG().clear();
-  s.getR().clear();
+  BOOST_AUTO(F, reshape(s.template getVar<VarGroupF>(), ND + NR, ND + NR));
+  BOOST_AUTO(Q, reshape(s.template getVar<VarGroupQ>(), ND + NR, ND + NR));
+  BOOST_AUTO(G, reshape(s.template getVar<VarGroupG>(), ND + NR, NO));
+  BOOST_AUTO(R, reshape(s.template getVar<VarGroupR>(), NO, NO));
+
+  ident(F);
+  Q.clear();
+  G.clear();
+  R.clear();
 
   /* initialise */
   sim->init(rng, now, s, inInit);
@@ -458,8 +463,8 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
   mu1 = row(s.getDyn(), 0);
 
   /* Cholesky factor of predicted covariance */
-  U1 = s.getQ();
-  subrange(U1, 0, NR, NR, ND) = subrange(s.getF(), 0, NR, NR, ND);
+  U1 = Q;
+  subrange(U1, 0, NR, NR, ND) = subrange(F, 0, NR, NR, ND);
   trmm(1.0, subrange(U1, 0, NR, 0, NR), subrange(U1, 0, NR, NR, ND));
 
   /* across-time covariance */
@@ -486,10 +491,15 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
 
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
-  ident(s.getF());
-  s.getQ().clear();
-  s.getG().clear();
-  s.getR().clear();
+  BOOST_AUTO(F, reshape(s.template getVar<VarGroupF>(), ND + NR, ND + NR));
+  BOOST_AUTO(Q, reshape(s.template getVar<VarGroupQ>(), ND + NR, ND + NR));
+  BOOST_AUTO(G, reshape(s.template getVar<VarGroupG>(), ND + NR, NO));
+  BOOST_AUTO(R, reshape(s.template getVar<VarGroupR>(), NO, NO));
+
+  ident(F);
+  Q.clear();
+  G.clear();
+  R.clear();
 
   /* initialise */
   sim->init(rng, theta, now, s);
@@ -498,8 +508,8 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
   mu1 = row(s.getDyn(), 0);
 
   /* Cholesky factor of predicted covariance */
-  U1 = s.getQ();
-  subrange(U1, 0, NR, NR, ND) = subrange(s.getF(), 0, NR, NR, ND);
+  U1 = Q;
+  subrange(U1, 0, NR, NR, ND) = subrange(F, 0, NR, NR, ND);
   trmm(1.0, subrange(U1, 0, NR, 0, NR), subrange(U1, 0, NR, NR, ND));
 
   /* across-time covariance */
@@ -538,6 +548,9 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
         throw (CholeskyException) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
+  BOOST_AUTO(F, reshape(s.template getVar<VarGroupF>(), ND + NR, ND + NR));
+  BOOST_AUTO(Q, reshape(s.template getVar<VarGroupQ>(), ND + NR, ND + NR));
+
   /* predict */
   sim->advance(next, s);
 
@@ -547,13 +560,13 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
   /* across-time block of square-root covariance */
   columns(C, 0, NR).clear();
   subrange(C, 0, NR, NR, ND).clear();
-  subrange(C, NR, ND, NR, ND) = subrange(s.getF(), NR, ND, NR, ND);
+  subrange(C, NR, ND, NR, ND) = subrange(F, NR, ND, NR, ND);
   trmm(1.0, U2, C);
 
   /* current-time block of square-root covariance */
   rows(U1, NR, ND).clear();
-  subrange(U1, 0, NR, 0, NR) = subrange(s.getQ(), 0, NR, 0, NR);
-  subrange(U1, 0, NR, NR, ND) = subrange(s.getF(), 0, NR, NR, ND);
+  subrange(U1, 0, NR, 0, NR) = subrange(Q, 0, NR, 0, NR);
+  subrange(U1, 0, NR, NR, ND) = subrange(F, 0, NR, NR, ND);
   trmm(1.0, subrange(U1, 0, NR, 0, NR), subrange(U1, 0, NR, NR, ND));
 
   /* predicted covariance */
@@ -569,8 +582,8 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
   chol(Sigma, U1);
 
   /* reset Jacobian, as it has now been multiplied in */
-  ident(s.getF());
-  s.getQ().clear();
+  ident(F);
+  Q.clear();
 }
 
 template<class B, class S, class IO1>
@@ -582,6 +595,9 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
   typedef typename loc_temp_vector<L,real>::type vector_type;
   typedef typename loc_temp_vector<L,int>::type int_vector_type;
 
+  BOOST_AUTO(G, reshape(s.template getVar<VarGroupG>(), ND + NR, NO));
+  BOOST_AUTO(R, reshape(s.template getVar<VarGroupR>(), NO, NO));
+
   real ll = 0.0;
   mu2 = mu1;
   U2 = U1;
@@ -592,7 +608,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
 
     sim->observe(s);
 
-    matrix_type C(M, W), U3(W, W), Sigma(W, W), R(W, W);
+    matrix_type C(M, W), U3(W, W), Sigma3(W, W), R3(W, W);
     vector_type y(W), z(W), mu3(W);
     int_vector_type map(W);
 
@@ -613,18 +629,18 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
     }
 
     /* project matrices and vectors to active variables in mask */
-    gather_columns(map, s.getG(), C);
-    gather_matrix(map, map, s.getR(), R);
+    gather_columns(map, G, C);
+    gather_matrix(map, map, R, R3);
     gather(map, row(s.get(O_VAR), 0), mu3);
     gather(map, row(s.get(OY_VAR), 0), y);
 
     trmm(1.0, U1, C);
 
-    Sigma.clear();
-    syrk(1.0, C, 0.0, Sigma, 'U', 'T');
-    syrk(1.0, R, 1.0, Sigma, 'U', 'T');
+    Sigma3.clear();
+    syrk(1.0, C, 0.0, Sigma3, 'U', 'T');
+    syrk(1.0, R3, 1.0, Sigma3, 'U', 'T');
     trmm(1.0, U1, C, 'L', 'U', 'T');
-    chol(Sigma, U3, 'U');
+    chol(Sigma3, U3, 'U');
 
     /* incremental log-likelihood */
     ///@todo Duplicates some operations in condition() calls below
@@ -642,8 +658,8 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
     row(s.getDyn(), 0) = mu2;
 
     /* reset Jacobian */
-    s.getG().clear();
-    s.getR().clear();
+    G.clear();
+    R.clear();
   }
 
   return ll;

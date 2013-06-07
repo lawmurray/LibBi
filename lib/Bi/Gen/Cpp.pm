@@ -79,12 +79,17 @@ sub gen {
         # dimensions
         foreach my $dim (@{$model->get_all_dims}) {
             $self->process_dim($model, $dim);
-        }   
+        }
         
         # variables
         foreach my $var (@{$model->get_all_vars}) {
             $self->process_var($model, $var);
-        }    
+        }
+
+        # variable groups
+        foreach my $group (@{$model->get_all_var_groups}) {
+            $self->process_var_group($model, $group);
+        }
     
         # blocks
         foreach my $block (@{$model->get_all_blocks}) {
@@ -140,6 +145,21 @@ sub process_var {
     $template = 'var_coord';
     $out = File::Spec->catfile('src', 'model', 'var', 'VarCoord' . $var->get_id);
     $self->process_templates($template, { 'var' => $var, 'model' => $model }, $out);    
+}
+
+=item B<process_var_group>(I<group>)
+
+Generate code for variable group.
+
+=cut
+sub process_var_group {
+    my $self = shift;
+    my $model = shift;
+    my $group = shift;
+
+    my $template = 'var_group';
+    my $out = File::Spec->catfile('src', 'model', 'var', 'VarGroup' . $group->get_name);
+    $self->process_templates($template, { 'var_group' => $group, 'model' => $model }, $out);
 }
 
 =item B<process_block>(I<block>)
