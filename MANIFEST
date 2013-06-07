@@ -1,10 +1,18 @@
-Changes
 docs/src/developers.tex
 docs/src/index.tex
 docs/src/models.tex
 docs/src/users.tex
 Doxyfile
 inc/Module/Install.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Scripts.pm
+inc/Module/Install/Share.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
 INSTALL.md
 lib/Bi.pm
 lib/Bi/Action.pm
@@ -178,6 +186,8 @@ share/src/bi/concept/Norm.hpp
 share/src/bi/concept/Partitioner.hpp
 share/src/bi/concept/Pdf.hpp
 share/src/bi/concept/Resampler.hpp
+share/src/bi/cuda/cache/AncestryCacheGPU.cuh
+share/src/bi/cuda/cache/AncestryCacheKernel.cuh
 share/src/bi/cuda/constant.cuh
 share/src/bi/cuda/cuda.hpp
 share/src/bi/cuda/device.cu
@@ -276,6 +286,7 @@ share/src/bi/cuda/updater/StaticUpdaterGPU.cuh
 share/src/bi/cuda/updater/StaticUpdaterKernel.cuh
 share/src/bi/cuda/updater/StaticUpdaterMatrixVisitorGPU.cuh
 share/src/bi/cuda/updater/StaticUpdaterVisitorGPU.cuh
+share/src/bi/host/cache/AncestryCacheHost.hpp
 share/src/bi/host/host.hpp
 share/src/bi/host/host_load_visitor.hpp
 share/src/bi/host/host_store_visitor.hpp
@@ -631,6 +642,7 @@ share/tt/package/config.conf.tt
 share/tt/package/init.sh.tt
 share/tt/package/LICENSE.tt
 share/tt/package/MANIFEST.tt
+share/tt/package/META.yml.tt
 share/tt/package/Model.bi.tt
 share/tt/package/README.md.tt
 share/tt/package/run.sh.tt
