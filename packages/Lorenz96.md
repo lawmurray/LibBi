@@ -51,8 +51,9 @@ The model is one of the examples given in the LibBi introductory paper (Murray
 References
 ----------
 
-E. N. Lorenz. *Predictability - a problem partly solved*, chapter 3, page
-118. Cambridge University Press, 2006.
+E. N. Lorenz. Chapter 3: Predictability -- a problem partly solved. In
+*Predictability of Weather and Climate*, Cambridge University Press, 2006,
+40-58.
 
 L. M. Murray. *Bayesian state-space modelling on high-performance hardware
 using LibBi*. 2013.
