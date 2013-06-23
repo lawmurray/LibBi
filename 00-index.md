@@ -5,9 +5,9 @@ menu: Home
 permalink: index.html
 ---
 
-LibBi is used for state-space modelling and Bayesian inference on modern
-computer hardware, including multi-core CPUs, many-core GPUs (graphics
-processing units) and distributed-memory clusters.
+LibBi is used for state-space modelling and Bayesian inference on
+high-performance computer hardware, including multi-core CPUs, many-core
+GPUs (graphics processing units) and distributed-memory clusters.
 
 The staple methods of LibBi are based on sequential Monte Carlo (SMC). This
 includes particle Markov chain Monte Carlo (PMCMC) and SMC<sup>2</sup>

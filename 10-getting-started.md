@@ -23,7 +23,9 @@ LibBi runs on Linux, and on Mac OS X with dependencies installed from the
 get it running there the contribution of installation instructions would be
 appreciated.
 
-Installation instructions are in the `INSTALL.md` file of the distribution.
+Installation instructions are in the
+[INSTALL.md](https://github.com/libbi/LibBi/blob/master/INSTALL.md) file of
+the distribution.
 
 Run
 ---
