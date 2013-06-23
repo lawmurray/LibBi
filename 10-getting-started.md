@@ -28,8 +28,8 @@ Installation instructions are in the `INSTALL.md` file of the distribution.
 Run
 ---
 
-The [introductory paper](/docs/LibBi-Intro.pdf) is a good place to start,
-followed by the [manual](/docs/LibBi-Manual.pdf). The examples in the
+The [introductory paper](http://arxiv.org/abs/1306.3277) is a good place to
+start, followed by the [manual](/docs/LibBi-Manual.pdf). The examples in the
 introductory paper are available [here](/packages/Windkessel.html) and
 [here](/packages/Lorenz96.html), along with [others](/examples.html), for you
 to download and run.

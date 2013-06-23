@@ -56,7 +56,7 @@ text of the GPL version 2 with some additional provisions.
 Please cite the following paper:
 
 L. M. Murray, Bayesian state-space modelling on high-performance hardware
-using LibBi, 2013. [\[full text\]](/docs/LibBi-Intro.pdf)
+using LibBi, 2013. [\[arXiv\]](http://arxiv.org/abs/1306.3277)
 
 ### Why can't I just use BUGS, or JAGS, or Stan, or something else?
 

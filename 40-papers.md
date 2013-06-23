@@ -11,7 +11,7 @@ Papers
 Please cite the following paper if you use LibBi:
 
 * L. M. Murray, Bayesian state-space modelling on high-performance hardware
-  using LibBi, 2013. [\[full text\]](/docs/LibBi-Intro.pdf)
+  using LibBi, 2013. [\[arXiv\]](http://arxiv.org/abs/1306.3277)
 
 The following papers may be of interest, detailing novel contributions in the
 development of LibBi:
