@@ -247,10 +247,6 @@ footer {
   body {
     padding:15px;
   }
-  
-  header ul.buttons {
-    display:none;
-  }
 }
 
 @media print {
