@@ -294,7 +294,7 @@ sub _configure {
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
-    $options .= $self->{_extra_debug} ? ' --enable-extra-debug' : ' --disable-extra-debug';
+    $options .= $self->{_extra_debug} ? ' --enable-extradebug' : ' --disable-extradebug';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     

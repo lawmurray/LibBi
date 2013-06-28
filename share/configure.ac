@@ -60,11 +60,11 @@ AC_ARG_ENABLE([vampir],
      esac],[vampir=false])
      
 AC_ARG_ENABLE([extradebug],
-     [  --enable-extra-debug    use extra debugging options],
+     [  --enable-extradebug    use extra debugging options],
      [case "${enableval}" in
        yes) extradebug=true ;;
        no)  extradebug=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-extra-debug]) ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-extradebug]) ;;
      esac],[extradebug=false])
 
 AC_ARG_ENABLE([diagnostics],
