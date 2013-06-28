@@ -16,6 +16,10 @@ with C<--disable->.
 
 =over 4
 
+=item C<--dry-parse> (default off)
+
+Do not parse model file. Implies C<--dry-gen>.
+
 =item C<--dry-gen> (default off)
 
 Do not generate code.
