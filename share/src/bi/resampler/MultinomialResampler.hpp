@@ -266,11 +266,11 @@ void bi::MultinomialResampler::precompute(const V1 lws, const V2 as,
     pre.lws1 = lws;
     seq_elements(pre.ps, 0);
     bi::sort_by_key(pre.lws1, pre.ps);
-    lZ = sumexpu_exclusive_scan(pre.lws1, pre.Ws);
-    pre.W = *(pre.Ws.end() - 1) + bi::exp(*(pre.lws1.end() - 1) - lZ);  // log sum of weights
+    lZ = sumexpu_inclusive_scan(pre.lws1, pre.Ws);
+    pre.W = *(pre.Ws.end() - 1);  // log sum of weights
   } else {
-    lZ = sumexpu_exclusive_scan(lws, pre.Ws);
-    pre.W = *(pre.Ws.end() - 1) + bi::exp(*(lws.end() - 1) - lZ);  // log sum of weights
+    lZ = sumexpu_inclusive_scan(lws, pre.Ws);
+    pre.W = *(pre.Ws.end() - 1);  // log sum of weights
   }
   pre.sort = sort;
 }

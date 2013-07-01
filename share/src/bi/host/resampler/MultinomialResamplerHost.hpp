@@ -34,13 +34,13 @@ void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
         ++Q; // pick up a leftover
       }
 
-      int i, j = lwsSize - 1;
+      int i, j = lwsSize;
       T1 lMax = 0.0, lu;
       for (i = Q; i > 0; --i) {
         lMax += bi::log(rng.uniform<T1>())/i;
         lu = lW + lMax;
 
-        while (lu < bi::log(pre.Ws(j))) {
+        while (j > 0 && lu < bi::log(pre.Ws(j - 1))) {
           --j;
         }
         if (pre.sort) {
