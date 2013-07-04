@@ -12,8 +12,9 @@ OctBi
 -----
 
 <ul class="buttons">
-  <li><a href="https://github.com/libbi/OctBi/archive/master.tar.gz">Download <strong>TAR Ball</strong></a></li>
-  <li><a href="https://github.com/libbi/OctBi">View On <strong>GitHub</strong></a></li>
+  <li><a
+  href="https://github.com/libbi/OctBi/archive/master.tar.gz"><strong>Download</strong> Stable</a></li>
+  <li><a href="https://github.com/libbi/OctBi"><strong>View</strong> Dev</a></li>
 </ul>
 
 OctBi is a package for [GNU Octave](http://www.octave.org) with functions for
@@ -28,8 +29,8 @@ RBi
 ---
 
 <ul class="buttons">
-  <li><a href="https://github.com/libbi/RBi/archive/master.tar.gz">Download <strong>TAR Ball</strong></a></li>
-  <li><a href="https://github.com/libbi/RBi">View On <strong>GitHub</strong></a></li>
+  <li><a href="https://github.com/libbi/RBi/archive/master.tar.gz"><strong>Download</strong> Stable</a></li>
+  <li><a href="https://github.com/libbi/RBi"><strong>View</strong> Dev</a></li>
 </ul>
 
 RBi is a work in progress to create a package for
