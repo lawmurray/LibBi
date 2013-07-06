@@ -332,9 +332,10 @@ Creates a type tree definition from an array ref of blocks or actions.
 sub to_typetree {
     my $types = shift;
         
-    assert (!defined($types) || ref($types) eq 'ARRAY') if DEBUG;
     if (!defined($types)) {
         $types = [];
+    } elsif (ref($types) ne 'ARRAY') {
+        $types = [ $types ];
     }
 
     my $class_name;
