@@ -29,10 +29,6 @@ Pseudorandom number generator seed.
 Run with C<N> threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-=item C<--with-timing> (default off)
-
-Enable timings.
-
 =item C<--with-output> (default on)
 
 Enable output.
@@ -249,11 +245,6 @@ our @CLIENT_OPTIONS = (
     {
       name => 'nthreads',
       type => 'int',
-      default => 0
-    },
-    {
-      name => 'with-timing',
-      type => 'bool',
       default => 0
     },
     {
