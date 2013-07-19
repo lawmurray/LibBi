@@ -333,8 +333,10 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
   /* init */
   evidence = init(rng, *iter, s, thetas, lws, as);
+  std::cerr << "evidence: " << evidence << std::endl;
   while (iter + 1 != last) {
     evidence += step(rng, first, iter, last, s, thetas, lws, as);
+    std::cerr << "evidence: " << evidence << std::endl;
   }
   output(thetas, lws);
 
@@ -386,6 +388,8 @@ real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
 
     evidence += bi::exp(theta.getIncLogLikelihood());
   }
+  // incremental evidence = average incremental likelihood
+  evidence /= thetas.size();
   return evidence;
 }
 
@@ -413,6 +417,10 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
   report(*iter, ess, r, acceptRate);
 
   ScheduleIterator iter1;
+
+  // compute the former sum of the theta-weights
+  // in order to be able to compute the incremental evidence
+  real sumlws = sumexp_reduce(lws);
   for (i = 0; i < thetas.size(); i++) {
     BOOST_AUTO(&theta, *thetas[i]);
     BOOST_AUTO(filter, pmmh->getFilter());
@@ -422,14 +430,17 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
     theta.getIncLogLikelihood() = filter->step(rng, iter1, last, theta,
         theta.getLogWeights(), theta.getAncestors());
     theta.getLogLikelihood1() += theta.getIncLogLikelihood();
+    /* compute incremental evidence along the way */
+    // evidence needs to be updated with the previous weights
+    // otherwise we cound the new incremental likelihood twice!!
+    evidence += bi::exp(lws(i) + theta.getIncLogLikelihood());
+
     lws(i) += theta.getIncLogLikelihood();
 
     filter->sampleTrajectory(rng, theta.getTrajectory());
 
-    /* compute evidence along the way */
-    evidence += bi::exp(lws(i) + theta.getIncLogLikelihood());
   }
-  evidence /= sumexp_reduce(lws);
+  evidence /= sumlws;
   iter = iter1;
 
   return evidence;
