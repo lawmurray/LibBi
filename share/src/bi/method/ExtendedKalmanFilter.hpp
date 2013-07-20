@@ -669,7 +669,7 @@ template<class B, class S, class IO1>
 template<bi::Location L>
 void bi::ExtendedKalmanFilter<B,S,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
-    //out->writeParameters(s);
+    out->writeParameters(s);
   }
 }
 
