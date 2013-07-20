@@ -33,10 +33,27 @@ void bi::SMC2NetCDFBuffer::create(const long P, const long T) {
   lwVar = ncFile->add_var("logweight", netcdf_real, npDim);
   BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
       "Could not create logweight variable");
+
+  leVar = ncFile->add_var("logevidence", netcdf_real, nrDim);
+  BI_ERROR_MSG(leVar != NULL && leVar->is_valid(),
+      "Could not create logevidence variable");
 }
 
 void bi::SMC2NetCDFBuffer::map(const long P, const long T) {
   lwVar = ncFile->get_var("logweight");
   BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
       "Could not create logweight variable");
+  leVar = ncFile->get_var("logevidence");
+  BI_ERROR_MSG(leVar != NULL && leVar->is_valid(),
+      "File does not contain variable logevidence");
+  BI_ERROR_MSG(leVar->num_dims() == 1,
+      "Variable logevidence has " << leVar->num_dims() << " dimensions, should have 1");
+  BI_ERROR_MSG(leVar->get_dim(0) == nrDim,
+      "Dimension 0 of variable logevidence should be nr");
+
 }
+
+void bi::SMC2NetCDFBuffer::writeLogEvidence(const int k, const real &le){
+    writeScalar(leVar, k, le);
+}
+

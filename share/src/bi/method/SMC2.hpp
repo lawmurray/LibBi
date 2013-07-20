@@ -333,10 +333,12 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
   /* init */
   evidence = init(rng, *iter, s, thetas, lws, as);
-  std::cerr << "evidence: " << evidence << std::endl;
+  int k = iter->indexOutput();
+  out->writeLogEvidence(k, log(evidence));
   while (iter + 1 != last) {
-    evidence += step(rng, first, iter, last, s, thetas, lws, as);
-    std::cerr << "evidence: " << evidence << std::endl;
+    evidence = step(rng, first, iter, last, s, thetas, lws, as);
+    k = iter->indexOutput();
+    out->writeLogEvidence(k, log(evidence));
   }
   output(thetas, lws);
 

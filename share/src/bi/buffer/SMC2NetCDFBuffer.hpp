@@ -55,6 +55,10 @@ public:
    */
   template<class V1>
   void writeLogWeights(const V1 lws);
+  /**
+   * Write incremental log evidence
+   */
+  void writeLogEvidence(const int k, const real &le);
 
 protected:
   /**
@@ -71,6 +75,10 @@ protected:
    * Log-weights variable.
    */
   NcVar* lwVar;
+  /**
+   * Incremental log evidence variable
+   */
+  NcVar* leVar;
 };
 }
 

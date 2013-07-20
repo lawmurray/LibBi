@@ -59,6 +59,10 @@ public:
   void readLogWeights(V1 lws) const;
 
   /**
+   * Write incremental log evidence le at time k
+   */
+  void writeLogEvidence(const int k, const real &le);
+  /**
    * @copydoc SMC2NetCDFBuffer::writeLogWeights()
    */
   template<class V1>
@@ -162,6 +166,13 @@ void bi::SMC2Cache<IO1,CL>::readLogWeights(V1 lws) const {
   BI_ASSERT(out != NULL);
 
   out->readLogWeights(lws);
+}
+
+template<class IO1, bi::Location CL>
+void bi::SMC2Cache<IO1,CL>::writeLogEvidence(const int k, const real &le) {
+  if (out != NULL) {
+    out->writeLogEvidence(k, le);
+  }
 }
 
 template<class IO1, bi::Location CL>
