@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
   timer.sync();
   /* output timing results */
   if (rank == 0) {
-    std::cout << timer.toc() << std::endl;
+    std::cout << "total " << timer.toc() << " us" << std::endl;
   }
   #endif
   #ifdef ENABLE_GPERFTOOLS
