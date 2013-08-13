@@ -18,8 +18,6 @@ Actions in the C<lookahead_transition> block may reference variables of any
 type except C<obs>, but may only target variables of type C<noise> and
 C<state>.
 
-=back
-
 =cut
 
 package Bi::Block::lookahead_transition;
