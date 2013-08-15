@@ -78,6 +78,7 @@ sub new {
     my $self = {
         _help => 0,
         _verbose => 0,
+        _dry_parse => 0,
         _dry_gen => 0,
         _dry_run => 0,
         _dry_build => 0,
@@ -90,6 +91,7 @@ sub new {
     my @args = (
         'help' => \$self->{_help},
         'verbose!' => \$self->{_verbose},
+        'dry-parse!' => \$self->{_dry_parse},
         'dry-gen!' => \$self->{_dry_gen},
         'dry-run!' => \$self->{_dry_run},
         'dry-build!' => \$self->{_dry_build},
@@ -142,28 +144,42 @@ sub client {
     # parse
     my $model = undef;
     if (defined $self->{_model_file}) {
-        $self->_report("Parsing...");
-        my $fh = new IO::File;
-        $fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
-        my $parser = new Bi::Parser;
-        $model = $parser->parse($fh);
-        $fh->close;
-        if ($model->get_name . '.bi' ne $self->{_model_file}) {
-            warn("model name does not match model file name\n");
-        }
+    	if (!$self->{_dry_parse}) {
+	        $self->_report("Parsing...");
+    	    my $fh = new IO::File;
+        	$fh->open($self->{_model_file}) || die("could not open " . $self->{_model_file} . "\n");
+        	my $parser = new Bi::Parser;
+        	$model = $parser->parse($fh);
+        	$fh->close;
+        	if ($model->get_name . '.bi' ne $self->{_model_file}) {
+            	warn("model name does not match model file name\n");
+        	}
+    	}
+    }
+
+    # build directory
+    my $dirname;
+    if (defined $model) {
+        $dirname = $model->get_name;
+    } elsif (defined $self->{_model_file} && $self->{_model_file} =~ /^(\w+)\.bi$/) {
+    	# usually the case when --dry-parse used
+        $dirname = $1;
+    } else {
+    	$dirname = 'LibBi';
     }
     
     # generators etc
-    my $dirname = (defined $model) ? $model->get_name : 'LibBi';
     my $builder = new Bi::Builder($dirname, $self->{_verbose});
     my $cpp = new Bi::Gen::Cpp($builder->get_dir);
     my $build = new Bi::Gen::Build($builder->get_dir);
     my $client = new Bi::Client($cmd, $builder->get_dir, $self->{_verbose});    
 
-    # process args
-    if (!defined $model && $client->needs_model) {
+    # model presence check
+    if (!defined $model && !$self->{_dry_parse} && $client->needs_model) {
         die("no model specified\n");
     }
+
+    # process args
     $self->_report("Processing arguments...");
     $client->process_args;
 
@@ -201,7 +217,7 @@ sub client {
 
     # generate code and build
     if ($client->is_cpp) {
-        if (!$self->{_dry_gen}) {
+        if (defined $model && !$self->{_dry_gen}) {
             $self->_report("Generating code...");
             $cpp->gen($model, $client);
             

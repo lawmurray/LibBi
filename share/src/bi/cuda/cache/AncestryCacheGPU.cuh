@@ -58,7 +58,7 @@ public:
 template<class V1>
 int bi::AncestryCacheGPU::prune(V1 as, V1 os, V1 ls) {
   /* pre-condition */
-  assert(!V1::on_device);
+  BI_ASSERT(V1::on_device);
 
   typename temp_gpu_vector<int>::type numRemoved(ls.size());
 
@@ -77,6 +77,10 @@ template<class M1, class V1, class M2, class V2>
 int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, const M2 X1,
     const V2 as1) {
   /* pre-condition */
+  BI_ASSERT(M1::on_device);
+  BI_ASSERT(V1::on_device);
+  BI_ASSERT(M2::on_device);
+  BI_ASSERT(V2::on_device);
   BI_ASSERT(X1.size1() == as1.size());
 
   const int N = X1.size1();
@@ -88,34 +92,34 @@ int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, con
   ls.resize(N, false);
 
   /* first fit */
-//  zero_inclusive_scan(os, Z);
-//  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
-//  int q = 0;
+  zero_inclusive_scan(os, Z);
+  thrust::upper_bound(Z.fast_begin(), Z.fast_end(), seq, seq + N, ls.fast_begin());
+  int q = 0;
 
   /* next fit */
-  int q = start, len, numAlloc, maxAlloc, numDone = 0;
-  do {
-    /* determine subrange to search */
-    len = bi::min(Z.size(), os.size() - q);
-
-    /* count up free slots in this subrange */
-    BOOST_AUTO(z, subrange(Z, 0, len));
-    zero_inclusive_scan(subrange(os, q, len), z);
-
-    /* number of free slots to allocate in this subrange */
-    maxAlloc = *(z.end() - 1);
-    numAlloc = bi::min(maxAlloc, N - numDone);
-
-    /* allocate slots */
-    thrust::upper_bound(z.fast_begin(), z.fast_end(), seq, seq + numAlloc, ls.fast_begin() + numDone);
-    addscal_elements(subrange(ls, numDone, numAlloc), q, subrange(ls, numDone, numAlloc));
-
-    numDone += numAlloc;
-    q += z.size();
-    if (q >= os.size()) {
-      q = 0;
-    }
-  } while (numDone < N);
+//  int q = start, len, numAlloc, maxAlloc, numDone = 0;
+//  do {
+//    /* determine subrange to search */
+//    len = bi::min(Z.size(), os.size() - q);
+//
+//    /* count up free slots in this subrange */
+//    BOOST_AUTO(z, subrange(Z, 0, len));
+//    zero_inclusive_scan(subrange(os, q, len), z);
+//
+//    /* number of free slots to allocate in this subrange */
+//    maxAlloc = *(z.end() - 1);
+//    numAlloc = bi::min(maxAlloc, N - numDone);
+//
+//    /* allocate slots */
+//    thrust::upper_bound(z.fast_begin(), z.fast_end(), seq, seq + numAlloc, ls.fast_begin() + numDone);
+//    addscal_elements(subrange(ls, numDone, numAlloc), q, subrange(ls, numDone, numAlloc));
+//
+//    numDone += numAlloc;
+//    q += z.size();
+//    if (q >= os.size()) {
+//      q = 0;
+//    }
+//  } while (numDone < N);
 
   bi::scatter(ls, bs, as);
   bi::scatter_rows(ls, X1, X);

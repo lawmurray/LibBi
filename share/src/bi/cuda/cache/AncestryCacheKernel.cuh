@@ -28,14 +28,14 @@ CUDA_FUNC_GLOBAL void kernelAncestryCachePrune(V1 as, V1 os, V1 ls, V2 numRemove
 }
 
 template<class V1, class V2>
-CUDA_FUNC_GLOBAL void bi::kernelAncestryCachePrune(V1 as, V1 os, V1 ls, V2 numRemoved) {\
+CUDA_FUNC_GLOBAL void bi::kernelAncestryCachePrune(V1 as, V1 os, V1 ls, V2 numRemoved) {
   const int N = ls.size();
   const int i = blockIdx.x*blockDim.x + threadIdx.x;
-  int j, m = 0, o;
+  int j, o, m = 0;
 
   if (i < N) {
     j = ls(i);
-    o = os(j); // should be no thread conflict here
+    o = os(j);
     while (o == 0) {
       ++m;
       j = as(j);

@@ -181,7 +181,9 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
+  #ifdef ENABLE_TIMING
   TicToc timer;
+  #endif
 
   [% IF client.get_named_arg('filter') == 'adaptive' && client.get_named_arg('joint-adaptation') == '1' %]
   sampler->sample_together(rng, sched.begin(), sched.end(), s, bufInit, NSAMPLES);
@@ -196,10 +198,10 @@ int main(int argc, char* argv[]) {
   std::cerr << sampler->getNumAccepted() << " of " <<
       sampler->getNumSteps() << " proposals accepted" << std::endl;
 
+  #ifdef ENABLE_TIMING
   /* output timing results */
-  if (WITH_TIMING) {
-    std::cout << timer.toc() << std::endl;
-  }
+  std::cout << "total " << timer.toc() << " us" << std::endl;
+  #endif
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif

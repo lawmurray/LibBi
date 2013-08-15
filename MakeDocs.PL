@@ -80,7 +80,9 @@ sub process_tex {
     my $contents = shift;
     my $type = shift;
 
-    $contents =~ s/\\label\{([A-Za-z0-9\-\_\\]*?)\}/\\label\{${type}_$1\}/g;
+    if (defined $type) {
+        $contents =~ s/\\label\{([A-Za-z0-9\-\_\\]*?)\}/\\label\{${type}_$1\}/g;
+    }
     $contents =~ s/\\texttt\{/\\bitt\{/g;
     $contents =~ s/\\begin\{verbatim\}((?:.|\n)*?)\\end\{verbatim\}/&process_tt($1)/gem;
     $contents =~ s/I<(.*?)>/\\textsl\{$1\}/g;

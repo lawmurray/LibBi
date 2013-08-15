@@ -406,7 +406,6 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
     const bool r) {
   /* pre-conditions */
   BI_ASSERT(X.size1() == as.size());
-  BI_ASSERT(!V1::on_device);
 
 #ifdef ENABLE_DIAGNOSTICS
   synchronize();
@@ -416,7 +415,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   if (m == 0) {
     init(X);
   } else {
-    int_vector_type os(X.size1());
+    int_vector_type os(as.size());
     Resampler::ancestorsToOffspring(as, os);
 
     bi::scatter(ls, os, this->os);

@@ -66,6 +66,21 @@ private:
   static void redistribute(M1 O, O1& s);
 
   /**
+   * @name Timing
+   */
+  //@{
+  /**
+   * Report resample timings to stderr.
+   */
+  static void reportResample(int rank, long usecs);
+
+  /**
+   * Report redistribution timings to stderr.
+   */
+  static void reportRedistribute(int rank, long usecs);
+  //@}
+
+  /**
    * Select particle from copy() compatible object.
    *
    * @tparam B Model type.
@@ -123,6 +138,11 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 
+#ifdef ENABLE_TIMING
+  synchronize();
+  TicToc clock;
+#endif
+
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();
@@ -149,11 +169,24 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
   }
   boost::mpi::broadcast(world, O, 0);
 
+#ifdef ENABLE_TIMING
+  long usecs = clock.toc();
+  reportResample(rank, usecs);
+#endif
+
   redistribute(O, s);
   offspringToAncestors(column(O, rank), as);
   permute(as);
   copy(as, s);
   lws.clear();
+}
+
+template<class R>
+void bi::DistributedResampler<R>::reportResample(int rank, long usecs) {
+  std::cerr << "DistributedResampler::resample ";
+  std::cerr << " process " << rank << " ";
+  std::cerr << usecs << " us";
+  std::cerr << std::endl;
 }
 
 template<class R>
@@ -201,6 +234,11 @@ template<class M1, class O1>
 void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   typedef typename temp_host_vector<int>::type int_vector_type;
 
+#ifdef ENABLE_TIMING
+  synchronize();
+  TicToc clock;
+#endif
+
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();
@@ -210,7 +248,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   int_vector_type Ps(size);  // number of particles in each process
   int_vector_type ranks(size);  // ranks sorted by number of particles
-  std::list < boost::mpi::request > reqs;
+  std::list<boost::mpi::request> reqs;
 
   sum_rows(O, Ps);
   seq_elements(ranks, 0);
@@ -272,6 +310,19 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
+
+#ifdef ENABLE_TIMING
+  long usecs = clock.toc();
+  reportRedistribute(rank, usecs);
+#endif
+}
+
+template<class R>
+void bi::DistributedResampler<R>::reportRedistribute(int rank, long usecs) {
+  std::cerr << "DistributedResampler::redistribute ";
+  std::cerr << " process " << rank << " ";
+  std::cerr << usecs << " us";
+  std::cerr << std::endl;
 }
 
 template<class R>

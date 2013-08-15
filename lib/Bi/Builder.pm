@@ -16,6 +16,10 @@ with C<--disable->.
 
 =over 4
 
+=item C<--dry-parse> (default off)
+
+Do not parse model file. Implies C<--dry-gen>.
+
 =item C<--dry-gen> (default off)
 
 Do not generate code.
@@ -42,6 +46,10 @@ production runs.
 
 Enable extra debugging options in compilation. This is recommended along with
 C<--with-gdb> or C<--with-cuda-gdb> when debugging.
+
+=item C<--enable-timing> (default off)
+
+Print detailed timing information to standard output.
 
 =item C<--enable-diagnostics> (default off)
 
@@ -124,6 +132,7 @@ sub new {
         _vampir => 0,
         _single => 0,
         _extra_debug => 0,
+        _timing => 0,
         _diagnostics => 0,
         _gperftools => 0,
         _tstamps => {},
@@ -150,6 +159,8 @@ sub new {
         'disable-single' => sub { $self->{_single} = 0 },
         'enable-extra-debug' => sub { $self->{_extra_debug} = 1 },
         'disable-extra-debug' => sub { $self->{_extra_debug} = 0 },
+        'enable-timing' => sub { $self->{_timing} = 1 },
+        'disable-timing' => sub { $self->{_timing} = 0 },
         'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
         'enable-gperftools' => sub { $self->{_gperftools} = 1 },
@@ -177,6 +188,7 @@ sub new {
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
     push(@builddir, 'extradebug') if $self->{_extra_debug};
+    push(@builddir, 'timing') if $self->{_timing};
     push(@builddir, 'diagnostics') if $self->{_diagnostics};
     push(@builddir, 'gperftools') if $self->{_gperftools};
     
@@ -294,7 +306,8 @@ sub _configure {
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
-    $options .= $self->{_extra_debug} ? ' --enable-extra-debug' : ' --disable-extra-debug';
+    $options .= $self->{_extra_debug} ? ' --enable-extradebug' : ' --disable-extradebug';
+    $options .= $self->{_timing} ? ' --enable-timing' : ' --disable-timing';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     

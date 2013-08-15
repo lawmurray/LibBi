@@ -86,23 +86,20 @@ int bi::AncestryCacheHost::insert(M1 X, V1 as, V1 os, V1 ls, const int start,
 
   const int N = X1.size1();
   host_int_vector_type bs(N);
-  int i, sz, q = start;
+  int i, q = start;
 
   bi::gather(as1, ls, bs);
   ls.resize(N, false);
 
-  sz = 0;
   for (i = 0; i < N; ++i) {
     while (os(q) > 0) {
       ++q;
-      sz = 0;
       if (q == X.size1()) {
         q = 0;
       }
     }
     ls(i) = q;
     ++q;
-    ++sz;
     if (q == X.size1()) {
       q = 0;
     }
