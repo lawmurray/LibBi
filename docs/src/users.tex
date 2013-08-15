@@ -584,7 +584,7 @@ may be unnecessary to understand these schema, as they are encapsulated by
 the higher-level functions of these packages.
 \end{tip}
 
-\subsection{Simulation schema}
+\subsection{Simulation schema\label{Simulation schema}}
 
 This schema is used by the \clientref{sample} command when the \bitt{target}
 option is set to \bitt{prior}, \bitt{joint} or \bitt{prediction}. It consists
@@ -793,6 +793,39 @@ defined along the following dimensions, in the order given:
 
 For spatially sparse input, see \secref{Coordinate_variables}{Coordinate
   variables} below.
+
+\begin{tip}
+The \secref{Simulation schema}{Simulation schema} is in fact a special case of
+the input schema, so that the \clientref{sample} command can often be used
+quite sensibly as input to another run. For example, a simulated data set can
+be generated with:
+\begin{cmdcode}
+libbi sample \textbackslash
+    --target joint \textbackslash
+    --nsamples 1 \textbackslash
+    --output-file data/obs.nc \textbackslash
+    ...
+\end{cmdcode}
+The \bitt{data/obs.nc} file can then be used as an observation file, sampling
+from the posterior distribution conditioned on the simulated trajectory as
+data:
+\begin{cmdcode}
+libbi sample \textbackslash
+    --target posterior \textbackslash
+    --obs-file data/obs.nc \textbackslash
+    --output-file results/posterior.nc \textbackslash
+    ...
+\end{cmdcode}
+Then, indeed, the output of that might be fed into a new sample forward in
+time:
+\begin{cmdcode}
+libbi sample \textbackslash
+    --target prediction \textbackslash
+    --init-file results/posterior.nc \textbackslash
+    --output-file results/prediction.nc \textbackslash
+    ....
+\end{cmdcode}
+\end{tip}
 
 \subsection{Time variables\label{Time_variables}}
 
@@ -1010,7 +1043,7 @@ Note two important points in this procedure:
   initialisation file.
 \end{itemize}
 
-\section{Putting it all together\label{Putting it all together}}
+\section{Getting it all working\label{Getting it all working}}
 
 This section contains some general advice on the statistical methods employed
 by LibBi and the tuning that might be required to make the most of them. It
@@ -1060,12 +1093,12 @@ The numerical columns provide, in order:
 The last of these is the most important for tuning.
 
 For a standard Metropolis-Hastings, a reasonable guide is to aim at an
-acceptance rate of 50\% for a single parameter, down to 23\% for five or more
+acceptance rate of 0.5 for a single parameter, down to 0.23 for five or more
 parameters~\citep{Gelman1994}. This includes the case where a Kalman filter is
 being used rather than a particle filter (by using the \bitt{--filter kalman}
 option to \clientref{sample}). In such cases the only tuning to perform is
 that of the proposal distribution. The proposal distribution is given in the
-\blockref{proposal_parameter} block of the model specification. In this block
+\blockref{proposal_parameter} block of the model specification. If this block
 is not specified, the \blockref{parameter} block is used instead, and this may
 make for a poor proposal distribution, especially when there are many
 observations. Increasing the width of the proposal distribution will decrease
@@ -1081,53 +1114,60 @@ PMMH has the added complication of using a particle filter to estimate the
 likelihood, rather than a Kalman filter to compute it exactly (although note
 that the Kalman filter works only for linear and Gaussian models). It is
 necessary to set the number of particles in the particle filter. More
-particles decreases the variance in the likelihood estimate and so increases
-the acceptance rate, but also increases the computational cost. Because of the
-likelihood estimate, the optimal acceptance rate will be lower than for
-standard Metropolis-Hastings. Anecdotally, 10-15\% seems reasonable.
+particles decreases the variance in the likelihood estimator and so increases
+the acceptance rate, but also increases the computational cost. Because the
+likelihood is estimated and not computed exactly, the optimal acceptance rate
+will be lower than for standard Metropolis-Hastings. Anecdotally, 0.1--0.15
+seems reasonable.
 
 The tradeoff between proposal size and number of particles is still under
-study (e.g. \citet{Doucet2013}). The following procedure is suggested.
+study, e.g. \citet{Doucet2013}. The following procedure is suggested.
 \begin{enumerate}
-\item Start with an empty \blockref{proposal_parameter} block, the simulation
-  time (\bitt{--end-time}) set to the time of the first observation, and the
-  number of particles (\bitt{--nparticles}) set to a modest number. When
+\item Start with an empty \blockref{proposal_parameter} block. Set the
+  simulation time (\bitt{--end-time}) to the time of the first observation,
+  and the number of particles (\bitt{--nparticles}) to a modest amount. When
   running PMMH, it is then the case that the same state of the chain, its
-  starting state in fact, will be proposed repeatedly. The acceptance rate
-  here depends entirely on the variance of the particle filter's likelihood
-  estimator. One hopes to see a high acceptance rate here, say 50\% or
-  more. Increase the number of particles until this is achieved. Note that
-  that random number seed can be fixed (\bitt{--seed}) if you wish.
-\item Steadily extend the simulation time (\bitt{--end-time}) to include a few
-  more observations at a time, and increase (\bitt{--nparticles}) as needed to
-  maintain the high acceptance rate. The number of particles will typically
-  need to scale linearly with the simulation time. Consult the
-  \secref{Performance guide}{Performance guide} to improve execution times and
-  further increase the number of particles if necessary.
+  starting state in fact, will be proposed repeatedly, and the acceptance rate
+  will depend entirely on the variance of the likelihood estimator. One hopes
+  to see a high acceptance rate here, say 0.5 or more. Increase the number of
+  particles until this is achieved. Note that the random number seed can be
+  fixed (\bitt{--seed}) if you wish.
+\item Steadily extend the simulation time to include a few more observations
+  on each attempt, and increase the number of particles as needed to maintain
+  the high acceptance rate. The number of particles will typically need to
+  scale linearly with the simulation time. Consult the \secref{Performance
+    guide}{Performance guide} to improve execution times and further increase
+  the number of particles if necessary.
 \item If a suitable configuration is achieved for the full data set, or a
   workable subset, the proposal distribution can be considered. You may find
   it useful to add one parameter at a time to the proposal distribution,
-  working towards an overall acceptance rate of 10-15\%.
+  working towards an overall acceptance rate of 0.1--0.15.
 \item If this fails to find a working combination with a healthy acceptance
-  rate, consider the initialisation of the chain. It has been observed
-  empirically that the variance in the likelihood estimator is
+  rate, consider the initialisation of the chain. By default, LibBi simply
+  draws a sample from the parameter model to initialise the chain. If this is
+  in an area where the variance in the likelihood estimator is high, the chain
+  may mix untenably slowly for any sensible number of particles. It has been
+  observed empirically that the variance in the likelihood estimator is
   heteroskedastic, and tends to increase with distance from the maximum
-  likelihood~\citep{Murray2013a}. By default, LibBi simply draws a sample from
-  the parameter model to initialise the chain. If this is in an area where the
-  variance in the likelihood estimator is high, the chain may mix untenably
-  slowly for any sensible number of particles. Closer to the maximum
-  likelihood, however, the chain may still be able to mix well with a
-  reasonable number of particles. As such, using \textsl{a priori} knowledge,
-  or exploration of the data set, to initialise the chain closer to the
-  maximum likelihood may allow the chain to mix well. The initial value of the
-  chain can be specified by putting parameters in a NetCDF file and passing
-  the name of that file to LibBi with the \bitt{--init-file} command-line
-  option.
+  likelihood~\citep{Murray2013a}. So initialising the chain closer to the
+  maximum likelihood may allow it to mix well with a reasonable number of
+  particles. Prior knowledge, optimisation of parameters (perhaps with the
+  \clientref{optimise} command), or exploration of the data set may inform the
+  initialisation. The initialisation can be given in the initialisation file
+  (\bitt{--init-file}).
 \end{enumerate}
 
-Be aware that LibBi uses methods that are still being actively researched and
-applied to increasingly large and complex models. It may be the case that your
-model and/or data set exceeds the current capabilities of LibBi. In such cases
+\begin{tip}
+It can also be the case that, in steadily extending the simulation time
+(\bitt{--end-time}), the acceptance rate suddenly drops at a particular
+time. This indicates that the particle filter degenerates at this
+point. Improving the initialisation of the chain is the best strategy in this
+case, although increasing the number of particles may help in mild cases.
+\end{tip}
+
+Be aware that LibBi uses methods that are still being actively developed, and
+applied to larger and more complex models. It may be the case that your model
+or data set exceeds the current capabilities of the software. In such cases
 the only option is to consider a smaller or simpler model, or a subsample of
 the available data.
 
