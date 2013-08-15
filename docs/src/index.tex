@@ -1,6 +1,7 @@
 \documentclass[a4paper,notitlepage]{refrep}
 
 %\usepackage{fullpage}
+\usepackage[round,comma,authoryear]{natbib}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{alltt}
@@ -19,6 +20,9 @@
 \usepackage{relsize}
 \usepackage{mathpazo}
 \usepackage[T1]{fontenc}
+
+% include citations in index
+%\citeindextrue
 
 % font adjustments
 \def\bs{\char'134 } % backslash in \tt font.
@@ -177,6 +181,9 @@ Version 1.0.0
 \chapter{Developer Guide\label{Developer_Guide}}
 
 \input{developers}
+
+\bibliographystyle{abbrvnat}
+{\small\bibliography{index}}
 
 \begingroup \catcode`_=12 % allows bare underscores in index
 \printindex

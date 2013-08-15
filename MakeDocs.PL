@@ -35,6 +35,9 @@ system("mkdir -p $PDF_DIR");
 # copy fixed tex files
 `cp $SRC_DIR/*.tex $PDF_DIR/.`;
 
+# copy bib files
+`cp $SRC_DIR/*.bib $PDF_DIR/.`;
+
 # copy pods to temporary directory
 `cp $ACTION_DIR/*.pm $ACTION_TMPDIR`;
 `cp $BLOCK_DIR/*.pm $BLOCK_TMPDIR`;
@@ -71,7 +74,7 @@ foreach my $file ($BUILD_OUT, $RUN_OUT, $COMMON_OUT, $ACTION_OUT, $BLOCK_OUT, $C
 #system("cd $PDF_DIR; latex2html -antialias -antialias_text -show_section_numbers -local_icons -toc_depth 4 -split 5 -dir ../html index.tex");
 
 # compile tex
-system("cd $PDF_DIR; pdflatex index.tex; makeindex index; pdflatex index.tex; pdflatex index.tex");
+system("cd $PDF_DIR; pdflatex index.tex; bibtex index; makeindex index; pdflatex index.tex; pdflatex index.tex");
 
 sub process_tex {
     my $contents = shift;
@@ -93,7 +96,8 @@ sub process_tex {
     $contents =~ s/\\subsubsection\*\{See also\\label\{.*?\}\}\n\n\n(\\\w+ref\{.*\})/\\newseealso\{See also $1\}/g;
 
     # remove index entries for subsections and paragraphs
-    $contents =~ s/\\index\{[A-Za-z0-9\-\_\\ ]+?\!(?:SYNOPSIS|DESCRIPTION|ARGUMENTS|PARAMETERS|OPTIONS|SEE ALSO)\}//ig;
+    #$contents =~ s/\\index\{[A-Za-z0-9\-\_\\ ]+?\!(?:SYNOPSIS|DESCRIPTION|ARGUMENTS|PARAMETERS|OPTIONS|SEE ALSO)\}//ig;
+    $contents =~ s/(\\sub(?:sub)?section\*?)\{(.*?)\\index\{.*?\}\}/$1\{$2\}/g;
     $contents =~ s/(\\paragraph\*?\{.*?)\\index\{.*?\}/$1/g;
 
     $contents =~ s/\\subsection\{((?:\w|\\_)+)\\/\\subsection{\\bitt\{$1\}\\/g;

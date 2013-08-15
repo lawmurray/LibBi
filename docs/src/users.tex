@@ -137,10 +137,31 @@ also begin with an uppercase letter, as in CamelCase. See the
 \end{tip}
 
 Each of the files that are created contains some placeholder content that is
-intended to be modified. The most important file is the \bitt{MANIFEST} file,
-which includes the complete list of files that should be packaged for
-distribution. Following this guide, and looking at some existing examples, is
-a good way to proceed.
+intended to be modified. The \bitt{META.yml} file can be completed immediately
+with the name of the package, the name of its author and a brief
+description. This and other files are detailed with the \clientref{package}
+command.
+
+This early stage is also the ideal time to think about version control. LibBi
+developers use Git\index{Git} for version control, and you may like to do the
+same for your project. A new repository can be initialised in the same
+directory with:
+\begin{cmdcode}
+git init
+\end{cmdcode}
+Then add all of the initial files to the repository and make the first commit:
+\begin{cmdcode}
+git add *
+git commit -m 'Added initial files'
+\end{cmdcode}
+The state of the repository at each commit may be restored at any stage,
+allowing old versions of files to be maintained without polluting the working
+directory.
+
+A complete introduction to Git is beyond the scope of this document. See
+\href{http://www.git-scm.com}{www.git-scm.com} for more information. The
+documentation for the \clientref{package} command also gives some advice on
+what to include, and what not to include, in a version control repository.
 
 The following command can be run at any time to validate that a project still
 conforms to the standard structure:
@@ -324,11 +345,12 @@ given on the right. Such actions might be simple scalar\index{scalar},
 vector\index{vector} or matrix\index{matrix} expressions.
 
 The third form, with the \bitt{=} operator, is for expressing ordinary
-differential equations.
+differential equations\index{ordinary\,differential\,equations}.
 
 Individual elements of a vector, matrix or higher-dimensional variable may be
 targeted using square brackets. Consider the following action giving the
-ordinary differential equation for a Lorenz '96 model:
+ordinary differential equation\index{ordinary\,differential\,equations} for a
+Lorenz '96\index{Lorenz\,'96} model:
 \begin{bicode}
 dx[i]/dt = x[i - 1]*(x[i + 1] - x[i - 2]) - x[i] + F
 \end{bicode}
@@ -484,20 +506,252 @@ The following functions are supported in expressions:
 \\ \hline
 \end{tabular}\index{functions}
 
+\section{Command-line interface\label{Command_line_interface}}\index{command\,line}
+
+Methods are applied to models via the command-line interface of LibBi. This is
+invoked using:
+\begin{cmdcode}
+libbi \textit{command} \textit{options} ...
+\end{cmdcode}
+where \bitt{\textit{command}} is any one of the following:
+\begin{description}
+\item[\clientref{filter}] for filtering problems using the model and
+  observations,
+%\item[\clientref{smooth}] for smoothing problems using the model and
+%  observations,
+\item[\clientref{optimise}] for parameter optimisation problems using the
+  model and observations,
+\item[\clientref{sample}] for parameter and state sampling problems using the
+  model and observations,
+\item[\clientref{package}] for creating projects and building packages for
+  distribution,
+\item[\clientref{help}] for accessing online help,
+\item[\clientref{draw}] to visualise a model (useful for
+  debugging and development),
+\item[\clientref{rewrite}] to inspect the internal representation of a model
+  (useful for debugging and development),
+\end{description}
+and available \bitt{\textit{options}} depend on the command.
+
+Options may be specified in a configuration file\index{config\,file} or on the
+command line itself. To use a configuration file, give the name of the file on
+the command line, preceded by \bitt{@}, e.g.
+\begin{cmdcode}
+libbi \textit{command} @command.conf
+\end{cmdcode}
+
+More than one config file may be specified, each preceded by \bitt{@}. An
+option given on the command line will override an option of the same name
+given in the configuration file.
+
+A config file simply contains a list of command-line options just as they
+would be given on the command line itself. For readability, the command-line
+options may be spread over any number of lines, and end-of-line comments,
+preceded by \bitt{\#}, may appear. The contents of one config file may be
+nested in another by using the \bitt{@file.conf} syntax within a file. This
+can be useful to avoid redundancy. For example, the \clientref{sample} command
+inherits all the options of \clientref{filter}. In this case it may be useful
+to write a \bitt{filter.conf} file that is nested within a \bitt{sample.conf}
+file, so that options need not be repeated.
+
+\section{Output files}
+
+LibBi uses NetCDF\index{NetCDF} files for input and output\index{I/O}. A
+NetCDF file consists of \emph{dimensions}, along with \emph{variables}
+extending across them. This is very similar to LibBi models. Where use of
+these overloaded names may cause confusion, the specific names \emph{NetCDF
+  variable/dimension} and \emph{model variable/dimension} are used throughout
+this section and the next. A NetCDF file may also contain scalar
+\emph{attributes} that provide meta information.
+
+The \emph{schema} of a NetCDF file is its structure with respect to the
+dimensions, variables and attributes that it contains. Among the dimensions
+will be those that correspond to model dimensions. Likewise for
+variables. Some additional dimensions and variables will provide critical
+method-specific information or diagnostics.
+
+There are several standard schemas. The schema of an output file depends on
+the command that produces it, and the options given to that command. The
+schemas are related by strong conventions and inherited structure.
+
+This section outlines each schema in turn. The syntax \bitt{x[m,n]} is used to
+refer to a NetCDF variable named \bitt{x} that extends across the NetCDF
+dimensions named \bitt{m} and \bitt{n}.
+
+\begin{tip}
+If using OctBi or RBi for collating and visualising the output of LibBi, it
+may be unnecessary to understand these schema, as they are encapsulated by
+the higher-level functions of these packages.
+\end{tip}
+
+\subsection{Simulation schema}
+
+This schema is used by the \clientref{sample} command when the \bitt{target}
+option is set to \bitt{prior}, \bitt{joint} or \bitt{prediction}. It consists
+of dimensions:
+\begin{itemize}
+\item \bitt{nr} indexing time,
+\item \bitt{np} indexing trajectories, and
+\item for each dimension \bitt{\emph{n}} in the model, a dimension
+  \bitt{\emph{n}}.
+\end{itemize}
+And variables:
+\begin{itemize}
+\item \bitt{time[nr]} giving the output times,
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
+\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
+  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{x}[nr,\emph{m},...,\emph{n},np]}.
+\end{itemize}
+
+\subsection{Particle filter schema}
+
+This schema is used by the \clientref{filter} command when a particle filter,
+besides the adaptive particle filter, is chosen. It extends the simulation
+schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension is now interpreted as indexing \emph{particles}
+  not \emph{trajectories}.
+\end{itemize}
+
+The following variables are added:
+\begin{itemize}
+\item \bitt{logweight[nr,np]} giving the log-weights vector at each time, and
+\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time.
+\end{itemize}
+
+\begin{tip}
+To draw a whole trajectory out of a file of the particle filter schema, begin
+at the last time, select a particle, and use the \bitt{ancestor} vector at
+each time to trace that particle's ancestry back through time. One cannot
+simply take a row from the matrix of a state variable to obtain a complete
+trajectory, as with the simulation schema.
+\end{tip}
+
+\subsection{Simulation ``flexi'' schema}
+
+This schema is currently not used directly, but the particle filter ``flexi''
+schema below extends it. The complication here is that the number of
+particles at each time can vary. The schema consists of the following
+dimensions:
+\begin{itemize}
+\item \bitt{nr} indexing time,
+\item \bitt{nrp} indexing both time and trajectories (an unlimited dimension),
+  and
+\item for each dimension \bitt{\emph{n}} in the model, a dimension
+  \bitt{\emph{n}}.
+\end{itemize}
+And variables:
+\begin{itemize}
+\item \bitt{time[nr]} giving the output times,
+\item \bitt{start[nr]} giving, for each time, the starting index along the
+  \bitt{nrp} dimension for particles associated with that time,
+\item \bitt{len[nr]} giving, for each time, the number of particles at that
+  time,
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
+\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
+  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{x}[\emph{m},...,\emph{n},nrp]}.
+\end{itemize}
+
+\begin{tip}
+With the ``flexi'' schema, to read the contents of a variable at some time
+index \bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
+dimension, beginning at index \bitt{start[\emph{t}]}.
+\end{tip}
+
+\subsection{Particle filter ``flexi'' schema}
+
+This schema is used by the \clientref{filter} command when an adaptive
+particle filter is chosen. It extends the simulation ``flexi'' schema. The
+following variables are added:
+\begin{itemize}
+\item \bitt{logweight[nrp]} giving the log-weights vector at each time, and
+\item \bitt{ancestor[nrp]} giving the ancestry vector at each time.
+\end{itemize}
+
+\subsection{Kalman filter schema}
+
+This schema is used by the \clientref{filter} command when a Kalman filter is
+chosen. It extends the simulation schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension is always of size 1, and
+\item variables that correspond to \kwref{state} and \kwref{noise} variables
+  in the model are now interpreted as containing the mean of the filter
+  density at each time.
+\end{itemize}
+
+The following dimensions are added:
+\begin{itemize}
+\item \bitt{nxcol} indexing columns of matrices, and
+\item \bitt{nxrow} indexing rows of matrices.
+\end{itemize}
+
+The following variables are added:
+\begin{itemize}
+\item \bitt{U\_[nr,nxcol,nxrow]} containing the upper-triangular Cholesky
+  factor of the covariance matrix of the filter density at each time.
+\item For each \kwref{noise} and \kwref{state} variable \bitt{\emph{x}}, a
+  variable \bitt{index.\emph{x}} giving the index of the first row (and
+  column) in \bitt{S\_} pertaining to this variable, the first such index being
+  zero.
+\end{itemize}
+
+\subsection{Optimisation schema}
+
+This schema is used by the \clientref{optimise} command. It consists of
+dimensions:
+\begin{itemize}
+\item \texttt{ns} indexing iterations of the optimiser (an unlimited
+  dimension).
+\end{itemize}
+And variables:
+\begin{itemize}
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
+  \bitt{\emph{theta}[ns,\emph{m},...,\emph{n}]},
+\item \bitt{optimiser.value[ns]} giving the value of the function being
+  optimised at each iteration, and
+\item \bitt{optimiser.size[ns]} giving the value of the convergence criterion
+  at each iteration.
+\end{itemize}
+
+\subsection{PMCMC schema}
+
+This schema is used by the \clientref{sample} command when a PMCMC method is
+chosen. It extends the simulation schema, with the following changes:
+\begin{itemize}
+\item the \bitt{np} dimension indexes samples, not trajectories, and
+\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
+  defined over dimensions \bitt{\emph{m},...,\emph{n}}, there is a variable
+  \bitt{\emph{theta}[\emph{m},...,\emph{n},np]} instead of
+  \bitt{\emph{theta}[\emph{m},...,\emph{n}]} (i.e. \kwref{param} variables are
+  defined over the \bitt{np} dimension also).
+\end{itemize}
+The following variables are added:
+\begin{itemize}
+\item \bitt{loglikelihood[np]} giving the log-likelihood estimate
+  $\hat{p}(\mathbf{y}_{1:T}|\boldsymbol{\theta}^p)$ for each sample
+  $\boldsymbol{\theta}^p$, and
+\item \bitt{logprior[np]} giving the log-prior density
+  $p(\boldsymbol{\theta}^p)$ of each sample $\boldsymbol{\theta}^p$.
+\end{itemize}
+
+\subsection{SMC$^2$ schema}
+
+This schema is used by the \clientref{sample} command when an SMC$^2$ method
+is chosen. It extends the PMCMC schema, with the following additional
+variable:
+\begin{itemize}
+\item \bitt{logweight[np]} giving the log-weights vector of parameter samples.
+\end{itemize}
+
+
 \section{Input files\label{Input_files}}\index{data}\index{I/O}\index{input}
-
-Data\index{data} is input to\index{I/O} LibBi using NetCDF\index{NetCDF}
-files. NetCDF uses the terminology \emph{variables} and \emph{dimensions} in
-describing file contents, which can cause some confusion with the use of the
-same terms in LibBi nomenclature. Usually the intent is clear from context;
-where it is not, the terms \emph{NetCDF variable/dimension} and \emph{model
-  variable/dimension} are used.
-
-The schema of input files is described in this section. The schema is the
-structure of the NetCDF file with respect to the dimensions, variables and
-attributes that it may contain. The syntax \bitt{x[m,n]} is used to refer to a
-variable in a NetCDF file named \bitt{x}, defined across the dimensions named
-\bitt{m} and \bitt{n}.
 
 Input files take three forms:
 \begin{itemize}
@@ -756,231 +1010,126 @@ Note two important points in this procedure:
   initialisation file.
 \end{itemize}
 
-\section{Command-line interface\label{Command_line_interface}}\index{command\,line}
+\section{Putting it all together\label{Putting it all together}}
 
-Methods are applied to models via the command-line interface of LibBi. This is
-invoked using:
-\begin{cmdcode}
-libbi \textit{command} \textit{options} ...
-\end{cmdcode}
-where \bitt{\textit{command}} is any one of the following:
-\begin{description}
-\item[\clientref{filter}] for filtering problems using the model and
-  observations,
-%\item[\clientref{smooth}] for smoothing problems using the model and
-%  observations,
-\item[\clientref{optimise}] for parameter optimisation problems using the
-  model and observations,
-\item[\clientref{sample}] for parameter and state sampling problems using the
-  model and observations,
-\item[\clientref{package}] for creating projects and building packages for
-  distribution,
-\item[\clientref{help}] for accessing online help,
-\item[\clientref{draw}] to visualise a model (useful for
-  debugging and development),
-\item[\clientref{rewrite}] to inspect the internal representation of a model
-  (useful for debugging and development),
-\end{description}
-and available \bitt{\textit{options}} depend on the command.
+This section contains some general advice on the statistical methods employed
+by LibBi and the tuning that might be required to make the most of them. It
+concentrates on the \emph{particle marginal
+  Metropolis-Hastings}\index{Metropolis-Hastings} (PMMH) sampler, used by
+default by the \clientref{sample} command when sampling from the posterior
+distribution.
 
-Options may be specified in a configuration file\index{config\,file} or on the
-command line itself. To use a configuration file, give the name of the file on
-the command line, preceded by \bitt{@}, e.g.
-\begin{cmdcode}
-libbi \textit{command} @command.conf
-\end{cmdcode}
+PMMH is of the family of \emph{particle Markov chain Monte Carlo} (PMCMC)
+methods~\citep{Andrieu2010}, which in turn belong to the family of Markov
+chain Monte Carlo (MCMC)\index{Markov\,chain\,Monte\,Carlo}. A complete
+introduction to PMMH is beyond the scope of this manual. \citet{Murray2013b}
+provides an introduction of the method and its implementation in LibBi.
 
-More than one config file may be specified, each preceded by \bitt{@}. An
-option given on the command line will override an option of the same name
-given in the configuration file.
+When using MCMC methods it is common to perform some short pilot runs to tune
+the parameters of the method in order to improve its efficiency, before
+performing a final run. In PMMH, the parameters to be tuned are the proposal
+distribution, and the number of particles in the particle filter, or
+sequential Monte Carlo~\citep{Doucet2001}, component of the method.
 
-A config file simply contains a list of command-line options just as they
-would be given on the command line itself. For readability, the command-line
-options may be spread over any number of lines, and end-of-line comments,
-preceded by \bitt{\#}, may appear. The contents of one config file may be
-nested in another by using the \bitt{@file.conf} syntax within a file. This
-can be useful to avoid redundancy. For example, the \clientref{sample} command
-inherits all the options of \clientref{filter}. In this case it may be useful
-to write a \bitt{filter.conf} file that is nested within a \bitt{sample.conf}
-file, so that options need not be repeated.
+When running PMMH in LibBi, diagnostics are output that can be used to guide
+tuning. Here is an example:
 
-\section{Output files}
+{\scriptsize\begin{cmdcode}
+22: -116.129  -16.984  7.25272  beats -121.853  -17.6397  7.49326  accept=0.217391
+23: -116.129  -16.984  5.63203  beats -119.772  -18.0891  6.07209  accept=0.208333
+24: -116.129  -16.984  6.89478  beats -121.268  -19.3354  8.25723  accept=0.2
+25: -116.129  -16.984  0.643236 beats -136.661  -21.5339  6.44331  accept=0.192308
+26: -116.129  -16.984  3.58096  beats -128.692  -20.3304  6.3502   accept=0.185185
+\end{cmdcode}}
 
-The schema of an output file depends on the command that produces it and the
-options given to that command. These are related by strong conventions and
-inherited structure, however. This section outlines each schema.
+The numerical columns provide, in order:
+\begin{enumerate}
+\item the iteration number,
+\item the log-likelihood of the current state of the chain,
+\item the prior log-density of the current state of the chain,
+\item the proposal log-density of the current state of the chain, conditioned
+  on the other state,
+\item the log-likelihood of the other state of the chain (the previous state
+  if the most recent proposal was accepted, the last proposed state if the
+  most recent proposal was rejected),
+\item the prior log-density of the other state of the chain,
+\item the proposal log-density of the other state of the chain, conditioned on
+  the current state, and
+\item the acceptance rate of the chain so far.
+\end{enumerate}
+The last of these is the most important for tuning.
 
-\begin{tip}
-If using OctBi or RBi for collating and visualising the output of LibBi, it
-may be unnecessary to understand these schema, as they are encapsulated by
-the higher-level functions of these packages.
-\end{tip}
-
-\subsection{Simulation schema}
-
-This schema is used by the \clientref{sample} command when the \bitt{target}
-option is set to \bitt{prior}, \bitt{joint} or \bitt{prediction}. It consists
-of dimensions:
-\begin{itemize}
-\item \bitt{nr} indexing time,
-\item \bitt{np} indexing trajectories, and
-\item for each dimension \bitt{\emph{n}} in the model, a dimension
-  \bitt{\emph{n}}.
-\end{itemize}
-And variables:
-\begin{itemize}
-\item \bitt{time[nr]} giving the output times,
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
-\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
-  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{x}[nr,\emph{m},...,\emph{n},np]}.
-\end{itemize}
-
-\subsection{Particle filter schema}
-
-This schema is used by the \clientref{filter} command when a particle filter,
-besides the adaptive particle filter, is chosen. It extends the simulation
-schema, with the following changes:
-\begin{itemize}
-\item the \bitt{np} dimension is now interpreted as indexing \emph{particles}
-  not \emph{trajectories}.
-\end{itemize}
-
-The following variables are added:
-\begin{itemize}
-\item \bitt{logweight[nr,np]} giving the log-weights vector at each time, and
-\item \bitt{ancestor[nr,np]} giving the ancestry vector at each time.
-\end{itemize}
+For a standard Metropolis-Hastings, a reasonable guide is to aim at an
+acceptance rate of 50\% for a single parameter, down to 23\% for five or more
+parameters~\citep{Gelman1994}. This includes the case where a Kalman filter is
+being used rather than a particle filter (by using the \bitt{--filter kalman}
+option to \clientref{sample}). In such cases the only tuning to perform is
+that of the proposal distribution. The proposal distribution is given in the
+\blockref{proposal_parameter} block of the model specification. In this block
+is not specified, the \blockref{parameter} block is used instead, and this may
+make for a poor proposal distribution, especially when there are many
+observations. Increasing the width of the proposal distribution will decrease
+the acceptance rate. Decreasing the width of the proposal distribution will
+increase the acceptance rate.
 
 \begin{tip}
-To draw a whole trajectory out of a file of the particle filter schema, begin
-at the last time, select a particle, and use the \bitt{ancestor} vector at
-each time to trace that particle's ancestry back through time. One cannot
-simply take a row from the matrix of a state variable to obtain a complete
-trajectory, as with the simulation schema.
+Higher acceptance rates are not necessarily better. They may simply be a
+result of the chain exploring the posterior distribution very slowly.
 \end{tip}
 
-\subsection{Simulation ``flexi'' schema}
+PMMH has the added complication of using a particle filter to estimate the
+likelihood, rather than a Kalman filter to compute it exactly (although note
+that the Kalman filter works only for linear and Gaussian models). It is
+necessary to set the number of particles in the particle filter. More
+particles decreases the variance in the likelihood estimate and so increases
+the acceptance rate, but also increases the computational cost. Because of the
+likelihood estimate, the optimal acceptance rate will be lower than for
+standard Metropolis-Hastings. Anecdotally, 10-15\% seems reasonable.
 
-This schema is currently not used directly, but the particle filter ``flexi''
-schema below extends it. The complication here is that the number of
-particles at each time can vary. The schema consists of the following
-dimensions:
-\begin{itemize}
-\item \bitt{nr} indexing time,
-\item \bitt{nrp} indexing both time and trajectories (an unlimited dimension),
-  and
-\item for each dimension \bitt{\emph{n}} in the model, a dimension
-  \bitt{\emph{n}}.
-\end{itemize}
-And variables:
-\begin{itemize}
-\item \bitt{time[nr]} giving the output times,
-\item \bitt{start[nr]} giving, for each time, the starting index along the
-  \bitt{nrp} dimension for particles associated with that time,
-\item \bitt{len[nr]} giving, for each time, the number of particles at that
-  time,
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]}, and
-\item for each \kwref{state} and \kwref{noise} variable \bitt{\emph{x}} in the
-  model, defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{x}[\emph{m},...,\emph{n},nrp]}.
-\end{itemize}
+The tradeoff between proposal size and number of particles is still under
+study (e.g. \citet{Doucet2013}). The following procedure is suggested.
+\begin{enumerate}
+\item Start with an empty \blockref{proposal_parameter} block, the simulation
+  time (\bitt{--end-time}) set to the time of the first observation, and the
+  number of particles (\bitt{--nparticles}) set to a modest number. When
+  running PMMH, it is then the case that the same state of the chain, its
+  starting state in fact, will be proposed repeatedly. The acceptance rate
+  here depends entirely on the variance of the particle filter's likelihood
+  estimator. One hopes to see a high acceptance rate here, say 50\% or
+  more. Increase the number of particles until this is achieved. Note that
+  that random number seed can be fixed (\bitt{--seed}) if you wish.
+\item Steadily extend the simulation time (\bitt{--end-time}) to include a few
+  more observations at a time, and increase (\bitt{--nparticles}) as needed to
+  maintain the high acceptance rate. The number of particles will typically
+  need to scale linearly with the simulation time. Consult the
+  \secref{Performance guide}{Performance guide} to improve execution times and
+  further increase the number of particles if necessary.
+\item If a suitable configuration is achieved for the full data set, or a
+  workable subset, the proposal distribution can be considered. You may find
+  it useful to add one parameter at a time to the proposal distribution,
+  working towards an overall acceptance rate of 10-15\%.
+\item If this fails to find a working combination with a healthy acceptance
+  rate, consider the initialisation of the chain. It has been observed
+  empirically that the variance in the likelihood estimator is
+  heteroskedastic, and tends to increase with distance from the maximum
+  likelihood~\citep{Murray2013a}. By default, LibBi simply draws a sample from
+  the parameter model to initialise the chain. If this is in an area where the
+  variance in the likelihood estimator is high, the chain may mix untenably
+  slowly for any sensible number of particles. Closer to the maximum
+  likelihood, however, the chain may still be able to mix well with a
+  reasonable number of particles. As such, using \textsl{a priori} knowledge,
+  or exploration of the data set, to initialise the chain closer to the
+  maximum likelihood may allow the chain to mix well. The initial value of the
+  chain can be specified by putting parameters in a NetCDF file and passing
+  the name of that file to LibBi with the \bitt{--init-file} command-line
+  option.
+\end{enumerate}
 
-\begin{tip}
-With the ``flexi'' schema, to read the contents of a variable at some time
-index \bitt{\emph{t}}, read \bitt{len[\emph{t}]} entries along the \bitt{nrp}
-dimension, beginning at index \bitt{start[\emph{t}]}.
-\end{tip}
-
-\subsection{Particle filter ``flexi'' schema}
-
-This schema is used by the \clientref{filter} command when an adaptive
-particle filter is chosen. It extends the simulation ``flexi'' schema. The
-following variables are added:
-\begin{itemize}
-\item \bitt{logweight[nrp]} giving the log-weights vector at each time, and
-\item \bitt{ancestor[nrp]} giving the ancestry vector at each time.
-\end{itemize}
-
-\subsection{Kalman filter schema}
-
-This schema is used by the \clientref{filter} command when a Kalman filter is
-chosen. It extends the simulation schema, with the following changes:
-\begin{itemize}
-\item the \bitt{np} dimension is always of size 1, and
-\item variables that correspond to \kwref{state} and \kwref{noise} variables
-  in the model are now interpreted as containing the mean of the filter
-  density at each time.
-\end{itemize}
-
-The following dimensions are added:
-\begin{itemize}
-\item \bitt{nxcol} indexing columns of matrices, and
-\item \bitt{nxrow} indexing rows of matrices.
-\end{itemize}
-
-The following variables are added:
-\begin{itemize}
-\item \bitt{U\_[nr,nxcol,nxrow]} containing the upper-triangular Cholesky
-  factor of the covariance matrix of the filter density at each time.
-\item For each \kwref{noise} and \kwref{state} variable \bitt{\emph{x}}, a
-  variable \bitt{index.\emph{x}} giving the index of the first row (and
-  column) in \bitt{S\_} pertaining to this variable, the first such index being
-  zero.
-\end{itemize}
-
-\subsection{Optimisation schema}
-
-This schema is used by the \clientref{optimise} command. It consists of
-dimensions:
-\begin{itemize}
-\item \texttt{ns} indexing iterations of the optimiser (an unlimited
-  dimension).
-\end{itemize}
-And variables:
-\begin{itemize}
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[ns,\emph{m},...,\emph{n}]},
-\item \bitt{optimiser.value[ns]} giving the value of the function being
-  optimised at each iteration, and
-\item \bitt{optimiser.size[ns]} giving the value of the convergence criterion
-  at each iteration.
-\end{itemize}
-
-\subsection{PMCMC schema}
-
-This schema is used by the \clientref{sample} command when a PMCMC method is
-chosen. It extends the simulation schema, with the following changes:
-\begin{itemize}
-\item the \bitt{np} dimension indexes samples, not trajectories, and
-\item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
-  defined over dimensions \bitt{\emph{m},...,\emph{n}}, there is a variable
-  \bitt{\emph{theta}[\emph{m},...,\emph{n},np]} instead of
-  \bitt{\emph{theta}[\emph{m},...,\emph{n}]} (i.e. \kwref{param} variables are
-  defined over the \bitt{np} dimension also).
-\end{itemize}
-The following variables are added:
-\begin{itemize}
-\item \bitt{loglikelihood[np]} giving the log-likelihood estimate
-  $\hat{p}(\mathbf{y}_{1:T}|\boldsymbol{\theta}^p)$ for each sample
-  $\boldsymbol{\theta}^p$, and
-\item \bitt{logprior[np]} giving the log-prior density
-  $p(\boldsymbol{\theta}^p)$ of each sample $\boldsymbol{\theta}^p$.
-\end{itemize}
-
-\subsection{SMC$^2$ schema}
-
-This schema is used by the \clientref{sample} command when an SMC$^2$ method
-is chosen. It extends the PMCMC schema, with the following additional
-variable:
-\begin{itemize}
-\item \bitt{logweight[np]} giving the log-weights vector of parameter samples.
-\end{itemize}
+Be aware that LibBi uses methods that are still being actively researched and
+applied to increasingly large and complex models. It may be the case that your
+model and/or data set exceeds the current capabilities of LibBi. In such cases
+the only option is to consider a smaller or simpler model, or a subsample of
+the available data.
 
 \section{Performance guide\label{Performance guide}\index{performance}}
 

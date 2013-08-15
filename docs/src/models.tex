@@ -147,7 +147,7 @@ declared\index{scope}.
 
 \subsection{\bitt{inline}\label{inline}\index{inline}}
 
-Declare an inline\index{inline expression}.
+Declare an inline\index{inline\,expression}.
 
 \subsubsection*{Synopsis\label{inline_synopsis}}
 \begin{bicode}
@@ -158,13 +158,14 @@ x <- 2*\textsl{name}  // equivalent to x <- 2*(\textsl{expression})
 
 \subsubsection*{Description\label{inline_description}}
 
-An \bitt{inline}\index{inline} statement declares an inline\index{inline
-  expression}, the value of which is an expression that will be substituted in
-place of any occurrence of the inline's name in other expressions. The inline
-may be used in any expression where it will not violate the constraints on
-that expression (e.g. an inline expression that refers to a \kwref{state}
-variable may not be used within a constant expression).
+An \bitt{inline}\index{inline} statement declares an
+inline\index{inline\,expression}, the value of which is an expression that
+will be substituted in place of any occurrence of the inline's name in other
+expressions. The inline may be used in any expression where it will not
+violate the constraints on that expression (e.g. an inline expression that
+refers to a \kwref{state} variable may not be used within a constant
+expression\index{constant\,expression}).
 
-An inline expression\index{inline expression} may be declared anywhere in a
+An inline expression\index{inline\,expression} may be declared anywhere in a
 model specification. Its scope is restricted to the block in which it is
 declared\index{scope}.
