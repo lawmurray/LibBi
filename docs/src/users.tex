@@ -570,8 +570,16 @@ will be those that correspond to model dimensions. Likewise for
 variables. Some additional dimensions and variables will provide critical
 method-specific information or diagnostics.
 
-There are several standard schemas. The schema of an output file depends on
-the command that produces it, and the options given to that command. The
+\begin{tip}
+To quickly inspect the structure and contents of a NetCDF file, use the
+\bitt{ncdump} utility, included as standard in NetCDF distributions:
+\begin{cmdcode}
+ncdump file.nc | less
+\end{cmdcode}
+\end{tip}
+
+LibBi output files have several schemas. The schema of an output file depends
+on the command that produces it, and the options given to that command. The
 schemas are related by strong conventions and inherited structure.
 
 This section outlines each schema in turn. The syntax \bitt{x[m,n]} is used to
