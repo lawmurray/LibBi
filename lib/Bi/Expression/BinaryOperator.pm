@@ -123,7 +123,7 @@ sub get_shape {
     my $op = $self->get_op;
     my $expr2 = $self->get_expr2;
 
-    if ($op eq '*') {
+    if ($op eq '*' && $expr1->is_matrix && $expr2->is_vector) {
         return new Bi::Expression::Shape([ $expr1->get_shape->get_size1, $expr2->get_shape->get_size2 ]);
     } else {
         assert ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) if DEBUG;

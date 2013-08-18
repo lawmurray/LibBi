@@ -162,7 +162,7 @@ sub get_shape {
         
         return new Bi::Expression::Shape($expr1->get_size1, $expr2->get_size2);
     } else {
-        return new Bi::Expression::Shape;
+        return new Bi::Expression::Shape();
     }
 }
 
