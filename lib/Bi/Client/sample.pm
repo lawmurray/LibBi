@@ -208,6 +208,9 @@ sub process_args {
         }
     } elsif ($target eq 'joint') {
         $binary = 'simulate';
+        if (!$self->is_named_arg('with-transform-param-to-state')) {
+	        $self->set_named_arg('with-transform-param-to-state', 1);
+        }
         if (!$self->is_named_arg('with-transform-obs-to-state')) {
             $self->set_named_arg('with-transform-obs-to-state', 1);
         }
