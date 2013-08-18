@@ -235,7 +235,7 @@ sub get_shape {
     my $self = shift;
     
     my @shape = map { $_->get_size } @{$self->get_dims};
-    return \@shape;
+    return new Bi::Expression::Shape(\@shape);
 }
 
 =item B<get_size>
@@ -248,7 +248,7 @@ sub get_size {
     my $self = shift;
     
     my $size = 1;
-    foreach my $len (@{$self->get_shape}) {
+    foreach my $len (@{$self->get_shape->get_sizes}) {
         $size *= $len;
     }
     

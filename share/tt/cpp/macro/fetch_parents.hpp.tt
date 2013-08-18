@@ -30,7 +30,7 @@
   [%-',' UNLESS loop.last-%]
   [%-END-%]);
   const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, cox[% loop.index %].index()));
-  [% ELSIF ref.get_var.get_dims.size > 0 %]
+  [% ELSIF ref.get_var.get_shape.get_count > 0 %]
   const VarCoord[% ref.get_var.get_id %] cox[% loop.index %](cox.index());
   const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, cox[% loop.index %].index()));
   [% ELSE %]

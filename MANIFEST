@@ -1,4 +1,5 @@
 docs/src/developers.tex
+docs/src/index.bib
 docs/src/index.tex
 docs/src/models.tex
 docs/src/users.tex
@@ -79,6 +80,7 @@ lib/Bi/Expression/Literal.pm
 lib/Bi/Expression/Matrix.pm
 lib/Bi/Expression/MatrixReference.pm
 lib/Bi/Expression/Range.pm
+lib/Bi/Expression/Shape.pm
 lib/Bi/Expression/StringLiteral.pm
 lib/Bi/Expression/TernaryOperator.pm
 lib/Bi/Expression/UnaryOperator.pm
@@ -99,6 +101,7 @@ lib/Bi/Model/DimAlias.pm
 lib/Bi/Model/Inline.pm
 lib/Bi/Model/Spec.pm
 lib/Bi/Model/Var.pm
+lib/Bi/Model/VarGroup.pm
 lib/Bi/Node.pm
 lib/Bi/Optimiser.pm
 lib/Bi/Parser.pm
@@ -550,6 +553,7 @@ share/tt/bi/macro/arg_list.bi.tt
 share/tt/bi/macro/dim_list.bi.tt
 share/tt/bi/model.bi.tt
 share/tt/bi/var.bi.tt
+share/tt/bi/var_group.bi.tt
 share/tt/build/Makefile.am.tt
 share/tt/cpp/action/beta.hpp.tt
 share/tt/cpp/action/eval_.hpp.tt
@@ -633,6 +637,7 @@ share/tt/cpp/test/test_resampler_cpu.cpp.tt
 share/tt/cpp/test/test_resampler_gpu.cu.tt
 share/tt/cpp/var.hpp.tt
 share/tt/cpp/var_coord.hpp.tt
+share/tt/cpp/var_group.hpp.tt
 share/tt/dot/action.dot.tt
 share/tt/dot/block.dot.tt
 share/tt/dot/model.dot.tt

@@ -177,6 +177,23 @@ sub get_expr3 {
     return $self->{_expr3};
 }
 
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    my $expr2 = $self->get_expr2;
+    my $expr3 = $self->get_expr3;
+
+    assert ($expr2->get_shape->equals($expr3->get_shape)) if DEBUG;
+
+    return $expr2->get_shape;
+}
+
 =item B<d>(I<ident>)
 
 Symbolically differentiate the expression with respect to I<ident>, and

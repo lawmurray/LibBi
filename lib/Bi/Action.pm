@@ -50,7 +50,7 @@ sub new {
     $self->{_left} = undef;
     $self->{_op} = undef;
     $self->{_name} = undef;
-    $self->{_shape} = [];
+    $self->{_shape} = new Bi::Expression::Shape();
     $self->{_parent} = undef;
     $self->{_is_matrix} = 0;
     $self->{_can_combine} = 0;
@@ -71,15 +71,13 @@ Return a clone of the object.
 sub clone {
     my $self = shift;
     
-    my @shape = @{$self->get_shape};
-    
     my $clone = Bi::ArgHandler::clone($self);
     $clone->{_id} = $_next_action_id++;
     $clone->{_aliases} = $self->get_aliases; # don't clone
     $clone->{_left} = $self->get_left->clone;
     $clone->{_op} = $self->get_op;
     $clone->{_name} = $self->get_name;
-    $clone->{_shape} = \@shape;
+    $clone->{_shape} = $self->get_shape->clone;
     $clone->{_parent} = $self->get_parent;
     $clone->{_is_matrix} = $self->is_matrix;
     $clone->{_can_combine} = $self->can_combine;
@@ -345,7 +343,7 @@ sub set_shape {
     my $self = shift;
     my $shape = shift;
     
-    assert (!defined($shape) || ref($shape) eq 'ARRAY') if DEBUG;
+    assert (ref($shape) eq 'Bi::Expression::Shape') if DEBUG;
 
     $self->{_shape} = $shape;
 }

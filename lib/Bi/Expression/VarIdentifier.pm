@@ -108,6 +108,28 @@ sub set_var {
     $self->{_var} = $var;
 }
 
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    if (@{$self->get_indexes}) {
+        my $shape = [];
+        for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
+            if ($self->get_indexes->[$i]->is_range) {
+                push(@$shape, $self->get_indexes->[$i]->get_size);
+            }
+        }
+        return new Bi::Expression::Shape($shape);
+    } else {
+        return $self->get_var->get_shape;
+    }
+}
+
 =item B<get_indexes>
 
 Get the array ref of dimension indexes into I<var>, as

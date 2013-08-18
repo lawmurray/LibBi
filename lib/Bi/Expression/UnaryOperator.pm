@@ -105,6 +105,18 @@ sub get_expr {
     return $self->{_expr};
 }
 
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    return $self->get_expr->get_shape;
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.

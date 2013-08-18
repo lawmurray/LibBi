@@ -95,6 +95,15 @@ sub is_range {
     return 0;
 }
 
+=item B<get_size>
+
+Size of the range.
+
+=cut
+sub get_size {
+    return 1;
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.

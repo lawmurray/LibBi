@@ -62,10 +62,10 @@ sub validate {
     my $A = $self->get_named_arg('A');
     my $x = $self->get_named_arg('x');
 
-    if ($A->get_shape->[1] != $x->get_shape->[0]) {
+    if ($A->get_shape->get_sizes->[1] != $x->get_shape->get_sizes->[0]) {
         die("incompatible dimension sizes in arguments to action 'gemv_'");
     } else {
-        $self->set_shape([ $A->get_shape->[0] ]);
+        $self->set_shape(new Bi::Expression::Shape([ $A->get_shape->get_sizes->[0] ]));
     }
 
     if ($A->is_common) {

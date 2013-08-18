@@ -135,6 +135,21 @@ sub has_end {
     return defined $self->{_end};
 }
 
+=item B<get_size>
+
+Size of the range.
+
+=cut
+sub get_size {
+    my $self = shift;
+    
+    if ($self->has_start && $self->has_end) {
+        return $self->get_end - $self->get_start + 1;
+    } else {
+        return [];
+    }
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.

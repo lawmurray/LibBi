@@ -114,10 +114,22 @@ sub _unroll_expr {
 
     # temporary variable to hold expression result
     my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';
-    my $var = new Bi::Model::Var($type, undef, [], [], {
-        'has_input' => new Bi::Expression::IntegerLiteral(0),
-        'has_output' => new Bi::Expression::IntegerLiteral(0)
-    });
+    
+    
+    
+    my $var;
+    if ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'gemv_') {
+        # TODO: This is just a hack for gemv_ for now
+        $var = new Bi::Model::Var($type, undef, $expr->get_arg(1)->get_var->get_dims, [], {
+            'has_input' => new Bi::Expression::IntegerLiteral(0),
+            'has_output' => new Bi::Expression::IntegerLiteral(0)
+        });
+    } else {
+        $var = new Bi::Model::Var($type, undef, [], [], {
+            'has_input' => new Bi::Expression::IntegerLiteral(0),
+            'has_output' => new Bi::Expression::IntegerLiteral(0)
+        });
+    }
     $model->push_var($var);
 
     # action to evaluate expression

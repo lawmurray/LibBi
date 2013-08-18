@@ -444,7 +444,7 @@ sub ensure_num_dims {
     my $name = shift;
     my $num = shift;
     
-    if (!(!$self->is_named_arg($name) || @{$self->get_named_arg($name)->get_shape} <= $num)) {
+    if (!(!$self->is_named_arg($name) || $self->get_named_arg($name)->get_shape->get_count <= $num)) {
         my $action = $self->get_name;
         my $plural = '';
         if ($num == 1) {

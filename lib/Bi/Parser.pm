@@ -758,7 +758,7 @@ sub ternary_operator {
     my $op2 = shift;
     my $expr3 = shift;
     
-    if (@{$expr1->get_shape} > 0) {
+    if ($expr1->get_shape->get_count > 0) {
         die("conditional in ternary operator must be scalar\n");
     }    
     return new Bi::Expression::TernaryOperator($expr1, $op1, $expr2, $op2, $expr3);

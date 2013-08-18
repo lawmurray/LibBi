@@ -146,6 +146,26 @@ sub is_math {
     return exists $MATH_FUNCTIONS{$self->get_name};
 }
 
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    my $name = $self->get_name;
+    if ($name eq 'gemv') {
+        my $expr1 = $self->get_named_arg('A');
+        my $expr2 = $self->get_named_arg('x');
+        
+        return new Bi::Expression::Shape($expr1->get_size1, $expr2->get_size2);
+    } else {
+        return new Bi::Expression::Shape;
+    }
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.

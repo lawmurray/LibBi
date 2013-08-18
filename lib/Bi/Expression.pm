@@ -25,6 +25,7 @@ use overload
 
 use Carp::Assert;
 
+use Bi::Expression::Shape;
 use Bi::Expression::BinaryOperator;
 use Bi::Expression::ConstIdentifier;
 use Bi::Expression::DimAliasIdentifier;
@@ -104,7 +105,7 @@ Is this a scalar expression?
 sub is_scalar {
     my $self = shift;
     
-    return scalar(@{$self->get_shape}) == 0;
+    return $self->get_shape->get_count == 0;
 }
 
 =item B<is_vector>
@@ -115,7 +116,7 @@ Is this a vector expression?
 sub is_vector {
     my $self = shift;
     
-    return scalar(@{$self->get_shape}) == 1;
+    return $self->get_shape->get_count == 1;
 }
 
 =item B<is_matrix>
@@ -126,7 +127,7 @@ Is this a matrix expression?
 sub is_matrix {
     my $self = shift;
     
-    return scalar(@{$self->get_shape}) == 2;
+    return $self->get_shape->get_count == 2;
 }
 
 =item B<is_element>
@@ -187,13 +188,12 @@ sub eval_const {
 
 =item B<get_shape>
 
-Get the shape of the expression result, as an array ref of sizes.
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
 
 =cut
 sub get_shape {
-    my $self = shift;
-    
-    return [];
+    return new Bi::Expression::Shape();
 }
 
 =item B<d>(I<ident>)

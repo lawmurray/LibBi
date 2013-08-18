@@ -11,9 +11,9 @@
 [% create_action_typetree(block) %]
 
 [%-
-A = block.get_action.get_named_arg('A');
-x = block.get_action.get_named_arg('x');
-target = block.get_action.get_left;
+A = block.get_actions.0.get_named_arg('A');
+x = block.get_actions.0.get_named_arg('x');
+target = block.get_actions.0.get_left;
 %]
 
 /**
@@ -42,7 +42,7 @@ public:
 #include "bi/math/operation.hpp"
 
 [% sig_block_static_function('simulate') %] {
-  BOOST_AUTO(A, reshape([% get_var(A) %], [% A.get_dims.0.get_size %], [% A.get_dims.1.get_size %]));
+  BOOST_AUTO(A, reshape([% get_var(A) %], [% A.get_shape.get_size1 %], [% A.get_shape.get_size2 %]));
   BOOST_AUTO(X, [% get_var(x) %]);
   BOOST_AUTO(Y, [% get_var(target) %]);
 

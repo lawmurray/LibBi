@@ -110,6 +110,27 @@ sub get_expr2 {
     return $self->{_expr2};
 }
 
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    my $expr1 = $self->get_expr1;
+    my $op = $self->get_op;
+    my $expr2 = $self->get_expr2;
+
+    if ($op eq '*') {
+        return new Bi::Expression::Shape([ $expr1->get_shape->get_size1, $expr2->get_shape->get_size2 ]);
+    } else {
+        assert ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) if DEBUG;
+        return $self->get_expr1->get_shape;
+    }
+}
+
 =item B<accept>(I<visitor>, ...)
 
 Accept visitor.
