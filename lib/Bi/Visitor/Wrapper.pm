@@ -68,7 +68,7 @@ sub _wrap {
         my @vertices = $graph->vertices;
         $graph->add_vertex($child);
 
-        my $vars = [ @{$child->get_all_vars}, @{$child->get_all_right_vars} ];
+        my $vars = [ @{$child->get_all_left_vars}, @{$child->get_all_right_vars} ];
         foreach my $vertex (@vertices) {
             my $left_vars = $vertex->get_all_left_vars;
             if (@{set_intersect($vars, $left_vars)} > 0) {
