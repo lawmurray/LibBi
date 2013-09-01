@@ -35,7 +35,6 @@
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
-#include "bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/cache/ParticleFilterCache.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
@@ -77,10 +76,7 @@ int main(int argc, char* argv[]) {
   const int rank = 0;
   const int size = 1;
   #endif
-  
-  /* NetCDF init */
-  NcError ncErr(NcError::silent_nonfatal);
-  
+    
   /* bi init */
   bi_init(NTHREADS);
 
@@ -110,17 +106,10 @@ int main(int argc, char* argv[]) {
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
   /* output */
-  [% IF client.get_named_arg('filter') == 'adaptive' %]
-  FlexiParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT) {
-    bufOutput = new FlexiParticleFilterNetCDFBuffer(m, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-  }
-  [% ELSE %]
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT) {
     bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
   }
-  [% END %]
 
   /* resampler */
   [% IF client.get_named_arg('with-mpi') %]

@@ -8,128 +8,51 @@
 #include "ParticleMCMCNetCDFBuffer.hpp"
 
 bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode) :
-    NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
-  BI_ASSERT(mode == READ_ONLY || mode == WRITE);
-  map();
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, file, mode, schema) {
+  if (mode == NEW || mode == REPLACE) {
+    create();
+  } else {
+    map();
+  }
 }
 
 bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
-    const int P, const int T, const std::string& file,
-    const FileMode mode) : NetCDFBuffer(file, mode), m(m), vars(NUM_VAR_TYPES) {
+    const size_t P, const size_t T, const std::string& file,
+    const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
-    create(P, T);
+    create();
   } else {
-    map(P, T);
+    map();
   }
 }
 
-void bi::ParticleMCMCNetCDFBuffer::create(const long P, const long T) {
-  int id, i;
-  VarType type;
-  Var* var;
-  Dim* dim;
+void bi::ParticleMCMCNetCDFBuffer::create() {
+  nc_put_att(ncid, "libbi_schema", "ParticleMCMC");
+  nc_put_att(ncid, "libbi_schema_version", 1);
+  nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
-  ncFile->add_att(PACKAGE_TARNAME "_schema", "ParticleMCMC");
-  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
-  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
-
-  /* dimensions */
-  nrDim = createDim("nr", T);
-  for (i = 0; i < m.getNumDims(); ++i) {
-    dim = m.getDim(i);
-    nDims.push_back(createDim(dim->getName().c_str(), dim->getSize()));
-  }
-  npDim = createDim("np", P);
-
-  /* time variable */
-  tVar = ncFile->add_var("time", netcdf_real, nrDim);
-  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(), "Could not create time variable");
-
-  /* other variables */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    type = static_cast<VarType>(i);
-    vars[type].resize(m.getNumVars(type), NULL);
-
-    if (type == D_VAR || type == R_VAR || type == P_VAR) {
-      for (id = 0; id < (int)vars[type].size(); ++id) {
-        var = m.getVar(type, id);
-        if (var->hasOutput()) {
-          if (type == P_VAR) {
-            vars[type][id] = createVar(var, false, true);
-          } else {
-            vars[type][id] = createVar(var, !var->getOutputOnce(), true);
-          }
-        }
-      }
-    }
-  }
-
-  llVar = ncFile->add_var("loglikelihood", netcdf_real, npDim);
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "Could not create loglikelihood variable");
-
-  lpVar = ncFile->add_var("logprior", netcdf_real, npDim);
-  BI_ERROR_MSG(lpVar != NULL && lpVar->is_valid(),
-      "Could not create logprior variable");
-
+  llVar = nc_def_var(ncid, "loglikelihood", NC_REAL, npDim);
+  lpVar = nc_def_var(ncid, "logprior", NC_REAL, npDim);
 }
 
-void bi::ParticleMCMCNetCDFBuffer::map(const long P, const long T) {
-  std::string name;
-  int id, i;
-  VarType type;
-  Var* var;
-  Dim* dim;
+void bi::ParticleMCMCNetCDFBuffer::map() {
+  std::vector<int> dimids;
 
-  /* dimensions */
-  BI_ERROR_MSG(hasDim("nr"), "File must have nr dimension");
-  nrDim = mapDim("nr", T);
-  for (i = 0; i < m.getNumDims(); ++i) {
-    dim = m.getDim(i);
-    BI_ERROR_MSG(hasDim(dim->getName().c_str()), "File must have " <<
-        dim->getName() << " dimension");
-    nDims.push_back(mapDim(dim->getName().c_str(), dim->getSize()));
-  }
-  BI_ERROR_MSG(hasDim("np"), "File must have np dimension");
-  npDim = mapDim("np", P);
+  llVar = nc_inq_varid(ncid, "loglikelihood");
+  BI_ERROR_MSG(llVar >= 0, "No variable loglikelihood in file " << file);
+  dimids = nc_inq_vardimid(ncid, llVar);
+  BI_ERROR_MSG(dimids.size() == 1u,
+      "Variable loglikelihood has " << dimids.size() << " dimensions, should have 1, in file " << file);
+  BI_ERROR_MSG(dimids[0] == npDim,
+      "Only dimension of variable loglikelihood should be np, in file " << file);
 
-  /* time variable */
-  tVar = ncFile->get_var("time");
-  BI_ERROR_MSG(tVar != NULL && tVar->is_valid(),
-      "File does not contain variable time");
-  BI_ERROR_MSG(tVar->num_dims() == 1, "Variable time has " << tVar->num_dims() <<
-      " dimensions, should have 1");
-  BI_ERROR_MSG(tVar->get_dim(0) == nrDim, "Dimension 0 of variable time should be nr");
-
-  /* other variables */
-  for (i = 0; i < NUM_VAR_TYPES; ++i) {
-    type = static_cast<VarType>(i);
-    if (type == D_VAR || type == R_VAR || type == P_VAR) {
-      vars[type].resize(m.getNumVars(type), NULL);
-      for (id = 0; id < m.getNumVars(type); ++id) {
-        var = m.getVar(type, id);
-        if (hasVar(var->getOutputName().c_str())) {
-          vars[type][id] = mapVar(m.getVar(type, id));
-        }
-      }
-    }
-  }
-
-  llVar = ncFile->get_var("loglikelihood");
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "File does not contain variable loglikelihood");
-  BI_ERROR_MSG(llVar->num_dims() == 1, "Variable loglikelihood has " <<
-      llVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR_MSG(llVar->get_dim(0) == npDim,
-      "Dimension 0 of variable loglikelihood should be np");
-
-  lpVar = ncFile->get_var("logprior");
-  BI_ERROR_MSG(lpVar != NULL && lpVar->is_valid(),
-      "File does not contain variable logprior");
-  BI_ERROR_MSG(lpVar->num_dims() == 1, "Variable logprior has " <<
-      lpVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR_MSG(lpVar->get_dim(0) == npDim,
-      "Dimension 0 of variable logprior should be np");
-
+  lpVar = nc_inq_varid(ncid, "logprior");
+  BI_ERROR_MSG(lpVar >= 0, "No variable logprior in file " << file);
+  dimids = nc_inq_vardimid(ncid, lpVar);
+  BI_ERROR_MSG(dimids.size() == 1u,
+      "Variable logprior has " << dimids.size() << " dimensions, should have 1, in file " << file);
+  BI_ERROR_MSG(dimids[0] == npDim,
+      "Only dimension of variable logprior should be np, in file " << file);
 }

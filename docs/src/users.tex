@@ -714,17 +714,17 @@ The following variables are added:
 This schema is used by the \clientref{optimise} command. It consists of
 dimensions:
 \begin{itemize}
-\item \texttt{ns} indexing iterations of the optimiser (an unlimited
+\item \texttt{np} indexing iterations of the optimiser (an unlimited
   dimension).
 \end{itemize}
 And variables:
 \begin{itemize}
 \item for each \kwref{param} variable \bitt{\emph{theta}} in the model,
   defined over dimensions \bitt{\emph{m},...,\emph{n}}, a variable
-  \bitt{\emph{theta}[ns,\emph{m},...,\emph{n}]},
-\item \bitt{optimiser.value[ns]} giving the value of the function being
+  \bitt{\emph{theta}[\emph{m},...,\emph{n},np]},
+\item \bitt{optimiser.value[np]} giving the value of the function being
   optimised at each iteration, and
-\item \bitt{optimiser.size[ns]} giving the value of the convergence criterion
+\item \bitt{optimiser.size[np]} giving the value of the convergence criterion
   at each iteration.
 \end{itemize}
 

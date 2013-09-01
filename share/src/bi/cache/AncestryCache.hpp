@@ -83,18 +83,16 @@ public:
   /**
    * Add particles at a new time to the cache.
    *
-   * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    * @tparam V1 Vector type.
    *
-   * @param t Time index.
-   * @param s State.
+   * @param k Time index.
+   * @param X State.
    * @param as Ancestors.
    * @param r Was resampling performed?
    */
-  template<class B, Location L, class V1>
-  void writeState(const int t, const State<B,L>& s, const V1 as,
-      const bool r);
+  template<class M1, class V1>
+  void writeState(const int k, const M1 X, const V1 as, const bool r);
 
   /**
    * @name Diagnostics
@@ -315,10 +313,10 @@ void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
 }
 
 template<bi::Location CL>
-template<class B, bi::Location L, class V1>
-void bi::AncestryCache<CL>::writeState(const int t, const State<B,L>& s,
-    const V1 as, const bool r) {
-  writeState(s.getDyn(), as, r);
+template<class M1, class V1>
+void bi::AncestryCache<CL>::writeState(const int k, const M1 X, const V1 as,
+    const bool r) {
+  writeState(X, as, r);
 }
 
 template<bi::Location CL>

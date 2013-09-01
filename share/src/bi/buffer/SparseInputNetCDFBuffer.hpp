@@ -35,7 +35,7 @@ public:
    * dimension.
    */
   SparseInputNetCDFBuffer(const Model& m, const std::string& file,
-      const int ns = 0, const int np = -1);
+      const size_t ns = 0, const size_t np = -1);
 
   /**
    * Get time.
@@ -44,7 +44,7 @@ public:
    *
    * @return Time.
    */
-  real getTime(const int k) const;
+  real getTime(const size_t k) const;
 
   /**
    * Get all times.
@@ -62,7 +62,7 @@ public:
    * @param type Variable type.
    * @param[out] mask Mask.
    */
-  void readMask(const int k, const VarType type, Mask<ON_HOST>& mask);
+  void readMask(const size_t k, const VarType type, Mask<ON_HOST>& mask);
 
   /**
    * Read dynamic variables.
@@ -75,7 +75,8 @@ public:
    * @param[in,out] X State.
    */
   template<class M1>
-  void readState(const int k, const VarType type, const Mask<ON_HOST>& mask, M1 X);
+  void readState(const size_t k, const VarType type,
+      const Mask<ON_HOST>& mask, M1 X);
 
   /**
    * Convenience method for reading dynamic variables when the mask is not of
@@ -88,7 +89,7 @@ public:
    * @param[in,out] X State.
    */
   template<class M1>
-  void read(const int k, const VarType type, M1 X);
+  void read(const size_t k, const VarType type, M1 X);
 
   /**
    * Read mask of static variables.
@@ -136,7 +137,8 @@ private:
    * in @p t, and the number of consecutive entries of the same value in
    * @p len.
    */
-  void readTime(NcVar* ncVar, const int start, int* const len, real* const t);
+  void readTime(int ncVar, const size_t start, size_t* const len,
+      real* const t);
 
   /**
    * Read from coordinate variable.
@@ -149,7 +151,7 @@ private:
    * @param[out] C Coordinate vector.
    */
   template<class M1>
-  void readCoords(NcVar* ncVar, const int start, const int len, M1 C);
+  void readCoords(int ncVar, const size_t start, const size_t len, M1 C);
 
   /**
    * Densely-masked read into matrix.
@@ -162,7 +164,7 @@ private:
    * @param[out] X Output.
    */
   template<class M1>
-  void readVar(NcVar* ncVar, const int start, const int len, M1 X);
+  void readVar(int ncVar, const size_t start, const size_t len, M1 X);
 
   /**
    * Sparsely-masked read into matrix.
@@ -176,7 +178,7 @@ private:
    * @param[out] X Output.
    */
   template<class V1, class M1>
-  void readVar(NcVar* ncVar, const int start, const int len, const V1 ixs,
+  void readVar(int ncVar, const size_t start, const size_t len, const V1 ixs,
       M1 X);
 
   /**
@@ -205,7 +207,7 @@ private:
    * @return Pair containing the associated record dimension index (-1 if
    * none) and variable.
    */
-  std::pair<int,NcVar*> mapVarDim(const Var* var);
+  std::pair<int,int> mapVarDim(const Var* var);
 
   /**
    * Map record dimension in existing NetCDF file.
@@ -216,7 +218,7 @@ private:
    * no record dimension is associated, or the record dimension is already
    * associated with another time variable.
    */
-  NcDim* mapTimeDim(NcVar* ncVar);
+  int mapTimeDim(int ncVar);
 
   /**
    * Map record dimension in existing NetCDF file.
@@ -227,22 +229,12 @@ private:
    * no record dimension is associated, or the record dimension is already
    * associated with another coordinate variable.
    */
-  NcDim* mapCoordDim(NcVar* ncVar);
+  int mapCoordDim(int ncVar);
 
   /**
    * Model.
    */
   const Model& m;
-
-  /**
-   * Experiment dimension.
-   */
-  NcDim* nsDim;
-
-  /**
-   * P-dimension (trajectories).
-   */
-  NcDim* npDim;
 
   /**
    * Times.
@@ -252,27 +244,27 @@ private:
   /**
    * Record dimensions.
    */
-  std::vector<NcDim*> recDims;
+  std::vector<int> recDims;
 
   /**
    * Offsets along record dimensions.
    */
-  std::vector<std::vector<int> > recStarts;
+  std::vector<std::vector<size_t> > recStarts;
 
   /**
    * Extends along record dimensions.
    */
-  std::vector<std::vector<int> > recLens;
+  std::vector<std::vector<size_t> > recLens;
 
   /**
    * Time variables, by record dimension index, NULL where none.
    */
-  std::vector<NcVar*> timeVars;
+  std::vector<int> timeVars;
 
   /**
    * Coordinate variables, by record dimension index, NULL where none.
    */
-  std::vector<NcVar*> coordVars;
+  std::vector<int> coordVars;
 
   /**
    * Model variables, indexed by record dimension.
@@ -280,33 +272,45 @@ private:
   std::multimap<int,Var*> modelVars;
 
   /**
-   * Variables, indexed by type.
+   * Model dimensions.
    */
-  std::vector<std::vector<NcVar*> > vars;
+  std::vector<int> dims;
+
+  /**
+   * Model variables, indexed by type.
+   */
+  std::vector<std::vector<int> > vars;
+
+  /**
+   * Record dimension.
+   */
+  int nsDim;
+
+  /**
+   * Sample dimension.
+   */
+  int npDim;
 
   /**
    * Index of record to read along @c ns dimension.
    */
-  int ns;
+  size_t ns;
 
   /**
    * Index of record to read along @c np dimension.
    */
-  int np;
+  size_t np;
 };
 }
 
-#include "../math/temp_vector.hpp"
-#include "../math/temp_matrix.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
-#include "../misc/compile.hpp"
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
-inline real bi::SparseInputNetCDFBuffer::getTime(const int k) const {
+inline real bi::SparseInputNetCDFBuffer::getTime(const size_t k) const {
   return times[k];
 }
 
@@ -314,15 +318,14 @@ inline const std::vector<real>& bi::SparseInputNetCDFBuffer::getTimes() const {
   return times;
 }
 
-
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readState(const int k, const VarType type,
-    const Mask<ON_HOST>& mask, M1 X) {
+void bi::SparseInputNetCDFBuffer::readState(const size_t k,
+    const VarType type, const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
-  NcVar* ncVar;
-  int r, start, len;
+  int ncVar, r;
+  size_t start, len;
   for (r = 0; r < int(recDims.size()); ++r) {
-    if (timeVars[r] != NULL) {
+    if (timeVars[r] >= 0) {
       start = recStarts[k][r];
       len = recLens[k][r];
 
@@ -336,14 +339,15 @@ void bi::SparseInputNetCDFBuffer::readState(const int k, const VarType type,
           var = iter->second;
           if (var->getType() == type) {
             ncVar = vars[type][var->getId()];
-
-            /* update this variable */
-            if (mask.isDense(var->getId())) {
-              readVar(ncVar, start, len,
-                  columns(X, var->getStart(), var->getSize()));
-            } else if (mask.isSparse(var->getId())) {
-              readVar(ncVar, start, len, mask.getIndices(var->getId()),
-                  columns(X, var->getStart(), var->getSize()));
+            if (ncVar >= 0) {
+              /* update this variable */
+              if (mask.isDense(var->getId())) {
+                readVar(ncVar, start, len,
+                    columns(X, var->getStart(), var->getSize()));
+              } else if (mask.isSparse(var->getId())) {
+                readVar(ncVar, start, len, mask.getIndices(var->getId()),
+                    columns(X, var->getStart(), var->getSize()));
+              }
             }
           }
         }
@@ -353,7 +357,7 @@ void bi::SparseInputNetCDFBuffer::readState(const int k, const VarType type,
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::read(const int k, const VarType type,
+void bi::SparseInputNetCDFBuffer::read(const size_t k, const VarType type,
     M1 X) {
   Mask<ON_HOST> mask;
   readMask(k, type, mask);
@@ -364,25 +368,27 @@ template<class M1>
 void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
     const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
-  NcVar* ncVar;
-  int r, start, len;
+  int ncVar, r;
+  size_t start, len;
 
   /* sparse reads */
   for (r = 0; r < int(recDims.size()); ++r) {
-    if (timeVars[r] == NULL) {
+    if (timeVars[r] < 0) {
       BOOST_AUTO(range, modelVars.equal_range(r));
       BOOST_AUTO(iter, range.first);
       BOOST_AUTO(end, range.second);
 
       start = 0;
-      len = recDims[r]->size();
+      len = nc_inq_dimlen(ncid, recDims[r]);
 
       for (; iter != end; ++iter) {
         var = iter->second;
         if (var->getType() == type) {
           ncVar = vars[type][var->getId()];
-          readVar(ncVar, start, len, mask.getIndices(var->getId()),
-              columns(X, var->getStart(), var->getSize()));
+          if (ncVar >= 0) {
+            readVar(ncVar, start, len, mask.getIndices(var->getId()),
+                columns(X, var->getStart(), var->getSize()));
+          }
         }
       }
     }
@@ -400,7 +406,9 @@ void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
     len = var->getSize();
     if (var->getType() == type) {
       ncVar = vars[type][var->getId()];
-      readVar(ncVar, -1, -1, columns(X, var->getStart(), var->getSize()));
+      if (ncVar >= 0) {
+        readVar(ncVar, -1, -1, columns(X, var->getStart(), var->getSize()));
+      }
     }
   }
 }
@@ -413,19 +421,21 @@ void bi::SparseInputNetCDFBuffer::read0(const VarType type, M1 X) {
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readCoords(NcVar* ncVar, const int start,
-    const int len, M1 C) {
+void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const size_t start,
+    const size_t len, M1 C) {
   /* pre-condition */
-  BI_ASSERT(ncVar != NULL);
+  BI_ASSERT(ncVar >= 0);
   BI_ASSERT(start >= 0);
   BI_ASSERT(len >= 0);
 
-  long offsets[3], counts[3];
+  std::vector<size_t> offsets(3), counts(3);
+  std::vector<int> dimids(3);
   int j = 0;
-  BI_UNUSED NcBool ret;
+
+  dimids = nc_inq_vardimid(ncid, ncVar);
 
   /* optional ns dimension */
-  if (nsDim != NULL && ncVar->get_dim(j) == nsDim) {
+  if (nsDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == nsDim) {
     offsets[j] = ns;
     counts[j] = 1;
     ++j;
@@ -437,45 +447,38 @@ void bi::SparseInputNetCDFBuffer::readCoords(NcVar* ncVar, const int start,
   ++j;
 
   /* optional dimension indexing model dimensions */
-  if (j < ncVar->num_dims()) {
+  if (j < static_cast<int>(dimids.size())) {
     offsets[j] = 0;
     counts[j] = C.size2();
     ++j;
   }
 
   /* read */
-  ret = ncVar->set_cur(offsets);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
-
   if (M1::on_device || !C.contiguous()) {
     typename sim_temp_matrix<M1>::type C1(C.size1(), C.size2());
-    ret = ncVar->get(C1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    nc_get_vara(ncid, ncVar, offsets, counts, C1.buf());
     C = C1;
   } else {
-    ret = ncVar->get(C.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    nc_get_vara(ncid, ncVar, offsets, counts, C.buf());
   }
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
-    const int len, M1 X) {
+void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const size_t start,
+    const size_t len, M1 X) {
   /* pre-condition */
-  BI_ASSERT(ncVar != NULL);
+  BI_ASSERT(ncVar >= 0);
 
-  typedef typename M1::value_type value_type;
-  typedef typename temp_host_vector<value_type>::type vector_type;
-  typedef typename temp_host_matrix<value_type>::type matrix_type;
+  typedef typename sim_temp_host_vector<M1>::type temp_vector_type;
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
-  const int ndims = ncVar->num_dims();
-  long offsets[ndims], counts[ndims];
+  std::vector<int> dimids = nc_inq_vardimid(ncid, ncVar);
+  std::vector<size_t> offsets(dimids.size()), counts(dimids.size());
   int j = 0;
   bool haveP = false;
-  BI_UNUSED NcBool ret;
 
   /* ns dimension */
-  if (nsDim != NULL && ncVar->get_dim(j) == nsDim) {
+  if (nsDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == nsDim) {
     offsets[j] = ns;
     counts[j] = 1;
     ++j;
@@ -489,24 +492,24 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
   }
 
   /* model dimensions */
-  while (j < ndims && ncVar->get_dim(j) != npDim) {
+  while (j < static_cast<int>(dimids.size()) && dimids[j] != npDim) {
     offsets[j] = 0;
-    counts[j] = ncVar->get_dim(j)->size();
+    counts[j] = nc_inq_dimlen(ncid, dimids[j]);
     ++j;
   }
 
   /* np dimension */
-  if (j < ndims && npDim != NULL && ncVar->get_dim(j) == npDim) {
-    if (npDim->size() == 1) {
+  if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+    if (nc_inq_dimlen(ncid, npDim) == 1) {
       /* special case, often occurring with simulated data sets */
       offsets[j] = 0;
       counts[j] = 1;
     } else if (np >= 0) {
-      BI_ASSERT(np < npDim->size());
+      BI_ASSERT(np < nc_inq_dimlen(ncid, npDim));
       offsets[j] = np;
       counts[j] = 1;
     } else {
-      BI_ASSERT(X.size1() <= npDim->size());
+      BI_ASSERT(X.size1() <= static_cast<int>(nc_inq_dimlen(ncid, npDim)));
       offsets[j] = 0;
       counts[j] = X.size1();
       haveP = true;
@@ -515,44 +518,37 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
   }
 
   /* read */
-  ret = ncVar->set_cur(offsets);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
-
   if (!haveP && X.size1() > 1) {
-    vector_type x1(X.size2());
-    ret = ncVar->get(x1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    temp_vector_type x1(X.size2());
+    nc_get_vara(ncid, ncVar, offsets, counts, x1.buf());
     set_rows(X, x1);
   } else if (M1::on_device || !X.contiguous()) {
-    matrix_type X1(X.size1(), X.size2());
-    ret = ncVar->get(X1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    temp_matrix_type X1(X.size1(), X.size2());
+    nc_get_vara(ncid, ncVar, offsets, counts, X1.buf());
     X = X1;
   } else {
-    ret = ncVar->get(X.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+    nc_get_vara(ncid, ncVar, offsets, counts, X.buf());
   }
 }
 
 template<class V1, class M1>
-void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
-    const int len, const V1 ixs, M1 X) {
+void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const size_t start,
+    const size_t len, const V1 ixs, M1 X) {
   /* pre-condition */
-  BI_ASSERT(ncVar != NULL);
+  BI_ASSERT(ncVar >= 0);
   BI_ASSERT(!V1::on_device);
 
-  typedef typename M1::value_type value_type;
-  typedef typename temp_host_vector<value_type>::type vector_type;
-  typedef typename temp_host_matrix<value_type>::type matrix_type;
+  typedef typename sim_temp_host_vector<M1>::type temp_vector_type;
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
-  const int ndims = ncVar->num_dims();
-  long offsets[ndims], counts[ndims];
+  std::vector<int> dimids = nc_inq_vardimid(ncid, ncVar);
+  std::vector<size_t> offsets(dimids.size()), counts(dimids.size());
   int j = 0;
   bool haveP = false;
-  BI_UNUSED NcBool ret;
 
   /* ns dimension */
-  if (nsDim != NULL && ncVar->get_dim(j) == nsDim) {
+  if (nsDim >= 0 && j < static_cast<int>(dimids.size())
+      && dimids[j] == nsDim) {
     offsets[j] = ns;
     counts[j] = 1;
     ++j;
@@ -564,13 +560,13 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
   ++j;
 
   /* np dimension */
-  if (j < ndims && npDim != NULL && ncVar->get_dim(j) == npDim) {
+  if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
     if (np >= 0) {
-      BI_ASSERT(np + X.size1() <= npDim->size());
+      BI_ASSERT(np + X.size1() <= nc_inq_dimlen(ncid, npDim));
       offsets[j] = np;
       counts[j] = 1;
     } else {
-      BI_ASSERT(X.size1() <= npDim->size());
+      BI_ASSERT(X.size1() <= static_cast<int>(nc_inq_dimlen(ncid, npDim)));
       offsets[j] = 0;
       counts[j] = X.size1();
       haveP = true;
@@ -578,21 +574,16 @@ void bi::SparseInputNetCDFBuffer::readVar(NcVar* ncVar, const int start,
     ++j;
   }
 
-  ret = ncVar->set_cur(offsets);
-  BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
-
   if (!haveP && X.size1() > 1) {
-    vector_type x1(len);
-    ret = ncVar->get(x1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
-    for (j = 0; j < len; ++j) {
+    temp_vector_type x1(static_cast<int>(len));
+    nc_get_vara(ncid, ncVar, offsets, counts, x1.buf());
+    for (j = 0; j < static_cast<int>(len); ++j) {
       set_elements(column(X, ixs(j)), x1(j));
     }
   } else {
-    matrix_type X1(X.size1(), len);
-    ret = ncVar->get(X1.buf(), counts);
-    BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
-    for (j = 0; j < len; ++j) {
+    temp_matrix_type X1(X.size1(), static_cast<int>(len));
+    nc_get_vara(ncid, ncVar, offsets, counts, X1.buf());
+    for (j = 0; j < static_cast<int>(len); ++j) {
       ///@todo This could be improved for contiguous columns
       column(X, ixs(j)) = column(X1, j);
     }

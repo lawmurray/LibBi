@@ -637,10 +637,6 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
   BI_ASSERT(A.inc() == 1);
   BI_ASSERT(U.inc() == 1);
 
-  int info;
-  int N = A.size1();
-  int ld = U.lead();
-
   U = A;
   try {
     potrf(U, uplo);

@@ -8,14 +8,19 @@
 #include "ParticleFilterNetCDFBuffer.hpp"
 
 bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, file, mode) {
-  map();
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, file, mode, schema) {
+  if (mode == NEW || mode == REPLACE) {
+    create();
+  } else {
+    map();
+  }
 }
 
 bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
-    const int P, const int T, const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, P, T, file, mode) {
+    const size_t P, const size_t T, const std::string& file,
+    const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {
@@ -24,65 +29,69 @@ bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
 }
 
 void bi::ParticleFilterNetCDFBuffer::create() {
-  ncFile->add_att(PACKAGE_TARNAME "_schema", "ParticleFilter");
-  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
-  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
+  if (schema == FLEXI) {
+    nc_put_att(ncid, "libbi_schema", "FlexiParticleFilter");
+    nc_put_att(ncid, "libbi_schema_version", 1);
+  } else {
+    nc_put_att(ncid, "libbi_schema", "ParticleFilter");
+    nc_put_att(ncid, "libbi_schema_version", 1);
+  }
+  nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
-  aVar = ncFile->add_var("ancestor", ncInt, nrDim, npDim);
-  BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),
-      "Could not create ancestor variable");
-
-  lwVar = ncFile->add_var("logweight", netcdf_real, nrDim, npDim);
-  BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
-      "Could not create logweight variable");
-
-  rVar = ncFile->add_var("resample", ncInt, nrDim);
-  BI_ERROR_MSG(rVar != NULL && rVar->is_valid(),
-      "Could not create resample variable");
-
-  llVar = ncFile->add_var("LL", netcdf_real);
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "Could not create variable LL");
+  if (schema == FLEXI) {
+    aVar = nc_def_var(ncid, "ancestor", NC_INT, nrpDim);
+    lwVar = nc_def_var(ncid, "logweight", NC_REAL, nrpDim);
+  } else {
+    aVar = nc_def_var(ncid, "ancestor", NC_INT, nrDim, npDim);
+    lwVar = nc_def_var(ncid, "logweight", NC_REAL, nrDim, npDim);
+  }
+  llVar = nc_def_var(ncid, "LL", NC_REAL);
 }
 
 void bi::ParticleFilterNetCDFBuffer::map() {
-  aVar = ncFile->get_var("ancestor");
-  BI_ERROR_MSG(aVar != NULL && aVar->is_valid(),
-      "File does not contain variable ancestor");
-  BI_ERROR_MSG(aVar->num_dims() == 2,
-      "Variable ancestor has " << aVar->num_dims() << " dimensions, should have 2");
-  BI_ERROR_MSG(aVar->get_dim(0) == nrDim,
-      "Dimension 0 of variable ancestor should be nr");
-  BI_ERROR_MSG(aVar->get_dim(1) == npDim,
-      "Dimension 1 of variable ancestor should be np");
+  std::vector<int> dimids;
 
-  lwVar = ncFile->get_var("logweight");
-  BI_ERROR_MSG(lwVar != NULL && lwVar->is_valid(),
-      "File does not contain variable logweight");
-  BI_ERROR_MSG(lwVar->num_dims() == 2,
-      "Variable logweight has " << lwVar->num_dims() << " dimensions, should have 2");
-  BI_ERROR_MSG(lwVar->get_dim(0) == nrDim,
-      "Dimension 0 of variable logweight should be nr");
-  BI_ERROR_MSG(lwVar->get_dim(1) == npDim,
-      "Dimension 1 of variable logweight should be np");
+  aVar = nc_inq_varid(ncid, "ancestor");
+  BI_ERROR_MSG(aVar >= 0, "No variable ancestor in file " << file);
+  dimids = nc_inq_vardimid(ncid, aVar);
+  if (schema == FLEXI) {
+    BI_ERROR_MSG(dimids.size() == 1u,
+        "Variable ancestor has " << dimids.size() << " dimensions, should have 1, in file " << file);
+    BI_ERROR_MSG(dimids[0] == nrpDim,
+        "Only dimension of variable ancestor should be nrp, in file " << file);
+  } else {
+    BI_ERROR_MSG(dimids.size() == 2u,
+        "Variable ancestor has " << dimids.size() << " dimensions, should have 2, in file " << file);
+    BI_ERROR_MSG(dimids[0] == nrDim,
+        "First dimension of variable ancestor should be nr, in file " << file);
+    BI_ERROR_MSG(dims[1] == npDim,
+        "Second dimension of variable ancestor should be np, in file " << file);
+  }
 
-  rVar = ncFile->get_var("resample");
-  BI_ERROR_MSG(rVar != NULL && rVar->is_valid(),
-      "File does not contain variable resample");
-  BI_ERROR_MSG(rVar->num_dims() == 1,
-      "Variable resample has " << rVar->num_dims() << " dimensions, should have 1");
-  BI_ERROR_MSG(rVar->get_dim(0) == nrDim,
-      "Dimension 0 of variable resample should be nr");
+  lwVar = nc_inq_varid(ncid, "logweight");
+  BI_ERROR_MSG(lwVar >= 0, "No variable logweight in file " << file);
+  dimids = nc_inq_vardimid(ncid, lwVar);
+  if (schema == FLEXI) {
+    BI_ERROR_MSG(dimids.size() == 1u,
+        "Variable logweight has " << dimids.size() << " dimensions, should have 1, in file " << file);
+    BI_ERROR_MSG(dimids[0] == nrpDim,
+        "Only dimension of variable logweight should be nrp, in file " << file);
+  } else {
+    BI_ERROR_MSG(dimids.size() == 2u,
+        "Variable logweight has " << dimids.size() << " dimensions, should have 2, in file " << file);
+    BI_ERROR_MSG(dimids[0] == nrDim,
+        "First dimension of variable logweight should be nr, in file " << file);
+    BI_ERROR_MSG(dimids[1] == npDim,
+        "Second dimension of variable logweight should be np, in file " << file);
+  }
 
-  llVar = ncFile->get_var("LL");
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "File does not contain variable LL");
-  BI_ERROR_MSG(llVar->num_dims() == 0,
-      "Variable LL has " << llVar->num_dims() << " dimensions, should have 0");
+  llVar = nc_inq_varid(ncid, "LL");
+  BI_ERROR_MSG(llVar >= 0, "No variable LL in file " << file);
+  dimids = nc_inq_vardimid(ncid, llVar);
+  BI_ERROR_MSG(dimids.size() == 0u,
+      "Variable LL has " << dimids.size() << " dimensions, should have 0, in file " << file);
 }
 
 void bi::ParticleFilterNetCDFBuffer::writeLL(const real ll) {
-  BI_UNUSED NcBool ret;
-  ret = llVar->put(&ll, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable ll");
+  nc_put_var(ncid, llVar, &ll);
 }

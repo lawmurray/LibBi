@@ -58,48 +58,48 @@ public:
   /**
    * @copydoc SimulatorNetCDFBuffer::readTime()
    */
-  void readTime(const int t, real& x) const;
+  void readTime(const int k, real& t) const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeTime()
    */
-  void writeTime(const int t, const real& x);
+  void writeTime(const int k, const real& t);
 
   /**
    * @copydoc SimulatorNetCDFBuffer::readTimes()
    */
   template<class V1>
-  void readTimes(const int t, V1 x) const;
+  void readTimes(const int k, V1 ts) const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeTimes()
    */
   template<class V1>
-  void writeTimes(const int t, const V1 x);
+  void writeTimes(const int k, const V1 ts);
 
   /**
    * @copydoc SimulatorNetCDFBuffer::readParameters()
    */
-  template<class B, Location L>
-  void readParameters(State<B,L>& s) const;
+  template<class M1>
+  void readParameters(M1 X) const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeParameters()
    */
-  template<class B, Location L>
-  void writeParameters(const State<B,L>& s);
+  template<class M1>
+  void writeParameters(const M1 X);
 
   /**
    * @copydoc SimulatorNetCDFBuffer::readState()
    */
-  template<class B, Location L>
-  void readState(const int t, State<B,L>& s) const;
+  template<class M1>
+  void readState(const int k, M1 X) const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeState()
    */
-  template<class B, Location L>
-  void writeState(const int t, const State<B,L>& s);
+  template<class M1>
+  void writeState(const int k, const M1 X);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -229,77 +229,77 @@ inline const typename bi::Cache1D<real,bi::ON_HOST>::vector_reference_type bi::S
 }
 
 template<class IO1, bi::Location CL>
-inline void bi::SimulatorCache<IO1,CL>::readTime(const int t, real& x) const {
+inline void bi::SimulatorCache<IO1,CL>::readTime(const int k, real& t) const {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t < len);
+  BI_ASSERT(k >= 0 && k < len);
 
-  x = timeCache.get(t);
+  t = timeCache.get(k);
 }
 
 template<class IO1, bi::Location CL>
-inline void bi::SimulatorCache<IO1,CL>::writeTime(const int t, const real& x) {
+inline void bi::SimulatorCache<IO1,CL>::writeTime(const int k, const real& t) {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t <= len);
+  BI_ASSERT(k >= 0 && k <= len);
 
-  if (t == len) {
+  if (k == len) {
     ++len;
   }
-  timeCache.set(t, x);
+  timeCache.set(k, t);
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-inline void bi::SimulatorCache<IO1,CL>::readTimes(const int t, V1 x) const {
+inline void bi::SimulatorCache<IO1,CL>::readTimes(const int k, V1 ts) const {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t + x.size() <= len);
+  BI_ASSERT(k >= 0 && k + ts.size() <= len);
 
-  x = timeCache.get(t, x.size());
+  ts = timeCache.get(k, ts.size());
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-inline void bi::SimulatorCache<IO1,CL>::writeTimes(const int t, const V1 x) {
+inline void bi::SimulatorCache<IO1,CL>::writeTimes(const int k, const V1 ts) {
   /* pre-condition */
-  BI_ASSERT(t >= 0 && t <= len);
+  BI_ASSERT(k >= 0 && k <= len);
 
-  if (t + x.size() > len) {
-    len = t + x.size();
+  if (k + ts.size() > len) {
+    len = k + ts.size();
   }
-  timeCache.set(t, x.size(), x);
+  timeCache.set(k, ts.size(), ts);
 }
 
 template<class IO1, bi::Location CL>
-template<class B, bi::Location L>
-inline void bi::SimulatorCache<IO1,CL>::readParameters(State<B,L>& s) const {
+template<class M1>
+inline void bi::SimulatorCache<IO1,CL>::readParameters(M1 X) const {
   /* pre-conditions */
   BI_ASSERT(out != NULL);
 
-  out->readParameters(s);
+  out->readParameters(X);
 }
 
 template<class IO1, bi::Location CL>
-template<class B, bi::Location L>
-inline void bi::SimulatorCache<IO1,CL>::writeParameters(const State<B,L>& s) {
+template<class M1>
+inline void bi::SimulatorCache<IO1,CL>::writeParameters(const M1 X) {
   if (out != NULL) {
-    out->writeParameters(s);
+    out->writeParameters(X);
   }
 }
 
 template<class IO1, bi::Location CL>
-template<class B, bi::Location L>
-inline void bi::SimulatorCache<IO1,CL>::readState(const int t, State<B,L>& s) const {
+template<class M1>
+inline void bi::SimulatorCache<IO1,CL>::readState(const int t, M1 X) const {
   /* pre-conditions */
   BI_ASSERT(out != NULL);
 
-  out->readState(t, s);
+  out->readState(t, X);
 }
 
 template<class IO1, bi::Location CL>
-template<class B, bi::Location L>
+template<class M1>
 inline void bi::SimulatorCache<IO1,CL>::writeState(const int t,
-    const State<B,L>& s) {
+    const M1 X) {
   if (out != NULL) {
-    out->writeState(t, s);
+    out->writeState(t, X);
   }
 }
 

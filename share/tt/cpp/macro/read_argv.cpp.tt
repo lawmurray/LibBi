@@ -19,7 +19,7 @@
   [% TYPES = { 'int' => 'int', 'float' => 'real', 'bool' => 'bool', 'string' => 'std::string' } %]
   [%-FOREACH param IN client.get_params %]
   [% IF !param.exists('deprecated') || !param.deprecated %]
-  [% TYPES.${param.type} %] [% param.name.replace('-', '_') | upper-%]
+  BI_UNUSED [% TYPES.${param.type} %] [% param.name.replace('-', '_') | upper-%]
   [%-IF param.exists('default')-%]
   [%-IF param.type == 'string'-%]
   = std::string("[% param.default %]")

@@ -48,9 +48,6 @@ int main(int argc, char* argv[]) {
   boost::mpi::environment env(argc, argv);
   #endif
   
-  /* NetCDF init */
-  NcError ncErr(NcError::silent_nonfatal);
-  
   /* bi init */
   bi_init(NTHREADS);
 

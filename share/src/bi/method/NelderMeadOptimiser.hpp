@@ -402,8 +402,7 @@ template<bi::Location L>
 void bi::NelderMeadOptimiser<B,F,IO1>::output(const int k,
     const State<B,L>& s) {
   if (out != NULL) {
-    out->writeState(P_VAR, k, vec(s.get(P_VAR)));
-    //out->writeState(D_VAR, k, row(s.get(D_VAR), 0));
+    out->writeState(P_VAR, 0, k, s.get(P_VAR));
     out->writeValue(k, -state.minimizer->fval);
     out->writeSize(k, state.size);
   }

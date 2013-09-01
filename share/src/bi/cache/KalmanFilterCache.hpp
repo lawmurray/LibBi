@@ -395,7 +395,7 @@ void bi::KalmanFilterCache<IO1,CL>::writeCross(const int k, const M1 C) {
 }
 
 template<class IO1, bi::Location CL>
-inline void bi::KalmanFilterCache<IO1,CL>::writeLL(const double ll) {
+inline void bi::KalmanFilterCache<IO1,CL>::writeLL(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
   }
@@ -403,7 +403,8 @@ inline void bi::KalmanFilterCache<IO1,CL>::writeLL(const double ll) {
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readTrajectory(const int p, M1 X) const {
+void bi::KalmanFilterCache<IO1,CL>::readTrajectory(const int p,
+    M1 X) const {
   //
 }
 

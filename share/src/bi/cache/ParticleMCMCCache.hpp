@@ -8,6 +8,7 @@
 #ifndef BI_CACHE_PARTICLEMCMCCACHE_HPP
 #define BI_CACHE_PARTICLEMCMCCACHE_HPP
 
+#include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "CacheCross.hpp"
 #include "../buffer/ParticleMCMCNetCDFBuffer.hpp"
@@ -22,7 +23,7 @@ namespace bi {
  * @tparam CL Location.
  */
 template<class IO1 = ParticleMCMCNetCDFBuffer, Location CL = ON_HOST>
-class ParticleMCMCCache {
+class ParticleMCMCCache: public SimulatorCache<IO1,CL> {
 public:
   /**
    * Constructor.
@@ -49,18 +50,6 @@ public:
    * Deep assignment operator.
    */
   ParticleMCMCCache<IO1,CL>& operator=(const ParticleMCMCCache<IO1,CL>& o);
-
-  /**
-   * @copydoc ParticleMCMCNetCDFBuffer::readTimes()
-   */
-  template<class V1>
-  void readTimes(const int t, V1 x) const;
-
-  /**
-   * @copydoc ParticleMCMCNetCDFBuffer::writeTimes()
-   */
-  template<class V1>
-  void writeTimes(const int t, const V1 x);
 
   /**
    * Read log-likelihood.
@@ -267,21 +256,17 @@ struct ParticleMCMCCacheFactory {
 
 template<class IO1, bi::Location CL>
 template<class B>
-bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(B& m, IO1* out) : m(m),
-    llCache(NUM_SAMPLES), lpCache(NUM_SAMPLES), parameterCache(NUM_SAMPLES,
-    m.getNetSize(P_VAR)), first(0), len(0), out(out) {
+bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(B& m, IO1* out) :
+    SimulatorCache<IO1,CL>(out), m(m), llCache(NUM_SAMPLES), lpCache(NUM_SAMPLES), parameterCache(
+        NUM_SAMPLES, m.getNetSize(P_VAR)), first(0), len(0), out(out) {
   //
 }
 
 template<class IO1, bi::Location CL>
-bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>& o) :
-    m(o.m),
-    llCache(o.llCache),
-    lpCache(o.lpCache),
-    parameterCache(o.parameterCache),
-    first(o.first),
-    len(o.len),
-    out(o.out) {
+bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(
+    const ParticleMCMCCache<IO1,CL>& o) :
+    SimulatorCache<IO1,CL>(o), m(o.m), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+        o.parameterCache), first(o.first), len(o.len), out(o.out) {
   trajectoryCache.resize(o.trajectoryCache.size());
   for (int i = 0; i < trajectoryCache.size(); ++i) {
     trajectoryCache[i] = new CacheCross<real,CL>(*o.trajectoryCache[i]);
@@ -291,15 +276,15 @@ bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>
 template<class IO1, bi::Location CL>
 bi::ParticleMCMCCache<IO1,CL>::~ParticleMCMCCache() {
   flush();
-  for (int t = 0; t < int(trajectoryCache.size()); ++t) {
-    delete trajectoryCache[t];
+  for (int i = 0; i < int(trajectoryCache.size()); ++i) {
+    delete trajectoryCache[i];
   }
 }
 
 template<class IO1, bi::Location CL>
 bi::ParticleMCMCCache<IO1,CL>& bi::ParticleMCMCCache<IO1,CL>::operator=(
     const ParticleMCMCCache<IO1,CL>& o) {
-  m = o.m;
+  SimulatorCache<IO1,CL>::operator=(o);
 
   empty();
   llCache = o.llCache;
@@ -316,23 +301,6 @@ bi::ParticleMCMCCache<IO1,CL>& bi::ParticleMCMCCache<IO1,CL>::operator=(
   }
 
   return *this;
-}
-
-template<class IO1, bi::Location CL>
-template<class V1>
-void bi::ParticleMCMCCache<IO1,CL>::readTimes(const int t, V1 x) const {
-  /* pre-condition */
-  BI_ASSERT(out != NULL);
-
-  out->readTimes(t, x);
-}
-
-template<class IO1, bi::Location CL>
-template<class V1>
-void bi::ParticleMCMCCache<IO1,CL>::writeTimes(const int t, const V1 x) {
-  if (out != NULL) {
-    out->writeTimes(t, x);
-  }
 }
 
 template<class IO1, bi::Location CL>
@@ -367,7 +335,8 @@ real bi::ParticleMCMCCache<IO1,CL>::readLogPrior(const int p) {
 }
 
 template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::writeLogPrior(const int p, const real lp) {
+void bi::ParticleMCMCCache<IO1,CL>::writeLogPrior(const int p,
+    const real lp) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -419,7 +388,8 @@ void bi::ParticleMCMCCache<IO1,CL>::readTrajectory(const int p, M1 X) {
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
+void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p,
+    const M1 X) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -435,7 +405,8 @@ void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
   }
   for (int t = 0; t < X.size2(); ++t) {
     if (trajectoryCache[t] == NULL) {
-      trajectoryCache[t] = new CacheCross<real,CL>(NUM_SAMPLES, m.getDynSize());
+      trajectoryCache[t] = new CacheCross<real,CL>(NUM_SAMPLES,
+          m.getDynSize());
     }
     trajectoryCache[t]->set(p - first, column(X, t));
   }
@@ -473,9 +444,9 @@ void bi::ParticleMCMCCache<IO1,CL>::empty() {
   llCache.empty();
   lpCache.empty();
   parameterCache.empty();
-  for (int t = 0; t < trajectoryCache.size(); ++t) {
-    trajectoryCache[t]->empty();
-    delete trajectoryCache[t];
+  for (int k = 0; k < trajectoryCache.size(); ++k) {
+    trajectoryCache[k]->empty();
+    delete trajectoryCache[k];
   }
   trajectoryCache.resize(0);
   first = 0;
@@ -493,16 +464,17 @@ void bi::ParticleMCMCCache<IO1,CL>::flush() {
     lpCache.flush();
     parameterCache.flush();
 
-    for (int t = 0; t < int(trajectoryCache.size()); ++t) {
-      out->writeState(t, first, trajectoryCache[t]->get(0, len));
-      trajectoryCache[t]->flush();
+    for (int k = 0; k < int(trajectoryCache.size()); ++k) {
+      out->writeState(k, first, trajectoryCache[k]->get(0, len));
+      trajectoryCache[k]->flush();
     }
   }
 }
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::ParticleMCMCCache<IO1,CL>::save(Archive& ar, const unsigned version) const {
+void bi::ParticleMCMCCache<IO1,CL>::save(Archive& ar,
+    const unsigned version) const {
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
@@ -513,7 +485,8 @@ void bi::ParticleMCMCCache<IO1,CL>::save(Archive& ar, const unsigned version) co
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::ParticleMCMCCache<IO1,CL>::load(Archive& ar, const unsigned version) {
+void bi::ParticleMCMCCache<IO1,CL>::load(Archive& ar,
+    const unsigned version) {
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;

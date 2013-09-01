@@ -37,7 +37,7 @@ struct sim_temp_host_matrix {
    */
   typedef typename VM1::value_type T;
 
-  typedef temp_host_matrix<T,size1_value,size2_value,lead_value,inc_value> type;
+  typedef typename temp_host_matrix<T,size1_value,size2_value,lead_value,inc_value>::type type;
 };
 }
 

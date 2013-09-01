@@ -170,7 +170,7 @@ void bi::CacheObject<T1>::resize(const int size) {
   int i;
 
   if (size < oldSize) {
-    for (i = size; i < pages.size(); ++i) {
+    for (i = size; i < static_cast<int>(pages.size()); ++i) {
       delete pages[i];
       pages[i] = NULL;
     }

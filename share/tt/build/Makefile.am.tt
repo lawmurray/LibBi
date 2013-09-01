@@ -55,9 +55,8 @@ endif
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
-  src/bi/buffer/FlexiParticleFilterNetCDFBuffer.cpp \
-  src/bi/buffer/FlexiSimulatorNetCDFBuffer.cpp \
   src/bi/buffer/KalmanFilterNetCDFBuffer.cpp \
+  src/bi/buffer/netcdf.cpp \
   src/bi/buffer/NetCDFBuffer.cpp \
   src/bi/buffer/OptimiserNetCDFBuffer.cpp \
   src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \

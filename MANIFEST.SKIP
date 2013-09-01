@@ -15,6 +15,7 @@
 ^LibBi.*
 ^libbi.*
 ^Makefile$
+^Makefile\.old$
 ^MakeManifest.PL$
 ^MANIFEST$
 ^MANIFEST.SKIP$

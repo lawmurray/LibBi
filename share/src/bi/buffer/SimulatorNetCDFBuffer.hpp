@@ -20,8 +20,33 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class SimulatorNetCDFBuffer : public NetCDFBuffer {
+class SimulatorNetCDFBuffer: public NetCDFBuffer {
 public:
+  /**
+   * Schema flags.
+   */
+  enum SchemaMode {
+    /**
+     * Default schema.
+     */
+    DEFAULT,
+
+    /**
+     * Have multiple parameter samples.
+     */
+    MULTI,
+
+    /**
+     * Multiple parameter samples, but parameters only.
+     */
+    PARAM_ONLY,
+
+    /**
+     * Use flexi schema.
+     */
+    FLEXI
+  };
+
   /**
    * Constructor.
    *
@@ -30,122 +55,154 @@ public:
    * @param mode File open mode.
    */
   SimulatorNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY);
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT);
 
   /**
    * Constructor.
    *
    * @param m Model.
-   * @param P Number of trajectories to hold in file.
-   * @param T Number of time points to hold in file.
+   * @param P Number of samples to hold in file.
+   * @param T Number of times to hold in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  SimulatorNetCDFBuffer(const Model& m, const int P, const int T,
-      const std::string& file, const FileMode mode = READ_ONLY);
+  SimulatorNetCDFBuffer(const Model& m, const size_t P, const size_t T,
+      const std::string& file, const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Read time.
    *
-   * @param k Index of record.
+   * @param k Time index.
    * @param[out] t Time.
    */
-  void readTime(const int k, real& t) const;
+  void readTime(const size_t k, real& t) const;
 
   /**
    * Write time.
    *
-   * @param k Index of record.
+   * @param k Time index.
    * @param t Time.
    */
-  void writeTime(const int k, const real& t);
+  void writeTime(const size_t k, const real& t);
 
   /**
    * Read times.
    *
    * @tparam V1 Vector type.
    *
-   * @param k Index of first record.
+   * @param k First time index.
    * @param[out] ts Times.
    */
   template<class V1>
-  void readTimes(const int k, V1 ts) const;
+  void readTimes(const size_t k, V1 ts) const;
 
   /**
    * Write times.
    *
    * @tparam V1 Vector type.
    *
-   * @param k Index of first record.
+   * @param k First time index.
    * @param ts Times.
    */
   template<class V1>
-  void writeTimes(const int k, const V1 ts);
+  void writeTimes(const size_t k, const V1 ts);
 
   /**
    * Write static parameters.
    *
    * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    *
-   * @param[out] s State.
+   * @param[out] X Parameters.
    */
-  template<class B, Location L>
-  void readParameters(State<B,L>& s) const;
+  template<class M1>
+  void readParameters(M1 X) const;
 
   /**
    * Read static parameters.
    *
    * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    *
-   * @param s State.
+   * @param X Parameters.
    */
-  template<class B, Location L>
-  void writeParameters(const State<B,L>& s);
+  template<class M1>
+  void writeParameters(const M1 X);
+
+  /**
+   * Write static parameters.
+   *
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   *
+   * @param p First sample index.
+   * @param[out] X Parameters.
+   */
+  template<class M1>
+  void readParameters(const size_t p, M1 X) const;
+
+  /**
+   * Read static parameters.
+   *
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   *
+   * @param p First sample index.
+   * @param X Parameters.
+   */
+  template<class M1>
+  void writeParameters(const size_t p, const M1 X);
 
   /**
    * Read dynamic state.
    *
    * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    *
    * @param k Time index.
-   * @param[out] s State.
+   * @param[out] X State.
    */
-  template<class B, Location L>
-  void readState(const int k, State<B,L>& s) const;
+  template<class M1>
+  void readState(const size_t k, M1 X) const;
 
   /**
    * Write dynamic state.
    *
    * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    *
    * @param k Time index.
-   * @param s State.
+   * @param X State.
    */
-  template<class B, Location L>
-  void writeState(const int k, const State<B,L>& s);
-
-protected:
-  /**
-   * Set up structure of NetCDF file.
-   *
-   * @param P Number of particles.
-   * @param T Number of time points.
-   */
-  void create(const long P, const long T);
+  template<class M1>
+  void writeState(const size_t k, const M1 X);
 
   /**
-   * Map structure of existing NetCDF file.
+   * Read dynamic state.
    *
-   * @param P Number of particles. Used to validate file, ignored if
-   * negative.
-   * @param T Number of time points. Used to validate file, ignored if
-   * negative.
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param p First sample index.
+   * @param[out] X State.
    */
-  void map(const long P = -1, const long T = -1);
+  template<class M1>
+  void readState(const size_t k, const size_t p, M1 X) const;
+
+  /**
+   * Write dynamic state.
+   *
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   *
+   * @param k Time index.
+   * @param p First sample index.
+   * @param X State.
+   */
+  template<class M1>
+  void writeState(const size_t k, const size_t p, const M1 X);
 
   /**
    * Read state.
@@ -154,11 +211,12 @@ protected:
    *
    * @param type Variable type.
    * @param k Time index.
-   * @param[out] s State. Rows index trajectories, columns variables of the
-   * given type.
+   * @param p First sample index.
+   * @param[out] s State. Rows index samples, columns variables.
    */
   template<class M1>
-  void readState(const VarType type, const int k, M1 X) const;
+  void readState(const VarType type, const size_t k, const size_t p,
+      M1 X) const;
 
   /**
    * Write state.
@@ -167,11 +225,147 @@ protected:
    *
    * @param type Variable type.
    * @param k Time index.
-   * @param s State. Rows index trajectories, columns variables of the given
-   * type.
+   * @param p First sample index.
+   * @param[out] s State. Rows index samples, columns variables.
    */
   template<class M1>
-  void writeState(const VarType type, const int k, const M1 X);
+  void writeState(const VarType type, const size_t k, const size_t p,
+      const M1 X);
+
+  /**
+   * Read offset along @c nrp dimension for time. Flexi schema only.
+   *
+   * @param k Time index.
+   *
+   * @return Offset along @c nrp dimension.
+   */
+  long readStart(const size_t k) const;
+
+  /**
+   * Write offset along @c nrp dimension for time. Flexi schema only.
+   *
+   * @param k Time index.
+   * @param start Offset along @c nrp dimension.
+   */
+  void writeStart(const size_t k, const long& start);
+
+  /**
+   * Read length along @c nrp dimension for time. Flexi schema only.
+   *
+   * @param k Time index.
+   *
+   * @return Length along @c nrp dimension.
+   */
+  long readLen(const size_t k) const;
+
+  /**
+   * Write length along @c nrp dimension for time. Flexi schema only.
+   *
+   * @param k Time index.
+   * @param len Length along @c nrp dimension.
+   */
+  void writeLen(const size_t k, const long& len);
+
+protected:
+  /**
+   * Set up structure of NetCDF file.
+   *
+   * @param P Number of samples. Zero for unlimited.
+   * @param T Number of times. Zero for unlimited.
+   */
+  void create(const size_t P = 0, const size_t T = 0);
+
+  /**
+   * Map structure of existing NetCDF file.
+   *
+   * @param P Number of samples. Used to validate file, ignored if zero.
+   * @param T Number of times. Used to validate file, ignored if zero.
+   */
+  void map(const size_t P = 0, const size_t T = 0);
+
+  /**
+   * Create variable.
+   *
+   * @param var Variable.
+   *
+   * @return Variable id.
+   */
+  int createVar(Var* var);
+
+  /**
+   * Map variable.
+   *
+   * @param var Variable.
+   *
+   * @return Variable id.
+   */
+  int mapVar(Var* var);
+
+  /**
+   * Create dimension.
+   *
+   * @param dim Dimension.
+   *
+   * @return Dimension id.
+   */
+  int createDim(Dim* dim);
+
+  /**
+   * Map dimension.
+   *
+   * @param dim Dimension.
+   *
+   * @return Dimension id.
+   */
+  int mapDim(Dim* dim);
+
+  /**
+   * Read vector.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Time index.
+   * @param[out] x Vector.
+   */
+  template<class V1>
+  void readVector(const int varid, const size_t k, V1 x) const;
+
+  /**
+   * Write vector.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Time index.
+   * @param x Vector.
+   */
+  template<class V1>
+  void writeVector(const int varid, const size_t k, const V1 x);
+
+  /**
+   * Read matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Time index.
+   * @param X Matrix.
+   */
+  template<class M1>
+  void readMatrix(const int varid, const size_t k, M1 X) const;
+
+  /**
+   * Write matrix.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Time index.
+   * @param[out] X Matrix.
+   */
+  template<class M1>
+  void writeMatrix(const int varid, const size_t k, const M1 X);
 
   /**
    * Model.
@@ -179,182 +373,296 @@ protected:
   const Model& m;
 
   /**
+   * Schema mode.
+   */
+  unsigned schema;
+
+  /**
+   * Record dimension.
+   */
+  int nsDim;
+
+  /**
    * Time dimension.
    */
-  NcDim* nrDim;
+  int nrDim;
 
   /**
-   * Model dimensions.
+   * Sample dimension.
    */
-  std::vector<NcDim*> nDims;
+  int npDim;
 
   /**
-   * P-dimension (trajectories).
+   * Serialised time and trajectory dimension.
    */
-  NcDim* npDim;
+  int nrpDim;
 
   /**
    * Time variable.
    */
-  NcVar* tVar;
+  int tVar;
 
   /**
-   * Node variables, indexed by type.
+   * Variable holding starting index into nrp dimension for each time, flexi
+   * schema only.
    */
-  std::vector<std::vector<NcVar*> > vars;
+  int startVar;
+
+  /**
+   * Variable holding length along nrp dimension for each time, flexi schema
+   * only.
+   */
+  int lenVar;
+
+  /**
+   * Model dimensions.
+   */
+  std::vector<int> dims;
+
+  /**
+   * Model variables, indexed by type.
+   */
+  std::vector<std::vector<int> > vars;
 };
 }
 
 #include "../math/view.hpp"
-#include "../math/temp_matrix.hpp"
+#include "../math/sim_temp_vector.hpp"
+#include "../math/sim_temp_matrix.hpp"
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::readTimes(const int k, V1 ts) const {
-  read1d(tVar, k, ts);
+void bi::SimulatorNetCDFBuffer::readTimes(const size_t k, V1 ts) const {
+  nc_get_vara(ncid, tVar, k, ts.size(), ts.buf());
 }
 
 template<class V1>
-void bi::SimulatorNetCDFBuffer::writeTimes(const int k, const V1 ts) {
-  write1d(tVar, k, ts);
-}
-
-template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::readParameters(State<B,L>& s) const {
-  readState(P_VAR, 0, s.get(P_VAR));
-}
-
-template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::writeParameters(const State<B,L>& s) {
-  writeState(P_VAR, 0, s.get(P_VAR));
-}
-
-template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::readState(const int k, State<B,L>& s) const {
-  readState(R_VAR, k, s.get(R_VAR));
-  readState(D_VAR, k, s.get(D_VAR));
-}
-
-template<class B, bi::Location L>
-void bi::SimulatorNetCDFBuffer::writeState(const int k,
-    const State<B,L>& s) {
-  writeState(R_VAR, k, s.get(R_VAR));
-  writeState(D_VAR, k, s.get(D_VAR));
+void bi::SimulatorNetCDFBuffer::writeTimes(const size_t k, const V1 ts) {
+  nc_put_vara(ncid, tVar, k, ts.size(), ts.buf());
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readState(const VarType type, const int t,
-    M1 X) const {
-  /* pre-conditions */
-  BI_ASSERT(X.size1() == npDim->size());
+void bi::SimulatorNetCDFBuffer::readParameters(M1 X) const {
+  readState(P_VAR, 0, 0, X);
+}
 
-  typedef typename M1::value_type temp_value_type;
-  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeParameters(M1 X) {
+  writeState(P_VAR, 0, 0, X);
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readParameters(const size_t p, M1 X) const {
+  readState(P_VAR, 0, p, X);
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeParameters(const size_t p, M1 X) {
+  writeState(P_VAR, 0, p, X);
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readState(const size_t k, M1 X) const {
+  readState(R_VAR, k, 0, columns(X, 0, m.getNetSize(R_VAR)));
+  readState(D_VAR, k, 0,
+      columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeState(const size_t k, const M1 X) {
+  writeState(R_VAR, k, 0, columns(X, 0, m.getNetSize(R_VAR)));
+  writeState(D_VAR, k, 0,
+      columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readState(const size_t k, const size_t p,
+    M1 X) const {
+  readState(R_VAR, k, p, columns(X, 0, m.getNetSize(R_VAR)));
+  readState(D_VAR, k, p,
+      columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeState(const size_t k, const size_t p,
+    const M1 X) {
+  writeState(R_VAR, k, p, columns(X, 0, m.getNetSize(R_VAR)));
+  writeState(D_VAR, k, p,
+      columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
+    const size_t p, M1 X) const {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
   Var* var;
-  host_vector<long> offsets, counts;
-  int start, size, id, i, j;
-  BI_UNUSED NcBool ret;
+  std::vector<size_t> offsets, counts;
+  std::vector<int> dimids;
+  int start, size, id, i, j, varid;
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
     start = var->getStart();
     size = var->getSize();
 
-    if (var->hasOutput()) {
-      BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
+    if (var->hasInput()) {
+      varid = vars[type][id];
+      BI_ASSERT(varid >= 0);
 
       j = 0;
-      offsets.resize(ncVar->num_dims(), false);
-      counts.resize(ncVar->num_dims(), false);
+      dimids = nc_inq_vardimid(ncid, varid);
+      offsets.resize(dimids.size());
+      counts.resize(dimids.size());
 
-      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
-        offsets[j] = t;
+      if (j < dimids.size() && dimids[j] == nrDim) {
+        offsets[j] = k;
         counts[j] = 1;
         ++j;
       }
-      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i) {
         offsets[j] = 0;
-        counts[j] = ncVar->get_dim(j)->size();
+        counts[j] = nc_inq_dimlen(ncid, dimids[j]);
+        ++j;
       }
-      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
-        offsets[j] = 0;
+      if (j < dimids.size() && dimids[j] == npDim) {
+        offsets[j] = p;
         counts[j] = X.size1();
+        ++j;
       }
-
-      ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT_MSG(ret, "Indexing out of bounds reading " << ncVar->name());
+      if (j < dimids.size() && dimids[j] == nrpDim) {
+        offsets[j] = readStart(k);
+        counts[j] = readLen(k);
+      }
 
       if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
-        ret = ncVar->get(X1.buf(), counts.buf());
-        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+        nc_get_vara(ncid, varid, offsets, counts, X1.buf());
         columns(X, start, size) = X1;
       } else {
-        ret = ncVar->get(columns(X, start, size).buf(),
-            counts.buf());
-        BI_ASSERT_MSG(ret, "Inconvertible type reading " << ncVar->name());
+        nc_get_vara(ncid, varid, offsets, counts,
+            columns(X, start, size).buf());
       }
     }
   }
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const int t,
-    const M1 X) {
-  /* pre-conditions */
-  BI_ASSERT(X.size1() <= npDim->size());
-
-  typedef typename M1::value_type temp_value_type;
-  typedef typename temp_host_matrix<temp_value_type>::type temp_matrix_type;
+void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
+    const size_t p, const M1 X) {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
   Var* var;
-  host_vector<long> offsets, counts;
-  int start, size, id, i, j;
-  BI_UNUSED NcBool ret;
+  std::vector<size_t> offsets, counts;
+  std::vector<int> dimids;
+  int start, size, id, i, j, varid;
 
+  if (schema == FLEXI) {
+    /* write offset and length */
+    long offset = (k == 0) ? 0 : readStart(k - 1) + readLen(k - 1);
+    long len = p + X.size1();
+    writeStart(k, offset);
+    writeLen(k, len);
+  }
+
+  /* write data */
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
     start = var->getStart();
     size = var->getSize();
 
     if (var->hasOutput()) {
-      BOOST_AUTO(ncVar, vars[type][id]);
-      BI_ERROR_MSG (ncVar != NULL, "Variable " << var->getOutputName() <<
-          " does not exist in file");
+      varid = vars[type][id];
+      BI_ASSERT(varid >= 0);
 
       j = 0;
-      offsets.resize(ncVar->num_dims(), false);
-      counts.resize(ncVar->num_dims(), false);
+      dimids = nc_inq_vardimid(ncid, varid);
+      offsets.resize(dimids.size());
+      counts.resize(dimids.size());
 
-      if (j < ncVar->num_dims() && ncVar->get_dim(j) == nrDim) {
-        offsets[j] = t;
+      if (j < static_cast<int>(dimids.size()) && dimids[j] == nrDim) {
+        offsets[j] = k;
         counts[j] = 1;
         ++j;
       }
-      for (i = var->getNumDims() - 1; i >= 0; --i, ++j) {
+      for (i = var->getNumDims() - 1; i >= 0; --i) {
         offsets[j] = 0;
-        counts[j] = ncVar->get_dim(j)->size();
+        counts[j] = nc_inq_dimlen(ncid, dimids[j]);
+        ++j;
       }
-      if (j < ncVar->num_dims() && ncVar->get_dim(j) == npDim) {
-        offsets[j] = 0;
+      if (j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+        offsets[j] = p;
         counts[j] = X.size1();
+        ++j;
       }
-      ret = ncVar->set_cur(offsets.buf());
-      BI_ASSERT_MSG(ret, "Indexing out of bounds writing " << ncVar->name());
+      if (j < static_cast<int>(dimids.size()) && dimids[j] == nrpDim) {
+        offsets[j] = readStart(k);
+        counts[j] = readLen(k);
+      }
 
       if (M1::on_device || !X.contiguous()) {
         temp_matrix_type X1(X.size1(), size);
         X1 = columns(X, start, size);
         synchronize(M1::on_device);
-        ret = ncVar->put(X1.buf(), counts.buf());
+        nc_put_vara(ncid, varid, offsets, counts, X1.buf());
+        columns(X, start, size) = X1;
       } else {
-        ret = ncVar->put(columns(X, start, size).buf(), counts.buf());
+        nc_put_vara(ncid, varid, offsets, counts,
+            columns(X, start, size).buf());
       }
-      BI_ASSERT_MSG(ret, "Inconvertible type writing " << ncVar->name());
     }
   }
+}
+
+template<class V1>
+void bi::SimulatorNetCDFBuffer::readVector(const int varid, const size_t k,
+    V1 x) const {
+  std::vector<size_t> start(2), count(2);
+  start[0] = k;
+  start[1] = 0;
+  count[0] = 1;
+  count[1] = x.size();
+
+  nc_get_vara(ncid, varid, start, count, x.buf());
+}
+
+template<class V1>
+void bi::SimulatorNetCDFBuffer::writeVector(const int varid, const size_t k,
+    const V1 x) {
+  std::vector<size_t> start(2), count(2);
+  start[0] = k;
+  start[1] = 0;
+  count[0] = 1;
+  count[1] = x.size();
+
+  nc_put_vara(ncid, varid, start, count, x.buf());
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readMatrix(const int varid, const size_t k,
+    M1 X) const {
+  std::vector<size_t> start(3), count(3);
+  start[0] = k;
+  start[1] = 0;
+  start[2] = 0;
+  count[0] = 1;
+  count[1] = X.size2();
+  count[2] = X.size1();
+
+  nc_get_vara(ncid, varid, start, count, X.buf());
+}
+
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeMatrix(const int varid, const size_t k,
+    const M1 X) {
+  std::vector<size_t> start(3), count(3);
+  start[0] = k;
+  start[1] = 0;
+  start[2] = 0;
+  count[0] = 1;
+  count[1] = X.size2();
+  count[2] = X.size1();
+
+  nc_put_vara(ncid, varid, start, count, X.buf());
 }
 
 #endif

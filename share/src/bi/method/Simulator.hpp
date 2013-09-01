@@ -668,7 +668,7 @@ template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
-    out->writeParameters(s);
+    out->writeParameters(s.get(P_VAR));
   }
 }
 
@@ -678,7 +678,7 @@ void bi::Simulator<B,F,O,IO1>::output(const ScheduleElement now,
     const State<B,L>& s) {
   if (out != NULL && now.hasOutput()) {
     out->writeTime(now.indexOutput(), now.getTime());
-    out->writeState(now.indexOutput(), s);
+    out->writeState(now.indexOutput(), s.getDyn());
   }
 }
 

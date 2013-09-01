@@ -169,7 +169,6 @@ AC_SEARCH_LIBS([dpotrf_], [openblas openblaso lapack], [], [AC_MSG_ERROR([requir
 AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([gsl], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([netcdf], [main], [], [AC_MSG_ERROR([required library not found])])
-AC_CHECK_LIB([netcdf_c++], [main], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([profiler], [main], [], [])
 
 if test x$cuda = xtrue; then
@@ -194,8 +193,8 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 # Checks for header files
 AC_HEADER_ASSERT
 
-AC_CHECK_HEADER([netcdfcpp.h], [], \
-    AC_MSG_ERROR([required NetCDF C++ interface header not found]), [-])
+AC_CHECK_HEADER([netcdf.h], [], \
+    AC_MSG_ERROR([required NetCDF header not found]), [-])
 
 AC_CHECK_HEADERS([mkl_cblas.h cblas.h gsl/gsl_cblas.h], [], [], [-])
 if test x$ac_cv_header_mkl_cblas_h = xfalse && test x$ac_cv_header_cblas_h = xfalse && x$ac_cv_header_gsl_gsl_cblas_h = xfalse; then

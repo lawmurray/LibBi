@@ -34,7 +34,7 @@ struct sim_temp_gpu_vector {
    */
   typedef typename VM1::value_type T;
 
-  typedef temp_gpu_vector<T,size_value,inc_value> type;
+  typedef typename temp_gpu_vector<T,size_value,inc_value>::type type;
 };
 }
 

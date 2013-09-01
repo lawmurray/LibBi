@@ -85,9 +85,6 @@ int main(int argc, char* argv[]) {
   const int size = 1;
   #endif
   
-  /* NetCDF init */
-  NcError ncErr(NcError::silent_nonfatal);
-  
   /* bi init */
   bi_init(NTHREADS);
 

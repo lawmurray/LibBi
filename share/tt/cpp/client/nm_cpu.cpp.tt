@@ -73,10 +73,7 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_MPI
   boost::mpi::environment env(argc, argv);
   #endif
-  
-  /* NetCDF init */
-  NcError ncErr(NcError::silent_nonfatal);
-  
+    
   /* bi init */
   bi_init(NTHREADS);
 
@@ -111,7 +108,7 @@ int main(int argc, char* argv[]) {
   /* output */
   OptimiserNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new OptimiserNetCDFBuffer(m, OUTPUT_FILE, NetCDFBuffer::REPLACE);
+    bufOutput = new OptimiserNetCDFBuffer(m, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
   }
   
   /* simulator */

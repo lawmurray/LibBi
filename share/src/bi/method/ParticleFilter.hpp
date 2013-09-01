@@ -690,7 +690,7 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L>
 void bi::ParticleFilter<B,S,R,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
-    out->writeParameters(s);
+    out->writeParameters(s.get(P_VAR));
   }
 }
 
@@ -701,7 +701,7 @@ void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
   if (out != NULL && now.hasOutput()) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
-    out->writeState(k, s, as, r);
+    out->writeState(k, s.getDyn(), as, r);
     out->writeLogWeights(k, lws);
   }
 }

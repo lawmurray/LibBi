@@ -149,12 +149,10 @@ share/configure.ac
 share/nvcc_wrapper.pl
 share/src/bi/bi.cpp
 share/src/bi/bi.hpp
-share/src/bi/buffer/FlexiParticleFilterNetCDFBuffer.cpp
-share/src/bi/buffer/FlexiParticleFilterNetCDFBuffer.hpp
-share/src/bi/buffer/FlexiSimulatorNetCDFBuffer.cpp
-share/src/bi/buffer/FlexiSimulatorNetCDFBuffer.hpp
 share/src/bi/buffer/KalmanFilterNetCDFBuffer.cpp
 share/src/bi/buffer/KalmanFilterNetCDFBuffer.hpp
+share/src/bi/buffer/netcdf.cpp
+share/src/bi/buffer/netcdf.hpp
 share/src/bi/buffer/NetCDFBuffer.cpp
 share/src/bi/buffer/NetCDFBuffer.hpp
 share/src/bi/buffer/OptimiserNetCDFBuffer.cpp

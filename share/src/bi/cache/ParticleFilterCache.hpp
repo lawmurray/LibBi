@@ -66,25 +66,25 @@ public:
    * @copydoc ParticleFilterNetCDFBuffer::readLogWeights()
    */
   template<class V1>
-  void readLogWeights(const int t, V1 lws) const;
+  void readLogWeights(const int k, V1 lws) const;
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::writeLogWeights()
    */
   template<class V1>
-  void writeLogWeights(const int t, const V1 lws);
+  void writeLogWeights(const int k, const V1 lws);
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::readAncestors()
    */
   template<class V1>
-  void readAncestors(const int t, V1 a) const;
+  void readAncestors(const int k, V1 a) const;
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::writeAncestors()
    */
   template<class V1>
-  void writeAncestors(const int t, const V1 a);
+  void writeAncestors(const int k, const V1 a);
 
   /**
    * @copydoc ParticleFilterNetCDFBuffer::writeLL()
@@ -101,18 +101,16 @@ public:
    * Write-through to the underlying buffer, as well as efficient caching
    * of the ancestry using AncestryCache.
    *
-   * @tparam B Model type.
-   * @tparam L Location.
+   * @tparam M1 Matrix type.
    * @tparam V1 Vector type.
    *
-   * @param t Time index.
-   * @param s State.
+   * @param k Time index.
+   * @param X State.
    * @param as Ancestors.
    * @param r Was resampling performed?
    */
-  template<class B, Location L, class V1>
-  void writeState(const int t, const State<B,L>& s, const V1 as,
-      const bool r);
+  template<class M1, class V1>
+  void writeState(const int k, const M1 X, const V1 as, const bool r);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -242,19 +240,19 @@ const typename bi::Cache1D<real,CL>::vector_reference_type bi::ParticleFilterCac
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::readLogWeights(const int t,
+void bi::ParticleFilterCache<IO1,CL>::readLogWeights(const int k,
     V1 lws) const {
   BI_ASSERT(out != NULL);
 
-  out->readLogWeights(t, lws);
+  out->readLogWeights(k, lws);
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::writeLogWeights(const int t,
+void bi::ParticleFilterCache<IO1,CL>::writeLogWeights(const int k,
     const V1 lws) {
   if (out != NULL) {
-    out->writeLogWeights(t, lws);
+    out->writeLogWeights(k, lws);
   }
   logWeightsCache.resize(lws.size());
   logWeightsCache.set(0, lws.size(), lws);
@@ -262,19 +260,19 @@ void bi::ParticleFilterCache<IO1,CL>::writeLogWeights(const int t,
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::readAncestors(const int t,
+void bi::ParticleFilterCache<IO1,CL>::readAncestors(const int k,
     V1 as) const {
   BI_ASSERT(out != NULL);
 
-  out->readAncestors(t, as);
+  out->readAncestors(k, as);
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::ParticleFilterCache<IO1,CL>::writeAncestors(const int t,
+void bi::ParticleFilterCache<IO1,CL>::writeAncestors(const int k,
     const V1 as) {
   if (out != NULL) {
-    out->writeAncestors(t, as);
+    out->writeAncestors(k, as);
   }
 }
 
@@ -293,11 +291,12 @@ void bi::ParticleFilterCache<IO1,CL>::readTrajectory(const int p,
 }
 
 template<class IO1, bi::Location CL>
-template<class B, bi::Location L, class V1>
-void bi::ParticleFilterCache<IO1,CL>::writeState(const int t,
-    const State<B,L>& s, const V1 as, const bool r) {
-  SimulatorCache<IO1,CL>::writeState(t, s);
-  ancestryCache.writeState(t, s, as, r);
+template<class M1, class V1>
+void bi::ParticleFilterCache<IO1,CL>::writeState(const int k,
+    const M1 X, const V1 as, const bool r) {
+  SimulatorCache<IO1,CL>::writeState(k, X);
+  writeAncestors(k, as);
+  ancestryCache.writeState(k, X, as, r);
 }
 
 template<class IO1, bi::Location CL>

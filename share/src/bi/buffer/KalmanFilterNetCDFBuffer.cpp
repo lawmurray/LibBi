@@ -7,15 +7,22 @@
  */
 #include "KalmanFilterNetCDFBuffer.hpp"
 
+#include <sstream>
+
 bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, file, mode), m(m), M(m.getDynSize()) {
-  map();
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, file, mode, schema) {
+  if (mode == NEW || mode == REPLACE) {
+    create();
+  } else {
+    map();
+  }
 }
 
 bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(const Model& m,
-    const int P, const int T, const std::string& file, const FileMode mode) :
-    SimulatorNetCDFBuffer(m, P, T, file, mode), m(m), M(m.getDynSize()) {
+    const size_t P, const size_t T, const std::string& file,
+    const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create(T);  // set up structure of new file
   } else {
@@ -23,135 +30,136 @@ bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(const Model& m,
   }
 }
 
-void bi::KalmanFilterNetCDFBuffer::create(const long T) {
-  ncFile->add_att(PACKAGE_TARNAME "_schema", "KalmanFilter");
-  ncFile->add_att(PACKAGE_TARNAME "_schema_version", 1);
-  ncFile->add_att(PACKAGE_TARNAME "_version", PACKAGE_VERSION);
+void bi::KalmanFilterNetCDFBuffer::create(const size_t T) {
+  const int M = m.getNetSize(R_VAR) + m.getNetSize(D_VAR);
+
+  nc_put_att(ncid, "libbi_schema", "KalmanFilter");
+  nc_put_att(ncid, "libbi_schema_version", 1);
+  nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   /* dimensions */
-  nxcolDim = createDim("nxcol", M);
-  nxrowDim = createDim("nxrow", M);
+  nxcolDim = nc_def_dim(ncid, "nxcol", M);
+  nxrowDim = nc_def_dim(ncid, "nxrow", M);
 
   /* variables */
-  mu1Var = ncFile->add_var("mu1_", netcdf_real, nrDim, nxrowDim);
-  BI_ERROR_MSG(mu1Var != NULL && mu1Var->is_valid(),
-      "Could not create variable mu1_");
+  std::vector<int> dimidsVec(2), dimidsMat(3);
+  dimidsVec[0] = nrDim;
+  dimidsVec[1] = nxrowDim;
+  dimidsMat[0] = nrDim;
+  dimidsMat[1] = nxcolDim;
+  dimidsMat[2] = nxrowDim;
 
-  U1Var = ncFile->add_var("U1_", netcdf_real, nrDim, nxcolDim, nxrowDim);
-  BI_ERROR_MSG(U1Var != NULL && U1Var->is_valid(),
-      "Could not create variable U1_");
-
-  mu2Var = ncFile->add_var("mu2_", netcdf_real, nrDim, nxrowDim);
-  BI_ERROR_MSG(mu2Var != NULL && mu2Var->is_valid(),
-      "Could not create variable mu2_");
-
-  U2Var = ncFile->add_var("U2_", netcdf_real, nrDim, nxcolDim, nxrowDim);
-  BI_ERROR_MSG(U2Var != NULL && U2Var->is_valid(),
-      "Could not create variable U2_");
-
-  CVar = ncFile->add_var("C_", netcdf_real, nrDim, nxcolDim, nxrowDim);
-  BI_ERROR_MSG(CVar != NULL && CVar->is_valid(),
-      "Could not create variable C_");
+  mu1Var = nc_def_var(ncid, "mu1_", NC_REAL, dimidsVec);
+  U1Var = nc_def_var(ncid, "U1_", NC_REAL, dimidsMat);
+  mu2Var = nc_def_var(ncid, "mu2_", NC_REAL, dimidsVec);
+  U2Var = nc_def_var(ncid, "U2_", NC_REAL, dimidsVec);
+  CVar = nc_def_var(ncid, "C_", NC_REAL, dimidsVec);
 
   /* index variables */
   Var* var;
-  int id, size = 0;
+  VarType type;
+  int id, i, size = 0, varid;
   std::stringstream name;
-  for (id = 0; id < m.getNumVars(R_VAR); ++id) {
-    var = m.getVar(R_VAR, id);
-    if (var->hasOutput()) {
-      name.str("");
-      name << "index." << var->getOutputName();
-      ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
-      size += var->getSize();
-    }
-  }
-  for (id = 0; id < m.getNumVars(D_VAR); ++id) {
-    var = m.getVar(D_VAR, id);
-    if (var->hasOutput()) {
-      name.str("");
-      name << "index." << var->getOutputName();
-      ncFile->add_var(name.str().c_str(), ncInt)->put(&size, 1);
-      size += var->getSize();
+  for (i = 0; i < NUM_VAR_TYPES; ++i) {
+    type = static_cast<VarType>(i);
+
+    if (type == D_VAR || type == R_VAR) {
+      for (id = 0; id < m.getNumVars(type); ++id) {
+        var = m.getVar(type, id);
+        if (var->hasOutput()) {
+          name.str("");
+          name << "index." << var->getOutputName();
+          varid = nc_def_var(ncid, name.str(), NC_INT);
+          nc_put_var(ncid, varid, &size);
+          size += var->getSize();
+        }
+      }
     }
   }
 
   /* marginal log-likelihood variable */
-  llVar = ncFile->add_var("LL", netcdf_real);
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "Could not create variable LL");
+  llVar = nc_def_var(ncid, "LL", NC_REAL);
 }
 
-void bi::KalmanFilterNetCDFBuffer::map(const long T) {
+void bi::KalmanFilterNetCDFBuffer::map(const size_t T) {
+  const size_t M = m.getNetSize(R_VAR) + m.getNetSize(D_VAR);
+  std::vector<int> dimids;
+
   /* dimensions */
-  nxcolDim = mapDim("nxcol");
-  nxrowDim = mapDim("nxrow");
+  nxcolDim = nc_inq_dimid(ncid, "nxcol");
+  BI_ERROR_MSG(nxcolDim >= 0, "No dimension nxcol in file " << file);
+  BI_ERROR_MSG(nc_inq_dimlen(ncid, nxcolDim) == M,
+      "Dimension nxcol has length " << nc_inq_dimlen(ncid, nxcolDim) << ", should be of length " << M << ", in file " << file);
 
-  mu1Var = ncFile->get_var("mu1_");
-  BI_ERROR_MSG(mu1Var != NULL && mu1Var->is_valid(),
-      "File does not contain variable mu1_");
-  BI_ERROR_MSG(mu1Var->num_dims() == 2,
-      "Variable mu1_ has " << mu1Var->num_dims() << " dimensions, should have 2");
-  BI_ERROR_MSG(mu1Var->get_dim(0) == nrDim,
-      "Dimension 0 of variable mu1_ should be nr");
-  BI_ERROR_MSG(mu1Var->get_dim(1) == nxcolDim,
-      "Dimension 1 of variable mu1_ should be nxcol");
+  nxrowDim = nc_inq_dimid(ncid, "nxrow");
+  BI_ERROR_MSG(nxrowDim >= 0, "No dimension nxrow in file " << file);
+  BI_ERROR_MSG(nc_inq_dimlen(ncid, nxrowDim) == M,
+      "Dimension nxrow has length " << nc_inq_dimlen(ncid, nxrowDim) << ", should be of length " << M << ", in file " << file);
 
-  U1Var = ncFile->get_var("U1_");
-  BI_ERROR_MSG(U1Var != NULL && U1Var->is_valid(),
-      "File does not contain variable U1_");
-  BI_ERROR_MSG(U1Var->num_dims() == 3,
-      "Variable U1_ has " << U1Var->num_dims() << " dimensions, should have 3");
-  BI_ERROR_MSG(U1Var->get_dim(0) == nrDim,
-      "Dimension 0 of variable U1_ should be nr");
-  BI_ERROR_MSG(U1Var->get_dim(1) == nxcolDim,
-      "Dimension 1 of variable U1_ should be nxcol");
-  BI_ERROR_MSG(U1Var->get_dim(2) == nxrowDim,
-      "Dimension 2 of variable U1_ should be nxrow");
+  /* variables */
+  mu1Var = nc_inq_varid(ncid, "mu1_");
+  BI_ERROR_MSG(mu1Var >= 0, "No variable mu1_ in file " << file);
+  dimids = nc_inq_vardimid(ncid, mu1Var);
+  BI_ERROR_MSG(dims.size() == 2,
+      "Variable mu1_ has " << dims.size() << " dimensions, should have 2, in file " << file);
+  BI_ERROR_MSG(dims[0] == nrDim,
+      "First dimension of variable mu1_ should be nr, in file " << file);
+  BI_ERROR_MSG(dims[1] == nxcolDim,
+      "Second dimension of variable mu1_ should be nxcol, in file " << file);
 
-  mu2Var = ncFile->get_var("mu2_");
-  BI_ERROR_MSG(mu2Var != NULL && mu2Var->is_valid(),
-      "File does not contain variable mu2_");
-  BI_ERROR_MSG(mu2Var->num_dims() == 2,
-      "Variable mu2_ has " << mu2Var->num_dims() << " dimensions, should have 2");
-  BI_ERROR_MSG(mu2Var->get_dim(0) == nrDim,
-      "Dimension 0 of variable mu2_ should be nr");
-  BI_ERROR_MSG(mu2Var->get_dim(1) == nxcolDim,
-      "Dimension 1 of variable mu2_ should be nxcol");
+  U1Var = nc_inq_varid(ncid, "U1_");
+  BI_ERROR_MSG(U1Var >= 0, "No variable U1_ in file " << file);
+  dimids = nc_inq_vardimid(ncid, U1Var);
+  BI_ERROR_MSG(dimids.size() == 3,
+      "Variable U1_ has " << dimids.size() << " dimensions, should have 3, in file " << file);
+  BI_ERROR_MSG(dimids[0] == nrDim,
+      "First dimension of variable U1_ should be nr, in file " << file);
+  BI_ERROR_MSG(dimids[1] == nxcolDim,
+      "Second dimension of variable U1_ should be nxcol, in file " << file);
+  BI_ERROR_MSG(dimids[2] == nxrowDim,
+      "Third dimension of variable U1_ should be nxrow, in file " << file);
 
-  U2Var = ncFile->get_var("U2_");
-  BI_ERROR_MSG(U2Var != NULL && U2Var->is_valid(),
-      "File does not contain variable U2_");
-  BI_ERROR_MSG(U2Var->num_dims() == 3,
-      "Variable U2_ has " << U2Var->num_dims() << " dimensions, should have 3");
-  BI_ERROR_MSG(U2Var->get_dim(0) == nrDim,
-      "Dimension 0 of variable U2_ should be nr");
-  BI_ERROR_MSG(U2Var->get_dim(1) == nxcolDim,
-      "Dimension 1 of variable U2_ should be nxcol");
-  BI_ERROR_MSG(U2Var->get_dim(2) == nxrowDim,
-      "Dimension 2 of variable U2_ should be nxrow");
+  mu2Var = nc_inq_varid(ncid, "mu2_");
+  BI_ERROR_MSG(mu2Var >= 0, "No variable mu2_ in file " << file);
+  dimids = nc_inq_vardimid(ncid, mu2Var);
+  BI_ERROR_MSG(dimids.size() == 2,
+      "Variable mu2_ has " << dimids.size() << " dimensions, should have 2, in file " << file);
+  BI_ERROR_MSG(dimids[0] == nrDim,
+      "First dimension of variable mu2_ should be nr, in file " << file);
+  BI_ERROR_MSG(dimids[1] == nxcolDim,
+      "Second dimension of variable mu2_ should be nxcol, in file " << file);
 
-  CVar = ncFile->get_var("C_");
-  BI_ERROR_MSG(CVar != NULL && CVar->is_valid(),
-      "File does not contain variable C_");
-  BI_ERROR_MSG(CVar->num_dims() == 3,
-      "Variable C_ has " << CVar->num_dims() << " dimensions, should have 3");
-  BI_ERROR_MSG(CVar->get_dim(0) == nrDim,
-      "Dimension 0 of variable C_ should be nr");
-  BI_ERROR_MSG(CVar->get_dim(1) == nxcolDim,
-      "Dimension 1 of variable C_ should be nxcol");
-  BI_ERROR_MSG(CVar->get_dim(2) == nxrowDim,
-      "Dimension 2 of variable C_ should be nxrow");
+  U2Var = nc_inq_varid(ncid, "U2_");
+  BI_ERROR_MSG(U2Var >= 0, "No variable U2_ in file " << file);
+  dimids = nc_inq_vardimid(ncid, U2Var);
+  BI_ERROR_MSG(dimids.size() == 3,
+      "Variable U2_ has " << dimids.size() << " dimensions, should have 3, in file " << file);
+  BI_ERROR_MSG(dimids[0] == nrDim,
+      "First dimension of variable U2_ should be nr, in file " << file);
+  BI_ERROR_MSG(dimids[1] == nxcolDim,
+      "Second dimension of variable U2_ should be nxcol, in file " << file);
+  BI_ERROR_MSG(dimids[2] == nxrowDim,
+      "Third dimension of variable U2_ should be nxrow, in file " << file);
 
-  llVar = ncFile->get_var("LL");
-  BI_ERROR_MSG(llVar != NULL && llVar->is_valid(),
-      "File does not contain variable LL");
-  BI_ERROR_MSG(llVar->num_dims() == 0,
-      "Variable LL has " << llVar->num_dims() << " dimensions, should have 0");
+  CVar = nc_inq_varid(ncid, "C_");
+  BI_ERROR_MSG(CVar >= 0, "No variable C_ in file " << file);
+  dimids = nc_inq_vardimid(ncid, CVar);
+  BI_ERROR_MSG(dimids.size() == 3,
+      "Variable C_ has " << dimids.size() << " dimensions, should have 3, in file " << file);
+  BI_ERROR_MSG(dimids[0] == nrDim,
+      "First dimension of variable C_ should be nr, in file " << file);
+  BI_ERROR_MSG(dimids[1] == nxcolDim,
+      "Second dimension of variable C_ should be nxcol, in file " << file);
+  BI_ERROR_MSG(dimids[2] == nxrowDim,
+      "Third dimension of variable C_ should be nxrow, in file " << file);
+
+  llVar = nc_inq_varid(ncid, "LL");
+  BI_ERROR_MSG(llVar >= 0, "No variable LL in file " << file);
+  dimids = nc_inq_vardimid(ncid, llVar);
+  BI_ERROR_MSG(dimids.size() == 0,
+      "Variable LL has " << dimids.size() << " dimensions, should have none, in file " << file);
 }
 
 void bi::KalmanFilterNetCDFBuffer::writeLL(const real ll) {
-  BI_UNUSED NcBool ret;
-  ret = llVar->put(&ll, 1);
-  BI_ASSERT_MSG(ret, "Inconvertible type writing variable ll");
+  nc_put_var(ncid, llVar, &ll);
 }

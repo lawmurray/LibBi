@@ -214,8 +214,8 @@ template<bi::Location L>
 bi::Mask<L>::Mask(const Mask<L>& o) :
     info(o.info),
     ixs(o.ixs),
-    sparseSize(o.sparseSize),
-    denseSize(o.denseSize) {
+    denseSize(o.denseSize),
+    sparseSize(o.sparseSize) {
   //
 }
 

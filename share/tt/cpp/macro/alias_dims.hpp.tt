@@ -9,9 +9,9 @@
   [%-un = 0-%]
   [%-FOREACH alias IN action.get_aliases %]
   [%-IF alias.has_name -%]
-  const int [% alias.get_name %]_ = cox.i[% loop.index %];
+  BI_UNUSED const int [% alias.get_name %]_ = cox.i[% loop.index %];
   [%-ELSE-%]
-  const int un[% un; un = un + 1 %] = cox.i[% loop.index %];  
+  BI_UNUSED const int un[% un; un = un + 1 %] = cox.i[% loop.index %];  
   [%-END-%]
   [%-END %]
 [%-END-%]
