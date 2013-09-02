@@ -228,7 +228,7 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   timer.sync();
   timer.tic();
-  #endif;
+  #endif
   
   sampler->sample(rng, sched.begin(), sched.end(), s, bufInit, NSAMPLES);
   

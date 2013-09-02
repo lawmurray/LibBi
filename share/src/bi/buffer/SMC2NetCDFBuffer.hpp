@@ -57,6 +57,18 @@ public:
   template<class V1>
   void writeLogWeights(const V1 lws);
 
+  /**
+   * @copydoc #concept::SMC2NetCDFBuffer::readLogEvidences()
+   */
+  template<class V1>
+  void readLogEvidences(V1 les);
+
+  /**
+   * @copydoc #concept::SMC2NetCDFBuffer::writeLogEvidences()
+   */
+  template<class V1>
+  void writeLogEvidences(const V1 les);
+
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -72,6 +84,11 @@ protected:
    * Log-weights variable.
    */
   int lwVar;
+
+  /**
+   * Incremental log evidence variable
+   */
+  int leVar;
 };
 }
 
@@ -87,6 +104,16 @@ void bi::SMC2NetCDFBuffer::readLogWeights(V1 lws) {
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeLogWeights(const V1 lws) {
   nc_put_var(ncid, lwVar, lws.buf());
+}
+
+template<class V1>
+void bi::SMC2NetCDFBuffer::readLogEvidences(V1 les) {
+  nc_get_var(ncid, leVar, les.buf());
+}
+
+template<class V1>
+void bi::SMC2NetCDFBuffer::writeLogEvidences(const V1 les) {
+  nc_put_var(ncid, leVar, les.buf());
 }
 
 #endif

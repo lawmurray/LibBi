@@ -753,11 +753,12 @@ The following variables are added:
 
 This schema is used by the \clientref{sample} command when an SMC$^2$ method
 is chosen. It extends the PMCMC schema, with the following additional
-variable:
+variables:
 \begin{itemize}
 \item \bitt{logweight[np]} giving the log-weights vector of parameter samples.
+\item \bitt{logevidence[nr]} giving the incremental log-evidence of the model
+  at each time.
 \end{itemize}
-
 
 \section{Input files\label{Input_files}}\index{data}\index{I/O}\index{input}
 

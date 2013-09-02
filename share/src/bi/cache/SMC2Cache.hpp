@@ -65,6 +65,18 @@ public:
   void writeLogWeights(const V1 lws);
 
   /**
+   * @copydoc SMC2NetCDFBuffer::readLogEvidences()
+   */
+  template<class V1>
+  void readLogEvidences(V1 les) const;
+
+  /**
+   * @copydoc SMC2NetCDFBuffer::writeLogEvidences()
+   */
+  template<class V1>
+  void writeLogEvidences(const V1 les);
+
+  /**
    * Swap the contents of the cache with that of another.
    */
   void swap(SMC2Cache<IO1,CL>& o);
@@ -159,6 +171,7 @@ bi::SMC2Cache<IO1,CL>::~SMC2Cache() {
 template<class IO1, bi::Location CL>
 template<class V1>
 void bi::SMC2Cache<IO1,CL>::readLogWeights(V1 lws) const {
+  /* pre-condition */
   BI_ASSERT(out != NULL);
 
   out->readLogWeights(lws);
@@ -169,6 +182,23 @@ template<class V1>
 void bi::SMC2Cache<IO1,CL>::writeLogWeights(const V1 lws) {
   if (out != NULL) {
     out->writeLogWeights(lws);
+  }
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::SMC2Cache<IO1,CL>::readLogEvidences(V1 les) const {
+  /* pre-condition */
+  BI_ASSERT(out != NULL);
+
+  out->readLogEvidences(les);
+}
+
+template<class IO1, bi::Location CL>
+template<class V1>
+void bi::SMC2Cache<IO1,CL>::writeLogEvidences(const V1 les) {
+  if (out != NULL) {
+    out->writeLogEvidences(les);
   }
 }
 

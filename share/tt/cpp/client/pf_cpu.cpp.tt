@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   timer.sync();
   timer.tic();
-  #endif;
+  #endif
   
   filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
   

@@ -211,12 +211,15 @@ public:
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
    *
    * @param thetas Theta-particles.
    * @param lws Log-weights of theta-particles.
+   * @param les Incremental log-evidences.
    */
-  template<bi::Location L, class V1>
-  void output(const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws);
+  template<bi::Location L, class V1, class V2>
+  void output(const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+      const V2 les);
 
   /**
    * Report progress on stderr.
@@ -327,16 +330,22 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
   std::vector<ThetaParticle<B,L>*> thetas(C);  // theta-particles
   host_logweight_vector_type lws(C);  // log-weights of theta-particles
+  host_logweight_vector_type les(
+      static_cast<int>(std::distance(first, last)));  // incremental log-evidences
   host_ancestor_vector_type as(C);  // ancestors of theta-particles
-  real evidence = 0.0;
+  real le = 0.0;
   ScheduleIterator iter = first;
 
   /* init */
-  evidence = init(rng, *iter, s, thetas, lws, as);
+  le = init(rng, *iter, s, thetas, lws, as);
+  int k = iter->indexOutput();
+  les(k) = le;
   while (iter + 1 != last) {
-    evidence += step(rng, first, iter, last, s, thetas, lws, as);
+    le = step(rng, first, iter, last, s, thetas, lws, as);
+    k = iter->indexOutput();
+    les(k) = le;
   }
-  output(thetas, lws);
+  output(thetas, lws, les);
 
   /* delete remaining stuff */
   for (int i = 0; i < C; i++) {
@@ -356,7 +365,7 @@ real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
   assert(!V1::on_device);
   assert(!V2::on_device);
 
-  real evidence = 0.0;
+  real le = 0.0;
   int i;
 
   /* initialise theta-particles */
@@ -383,10 +392,10 @@ real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
     /* initialise weights and ancestors */
     lws(i) = theta.getIncLogLikelihood();
     as(i) = i;
-
-    evidence += bi::exp(theta.getIncLogLikelihood());
   }
-  return evidence;
+  le = logsumexp_reduce(lws) - bi::log(static_cast<real>(thetas.size()));
+
+  return le;
 }
 
 template<class B, class F, class R, class IO1>
@@ -399,7 +408,7 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
   int i, r;
-  real evidence = 0.0, acceptRate = 0.0, ess = 0.0;
+  real le = 0.0, acceptRate = 0.0, ess = 0.0;
   GaussianPdf<host_vector_type,host_matrix_type> q(NP);  // proposal distro
 
   ess = resam->ess(lws);
@@ -409,10 +418,13 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
     adapt(thetas, lws, q);
     resample(rng, *iter, lws, as, thetas);
     acceptRate = rejuvenate(rng, first, iter + 1, s, thetas, q);
+  } else {
+    Resampler::normalise(lws);
   }
   report(*iter, ess, r, acceptRate);
 
   ScheduleIterator iter1;
+
   for (i = 0; i < thetas.size(); i++) {
     BOOST_AUTO(&theta, *thetas[i]);
     BOOST_AUTO(filter, pmmh->getFilter());
@@ -422,17 +434,19 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
     theta.getIncLogLikelihood() = filter->step(rng, iter1, last, theta,
         theta.getLogWeights(), theta.getAncestors());
     theta.getLogLikelihood1() += theta.getIncLogLikelihood();
+
+    /* compute incremental evidence along the way */
+    // evidence needs to be updated with the previous weights
+    // otherwise we count the new incremental likelihood twice!!
     lws(i) += theta.getIncLogLikelihood();
 
     filter->sampleTrajectory(rng, theta.getTrajectory());
 
-    /* compute evidence along the way */
-    evidence += bi::exp(lws(i) + theta.getIncLogLikelihood());
   }
-  evidence /= sumexp_reduce(lws);
+  le = logsumexp_reduce(lws) - bi::log(static_cast<real>(lws.size()));
   iter = iter1;
 
-  return evidence;
+  return le;
 }
 
 template<class B, class F, class R, class IO1>
@@ -517,15 +531,17 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
 }
 
 template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1>
+template<bi::Location L, class V1, class V2>
 void bi::SMC2<B,F,R,IO1>::output(
-    const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws) {
+    const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+    const V2 les) {
   if (out != NULL) {
     pmmh->setOutput(out);
     for (int p = 0; p < thetas.size(); ++p) {
       pmmh->output(p, *thetas[p]);
     }
     out->writeLogWeights(lws);
+    out->writeLogEvidences(les);
   }
 }
 
