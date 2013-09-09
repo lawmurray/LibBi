@@ -8,7 +8,7 @@
 #include "SparseInputNetCDFBuffer.hpp"
 
 bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
-    const std::string& file, const size_t ns, const size_t np) :
+    const std::string& file, const long ns, const long np) :
     NetCDFBuffer(file), m(m), vars(NUM_VAR_TYPES), nsDim(-1), npDim(-1), ns(
         ns), np(np) {
   map();
@@ -22,7 +22,7 @@ void bi::SparseInputNetCDFBuffer::readMask(const size_t k, const VarType type,
 
   Var* var;
   int r;
-  size_t start, len;
+  long start, len;
   for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] >= 0) {
       start = recStarts[k][r];
@@ -65,7 +65,7 @@ void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
 
   Var* var;
   int r;
-  size_t start, len;
+  long start, len;
 
   /* sparse masks */
   for (r = 0; r < int(recDims.size()); ++r) {
@@ -321,7 +321,7 @@ int bi::SparseInputNetCDFBuffer::mapCoordDim(int ncVar) {
   return ncDim;
 }
 
-void bi::SparseInputNetCDFBuffer::readTime(int ncVar, const size_t start,
+void bi::SparseInputNetCDFBuffer::readTime(int ncVar, const long start,
     size_t* const len, real* const t) {
   /* pre-condition */
   BI_ASSERT(start >= 0);

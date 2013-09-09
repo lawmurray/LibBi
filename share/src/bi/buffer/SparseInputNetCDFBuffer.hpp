@@ -35,7 +35,7 @@ public:
    * dimension.
    */
   SparseInputNetCDFBuffer(const Model& m, const std::string& file,
-      const size_t ns = 0, const size_t np = -1);
+      const long ns = 0, const long np = -1);
 
   /**
    * Get time.
@@ -137,7 +137,7 @@ private:
    * in @p t, and the number of consecutive entries of the same value in
    * @p len.
    */
-  void readTime(int ncVar, const size_t start, size_t* const len,
+  void readTime(int ncVar, const long start, size_t* const len,
       real* const t);
 
   /**
@@ -151,7 +151,7 @@ private:
    * @param[out] C Coordinate vector.
    */
   template<class M1>
-  void readCoords(int ncVar, const size_t start, const size_t len, M1 C);
+  void readCoords(int ncVar, const long start, const long len, M1 C);
 
   /**
    * Densely-masked read into matrix.
@@ -164,7 +164,7 @@ private:
    * @param[out] X Output.
    */
   template<class M1>
-  void readVar(int ncVar, const size_t start, const size_t len, M1 X);
+  void readVar(int ncVar, const long start, const long len, M1 X);
 
   /**
    * Sparsely-masked read into matrix.
@@ -178,7 +178,7 @@ private:
    * @param[out] X Output.
    */
   template<class V1, class M1>
-  void readVar(int ncVar, const size_t start, const size_t len, const V1 ixs,
+  void readVar(int ncVar, const long start, const long len, const V1 ixs,
       M1 X);
 
   /**
@@ -289,17 +289,17 @@ private:
   /**
    * Sample dimension.
    */
-  int npDim;
+  long npDim;
 
   /**
    * Index of record to read along @c ns dimension.
    */
-  size_t ns;
+  long ns;
 
   /**
    * Index of record to read along @c np dimension.
    */
-  size_t np;
+  long np;
 };
 }
 
@@ -323,7 +323,7 @@ void bi::SparseInputNetCDFBuffer::readState(const size_t k,
     const VarType type, const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
   int ncVar, r;
-  size_t start, len;
+  long start, len;
   for (r = 0; r < int(recDims.size()); ++r) {
     if (timeVars[r] >= 0) {
       start = recStarts[k][r];
@@ -369,7 +369,7 @@ void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
     const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
   int ncVar, r;
-  size_t start, len;
+  long start, len;
 
   /* sparse reads */
   for (r = 0; r < int(recDims.size()); ++r) {
@@ -421,8 +421,8 @@ void bi::SparseInputNetCDFBuffer::read0(const VarType type, M1 X) {
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const size_t start,
-    const size_t len, M1 C) {
+void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const long start,
+    const long len, M1 C) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
   BI_ASSERT(start >= 0);
@@ -464,8 +464,8 @@ void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const size_t start,
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const size_t start,
-    const size_t len, M1 X) {
+void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
+    const long len, M1 X) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
 
@@ -532,8 +532,8 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const size_t start,
 }
 
 template<class V1, class M1>
-void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const size_t start,
-    const size_t len, const V1 ixs, M1 X) {
+void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
+    const long len, const V1 ixs, M1 X) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
   BI_ASSERT(!V1::on_device);
