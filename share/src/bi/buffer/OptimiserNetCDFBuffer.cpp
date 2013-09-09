@@ -31,12 +31,16 @@ bi::OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
 }
 
 void bi::OptimiserNetCDFBuffer::create() {
+  nc_redef(ncid);
+
   nc_put_att(ncid, "libbi_schema", "Optimiser");
   nc_put_att(ncid, "libbi_schema_version", 2);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   valueVar = nc_def_var(ncid, "optimiser.value", NC_REAL, npDim);
   sizeVar = nc_def_var(ncid, "optimiser.size", NC_REAL, npDim);
+
+  nc_enddef(ncid);
 }
 
 void bi::OptimiserNetCDFBuffer::map() {

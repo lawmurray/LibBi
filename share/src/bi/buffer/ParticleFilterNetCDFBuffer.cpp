@@ -29,6 +29,8 @@ bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
 }
 
 void bi::ParticleFilterNetCDFBuffer::create() {
+  nc_redef(ncid);
+
   if (schema == FLEXI) {
     nc_put_att(ncid, "libbi_schema", "FlexiParticleFilter");
     nc_put_att(ncid, "libbi_schema_version", 1);
@@ -46,6 +48,8 @@ void bi::ParticleFilterNetCDFBuffer::create() {
     lwVar = nc_def_var(ncid, "logweight", NC_REAL, nrDim, npDim);
   }
   llVar = nc_def_var(ncid, "LL", NC_REAL);
+
+  nc_enddef(ncid);
 }
 
 void bi::ParticleFilterNetCDFBuffer::map() {

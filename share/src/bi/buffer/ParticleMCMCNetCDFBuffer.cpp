@@ -29,12 +29,16 @@ bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
 }
 
 void bi::ParticleMCMCNetCDFBuffer::create() {
+  nc_redef(ncid);
+
   nc_put_att(ncid, "libbi_schema", "ParticleMCMC");
   nc_put_att(ncid, "libbi_schema_version", 1);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   llVar = nc_def_var(ncid, "loglikelihood", NC_REAL, npDim);
   lpVar = nc_def_var(ncid, "logprior", NC_REAL, npDim);
+
+  nc_enddef(ncid);
 }
 
 void bi::ParticleMCMCNetCDFBuffer::map() {

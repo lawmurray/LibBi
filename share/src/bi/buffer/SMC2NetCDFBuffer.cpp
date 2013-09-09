@@ -31,12 +31,16 @@ bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const size_t P,
 }
 
 void bi::SMC2NetCDFBuffer::create() {
+  nc_redef(ncid);
+
   nc_put_att(ncid, "libbi_schema", "SMC2");
   nc_put_att(ncid, "libbi_schema_version", 2);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   lwVar = nc_def_var(ncid, "logweight", NC_REAL, npDim);
   leVar = nc_def_var(ncid, "logevidence", NC_REAL, nrDim);
+
+  nc_enddef(ncid);
 }
 
 void bi::SMC2NetCDFBuffer::map() {

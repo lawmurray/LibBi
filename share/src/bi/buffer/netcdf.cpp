@@ -72,7 +72,7 @@ std::string bi::nc_inq_dimname(int ncid, int dimid) {
   char name[NC_MAX_NAME + 1];
   int status;
   status = ::nc_inq_dimname(ncid, dimid, name);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
   return std::string(name);
 }
 
@@ -80,7 +80,7 @@ size_t bi::nc_inq_dimlen(int ncid, int dimid) {
   size_t len;
   int status;
   status = ::nc_inq_dimlen(ncid, dimid, &len);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
   return len;
 }
 
@@ -128,14 +128,14 @@ std::string bi::nc_inq_varname(int ncid, int varid) {
   char name[NC_MAX_NAME + 1];
   int status;
   status = ::nc_inq_varname(ncid, varid, name);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
   return std::string(name);
 }
 
 int bi::nc_inq_varndims(int ncid, int varid) {
   int ndims, status;
   status = ::nc_inq_varndims(ncid, varid, &ndims);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
   return ndims;
 }
 
@@ -144,7 +144,7 @@ std::vector<int> bi::nc_inq_vardimid(int ncid, int varid) {
   std::vector<int> dimids(ndims);
   if (ndims > 0) {
     int status = ::nc_inq_vardimid(ncid, varid, dimids.data());
-    BI_ERROR(status == NC_NOERR);
+    BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
   }
   return dimids;
 }
@@ -176,240 +176,240 @@ void bi::nc_put_att(int ncid, const std::string& name, const double value) {
 
 void bi::nc_get_var(int ncid, int varid, int* ip) {
   int status = ::nc_get_var_int(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var(int ncid, int varid, long* ip) {
   int status = ::nc_get_var_long(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var(int ncid, int varid, float* ip) {
   int status = ::nc_get_var_float(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var(int ncid, int varid, double* ip) {
   int status = ::nc_get_var_double(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var(int ncid, int varid, const int* ip) {
   int status = ::nc_put_var_int(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var(int ncid, int varid, const long* ip) {
   int status = ::nc_put_var_long(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var(int ncid, int varid, const float* ip) {
   int status = ::nc_put_var_float(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var(int ncid, int varid, const double* ip) {
   int status = ::nc_put_var_double(ncid, varid, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const size_t index, int* ip) {
   int status;
   status = ::nc_get_var1_int(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const size_t index, long* ip) {
   int status;
   status = ::nc_get_var1_long(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const size_t index, float* ip) {
   int status = ::nc_get_var1_float(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const size_t index, double* ip) {
   int status = ::nc_get_var1_double(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const size_t index,
     const int* ip) {
   int status = ::nc_put_var1_int(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const size_t index,
     const long* ip) {
   int status = ::nc_put_var1_long(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const size_t index,
     const float* ip) {
   int status = ::nc_put_var1_float(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const size_t index,
     const double* ip) {
   int status = ::nc_put_var1_double(ncid, varid, &index, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     int* ip) {
   int status;
   status = ::nc_get_var1_int(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     long* ip) {
   int status;
   status = ::nc_get_var1_long(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     float* ip) {
   int status = ::nc_get_var1_float(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     double* ip) {
   int status = ::nc_get_var1_double(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const int* ip) {
   int status = ::nc_put_var1_int(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const long* ip) {
   int status = ::nc_put_var1_long(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const float* ip) {
   int status = ::nc_put_var1_float(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const double* ip) {
   int status = ::nc_put_var1_double(ncid, varid, index.data(), ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const size_t start,
     const size_t count, int* ip) {
   int status = ::nc_get_vara_int(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const size_t start,
     const size_t count, long* ip) {
   int status = ::nc_get_vara_long(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const size_t start,
     const size_t count, float* ip) {
   int status = ::nc_get_vara_float(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const size_t start,
     const size_t count, double* ip) {
   int status = ::nc_get_vara_double(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const size_t start,
     const size_t count, const int* ip) {
   int status = ::nc_put_vara_int(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const size_t start,
     const size_t count, const long* ip) {
   int status = ::nc_put_vara_long(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const size_t start,
     const size_t count, const float* ip) {
   int status = ::nc_put_vara_float(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const size_t start,
     const size_t count, const double* ip) {
   int status = ::nc_put_vara_double(ncid, varid, &start, &count, ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, int* ip) {
   int status = ::nc_get_vara_int(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, long* ip) {
   int status = ::nc_get_vara_long(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, float* ip) {
   int status = ::nc_get_vara_float(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, double* ip) {
   int status = ::nc_get_vara_double(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const int* ip) {
   int status = ::nc_put_vara_int(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const long* ip) {
   int status = ::nc_put_vara_long(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const float* ip) {
   int status = ::nc_put_vara_float(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const double* ip) {
   int status = ::nc_put_vara_double(ncid, varid, start.data(), count.data(),
       ip);
-  BI_ERROR(status == NC_NOERR);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
