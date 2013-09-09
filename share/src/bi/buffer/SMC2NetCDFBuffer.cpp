@@ -31,8 +31,6 @@ bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const size_t P,
 }
 
 void bi::SMC2NetCDFBuffer::create() {
-  nc_redef(ncid);
-
   nc_put_att(ncid, "libbi_schema", "SMC2");
   nc_put_att(ncid, "libbi_schema_version", 2);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);

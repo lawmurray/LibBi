@@ -27,17 +27,27 @@ int bi::nc_create(const std::string& path, int cmode) {
 
 void bi::nc_set_fill(int ncid, int fillmode) {
   int status = ::nc_set_fill(ncid, fillmode, NULL);
-  BI_WARN_MSG(status == NC_NOERR, "Could not set fill");
+  BI_WARN_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_sync(int ncid) {
   int status = ::nc_sync(ncid);
-  BI_WARN_MSG(status == NC_NOERR, "Could not sync");
+  BI_WARN_MSG(status == NC_NOERR, nc_strerror(status));
+}
+
+void bi::nc_redef(int ncid) {
+  int status = ::nc_redef(ncid);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
+}
+
+void bi::nc_enddef(int ncid) {
+  int status = ::nc_enddef(ncid);
+  BI_ERROR_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 void bi::nc_close(int ncid) {
   int status = ::nc_close(ncid);
-  BI_WARN_MSG(status == NC_NOERR, "Could not close");
+  BI_WARN_MSG(status == NC_NOERR, nc_strerror(status));
 }
 
 int bi::nc_inq_nvars(int ncid) {

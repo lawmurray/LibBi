@@ -59,6 +59,16 @@ void nc_sync(int ncid);
 /**
  * @ingroup io_buffer
  */
+void nc_redef(int ncid);
+
+/**
+ * @ingroup io_buffer
+ */
+void nc_enddef(int ncid);
+
+/**
+ * @ingroup io_buffer
+ */
 void nc_close(int ncid);
 
 /**

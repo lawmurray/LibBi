@@ -33,8 +33,6 @@ bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(const Model& m,
 void bi::KalmanFilterNetCDFBuffer::create(const size_t T) {
   const int M = m.getNetSize(R_VAR) + m.getNetSize(D_VAR);
 
-  nc_redef(ncid);
-
   nc_put_att(ncid, "libbi_schema", "KalmanFilter");
   nc_put_att(ncid, "libbi_schema_version", 1);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
@@ -72,7 +70,9 @@ void bi::KalmanFilterNetCDFBuffer::create(const size_t T) {
           name.str("");
           name << "index." << var->getOutputName();
           varid = nc_def_var(ncid, name.str(), NC_INT);
+          nc_enddef(ncid);
           nc_put_var(ncid, varid, &size);
+          nc_redef(ncid);
           size += var->getSize();
         }
       }

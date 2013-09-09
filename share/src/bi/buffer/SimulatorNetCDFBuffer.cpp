@@ -40,8 +40,6 @@ void bi::SimulatorNetCDFBuffer::create(const size_t P, const size_t T) {
   Var* var;
   Dim* dim;
 
-  nc_redef(ncid);
-
   if (schema == FLEXI) {
     nc_put_att(ncid, "libbi_schema", "FlexiSimulator");
     nc_put_att(ncid, "libbi_schema_version", 1);
