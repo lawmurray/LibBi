@@ -160,12 +160,6 @@ int nc_def_var(int ncid, const std::string& name, nc_type xtype, int dimid1,
 /**
  * @ingroup io_buffer
  */
-void nc_def_var_deflate(int ncid, int varid, int shuffle, int deflate,
-    int deflate_level);
-
-/**
- * @ingroup io_buffer
- */
 int nc_inq_varid(int ncid, const std::string& name);
 
 /**

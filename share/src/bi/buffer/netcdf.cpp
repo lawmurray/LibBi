@@ -117,14 +117,6 @@ int bi::nc_def_var(int ncid, const std::string& name, nc_type xtype,
   return varid;
 }
 
-void bi::nc_def_var_deflate(int ncid, int varid, int shuffle, int deflate,
-    int deflate_level) {
-  int status;
-  status = ::nc_def_var_deflate(ncid, varid, shuffle, deflate, deflate_level);
-  BI_WARN_MSG(status == NC_NOERR,
-      "Could not define deflation on variable " << nc_inq_varname(ncid, varid));
-}
-
 int bi::nc_inq_varid(int ncid, const std::string& name) {
   int varid = -1;
   BI_UNUSED int status;
