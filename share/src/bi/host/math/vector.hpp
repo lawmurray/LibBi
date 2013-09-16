@@ -22,6 +22,7 @@
 
 #include "thrust/iterator/detail/normal_iterator.h"
 #include "thrust/fill.h"
+#include "thrust/copy.h"
 
 #include <algorithm>
 #include <memory>

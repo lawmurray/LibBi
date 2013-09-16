@@ -23,6 +23,7 @@
 
 #include "thrust/device_ptr.h"
 #include "thrust/iterator/detail/normal_iterator.h"
+#include "thrust/copy.h"
 
 namespace bi {
 /**
