@@ -94,7 +94,7 @@ AC_ARG_ENABLE([gperftools],
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
-    CUDA_CPPFLAGS="-I/usr/local/cuda/include -I$CUDA_ROOT/include"
+    CUDA_CPPFLAGS="-I/usr/local/cuda/include -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
     CUDA_CXXFLAGS=
     CUDA_LDFLAGS="-L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib"
     CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
@@ -176,7 +176,7 @@ if test x$cuda = xtrue; then
     AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
     AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
     AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
-    AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
+    AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], []) # removed in MAGMA 1.4, so not required
     AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
 fi
 

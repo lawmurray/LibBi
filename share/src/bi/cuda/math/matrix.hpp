@@ -568,7 +568,7 @@ bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& bi::gp
     const gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& o) {
   /* pre-conditions */
   //BI_ASSERT(this->size1() == o.size1() && this->size2() == o.size2());
-  if (!same(o)) {
+  if (!this->same(o)) {
     if (this->contiguous() && o.contiguous()) {
       /* plain linear copy */
       CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),

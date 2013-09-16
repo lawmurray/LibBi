@@ -498,7 +498,7 @@ inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_referenc
   /* pre-condition */
   //BI_ASSERT(this->size() == o.size());
 
-  if (!same(o)) {
+  if (!this->same(o)) {
     if (this->inc() == 1) {
       if (o.inc() == 1) {
         /* asynchronous linear copy */
