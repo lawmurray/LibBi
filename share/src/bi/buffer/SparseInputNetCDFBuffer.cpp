@@ -198,8 +198,9 @@ void bi::SparseInputNetCDFBuffer::map() {
   real tnxt;
 
   for (k = 0; k < int(recDims.size()); ++k) {
-    if (timeVars[k] >= 0) {
-      /* initialise */
+    if (timeVars[k] >= 0 && modelVars.count(k) > 0) {
+      /* ^ ignores record dimensions with no associated time or model
+       *   variables */
       readTime(timeVars[k], starts[k], &lens[k], &tnxt);
       seq.insert(std::make_pair(tnxt, k));
     }
