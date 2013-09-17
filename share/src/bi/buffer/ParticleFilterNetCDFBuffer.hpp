@@ -141,7 +141,7 @@ void bi::ParticleFilterNetCDFBuffer::readLogWeights(const size_t k, V1 lws) {
     size_t start = readStart(k);
     size_t len = readLen(k);
     BI_ERROR(lws.size() == len);
-    nc_get_vara(ncid, lwVar, start, len, lws.buf());
+    readRange(lwVar, start, lws);
   } else {
     readVector(lwVar, k, lws);
   }
@@ -150,18 +150,39 @@ void bi::ParticleFilterNetCDFBuffer::readLogWeights(const size_t k, V1 lws) {
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const size_t k,
     const V1 lws) {
-  writeVector(lwVar, k, lws);
+  if (schema == FLEXI) {
+    size_t start = readStart(k);
+    size_t len = readLen(k);
+    BI_ERROR(lws.size() == len);
+    writeRange(lwVar, start, lws);
+  } else {
+    writeVector(lwVar, k, lws);
+  }
 }
 
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::readAncestors(const size_t k, V1 as) {
-  readVector(aVar, k, as);
+  if (schema == FLEXI) {
+    size_t start = readStart(k);
+    size_t len = readLen(k);
+    BI_ERROR(as.size() == len);
+    readRange(aVar, start, as);
+  } else {
+    readVector(aVar, k, as);
+  }
 }
 
 template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeAncestors(const size_t k,
     const V1 as) {
-  writeVector(aVar, k, as);
+  if (schema == FLEXI) {
+    size_t start = readStart(k);
+    size_t len = readLen(k);
+    BI_ERROR(as.size() == len);
+    writeRange(aVar, start, as);
+  } else {
+    writeVector(aVar, k, as);
+  }
 }
 
 template<class M1, class V1>

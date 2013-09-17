@@ -320,6 +320,30 @@ protected:
   int mapDim(Dim* dim);
 
   /**
+   * Read range of variable along single dimension.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Index along dimension.
+   * @param[out] x Vector.
+   */
+  template<class V1>
+  void readRange(const int varid, const size_t k, V1 x) const;
+
+  /**
+   * Write range of variable along single dimension.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param varid NetCDF variable id.
+   * @param k Index along dimension.
+   * @param x Vector.
+   */
+  template<class V1>
+  void writeRange(const int varid, const size_t k, const V1 x);
+
+  /**
    * Read vector.
    *
    * @tparam V1 Vector type.
@@ -432,12 +456,12 @@ protected:
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readTimes(const size_t k, V1 ts) const {
-  nc_get_vara(ncid, tVar, k, ts.size(), ts.buf());
+  readRange(tVar, k, ts);
 }
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::writeTimes(const size_t k, const V1 ts) {
-  nc_put_vara(ncid, tVar, k, ts.size(), ts.buf());
+  writeRange(tVar, k, ts);
 }
 
 template<class M1>
@@ -604,7 +628,6 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
         X1 = columns(X, start, size);
         synchronize(M1::on_device);
         nc_put_vara(ncid, varid, offsets, counts, X1.buf());
-        columns(X, start, size) = X1;
       } else {
         nc_put_vara(ncid, varid, offsets, counts,
             columns(X, start, size).buf());
@@ -614,32 +637,86 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
 }
 
 template<class V1>
+void bi::SimulatorNetCDFBuffer::readRange(const int varid, const size_t k,
+    V1 x) const {
+  typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
+
+  std::vector<size_t> start(1), count(1);
+  start[0] = k;
+  count[0] = x.size();
+  if (V1::on_device || !x.contiguous()) {
+    temp_vector_type x1(x.size());
+    nc_get_vara(ncid, varid, start, count, x1.buf());
+    x = x1;
+  } else {
+    nc_get_vara(ncid, varid, start, count, x.buf());
+  }
+}
+
+template<class V1>
+void bi::SimulatorNetCDFBuffer::writeRange(const int varid, const size_t k,
+    const V1 x) {
+  typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
+
+  std::vector<size_t> start(1), count(1);
+  start[0] = k;
+  count[0] = x.size();
+  if (V1::on_device || !x.contiguous()) {
+    temp_vector_type x1(x.size());
+    x1 = x;
+    synchronize(V1::on_device);
+    nc_put_vara(ncid, varid, start, count, x1.buf());
+  } else {
+    nc_put_vara(ncid, varid, start, count, x.buf());
+  }
+}
+
+template<class V1>
 void bi::SimulatorNetCDFBuffer::readVector(const int varid, const size_t k,
     V1 x) const {
+  typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
+
   std::vector<size_t> start(2), count(2);
   start[0] = k;
   start[1] = 0;
   count[0] = 1;
   count[1] = x.size();
 
-  nc_get_vara(ncid, varid, start, count, x.buf());
+  if (V1::on_device || !x.contiguous()) {
+    temp_vector_type x1(x.size());
+    nc_get_vara(ncid, varid, start, count, x1.buf());
+    x = x1;
+  } else {
+    nc_get_vara(ncid, varid, start, count, x.buf());
+  }
 }
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::writeVector(const int varid, const size_t k,
     const V1 x) {
+  typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
+
   std::vector<size_t> start(2), count(2);
   start[0] = k;
   start[1] = 0;
   count[0] = 1;
   count[1] = x.size();
 
-  nc_put_vara(ncid, varid, start, count, x.buf());
+  if (V1::on_device || !x.contiguous()) {
+    temp_vector_type x1(x.size());
+    x1 = x;
+    synchronize(V1::on_device);
+    nc_put_vara(ncid, varid, start, count, x1.buf());
+  } else {
+    nc_put_vara(ncid, varid, start, count, x.buf());
+  }
 }
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readMatrix(const int varid, const size_t k,
     M1 X) const {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
+
   std::vector<size_t> start(3), count(3);
   start[0] = k;
   start[1] = 0;
@@ -648,12 +725,20 @@ void bi::SimulatorNetCDFBuffer::readMatrix(const int varid, const size_t k,
   count[1] = X.size2();
   count[2] = X.size1();
 
-  nc_get_vara(ncid, varid, start, count, X.buf());
+  if (M1::on_device || !X.contiguous()) {
+    temp_matrix_type X1(X.size1(), X.size2());
+    nc_get_vara(ncid, varid, start, count, X1.buf());
+    X = X1;
+  } else {
+    nc_get_vara(ncid, varid, start, count, X.buf());
+  }
 }
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::writeMatrix(const int varid, const size_t k,
     const M1 X) {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
+
   std::vector<size_t> start(3), count(3);
   start[0] = k;
   start[1] = 0;
@@ -662,7 +747,14 @@ void bi::SimulatorNetCDFBuffer::writeMatrix(const int varid, const size_t k,
   count[1] = X.size2();
   count[2] = X.size1();
 
-  nc_put_vara(ncid, varid, start, count, X.buf());
+  if (M1::on_device || !X.contiguous()) {
+    temp_matrix_type X1(X.size1(), X.size2());
+    X1 = X;
+    synchronize(M1::on_device);
+    nc_put_vara(ncid, varid, start, count, X1.buf());
+  } else {
+    nc_put_vara(ncid, varid, start, count, X.buf());
+  }
 }
 
 #endif

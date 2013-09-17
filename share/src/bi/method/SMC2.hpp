@@ -330,8 +330,7 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
   std::vector<ThetaParticle<B,L>*> thetas(C);  // theta-particles
   host_logweight_vector_type lws(C);  // log-weights of theta-particles
-  host_logweight_vector_type les(
-      static_cast<int>(std::distance(first, last)));  // incremental log-evidences
+  host_logweight_vector_type les(last->indexOutput() - first->indexOutput());  // incremental log-evidences
   host_ancestor_vector_type as(C);  // ancestors of theta-particles
   real le = 0.0;
   ScheduleIterator iter = first;

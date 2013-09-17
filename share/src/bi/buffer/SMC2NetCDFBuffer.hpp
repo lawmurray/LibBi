@@ -98,22 +98,22 @@ protected:
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::readLogWeights(V1 lws) {
-  nc_get_var(ncid, lwVar, lws.buf());
+  readRange(lwVar, 0, lws);
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeLogWeights(const V1 lws) {
-  nc_put_var(ncid, lwVar, lws.buf());
+  writeRange(lwVar, 0, lws);
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::readLogEvidences(V1 les) {
-  nc_get_var(ncid, leVar, les.buf());
+  readRange(leVar, 0, les);
 }
 
 template<class V1>
 void bi::SMC2NetCDFBuffer::writeLogEvidences(const V1 les) {
-  nc_put_var(ncid, leVar, les.buf());
+  writeRange(leVar, 0, les);
 }
 
 #endif

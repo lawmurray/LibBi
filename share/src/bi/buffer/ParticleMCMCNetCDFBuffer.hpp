@@ -108,24 +108,24 @@ protected:
 
 template<class V1>
 void bi::ParticleMCMCNetCDFBuffer::readLogLikelihoods(const size_t p, V1 ll) {
-  nc_get_vara(ncid, llVar, p, ll.size(), ll.buf());
+  readRange(llVar, p, ll);
 }
 
 template<class V1>
 void bi::ParticleMCMCNetCDFBuffer::writeLogLikelihoods(const size_t p,
     const V1 ll) {
-  nc_put_vara(ncid, llVar, p, ll.size(), ll.buf());
+  writeRange(llVar, p, ll);
 }
 
 template<class V1>
 void bi::ParticleMCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
-  nc_get_vara(ncid, lpVar, p, lp.size(), lp.buf());
+  readRange(lpVar, p, lp);
 }
 
 template<class V1>
 void bi::ParticleMCMCNetCDFBuffer::writeLogPriors(const size_t p,
     const V1 lp) {
-  nc_put_vara(ncid, lpVar, p, lp.size(), lp.buf());
+  writeRange(llVar, p, lp);
 }
 
 #endif
