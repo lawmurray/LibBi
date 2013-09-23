@@ -25,12 +25,9 @@ void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
 
     #pragma omp parallel
     {
-      const int tid = omp_get_thread_num();
-      const int nthreads = omp_get_num_threads();
-
-      int Q = P/nthreads;
-      int start = tid*Q + bi::min(tid, P % nthreads); // min() handles leftovers
-      if (tid < P % nthreads) {
+      int Q = P/bi_omp_max_threads;
+      int start = bi_omp_tid*Q + bi::min(bi_omp_tid, P % bi_omp_max_threads); // min() handles leftovers
+      if (bi_omp_tid < P % bi_omp_max_threads) {
         ++Q; // pick up a leftover
       }
 
