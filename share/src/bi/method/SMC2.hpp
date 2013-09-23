@@ -475,7 +475,7 @@ void bi::SMC2<B,F,R,IO1>::adapt(
 
     /* write proposal */
     if (adapter == LOCAL_ADAPTER) {
-      matrix_scal(adapterScale, q.std());
+      matrix_scal(adapterScale, U);
       q.mean().clear();
     } else {
       q.setMean(mu);
