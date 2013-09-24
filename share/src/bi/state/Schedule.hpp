@@ -244,6 +244,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     BOOST_AUTO(upper, std::upper_bound(lower, tInputs.end(), sT));
     elem.kInput = std::distance(tInputs.begin(), lower);
     tInputs.resize(std::distance(tInputs.begin(), upper));
+    if (elem.kInput > 0 && elem.kInput < tInputs.size() && tInputs[elem.kInput] >= st) {
+      --elem.kInput; // start time falls between input update times, so need previous
+    }
   }
 
   /* observation times */
@@ -273,9 +276,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
 
     // inputs update on half-open intervals (t, t+1], except for the first
     // input, which is on the closed interval [t, t+1]
-    elem.bInput = (elem.k > 0 && elem.kInput < int(tInputs.size())
-        && tInputs[elem.kInput] == ts[elem.k - 1])
-        || (elem.k == 0 && int(tInputs.size()) > 0 && tInputs[0] == ts[0]);
+    elem.bInput = elem.kInput < int(tInputs.size()) &&
+        (elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1]) ||
+        (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]);
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
