@@ -125,7 +125,7 @@ void bi::ParticleMCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
 template<class V1>
 void bi::ParticleMCMCNetCDFBuffer::writeLogPriors(const size_t p,
     const V1 lp) {
-  writeRange(llVar, p, lp);
+  writeRange(lpVar, p, lp);
 }
 
 #endif
