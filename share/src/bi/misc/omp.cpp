@@ -18,12 +18,13 @@ BI_THREAD cudaStream_t bi_omp_cuda_stream;
 #endif
 
 void bi_omp_init(const int threads) {
+  #ifdef ENABLE_OPENMP
   /* explicitly turn off dynamic threads, required for threadprivate
    * guarantees */
   omp_set_dynamic(0);
 
   /* allow nested parallelism */
-  omp_set_nested(1);
+  //omp_set_nested(1);
 
   /* use static scheduling for pseudorandom sequence reproducibility */
   omp_set_schedule(omp_sched_static, 0);
@@ -42,6 +43,14 @@ void bi_omp_init(const int threads) {
     CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
     #endif
   }
+#else
+  bi_omp_max_threads = 1;
+  bi_omp_tid = 0;
+  #ifdef ENABLE_CUDA
+  CUBLAS_CHECKED_CALL(cublasCreate(&bi_omp_cublas_handle));
+  CUDA_CHECKED_CALL(cudaStreamCreate(&bi_omp_cuda_stream));
+  #endif
+#endif
 }
 
 void bi_omp_term() {

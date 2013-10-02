@@ -59,6 +59,10 @@ Enable diagnostic outputs to standard error.
 
 Use single-precision floating point.
 
+=item C<--enable-openmp> (default on)
+
+Use OpenMP multithreading.
+
 =item C<--enable-cuda> (default off)
 
 Enable CUDA code.
@@ -126,6 +130,7 @@ sub new {
         _force => 0,
         _warnings => 0,
         _assert => 1,
+        _openmp => 1,
         _cuda => 0,
         _sse => 0,
         _mpi => 0,
@@ -147,6 +152,8 @@ sub new {
         'disable-warnings' => sub { $self->{_warnings} = 0 },
         'enable-assert' => sub { $self->{_assert} = 1 },
         'disable-assert' => sub { $self->{_assert} = 0 },
+        'enable-openmp' => sub { $self->{_openmp} = 1 },
+        'disable-openmp' => sub { $self->{_openmp} = 0 },
         'enable-cuda' => sub { $self->{_cuda} = 1 },
         'disable-cuda' => sub { $self->{_cuda} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
@@ -182,6 +189,7 @@ sub new {
     # work out name of build directory
     my @builddir = 'build';
     push(@builddir, 'assert') if $self->{_assert};
+    push(@builddir, 'openmp') if $self->{_openmp};
     push(@builddir, 'cuda') if $self->{_cuda};
     push(@builddir, 'sse') if $self->{_sse};
     push(@builddir, 'mpi') if $self->{_mpi};
@@ -301,6 +309,7 @@ sub _configure {
     }
 
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
+    $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';

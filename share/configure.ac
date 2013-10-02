@@ -104,13 +104,13 @@ AC_ARG_ENABLE([gperftools],
 # Defines
 if test x$cuda = xtrue; then
   AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
-else
+elif test x$openmp = xtrue; then
   AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_OMP])
 fi
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_TBB])
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
-# ^ OpenMP very slow as at Thrust 1.6 due to numerous omp_get_num_threads() calls
+# ^ OpenMP very slow as at Thrust 1.6
 
 # Checks for programs.
 AC_PROG_CXX([icpc g++])
@@ -125,7 +125,9 @@ else
 fi
 
 # Compiler characteristics
-AC_OPENMP
+if test x$opebmp = xtrue; then
+  AC_OPENMP
+fi
 
 # Checks of programs
 if test x$mpi = xtrue; then

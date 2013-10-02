@@ -48,7 +48,7 @@
  *
  * Declare variable as thread local storage.
  */
-#if defined(__GNUC__)
+#if defined(__GNUC__) and defined(ENABLE_OPENMP)
 #define BI_THREAD __thread
 #else
 #define BI_THREAD
