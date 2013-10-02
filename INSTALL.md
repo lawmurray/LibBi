@@ -47,7 +47,7 @@ The following packages are required:
   * a C++ compiler,
   * [GNU Autotools](http://www.gnu.org/software/): autoconf and automake,
   * [Thrust](http://thrust.github.com) 1.6 or later,
-  * [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) 4.1 or later,
+  * [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) 4.2 or later,
   * [QRUpdate](http://qrupdate.sourceforge.net),
   * [GNU Scientific Library](http://www.gnu.org/software/gsl/),
   * [Boost](http://www.boost.org) 1.43 or later, specifically Boost.Random and
