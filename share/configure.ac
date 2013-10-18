@@ -43,6 +43,14 @@ AC_ARG_ENABLE([sse],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-sse]) ;;
      esac],[sse=false])
 
+AC_ARG_ENABLE([openmp],
+     [  --enable-openmp            use OpenMP multithreading],
+     [case "${enableval}" in
+       yes) openmp=true ;;
+       no)  openmp=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-openmp]) ;;
+     esac],[openmp=true])
+
 AC_ARG_ENABLE([mpi],
      [  --enable-mpi            use MPI code],
      [case "${enableval}" in
@@ -125,7 +133,7 @@ else
 fi
 
 # Compiler characteristics
-if test x$opebmp = xtrue; then
+if test x$openmp = xtrue; then
   AC_OPENMP
 fi
 
