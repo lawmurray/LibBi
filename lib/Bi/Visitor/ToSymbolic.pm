@@ -224,7 +224,7 @@ sub visit_after {
         my $name = $self->_substitute($node);
         $symb = new Math::Symbolic::Variable($name);
     } elsif ($node->isa('Bi::Expression::DimAliasIdentifier')) {
-        $symb = $node->get_alias->get_name;
+        $symb = $self->_substitute($node);
     } elsif ($node->isa('Bi::Expression::Literal')) {
         $symb = new Math::Symbolic::Constant($node->get_value);
     } elsif ($node->isa('Bi::Expression::IntegerLiteral')) {

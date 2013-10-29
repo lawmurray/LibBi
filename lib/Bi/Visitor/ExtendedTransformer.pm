@@ -286,6 +286,7 @@ sub _create_jacobian_actions {
             
             if (!$right->equals($old_right)) {
                 my $left = $J_vars->get($i, $j)->clone;
+                                
                 my @indexes = map { $_->clone } ($left->get_indexes->[0], @{$node->get_left->get_indexes});
                 my @aliases = (new Bi::Model::DimAlias(undef, $left->get_indexes->[0]), @{$node->get_aliases});
 

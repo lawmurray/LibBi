@@ -121,7 +121,7 @@ sub get_shape {
         my $shape = [];
         for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
             if ($self->get_indexes->[$i]->is_range) {
-                push(@$shape, $self->get_indexes->[$i]->get_size);
+                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
             }
         }
         return new Bi::Expression::Shape($shape);
@@ -150,7 +150,7 @@ L<Bi::Expression::Index> and L<Bi::Expression::Range> objects.
 sub set_indexes {
     my $self = shift;
     my $indexes = shift;
-    
+        
     # pre-conditions
     assert(!defined($indexes) || ref($indexes) eq 'ARRAY');
     assert(!defined($indexes) || scalar(@$indexes) == 0 || scalar(@$indexes) == scalar(@{$self->get_var->get_dims})) if DEBUG;

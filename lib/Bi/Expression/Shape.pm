@@ -45,6 +45,7 @@ sub new {
     my $sizes = shift;
     
     assert (!defined $sizes || ref($sizes) eq 'ARRAY') if DEBUG;
+    map { assert(ref($_) eq '') } @$sizes if DEBUG;
     
     if (!defined $sizes) {
         $sizes = [];
@@ -131,7 +132,7 @@ sub equals {
     my $self = shift;
     my $obj = shift;
     
-    my $equals = $self->get_count == $obj->get_count;
+    my $equals = ref($obj) eq ref($self) && $self->get_count == $obj->get_count;
     for (my $i = 0; $equals && $i < $self->get_count; ++$i) {
         $equals = $equals && $self->get_sizes->[$i] == $obj->get_sizes->[$i];
     }

@@ -272,8 +272,8 @@ std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
         dim = var->getDim(i);
         ncDim = dimids[j];
 
-        BI_ERROR_MSG(dim->getName().compare(nc_inq_varname(ncid, ncDim)) == 0,
-            "Dimension " << j << " of variable " << nc_inq_varname(ncid, ncVar) << " should be " << dim->getName() << ", in file " << file);
+        BI_ERROR_MSG(dim->getName().compare(nc_inq_dimname(ncid, ncDim)) == 0,
+            "Dimension " << j << " of variable " << nc_inq_dimname(ncid, ncVar) << " should be " << dim->getName() << " not " << nc_inq_dimname(ncid, ncDim) << ", in file " << file);
         BI_ERROR_MSG(k < 0 || coordVars[k] < 0,
             "Variable " << nc_inq_varname(ncid, ncVar) << " has both dense and sparse definitions, in file " << file);
       }

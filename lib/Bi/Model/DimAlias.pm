@@ -34,7 +34,7 @@ Constructor.
 
 Alias of the dimension, as string.
 
-=item I<start>
+=item I<range>
 
 Range of the alias, as L<Bi::Expression::Range> object.
 
