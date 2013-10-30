@@ -44,7 +44,7 @@ AC_ARG_ENABLE([sse],
      esac],[sse=false])
 
 AC_ARG_ENABLE([openmp],
-     [  --enable-openmp            use OpenMP multithreading],
+     [  --enable-openmp         use OpenMP multithreading],
      [case "${enableval}" in
        yes) openmp=true ;;
        no)  openmp=false ;;
@@ -172,9 +172,9 @@ AC_CHECK_LIB([mkl_core], [mkl_blas_dgemv], [], [])
 AC_CHECK_LIB([atlas], [main], [], [])
 
 # ...otherwise search for alternatives
-AC_SEARCH_LIBS([cblas_dgemv], [openblas openblaso cblas gslcblas], [], [AC_MSG_ERROR([required library not found])])
-AC_SEARCH_LIBS([dgemv_], [openblas openblaso blas f77blas], [], [AC_MSG_ERROR([required library not found])])
-AC_SEARCH_LIBS([dpotrf_], [openblas openblaso lapack], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([cblas_dgemv], [openblaso openblas cblas gslcblas], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([dgemv_], [openblaso openblas blas f77blas], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([dpotrf_], [openblaso openblas lapack], [], [AC_MSG_ERROR([required library not found])])
 
 AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required library not found])])
 AC_CHECK_LIB([gsl], [main], [], [AC_MSG_ERROR([required library not found])])
@@ -279,6 +279,7 @@ AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
+AM_CONDITIONAL([ENABLE_OPENMP], [test x$openmp = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])
