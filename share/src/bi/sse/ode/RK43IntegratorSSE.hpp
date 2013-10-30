@@ -37,7 +37,7 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   /* pre-condition */
   BI_ASSERT(t1 < t2);
 
-  typedef host_vector_reference<sse_real> vector_reference_type;
+  typedef typename temp_host_vector<sse_real>::type vector_type;
   typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
   typedef RK43VisitorHost<B,S,S,real,PX,sse_real> Visitor;
   static const int N = block_size<S>::value;
@@ -45,12 +45,7 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
 
   #pragma omp parallel
   {
-    sse_real buf[4*N]; // use of dynamic array faster than heap allocation
-    vector_reference_type r1(buf, N);
-    vector_reference_type r2(buf + N, N);
-    vector_reference_type err(buf + 2*N, N);
-    vector_reference_type old(buf + 3*N, N);
-
+    vector_type r1(N), r2(N), err(N), old(N);
     sse_real e, e2;
     real t, h, logfacold, logfac11, fac, e2max;
     int n, id, p;

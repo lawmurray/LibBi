@@ -131,6 +131,14 @@ inline [% class_name %]::[% class_name %]([% FOREACH dim IN var.get_dims %]const
   [%-FOREACH dim IN var.get_dims %]
   [% IF dim.get_named_arg('boundary').eval_const == 'cyclic' %]
   this->i[% loop.index %] = (i[% loop.index %] + N[% loop.index %]) % N[% loop.index %];
+  [% ELSIF dim.get_named_arg('boundary').eval_const == 'extended' %]
+  if (i[% loop.index %] < 0) {
+    this->i[% loop.index %] = 0;
+  } else if (i[% loop.index %] >= N[% loop.index %]) {
+    this->i[% loop.index %] = N[% loop.index %] - 1;
+  } else {
+    this->i[% loop.index %] = i[% loop.index %];
+  }
   [% ELSE %]
   this->i[% loop.index %] = i[% loop.index %];
   [% END %]

@@ -47,33 +47,23 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
   /* pre-condition */
   BI_ASSERT(t1 < t2);
 
-  typedef host_vector_reference<real> vector_reference_type;
+  typedef typename temp_host_vector<real>::type vector_type;
   typedef Pa<ON_HOST,B,host,host,host,host> PX;
   typedef DOPRI5VisitorHost<B,S,S,real,PX,real> Visitor;
 
   static const int N = block_size<S>::value;
   const int P = s.size();
 
-  #pragma omp parallel
+#pragma omp parallel
   {
-    real buf[10*N]; // use of dynamic array faster than heap allocation
-    vector_reference_type x0(buf, N);
-    vector_reference_type x1(buf + N, N);
-    vector_reference_type x2(buf + 2*N, N);
-    vector_reference_type x3(buf + 3*N, N);
-    vector_reference_type x4(buf + 4*N, N);
-    vector_reference_type x5(buf + 5*N, N);
-    vector_reference_type x6(buf + 6*N, N);
-    vector_reference_type err(buf + 7*N, N);
-    vector_reference_type k1(buf + 8*N, N);
-    vector_reference_type k7(buf + 9*N, N);
-
+    vector_type x0(N), x1(N), x2(N), x3(N), x4(N), x5(N), x6(N), err(N), k1(
+        N), k7(N);
     real t, h, e, e2, logfacold, logfac11, fac;
     int n, id, p;
     bool k1in;
     PX pax;
 
-    #pragma omp for
+#pragma omp for
     for (p = 0; p < P; ++p) {
       t = t1;
       h = h_h0;
@@ -97,7 +87,7 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
 
         /* stages */
         Visitor::stage1(t, h, s, p, pax, x0.buf(), x1.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), k1.buf(), err.buf(), k1in);
-        k1in = true; // can reuse from previous iteration in future
+        k1in = true;  // can reuse from previous iteration in future
         host_store<B,S>(s, p, x1);
 
         Visitor::stage2(t, h, s, p, pax, x0.buf(), x2.buf(), x3.buf(), x4.buf(), x5.buf(), x6.buf(), err.buf());
@@ -140,8 +130,8 @@ void bi::DOPRI5IntegratorHost<B,S,T1>::update(const T1 t1, const T1 t2,
             h *= bi::max(h_facl, bi::exp(h_logsafe - logfac11));
           } else {
             /* step was accepted */
-            fac = bi::exp(h_beta*logfacold + h_logsafe - logfac11); // Lund-stabilization
-            fac = bi::min(h_facr, bi::max(h_facl, fac));  // bound
+            fac = bi::exp(h_beta*logfacold + h_logsafe - logfac11);  // Lund-stabilization
+            fac = bi::min(h_facr, bi::max(h_facl, fac));// bound
             h *= fac;
             logfacold = BI_REAL(0.5)*bi::log(bi::max(e2, BI_REAL(1.0e-8)));
           }
