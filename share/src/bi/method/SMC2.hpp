@@ -51,7 +51,7 @@ public:
    */
   SMC2(B& m, F* pmmh = NULL, R* resam = NULL, const int Nmoves = 1,
       const SMC2Adapter adapter = NO_ADAPTER, const real adapterScale = 0.5,
-      IO1* out = NULL);
+      const real adapterEssRel = 0.25, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -198,13 +198,14 @@ public:
    * @param[out] s Working state.
    * @param[in,out] thetas The set of \f$\theta\f$-particles.
    * @param q Proposal distribution.
+   * @param ess Current effective sample size.
    *
    * @return Acceptance rate.
    */
   template<Location L, class V1, class M1>
   real rejuvenate(Random& rng, const ScheduleIterator first,
       const ScheduleIterator now, ThetaParticle<B,L>& s,
-      const std::vector<ThetaParticle<B,L>*>& thetas, GaussianPdf<V1,M1>& q);
+      const std::vector<ThetaParticle<B,L>*>& thetas, GaussianPdf<V1,M1>& q, const real ess);
 
   /**
    * Output.
@@ -260,7 +261,7 @@ private:
   int Nmoves;
 
   /**
-   * Rejuventate with local moves?
+   * Rejuvenate with local moves?
    */
   SMC2Adapter adapter;
 
@@ -269,6 +270,11 @@ private:
    * to sample standard deviation.
    */
   real adapterScale;
+
+  /**
+   * Relative ESS trigger for adaptation.
+   */
+  real adapterEssRel;
 
   /**
    * Output.
@@ -299,9 +305,10 @@ struct SMC2Factory {
   template<class B, class F, class R, class IO1>
   static SMC2<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
       const int Nmoves = 1, const SMC2Adapter adapter = NO_ADAPTER,
-      const real adapterScale = 0.5, IO1* out = NULL) {
+      const real adapterScale = 0.5, const real adapterEssRel = 0.25,
+      IO1* out = NULL) {
     return new SMC2<B,F,R,IO1>(m, pmmh, resam, Nmoves, adapter, adapterScale,
-        out);
+        adapterEssRel, out);
   }
 };
 }
@@ -314,9 +321,9 @@ struct SMC2Factory {
 
 template<class B, class F, class R, class IO1>
 bi::SMC2<B,F,R,IO1>::SMC2(B& m, F* pmmh, R* resam, const int Nmoves,
-    const SMC2Adapter adapter, const real adapterScale, IO1* out) :
-    m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
-        adapterScale), out(out) {
+    const SMC2Adapter adapter, const real adapterScale, const real adapterEssRel, IO1* out) :
+m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
+    adapterScale), adapterEssRel(adapterEssRel), out(out) {
   //
 }
 
@@ -416,7 +423,7 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
     /* resample-move */
     adapt(thetas, lws, q);
     resample(rng, *iter, lws, as, thetas);
-    acceptRate = rejuvenate(rng, first, iter + 1, s, thetas, q);
+    acceptRate = rejuvenate(rng, first, iter + 1, s, thetas, q, ess);
   } else {
     Resampler::normalise(lws);
   }
@@ -499,7 +506,7 @@ template<bi::Location L, class V1, class M1>
 real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
     ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
-    GaussianPdf<V1,M1>& q) {
+    GaussianPdf<V1,M1>& q, const real ess) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -513,7 +520,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
     s = theta;
     for (move = 0; move < Nmoves; ++move) {
       pmmh->getFilter()->setOutput(&s.getOutput());
-      if (adapter == NO_ADAPTER) {
+      if (adapter == NO_ADAPTER || ess < P*adapterEssRel) {
         accept = pmmh->step(rng, first, last, s);
       } else {
         accept = pmmh->step(rng, first, last, s, q, adapter == LOCAL_ADAPTER);

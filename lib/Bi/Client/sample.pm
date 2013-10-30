@@ -132,6 +132,14 @@ Global proposal adaptation.
 When local proposal adaptation is used, the scaling factor of the local
 proposal standard deviation relative to the global sample standard deviation.
 
+=item C<--adapter-ess-rel> (default 0.25)
+
+Threshold for effective sample size (ESS) adaptation trigger. Adaptation will
+only be performed if ESS is above this proportion of C<--nsamples>. To always
+adapt, use C<--adapter-ess-rel 1>. If adaptation is not performed, the
+C<proposal_parameter> top-level block is used for rejuvenation proposals
+instead. 
+
 =back
 
 =cut
@@ -180,6 +188,11 @@ our @CLIENT_OPTIONS = (
       name => 'adapter-scale',
       type => 'float',
       default => 0.5
+    },
+    {
+      name => 'adapter-ess-rel',
+      type => 'float',
+      default => 0.25
     },
 );
 

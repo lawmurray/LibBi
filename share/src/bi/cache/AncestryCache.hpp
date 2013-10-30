@@ -383,8 +383,11 @@ void bi::AncestryCache<CL>::enlarge(const int N) {
    *      have memory sizes much smaller than main memory.
    */
   int oldSize = Xs.size1();
+  #ifdef ENABLE_CUDA
   int newSize = oldSize + N;
-  //int newSize = 2*bi::max(oldSize, N);
+  #else
+  int newSize = 2*bi::max(oldSize, N);
+  #endif
 
   Xs.resize(newSize, Xs.size2(), true);
   as.resize(newSize, true);
