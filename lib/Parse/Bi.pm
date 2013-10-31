@@ -2880,13 +2880,13 @@ sub
 		 'dim_alias', 1,
 sub
 #line 224 "share/bi.yp"
-{ $_[0]->dim_alias(undef, $_[3]) }
+{ $_[0]->dim_alias(undef, $_[1]) }
 	],
 	[#Rule 93
 		 'dim_alias', 3,
 sub
 #line 225 "share/bi.yp"
-{ $_[0]->dim_alias(undef, $_[3], $_[5]) }
+{ $_[0]->dim_alias(undef, $_[1], $_[3]) }
 	],
 	[#Rule 94
 		 'index_args', 3,

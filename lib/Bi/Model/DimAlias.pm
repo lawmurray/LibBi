@@ -145,8 +145,12 @@ Get the size.
 =cut
 sub get_size {
     my $self = shift;
-    
-    return $self->get_range->get_end->eval_const - $self->get_range->get_start->eval_const + 1;
+
+    if ($self->has_range && $self->get_range->has_end) {
+      return $self->get_range->get_end->eval_const - $self->get_range->get_start->eval_const + 1;
+    } else {
+      return 1;
+    }
 }
 
 =item B<gen_index>

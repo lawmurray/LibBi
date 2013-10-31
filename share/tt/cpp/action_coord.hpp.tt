@@ -118,7 +118,11 @@ public:
   /**
    * Length along dimension.
    */
+  [% IF alias.get_range.has_end %]
   static const int LEN[% loop.index %] = [% alias.get_range.get_end.eval_const - alias.get_range.get_start.eval_const + 1 %];
+  [% ELSE %]
+  static const int LEN[% loop.index %] = 1;
+  [% END %]
   [% END %]
 
   [% FOREACH dim IN action.get_left.get_var.get_dims %]

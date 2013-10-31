@@ -538,26 +538,13 @@ sub dim_alias {
         }
     }
     my $range = undef;
-    if (defined $start) {
-        $range = new Bi::Expression::Range($start, $end);
-    } else {
-        assert (!defined $end) if DEBUG;
+    if (defined $start && defined $end) {
+        $range = new Bi::Expression::Range(new Bi::Expression::IntegerLiteral($start), new Bi::Expression::IntegerLiteral($end));
+    } elsif (defined $start) {
+    	$range = new Bi::Expression::Range(new Bi::Expression::IntegerLiteral($start));
     }
     
     return new Bi::Model::DimAlias($name, $range);
-}
-
-=item B<dim_range>(I<name>)
-
-Handle dimension range.
-
-=cut
-sub dim_range {
-    my $self = shift;
-    my $from = shift;
-    my $to = shift;
-    
-    return new Bi::Expression::Range($from, $to);
 }
 
 =item B<expression>(I<root>)

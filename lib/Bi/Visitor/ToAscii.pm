@@ -92,12 +92,12 @@ sub visit_after {
         $str = $exprs[0];
     } elsif ($node->isa('Bi::Expression::Range')) {
         $str = "";
-        if ($node->has_end) {
+        if ($node->has_start) {
             my $expr = splice(@$args, -1);
-            $str .= "$expr";
-            if ($node->has_start) {
+            $str = $expr;
+            if ($node->has_end) {
                 $expr = splice(@$args, -1);
-                $str = "$expr:$str";
+                $str .= ":$expr";
             }
         }
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
