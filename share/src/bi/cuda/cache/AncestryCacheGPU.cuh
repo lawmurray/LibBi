@@ -77,7 +77,7 @@ template<class M1, class V1, class M2, class V2>
 int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, const M2 X1,
     const V2 as1) {
   /* pre-condition */
-  BI_ASSERT(M1::on_device);
+  BI_ASSERT(!M1::on_device);
   BI_ASSERT(V1::on_device);
   BI_ASSERT(M2::on_device);
   BI_ASSERT(V2::on_device);

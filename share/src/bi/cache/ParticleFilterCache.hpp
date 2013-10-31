@@ -136,7 +136,11 @@ private:
   /**
    * Ancestry cache.
    */
+  #ifdef ENABLE_GPU_CACHE
   AncestryCache<CL> ancestryCache;
+  #else
+  AncestryCache<ON_HOST> ancestryCache;
+  #endif
 
   /**
    * Most recent log-weights.
@@ -296,7 +300,18 @@ void bi::ParticleFilterCache<IO1,CL>::writeState(const int k,
     const M1 X, const V1 as, const bool r) {
   SimulatorCache<IO1,CL>::writeState(k, X);
   writeAncestors(k, as);
+
+  #if defined(ENABLE_CUDA) and !defined(ENABLE_GPU_CACHE)
+  typename temp_host_matrix<real>::type X1(X.size1(), X.size2());
+  typename temp_host_vector<int>::type as1(as.size());
+  X1 = X;
+  as1 = as;
+  synchronize();
+
+  ancestryCache.writeState(k, X1, as1, r);
+  #else
   ancestryCache.writeState(k, X, as, r);
+  #endif
 }
 
 template<class IO1, bi::Location CL>

@@ -123,6 +123,10 @@ include src/$(DEPDIR)/[% client %]_gpu.Po
 [% END %]
 endif
 
+if ENABLE_GPU_CACHE
+CPPFLAGS += -DENABLE_GPU_CACHE
+endif
+
 if ENABLE_SSE
 CPPFLAGS += -DENABLE_SSE
 CXXFLAGS += -msse3

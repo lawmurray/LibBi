@@ -35,6 +35,14 @@ AC_ARG_ENABLE([cuda],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-cuda]) ;;
      esac],[cuda=false])
 
+AC_ARG_ENABLE([gpucache],
+     [  --enable-gpucache       use GPU implementation of ancestry cache],
+     [case "${enableval}" in
+       yes) gpucache=true ;;
+       no)  gpucache=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-gpucache]) ;;
+     esac],[gpucache=false])
+
 AC_ARG_ENABLE([sse],
      [  --enable-sse            use SSE code],
      [case "${enableval}" in
@@ -278,6 +286,7 @@ LDFLAGS=$USER_LDFLAGS
 AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
+AM_CONDITIONAL([ENABLE_GPU_CACHE], [test x$gpucache = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
 AM_CONDITIONAL([ENABLE_OPENMP], [test x$openmp = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])

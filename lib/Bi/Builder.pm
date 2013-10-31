@@ -65,7 +65,13 @@ Use OpenMP multithreading.
 
 =item C<--enable-cuda> (default off)
 
-Enable CUDA code.
+Enable CUDA code for graphics processing units (GPU).
+
+=item C<--enable-gpu-cache> (default off)
+
+For particle filters, enable ancestry caching in GPU memory. GPU memory is
+typically much more limited than main memory. If sufficient GPU memory is
+available this may give some performance improvement.
 
 =item C<--enable-sse> (default off)
 
@@ -132,6 +138,7 @@ sub new {
         _assert => 1,
         _openmp => 1,
         _cuda => 0,
+        _gpu_cache => 0,
         _sse => 0,
         _mpi => 0,
         _vampir => 0,
@@ -156,6 +163,8 @@ sub new {
         'disable-openmp' => sub { $self->{_openmp} = 0 },
         'enable-cuda' => sub { $self->{_cuda} = 1 },
         'disable-cuda' => sub { $self->{_cuda} = 0 },
+        'enable-gpu-cache' => sub { $self->{_gpu_cache} = 1 },
+        'disable-gpu-cache' => sub { $self->{_gpu_cache} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
         'disable-sse' => sub { $self->{_sse} = 0 },
         'enable-mpi' => sub { $self->{_mpi} = 1 },
@@ -191,6 +200,7 @@ sub new {
     push(@builddir, 'assert') if $self->{_assert};
     push(@builddir, 'openmp') if $self->{_openmp};
     push(@builddir, 'cuda') if $self->{_cuda};
+    push(@builddir, 'gpucache') if $self->{_gpu_cache};
     push(@builddir, 'sse') if $self->{_sse};
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
@@ -311,6 +321,7 @@ sub _configure {
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
+    $options .= $self->{_gpu_cache} ? ' --enable-gpucache' : ' --disable-gpucache';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';

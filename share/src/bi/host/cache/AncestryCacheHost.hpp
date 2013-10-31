@@ -58,7 +58,7 @@ public:
 template<class V1>
 int bi::AncestryCacheHost::prune(V1 as, V1 os, V1 ls) {
   /* pre-condition */
-  assert(!V1::on_device);
+  BI_ASSERT(!V1::on_device);
 
   int i, j, numRemoved = 0;
   for (i = 0; i < ls.size(); ++i) {
@@ -81,6 +81,8 @@ int bi::AncestryCacheHost::insert(M1 X, V1 as, V1 os, V1 ls, const int start,
     const M2 X1, const V2 as1) {
   /* pre-condition */
   BI_ASSERT(X1.size1() == as1.size());
+  BI_ASSERT(!M1::on_device);
+  BI_ASSERT(!V1::on_device);
 
   typedef typename temp_host_vector<int>::type host_int_vector_type;
 
