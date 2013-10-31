@@ -1243,7 +1243,11 @@ The following configuration options are worth considering:
 \item Experiment with the \bitt{--enable-cuda} command-line option to make use
   of a CUDA-enabled GPU\index{GPU}\index{CUDA}. This should usually improve
   performance, as long as a sufficient number of model trajectories are to be
-  simulated (typically upwards of 1024).
+  simulated (typically upwards of 1024). If CUDA is being used, also try the
+  \bitt{--enable-gpu-cache} command-line option if running PMCMC or SMC$^2$.
+  This caches particle histories in GPU rather than main memory. As GPU
+  memory is usually much more limited than main memory, and this may result in
+  its exhaustion, the option is disabled by default.
 
 \item Experiment with the \bitt{--enable-sse} command-line
   option to make use of CPU SSE instructions\index{SSE}\index{SIMD}. These can
