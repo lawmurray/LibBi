@@ -24,6 +24,8 @@ use parent 'Bi::Visitor';
 use warnings;
 use strict;
 
+use Carp::Assert;
+
 use Bi::Expression;
 
 =item B<evaluate>(I<expr>)
@@ -91,14 +93,19 @@ sub visit_after {
         my @exprs = pop(@$args);
         $str = $exprs[0];
     } elsif ($node->isa('Bi::Expression::Range')) {
-        $str = "";
+        my $start;
+        my $end;
+        if ($node->has_end) {
+        	$end = pop(@$args);
+        }
         if ($node->has_start) {
-            my $expr = splice(@$args, -1);
-            $str = $expr;
-            if ($node->has_end) {
-                $expr = splice(@$args, -1);
-                $str .= ":$expr";
-            }
+        	$start = pop(@$args);
+        }
+      	assert (defined $start) if DEBUG;
+        if (defined $start && defined $end) {
+        	$str = "$start:$end";
+        } else {
+        	$str = $start;
         }
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
