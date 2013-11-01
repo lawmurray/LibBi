@@ -17,9 +17,11 @@ Synopsis
 
 This samples from the prior and posterior distributions, and performs a
 posterior prediction. The `oct/` directory contains a few functions for
-plotting these results (GNU Octave and OctBi required).
+plotting these results (GNU Octave and OctBi required). In particular, after
+`./run.sh`, the `plot_and_print` function will produce SVG figures in the
+`figs/` directory.
 
-A synthetic data set is provided, but a new one one may be generated with
+A synthetic data set is provided, but a new one may be generated with
 `init.sh` (GNU Octave and OctBi required).
 
 The `time.sh` script can be used to reproduce the timing results in Murray

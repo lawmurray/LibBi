@@ -17,7 +17,8 @@ Synopsis
 
 This samples from the prior and posterior distributions. The `oct/` directory
 contains a few functions for plotting these results (GNU Octave and OctBi
-required).
+required). In particular, after `./run.sh`, the `plot_and_print` function will
+produce SVG figures in the `figs/` directory.
 
 Synthetic inputs and observations are provided in the `data/` directory, but
 new files may be generated with the `init.sh` script (GNU Octave and OctBi
