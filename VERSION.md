@@ -6,12 +6,12 @@ v1.0.2
 
 * Removed dependency on NetCDF C++ interface, the C interface is now used
   directly.
-* Added 'extended' boundary condition for dimensions.
-* Added --enable-openmp/--disable-openmp command-line option.
-* Added --enable-gpu-cache/--disable-gpu-cache command-line options for better
+* Added `'extended'` boundary condition for dimensions.
+* Added `--enable-openmp`/`--disable-openmp` command-line options.
+* Added `--enable-gpu-cache/--disable-gpu-cach`e command-line options for better
   control of GPU memory usage.
-* Added --adapter-ess-rel  command-line option to avoid adaptation of proposal
-  in SMC^2 when ESS too low.
+* Added `--adapter-ess-rel`  command-line option to avoid adaptation of proposal
+  in SMC$^2$ when ESS too low.
 * Several bug and compatibility fixes.
 
 v1.0.1
