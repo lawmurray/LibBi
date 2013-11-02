@@ -533,7 +533,14 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
       }
     }
   }
-  return static_cast<double>(naccept) / (Nmoves * P);
+  int totalMoves = (Nmoves * p);
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  boost::mpi::all_reduce(world, &totalMoves, 1, &totalMoves, std::plus<int>());
+  boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
+#endif
+  return static_cast<double>(naccept) / totalMoves;
 }
 
 template<class B, class F, class R, class IO1>
