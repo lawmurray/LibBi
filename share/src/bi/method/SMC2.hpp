@@ -285,6 +285,16 @@ private:
   static const int NR = B::NR;
   static const int ND = B::ND;
   static const int NP = B::NP;
+
+  /**
+  * @name Timing
+  */
+    //@{
+    /**
+  * Report rejuvenate timings to stderr.
+  */
+    void reportRejuvenate(int timestep, long usecs);
+    //@}
 };
 
 /**
@@ -313,6 +323,7 @@ struct SMC2Factory {
 };
 }
 
+#include <cstdio>
 #include "../math/misc.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
@@ -507,6 +518,10 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
     ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
     GaussianPdf<V1,M1>& q, const real ess) {
+#ifdef ENABLE_TIMING
+  synchronize();
+  TicToc clock;
+#endif
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -540,7 +555,24 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
   boost::mpi::all_reduce(world, &totalMoves, 1, &totalMoves, std::plus<int>());
   boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
+
+#ifdef ENABLE_TIMING
+  long usecs = clock.toc();
+  const int timesteps = s.getOutput().size() - 1;
+  reportRejuvenate(timesteps, usecs);
+#endif
   return static_cast<double>(naccept) / totalMoves;
+}
+
+template<class B, class F, class R, class IO1>
+void bi::SMC2<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  fprintf(stderr, "%d: SMC2::rejuvenate proc %d %ld us\n", timestep, rank, usecs);
+#else
+  fprintf(stderr, "%d: SMC2::rejuvenate %ld us\n", timestep, usecs);
+#endif
 }
 
 template<class B, class F, class R, class IO1>

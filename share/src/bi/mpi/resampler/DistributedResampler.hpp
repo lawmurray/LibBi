@@ -72,12 +72,12 @@ private:
   /**
    * Report resample timings to stderr.
    */
-  static void reportResample(int rank, long usecs);
+  static void reportResample(int timestep, int rank, long usecs);
 
   /**
    * Report redistribution timings to stderr.
    */
-  static void reportRedistribute(int rank, long usecs);
+  static void reportRedistribute(int timestep, int rank, long usecs);
   //@}
 
   /**
@@ -115,6 +115,7 @@ private:
 };
 }
 
+#include <cstdio>
 #include "../mpi.hpp"
 #include "../../math/temp_vector.hpp"
 #include "../../math/temp_matrix.hpp"
@@ -171,7 +172,8 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 
 #ifdef ENABLE_TIMING
   long usecs = clock.toc();
-  reportResample(rank, usecs);
+  const int timesteps = s.front()->getOutput().size() - 1;
+  reportResample(timesteps, rank, usecs);
 #endif
 
   redistribute(O, s);
@@ -182,11 +184,8 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 }
 
 template<class R>
-void bi::DistributedResampler<R>::reportResample(int rank, long usecs) {
-  std::cerr << "DistributedResampler::resample ";
-  std::cerr << " process " << rank << " ";
-  std::cerr << usecs << " us";
-  std::cerr << std::endl;
+void bi::DistributedResampler<R>::reportResample(int timestep, int rank, long usecs) {
+  fprintf(stderr, "%d: DistributedResampler::resample proc %d %ld us\n", timestep, rank, usecs);
 }
 
 template<class R>
@@ -313,16 +312,14 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
 #ifdef ENABLE_TIMING
   long usecs = clock.toc();
-  reportRedistribute(rank, usecs);
+  const int timesteps = s.front()->getOutput().size() - 1;
+  reportRedistribute(timesteps, rank, usecs);
 #endif
 }
 
 template<class R>
-void bi::DistributedResampler<R>::reportRedistribute(int rank, long usecs) {
-  std::cerr << "DistributedResampler::redistribute ";
-  std::cerr << " process " << rank << " ";
-  std::cerr << usecs << " us";
-  std::cerr << std::endl;
+void bi::DistributedResampler<R>::reportRedistribute(int timestep, int rank, long usecs) {
+  fprintf(stderr, "%d: DistributedResampler::redistribute proc %d %ld us\n", timestep, rank, usecs);
 }
 
 template<class R>
