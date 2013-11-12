@@ -418,6 +418,9 @@ template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     State<B,L>& s, IO2* inInit) {
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -466,6 +469,9 @@ template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     IO2* inInit) {
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -515,6 +521,9 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -545,6 +554,9 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
     State<B,L>& s) {
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
+
+  /* time */
+  s.setTime(now.getTime());
 
   /* static inputs */
   if (in != NULL) {
@@ -603,6 +615,7 @@ void bi::Simulator<B,F,O,IO1>::advance(Random& rng,
     obs->update(next.indexObs(), s);
   }
   m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -618,6 +631,7 @@ void bi::Simulator<B,F,O,IO1>::advance(const ScheduleElement next,
     obs->update(next.indexObs(), s);
   }
   m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -634,6 +648,7 @@ void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng,
   }
   m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
       next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -650,6 +665,7 @@ void bi::Simulator<B,F,O,IO1>::lookahead(const ScheduleElement next,
   }
   m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
       next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>

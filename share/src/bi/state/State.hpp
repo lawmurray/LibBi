@@ -131,6 +131,44 @@ public:
   void clear();
 
   /**
+   * @name Built-in variables
+   */
+  //@{
+  /**
+   * Get current time.
+   */
+  CUDA_FUNC_BOTH
+  real getTime() const;
+
+  /**
+   * Set current time.
+   */
+  void setTime(const real t);
+
+  /**
+   * Get time of last input.
+   */
+  CUDA_FUNC_BOTH
+  real getLastInputTime() const;
+
+  /**
+   * Set time of last input.
+   */
+  void setLastInputTime(const real t);
+
+  /**
+   * Get time of next observation.
+   */
+  CUDA_FUNC_BOTH
+  real getNextObsTime() const;
+
+  /**
+   * Set time of next observation.
+   */
+  void setNextObsTime(const real t);
+  //@}
+
+  /**
    * Get buffer for net.
    *
    * @param type Node type.
@@ -314,6 +352,21 @@ private:
   matrix_type Kdn;
 
   /**
+   * Current time.
+   */
+  real t;
+
+  /**
+   * Time of last input.
+   */
+  real tInput;
+
+  /**
+   * Time of next observation.
+   */
+  real tObs;
+
+  /**
    * Index of starting trajectory in @p Xdn.
    */
   int p;
@@ -361,13 +414,14 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
     Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
-    p(0), P(roundup(P)) {
+    t(0.0), tInput(0.0), tObs(0.0), p(0), P(roundup(P)) {
   clear();
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+    Xdn(o.Xdn), Kdn(o.Kdn), t(o.t), tInput(o.tInput), tObs(o.tObs), p(o.p), P(
+        o.P) {
   //
 }
 
@@ -375,6 +429,9 @@ template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
+  t = o.t;
+  tInput = o.tInput;
+  tObs = o.tObs;
 
   return *this;
 }
@@ -384,6 +441,9 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
+  t = o.t;
+  tInput = o.tInput;
+  tObs = o.tObs;
 
   return *this;
 }
@@ -454,6 +514,36 @@ template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
   rows(Xdn, 0, P).clear();
   Kdn.clear();
+}
+
+template<class B, bi::Location L>
+real bi::State<B,L>::getTime() const {
+  return t;
+}
+
+template<class B, bi::Location L>
+void bi::State<B,L>::setTime(const real t) {
+  this->t = t;
+}
+
+template<class B, bi::Location L>
+real bi::State<B,L>::getLastInputTime() const {
+  return tInput;
+}
+
+template<class B, bi::Location L>
+void bi::State<B,L>::setLastInputTime(const real t) {
+  this->tInput = t;
+}
+
+template<class B, bi::Location L>
+real bi::State<B,L>::getNextObsTime() const {
+  return tObs;
+}
+
+template<class B, bi::Location L>
+void bi::State<B,L>::setNextObsTime(const real t) {
+  this->tObs = t;
 }
 
 template<class B, bi::Location L>
@@ -759,6 +849,9 @@ template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
   save_resizable_matrix(ar, version, Xdn);
   save_resizable_matrix(ar, version, Kdn);
+  ar & t;
+  ar & tInput;
+  ar & tObs;
   ar & p;
   ar & P;
 }
@@ -768,6 +861,9 @@ template<class Archive>
 void bi::State<B,L>::load(Archive& ar, const unsigned version) {
   load_resizable_matrix(ar, version, Xdn);
   load_resizable_matrix(ar, version, Kdn);
+  ar & t;
+  ar & tInput;
+  ar & tObs;
   ar & p;
   ar & P;
 }

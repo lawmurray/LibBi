@@ -442,9 +442,14 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     V1 lw1s, V1 lw2s) {
   if (last->indexObs() > (iter + 1)->indexObs()) {
     /* one or more observations remain, lookahead to next */
+
+    /* save previous state */
     typename loc_temp_matrix<L,real>::type X(s.getDyn().size1(),
         s.getDyn().size2());
     X = s.getDyn();
+    real t = s.getTime();
+    real tInput = s.getLastInputTime();
+    real tObs = s.getNextObsTime();
 
     lw1s = lw2s;
     ScheduleIterator iter1 = iter;
@@ -456,6 +461,9 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
 
     /* restore previous state */
     s.getDyn() = X;
+    s.setTime(t);
+    s.setLastInputTime(tInput);
+    s.setNextObsTime(tObs);
   }
 }
 

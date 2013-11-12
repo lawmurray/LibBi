@@ -120,6 +120,7 @@ inline void bi::Forcer<IO1,CL>::update(const int k, State<B,L>& s) {
     in->read(k, F_VAR, s.get(F_VAR));
     cache.set(k, vec(s.get(F_VAR)));
   }
+  s.setLastInputTime(in->getTime(k));
 }
 
 template<class IO1, bi::Location CL>

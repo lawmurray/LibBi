@@ -143,6 +143,7 @@ inline void bi::Observer<IO1,CL>::update(const int k, State<B,L>& s) {
     in->readState(k, O_VAR, getHostMask(k), s.get(OY_VAR));
     cache.set(k, vec(s.get(OY_VAR)));
   }
+  s.setNextObsTime(in->getTime(k));
 }
 
 #endif
