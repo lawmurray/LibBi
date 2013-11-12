@@ -335,10 +335,13 @@ struct parent_type {
     typename
     boost::mpl::if_<is_o_var<X>,
         V4,
+    typename
+    boost::mpl::if_<is_b_var<X>,
+        V4,
     /*else*/
         int
     /*end*/
-    >::type>::type>::type>::type>::type>::type>::type type;
+    >::type>::type>::type>::type>::type>::type>::type>::type type;
 };
 
 }
