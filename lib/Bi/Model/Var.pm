@@ -77,7 +77,8 @@ our %_types = (
     'param' => 0,
     'param_aux_' => 0,
     'state' => 0,
-    'state_aux_' => 0
+    'state_aux_' => 0,
+    'builtin_' => 0
 );
 
 =head1 METHODS

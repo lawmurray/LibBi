@@ -59,6 +59,11 @@ sub new {
 
 	bless $self, $class;
 	
+	# add built-in variables
+	$self->push_var(new Bi::Model::Var('builtin_', 't_now'));
+	$self->push_var(new Bi::Model::Var('builtin_', 't_last_input'));
+	$self->push_var(new Bi::Model::Var('builtin_', 't_next_obs'));
+	
 	return $self;
 }
 
