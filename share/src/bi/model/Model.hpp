@@ -193,6 +193,7 @@ bi::Model::Model(B& o) {
   netSizes[O_VAR] = B::NO;
   netSizes[P_VAR] = B::NP;
   netSizes[PX_VAR] = B::NPX;
+  netSizes[B_VAR] = B::NB;
 
   netNumVars[D_VAR] = B::CD;
   netNumVars[DX_VAR] = B::CDX;
@@ -201,6 +202,7 @@ bi::Model::Model(B& o) {
   netNumVars[O_VAR] = B::CO;
   netNumVars[P_VAR] = B::CP;
   netNumVars[PX_VAR] = B::CPX;
+  netNumVars[B_VAR] = B::CB;
 
   dimsById.resize(B::Ndims);
 

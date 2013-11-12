@@ -78,6 +78,11 @@ enum VarType {
   OY_VAR,
 
   /**
+   * Built-in variable.
+   */
+  B_VAR,
+
+  /**
    * Number of variable types.
    */
   NUM_VAR_TYPES
@@ -270,6 +275,18 @@ struct is_p_var {
 template<class X>
 struct is_px_var {
   static const bool value = var_type<X>::value == PX_VAR;
+};
+
+/**
+ * Built-in variable trait.
+ *
+ * @ingroup model_low
+ *
+ * @tparam X Variable type.
+ */
+template<class X>
+struct is_b_var {
+  static const bool value = var_type<X>::value == B_VAR;
 };
 
 /**
