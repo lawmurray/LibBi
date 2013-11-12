@@ -451,7 +451,7 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     do {
       ++iter1;
       lookaheadPredict(rng, *iter1, s);
-    } while (!iter1->hasObs());
+    } while (!iter1->isObserved());
     lookaheadCorrect(*iter1, s, lw1s);
 
     /* restore previous state */
@@ -473,7 +473,7 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookaheadCorrect(
   /* pre-condition */
   BI_ASSERT(s.size() == lw1s.size());
 
-  if (now.hasObs()) {
+  if (now.isObserved()) {
     this->m.lookaheadObservationLogDensities(s,
         this->getSim()->getObs()->getMask(now.indexObs()), lw1s);
   }
@@ -487,7 +487,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw2s.size());
   BI_ASSERT(s.size() == lw1s.size());
 
-  bool r = now.hasObs() && this->getResam() != NULL
+  bool r = now.isObserved() && this->getResam() != NULL
       && this->getResam()->isTriggered(lw1s);
   if (r) {
     if (resampler_needs_max<R>::value) {
@@ -513,7 +513,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw1s.size());
   BI_ASSERT(a >= 0 && a < lw1s.size());
 
-  bool r = now.hasObs() && this->getResam() != NULL
+  bool r = now.isObserved() && this->getResam() != NULL
       && this->getResam()->isTriggered(lw1s);
   if (r) {
     if (resampler_needs_max<R>::value) {

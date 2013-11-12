@@ -436,6 +436,11 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     in->update(now.indexInput(), s);
   }
 
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
+  }
+
   /* state variable initial values */
   m.initialSamples(rng, s);
   if (inInit != NULL) {
@@ -454,11 +459,6 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     s.get(DY_VAR) = s.get(D_VAR);
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
-  }
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
   }
 }
 
@@ -484,6 +484,11 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     in->update(now.indexInput(), s);
   }
 
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
+  }
+
   /* state variable initial values */
   m.initialSimulates(s);
   if (inInit != NULL) {
@@ -500,11 +505,6 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     s.get(DY_VAR) = s.get(D_VAR);
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
-  }
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
   }
 }
 
@@ -525,6 +525,11 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
     in->update(now.indexInput(), s);
   }
 
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
+  }
+
   /* parameters */
   vec(s.get(P_VAR)) = theta;
   s.get(PY_VAR) = s.get(P_VAR);
@@ -532,11 +537,6 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
 
   /* initial values */
   m.initialSamples(rng, s);
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
-  }
 }
 
 template<class B, class F, class O, class IO1>
@@ -561,13 +561,13 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
     in->update(now.indexInput(), s);
   }
 
-  /* initial values */
-  m.initialSimulates(s);
-
   /* observations */
   if (now.hasObs()) {
     obs->update(now.indexObs(), s);
   }
+
+  /* initial values */
+  m.initialSimulates(s);
 }
 
 template<class B, class F, class O, class IO1>
@@ -599,10 +599,10 @@ void bi::Simulator<B,F,O,IO1>::advance(Random& rng,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
 }
 
 template<class B, class F, class O, class IO1>
@@ -614,10 +614,10 @@ void bi::Simulator<B,F,O,IO1>::advance(const ScheduleElement next,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
 }
 
 template<class B, class F, class O, class IO1>
@@ -629,11 +629,11 @@ void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
-      next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
 }
 
 template<class B, class F, class O, class IO1>
@@ -645,11 +645,11 @@ void bi::Simulator<B,F,O,IO1>::lookahead(const ScheduleElement next,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
-      next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
 }
 
 template<class B, class F, class O, class IO1>

@@ -78,7 +78,9 @@ struct Scaled2User: public std::unary_function<T,T> {
  *
  * @li the times at which output is required, and
  *
- * @li the times at which observations are available.
+ * @li the times at which observations change.
+ *
+ * @li the times at which observations are made.
  *
  * The class consolidates this sequence into one location to ensure consistent
  * handling across methods.
@@ -274,15 +276,21 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
         && tDeltas[elem.kDelta] == ts[elem.k - 1];
 
-    // inputs update on half-open intervals (t, t+1], except for the first
-    // input, which is on the closed interval [t, t+1]
+    /* inputs persist on half-open intervals (t, t+1], except for the first
+     * input, which is on the closed interval [t, t+1] */
     elem.bInput = elem.kInput < int(tInputs.size()) &&
         ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1]) ||
         (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
-    elem.bObs = elem.kObs < int(tObs.size()) && tObs[elem.kObs] == ts[elem.k];
+
+    /* observations persist on half-open intervals (t-1, t], except for the
+     * first input, which is on the closed interval [t-1, t] */
+    elem.bObs = elem.kObs < int(tObs.size()) &&
+        ((elem.kObs == 0 && tObs.size() > 0) ||
+          elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
+    elem.bObserved = elem.kObs < int(tObs.size()) && tObs[elem.kObs] == ts[elem.k];
 
     elems.push_back(elem);
 

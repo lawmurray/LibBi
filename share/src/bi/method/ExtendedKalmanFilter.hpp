@@ -602,7 +602,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
   mu2 = mu1;
   U2 = U1;
 
-  if (now.hasObs()) {
+  if (now.isObserved()) {
     BOOST_AUTO(mask, sim->getObs()->getMask(now.indexObs()));
     const int W = mask.size();
 

@@ -545,7 +545,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step_impl(Random& rng,
       this->output(*iter1, s, r, lws2, as);  /// @todo Subrange
 
       ++iter1;
-    } while (iter1 != last && !(iter1 - 1)->hasObs());
+    } while (iter1 != last && !(iter1 - 1)->isObserved());
 
     /* check stopping condition */
     finished = stopper->stop(lws2, totalObs, maxlw, blockSize);
@@ -578,7 +578,7 @@ bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
   /* pre-condition */
   int blockSize = as.size();
   bool r =
-      now.hasObs() && this->resam != NULL
+      now.isObserved() && this->resam != NULL
           && (this->essRel >= 1.0
               || ess_reduce(lws) <= lws.size() * this->essRel);
   if (r) {
@@ -601,7 +601,7 @@ bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
   int blockSize = as.size();
 
   bool r =
-      now.hasObs() && this->resam != NULL
+      now.isObserved() && this->resam != NULL
           && (this->essRel >= 1.0
               || ess_reduce(lws) <= lws.size() * this->essRel);
   if (r) {
@@ -624,7 +624,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::getMaxLogWeight(
   const int P = s.size();
 
   s.setRange(0, 1);
-  if (now.hasObs()) {
+  if (now.isObserved()) {
     this->m.observationMaxLogDensities(s,
         this->getSim()->getObs()->getMask(now.indexObs()), maxlw);
   }
