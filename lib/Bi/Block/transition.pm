@@ -48,12 +48,12 @@ our $BLOCK_ARGS = [
 sub validate {
     my $self = shift;
     
+    my $name = $self->get_name;
     $self->process_args($BLOCK_ARGS);
     if (!$self->get_named_arg('delta')->is_const) {
-        die("argument 'delta' to block 'transition' must be a constant expression\n");
+        die("argument 'delta' to block '$name' must be a constant expression\n");
     }
     
-    my $name = $self->get_name;
     my $actions = $self->get_all_actions;
     foreach my $action (@$actions) {
         my $op = $action->get_op;

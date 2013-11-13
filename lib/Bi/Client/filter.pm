@@ -59,6 +59,11 @@ former is not defined, the L<transition> top-level block will be used
 instead. If the latter is not defined, the L<observation> top-level block will
 be used instead.
 
+=item C<bridge>
+
+Particle filter with bridging potential. Bridging weights are assigned
+according to the L<bridge> top-level block.
+
 =for comment
 =item C<adaptive>
 

@@ -15,6 +15,8 @@
 #include "bi/random/Random.hpp"
 [% IF client.get_named_arg('filter') == 'lookahead' %]
 #include "bi/method/AuxiliaryParticleFilter.hpp"
+[% ELSIF client.get_named_arg('filter') == 'bridge' %]
+#include "bi/method/BridgeParticleFilter.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
 #include "bi/method/AdaptiveNParticleFilter.hpp"
 #include "bi/stopper/Stopper.hpp"
@@ -158,6 +160,8 @@ int main(int argc, char* argv[]) {
 
   [% IF client.get_named_arg('filter') == 'lookahead' %]
   BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
+  [% ELSIF client.get_named_arg('filter') == 'bridge' %]
+  BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
     /* stopper */
     [% IF client.get_named_arg('stopper') == 'deterministic' %]
