@@ -414,10 +414,16 @@ void bi::BridgeParticleFilter<B,S,R,IO1>::coerce(Random& rng,
   BI_ASSERT(s.size() == lw1s.size());
   BI_ASSERT(s.size() == lw2s.size());
 
-  //if (now.isBridged()) {
-  //  this->m.bridgeLogDensities(s,
-  //      this->getSim()->getObs()->getMask(now.indexObs()), lw1s);
-  //}
+  if (now.hasDelta() && !now.isObserved()) {
+    axpy(-1.0, lw1s, lw2s);
+    lw1s.clear();
+    this->m.bridgeLogDensities(s,
+        this->getSim()->getObs()->getMask(now.indexObs()), lw1s);
+    axpy(1.0, lw1s, lw2s);
+  } else if (now.isObserved()) {
+    axpy(-1.0, lw1s, lw2s);
+    lw1s.clear();
+  }
 }
 
 template<class B, class S, class R, class IO1>
@@ -429,14 +435,14 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw1s.size());
 
   bool r = now.isObserved() && this->getResam() != NULL
-      && this->getResam()->isTriggered(lw1s);
+      && this->getResam()->isTriggered(lw2s);
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(
           this->m.observationMaxLogDensity(s,
               this->getSim()->getObs()->getMask(now.indexObs())));
     }
-    this->getResam()->resample(rng, lw1s, lw2s, as, s);
+    this->getResam()->resample(rng, lw2s, as, s);
   } else {
     seq_elements(as, 0);
     Resampler::normalise(lw2s);
@@ -455,14 +461,14 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(a >= 0 && a < lw1s.size());
 
   bool r = now.isObserved() && this->getResam() != NULL
-      && this->getResam()->isTriggered(lw1s);
+      && this->getResam()->isTriggered(lw2s);
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(
           this->m.observationMaxLogDensity(s,
               this->getSim()->getObs()->getMask(now.indexObs())));
     }
-    this->getResam()->resample(rng, a, lw1s, lw2s, as, s);
+    this->getResam()->resample(rng, a, lw2s, as, s);
   } else {
     seq_elements(as, 0);
     Resampler::normalise(lw2s);

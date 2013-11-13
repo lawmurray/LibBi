@@ -35,7 +35,8 @@ our @BLOCKS = (
     'parameter',
     'initial',
     'transition',
-    'observation'
+    'observation',
+    'bridge'
 );
 
 our %MAP_BLOCKS = (
