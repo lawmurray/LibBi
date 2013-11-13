@@ -303,7 +303,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     if (elem.bOutput) {
       ++elem.kOutput;
     }
-    if (elem.bObs) {
+    if (elem.bObserved) {
       ++elem.kObs;
     }
   }
