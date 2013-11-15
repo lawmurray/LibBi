@@ -29,6 +29,8 @@ bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
 }
 
 void bi::ParticleFilterNetCDFBuffer::create() {
+  nc_redef(ncid);
+
   if (schema == FLEXI) {
     nc_put_att(ncid, "libbi_schema", "FlexiParticleFilter");
     nc_put_att(ncid, "libbi_schema_version", 1);
