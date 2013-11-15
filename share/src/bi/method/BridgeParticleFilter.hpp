@@ -123,7 +123,7 @@ public:
    * @param[in,out] lw2s Stage-two log-weights.
    */
   template<Location L, class V1>
-  void coerce(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lw1s,
+  void bridge(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lw1s,
       V1 lw2s);
   //@}
 };
@@ -269,7 +269,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     V1 lw1s, V1 lw2s, V2 as) {
   bool r = false;
   do {
-    this->coerce(rng, *iter, s, lw1s, lw2s);
+    this->bridge(rng, *iter, s, lw1s, lw2s);
     r = this->resample(rng, *iter, s, lw1s, lw2s, as);
     ++iter;
     this->predict(rng, *iter, s);
@@ -287,7 +287,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     const M1 X, V1 lw1s, V1 lw2s, V2 as) {
   bool r = false;
   do {
-    this->coerce(rng, *iter, s, lw1s, lw2s);
+    this->bridge(rng, *iter, s, lw1s, lw2s);
     r = this->resample(rng, *iter, s, lw1s, lw2s, as);
     ++iter;
     this->predict(rng, *iter, s);
@@ -301,10 +301,10 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-void bi::BridgeParticleFilter<B,S,R,IO1>::coerce(Random& rng,
+void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
     const ScheduleElement now, State<B,L>& s, V1 lw1s, V1 lw2s) {
+  lw1s = lw2s;
   if (now.hasDelta() && !now.isObserved()) {
-    lw1s = lw2s;
     this->m.bridgeLogDensities(s,
         this->getSim()->getObs()->getMask(now.indexObs()), lw1s);
   }

@@ -440,6 +440,7 @@ template<bi::Location L, class V1>
 void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
     V1 lw1s, V1 lw2s) {
+  lw1s = lw2s;
   if (last->indexObs() > (iter + 1)->indexObs()) {
     /* one or more observations remain, lookahead to next */
 
@@ -451,7 +452,6 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     real tInput = s.getLastInputTime();
     real tObs = s.getNextObsTime();
 
-    lw1s = lw2s;
     ScheduleIterator iter1 = iter;
     do {
       ++iter1;
