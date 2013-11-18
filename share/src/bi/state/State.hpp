@@ -411,8 +411,8 @@ bi::State<B,L>::State(const int P) :
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), builtin(o.builtin), p(o.p), P(o.P) {
-  //
+    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+  std::copy(o.builtin, o.builtin + 3, builtin);
 }
 
 template<class B, bi::Location L>
