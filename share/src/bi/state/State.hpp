@@ -419,7 +419,7 @@ template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  builtin = o.builtin;
+  std::copy(o.builtin, o.builtin + 3, builtin);
 
   return *this;
 }
@@ -429,7 +429,7 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  builtin = o.builtin;
+  std::copy(o.builtin, o.builtin + 3, builtin);
 
   return *this;
 }

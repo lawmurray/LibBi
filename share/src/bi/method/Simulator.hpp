@@ -414,6 +414,8 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   term();
 }
 
+#include "../math/io.hpp"
+
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
@@ -430,6 +432,17 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
   m.parameterSample(rng, s);
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
+
+    /* when --with-transform-initial-to-param active, need to read parameters
+     * that represent initial states from dynamic variables in input file */
+    BOOST_AUTO(iter,
+        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
+            now.getTime()));
+    if (iter != inInit->getTimes().end()) {
+      int k = std::distance(inInit->getTimes().begin(), iter);
+      inInit->read(k, P_VAR, s.get(P_VAR));
+    }
+
     s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
@@ -481,6 +494,17 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
   m.parameterSimulate(s);
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
+
+    /* when --with-transform-initial-to-param active, need to read parameters
+     * that represent initial states from dynamic variables in input file */
+    BOOST_AUTO(iter,
+        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
+            now.getTime()));
+    if (iter != inInit->getTimes().end()) {
+      int k = std::distance(inInit->getTimes().begin(), iter);
+      inInit->read(k, P_VAR, s.get(P_VAR));
+    }
+
     s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
