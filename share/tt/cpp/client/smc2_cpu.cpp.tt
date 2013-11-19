@@ -24,7 +24,7 @@
 [% ELSIF client.get_named_arg('filter') == 'bridge' %]
 #include "bi/method/BridgeParticleFilter.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-#include "bi/method/AdaptiveNParticleFilter.hpp"
+#include "bi/method/AdaptiveParticleFilter.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveNParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
+      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
     [% ELSE %]
       BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, outFilter)));
     [% END %]

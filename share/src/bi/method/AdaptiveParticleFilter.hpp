@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_ADAPTIVENPARTICLEFILTER_HPP
-#define BI_METHOD_ADAPTIVENPARTICLEFILTER_HPP
+#ifndef BI_METHOD_AdaptiveParticleFilter_HPP
+#define BI_METHOD_AdaptiveParticleFilter_HPP
 
 #include "ParticleFilter.hpp"
 #include "../resampler/Resampler.hpp"
@@ -29,7 +29,7 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class S2, class IO1>
-class AdaptiveNParticleFilter: public ParticleFilter<B,S,R,IO1> {
+class AdaptiveParticleFilter: public ParticleFilter<B,S,R,IO1> {
 public:
   /**
    * Constructor.
@@ -41,7 +41,7 @@ public:
    * @param blockSize Number of particles to propagate per block.
    * @param out Output.
    */
-  AdaptiveNParticleFilter(B& m, S* sim = NULL, R* resam = NULL, S2* stopper =
+  AdaptiveParticleFilter(B& m, S* sim = NULL, R* resam = NULL, S2* stopper =
       NULL, const int blockSize = 128, IO1* out = NULL);
 
   /**
@@ -113,42 +113,42 @@ private:
 };
 
 /**
- * Factory for creating AdaptiveNParticleFilter objects.
+ * Factory for creating AdaptiveParticleFilter objects.
  *
  * @ingroup method
  *
  * @tparam CL Cache location.
  *
- * @see AdaptiveNParticleFilter
+ * @see AdaptiveParticleFilter
  */
-struct AdaptiveNParticleFilterFactory {
+struct AdaptiveParticleFilterFactory {
   /**
    * Create adaptive N particle filter.
    *
-   * @return AdaptiveNParticleFilter object. Caller has ownership.
+   * @return AdaptiveParticleFilter object. Caller has ownership.
    *
-   * @see AdaptiveNParticleFilter::AdaptiveNParticleFilter()
+   * @see AdaptiveParticleFilter::AdaptiveParticleFilter()
    */
   template<class B, class S, class R, class S2, class IO1>
-  static AdaptiveNParticleFilter<B,S,R,S2,IO1>* create(B& m, S* sim = NULL,
+  static AdaptiveParticleFilter<B,S,R,S2,IO1>* create(B& m, S* sim = NULL,
       R* resam = NULL, S2* stopper = NULL, const int blockSize = 128,
       IO1* out = NULL) {
-    return new AdaptiveNParticleFilter<B,S,R,S2,IO1>(m, sim, resam, stopper,
+    return new AdaptiveParticleFilter<B,S,R,S2,IO1>(m, sim, resam, stopper,
         blockSize, out);
   }
 
   /**
    * Create adaptive N particle filter.
    *
-   * @return AdaptiveNParticleFilter object. Caller has ownership.
+   * @return AdaptiveParticleFilter object. Caller has ownership.
    *
-   * @see AdaptiveNParticleFilter::AdaptiveNParticleFilter()
+   * @see AdaptiveParticleFilter::AdaptiveParticleFilter()
    */
   template<class B, class S, class R, class S2>
-  static AdaptiveNParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(
+  static AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(
       B& m, S* sim = NULL, R* resam = NULL, S2* stopper = NULL,
       const int blockSize = 128) {
-    return new AdaptiveNParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m,
+    return new AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m,
         sim, resam, stopper, blockSize);
   }
 };
@@ -158,7 +158,7 @@ struct AdaptiveNParticleFilterFactory {
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class S2, class IO1>
-bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::AdaptiveNParticleFilter(B& m,
+bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::AdaptiveParticleFilter(B& m,
     S* sim, R* resam, S2* stopper, const int blockSize, IO1* out) :
     ParticleFilter<B,S,R,IO1>(m, sim, resam, out), stopper(stopper), blockSize(
         blockSize) {
@@ -167,7 +167,7 @@ bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::AdaptiveNParticleFilter(B& m,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class IO2>
-real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
+real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int totalObs = last->indexObs() - first->indexObs();
@@ -195,7 +195,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class V1>
-real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
+real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) {
   const int totalObs = last->indexObs() - first->indexObs();
@@ -223,20 +223,20 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
+real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, const int totalObs,
-    State<B,L>& s, V1& lws, V2& as_in) {
+    State<B,L>& s, V1& lws, V2& as) {
   int P = s.size();
   int maxParticles = stopper->getMaxParticles();
 
   typename loc_temp_vector<L,int>::type as_base(bi::max(maxParticles, P));
-  typename loc_temp_vector<L,real>::type lws2_base(bi::max(maxParticles, P));
+  typename loc_temp_vector<L,real>::type lws_base(bi::max(maxParticles, P));
   typename loc_temp_matrix<L,real>::type xvars(s.getDyn().size1(),
       s.getDyn().size2());
   xvars = s.getDyn();
 
   typename precompute_type<R,V1::location>::type pre;
-  this->resam->precompute(lws, as_in, pre);
+  this->resam->precompute(lws, as, pre);
 
   int block = 0;
   real maxlw, ll = 0.0;
@@ -246,36 +246,36 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
 
   do {  // loop over blocks
     s.setRange(block * blockSize, xvars.size1());
-    BOOST_AUTO(as, subrange(as_base, block * blockSize, blockSize));
-    BOOST_AUTO(lws2, subrange(lws2_base, block * blockSize, blockSize));
+    BOOST_AUTO(as1, subrange(as_base, block * blockSize, blockSize));
+    BOOST_AUTO(lws1, subrange(lws_base, block * blockSize, blockSize));
 
     s.getDyn() = xvars;
-    lws2.clear();
+    lws1.clear();
 
     iter1 = iter;  // don't modify the original iterator yet
     do {  // loop to advance block to time of next observation
-      r = resample(rng, *iter1, lws, as, pre);
-      this->resam->copy(as, s);
+      r = resample(rng, *iter1, lws, as1, pre);
+      this->resam->copy(as1, s);
       this->predict(rng, *iter1, s);
-      ll += this->correct(*iter1, s, lws2);
-      this->output(*iter1, s, r, lws2, as);  /// @todo Subrange
+      ll += this->correct(*iter1, s, lws1);
+      this->output(*iter1, s, r, lws1, as1);  /// @todo Subrange
       ++iter1;
     } while (iter1 != last && !(iter1 - 1)->isObserved());
+    if (block == 0) {
+      maxlw = this->getMaxLogWeight(*(iter1 - 1), s);
+    }
 
     /* check stopping condition */
-    finished = stopper->stop(lws2, totalObs, maxlw, blockSize);
+    finished = stopper->stop(lws1, totalObs, maxlw, blockSize);
 
-    if (block == 0) {
-      maxlw = this->getMaxLogWeight(*iter1, s);
-    }
     ++block;
-  } while (!finished/* && block < maxBlocks*/);
+  } while (!finished && block*blockSize < maxParticles);
 
   int length = bi::max(block, 1) * blockSize;
   lws.resize(length);
-  lws = subrange(lws2_base, 0, length);
-  as_in.resize(length);
-  as_in = subrange(as_base, 0, length);
+  as.resize(length);
+  lws = subrange(lws_base, 0, length);
+  as = subrange(as_base, 0, length);
 
   s.setRange(0, length);
   s.resizeMax(length);
@@ -287,7 +287,7 @@ real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<class V1, class V2>
-bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
+bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
     const ScheduleElement now, V1 lws, V2 as,
     typename precompute_type<R,V1::location>::type& pre) {
   /* pre-condition */
@@ -306,7 +306,7 @@ bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<class V1, class V2>
-bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
+bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
     const ScheduleElement now, int a, V1 lws, V2 as,
     typename precompute_type<R,V1::location>::type& pre) {
   /* pre-condition */
@@ -325,7 +325,7 @@ bool bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L>
-real bi::AdaptiveNParticleFilter<B,S,R,S2,IO1>::getMaxLogWeight(
+real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::getMaxLogWeight(
     const ScheduleElement now, State<B,L>& s) {
   typename loc_temp_vector<L,real>::type maxlw(1);
   maxlw.clear();

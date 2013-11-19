@@ -50,9 +50,7 @@ bool bi::MinimumESSStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
   T1 ess = (sumw*sumw)/sumw2;
 
   real min_ess = T*rel_min_ess;
-
   real threshold = exp(maxlw)*(min_ess-1)/2;
-
   BI_ASSERT(max_reduce(subrange(lws,start,blockSize)) <= maxlw );
 
   if (lws.size() >= maxParticles) {
