@@ -25,6 +25,7 @@
 #include "bi/method/BridgeParticleFilter.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
 #include "bi/method/AdaptiveParticleFilter.hpp"
+#include "bi/cache/AdaptiveParticleFilterCache.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
@@ -132,7 +133,11 @@ int main(int argc, char* argv[]) {
     BOOST_AUTO(outFilter, KalmanFilterCacheFactory<LOCATION>::create());
     BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
   [% ELSE %]
+    [% IF client.get_named_arg('filter') == 'adaptive' %]
+    BOOST_AUTO(outFilter, AdaptiveParticleFilterCacheFactory<LOCATION>::create());
+    [% ELSE %]
     BOOST_AUTO(outFilter, ParticleFilterCacheFactory<LOCATION>::create());
+    [% END %]
 
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]
@@ -166,15 +171,15 @@ int main(int argc, char* argv[]) {
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
       Stopper stopper(NPARTICLES);
       [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-      SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+      SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
       [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-      MinimumESSStopper stopper(REL_THRESHOLD, MAX_P);
+      MinimumESSStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
       [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-      StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+      StdDevStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
-      VarStopper stopper(REL_THRESHOLD, MAX_P);
+      VarStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
+      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_PARTICLES, outFilter)));
     [% ELSE %]
       BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, outFilter)));
     [% END %]

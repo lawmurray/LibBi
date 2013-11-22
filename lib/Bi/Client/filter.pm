@@ -64,10 +64,8 @@ be used instead.
 Particle filter with bridging potential. Bridging weights are assigned
 according to the L<bridge> top-level block.
 
-=for comment
 =item C<adaptive>
 
-=for comment
 Bootstrap particle filter with adaptive number of particles at each time
 step.
 
@@ -175,7 +173,6 @@ Number of steps to take.
 
 =back
 
-=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
@@ -215,20 +212,19 @@ minimum ESS,
 
 ...
 
-=item C<--block-P>
+=item C<--max-particles>
 
-...
+Maximum number of particles at each time step.
+
+=item C<--block-particles>
+
+Number of particles per block.
 
 =item C<--min-ess-rel>
 
-...
-
-=item C<--max-P>
-
-...
+Minimum ESS at each time step.
 
 =back
-=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
@@ -298,19 +294,19 @@ our @CLIENT_OPTIONS = (
       default => 'miness'
     },
     {
-      name => 'block-P',
+      name => 'block-particles',
       type => 'int',
       default => 128
+    },
+    {
+      name => 'max-particles',
+      type => 'int',
+      default => 32768
     },
     {
       name => 'rel-threshold',
       type => 'int',
       default => 10
-    },
-    {
-      name => 'max-P',
-      type => 'int',
-      default => 32768
     },
     
     # deprecations

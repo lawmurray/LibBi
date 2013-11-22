@@ -107,8 +107,14 @@ protected:
   real getMaxLogWeight(const ScheduleElement now, State<B,L>& s);
 
 private:
+  /**
+   * Stopping criterion.
+   */
   S2* stopper;
 
+  /**
+   * Number of particles per block.
+   */
   const int blockSize;
 };
 
