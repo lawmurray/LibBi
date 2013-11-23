@@ -52,6 +52,11 @@ public:
       const AdaptiveParticleFilterCache<IO1,CL>& o);
 
   /**
+   * @copydoc SimulatorNetCDFBuffer::writeTime()
+   */
+  void writeTime(const int k, const real& t);
+
+  /**
    * @copydoc ParticleFilterNetCDFBuffer::writeLogWeights()
    */
   template<class V1>
@@ -96,6 +101,11 @@ private:
   typedef typename loc_temp_matrix<CL,real>::type matrix_type;
   typedef typename loc_temp_vector<CL,real>::type vector_type;
   typedef typename loc_temp_vector<CL,int>::type int_vector_type;
+
+  /**
+   * Caches for times while adapting.
+   */
+  Cache1D<real,CL> timeCache;
 
   /**
    * Caches for particles while adapting, indexed by time.
@@ -184,7 +194,9 @@ bi::AdaptiveParticleFilterCache<IO1,CL>::AdaptiveParticleFilterCache(IO1* out) :
 template<class IO1, bi::Location CL>
 bi::AdaptiveParticleFilterCache<IO1,CL>::AdaptiveParticleFilterCache(
     const AdaptiveParticleFilterCache<IO1,CL>& o) :
-    ParticleFilterCache<IO1,CL>(o), base(-1), P(0) {
+    ParticleFilterCache<IO1,CL>(o), timeCache(o.timeCache), particleCache(
+        o.particleCache), logWeightCache(o.logWeightCache), ancestorCache(
+        o.ancestorCache), base(o.base), P(o.P) {
   //
 }
 
@@ -192,6 +204,7 @@ template<class IO1, bi::Location CL>
 bi::AdaptiveParticleFilterCache<IO1,CL>& bi::AdaptiveParticleFilterCache<IO1,
     CL>::operator=(const AdaptiveParticleFilterCache<IO1,CL>& o) {
   ParticleFilterCache<IO1,CL>::operator=(o);
+  timeCache = o.timeCache;
   particleCache = o.particleCache;
   logWeightCache = o.logWeightCache;
   ancestorCache = o.ancestorCache;
@@ -203,6 +216,15 @@ bi::AdaptiveParticleFilterCache<IO1,CL>& bi::AdaptiveParticleFilterCache<IO1,
 template<class IO1, bi::Location CL>
 bi::AdaptiveParticleFilterCache<IO1,CL>::~AdaptiveParticleFilterCache() {
   flush();
+}
+
+template<class IO1, bi::Location CL>
+void bi::AdaptiveParticleFilterCache<IO1,CL>::writeTime(const int k,
+    const real& t) {
+  if (base < 0) {
+    base = k;
+  }
+  timeCache.set(k - base, t);
 }
 
 template<class IO1, bi::Location CL>
@@ -218,7 +240,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeLogWeights(const int k,
     logWeightCache.setValid(j);
   }
   if (logWeightCache.get(j).size() < P) {
-    logWeightCache.get(j).resize(P);
+    logWeightCache.get(j).resize(P, true);
   }
 
   subrange(logWeightCache.get(j), P - lws.size(), lws.size()) = lws;
@@ -231,12 +253,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
   /* pre-condition */
   assert(X.size1() == as.size());
 
-  if (base < 0) {
-    base = k;
-  }
-  P += X.size1();
-
   int j = k - base;
+  P += X.size1();
 
   if (j >= particleCache.size()) {
     particleCache.resize(j + 1);
@@ -245,7 +263,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
     particleCache.setValid(j);
   }
   if (particleCache.get(j).size1() < P) {
-    particleCache.get(j).resize(P, X.size2());
+    particleCache.get(j).resize(P, X.size2(), true);
   }
 
   if (j >= ancestorCache.size()) {
@@ -255,7 +273,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
     ancestorCache.setValid(j);
   }
   if (ancestorCache.get(j).size() < P) {
-    ancestorCache.get(j).resize(P);
+    ancestorCache.get(j).resize(P, true);
   }
 
   rows(particleCache.get(j), P - X.size1(), X.size1()) = X;
@@ -266,6 +284,7 @@ template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
     AdaptiveParticleFilterCache<IO1,CL>& o) {
   ParticleFilterCache<IO1,CL>::swap(o);
+  timeCache.swap(o.timeCache);
   particleCache.swap(o.particleCache);
   logWeightCache.swap(o.logWeightCache);
   ancestorCache.swap(o.ancestorCache);
@@ -275,7 +294,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
 
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::clear() {
-  ParticleFilterCache<IO1,CL>::clear();
+  //ParticleFilterCache<IO1,CL>::clear();
+  timeCache.clear();
   particleCache.clear();
   logWeightCache.clear();
   ancestorCache.clear();
@@ -286,6 +306,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::clear() {
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
   ParticleFilterCache<IO1,CL>::empty();
+  timeCache.empty();
   particleCache.empty();
   logWeightCache.empty();
   ancestorCache.empty();
@@ -296,7 +317,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
   int k = 0;
-  while (particleCache.isValid(k)) {
+  while (timeCache.isValid(k)) {
+    ParticleFilterCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
     ParticleFilterCache<IO1,CL>::writeState(base + k, particleCache.get(k),
         ancestorCache.get(k), true);
     ParticleFilterCache<IO1,CL>::writeLogWeights(base + k,
@@ -304,7 +326,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
     ++k;
   }
 
-  ParticleFilterCache<IO1,CL>::flush();
+  //ParticleFilterCache<IO1,CL>::flush();
+  timeCache.flush();
   particleCache.flush();
   logWeightCache.flush();
   ancestorCache.flush();

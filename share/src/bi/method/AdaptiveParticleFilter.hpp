@@ -151,11 +151,11 @@ struct AdaptiveParticleFilterFactory {
    * @see AdaptiveParticleFilter::AdaptiveParticleFilter()
    */
   template<class B, class S, class R, class S2>
-  static AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(
-      B& m, S* sim = NULL, R* resam = NULL, S2* stopper = NULL,
+  static AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(B& m,
+      S* sim = NULL, R* resam = NULL, S2* stopper = NULL,
       const int blockSize = 128) {
-    return new AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m,
-        sim, resam, stopper, blockSize);
+    return new AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m, sim,
+        resam, stopper, blockSize);
   }
 };
 }
@@ -164,8 +164,8 @@ struct AdaptiveParticleFilterFactory {
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class S2, class IO1>
-bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::AdaptiveParticleFilter(B& m,
-    S* sim, R* resam, S2* stopper, const int blockSize, IO1* out) :
+bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::AdaptiveParticleFilter(B& m, S* sim,
+    R* resam, S2* stopper, const int blockSize, IO1* out) :
     ParticleFilter<B,S,R,IO1>(m, sim, resam, out), stopper(stopper), blockSize(
         blockSize) {
   //
@@ -247,8 +247,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
   int block = 0;
   real maxlw, ll = 0.0;
   bool r = false, finished = false;
-  BOOST_TYPEOF (iter)
-  iter1;
+  BOOST_AUTO(iter1, iter);
 
   do {  // loop over blocks
     s.setRange(block * blockSize, xvars.size1());
@@ -258,31 +257,34 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
     s.getDyn() = xvars;
     lws1.clear();
 
-    iter1 = iter;  // don't modify the original iterator yet
-    do {  // loop to advance block to time of next observation
-      r = resample(rng, *iter1, lws, as1, pre);
-      this->resam->copy(as1, s);
-      this->predict(rng, *iter1, s);
-      ll += this->correct(*iter1, s, lws1);
-      this->output(*iter1, s, r, lws1, as1);  /// @todo Subrange
+    iter1 = iter;
+    r = resample(rng, *iter1, lws, as1, pre);
+    this->resam->copy(as1, s);
+    do {
       ++iter1;
-    } while (iter1 != last && !(iter1 - 1)->isObserved());
+      this->predict(rng, *iter1, s);
+      this->output(*iter1, s, r, lws1, as1);
+    } while (iter1 + 1 != last && !iter1->isObserved());
+    ll += this->correct(*iter1, s, lws1);
+
     if (block == 0) {
       maxlw = this->getMaxLogWeight(*(iter1 - 1), s);
     }
-
-    /* check stopping condition */
     finished = stopper->stop(lws1, totalObs, maxlw, blockSize);
-
     ++block;
-  } while (!finished && block*blockSize < maxParticles);
+  } while (!finished && block * blockSize < maxParticles);
+
+  /* flush required for special AdaptiveParticleFilterCache */
+  if (this->out != NULL) {
+    this->out->flush();
+    this->out->clear();
+  }
 
   int length = bi::max(block, 1) * blockSize;
   lws.resize(length);
   as.resize(length);
   lws = subrange(lws_base, 0, length);
   as = subrange(as_base, 0, length);
-
   s.setRange(0, length);
   s.resizeMax(length);
 
@@ -298,7 +300,8 @@ bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
     typename precompute_type<R,V1::location>::type& pre) {
   /* pre-condition */
   int blockSize = as.size();
-  bool r = now.isObserved() && this->resam != NULL && this->resam->isTriggered(lws);
+  bool r = now.isObserved() && this->resam != NULL
+      && this->resam->isTriggered(lws);
   if (r) {
     this->resam->ancestors(rng, lws, as, pre);
     lws.clear();
@@ -318,7 +321,8 @@ bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
   /* pre-condition */
   int blockSize = as.size();
 
-  bool r = now.isObserved() && this->resam != NULL && this->resam->isTriggered(lws);
+  bool r = now.isObserved() && this->resam != NULL
+      && this->resam->isTriggered(lws);
   if (r) {
     //this->resam->ancestors(rng, lws, as, a, pre);
     lws.clear();

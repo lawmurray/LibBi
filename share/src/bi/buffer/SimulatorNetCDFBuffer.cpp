@@ -75,8 +75,10 @@ void bi::SimulatorNetCDFBuffer::create(const size_t P, const size_t T) {
 
   if (schema == FLEXI) {
     /* flexi schema variables */
-    startVar = nc_def_var(ncid, "start", NC_INT64, nrDim);
-    lenVar = nc_def_var(ncid, "len", NC_INT64, nrDim);
+    startVar = nc_def_var(ncid, "start", NC_INT, nrDim);
+    lenVar = nc_def_var(ncid, "len", NC_INT, nrDim);
+    /* ^ NC_INT64 would be preferable, but OctCdf, and thus OctBi, seem
+     *   not to support this yet */
   }
 
   /* other variables */

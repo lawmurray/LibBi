@@ -111,7 +111,11 @@ int main(int argc, char* argv[]) {
   /* output */
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT) {
+    [% IF client.get_named_arg('filter') == 'adaptive' %]
+    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE, SimulatorNetCDFBuffer::FLEXI);
+    [% ELSE %]
     bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+    [% END %]
   }
 
   /* resampler */
