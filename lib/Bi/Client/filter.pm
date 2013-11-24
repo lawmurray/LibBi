@@ -176,7 +176,7 @@ Number of steps to take.
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
-C<'anpf'>:
+C<'adaptive'>:
 
 =over 4
 
@@ -188,41 +188,38 @@ The stopping criterion to use; one of:
 
 =item C<deterministic>
 
-fixed number of particles,
+for a fixed number of particles,
 
 =item C<sumofweights>
 
-sum of weights,
+for a sum of weights,
 
 =item C<miness>
 
-minimum ESS,
+for a minimum effective sample size (ESS),
 
 =item C<stddev>
 
-...
+for a minimum standard deviation,
 
 =item C<var>
 
-...
+for a minimum variance.
 
 =back
 
-=item C<--rel-threshold>
+=item C<--stopper-threshold>
 
-...
+Threshold value for stopping criterion.
 
 =item C<--max-particles>
 
-Maximum number of particles at each time step.
+Maximum number of particles at any time, regardless of the stopping
+criterion.
 
 =item C<--block-particles>
 
-Number of particles per block.
-
-=item C<--min-ess-rel>
-
-Minimum ESS at each time step.
+Number of particles .
 
 =back
 
@@ -294,6 +291,11 @@ our @CLIENT_OPTIONS = (
       default => 'miness'
     },
     {
+      name => 'stopper-threshold',
+      type => 'int',
+      default => 128
+    },
+    {
       name => 'block-particles',
       type => 'int',
       default => 128
@@ -302,11 +304,6 @@ our @CLIENT_OPTIONS = (
       name => 'max-particles',
       type => 'int',
       default => 32768
-    },
-    {
-      name => 'rel-threshold',
-      type => 'int',
-      default => 10
     },
     
     # deprecations

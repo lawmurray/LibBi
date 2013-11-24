@@ -162,31 +162,31 @@ int main(int argc, char* argv[]) {
   
   /* filter */
   [% IF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create(bufOutput));
   [% ELSE %]
-  BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
   [% END %]
 
   [% IF client.get_named_arg('filter') == 'lookahead' %]
-  BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
     /* stopper */
     [% IF client.get_named_arg('stopper') == 'deterministic' %]
-    Stopper stopper(NPARTICLES);
+    Stopper stopper(NPARTICLES, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
     [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-    SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
+    SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
     [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-    MinimumESSStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
+    MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
     [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-    StdDevStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
+    StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
     [% ELSIF client.get_named_arg('stopper') == 'var' %]
-    VarStopper stopper(REL_THRESHOLD, MAX_PARTICLES);
+    VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
     [% END %]
-  BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_PARTICLES, out)));
+    BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, out)));
   [% ELSE %]
-  BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
   [% END %]
 
   #ifdef ENABLE_GPERFTOOLS

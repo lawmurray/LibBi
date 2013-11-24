@@ -360,6 +360,18 @@ public:
 
 protected:
   /**
+   * Compute the maximum log-weight of a particle at the current time.
+   *
+   * @tparam L Location.
+   *
+   * @param s State.
+   *
+   * @return Maximum log-weight.
+   */
+  template<Location L>
+  real getMaxLogWeight(const ScheduleElement now, State<B,L>& s);
+
+  /**
    * Model.
    */
   B& m;
@@ -651,9 +663,7 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
   if (r) {
     if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(
-          m.observationMaxLogDensity(s,
-              sim->getObs()->getMask(now.indexObs())));
+      resam->setMaxLogWeight(getMaxLogWeight(now, s));
     }
     resam->resample(rng, lws, as, s);
   } else {
@@ -674,9 +684,7 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
   if (r) {
     if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(
-          m.observationMaxLogDensity(s,
-              sim->getObs()->getMask(now.indexObs())));
+      resam->setMaxLogWeight(getMaxLogWeight(now, s));
     }
     resam->cond_resample(rng, a, a, lws, as, s);
   } else {
@@ -716,6 +724,18 @@ void bi::ParticleFilter<B,S,R,IO1>::outputT(const real ll) {
 template<class B, class S, class R, class IO1>
 void bi::ParticleFilter<B,S,R,IO1>::term() {
   sim->term();
+}
+
+template<class B, class S, class R, class IO1>
+template<bi::Location L>
+real bi::ParticleFilter<B,S,R,IO1>::getMaxLogWeight(const ScheduleElement now,
+    State<B,L>& s) {
+  real maxlw = 0.0;
+  if (now.isObserved()) {
+    maxlw = this->m.observationMaxLogDensity(s,
+        sim->getObs()->getMask(now.indexObs()));
+  }
+  return maxlw;
 }
 
 #endif

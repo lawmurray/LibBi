@@ -78,6 +78,13 @@ public:
   void writeState(const int k, const M1 X, const V1 as, const bool r);
 
   /**
+   * Push down to ParticleFilterCache. This is a special method for
+   * AdaptiveParticleFilterCache that pushes temporary storage of particles
+   * into ParticleFilterCache once the stopping criterion is met.
+   */
+  void push();
+
+  /**
    * Swap the contents of the cache with that of another.
    */
   void swap(AdaptiveParticleFilterCache<IO1,CL>& o);
@@ -281,6 +288,26 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
 }
 
 template<class IO1, bi::Location CL>
+void bi::AdaptiveParticleFilterCache<IO1,CL>::push() {
+  int k = 0;
+  while (timeCache.isValid(k)) {
+    ParticleFilterCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
+    ParticleFilterCache<IO1,CL>::writeState(base + k, particleCache.get(k),
+        ancestorCache.get(k), true);
+    ParticleFilterCache<IO1,CL>::writeLogWeights(base + k,
+        logWeightCache.get(k));
+    ++k;
+  }
+
+  timeCache.clear();
+  particleCache.clear();
+  logWeightCache.clear();
+  ancestorCache.clear();
+  base = -1;
+  P = 0;
+}
+
+template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
     AdaptiveParticleFilterCache<IO1,CL>& o) {
   ParticleFilterCache<IO1,CL>::swap(o);
@@ -294,7 +321,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
 
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::clear() {
-  //ParticleFilterCache<IO1,CL>::clear();
+  ParticleFilterCache<IO1,CL>::clear();
   timeCache.clear();
   particleCache.clear();
   logWeightCache.clear();
@@ -316,17 +343,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
 
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
-  int k = 0;
-  while (timeCache.isValid(k)) {
-    ParticleFilterCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
-    ParticleFilterCache<IO1,CL>::writeState(base + k, particleCache.get(k),
-        ancestorCache.get(k), true);
-    ParticleFilterCache<IO1,CL>::writeLogWeights(base + k,
-        logWeightCache.get(k));
-    ++k;
-  }
-
-  //ParticleFilterCache<IO1,CL>::flush();
+  push();
+  ParticleFilterCache<IO1,CL>::flush();
   timeCache.flush();
   particleCache.flush();
   logWeightCache.flush();

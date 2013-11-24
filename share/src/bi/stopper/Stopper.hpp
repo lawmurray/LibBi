@@ -1,50 +1,103 @@
 /**
  * @file
  *
- * @author anthony
- * $Rev$
- * $Date$
+ * @author Anthony Lee
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
  */
-
-#ifndef STOPPER_HPP_
-#define STOPPER_HPP_
+#ifndef BI_STOPPER_STOPPER_HPP
+#define BI_STOPPER_STOPPER_HPP
 
 #include "../math/scalar.hpp"
 
 namespace bi {
-
+/**
+ * Stopper for fixed number of particles.
+ *
+ * @ingroup method_stopper
+ *
+ * Used by AdaptiveParticleFilter to determine when a sufficient number of
+ * particles have been propagated. Call #stop() any number of times with
+ * additional weights of new particles, then #reset() again before reuse.
+ */
 class Stopper {
 public:
-  Stopper(int P);
+  /**
+   * Constructor.
+   *
+   * @param threshold Threshold value.
+   * @param maxP Maximum number of particles.
+   * @param blockP Number of particles per block.
+   * @param T Number of observations.
+   */
+  Stopper(const real threshold, const int maxP, const int blockP,
+      const int T);
 
-  template<class V1> bool stop(V1 lws, int T, real maxlw, int blockSize);
-  template<class V1> bool stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize);
+  /**
+   * Stop?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws New log-weights.
+   * @param maxlw Maximum log-weight.
+   */
+  template<class V1>
+  bool stop(const V1 lws, const real maxlw);
 
-  int getMaxParticles();
+  /**
+   * Reset for reuse.
+   */
+  void reset();
 
-private:
-  const int P;
+  /**
+   * Get number of particles per block.
+   */
+  int getBlockSize() const;
+
+protected:
+  /**
+   * Threshold value.
+   */
+  const real threshold;
+
+  /**
+   * Maximum number of particles.
+   */
+  const int maxP;
+
+  /**
+   * Number of particles per block.
+   */
+  const int blockP;
+
+  /**
+   * Number of observations.
+   */
+  const int T;
+
+  /**
+   * Number of particles.
+   */
+  int P;
 };
+}
 
-bi::Stopper::Stopper(int P) : P(P) {
-
+inline bi::Stopper::Stopper(const real threshold, const int maxP,
+    const int blockP, const int T) :
+    threshold(threshold), maxP(maxP), blockP(blockP), T(T), P(0) {
+  //
 }
 
 template<class V1>
-bool bi::Stopper::stop(V1 lws, int T, real maxlw, int blockSize) {
-  return lws.size() >= P;
+bool bi::Stopper::stop(const V1 lws, const real maxlw) {
+  return lws.size() >= threshold;
 }
 
-template<class V1>
-bool bi::Stopper::stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize) {
-  return lws_1.size() >= P;
+inline void bi::Stopper::reset() {
+  P = 0;
 }
 
-int bi::Stopper::getMaxParticles() {
-  return P;
+inline int bi::Stopper::getBlockSize() const {
+  return blockP;
 }
-
-}
-
 
 #endif
