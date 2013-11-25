@@ -242,7 +242,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
     this->correct(*iter1, s, lws1);
 
     if (block == 0) {
-      maxlw = this->getMaxLogWeight(*(iter1 - 1), s);
+      maxlw = this->getMaxLogWeight(*iter1, s);
     }
     ++block;
     finished = stopper->stop(lws1, maxlw);
