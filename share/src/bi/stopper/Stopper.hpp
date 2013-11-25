@@ -88,7 +88,8 @@ protected:
 
 inline bi::Stopper::Stopper(const real threshold, const int maxP,
     const int blockP, const int T) :
-    threshold(threshold), maxP(maxP), blockP(blockP), T(T), P(0) {
+    threshold(threshold), maxP(std::max(maxP, blockP)), blockP(blockP), T(T), P(
+        0) {
   //
 }
 

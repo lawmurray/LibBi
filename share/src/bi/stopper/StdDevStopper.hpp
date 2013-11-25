@@ -59,7 +59,7 @@ bool bi::StdDevStopper::stop(const V1 lws, const real maxlw) {
 
   real minsum = this->T * this->threshold;
 
-  return lws.size() >= this->maxP || sum >= minsum;
+  return P >= this->maxP || sum >= minsum;
 }
 
 inline void bi::StdDevStopper::reset() {

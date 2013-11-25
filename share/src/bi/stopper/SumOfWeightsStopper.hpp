@@ -54,7 +54,7 @@ bool bi::SumOfWeightsStopper::stop(const V1 lws, const real maxlw) {
   sumw += sumexp_reduce(lws);
   real minsumw = this->T*this->threshold*bi::exp(maxlw);
 
-  return lws.size() >= this->maxP || sumw >= minsumw;
+  return P >= this->maxP || sumw >= minsumw;
 }
 
 inline void bi::SumOfWeightsStopper::reset() {
