@@ -49,6 +49,11 @@ public:
   void reset();
 
   /**
+   * Get maximum number of particles.
+   */
+  int getMaxParticles() const;
+
+  /**
    * Get number of particles per block.
    */
   int getBlockSize() const;
@@ -94,6 +99,10 @@ bool bi::Stopper::stop(const V1 lws, const real maxlw) {
 
 inline void bi::Stopper::reset() {
   P = 0;
+}
+
+inline int bi::Stopper::getMaxParticles() const {
+  return maxP;
 }
 
 inline int bi::Stopper::getBlockSize() const {

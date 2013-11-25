@@ -84,15 +84,6 @@ public:
       State<B,L>& s, V1& lws, V2& as);
   //@}
 
-protected:
-  template<class V1, class V2>
-  bool resample(Random& rng, const ScheduleElement now, V1 lws, V2 as,
-      typename precompute_type<R,V1::location>::type& pre);
-
-  template<class V1, class V2>
-  bool resample(Random& rng, const ScheduleElement now, int a, V1 lws, V2 as,
-      typename precompute_type<R,V1::location>::type& pre);
-
 private:
   /**
    * Stopping criterion.
@@ -168,6 +159,9 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
   this->output0(s);
   ll = this->correct(*iter, s, lws);
   this->output(*iter, s, r, lws, as);
+  if (this->out != NULL) {
+    this->out->push(P);
+  }
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
@@ -195,6 +189,9 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
   this->output0(s);
   ll = this->correct(*iter, s, lws);
   this->output(*iter, s, r, lws, as);
+  if (this->out != NULL) {
+    this->out->push(P);
+  }
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
@@ -209,96 +206,62 @@ template<bi::Location L, class V1, class V2>
 real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last,
     State<B,L>& s, V1& lws, V2& as) {
-  int P = s.size();
+  const int maxP = stopper->getMaxParticles();
+  const int blockP = stopper->getBlockSize();
 
-  typename loc_temp_vector<L,int>::type as_base(P);
-  typename loc_temp_vector<L,real>::type lws_base(P);
-  typename loc_temp_matrix<L,real>::type xvars(P, s.getDyn().size2());
-  xvars = s.getDyn();
+  typename loc_temp_matrix<L,real>::type X(s.size(), s.getDyn().size2());
+  typename loc_temp_vector<L,int>::type as_base(maxP);
+  typename loc_temp_vector<L,real>::type lws_base(maxP);
+
+  X = s.getDyn();
+  lws_base.clear();
 
   typename precompute_type<R,V1::location>::type pre;
   this->resam->precompute(lws, as, pre);
 
-  int block = 0, blockSize = stopper->getBlockSize();
+  bool finished = false;
+  int block = 0;
   real maxlw, ll = 0.0;
-  bool r = false, finished = false;
   BOOST_AUTO(iter1, iter);
 
-  do {  // loop over blocks
-    s.setRange(block * blockSize, xvars.size1());
-    BOOST_AUTO(as1, subrange(as_base, block * blockSize, blockSize));
-    BOOST_AUTO(lws1, subrange(lws_base, block * blockSize, blockSize));
-
-    s.getDyn() = xvars;
-    lws1.clear();
+  /* propagate block by block */
+  this->stopper->reset();
+  do {
+    s.setRange(block * blockP, blockP);
+    BOOST_AUTO(as1, subrange(as_base, block * blockP, blockP));
+    BOOST_AUTO(lws1, subrange(lws_base, block * blockP, blockP));
 
     iter1 = iter;
-    r = resample(rng, *iter1, lws, as1, pre);
-    this->resam->copy(as1, s);
+    this->resam->ancestors(rng, lws, as1, pre);
+    this->resam->copy(as1, X, s.getDyn());
     do {
       ++iter1;
       this->predict(rng, *iter1, s);
-      this->output(*iter1, s, r, lws1, as1);
+      this->output(*iter1, s, true, lws1, as1);
     } while (iter1 + 1 != last && !iter1->isObserved());
     ll += this->correct(*iter1, s, lws1);
 
     if (block == 0) {
       maxlw = this->getMaxLogWeight(*(iter1 - 1), s);
     }
-    finished = stopper->stop(lws1, maxlw);
     ++block;
+    finished = stopper->stop(lws1, maxlw);
   } while (!finished);
 
+  int length = bi::max(block - 1, 1) * blockP; // drop last block
   if (this->out != NULL) {
-    this->out->push();
+    this->out->push(length);
   }
-
-  int length = bi::max(block, 1) * blockSize;
   lws.resize(length);
   as.resize(length);
   lws = subrange(lws_base, 0, length);
   as = subrange(as_base, 0, length);
   s.setRange(0, length);
-  s.resizeMax(length);
+  //s.resizeMax(length);
 
   iter = iter1;  // caller expects iter to be advanced at end of step()
 
   return ll;
-}
-
-template<class B, class S, class R, class S2, class IO1>
-template<class V1, class V2>
-bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
-    const ScheduleElement now, V1 lws, V2 as,
-    typename precompute_type<R,V1::location>::type& pre) {
-  bool r = now.isObserved() && this->resam != NULL
-      && this->resam->isTriggered(lws);
-  if (r) {
-    this->resam->ancestors(rng, lws, as, pre);
-    lws.clear();
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
-  }
-
-  return r;
-}
-
-template<class B, class S, class R, class S2, class IO1>
-template<class V1, class V2>
-bool bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::resample(Random& rng,
-    const ScheduleElement now, int a, V1 lws, V2 as,
-    typename precompute_type<R,V1::location>::type& pre) {
-  bool r = now.isObserved() && this->resam != NULL
-      && this->resam->isTriggered(lws);
-  if (r) {
-    //this->resam->ancestors(rng, lws, as, a, pre);
-    lws.clear();
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
-  }
-  return r;
 }
 
 #endif

@@ -61,7 +61,7 @@ bool bi::MinimumESSStopper::stop(const V1 lws, const real maxlw) {
   sumw2 += sumexpsq_reduce(lws);
 
   real ess = (sumw * sumw) / sumw2;
-  real miness = this->T * this->threshold;
+  real miness = this->threshold;
   real minsumw = bi::exp(maxlw) * (miness - 1.0) / 2.0;
 
   return lws.size() >= maxP || (sumw >= minsumw && ess >= miness);

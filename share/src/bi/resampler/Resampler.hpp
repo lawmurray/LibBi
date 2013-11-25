@@ -221,11 +221,25 @@ public:
    * @tparam V1 Vector type.
    * @tparam T1 Assignable type.
    *
-   * @param as Ancestry,
+   * @param as Ancestry.
    * @oaram[in,out] v STL vector.
    */
   template<class V1, class T1>
   static void copy(const V1 as, std::vector<T1*>& v);
+
+  /**
+   * Copy based on ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   * @tparam M2 Matrix type.
+   *
+   * @param X1 Input matrix.
+   * @param as Ancestry.
+   * @param X2 Output matrix.
+   */
+  template<class V1, class M1, class M2>
+  static void copy(const V1 as, const M1 X1, M2 X2);
 
   /**
    * Normalise log-weights after resampling.
@@ -532,6 +546,11 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
       *v[i] = *v[a];
     }
   }
+}
+
+template<class V1, class M1, class M2>
+void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
+  gather_rows(as, X1, X2);
 }
 
 template<class V1>

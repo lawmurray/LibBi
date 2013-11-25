@@ -81,8 +81,11 @@ public:
    * Push down to ParticleFilterCache. This is a special method for
    * AdaptiveParticleFilterCache that pushes temporary storage of particles
    * into ParticleFilterCache once the stopping criterion is met.
+   *
+   * @param P Number of particles to push down (allows last block to be
+   * omitted, for example).
    */
-  void push();
+  void push(const int P);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -288,14 +291,14 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::push() {
+void bi::AdaptiveParticleFilterCache<IO1,CL>::push(const int P) {
   int k = 0;
   while (timeCache.isValid(k)) {
     ParticleFilterCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
-    ParticleFilterCache<IO1,CL>::writeState(base + k, particleCache.get(k),
-        ancestorCache.get(k), true);
+    ParticleFilterCache<IO1,CL>::writeState(base + k, rows(particleCache.get(k), 0, P),
+        subrange(ancestorCache.get(k), 0, P), true);
     ParticleFilterCache<IO1,CL>::writeLogWeights(base + k,
-        logWeightCache.get(k));
+        subrange(logWeightCache.get(k), 0, P));
     ++k;
   }
 
@@ -304,7 +307,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::push() {
   logWeightCache.clear();
   ancestorCache.clear();
   base = -1;
-  P = 0;
+  this->P = 0;
 }
 
 template<class IO1, bi::Location CL>
@@ -343,7 +346,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
 
 template<class IO1, bi::Location CL>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
-  push();
+  push(P);
   ParticleFilterCache<IO1,CL>::flush();
   timeCache.flush();
   particleCache.flush();
