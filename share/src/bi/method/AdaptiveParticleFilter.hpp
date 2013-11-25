@@ -185,7 +185,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
   real ll;
 
   ScheduleIterator iter = first;
-  this->init(rng, *iter, theta, s, lws, as);
+  this->init(rng, theta, *iter, s, lws, as);
   this->output0(s);
   ll = this->correct(*iter, s, lws);
   this->output(*iter, s, r, lws, as);
