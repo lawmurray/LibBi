@@ -82,15 +82,16 @@ public:
   mean(s, p, cox, pax, mu);
   std(s, p, cox, pax, sigma);
 
-  x = BI_REAL(1.0); // (re)normalising constant for truncation
+  [% IF has_upper %]
+  upper(s, p, cox, pax, mx);
+  x = BI_REAL(0.5)*(BI_REAL(1.0) + bi::erf((mx - mu)/(BI_REAL([% Math.sqrt(2.0) %])*sigma)));
+  [% ELSE %]
+  x = BI_REAL(1.0);
+  [% END %]
+
   [% IF has_lower %]
   lower(s, p, cox, pax, mn);
   x -= BI_REAL(0.5)*(BI_REAL(1.0) + bi::erf((mn - mu)/(BI_REAL([% Math.sqrt(2.0) %])*sigma)));
-  [% END %]
-
-  [% IF has_upper %]
-  upper(s, p, cox, pax, mx);
-  x -= BI_REAL(0.5)*bi::erfc((mx - mu)/(BI_REAL([% Math.sqrt(2.0) %])*sigma));
   [% END %]
 }
 
@@ -150,19 +151,46 @@ public:
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  T1 sigma, Z;
+  T1 mu, sigma, mn, mx, Z;
+  bool inside = true;
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
-  
-  [%# not a tight bound unless lower < mu < upper, but a bound nonetheless %]
-  [% IF std.is_common && (!has_lower || lower.is_common) && (!has_upper || upper.is_common) %]
+  mean(s, p, cox, pax, mu);
   std(s, p, cox, pax, sigma);
   z(s, p, cox, pax, Z);
-  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  
+  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+
+  [% IF mean.is_common && std.is_common && (!has_lower || lower.is_common) && (!has_upper || upper.is_common) %]
+  [% IF has_lower && has_upper %]
+  lower(s, p, cox, pax, mn);
+  upper(s, p, cox, pax, mx);
+  if (mn <= mu && mu <= mx) {
+  	lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  } else {
+    T1 x = (bi::abs(mn - mu) < bi::abs(mx - mu)) ? mn : mx;    
+    lp += BI_REAL(-0.5)*bi::pow((x - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  }
+  [% ELSIF has_lower && !has_upper %]
+  lower(s, p, cox, pax, mn);
+  if (mn <= mu) {
+  	lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  } else {
+    lp += BI_REAL(-0.5)*bi::pow((mn - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  }
+  [% ELSIF !has_lower && has_upper %]
+  upper(s, p, cox, pax, mx);
+  if (mx >= mu) {
+  	lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  } else {
+    lp += BI_REAL(-0.5)*bi::pow((mx - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+  }
+  [% ELSE %]
+  lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
+  [% END %]
   [% ELSE %]
   lp = BI_REAL(1.0/0.0);
   [% END %]
-  
+
   x.template fetch<target_type>(s, p, cox.index()) = xy;
 }
 
