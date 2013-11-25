@@ -239,7 +239,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
       this->predict(rng, *iter1, s);
       this->output(*iter1, s, true, lws1, as1);
     } while (iter1 + 1 != last && !iter1->isObserved());
-    ll += this->correct(*iter1, s, lws1);
+    this->correct(*iter1, s, lws1);
 
     if (block == 0) {
       maxlw = this->getMaxLogWeight(*(iter1 - 1), s);
@@ -259,6 +259,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
   s.setRange(0, length);
   //s.resizeMax(length);
 
+  ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(length));
   iter = iter1;  // caller expects iter to be advanced at end of step()
 
   return ll;
