@@ -495,8 +495,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw2s.size());
   BI_ASSERT(s.size() == lw1s.size());
 
-  bool r = this->getResam() != NULL
-      && this->getResam()->isTriggered(lw1s);
+  bool r = this->getResam() != NULL && this->getResam()->isTriggered(lw1s);
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(this->getMaxLogWeight(now, s));
@@ -519,8 +518,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lw1s.size());
   BI_ASSERT(a >= 0 && a < lw1s.size());
 
-  bool r = this->getResam() != NULL
-      && this->getResam()->isTriggered(lw1s);
+  bool r = this->getResam() != NULL && this->getResam()->isTriggered(lw1s);
   if (r) {
     if (resampler_needs_max<R>::value) {
       this->getResam()->setMaxLogWeight(this->getMaxLogWeight(now, s));

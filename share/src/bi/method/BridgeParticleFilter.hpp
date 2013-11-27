@@ -8,7 +8,7 @@
 #ifndef BI_METHOD_BRIDGEPARTICLEFILTER_HPP
 #define BI_METHOD_BRIDGEPARTICLEFILTER_HPP
 
-#include "AuxiliaryParticleFilter.hpp"
+#include "ParticleFilter.hpp"
 
 namespace bi {
 /**
@@ -26,7 +26,7 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class IO1>
-class BridgeParticleFilter: public AuxiliaryParticleFilter<B,S,R,IO1> {
+class BridgeParticleFilter: public ParticleFilter<B,S,R,IO1> {
 public:
   /**
    * @copydoc ParticleFilter::ParticleFilter()
@@ -80,13 +80,12 @@ public:
    * return.
    * @param last End of time schedule.
    * @param[in,out] s State.
-   * @param[in,out] lw1s Stage 1 log-weights.
-   * @param[in,out] lw2s On input, current log-weights of particles, on
+   * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry after resampling.
    */
   template<bi::Location L, class V1, class V2>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, V1 lw1s, V1 lw2s, V2 as);
+      State<B,L>& s, V1 lws, V2 as);
 
   /**
    * Resample, predict and correct.
@@ -103,29 +102,31 @@ public:
    * @param[in,out] s State.
    * @param X Path on which to condition. Rows index variables, columns
    * index times.
-   * @param[in,out] lw1s Stage 1 log-weights.
-   * @param[in,out] lw2s On input, current log-weights of particles, on
+   * @param[in,out] lws Log-weights.
    * @param[out] as Ancestry after resampling.
    */
   template<bi::Location L, class M1, class V1, class V2>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, const M1 X, V1 lw1s, V1 lw2s, V2 as);
+      State<B,L>& s, const M1 X, V1 lws, V2 as);
 
   /**
    * Update particle weights using lookahead.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
    *
    * @param iter Current position in time schedule.
    * @param last End of time schedule.
    * @param[in,out] s State.
-   * @param[in,out] lw1s Stage-one log-weights.
-   * @param[in,out] lw2s Stage-two log-weights.
+   * @param[in,out] lws Log-weights.
+   * @param[in,out] as Ancestry.
+   *
+   * @return Was resampling performed?
    */
-  template<Location L, class V1>
-  void bridge(Random& rng, const ScheduleIterator iter,
-      const ScheduleIterator last, State<B,L>& s, V1 lw1s, V1 lw2s);
+  template<Location L, class V1, class V2>
+  bool bridge(Random& rng, const ScheduleElement iter,
+      const ScheduleElement last, State<B,L>& s, V1 lws, V2 as);
   //@}
 };
 
@@ -174,7 +175,7 @@ struct BridgeParticleFilterFactory {
 template<class B, class S, class R, class IO1>
 bi::BridgeParticleFilter<B,S,R,IO1>::BridgeParticleFilter(B& m, S* sim,
     R* resam, IO1* out) :
-    AuxiliaryParticleFilter<B,S,R,IO1>(m, sim, resam, out) {
+    ParticleFilter<B,S,R,IO1>(m, sim, resam, out) {
   //
 }
 
@@ -187,16 +188,16 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   bool r = false;
   real ll;
 
-  typename loc_temp_vector<L,real>::type lw1s(P), lw2s(P);
+  typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int,-1,1>::type as(P);
 
   ScheduleIterator iter = first;
-  this->init(rng, *iter, s, lw1s, lw2s, as, inInit);
+  this->init(rng, *iter, s, lws, as, inInit);
   this->output0(s);
-  ll = this->correct(*iter, s, lw2s);
-  this->output(*iter, s, r, lw2s, as);
+  ll = this->correct(*iter, s, lws);
+  this->output(*iter, s, r, lws, as);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lw1s, lw2s, as);
+    ll += step(rng, iter, last, s, lws, as);
   }
   this->term();
   this->outputT(ll);
@@ -216,16 +217,16 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   int r = 0;
   real ll;
 
-  typename loc_temp_vector<L,real>::type lw1s(P), lw2s(P);
+  typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int,-1,1>::type as(P);
 
   ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, lw1s, lw2s, as);
+  this->init(rng, theta, *iter, s, lws, as);
   this->output0(s);
-  ll = this->correct(*iter, s, lw2s);
-  this->output(*iter, s, r, lw2s, as);
+  ll = this->correct(*iter, s, lws);
+  this->output(*iter, s, r, lws, as);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lw1s, lw2s, as);
+    ll += step(rng, iter, last, s, lws, as);
   }
   this->term();
   this->outputT(ll);
@@ -245,17 +246,17 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   bool r = false;
   real ll;
 
-  typename loc_temp_vector<L,real>::type lw1s(P), lw2s(P);
+  typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int,-1,1>::type as(P);
 
   ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, lw1s, lw2s, as);
+  this->init(rng, theta, *iter, s, lws, as);
   row(s.getDyn(), 0) = column(X, 0);
   this->output0(s);
-  ll = this->correct(*iter, s, lw2s);
-  this->output(*iter, s, r, lw2s, as);
+  ll = this->correct(*iter, s, lws);
+  this->output(*iter, s, r, lws, as);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, X, lw1s, lw2s, as);
+    ll += step(rng, iter, last, s, X, lws, as);
   }
   this->term();
   this->outputT(ll);
@@ -267,16 +268,15 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    V1 lw1s, V1 lw2s, V2 as) {
-  bool r = false;
+    V1 lws, V2 as) {
+  bool r = this->resample(rng, *iter, s, lws, as);
   do {
-    this->bridge(rng, iter, last, s, lw1s, lw2s);
-    r = this->resample(rng, *iter, s, lw1s, lw2s, as);
+    r = this->bridge(rng, iter, last, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  real ll = this->correct(*iter, s, lw2s);
-  this->output(*iter, s, r, lw2s, as);
+  real ll = this->correct(*iter, s, lws);
+  this->output(*iter, s, r, lws, as);
 
   return ll;
 }
@@ -285,32 +285,46 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class M1, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    const M1 X, V1 lw1s, V1 lw2s, V2 as) {
-  bool r = false;
+    const M1 X, V1 lws, V2 as) {
+  bool r = this->resample(rng, *iter, s, lws, as);
   do {
-    this->bridge(rng, iter, last, s, lw1s, lw2s);
-    r = this->resample(rng, *iter, s, lw1s, lw2s, as);
+    r = this->bridge(rng, iter, last, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
   row(s.getDyn(), 0) = column(X, iter->indexOutput());
-  real ll = this->correct(*iter, s, lw2s);
-  this->output(*iter, s, r, lw2s, as);
+  real ll = this->correct(*iter, s, lws);
+  this->output(*iter, s, r, lws, as);
 
   return ll;
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1>
-void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
+template<bi::Location L, class V1, class V2>
+bool bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
-    V1 lw1s, V1 lw2s) {
-  lw1s = lw2s;
+    V1 lws, V2 as) {
+  bool r = false;
   if (last->indexObs() > iter->indexObs() && iter->hasDelta()
       && !iter->isObserved()) {
+    typename loc_temp_vector<L,real>::type lws1(lws.size());
+    typename loc_temp_vector<L,int,-1,1>::type as1(as.size());
+
+    lws1.clear();
     this->m.bridgeLogDensities(s,
-        this->getSim()->getObs()->getMask(iter->indexObs()), lw1s);
+        this->getSim()->getObs()->getMask(iter->indexObs()), lws1);
+    axpy(1.0, lws1, lws);
+
+    r = this->resam != NULL && this->resam->isTriggered(lws);
+    if (r) {
+      this->resam->resample(rng, lws, as1, s);
+      bi::gather(as1, as, as);
+      bi::gather(as1, lws1, lws1);
+    }
+    axpy(-1.0, lws1, lws);
+    Resampler::normalise(lws);
   }
+  return r;
 }
 
 #endif
