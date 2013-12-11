@@ -6,7 +6,6 @@
 
 [%-
 A = action.get_named_arg('A');
-x = action.get_named_arg('x');
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
@@ -23,13 +22,16 @@ public:
 };
 
 #include "bi/math/view.hpp"
+#include "bi/math/operation.hpp"
 
 [% sig_action_static_matrix_function('simulate') %] {
-  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), [% A.get_var.get_shape.get_size1 %], [% A.get_var.get_shape.get_size2 %]));
-  BOOST_AUTO(b, pax.template fetch<Var[% x.get_var.get_id %]>(s, p));
-  BOOST_AUTO(c, x.template fetch<target_type>(s, p));
-    
-  bi::gemv(A, b, c);
+  const int N1 = [% A.get_var.get_shape.get_size1 %];
+  const int N2 = [% A.get_var.get_shape.get_size2 %];
+
+  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), N1, N2));
+  BOOST_AUTO(B, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<target_type>(s, p)), N2, N1));
+  
+  bi::transpose(A, B);
 }
 
 [% sig_action_dynamic_matrix_function('simulate') %] {  

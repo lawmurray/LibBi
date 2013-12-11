@@ -75,6 +75,14 @@ void multi_set_vector(const int P, V1 xs, const int p, const V2 x);
 //@}
 
 /**
+ * Multiple #transpose.
+ *
+ * @ingroup math_multi_op
+ */
+template<class M1, class M2>
+void multi_transpose(const int P, const M1 A, M2 B);
+
+/**
  * Multiple #chol.
  *
  * @ingroup math_multi_op
@@ -560,6 +568,26 @@ void bi::multi_set_vector(const int P, V1 xs, const int p, const V2 x) {
   BI_ASSERT(P*x.size() == xs.size());
 
   subrange(xs, p, x.size(), P) = x;
+}
+
+template<class M1, class M2>
+void bi::multi_transpose(const int P, const M1 A, M2 B) {
+  #pragma omp parallel
+  {
+    typename sim_temp_matrix<M1>::type A1(A.size1()/P, A.size2());
+    typename sim_temp_matrix<M2>::type B1(B.size1()/P, B.size2());
+    int p;
+
+    #pragma omp for
+    for (int p = 0; p < P; ++p) {
+      multi_get_matrix(P, A, p, A1);
+      multi_get_matrix(P, B, p, B1);
+
+      transpose(A1, B1);
+
+      multi_set_matrix(P, B, p, B1);
+    }
+  }
 }
 
 template<class M1, class M2>
