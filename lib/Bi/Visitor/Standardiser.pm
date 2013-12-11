@@ -69,6 +69,8 @@ sub visit_after {
             if ($node->get_expr1->is_matrix) {
                 if ($node->get_expr2->is_vector) {
                     $result = new Bi::Expression::Function('gemv_', [ $node->get_expr1, $node->get_expr2 ]);
+                } elsif ($node->get_expr2->is_matrix) {
+                	$result = new Bi::Expression::Function('gemm_', [ $node->get_expr1, $node->get_expr2 ]);
                 }
             }
         } elsif ($node->get_op =~ /^\.(.*?)$/) {

@@ -556,7 +556,7 @@ sub expression {
     my $self = shift;
     my $root = shift;
 
-    return Bi::Visitor::Standardiser->evaluate($root);
+    return $root;
 }
 
 =item B<literal>(I<value>)

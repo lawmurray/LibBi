@@ -155,13 +155,11 @@ object.
 sub get_shape {
     my $self = shift;
 
-    my $name = $self->get_name;
-    if ($name eq 'gemv') {
-        my $expr1 = $self->get_named_arg('A');
-        my $expr2 = $self->get_named_arg('x');
-        
-        return new Bi::Expression::Shape($expr1->get_size1, $expr2->get_size2);
+    if ($self->num_args > 0) {
+    	# assume return value is same shape as first argument
+    	return $self->get_arg(0)->get_shape;
     } else {
+    	# scalar
         return new Bi::Expression::Shape();
     }
 }

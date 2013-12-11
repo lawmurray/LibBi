@@ -1,0 +1,80 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+%]
+
+[%-PROCESS block/misc/header.hpp.tt-%]
+
+[% create_action_typetree(block) %]
+
+[%-
+A = block.get_actions.0.get_named_arg('A');
+uplo = block.get_actions.0.get_named_arg('uplo');
+S = block.get_actions.0.get_left;
+%]
+
+/**
+ * Block: [% block.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% create_action_typedef(block) %]
+
+  [% declare_block_static_function('simulate') %]
+  [% declare_block_static_function('sample') %]
+  [% declare_block_static_function('logdensity') %]
+  [% declare_block_static_function('maxlogdensity') %]
+
+  [% declare_block_dynamic_function('simulate') %]
+  [% declare_block_dynamic_function('sample') %]
+  [% declare_block_dynamic_function('logdensity') %]
+  [% declare_block_dynamic_function('maxlogdensity') %]
+
+  [% declare_block_sparse_static_function('simulate') %]
+  [% declare_block_sparse_static_function('sample') %]
+  [% declare_block_sparse_static_function('logdensity') %]  
+  [% declare_block_sparse_static_function('maxlogdensity') %]  
+};
+
+#include "bi/math/operation.hpp"
+#include "bi/math/multi_operation.hpp"
+#include "bi/math/sim_temp_matrix.hpp"
+
+[% sig_block_static_function('simulate') %] {
+  const int P = s.size();
+  const int N = [% A.get_var.get_shape.get_size1 %];
+  const char uplo = '[% uplo.eval_const %]';
+  
+  [% IF A.is_common %]
+    BOOST_AUTO(A, reshape([% get_var(A) %], N, N));
+    [% IF S.is_common %]
+    BOOST_AUTO(S, reshape([% get_var(S) %], N, N));
+    bi::chol(A, S, uplo);
+    [% ELSE %]
+    typename bi::sim_temp_matrix<BOOST_TYPEOF(A)>::type S1(N, N);
+    bi::chol(A, S1, uplo);
+    set_rows([% get_var(S) %], vec(S1));
+    [% END %]
+  [% ELSE %]
+    BOOST_AUTO(A, reshape([% get_var(A) %], P*N, N));
+    BOOST_AUTO(S, reshape([% get_var(S) %], P*N, N));
+    bi::multi_chol(P, A, S, uplo);
+  [% END %]
+}
+
+[% std_block_static_function('sample') %]
+[% std_block_static_function('logdensity') %]
+[% std_block_static_function('maxlogdensity') %]
+
+[% std_block_dynamic_function('simulate') %]
+[% std_block_dynamic_function('sample') %]
+[% std_block_dynamic_function('logdensity') %]
+[% std_block_dynamic_function('maxlogdensity') %]
+
+[% std_block_sparse_static_function('simulate') %]
+[% std_block_sparse_static_function('sample') %]
+[% std_block_sparse_static_function('logdensity') %]
+[% std_block_sparse_static_function('maxlogdensity') %]
+
+[% PROCESS 'block/misc/footer.hpp.tt' %]

@@ -4,11 +4,6 @@
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
 %]
 
-[%-
-A = action.get_named_arg('A');
-uplo = action.get_named_arg('uplo');
-%]
-
 [%-PROCESS action/misc/header.hpp.tt-%]
 
 /**
@@ -18,24 +13,6 @@ class [% class_name %] {
 public:
   [% std_action %]
 
-  [% declare_action_static_matrix_function('simulate') %]
-  [% declare_action_dynamic_matrix_function('simulate') %]
 };
-
-#include "bi/math/view.hpp"
-#include "bi/math/operation.hpp"
-
-[% sig_action_static_matrix_function('simulate') %] {
-  const int N = [% A.get_var.get_shape.get_size1 %];
-
-  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), N, N));
-  BOOST_AUTO(S, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<target_type>(s, p)), N, N));
-  
-  bi::chol(A, S, '[% uplo.eval_const %]');
-}
-
-[% sig_action_dynamic_matrix_function('simulate') %] {  
-  simulates(s, p, pax, x);
-}
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

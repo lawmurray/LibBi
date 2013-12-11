@@ -85,7 +85,3 @@ sub validate {
 =head1 AUTHOR
 
 Lawrence Murray <lawrence.murray@csiro.au>
-
-=head1 VERSION
-
-$Rev$ $Date$

@@ -69,8 +69,7 @@ sub validate {
         die("unrecognised value '$uplo' for argument 'uplo' of action 'cholesky'\n");
     }
 
-    $self->set_parent('matrix_');
-    $self->set_can_combine(1);
+    $self->set_parent('cholesky_');
     $self->set_is_matrix(1);
     $self->set_can_nest(1);
     $self->set_unroll_target(1);

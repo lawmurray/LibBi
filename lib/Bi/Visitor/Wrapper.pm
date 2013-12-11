@@ -110,10 +110,10 @@ sub _wrap {
         }
         $graph->delete_vertex($vertex);
         
-        # greedily add any other children with satisfied dependneices to this
+        # greedily add any other children with satisfied dependencies to this
         # block, if it is of their preferred parent type
         foreach $vertex (@vertices[1..$#vertices]) {
-            if ($vertex->isa('Bi::Action') &&
+            if ($vertex->isa('Bi::Action') && $vertex->can_combine &&
                     $vertex->get_parent eq $block->get_name) {
                 $block->push_child($vertex);
                 $graph->delete_vertex($vertex);

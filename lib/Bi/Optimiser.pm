@@ -72,6 +72,9 @@ sub optimise {
     Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);
     
     Bi::Visitor::Unroller->evaluate($model);
+    Bi::Visitor::Standardiser->evaluate($model);
+    Bi::Visitor::Unroller->evaluate($model);
+    # ^ Standardiser may introduce additional actions to unroll
     Bi::Visitor::Wrapper->evaluate($model);
 }
 

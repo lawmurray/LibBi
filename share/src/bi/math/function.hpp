@@ -97,6 +97,12 @@ CUDA_FUNC_BOTH T min(const T x, const T y);
 template<class M1, class V1, class V2>
 CUDA_FUNC_BOTH void gemv(const M1 A, const V1 x, V2 y);
 
+template<class M1, class M2, class M3>
+CUDA_FUNC_BOTH void gemm(const M1 A, const M2 X, M3 Y);
+
+template<class M1, class M2>
+CUDA_FUNC_BOTH void trans(const M1 X, M2 Y);
+
 template<class V1, class V2>
 CUDA_FUNC_BOTH void inclusive_scan(const V1 x, V2 y);
 
@@ -385,7 +391,7 @@ template<class M1, class V1, class V2>
 inline void bi::gemv(const M1 A, const V1 x, V2 y) {
   /* pre-condition */
   BI_ASSERT(A.size2() == x.size());
-  BI_ASSERT(x.size() == y.size());
+  BI_ASSERT(A.size1() == y.size());
 
   typedef typename V2::value_type T2;
 
@@ -398,6 +404,33 @@ inline void bi::gemv(const M1 A, const V1 x, V2 y) {
       val += A(i,j)*x(j);
     }
     y(i) = val;
+  }
+}
+
+template<class M1, class M2, class M3>
+inline void bi::gemm(const M1 A, const M2 X, M3 Y) {
+  /* pre-condition */
+  BI_ASSERT(A.size2() == X.size1());
+  BI_ASSERT(Y.size1() == A.size1() && Y.size2() == X.size2());
+
+  ///@todo Improve upon naive implementation
+  int k;
+  for (k = 0; k < X.size2(); ++k) {
+    gemv(A, column(X, k), column(Y, k));
+  }
+}
+
+template<class M1, class M2>
+inline void bi::trans(const M1 X, M2 Y) {
+  /* pre-condition */
+  BI_ASSERT(X.size1() == Y.size2() && X.size2() == Y.size1());
+
+  ///@todo Improve upon naive implementation
+  int i, j;
+  for (i = 0; i < X.size1(); ++i) {
+    for (j = 0; j < X.size2(); ++j) {
+      Y(j,i) = X(i,j);
+    }
   }
 }
 
