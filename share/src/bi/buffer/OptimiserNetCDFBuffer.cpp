@@ -31,6 +31,8 @@ bi::OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
 }
 
 void bi::OptimiserNetCDFBuffer::create() {
+  nc_redef(ncid);
+
   nc_put_att(ncid, "libbi_schema", "Optimiser");
   nc_put_att(ncid, "libbi_schema_version", 2);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);

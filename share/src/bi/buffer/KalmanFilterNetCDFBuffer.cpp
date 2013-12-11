@@ -31,6 +31,8 @@ bi::KalmanFilterNetCDFBuffer::KalmanFilterNetCDFBuffer(const Model& m,
 }
 
 void bi::KalmanFilterNetCDFBuffer::create(const size_t T) {
+  nc_redef(ncid);
+
   const int M = m.getNetSize(R_VAR) + m.getNetSize(D_VAR);
 
   nc_put_att(ncid, "libbi_schema", "KalmanFilter");
