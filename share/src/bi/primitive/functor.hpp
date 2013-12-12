@@ -518,6 +518,76 @@ struct is_not_finite_functor : public std::unary_function<T,T> {
   }
 };
 
+/**
+ * @ingroup primitive_functor
+ *
+ * Functor to mask the upper triangle of a matrix. Elements not in the
+ * upper triangle return zero.
+ *
+ * @tparam T1 Scalar type.
+ * @tparam T2 Integer scalar type.
+ * @tparam T3 Scalar type.
+ */
+template<class T1, class T2, class T3>
+struct upper_triangle_functor : public std::binary_function<T1,T2,T3> {
+  T2 rows;
+
+  CUDA_FUNC_BOTH upper_triangle_functor(const T2 rows) : rows(rows) {
+    //
+  }
+
+  /**
+   * Apply functor.
+   *
+   * @param x Matrix element.
+   * @param k Serialised index of matrix element.
+   *
+   * @return @p x if the element is part of the upper triangle, zero
+   * otherwise.
+   */
+  CUDA_FUNC_BOTH T3 operator()(const T1& x, const T2& k) const {
+    T2 i = k % rows;
+    T2 j = k / rows;
+
+    return static_cast<T3>(i <= j ? x : 0);
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * Functor to mask the lower triangle of a matrix. Elements not in the
+ * lower triangle return zero.
+ *
+ * @tparam T1 Scalar type.
+ * @tparam T2 Integer scalar type.
+ * @tparam T3 Scalar type.
+ */
+template<class T1, class T2, class T3>
+struct lower_triangle_functor : public std::binary_function<T1,T2,T3> {
+  T2 rows;
+
+  CUDA_FUNC_BOTH lower_triangle_functor(const T2 rows) : rows(rows) {
+    //
+  }
+
+  /**
+   * Apply functor.
+   *
+   * @param x Matrix element.
+   * @param k Serialised index of matrix element.
+   *
+   * @return @p x if the element is part of the lower triangle, zero
+   * otherwise.
+   */
+  CUDA_FUNC_BOTH T3 operator()(const T1& x, const T2& k) const {
+    T2 i = k % rows;
+    T2 j = k / rows;
+
+    return static_cast<T3>(i >= j ? x : 0);
+  }
+};
+
 }
 
 #endif

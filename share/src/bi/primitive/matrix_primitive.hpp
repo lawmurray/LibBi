@@ -56,6 +56,40 @@ template<class M1, class V1>
 void set_rows(M1 A, const V1 x);
 
 /**
+ * Set the upper triangle of a matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param[out] A Matrix.
+ * @param X Matrix.
+ *
+ * Sets the upper triangle of @p A to the upper triangle of @p X, and zeros
+ * out the remainder of @p A. Both @p A and @p X must have the same size.
+ */
+template<class M1, class M2>
+void set_upper_triangle(M1 A, const M2 X);
+
+/**
+ * Set the lower triangle of a matrix.
+ *
+ * @ingroup primitive_matrix
+ *
+ * @tparam M1 Matrix type.
+ * @tparam M2 Matrix type.
+ *
+ * @param[out] A Matrix.
+ * @param X Matrix.
+ *
+ * Sets the lower triangle of @p A to the lower triangle of @p X, and zeros
+ * out the remainder of @p A. Both @p A and @p X must have the same size.
+ */
+template<class M1, class M2>
+void set_lower_triangle(M1 A, const M2 X);
+
+/**
  * Combine vector with the columns of a matrix, using a binary operator.
  *
  * @ingroup primitive_matrix
@@ -427,6 +461,34 @@ inline void bi::set_rows(M1 A, const V1 x) {
       set_elements(column(A,j), x(j));
     }
   }
+}
+
+template<class M1, class M2>
+void bi::set_upper_triangle(M1 A, const M2 X) {
+  /* pre-condition */
+  BI_ASSERT(A.size1() == X.size1() && A.size2() == X.size2());
+
+  typedef typename M1::value_type T1;
+  typedef int T2;
+  typedef typename M2::value_type T3;
+
+  upper_triangle_functor<T1,T2,T3> op(A.size1());
+  thrust::counting_iterator<T2> seq(0);
+  thrust::transform(X.begin(), X.end(), seq, A.begin(), op);
+}
+
+template<class M1, class M2>
+void bi::set_lower_triangle(M1 A, const M2 X) {
+  /* pre-condition */
+  BI_ASSERT(A.size1() == X.size1() && A.size2() == X.size2());
+
+  typedef typename M1::value_type T1;
+  typedef int T2;
+  typedef typename M2::value_type T3;
+
+  lower_triangle_functor<T1,T2,T3> op(A.size1());
+  thrust::counting_iterator<T2> seq(0);
+  thrust::transform(X.begin(), X.end(), seq, A.begin(), op);
 }
 
 template<class M1, class V1, class BinaryFunctor>

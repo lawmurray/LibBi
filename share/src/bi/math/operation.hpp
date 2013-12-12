@@ -636,7 +636,11 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
   BI_ASSERT(U.size1() == U.size2());
   BI_ASSERT(U.inc() == 1);
 
-  U = A;
+  if (uplo == 'U') {
+    set_upper_triangle(U, A);
+  } else {
+    set_lower_triangle(U, A);
+  }
   try {
     potrf(U, uplo);
   } catch (CholeskyException e) {
@@ -654,7 +658,11 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
       }
 
       while (!success) {
-        U = A;
+        if (uplo == 'U') {
+          set_upper_triangle(U, A);
+        } else {
+          set_lower_triangle(U, A);
+        }
         addscal_elements(d, factor, d);
         try {
           potrf(U, uplo);
