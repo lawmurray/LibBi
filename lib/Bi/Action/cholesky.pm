@@ -9,9 +9,9 @@ cholesky - Cholesky factorisation.
 
 =head1 DESCRIPTION
 
-A C<cholesky> action performs a Cholesky factorisation of a symmetric
+A C<cholesky> action performs a Cholesky factorisation of a symmetric,
 positive definite matrix, returning either the lower- or upper-triangular
-factor.
+factor, with the remainder of the matrix set to zero.
 
 =cut
 
@@ -27,12 +27,13 @@ use strict;
 
 =item C<A> (position 0, mandatory)
 
-The matrix.
+The symmetric, positive definite matrix to factorise.
 
 =item C<uplo> (position 1, default C<'U'>)
 
-C<'U'> to return the upper-triangular factor, C<'L'> to return the
-lower-triangular factor.
+C<'U'> for the upper-triangular factor, C<'L'> for the lower-triangular
+factor. As C<A> must be symmetric, this also indicates which triangle of
+C<A> is read; other elements are ignored.
 
 =back
 
