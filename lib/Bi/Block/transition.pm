@@ -71,7 +71,7 @@ sub validate {
         my $refs = $action->get_right_var_refs;
         foreach my $ref (@$refs) {
             if ($ref->get_var->get_type eq 'obs') {
-                warn("variable '$var_name' is of type '$type'; 'obs' variables should not appear on the right side of actions in the '$name' block.\n");
+                warn("'obs' variables should not appear on the right side of actions in the '$name' block.\n");
             }
         }
     }
