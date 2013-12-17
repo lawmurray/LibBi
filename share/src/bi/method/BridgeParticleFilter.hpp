@@ -117,14 +117,15 @@ public:
    * @tparam L Location.
    * @tparam V1 Vector type.
    *
-   * @param now Current step in time schedule.
+   * @param iter Current position in time schedule.
+   * @param last End of time schedule.
    * @param[in,out] s State.
    * @param[in,out] lw1s Stage-one log-weights.
    * @param[in,out] lw2s Stage-two log-weights.
    */
   template<Location L, class V1>
-  void bridge(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lw1s,
-      V1 lw2s);
+  void bridge(Random& rng, const ScheduleIterator iter,
+      const ScheduleIterator last, State<B,L>& s, V1 lw1s, V1 lw2s);
   //@}
 };
 
@@ -269,7 +270,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     V1 lw1s, V1 lw2s, V2 as) {
   bool r = false;
   do {
-    this->bridge(rng, *iter, s, lw1s, lw2s);
+    this->bridge(rng, iter, last, s, lw1s, lw2s);
     r = this->resample(rng, *iter, s, lw1s, lw2s, as);
     ++iter;
     this->predict(rng, *iter, s);
@@ -287,7 +288,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     const M1 X, V1 lw1s, V1 lw2s, V2 as) {
   bool r = false;
   do {
-    this->bridge(rng, *iter, s, lw1s, lw2s);
+    this->bridge(rng, iter, last, s, lw1s, lw2s);
     r = this->resample(rng, *iter, s, lw1s, lw2s, as);
     ++iter;
     this->predict(rng, *iter, s);
@@ -302,11 +303,13 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
 void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
-    const ScheduleElement now, State<B,L>& s, V1 lw1s, V1 lw2s) {
+    const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
+    V1 lw1s, V1 lw2s) {
   lw1s = lw2s;
-  if (now.hasDelta() && !now.isObserved()) {
+  if (last->indexObs() > iter->indexObs() && iter->hasDelta()
+      && !iter->isObserved()) {
     this->m.bridgeLogDensities(s,
-        this->getSim()->getObs()->getMask(now.indexObs()), lw1s);
+        this->getSim()->getObs()->getMask(iter->indexObs()), lw1s);
   }
 }
 
