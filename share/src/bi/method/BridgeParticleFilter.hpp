@@ -125,8 +125,8 @@ public:
    * @return Was resampling performed?
    */
   template<Location L, class V1, class V2>
-  bool bridge(Random& rng, const ScheduleElement iter,
-      const ScheduleElement last, State<B,L>& s, V1 lws, V2 as);
+  bool bridge(Random& rng, const ScheduleIterator iter,
+      const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as);
   //@}
 };
 
