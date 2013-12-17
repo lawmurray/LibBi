@@ -97,6 +97,8 @@ sub visit_after {
     # recurse through inlines too
     if ($node->isa('Bi::Expression::InlineIdentifier')) {
         $node->get_inline->get_expr->accept($self, $types, $nodes);
+    } elsif ($node->isa('Bi::Expression::ConstIdentifier')) {
+        $node->get_const->get_expr->accept($self, $types, $nodes);
     }
     
     foreach my $type (@$types) {
