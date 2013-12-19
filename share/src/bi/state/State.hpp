@@ -352,12 +352,12 @@ private:
   static const int NB = B::NB;
 
   /**
-   * Storage for dense non-shared variables.
+   * Storage for dense non-common variables.
    */
   matrix_type Xdn;
 
   /**
-   * Storage for dense shared variables.
+   * Storage for dense common variables.
    */
   matrix_type Kdn;
 
@@ -403,8 +403,8 @@ private:
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
-    Xdn(roundup(P), NR + ND + NO + NDX + NR + ND),  // includes dy- and ry-vars
-    Kdn(1, NP + NPX + NF + NP + NO),  // includes py- and oy-vars
+    Xdn(roundup(P), NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
+    Kdn(1, NP + NPX + NF + NP + 2*NO),  // includes py- and oy-vars
     p(0), P(roundup(P)) {
   clear();
 }
@@ -540,14 +540,12 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return subrange(Xdn.ref(), p, P, 0, NR);
   case D_VAR:
     return subrange(Xdn.ref(), p, P, NR, ND);
-  case O_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND, NO);
   case DX_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO, NDX);
+    return subrange(Xdn.ref(), p, P, NR + ND, NDX);
   case RY_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX, NR);
+    return subrange(Xdn.ref(), p, P, NR + ND + NDX, NR);
   case DY_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX + NR, ND);
+    return subrange(Xdn.ref(), p, P, NR + ND + NDX + NR, ND);
   case P_VAR:
     return columns(Kdn.ref(), 0, NP);
   case PX_VAR:
@@ -556,8 +554,10 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return columns(Kdn.ref(), NP + NPX, NF);
   case PY_VAR:
     return columns(Kdn.ref(), NP + NPX + NF, NP);
-  case OY_VAR:
+  case O_VAR:
     return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  case OY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF + NP + NO, NO);
   default:
     BI_ASSERT(false);
     return subrange(Xdn.ref(), 0, 0, 0, 0);
@@ -572,14 +572,12 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return subrange(Xdn.ref(), p, P, 0, NR);
   case D_VAR:
     return subrange(Xdn.ref(), p, P, NR, ND);
-  case O_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND, NO);
   case DX_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO, NDX);
+    return subrange(Xdn.ref(), p, P, NR + ND, NDX);
   case RY_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX, NR);
+    return subrange(Xdn.ref(), p, P, NR + ND + NDX, NR);
   case DY_VAR:
-    return subrange(Xdn.ref(), p, P, NR + ND + NO + NDX + NR, ND);
+    return subrange(Xdn.ref(), p, P, NR + ND + NDX + NR, ND);
   case P_VAR:
     return columns(Kdn.ref(), 0, NP);
   case PX_VAR:
@@ -588,8 +586,10 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::get(
     return columns(Kdn.ref(), NP + NPX, NF);
   case PY_VAR:
     return columns(Kdn.ref(), NP + NPX + NF, NP);
-  case OY_VAR:
+  case O_VAR:
     return columns(Kdn.ref(), NP + NPX + NF + NP, NO);
+  case OY_VAR:
+    return columns(Kdn.ref(), NP + NPX + NF + NP + NO, NO);
   default:
     BI_ASSERT(false);
     return subrange(Xdn.ref(), 0, 0, 0, 0);
@@ -659,14 +659,12 @@ inline real& bi::State<B,L>::getVar(const int p, const int ix) {
     return Xdn(this->p + p, start + ix);
   case D_VAR:
     return Xdn(this->p + p, NR + start + ix);
-  case O_VAR:
-    return Xdn(this->p + p, NR + ND + start + ix);
   case DX_VAR:
-    return Xdn(this->p + p, NR + ND + NO + start + ix);
+    return Xdn(this->p + p, NR + ND + start + ix);
   case RY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + start + ix);
   case DY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + NR + start + ix);
   case P_VAR:
     return Kdn(0, start + ix);
   case PX_VAR:
@@ -675,8 +673,10 @@ inline real& bi::State<B,L>::getVar(const int p, const int ix) {
     return Kdn(0, NP + NPX + start + ix);
   case PY_VAR:
     return Kdn(0, NP + NPX + NF + start + ix);
-  case OY_VAR:
+  case O_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + NO + start + ix);
   case B_VAR:
     return builtin[start + ix];
   default:
@@ -696,14 +696,12 @@ inline const real& bi::State<B,L>::getVar(const int p, const int ix) const {
     return Xdn(this->p + p, start + ix);
   case D_VAR:
     return Xdn(this->p + p, NR + start + ix);
-  case O_VAR:
-    return Xdn(this->p + p, NR + ND + start + ix);
   case DX_VAR:
-    return Xdn(this->p + p, NR + ND + NO + start + ix);
+    return Xdn(this->p + p, NR + ND + start + ix);
   case RY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + start + ix);
   case DY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + NR + start + ix);
   case P_VAR:
     return Kdn(0, start + ix);
   case PX_VAR:
@@ -712,8 +710,10 @@ inline const real& bi::State<B,L>::getVar(const int p, const int ix) const {
     return Kdn(0, NP + NPX + start + ix);
   case PY_VAR:
     return Kdn(0, NP + NPX + NF + start + ix);
-  case OY_VAR:
+  case O_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + NO + start + ix);
   case B_VAR:
     return builtin[start + ix];
   default:
@@ -733,14 +733,12 @@ inline real& bi::State<B,L>::getVarAlt(const int p, const int ix) {
     return Xdn(this->p + p, start + ix);
   case D_VAR:
     return Xdn(this->p + p, NR + start + ix);
-  case O_VAR:
-    return Xdn(this->p + p, NR + ND + start + ix);
   case DX_VAR:
-    return Xdn(this->p + p, NR + ND + NO + start + ix);
+    return Xdn(this->p + p, NR + ND + start + ix);
   case RY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + start + ix);
   case DY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + NR + start + ix);
   case P_VAR:
     return Kdn(0, start + ix);
   case PX_VAR:
@@ -749,8 +747,10 @@ inline real& bi::State<B,L>::getVarAlt(const int p, const int ix) {
     return Kdn(0, NP + NPX + start + ix);
   case PY_VAR:
     return Kdn(0, NP + NPX + NF + start + ix);
-  case OY_VAR:
+  case O_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + NO + start + ix);
   case B_VAR:
     return builtin[start + ix];
   default:
@@ -771,14 +771,12 @@ inline const real& bi::State<B,L>::getVarAlt(const int p,
     return Xdn(this->p + p, start + ix);
   case D_VAR:
     return Xdn(this->p + p, NR + start + ix);
-  case O_VAR:
-    return Xdn(this->p + p, NR + ND + start + ix);
   case DX_VAR:
-    return Xdn(this->p + p, NR + ND + NO + start + ix);
+    return Xdn(this->p + p, NR + ND + start + ix);
   case RY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + start + ix);
   case DY_VAR:
-    return Xdn(this->p + p, NR + ND + NO + NDX + NR + start + ix);
+    return Xdn(this->p + p, NR + ND + NDX + NR + start + ix);
   case P_VAR:
     return Kdn(0, start + ix);
   case PX_VAR:
@@ -787,8 +785,10 @@ inline const real& bi::State<B,L>::getVarAlt(const int p,
     return Kdn(0, NP + NPX + start + ix);
   case PY_VAR:
     return Kdn(0, NP + NPX + NF + start + ix);
-  case OY_VAR:
+  case O_VAR:
     return Kdn(0, NP + NPX + NF + NP + start + ix);
+  case OY_VAR:
+    return Kdn(0, NP + NPX + NF + NP + NO + start + ix);
   case B_VAR:
     return builtin[start + ix];
   default:

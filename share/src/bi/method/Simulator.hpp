@@ -695,13 +695,13 @@ void bi::Simulator<B,F,O,IO1>::lookahead(const ScheduleElement next,
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::observe(Random& rng, State<B,L>& s) {
-  m.observationSamples(rng, s);
+  m.observationSample(rng, s);
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::observe(State<B,L>& s) {
-  m.observationSimulates(s);
+  m.observationSimulate(s);
 }
 
 template<class B, class F, class O, class IO1>

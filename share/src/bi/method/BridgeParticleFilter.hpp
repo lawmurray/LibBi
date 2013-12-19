@@ -311,8 +311,8 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
     typename loc_temp_vector<L,int,-1,1>::type as1(as.size());
 
     lws1.clear();
-    this->m.bridgeLogDensities(s,
-        this->getSim()->getObs()->getMask(iter->indexObs()), lws1);
+    //this->m.bridgeLogDensities(s,
+    //    this->getSim()->getObs()->getMask(iter->indexObs()), lws1);
     axpy(1.0, lws1, lws);
 
     r = this->resam != NULL && this->resam->isTriggered(lws);

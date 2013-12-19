@@ -294,7 +294,7 @@ struct is_b_var {
  */
 template<class X>
 struct is_common_var {
-  static const bool value = is_f_var<X>::value || is_p_var<X>::value || is_px_var<X>::value;
+  static const bool value = is_f_var<X>::value || is_o_var<X>::value || is_p_var<X>::value || is_px_var<X>::value;
 };
 
 /**
@@ -302,7 +302,7 @@ struct is_common_var {
  */
 template<class X>
 struct is_common_var_alt {
-  static const bool value = is_common_var<X>::value || is_o_var<X>::value;
+  static const bool value = is_common_var<X>::value;
 };
 
 /**
