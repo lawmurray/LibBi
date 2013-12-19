@@ -29,6 +29,11 @@ the following additional options:
 
 Number of samples to draw.
 
+=item C<--nobs> (default 1)
+
+Number of observation sets, starting from C<--obs-np> in C<--obs-file>, on
+which to test.
+
 =back
 
 =cut
@@ -38,6 +43,11 @@ our @CLIENT_OPTIONS = (
       type => 'int',
       default => 1
     },
+    {
+      name => 'nobs',
+      type => 'int',
+      default => 1
+    }
 );
 
 sub init {

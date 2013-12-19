@@ -175,28 +175,59 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
+  #ifdef ENABLE_TIMING
+  TicToc timer;
+  #endif
 
-  for (int i = 0; i < NRUNS; ++i) {
+  std::cout << std::setw(13) << "Rel. ESS";
+  std::cout << std::setw(13) << "CAR";
+  std::cout << std::setw(13) << "L (mean)";
+  std::cout << std::setw(13) << "L (std)";
+  #ifdef ENABLE_TIMING
+  std::cout << std::setw(13) << "t (mean us)";
+  std::cout << std::setw(13) << "t (std us)";
+  #endif
+  std::cout << std::endl;
+
+  for (int k = 0; k < NOBS; ++k) {
+    for (int i = 0; i < NRUNS; ++i) {
+      bufObs->setnp(OBS_NP + i);
+      obs->clear();
+
+      #ifdef ENABLE_TIMING
+      synchronize();
+      timer.tic();
+      #endif
+      lls(i) = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
+      #ifdef ENABLE_TIMING
+      synchronize();
+      ts(i) = timer.toc();
+      #endif
+    }
+  
+    real ress = bi::ess_reduce(lls)/NRUNS;
+    real car = bi::car_reduce(lls);
+    real llmu = bi::sumexp_reduce(lls)/NRUNS;
+    real llstd = bi::sqrt(NRUNS*(bi::sumexpsq_reduce(lls)/NRUNS - llmu*llmu)/(NRUNS - 1));
     #ifdef ENABLE_TIMING
-    synchronize();
-    timer.tic();
+    real tmu = bi::sum_reduce(ts)/NRUNS;
+    real tstd = bi::sqrt(NRUNS*(bi::sumsq_reduce(ts)/NRUNS - tmu*tmu)/(NRUNS - 1));
     #endif
-    lls(i) = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
+
+    std::cout << std::setw(13) << ress;
+    std::cout << std::setw(13) << car;
+    std::cout << std::setw(13) << llmu;
+    std::cout << std::setw(13) << llstd;
     #ifdef ENABLE_TIMING
-    synchronize();
-    ts(i) = timer.toc();
+    std::cout << std::setw(13) << tmu;
+    std::cout << std::setw(13) << tstd;
     #endif
+    std::cout << std::endl;
   }
 
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
-  
-  real ess = bi::ess_reduce(lls);
-  real car = bi::car_reduce(lls);
-  
-  std::cerr << "ESS = " << ess << std::endl;
-  std::cerr << "CAR = " << car << std::endl;
  
   delete filter;
   delete outFilter;

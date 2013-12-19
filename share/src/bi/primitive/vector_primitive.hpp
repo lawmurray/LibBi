@@ -949,9 +949,11 @@ typename V1::value_type bi::car_reduce(const V1 lls) {
   typedef typename sim_temp_vector<V1>::type temp_vector_type;
 
   const int L = lls.size();
-  temp_vector_type c(L);
+  temp_vector_type s(L), c(L);
 
-  sumexpu_inclusive_scan(lls, c);
+  s = lls;
+  sort(s);
+  sumexpu_inclusive_scan(s, c);
   T1 sum = *(c.end() - 1);
   T1 car = (2.0*sum_reduce(c)/sum - 1.0)/L;
 
