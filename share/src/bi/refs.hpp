@@ -70,6 +70,11 @@
  * approach via density estimation. <i>IEEE Transactions on Signal
  * Processing</i>, <b>2011</b>, 59, 1017-1026.
  *
+ * @anchor Murray2013
+ * Murray, L. M.; Jones, E. M. & Parslow, J. On Disturbance State-Space Models
+ * and the Particle Marginal Metropolis-Hastings Sampler. <i>SIAM/ASA Journal
+ * of Uncertainty Quantification</i>, <b>2013</b>, 1, 494-521.
+ *
  * @anchor Pitt1999
  * Pitt, M. & Shephard, N. Filtering Via Simulation: Auxiliary Particle
  * Filters. <i>Journal of the American Statistical Association</i>,

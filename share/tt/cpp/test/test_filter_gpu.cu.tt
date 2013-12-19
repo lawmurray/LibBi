@@ -1,0 +1,7 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+%]
+
+#include "test_filter_cpu.cpp"

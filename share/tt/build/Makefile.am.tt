@@ -16,7 +16,8 @@ CLIENTS = [
     'simulate',
     'smc2',
     'test',
-    'test_resampler'
+    'test_resampler',
+    'test_filter'
 ];
 %]
 
