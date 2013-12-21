@@ -190,25 +190,29 @@ int main(int argc, char* argv[]) {
   std::cout << std::endl;
 
   for (int k = 0; k < NOBS; ++k) {
-    for (int i = 0; i < NRUNS; ++i) {
-      bufObs->setnp(OBS_NP + i);
-      obs->clear();
+    bufObs->setnp(OBS_NP + k);
+    obs->clear();
 
-      #ifdef ENABLE_TIMING
-      synchronize();
-      timer.tic();
-      #endif
-      lls(i) = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
-      #ifdef ENABLE_TIMING
-      synchronize();
-      ts(i) = timer.toc();
-      #endif
+    for (int i = 0; i < NRUNS; ++i) {
+      try {
+        #ifdef ENABLE_TIMING
+        synchronize();
+        timer.tic();
+        #endif
+        lls(i) = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
+        #ifdef ENABLE_TIMING
+        synchronize();
+        ts(i) = timer.toc();
+        #endif
+      } catch (ParticleFilterDegeneratedException e) {
+        --i; // repeat
+      }
     }
   
     real ress = bi::ess_reduce(lls)/NRUNS;
     real car = bi::car_reduce(lls);
-    real llmu = bi::sumexp_reduce(lls)/NRUNS;
-    real llstd = bi::sqrt(NRUNS*(bi::sumexpsq_reduce(lls)/NRUNS - llmu*llmu)/(NRUNS - 1));
+    real llmu = bi::sum_reduce(lls)/NRUNS;
+    real llstd = bi::sqrt(NRUNS*(bi::sumsq_reduce(lls)/NRUNS - llmu*llmu)/(NRUNS - 1));
     #ifdef ENABLE_TIMING
     real tmu = bi::sum_reduce(ts)/NRUNS;
     real tstd = bi::sqrt(NRUNS*(bi::sumsq_reduce(ts)/NRUNS - tmu*tmu)/(NRUNS - 1));
