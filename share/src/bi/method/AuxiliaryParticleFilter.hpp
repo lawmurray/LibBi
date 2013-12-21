@@ -187,7 +187,8 @@ public:
    * @return Estimate of the incremental log-likelihood.
    */
   template<Location L, class V1, class V2>
-  real correct(const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws, const V2 as);
+  real correct(const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws,
+      const V2 as);
   //@}
 };
 
@@ -432,8 +433,8 @@ void bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(const ScheduleElement now,
-    State<B,L>& s, V1 lws, V1 qlws, const V2 as) {
+real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(
+    const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws, const V2 as) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
@@ -444,7 +445,8 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(const ScheduleElement now,
     qlws.clear();
     Resampler::normalise(lws);
 
-    this->m.observationLogDensities(s, this->getSim()->getObs()->getMask(now.indexObs()), lws);
+    this->m.observationLogDensities(s,
+        this->getSim()->getObs()->getMask(now.indexObs()), lws);
     ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
   }
   return ll;
