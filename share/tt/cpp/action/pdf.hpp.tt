@@ -9,6 +9,7 @@
 [%-
   pdf = action.get_named_arg('pdf');
   max_pdf = action.get_named_arg('max_pdf');
+  log = action.get_named_arg('log').eval_const;
 -%]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
@@ -40,7 +41,11 @@ public:
   [% alias_dims(action) %]
   [% fetch_parents(pdf) %]
   
+  [% IF log %]
+  lp += [% pdf.to_cpp %];
+  [% ELSE %]
   lp += bi::log([% pdf.to_cpp %]);
+  [% END %]
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
@@ -53,6 +58,8 @@ public:
   
   [% IF max_pdf.is_const && max_pdf.eval_const == 0.0 %]
   lp = BI_REAL(1.0/0.0);
+  [% ELSIF log %]
+  lp += [% max_pdf.to_cpp %];
   [% ELSE %]
   lp += bi::log([% max_pdf.to_cpp %]);
   [% END %]
