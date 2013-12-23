@@ -192,11 +192,11 @@ int main(int argc, char* argv[]) {
 
   int k;
   for (int j = 0; j < NOBS || j < NINIT; ++j) {
-    if (j < NOBS) {
+    if (j < NOBS && bufObs != NULL && obs != NULL) {
       bufObs->setnp(OBS_NP + j);
       obs->clear();
     }
-    if (j < NINIT) {
+    if (j < NINIT && bufInit != NULL) {
       bufInit->setnp(INIT_NP + j);
     }
 
