@@ -191,9 +191,14 @@ int main(int argc, char* argv[]) {
   std::cout << std::endl;
 
   int k;
-  for (int j = 0; j < NOBS; ++j) {
-    bufObs->setnp(OBS_NP + j);
-    obs->clear();
+  for (int j = 0; j < NOBS || j < NINIT; ++j) {
+    if (j < NOBS) {
+      bufObs->setnp(OBS_NP + j);
+      obs->clear();
+    }
+    if (j < NINIT) {
+      bufInit->setnp(INIT_NP + j);
+    }
 
     k = 0;
     for (int i = 0; i < NRUNS; ++i) {
@@ -212,29 +217,31 @@ int main(int argc, char* argv[]) {
         //
       }
     }
-  
-    BOOST_AUTO(lls1, subrange(lls, 0, k));
-    BOOST_AUTO(ts1, subrange(ts, 0, k));
-  
-    real ress = bi::ess_reduce(lls1)/k;
-    real car = bi::car_reduce(lls1);
-    real llmu = bi::sum_reduce(lls1)/k;
-    real llstd = bi::sqrt(k*(bi::sumsq_reduce(lls1)/k - llmu*llmu)/(k - 1));
-    #ifdef ENABLE_TIMING
-    real tmu = bi::sum_reduce(ts1)/k;
-    real tstd = bi::sqrt(k*(bi::sumsq_reduce(ts1)/k - tmu*tmu)/(k - 1));
-    #endif
+ 
+    if (k > 0) {
+      BOOST_AUTO(lls1, subrange(lls, 0, k));
+      BOOST_AUTO(ts1, subrange(ts, 0, k));
+ 
+      real ress = bi::ess_reduce(lls1)/k;
+      real car = bi::car_reduce(lls1);
+      real llmu = bi::sum_reduce(lls1)/k;
+      real llstd = bi::sqrt(k*(bi::sumsq_reduce(lls1)/k - llmu*llmu)/(k - 1));
+      #ifdef ENABLE_TIMING
+      real tmu = bi::sum_reduce(ts1)/k;
+      real tstd = bi::sqrt(k*(bi::sumsq_reduce(ts1)/k - tmu*tmu)/(k - 1));
+      #endif
 
-    std::cout << std::setw(13) << ress;
-    std::cout << std::setw(13) << car;
-    std::cout << std::setw(13) << llmu;
-    std::cout << std::setw(13) << llstd;
-    #ifdef ENABLE_TIMING
-    std::cout << std::setw(13) << tmu;
-    std::cout << std::setw(13) << tstd;
-    #endif
-    std::cout << std::setw(13) << k;
-    std::cout << std::endl;
+      std::cout << std::setw(13) << ress;
+      std::cout << std::setw(13) << car;
+      std::cout << std::setw(13) << llmu;
+      std::cout << std::setw(13) << llstd;
+      #ifdef ENABLE_TIMING
+      std::cout << std::setw(13) << tmu;
+      std::cout << std::setw(13) << tstd;
+      #endif
+      std::cout << std::setw(13) << k;
+      std::cout << std::endl;
+    }
   }
 
   #ifdef ENABLE_GPERFTOOLS
