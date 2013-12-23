@@ -20,7 +20,6 @@ void bi::SparseInputNetCDFBuffer::setnp(const long np) {
   this->np = np;
 }
 
-
 void bi::SparseInputNetCDFBuffer::readMask(const size_t k, const VarType type,
     Mask<ON_HOST>& mask) {
   typedef typename temp_host_matrix<real>::type temp_matrix_type;

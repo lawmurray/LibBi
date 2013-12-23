@@ -262,8 +262,7 @@ public:
    * @param lws Log-weights.
    */
   template<class V1>
-  bool isTriggered(const V1 lws) const
-      throw (ParticleFilterDegeneratedException);
+  bool isTriggered(const V1 lws) const;
 
   /**
    * Compute effective sample size (ESS) of log-weights.
@@ -275,8 +274,7 @@ public:
    * @return ESS.
    */
   template<class V1>
-  static typename V1::value_type ess(const V1 lws)
-      throw (ParticleFilterDegeneratedException);
+  static typename V1::value_type ess(const V1 lws);
 
   /**
    * Compute sum of squared errors of ancestry.
@@ -561,20 +559,18 @@ void bi::Resampler::normalise(V1 lws) {
 }
 
 template<class V1>
-bool bi::Resampler::isTriggered(const V1 lws) const
-    throw (ParticleFilterDegeneratedException) {
+bool bi::Resampler::isTriggered(const V1 lws) const {
   return essRel >= 1.0 || ess(lws) < essRel * lws.size();
 }
 
 template<class V1>
-typename V1::value_type bi::Resampler::ess(const V1 lws)
-    throw (ParticleFilterDegeneratedException) {
+typename V1::value_type bi::Resampler::ess(const V1 lws) {
   typename V1::value_type result = ess_reduce(lws);
 
   if (result > 0.0) {
     return result;
   } else {
-    throw ParticleFilterDegeneratedException();
+    return 0.0; // may be nan
   }
 }
 
