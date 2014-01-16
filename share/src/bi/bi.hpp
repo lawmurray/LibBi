@@ -27,6 +27,10 @@
  *   @ingroup method
  *   Resamplers for particle filters.
  *
+ *   @defgroup method_stopper Stoppers
+ *   @ingroup method
+ *   Stoppers for adaptive particle filters.
+ *
  *   @defgroup method_updater Updaters
  *   @ingroup method
  *   Lower level components of methods.

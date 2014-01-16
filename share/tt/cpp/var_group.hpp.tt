@@ -62,6 +62,8 @@ public:
   P_VAR
   [%-ELSIF var_group.get_type == 'param_aux_'-%]
   PX_VAR
+  [%-ELSIF var_group.get_type == 'builtin_'-%]
+  B_VAR
   [%-END-%];
 };
 

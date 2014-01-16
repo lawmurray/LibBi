@@ -35,6 +35,10 @@ An expression giving the probability density function.
 
 An expression giving the maximum of the probability density function.
 
+=item C<log> (default 0)
+
+Is the expression given the log probability density function?
+
 =back
 
 =cut
@@ -47,6 +51,10 @@ our $ACTION_ARGS = [
     name => 'max_pdf',
     default => 0.0,
     positional => 1
+  },
+  {
+  	name => 'log',
+  	default => 0
   }
 ];
 
@@ -58,6 +66,8 @@ sub validate {
     $self->ensure_op('~');
     $self->ensure_scalar('pdf');
     $self->ensure_scalar('max_pdf');
+    $self->ensure_scalar('log');
+    $self->ensure_const('log');
     $self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);

@@ -46,7 +46,8 @@ TYPES = {
   'noise' => 'r',
   'obs' => 'o',
   'param' => 'p',
-  'param_aux_' => 'px'
+  'param_aux_' => 'px',
+  'builtin_' => 'b'
 };
 
 # top-level dynamic blocks
@@ -56,7 +57,7 @@ DYNAMIC_BLOCKS = ['transition', 'lookahead_transition'];
 STATIC_BLOCKS = ['parameter', 'initial', 'observation', 'proposal_parameter', 'proposal_initial'];
 
 # top-evel sparse blocks
-SPARSE_BLOCKS = ['observation', 'lookahead_observation'];
+SPARSE_BLOCKS = ['observation', 'lookahead_observation', 'bridge'];
 %]
 
 /**
@@ -93,70 +94,6 @@ public:
    * @return Time step.
    */
   static real getDelta();
-  [% END %]
-  
-  [% IF model.is_named_arg('F_start_') && model.is_named_arg('F_size_') %]
-  /**
-   * Get starting index of transition model Jacobian variables.
-   *
-   * @return Starting index.
-   */
-  static int getFStart();
-
-  /**
-   * Get size of transition model Jacobian variables.
-   *
-   * @return Size.
-   */
-  static int getFSize();
-  [% END %]
-
-  [% IF model.is_named_arg('G_start_') && model.is_named_arg('G_size_') %]
-  /**
-   * Get starting index of observation model Jacobian variables.
-   *
-   * @return Starting index.
-   */
-  static int getGStart();
-
-  /**
-   * Get size of observation model Jacobian variables.
-   *
-   * @return Size.
-   */
-  static int getGSize();
-  [% END %]
-
-  [% IF model.is_named_arg('Q_start_') && model.is_named_arg('Q_size_') %]
-  /**
-   * Get starting index of square-root covariance of state variables.
-   *
-   * @return Starting index.
-   */
-  static int getQStart();
-
-  /**
-   * Get size of square-root covariance of state variables.
-   *
-   * @return Size.
-   */
-  static int getQSize();
-  [% END %]
-
-  [% IF model.is_named_arg('R_start_') && model.is_named_arg('R_size_') %]
-  /**
-   * Get starting index of square-root covariance of observed variables.
-   *
-   * @return Starting index.
-   */
-  static int getRStart();
-
-  /**
-   * Get size of square-root covariance of observed variables.
-   *
-   * @return Size.
-   */
-  static int getRSize();
   [% END %]
 
   [%-FOREACH toplevel IN DYNAMIC_BLOCKS %]

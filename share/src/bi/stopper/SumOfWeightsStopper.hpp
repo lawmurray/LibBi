@@ -1,97 +1,65 @@
 /**
  * @file
  *
- * @author anthony
- * $Rev$
- * $Date$
+ * @author Anthony Lee
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
  */
-
-#ifndef SUMOFWEIGHTSSTOPPER_HPP_
-#define SUMOFWEIGHTSSTOPPER_HPP_
+#ifndef BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
+#define BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
 
 namespace bi {
-
-class SumOfWeightsStopper {
+/**
+ * Stopper based on sum of weights criterion.
+ *
+ * @ingroup method_stopper
+ */
+class SumOfWeightsStopper : public Stopper {
 public:
-  SumOfWeightsStopper(int rel_threshold, int maxParticles);
+  /**
+   * @copydoc Stopper::Stopper()
+   */
+  SumOfWeightsStopper(const real threshold, const int maxP, const int blockP,
+      const int T);
 
-  template<class V1> bool stop(V1 lws, int T, real maxlw, int blockSize);
-  template<class V1> bool stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize);
+  /**
+   * @copydoc Stopper::stop()
+   */
+  template<class V1>
+  bool stop(const V1 lws, const real maxlw);
 
-  int getMaxParticles();
+  /**
+   * @copydoc Stopper::reset()
+   */
+  void reset();
 
 private:
-  const int rel_threshold;
-  const int maxParticles;
+  /**
+   * Sum of weights.
+   */
   real sumw;
 };
+}
 
-bi::SumOfWeightsStopper::SumOfWeightsStopper(int rel_threshold, int maxParticles) :
-    rel_threshold(rel_threshold),
-    maxParticles(maxParticles) {
-
+inline bi::SumOfWeightsStopper::SumOfWeightsStopper(const real threshold,
+    const int maxP, const int blockP, const int T) :
+    Stopper(threshold, maxP, blockP, T), sumw(0.0) {
+  //
 }
 
 template<class V1>
-bool bi::SumOfWeightsStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-  int start;
-  if (lws.size() == blockSize) {
-    start = 0;
-    sumw = 0;
-  } else {
-    start = lws.size() - blockSize;
-  }
-  sumw += sumexp_reduce(subrange(lws,start,blockSize));
+bool bi::SumOfWeightsStopper::stop(const V1 lws, const real maxlw) {
+  /* pre-condition */
+  BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  real threshold = T*rel_threshold*exp(maxlw);
+  sumw += sumexp_reduce(lws);
+  real minsumw = this->T*this->threshold*bi::exp(maxlw);
 
-  BI_ASSERT(max_reduce(subrange(lws,start,blockSize)) <= maxlw );
-
-  if (lws.size() >= maxParticles) {
-    return true;
-  }
-
-  if (sumw >= threshold) {
-    return true;
-  } else {
-    return false;
-  }
+  return P >= this->maxP || sumw >= minsumw;
 }
 
-template<class V1>
-bool bi::SumOfWeightsStopper::stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-  int start;
-  if (lws_1.size() == blockSize) {
-    start = 0;
-    sumw = 0;
-  } else {
-    start = lws_1.size() - blockSize;
-  }
-  sumw += sumexp_reduce(subrange(lws_1,start,blockSize)) + sumexp_reduce(subrange(lws_2,start,blockSize));
-
-  real threshold = 2*T*rel_threshold*exp(maxlw);
-
-  BI_ASSERT(max_reduce(subrange(lws_1,start,blockSize)) <= maxlw);
-  BI_ASSERT(max_reduce(subrange(lws_2,start,blockSize)) <= maxlw);
-
-  if (lws_1.size() >= maxParticles) {
-    return true;
-  }
-
-  if (sumw >= threshold) {
-    return true;
-  } else {
-    return false;
-  }
+inline void bi::SumOfWeightsStopper::reset() {
+  Stopper::reset();
+  sumw = 0.0;
 }
-
-int bi::SumOfWeightsStopper::getMaxParticles() {
-  return maxParticles;
-}
-
-}
-
 
 #endif

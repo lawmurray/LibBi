@@ -416,7 +416,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   if (m == 0) {
     init(X);
   } else {
-    int_vector_type os(as.size());
+    int_vector_type os(ls.size());
     Resampler::ancestorsToOffspring(as, os);
 
     bi::scatter(ls, os, this->os);

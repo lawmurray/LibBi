@@ -23,7 +23,7 @@ public:
    * @return Number of nodes removed.
    */
   template<class V1>
-  static int prune(V1 as, V1 os, V1 ls);
+  static int prune(V1& as, V1& os, V1& ls);
 
   /**
    * Insert into ancestry tree.
@@ -44,7 +44,7 @@ public:
    * @return Updated starting index into storage.
    */
   template<class M1, class V1, class M2, class V2>
-  static int insert(M1 X, V1 as, V1 os, V1 ls, const int start, const M2 X1, const V2 as1);
+  static int insert(M1& X, V1& as, V1& os, V1& ls, const int start, const M2 X1, const V2 as1);
 };
 }
 
@@ -56,7 +56,7 @@ public:
 #include "../../primitive/matrix_primitive.hpp"
 
 template<class V1>
-int bi::AncestryCacheGPU::prune(V1 as, V1 os, V1 ls) {
+int bi::AncestryCacheGPU::prune(V1& as, V1& os, V1& ls) {
   /* pre-condition */
   BI_ASSERT(V1::on_device);
 
@@ -74,7 +74,7 @@ int bi::AncestryCacheGPU::prune(V1 as, V1 os, V1 ls) {
 }
 
 template<class M1, class V1, class M2, class V2>
-int bi::AncestryCacheGPU::insert(M1 X, V1 as, V1 os, V1 ls, const int start, const M2 X1,
+int bi::AncestryCacheGPU::insert(M1& X, V1& as, V1& os, V1& ls, const int start, const M2 X1,
     const V2 as1) {
   /* pre-condition */
   BI_ASSERT(!M1::on_device);

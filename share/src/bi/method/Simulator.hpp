@@ -414,10 +414,15 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   term();
 }
 
+#include "../math/io.hpp"
+
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     State<B,L>& s, IO2* inInit) {
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -427,6 +432,17 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
   m.parameterSample(rng, s);
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
+
+    /* when --with-transform-initial-to-param active, need to read parameters
+     * that represent initial states from dynamic variables in input file */
+    BOOST_AUTO(iter,
+        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
+            now.getTime()));
+    if (iter != inInit->getTimes().end()) {
+      int k = std::distance(inInit->getTimes().begin(), iter);
+      inInit->read(k, P_VAR, s.get(P_VAR));
+    }
+
     s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
@@ -434,6 +450,11 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
   /* dynamic inputs */
   if (now.hasInput()) {
     in->update(now.indexInput(), s);
+  }
+
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
   }
 
   /* state variable initial values */
@@ -455,17 +476,15 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
-  }
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     IO2* inInit) {
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -475,6 +494,17 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
   m.parameterSimulate(s);
   if (inInit != NULL) {
     inInit->read0(P_VAR, s.get(P_VAR));
+
+    /* when --with-transform-initial-to-param active, need to read parameters
+     * that represent initial states from dynamic variables in input file */
+    BOOST_AUTO(iter,
+        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
+            now.getTime()));
+    if (iter != inInit->getTimes().end()) {
+      int k = std::distance(inInit->getTimes().begin(), iter);
+      inInit->read(k, P_VAR, s.get(P_VAR));
+    }
+
     s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
   }
@@ -482,6 +512,11 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
   /* dynamic inputs */
   if (now.hasInput()) {
     in->update(now.indexInput(), s);
+  }
+
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
   }
 
   /* state variable initial values */
@@ -501,11 +536,6 @@ void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
-  }
 }
 
 template<class B, class F, class O, class IO1>
@@ -515,6 +545,9 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
+  /* time */
+  s.setTime(now.getTime());
+
   /* static inputs */
   if (in != NULL) {
     in->update0(s);
@@ -523,6 +556,11 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
   /* dynamic inputs */
   if (now.hasInput()) {
     in->update(now.indexInput(), s);
+  }
+
+  /* observations */
+  if (now.hasObs()) {
+    obs->update(now.indexObs(), s);
   }
 
   /* parameters */
@@ -532,11 +570,6 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
 
   /* initial values */
   m.initialSamples(rng, s);
-
-  /* observations */
-  if (now.hasObs()) {
-    obs->update(now.indexObs(), s);
-  }
 }
 
 template<class B, class F, class O, class IO1>
@@ -545,6 +578,9 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
     State<B,L>& s) {
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
+
+  /* time */
+  s.setTime(now.getTime());
 
   /* static inputs */
   if (in != NULL) {
@@ -561,13 +597,13 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
     in->update(now.indexInput(), s);
   }
 
-  /* initial values */
-  m.initialSimulates(s);
-
   /* observations */
   if (now.hasObs()) {
     obs->update(now.indexObs(), s);
   }
+
+  /* initial values */
+  m.initialSimulates(s);
 }
 
 template<class B, class F, class O, class IO1>
@@ -599,10 +635,11 @@ void bi::Simulator<B,F,O,IO1>::advance(Random& rng,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.transitionSamples(rng, next.getFrom(), next.getTo(), next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -614,10 +651,11 @@ void bi::Simulator<B,F,O,IO1>::advance(const ScheduleElement next,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.transitionSimulates(next.getFrom(), next.getTo(), next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -629,11 +667,12 @@ void bi::Simulator<B,F,O,IO1>::lookahead(Random& rng,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
-      next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.lookaheadTransitionSamples(rng, next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
@@ -645,23 +684,24 @@ void bi::Simulator<B,F,O,IO1>::lookahead(const ScheduleElement next,
   if (next.hasInput()) {
     in->update(next.indexInput(), s);
   }
-  m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
-      next.hasDelta(), s);
   if (next.hasObs()) {
     obs->update(next.indexObs(), s);
   }
+  m.lookaheadTransitionSimulates(next.getFrom(), next.getTo(),
+      next.hasDelta(), s);
+  s.setTime(next.getTime());
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::observe(Random& rng, State<B,L>& s) {
-  m.observationSamples(rng, s);
+  m.observationSample(rng, s);
 }
 
 template<class B, class F, class O, class IO1>
 template<bi::Location L>
 void bi::Simulator<B,F,O,IO1>::observe(State<B,L>& s) {
-  m.observationSimulates(s);
+  m.observationSimulate(s);
 }
 
 template<class B, class F, class O, class IO1>

@@ -62,6 +62,11 @@ public:
   template<class B, Location L>
   void update0(State<B,L>& s);
 
+  /**
+   * Clear caches.
+   */
+  void clear();
+
 private:
   /**
    * Input.
@@ -120,6 +125,7 @@ inline void bi::Forcer<IO1,CL>::update(const int k, State<B,L>& s) {
     in->read(k, F_VAR, s.get(F_VAR));
     cache.set(k, vec(s.get(F_VAR)));
   }
+  s.setLastInputTime(in->getTime(k));
 }
 
 template<class IO1, bi::Location CL>
@@ -131,6 +137,12 @@ inline void bi::Forcer<IO1,CL>::update0(State<B,L>& s) {
     in->read0(F_VAR, s.get(F_VAR));
     cache0.set(0, vec(s.get(F_VAR)));
   }
+}
+
+template<class IO1, bi::Location CL>
+void bi::Forcer<IO1,CL>::clear() {
+  cache.clear();
+  cache0.clear();
 }
 
 #endif

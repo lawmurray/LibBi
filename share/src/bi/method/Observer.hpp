@@ -62,6 +62,11 @@ public:
   template<class B, Location L>
   void update(const int k, State<B,L>& s);
 
+  /**
+   * Clear caches.
+   */
+  void clear();
+
 private:
   /**
    * Input.
@@ -136,13 +141,22 @@ const bi::Mask<CL>& bi::Observer<IO1,CL>::getMask(const int k) {
 
 template<class IO1, bi::Location CL>
 template<class B, bi::Location L>
-inline void bi::Observer<IO1,CL>::update(const int k, State<B,L>& s) {
+void bi::Observer<IO1,CL>::update(const int k, State<B,L>& s) {
   if (cache.isValid(k)) {
     vec(s.get(OY_VAR)) = cache.get(k);
   } else {
     in->readState(k, O_VAR, getHostMask(k), s.get(OY_VAR));
     cache.set(k, vec(s.get(OY_VAR)));
   }
+  s.get(O_VAR) = s.get(OY_VAR);
+  s.setNextObsTime(in->getTime(k));
+}
+
+template<class IO1, bi::Location CL>
+void bi::Observer<IO1,CL>::clear() {
+  cache.clear();
+  maskHostCache.clear();
+  maskCache.clear();
 }
 
 #endif

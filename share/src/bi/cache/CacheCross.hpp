@@ -83,10 +83,22 @@ public:
    * @tparam V1 Vector type.
    *
    * @param i Row index.
-   * @param x Rows.
+   * @param x Row.
    */
   template<class V1>
   void set(const int i, const V1 x);
+
+  /**
+   * Write rows.
+   *
+   * @tparam M1 Matrix type.
+   *
+   * @param i Index of first row.
+   * @param len Number of rows.
+   * @param X Rows.
+   */
+  template<class M1>
+  void set(const int i, const int len, const M1 X);
 
   /**
    * Resize cache.
@@ -175,11 +187,28 @@ template<class T1, bi::Location CL>
 template<class V1>
 inline void bi::CacheCross<T1,CL>::set(const int p, const V1 x) {
   /* pre-condition */
-  BI_ASSERT(p >= 0 && p < size());
+  BI_ASSERT(p >= 0);
 
+  if (p >= size()) {
+    resize(p, X.size2());
+  }
   row(X, p) = x;
   setDirty(p, true);
   setValid(p, true);
+}
+
+template<class T1, bi::Location CL>
+template<class M1>
+inline void bi::CacheCross<T1,CL>::set(const int p, const int len, const M1 X) {
+  /* pre-condition */
+  BI_ASSERT(p >= 0);
+
+  if (p + len > size()) {
+    resize(p + len, X.size2());
+  }
+  rows(this->X, p, len) = X;
+  setDirty(p, len, true);
+  setValid(p, len, true);
 }
 
 template<class T1, bi::Location CL>

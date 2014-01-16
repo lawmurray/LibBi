@@ -59,10 +59,13 @@ former is not defined, the L<transition> top-level block will be used
 instead. If the latter is not defined, the L<observation> top-level block will
 be used instead.
 
-=for comment
+=item C<bridge>
+
+Particle filter with bridging potential. Bridging weights are assigned
+according to the L<bridge> top-level block.
+
 =item C<adaptive>
 
-=for comment
 Bootstrap particle filter with adaptive number of particles at each time
 step.
 
@@ -170,11 +173,10 @@ Number of steps to take.
 
 =back
 
-=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
-C<'anpf'>:
+C<'adaptive'>:
 
 =over 4
 
@@ -186,44 +188,40 @@ The stopping criterion to use; one of:
 
 =item C<deterministic>
 
-fixed number of particles,
+for a fixed number of particles,
 
 =item C<sumofweights>
 
-sum of weights,
+for a sum of weights,
 
 =item C<miness>
 
-minimum ESS,
+for a minimum effective sample size (ESS),
 
 =item C<stddev>
 
-...
+for a minimum standard deviation,
 
 =item C<var>
 
-...
+for a minimum variance.
 
 =back
 
-=item C<--rel-threshold>
+=item C<--stopper-threshold>
 
-...
+Threshold value for stopping criterion.
 
-=item C<--block-P>
+=item C<--max-particles>
 
-...
+Maximum number of particles at any time, regardless of the stopping
+criterion.
 
-=item C<--min-ess-rel>
+=item C<--block-particles>
 
-...
-
-=item C<--max-P>
-
-...
+Number of particles .
 
 =back
-=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
@@ -293,17 +291,17 @@ our @CLIENT_OPTIONS = (
       default => 'miness'
     },
     {
-      name => 'block-P',
+      name => 'stopper-threshold',
       type => 'int',
       default => 128
     },
     {
-      name => 'rel-threshold',
+      name => 'block-particles',
       type => 'int',
-      default => 10
+      default => 128
     },
     {
-      name => 'max-P',
+      name => 'max-particles',
       type => 'int',
       default => 32768
     },

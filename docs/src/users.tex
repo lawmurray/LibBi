@@ -479,7 +479,7 @@ Special classes of expression are:
 Note from these definitions that a constant expression is a static expression,
 and a static expression is a common expression.
 
-%\subsection{Operators\label{Operators}}
+%\subsection{Operators\label{Operators}}\index{operators}
 
 The following operators are supported in expressions:
 
@@ -495,7 +495,7 @@ Ternary operators: & \bitt{?:} \\
 \hline
 \end{tabular}\index{scalar}\index{vector}\index{matrix}\index{arithmetic}\index{operators}
 
-%\subsection{Functions\label{Functions}}
+%\subsubsection{Functions\label{Functions}}\index{functions}
 
 The following functions are supported in expressions:
 
@@ -505,6 +505,18 @@ The following functions are supported in expressions:
   floor gamma lgamma log max min mod pow round sin sinh sqrt tan tanh}
 \\ \hline
 \end{tabular}\index{functions}
+
+\subsection{Built-in variables\label{Built_in_variable}}\index{built-in variables}
+
+The following built-in variables are supported:
+
+\noindent
+\begin{tabular}{lp{\textwidth}}
+\hline
+\bitt{t\_now} & the current time, \\
+\bitt{t\_last\_input} & the last time at which an \kwref{input} variable was updated, \\
+\bitt{t\_next\_obs} & the next time at which an \kwref{obs} variable will be updated. \\ \hline
+\end{tabular}\index{built-in variables}
 
 \section{Command-line interface\label{Command_line_interface}}\index{command\,line}
 

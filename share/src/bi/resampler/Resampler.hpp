@@ -221,11 +221,25 @@ public:
    * @tparam V1 Vector type.
    * @tparam T1 Assignable type.
    *
-   * @param as Ancestry,
+   * @param as Ancestry.
    * @oaram[in,out] v STL vector.
    */
   template<class V1, class T1>
   static void copy(const V1 as, std::vector<T1*>& v);
+
+  /**
+   * Copy based on ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam M1 Matrix type.
+   * @tparam M2 Matrix type.
+   *
+   * @param X1 Input matrix.
+   * @param as Ancestry.
+   * @param X2 Output matrix.
+   */
+  template<class V1, class M1, class M2>
+  static void copy(const V1 as, const M1 X1, M2 X2);
 
   /**
    * Normalise log-weights after resampling.
@@ -248,8 +262,7 @@ public:
    * @param lws Log-weights.
    */
   template<class V1>
-  bool isTriggered(const V1 lws) const
-      throw (ParticleFilterDegeneratedException);
+  bool isTriggered(const V1 lws) const;
 
   /**
    * Compute effective sample size (ESS) of log-weights.
@@ -261,8 +274,7 @@ public:
    * @return ESS.
    */
   template<class V1>
-  static typename V1::value_type ess(const V1 lws)
-      throw (ParticleFilterDegeneratedException);
+  static typename V1::value_type ess(const V1 lws);
 
   /**
    * Compute sum of squared errors of ancestry.
@@ -534,6 +546,11 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   }
 }
 
+template<class V1, class M1, class M2>
+void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
+  gather_rows(as, X1, X2);
+}
+
 template<class V1>
 void bi::Resampler::normalise(V1 lws) {
   typedef typename V1::value_type T1;
@@ -542,20 +559,18 @@ void bi::Resampler::normalise(V1 lws) {
 }
 
 template<class V1>
-bool bi::Resampler::isTriggered(const V1 lws) const
-    throw (ParticleFilterDegeneratedException) {
+bool bi::Resampler::isTriggered(const V1 lws) const {
   return essRel >= 1.0 || ess(lws) < essRel * lws.size();
 }
 
 template<class V1>
-typename V1::value_type bi::Resampler::ess(const V1 lws)
-    throw (ParticleFilterDegeneratedException) {
+typename V1::value_type bi::Resampler::ess(const V1 lws) {
   typename V1::value_type result = ess_reduce(lws);
 
   if (result > 0.0) {
     return result;
   } else {
-    throw ParticleFilterDegeneratedException();
+    return 0.0; // may be nan
   }
 }
 

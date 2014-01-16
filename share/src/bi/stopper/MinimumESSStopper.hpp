@@ -1,109 +1,76 @@
 /**
  * @file
  *
- * @author lee27x
- * $Rev$
- * $Date$
+ * @author Anthony Lee
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
  */
-
-#ifndef MINIMUMESSSTOPPER_HPP_
-#define MINIMUMESSSTOPPER_HPP_
+#ifndef BI_STOPPER_MINIMUMESSSTOPPER_HPP
+#define BI_STOPPER_MINIMUMESSSTOPPER_HPP
 
 namespace bi {
-
-class MinimumESSStopper {
+/**
+ * Stopper based on ESS criterion.
+ *
+ * @ingroup method_stopper
+ */
+class MinimumESSStopper : public Stopper {
 public:
-  MinimumESSStopper(int rel_min_ess, int maxParticles);
+  /**
+   * @copydoc Stopper::Stopper()
+   */
+  MinimumESSStopper(const real threshold, const int maxP, const int blockP,
+      const int T);
 
-  template<class V1> bool stop(V1 lws, int T, real maxlw, int blockSize);
-  template<class V1> bool stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize);
+  /**
+   * @copydoc Stopper::stop()
+   */
+  template<class V1>
+  bool stop(const V1 lws, const real maxlw);
 
-  int getMaxParticles();
+  /**
+   * @copydoc Stopper::reset()
+   */
+  void reset();
 
 private:
-  const int rel_min_ess;
-  const int maxParticles;
+  /**
+   * Sum of weights.
+   */
   real sumw;
+
+  /**
+   * Sum of squared weights.
+   */
   real sumw2;
 };
+}
 
-bi::MinimumESSStopper::MinimumESSStopper(int rel_min_ess, int maxParticles) :
-    rel_min_ess(rel_min_ess),
-    maxParticles(maxParticles) {
-
+inline bi::MinimumESSStopper::MinimumESSStopper(const real threshold,
+    const int maxP, const int blockP, const int T) :
+    Stopper(threshold, maxP, blockP, T), sumw(0.0), sumw2(0.0) {
+  //
 }
 
 template<class V1>
-bool bi::MinimumESSStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-//  BI_ASSERT(start == 0 ? sumw == sumw2 && sumw == 0 : true);
-  int start;
-  if (lws.size() == blockSize) {
-    start = 0;
-    sumw = 0;
-    sumw2 = 0;
-  } else {
-    start = lws.size() - blockSize;
-  }
-  sumw += sumexp_reduce(subrange(lws,start,blockSize));
-  sumw2 += sumexpsq_reduce(subrange(lws,start,blockSize));
-  T1 ess = (sumw*sumw)/sumw2;
+bool bi::MinimumESSStopper::stop(const V1 lws, const real maxlw) {
+  /* pre-condition */
+  BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  real min_ess = T*rel_min_ess;
+  P += lws.size();
+  sumw += sumexp_reduce(lws);
+  sumw2 += sumexpsq_reduce(lws);
 
-  real threshold = exp(maxlw)*(min_ess-1)/2;
+  real ess = (sumw * sumw) / sumw2;
+  real miness = this->threshold;
+  real minsumw = bi::exp(maxlw) * (miness - 1.0) / 2.0;
 
-  BI_ASSERT(max_reduce(subrange(lws,start,blockSize)) <= maxlw );
-
-  if (lws.size() >= maxParticles) {
-    return true;
-  }
-  if (sumw >= threshold && ess >= min_ess) {
-    return true;
-  } else {
-    return false;
-  }
+  return P >= this->maxP || (sumw >= minsumw && ess >= miness);
 }
 
-template<class V1>
-bool bi::MinimumESSStopper::stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-  int start;
-  if (lws_1.size() == blockSize) {
-    start = 0;
-    sumw = 0;
-    sumw2 = 0;
-  } else {
-    start = lws_1.size() - blockSize;
-  }
-
-  sumw += sumexp_reduce(subrange(lws_1,start,blockSize))
-      + sumexp_reduce(subrange(lws_2,start,blockSize));
-  sumw2 += sumexpsq_reduce(subrange(lws_1,start,blockSize))
-      + sumexpsq_reduce(subrange(lws_2,start,blockSize));
-
-  T1 ess = (sumw*sumw)/sumw2;
-
-  real min_ess = 2*T*rel_min_ess;
-  real threshold = exp(maxlw)*(min_ess-1)/2;
-
-  if (lws_1.size() >= maxParticles) {
-    return true;
-  }
-
-  if (sumw >= threshold && ess >= min_ess) {
-    return true;
-  } else {
-    return false;
-  }
-
+inline void bi::MinimumESSStopper::reset() {
+  Stopper::reset();
+  sumw = 0.0;
+  sumw2 = 0.0;
 }
-
-int bi::MinimumESSStopper::getMaxParticles() {
-  return maxParticles;
-}
-
-}
-
 
 #endif

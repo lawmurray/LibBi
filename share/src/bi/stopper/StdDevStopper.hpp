@@ -1,106 +1,70 @@
 /**
  * @file
  *
- * @author lee27x
- * $Rev$
- * $Date$
+ * @author Anthony Lee
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
  */
-
-#ifndef STDDEVSTOPPER_HPP_
-#define STDDEVSTOPPER_HPP_
+#ifndef BI_STOPPER_STDDEVSTOPPER_HPP
+#define BI_STOPPER_STDDEVSTOPPER_HPP
 
 namespace bi {
-
-class StdDevStopper {
+/**
+ * Stopper based on standard deviation criterion.
+ *
+ * @ingroup method_stopper
+ */
+class StdDevStopper : public Stopper {
 public:
-  StdDevStopper(int rel_threshold, int maxParticles);
+  /**
+   * @copydoc Stopper::Stopper()
+   */
+  StdDevStopper(const real threshold, const int maxP, const int blockP,
+      const int T);
 
-  template<class V1> bool stop(V1 lws, int T, real maxlw, int blockSize);
-  template<class V1> bool stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize);
+  /**
+   * @copydoc Stopper::stop()
+   */
+  template<class V1>
+  bool stop(const V1 lws, const real maxlw);
 
-  int getMaxParticles();
+  /**
+   * @copydoc Stopper::reset()
+   */
+  void reset();
 
 private:
-  const int rel_threshold;
-  const int maxParticles;
+  /**
+   * Cumulative sum.
+   */
   real sum;
 };
+}
 
-bi::StdDevStopper::StdDevStopper(int rel_threshold, int maxParticles) :
-    rel_threshold(rel_threshold),
-    maxParticles(maxParticles) {
-
+inline bi::StdDevStopper::StdDevStopper(const real threshold, const int maxP,
+    const int blockP, const int T) :
+    Stopper(threshold, maxP, blockP, T), sum(0.0) {
+  //
 }
 
 template<class V1>
-bool bi::StdDevStopper::stop(V1 lws, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-//  BI_ASSERT(start == 0 ? sumw == sumw2 && sumw == 0 : true);
-  int start;
-  if (lws.size() == blockSize) {
-    start = 0;
-    sum = 0;
-  } else {
-    start = lws.size() - blockSize;
-  }
+bool bi::StdDevStopper::stop(const V1 lws, const real maxlw) {
+  /* pre-condition */
+  BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  real mu = sumexp_reduce(subrange(lws,start,blockSize))/blockSize;
-  real s2 = sumexpsq_reduce(subrange(lws,start,blockSize))/blockSize;
-  real val = sqrt(s2-mu*mu);
+  real mu = sumexp_reduce(lws) / this->blockP;
+  real s2 = sumexpsq_reduce(lws) / this->blockP;
+  real val = bi::sqrt(s2 - mu * mu);
 
-  sum += blockSize*mu/val;
+  sum += this->blockP * mu / val;
 
-  real threshold = T*rel_threshold;
+  real minsum = this->T * this->threshold;
 
-  BI_ASSERT(max_reduce(subrange(lws,start,lws.size()-start)) <= maxlw );
-
-  if (lws.size() >= maxParticles) {
-    return true;
-  }
-  if (sum >= threshold) {
-    return true;
-  } else {
-    return false;
-  }
+  return P >= this->maxP || sum >= minsum;
 }
 
-template<class V1>
-bool bi::StdDevStopper::stop(V1 lws_1, V1 lws_2, int T, real maxlw, int blockSize) {
-  typedef typename V1::value_type T1;
-  int start;
-  if (lws_1.size() == blockSize) {
-    start = 0;
-    sum = 0;
-  } else {
-    start = lws_1.size() - blockSize;
-  }
-
-  real mu = (sumexp_reduce(subrange(lws_1,start,blockSize))
-          + sumexp_reduce(subrange(lws_2,start,blockSize)))/(2*blockSize);
-  real s2 = (sumexpsq_reduce(subrange(lws_1,start,blockSize))
-      + sumexpsq_reduce(subrange(lws_2,start,blockSize)))/(2*blockSize);
-  real val = sqrt(s2-mu*mu);
-
-  sum += blockSize*mu/val;
-
-  real threshold = 2*T*rel_threshold;
-
-  if (lws_1.size() >= maxParticles) {
-    return true;
-  }
-
-  if (sum >= threshold) {
-    return true;
-  } else {
-    return false;
-  }
-
-}
-
-int bi::StdDevStopper::getMaxParticles() {
-  return maxParticles;
-}
-
+inline void bi::StdDevStopper::reset() {
+  Stopper::reset();
+  sum = 0.0;
 }
 
 #endif

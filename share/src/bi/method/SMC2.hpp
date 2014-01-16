@@ -429,7 +429,7 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
   GaussianPdf<host_vector_type,host_matrix_type> q(NP);  // proposal distro
 
   ess = resam->ess(lws);
-  r = iter->hasObs() && resam->isTriggered(lws);
+  r = iter->isObserved() && resam->isTriggered(lws);
   if (r) {
     /* resample-move */
     adapt(thetas, lws, q);
@@ -507,7 +507,7 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::SMC2<B,F,R,IO1>::resample(Random& rng, const ScheduleElement now,
     V1 lws, V2 as, std::vector<ThetaParticle<B,L>*>& thetas) {
-  if (now.hasObs()) {
+  if (now.isObserved()) {
     resam->resample(rng, lws, as, thetas);
   }
 }

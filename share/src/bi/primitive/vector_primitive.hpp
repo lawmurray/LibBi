@@ -195,6 +195,19 @@ typename V1::value_type sumexpsq_reduce(const V1 x);
 template<class V1>
 typename V1::value_type ess_reduce(const V1 lws);
 
+/**
+ * Compute conditional acceptance rate as in
+ * @ref Murray2013 "Murray, Jones & Parslow (2013)".
+ *
+ * @ingroup primitive_vector
+ *
+ * @param lls Marginal log-likelihoods estimates.
+ *
+ * @return Conditional acceptance rate computed from given marginal
+ * log-likelihood estimates.
+ */
+template<class V1>
+typename V1::value_type car_reduce(const V1 lws);
 //@}
 
 /**
@@ -737,6 +750,8 @@ bool equal(const V1 input1, const V1 input2);
 
 }
 
+#include "../math/sim_temp_vector.hpp"
+
 #include "thrust/extrema.h"
 #include "thrust/transform_reduce.h"
 #include "thrust/transform_scan.h"
@@ -910,7 +925,7 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
 }
 
 template<class V1>
-inline typename V1::value_type bi::ess_reduce(const V1 lws) {
+typename V1::value_type bi::ess_reduce(const V1 lws) {
   /* pre-condition */
   BI_ASSERT(lws.size() > 0);
 
@@ -923,6 +938,29 @@ inline typename V1::value_type bi::ess_reduce(const V1 lws) {
       thrust::plus<T1>());
 
   return (sum1 * sum1) / sum2;
+}
+
+template<class V1>
+typename V1::value_type bi::car_reduce(const V1 lls) {
+  /* pre-condition */
+  BI_ASSERT(lls.size() > 0);
+
+  typedef typename V1::value_type T1;
+  typedef typename sim_temp_vector<V1>::type temp_vector_type;
+
+  const int L = lls.size();
+  temp_vector_type s(L), c(L);
+
+  s = lls;
+  sort(s);
+  sumexpu_inclusive_scan(s, c);
+  T1 sum = *(c.end() - 1);
+  T1 car = (2.0*sum_reduce(c)/sum - 1.0)/L;
+
+  /* post-condition */
+  BI_ASSERT(0.0 < car && car <= 1.0);
+
+  return car;
 }
 
 template<class V1, class V2, class UnaryOperator, class BinaryOperator>

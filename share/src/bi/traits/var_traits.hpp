@@ -78,6 +78,11 @@ enum VarType {
   OY_VAR,
 
   /**
+   * Built-in variable.
+   */
+  B_VAR,
+
+  /**
    * Number of variable types.
    */
   NUM_VAR_TYPES
@@ -273,11 +278,23 @@ struct is_px_var {
 };
 
 /**
+ * Built-in variable trait.
+ *
+ * @ingroup model_low
+ *
+ * @tparam X Variable type.
+ */
+template<class X>
+struct is_b_var {
+  static const bool value = var_type<X>::value == B_VAR;
+};
+
+/**
  * Common variable trait.
  */
 template<class X>
 struct is_common_var {
-  static const bool value = is_f_var<X>::value || is_p_var<X>::value || is_px_var<X>::value;
+  static const bool value = is_f_var<X>::value || is_o_var<X>::value || is_p_var<X>::value || is_px_var<X>::value;
 };
 
 /**
@@ -285,7 +302,7 @@ struct is_common_var {
  */
 template<class X>
 struct is_common_var_alt {
-  static const bool value = is_common_var<X>::value || is_o_var<X>::value;
+  static const bool value = is_common_var<X>::value;
 };
 
 /**
@@ -318,10 +335,13 @@ struct parent_type {
     typename
     boost::mpl::if_<is_o_var<X>,
         V4,
+    typename
+    boost::mpl::if_<is_b_var<X>,
+        V4,
     /*else*/
         int
     /*end*/
-    >::type>::type>::type>::type>::type>::type>::type type;
+    >::type>::type>::type>::type>::type>::type>::type>::type type;
 };
 
 }

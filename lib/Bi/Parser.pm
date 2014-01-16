@@ -100,7 +100,7 @@ sub parse {
 
 =item B<get_model>
 
-Get the model being constructed by the parser.
+Get the model constructed by the parser.
 
 =cut
 sub get_model {
@@ -151,7 +151,32 @@ Pop a block from the top of the stack, and return it.
 sub pop_block {
     my $self = shift;
         
+    return pop(@{$self->{_blocks}});
+}
+
+=item B<push_model>
+
+Push a new model onto the stack.
+
+=cut
+sub push_model {
+    my $self = shift;
+
+    push(@{$self->{_blocks}}, new Bi::Model);
+}
+
+=item B<pop_model>
+
+Pop a model from the top of the stack, and return it.
+
+=cut
+sub pop_model {
+    my $self = shift;
+        
     my $block = pop(@{$self->{_blocks}});
+    assert($block->isa('Bi::Model')) if DEBUG;
+    
+    return $block;
 }
 
 =back
@@ -170,8 +195,7 @@ sub model {
     my $spec = shift;
 
     # bless the last remaining block into a model
-    my $model = $self->pop_block;
-    bless $model, 'Bi::Model';
+    my $model = $self->pop_model;
 
     my $name;
     my $args = [];

@@ -80,9 +80,14 @@ public:
   bool hasOutput() const;
 
   /**
-   * Is there an observation at this time?
+   * Is there an observation to be updated at this time?
    */
   bool hasObs() const;
+
+  /**
+   * Is there an observation at this time?
+   */
+  bool isObserved() const;
 
 private:
   /**
@@ -126,25 +131,30 @@ private:
   bool bDelta;
 
   /**
-   * Is this an input time?
+   * Is there an input at this time?
    */
   bool bInput;
 
   /**
-   * Is this an output time?
+   * Is there an output at this time?
    */
   bool bOutput;
 
   /**
-   * Is this an observation time?
+   * Is there an observation to be updated at this time?
    */
   bool bObs;
+
+  /**
+   * Is there an observation at this time?
+   */
+  bool bObserved;
 };
 }
 
 inline bi::ScheduleElement::ScheduleElement() :
     t1(0.0), t2(0.0), k(0), kDelta(0), kInput(0), kOutput(0), kObs(0), bDelta(
-        false), bInput(false), bOutput(false), bObs(false) {
+        false), bInput(false), bOutput(false), bObs(false), bObserved(false) {
   //
 }
 
@@ -194,6 +204,10 @@ inline bool bi::ScheduleElement::hasOutput() const {
 
 inline bool bi::ScheduleElement::hasObs() const {
   return bObs;
+}
+
+inline bool bi::ScheduleElement::isObserved() const {
+  return bObserved;
 }
 
 #endif
