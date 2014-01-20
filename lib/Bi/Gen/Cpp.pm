@@ -73,7 +73,7 @@ sub gen {
 
     # model
     if (defined $model) {
-        $out = File::Spec->catfile('src', 'model', 'Model' . ucfirst($model->get_name));
+        $out = File::Spec->catfile('src', 'model', 'Model' . $model->get_name);
         $self->process_templates('model', { 'model' => $model }, $out);
 
         # dimensions
