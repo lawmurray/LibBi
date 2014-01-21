@@ -123,10 +123,22 @@ sub get_shape {
     my $op = $self->get_op;
     my $expr2 = $self->get_expr2;
 
-    if ($op eq '*' && $expr1->is_matrix && $expr2->is_vector) {
-        return new Bi::Expression::Shape([ $expr1->get_shape->get_size1, $expr2->get_shape->get_size2 ]);
+    if ($op eq '*' && ($expr1->is_vector || $expr1->is_matrix) && ($expr2->is_vector || $expr2->is_matrix)) {
+    	if ($expr1->get_shape->get_size2 != $expr2->get_shape->get_size1) {
+    		die("incompatible sizes in matrix/vector multiply\n");
+    	}
+    	my $shape = [];
+    	if ($expr1->get_shape->get_size1 > 1) {
+    		push(@$shape, $expr1->get_shape->get_size1);
+    	}
+    	if ($expr2->get_shape->get_size2 > 1) {
+    		push(@$shape, $expr2->get_shape->get_size2);
+    	}
+        return new Bi::Expression::Shape($shape);
     } else {
-        assert ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) if DEBUG;
+        unless ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) {
+            die("incompatible sizes in element-wise operation\n");
+        }
         return $self->get_expr1->get_shape;
     }
 }
