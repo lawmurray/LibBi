@@ -61,7 +61,11 @@ sub evaluate {
     $action->set_op('<-');
     
     foreach my $extract (@$extracts) {
-        my $var = new Bi::Model::Var('param_aux_');
+    	my $dims = [ map { $model->lookup_dim($_) } @{$extract->get_shape->get_sizes} ];
+    	my $var = new Bi::Model::Var('param_aux_', undef, $dims, [], {
+            'has_input' => new Bi::Expression::IntegerLiteral(0),
+            'has_output' => new Bi::Expression::IntegerLiteral(0)
+        });
         $model->push_var($var);
         
         my $left = new Bi::Expression::VarIdentifier($var);

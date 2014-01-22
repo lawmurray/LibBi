@@ -46,7 +46,16 @@ sub validate {
     $self->ensure_matrix('A');
     
     my $A = $self->get_named_arg('A');
-    $self->set_shape(new Bi::Expression::Shape([ $A->get_shape->get_sizes->[1], $A->get_shape->get_sizes->[0] ]));
+    
+    my $shape = [];
+    push(@$shape, $A->get_shape->get_size2);
+    if ($A->get_shape->get_size1 > 1) {
+        push(@$shape, $A->get_shape->get_size1);
+    }
+    $self->set_shape(new Bi::Expression::Shape($shape));
+    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
     
     $self->set_parent('matrix_');
     $self->set_can_combine(1);

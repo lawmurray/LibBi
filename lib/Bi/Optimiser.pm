@@ -68,13 +68,10 @@ sub optimise {
 
     my $model = $self->{_model};
         
-    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);    
-    Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);
-    
-    Bi::Visitor::Unroller->evaluate($model);
     Bi::Visitor::Standardiser->evaluate($model);
+    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);    
+    Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);    
     Bi::Visitor::Unroller->evaluate($model);
-    # ^ Standardiser may introduce additional actions to unroll
     Bi::Visitor::Wrapper->evaluate($model);
 }
 

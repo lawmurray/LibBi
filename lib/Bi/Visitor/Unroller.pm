@@ -66,7 +66,6 @@ sub visit_after {
             if ($node->is_element) {
                 die("cannot unroll action '" . $node->get_name . "' with element expressions\n");
             }
-
             my $action = $self->_unroll_expr($model, $node);
             $node = $action->get_left->clone;
             push(@$actions, $action);
@@ -114,35 +113,18 @@ sub _unroll_expr {
 
     # temporary variable to hold expression result
     my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';
-    my $var;
-    # TODO: These are action-specific hacks at this stage, need to improve
-    if ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'gemv_') {
-        $var = new Bi::Model::Var($type, undef, $expr->get_arg(1)->get_var->get_dims, [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } elsif ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'gemm_') {
-        $var = new Bi::Model::Var($type, undef, [ $expr->get_arg(0)->get_var->get_dims->[0], $expr->get_arg(1)->get_var->get_dims->[1] ], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } elsif ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'transpose') {
-        $var = new Bi::Model::Var($type, undef, [ $expr->get_arg(0)->get_var->get_dims->[1], $expr->get_arg(0)->get_var->get_dims->[0] ], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } else {
-        $var = new Bi::Model::Var($type, undef, [], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    }
+    my $dims = [ map { $model->lookup_dim($_) } @{$expr->get_shape->get_sizes} ];
+    
+  	my $var = new Bi::Model::Var($type, undef, $dims, [], {
+        'has_input' => new Bi::Expression::IntegerLiteral(0),
+        'has_output' => new Bi::Expression::IntegerLiteral(0)
+    });
     $model->push_var($var);
 
     # action to evaluate expression
     my $left = new Bi::Expression::VarIdentifier($var);
     my $right = $expr->clone; 
-    
+        
     my $action = new Bi::Action;
     $action->set_left($left);
     $action->set_op('<-');

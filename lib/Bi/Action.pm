@@ -172,9 +172,9 @@ sub set_left {
     $self->{_left} = $left;
     
     # set default aliases if they haven't been set already
-    if (@{$self->get_aliases} == 0) {
-    	$self->set_aliases($left->get_var->gen_aliases);
-    }
+    #if (@{$self->get_aliases} == 0) {
+    #	$self->set_aliases($left->get_var->gen_aliases);
+    #}
 }
 
 =item B<get_op>
@@ -564,16 +564,8 @@ sub validate {
     my $self = shift;
 
     my $name = $self->get_name;
-
-    # check aliases
     my $num_aliases = @{$self->get_aliases};
-    my $num_dims = @{$self->get_left->get_var->get_dims}; 
-    if ($num_aliases != $num_dims) {
-        my $plural1 = ($num_aliases == 1) ? '' : 'es';
-        my $plural2 = ($num_dims == 1) ? '' : 's';
-        die("action '$name' has $num_aliases alias$plural1 but $num_dims dimension$plural2.\n");
-    }
-
+    
     # explicitly set alias ranges
     for (my $i = 0; $i < $num_aliases; ++$i) {
         my $alias = $self->get_aliases->[$i];

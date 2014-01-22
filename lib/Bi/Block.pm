@@ -533,6 +533,9 @@ Set all children.
 sub set_children {
     my $self = shift;
     my $children = shift;
+    
+    map { assert ($_->isa('Bi::Action') || $_->isa('Bi::Block')) } @$children if DEBUG;
+        
     $self->{_children} = $children;
 }
 
@@ -694,9 +697,10 @@ sub accept {
     @{$self->{_dims}} = map { $_->accept($visitor, @args) } @{$self->get_dims};
     @{$self->{_vars}} = map { $_->accept($visitor, @args) } @{$self->get_vars};
     @{$self->{_var_groups}} = map { $_->accept($visitor, @args) } @{$self->get_var_groups};
-    
-    # visiting each child may return zero or more children, map works here
-    @{$self->{_children}} = map { $_->accept($visitor, @args) } @{$self->get_children};
+
+    # above style doesn't seem to work for children...    
+    my @children = map { $_->accept($visitor, @args) } @{$self->get_children};
+    $self->set_children(\@children);
 
     return $visitor->visit_after($self, @args);
 }

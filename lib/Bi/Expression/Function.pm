@@ -155,9 +155,33 @@ object.
 sub get_shape {
     my $self = shift;
 
-    if ($self->num_args > 0) {
+    my $name = $self->get_name;
+	if ($name eq 'gemv_' || $name eq 'gemm_') {
+		my $expr1 = $self->get_arg(0);
+		my $expr2 = $self->get_arg(1);
+		
+		if ($expr1->get_shape->get_size2 != $expr2->get_shape->get_size1) {
+    		die("incompatible sizes in matrix/vector multiply\n");
+    	}
+    	my $shape = [];
+    	if ($expr1->get_shape->get_size1 > 1) {
+    		push(@$shape, $expr1->get_shape->get_size1);
+    	}
+    	if ($expr2->get_shape->get_size2 > 1) {
+    		push(@$shape, $expr2->get_shape->get_size2);
+    	}
+        return new Bi::Expression::Shape($shape);
+	} elsif ($name eq 'transpose') {
+		my $expr1 = $self->get_arg(0);
+    	my $shape = [];
+    	push(@$shape, $expr1->get_shape->get_size2);
+    	if ($expr1->get_shape->get_size1 > 1) {
+    		push(@$shape, $expr1->get_shape->get_size1);
+    	}
+        return new Bi::Expression::Shape($shape);
+    } elsif ($self->num_args > 0) {
     	# assume return value is same shape as first argument
-    	return $self->get_arg(0)->get_shape;
+    	return $self->get_arg(0)->get_shape->clone;
     } else {
     	# scalar
         return new Bi::Expression::Shape();

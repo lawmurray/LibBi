@@ -54,6 +54,10 @@ sub validate {
     my $common_std = $self->get_named_arg('std')->is_common;
     my $vector_std = $self->get_named_arg('std')->is_scalar || $self->get_named_arg('std')->is_vector;
 
+    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
+
     if ($const_std) {
         $self->set_parent('const_std_');
     } elsif ($common_std) {
