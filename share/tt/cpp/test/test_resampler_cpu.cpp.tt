@@ -199,8 +199,6 @@ int main(int argc, char* argv[]) {
   
   bi::nc_put_var(ncid, PVar, actualPs.buf());
   bi::nc_put_var(ncid, zVar, zs.buf());
-  //PVar->put(actualPs.buf(), PS);
-  //zVar->put(zs.buf(), ZS);
 
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
