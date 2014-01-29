@@ -217,7 +217,7 @@ sub client {
 
     # generate code and build
     if ($client->is_cpp) {
-        if (defined $model && !$self->{_dry_gen}) {
+        if (!$self->{_dry_gen}) {
             $self->_report("Generating code...");
             $cpp->gen($model, $client);
             

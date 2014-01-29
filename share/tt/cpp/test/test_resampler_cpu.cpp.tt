@@ -20,13 +20,12 @@
 #include "bi/math/loc_vector.hpp"
 #include "bi/math/loc_matrix.hpp"
 #include "bi/misc/TicToc.hpp"
+#include "bi/buffer/netcdf.hpp"
 
 #include <iostream>
 #include <string>
 #include <unistd.h>
 #include <getopt.h>
-
-#include "netcdfcpp.h"
 
 #ifndef ENABLE_CUDA
 #define LOCATION ON_HOST
@@ -45,9 +44,6 @@ int main(int argc, char* argv[]) {
   boost::mpi::environment env(argc, argv);
   #endif
   
-  /* NetCDF init */
-  NcError ncErr(NcError::verbose_fatal);
-  
   /* bi init */
   bi_init(NTHREADS);
 
@@ -55,17 +51,22 @@ int main(int argc, char* argv[]) {
   Random rng(SEED);
 
   /* set up output file */
-  NcFile* out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
-	
-  NcDim* zDim = out->add_dim("z", ZS);
-  NcDim* PDim = out->add_dim("P", PS);
-  NcDim* repDim = out->add_dim("rep", REPS);
-	  
-  NcVar* sqerrVar = out->add_var("sqerr", ncDouble, zDim, PDim, repDim);
-  NcVar* timeVar = out->add_var("time", ncInt, zDim, PDim, repDim);
-  NcVar* PVar = out->add_var("P", ncInt, PDim);
-  NcVar* zVar = out->add_var("z", ncDouble, zDim);
+  int ncid = bi::nc_create(OUTPUT_FILE, NC_NETCDF4);
+
+  int zDim = bi::nc_def_dim(ncid, "z", ZS);
+  int PDim = bi::nc_def_dim(ncid, "P", PS);
+  int repDim = bi::nc_def_dim(ncid, "rep", REPS);
   
+  std::vector<int> dimids(3);
+  dimids[0] = zDim;
+  dimids[1] = PDim;
+  dimids[2] = repDim;
+  
+  int sqerrVar = bi::nc_def_var(ncid, "sqerr", NC_DOUBLE, dimids);
+  int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids);
+  int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
+  int zVar = bi::nc_def_var(ncid, "z", NC_DOUBLE, zDim);
+    
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
   MetropolisResampler resam(C);
@@ -182,25 +183,31 @@ int main(int argc, char* argv[]) {
     }
     
     /* output */
-    if (out != NULL) {
-      sqerrVar->set_cur(z, 0, 0);
-      sqerrVar->put(sqerrs.buf(), 1, PS, REPS);
-      timeVar->set_cur(z, 0, 0);
-      timeVar->put(times.buf(), 1, PS, REPS);
-    }
+    std::vector<size_t> start(3), count(3);
+    start[0] = z;
+    start[1] = 0;
+    start[2] = 0;
+    count[0] = 1;
+    count[1] = PS;
+    count[2] = REPS;
+    
+    bi::nc_put_vara(ncid, sqerrVar, start, count, sqerrs.buf());
+    bi::nc_put_vara(ncid, timeVar, start, count, times.buf());
+
     std::cerr << std::endl;
   }
   
-  PVar->put(actualPs.buf(), PS);
-  zVar->put(zs.buf(), ZS);
+  bi::nc_put_var(ncid, PVar, actualPs.buf());
+  bi::nc_put_var(ncid, zVar, zs.buf());
+  //PVar->put(actualPs.buf(), PS);
+  //zVar->put(zs.buf(), ZS);
 
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
   
   /* clean up */
-  out->sync();
-  delete out;
+  bi::nc_close(ncid);
 
   return 0;
 }
