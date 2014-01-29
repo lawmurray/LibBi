@@ -57,13 +57,12 @@ sub visit_after {
     my $node = shift;
     my $result = $node;
     
-    #if ($node->isa('Bi::Expression::UnaryOperator')) {
-    #    if ($node->get_op eq "'") {
-    #        # transpose operator, translate to function
-    #        $result = new Bi::Expression::Function('transpose', [ $node->get_expr ]);
-    #    }
-    #} els
-    if ($node->isa('Bi::Expression::BinaryOperator')) {
+    if ($node->isa('Bi::Expression::UnaryOperator')) {
+        if ($node->get_op eq "'") {
+            # transpose operator, translate to function
+            $result = new Bi::Expression::Function('transpose', [ $node->get_expr ]);
+        }
+    } elsif ($node->isa('Bi::Expression::BinaryOperator')) {
         if ($node->get_op eq '*') {
             # matrix multiplication, translate to function
             if ($node->get_expr1->is_matrix) {

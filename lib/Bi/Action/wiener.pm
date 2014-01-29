@@ -29,6 +29,11 @@ sub validate {
     Bi::Action::validate($self);
     $self->process_args($ACTION_ARGS);
     $self->ensure_op('~');
+
+    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
+
     $self->set_parent('wiener_');
 }
 

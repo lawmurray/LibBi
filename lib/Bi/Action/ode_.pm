@@ -51,11 +51,12 @@ sub validate {
     my $self = shift;
     
     Bi::Action::validate($self);
-    $self->process_args($ACTION_ARGS);
-    
-    # check removed for backwards compatibility with model files written
-    # prior to introduction of differential equation syntax
-    #$self->ensure_op('=');
+    $self->process_args($ACTION_ARGS);    
+    $self->ensure_op('=');
+
+    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
 
     $self->set_parent('ode');
     $self->set_can_combine(1);
