@@ -588,6 +588,38 @@ struct lower_triangle_functor : public std::binary_function<T1,T2,T3> {
   }
 };
 
+/**
+ * @ingroup primitive_functor
+ *
+ * \f$\exp(x-y)\f$; minus constant and exponentiate unary functor, return
+ * pair with both answer and squared answer. NaN give zero.
+ */
+template<class T>
+struct nan_minus_and_exp_ess_functor : public std::unary_function<T, std::pair<T,T> > {
+  T y;
+
+  CUDA_FUNC_HOST nan_minus_and_exp_ess_functor(const T y) : y(y) {
+    //
+  }
+
+  CUDA_FUNC_BOTH std::pair<T,T> operator()(const T& x) const {
+    T z = bi::nanexp(x - y);
+    return std::pair<T,T>(z, z*z);
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * Computes both sum and sum of squares in one functor.
+ */
+template<typename T>
+struct ess_functor : public std::binary_function<std::pair<T,T>,std::pair<T,T>,std::pair<T,T> > {
+  CUDA_FUNC_BOTH std::pair<T,T> operator()(const std::pair<T,T>& x, const std::pair<T,T>& y) const {
+    return std::pair<T,T>(x.first + y.first, x.second + y.second);
+  }
+};
+
 }
 
 #endif

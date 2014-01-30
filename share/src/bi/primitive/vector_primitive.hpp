@@ -39,10 +39,9 @@ namespace bi {
  *
  * @return Reduction.
  */
-template<class V1, class UnaryFunctor, class BinaryFunctor>
-typename V1::value_type op_reduce(const V1 x, UnaryFunctor op1,
-    const typename V1::value_type init,
-    BinaryFunctor op2 = thrust::plus<typename V1::value_type>());
+template<class T1, class V1, class UnaryFunctor, class BinaryFunctor>
+T1 op_reduce(const V1 x, UnaryFunctor op1, const T1 init, BinaryFunctor op2 =
+    thrust::plus<typename V1::value_type>());
 
 /**
  * Sum reduction.
@@ -767,9 +766,9 @@ bool equal(const V1 input1, const V1 input2);
 
 #include "boost/typeof/typeof.hpp"
 
-template<class V1, class UnaryFunctor, class BinaryFunctor>
-typename V1::value_type bi::op_reduce(const V1 x, UnaryFunctor op1,
-    const typename V1::value_type init, BinaryFunctor op2) {
+template<class T1, class V1, class UnaryFunctor, class BinaryFunctor>
+T1 bi::op_reduce(const V1 x, UnaryFunctor op1, const T1 init,
+    BinaryFunctor op2) {
   if (x.inc() == 1) {
     return thrust::transform_reduce(x.fast_begin(), x.fast_end(), op1, init,
         op2);
@@ -932,12 +931,17 @@ typename V1::value_type bi::ess_reduce(const V1 lws) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(lws);
-  T1 sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  T1 sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
 
-  return (sum1 * sum1) / sum2;
+  //T1 sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
+  //    thrust::plus<T1>());
+  //T1 sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+  //    thrust::plus<T1>());
+  //return sum1*sum1/sum2;
+
+  std::pair<T1,T1> sum(0, 0);
+  sum = op_reduce(lws, nan_minus_and_exp_ess_functor<T1>(mx), sum,
+      ess_functor<T1>());
+  return sum.first * sum.first / sum.second;
 }
 
 template<class V1>
@@ -955,7 +959,7 @@ typename V1::value_type bi::car_reduce(const V1 lls) {
   sort(s);
   sumexpu_inclusive_scan(s, c);
   T1 sum = *(c.end() - 1);
-  T1 car = (2.0*sum_reduce(c)/sum - 1.0)/L;
+  T1 car = (2.0 * sum_reduce(c) / sum - 1.0) / L;
 
   /* post-condition */
   BI_ASSERT(0.0 < car && car <= 1.0);
