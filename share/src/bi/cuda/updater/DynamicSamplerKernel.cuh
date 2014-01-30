@@ -24,7 +24,7 @@ namespace bi {
  * @param[in,out] s State.
  */
 template<class B, class S, class T1>
-CUDA_FUNC_GLOBAL void kernelDynamicSampler(curandState* rng, const T1 t1,
+CUDA_FUNC_GLOBAL void kernelDynamicSampler(curandStateSA rng, const T1 t1,
     const T1 t2, State<B,ON_DEVICE> s);
 
 }
@@ -38,7 +38,7 @@ CUDA_FUNC_GLOBAL void kernelDynamicSampler(curandState* rng, const T1 t1,
 #include "../../state/Ou.hpp"
 
 template<class B, class S, class T1>
-CUDA_FUNC_GLOBAL void bi::kernelDynamicSampler(curandState* rng, const T1 t1,
+CUDA_FUNC_GLOBAL void bi::kernelDynamicSampler(curandStateSA rng, const T1 t1,
     const T1 t2, State<B,ON_DEVICE> s) {
   typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
@@ -52,9 +52,9 @@ CUDA_FUNC_GLOBAL void bi::kernelDynamicSampler(curandState* rng, const T1 t1,
   OX x;
 
   RngGPU rng1;
-  rng1.r = rng[q];
+  rng.load(q, rng1.r);
   Visitor::accept(rng1, t1, t2, s, pax, x);
-  rng[q] = rng1.r;
+  rng.store(q, rng1.r);
 }
 
 #endif

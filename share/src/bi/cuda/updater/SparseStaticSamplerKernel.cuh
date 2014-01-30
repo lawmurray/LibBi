@@ -21,7 +21,7 @@ namespace bi {
  * @param mask Mask.
  */
 template<class B, class S>
-CUDA_FUNC_GLOBAL void kernelSparseStaticSampler(curandState* rng,
+CUDA_FUNC_GLOBAL void kernelSparseStaticSampler(curandStateSA rng,
     State<B,ON_DEVICE> s, const Mask<ON_DEVICE> mask);
 }
 
@@ -34,7 +34,7 @@ CUDA_FUNC_GLOBAL void kernelSparseStaticSampler(curandState* rng,
 #include "../../state/Ou.hpp"
 
 template<class B, class S>
-CUDA_FUNC_GLOBAL void bi::kernelSparseStaticSampler(curandState* rng,
+CUDA_FUNC_GLOBAL void bi::kernelSparseStaticSampler(curandStateSA rng,
     State<B,ON_DEVICE> s, const Mask<ON_DEVICE> mask) {
   typedef Pa<ON_DEVICE,B,global,global,global,global> PX;
   typedef Ou<ON_DEVICE,B,global> OX;
@@ -48,9 +48,9 @@ CUDA_FUNC_GLOBAL void bi::kernelSparseStaticSampler(curandState* rng,
   OX x;
 
   RngGPU rng1;
-  rng1.r = rng[q];
+  rng.load(q, rng1.r);
   Visitor::accept(rng1, s, mask, pax, x);
-  rng[q] = rng1.r;
+  rng.store(q, rng1.r);
 }
 
 #endif

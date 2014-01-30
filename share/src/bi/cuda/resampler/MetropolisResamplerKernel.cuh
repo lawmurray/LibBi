@@ -30,13 +30,13 @@ namespace bi {
  * @seealso Resampler::prePermute()
  */
 template<class V1, class V2, class V3, class PrePermute>
-CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(curandState* rng,
+CUDA_FUNC_GLOBAL void kernelMetropolisResamplerAncestors(curandStateSA rng,
     const V1 lws, V2 as, V3 is, const int B, const PrePermute doPrePermute);
 
 }
 
 template<class V1, class V2, class V3, class PrePermute>
-CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandState* rng,
+CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandStateSA rng,
     const V1 lws, V2 as, V3 is, const int B, const PrePermute doPrePermute) {
   typedef typename V1::value_type T1;
 
@@ -49,7 +49,7 @@ CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandState* rng,
   real a, lw1, lw2;
 
   RngGPU rng1;
-  rng1.r = rng[q];
+  rng.load(q, rng1.r);
 
   for (p = q; p < P2; p += Q) {
     p1 = p;
@@ -74,7 +74,7 @@ CUDA_FUNC_GLOBAL void bi::kernelMetropolisResamplerAncestors(curandState* rng,
     }
   }
 
-  rng[q] = rng1.r;
+  rng.store(q, rng1.r);
 }
 
 #endif

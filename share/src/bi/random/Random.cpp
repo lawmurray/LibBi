@@ -13,18 +13,10 @@
 
 bi::Random::Random() : own(true) {
   hostRngs = new RngHost[bi_omp_max_threads];
-  #ifdef ENABLE_CUDA
-  CUDA_CHECKED_CALL(cudaMalloc(&devRngs,
-      deviceIdealThreads()*sizeof(curandState)));
-  #endif
 }
 
 bi::Random::Random(const unsigned seed) : own(true) {
   hostRngs = new RngHost[bi_omp_max_threads];
-  #ifdef ENABLE_CUDA
-  CUDA_CHECKED_CALL(cudaMalloc(&devRngs,
-      deviceIdealThreads()*sizeof(curandState)));
-  #endif
   this->seeds(seed);
 }
 
@@ -39,11 +31,6 @@ bi::Random::Random(const Random& o) {
 bi::Random::~Random() {
   if (own) {
     delete[] hostRngs;
-    hostRngs = NULL;
-    #ifdef ENABLE_CUDA
-    CUDA_CHECKED_CALL(cudaFree(devRngs));
-    devRngs = NULL;
-    #endif
   }
 }
 
