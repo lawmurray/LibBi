@@ -122,11 +122,12 @@ if test x$cuda = xtrue; then
   AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
 elif test x$openmp = xtrue; then
   AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_OMP])
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
 fi
-#AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_TBB])
 #AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
-# ^ OpenMP very slow as at Thrust 1.6
+# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
+#   Thrust 1.7, so its OpenMP backend has been re-enabled.
 
 # Checks for programs.
 AC_PROG_CXX([icpc g++])
