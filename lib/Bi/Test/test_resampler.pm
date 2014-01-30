@@ -62,6 +62,11 @@ Number of trials on each combination of parameters and sizes.
 
 Sort weights prior to resampling.
 
+=item C<--with-copy> (default off)
+
+Copy weights to host/device and ancestors back to host/device as part of
+test and timing.
+
 =item C<-C> (default 0)
 
 Number of steps to take for Metropolis resampler.
@@ -94,6 +99,11 @@ our @CLIENT_OPTIONS = (
       name => 'with-sort',
       type => 'bool',
       default => 1
+    },
+    {
+      name => 'with-copy',
+      type => 'bool',
+      default => 0
     },
     {
       name => 'C',

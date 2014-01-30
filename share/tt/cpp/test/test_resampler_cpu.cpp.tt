@@ -29,8 +29,10 @@
 
 #ifndef ENABLE_CUDA
 #define LOCATION ON_HOST
+#define OTHER_LOCATION ON_DEVICE
 #else
 #define LOCATION ON_DEVICE
+#define OTHER_LOCATION ON_HOST
 #endif
 
 int main(int argc, char* argv[]) {
@@ -81,10 +83,15 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   /* buffers for weight-sets and results */
-  typedef typename loc_vector<LOCATION,real>::type vector_type;
-  typedef typename loc_matrix<LOCATION,real>::type matrix_type;
-  typedef typename loc_vector<LOCATION,int>::type int_vector_type;
-  typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
+  typedef typename loc_temp_vector<LOCATION,real>::type vector_type;
+  typedef typename loc_temp_matrix<LOCATION,real>::type matrix_type;
+  typedef typename loc_temp_vector<LOCATION,int>::type int_vector_type;
+  typedef typename loc_temp_matrix<LOCATION,int>::type int_matrix_type;
+
+  typedef typename loc_temp_vector<OTHER_LOCATION,real>::type vector_alt_type;
+  typedef typename loc_temp_matrix<OTHER_LOCATION,real>::type matrix_alt_type;
+  typedef typename loc_temp_vector<OTHER_LOCATION,int>::type int_vector_alt_type;
+  typedef typename loc_temp_matrix<OTHER_LOCATION,int>::type int_matrix_alt_type;
   
   /* generate particles (all on host so weight sets match on host and device) */
   int maxP = std::pow(2, PS + 4);
@@ -123,7 +130,9 @@ int main(int argc, char* argv[]) {
       actualPs(p) = actualP;
       
       vector_type lws(actualP);
+      vector_alt_type lws_other(actualP);
       int_vector_type as(actualP);
+      int_vector_alt_type as_other(actualP);
       int_vector_type os(actualP);
       int_vector_type Os(actualP);
       seq_elements(as, 0); // needed for sort and ess    
@@ -140,9 +149,19 @@ int main(int argc, char* argv[]) {
       [% END %]
     
       for (rep = 0; rep < REPS; ++rep) {
-        lws = subrange(column(lW, rep), 0, actualP);
-        synchronize();
-        timer.tic();
+        if (WITH_COPY) {
+          lws_other = subrange(column(lW, rep), 0, actualP);
+          synchronize();
+          timer.tic();
+          lws = lws_other;
+          if (LOCATION == ON_HOST) {
+            synchronize();
+          }
+        } else {
+          lws = subrange(column(lW, rep), 0, actualP);
+          synchronize();
+          timer.tic();
+        }
         
         [% IF client.get_named_arg('resampler') == 'stratified' %]
         resam.cumulativeOffspring(rng, lws, Os, actualP);
@@ -164,7 +183,12 @@ int main(int argc, char* argv[]) {
         real ess = bi::ess_reduce(lws);
         [% END %]
 
-        /* time */                
+        /* time */
+        [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
+        if (WITH_COPY) {
+          as_other = as;
+        }
+        [% END %]
         synchronize();
         time = timer.toc();
 
