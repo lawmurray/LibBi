@@ -18,10 +18,10 @@ namespace bi {
 /**
  * @internal
  *
- * Determine error in particular resampling.
+ * Functor for determining sum of squared errors in particular resampling.
  */
 template<class T>
-struct resample_error: public std::binary_function<T,int,T> {
+struct resample_se: public std::binary_function<T,int,T> {
   const T lW;
   const T P;
   // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
@@ -31,7 +31,7 @@ struct resample_error: public std::binary_function<T,int,T> {
    * Constructor.
    */
   CUDA_FUNC_HOST
-  resample_error(const T lW, const int P) :
+  resample_se(const T lW, const int P) :
       lW(lW), P(P) {
     //
   }
@@ -51,6 +51,49 @@ struct resample_error: public std::binary_function<T,int,T> {
     if (bi::is_finite(lw)) {
       eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
       eps *= eps;
+    } else {
+      eps = 0.0;
+    }
+
+    return eps;
+  }
+};
+
+/**
+ * @internal
+ *
+ * Functor for determining sum of errors in particular resampling.
+ */
+template<class T>
+struct resample_e: public std::binary_function<T,int,T> {
+  const T lW;
+  const T P;
+  // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
+  //   Fermi, so we set the type of P to T instead of int
+
+  /**
+   * Constructor.
+   */
+  CUDA_FUNC_HOST
+  resample_e(const T lW, const int P) :
+      lW(lW), P(P) {
+    //
+  }
+
+  /**
+   * Apply functor.
+   *
+   * @param lw Log-weight for this index.
+   * @param o Number of offspring for this index.
+   *
+   * @return Contribution to error for this index.
+   */
+  CUDA_FUNC_BOTH
+  T operator()(const T& lw, const int& o) {
+    T eps;
+
+    if (bi::is_finite(lw)) {
+      eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
     } else {
       eps = 0.0;
     }
@@ -285,9 +328,9 @@ public:
    * @param lws Log-weights.
    * @param os Offspring.
    *
-   * @return Squared error.
+   * @return Sum of squared errors.
    *
-   * This computes the sum of squared error in the resampling, as in
+   * This computes the sum of squared errors in the resampling, as in
    * @ref Kitagawa1996 "Kitagawa (1996)":
    *
    * \f[
@@ -297,7 +340,29 @@ public:
    * where \f$W\f$ is the sum of weights.
    */
   template<class V1, class V2>
-  static typename V1::value_type error(const V1 lws, const V2 os);
+  static typename V1::value_type sse(const V1 lws, const V2 os);
+
+  /**
+   * Compute sum of errors of ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integral vector type.
+   *
+   * @param lws Log-weights.
+   * @param os Offspring.
+   *
+   * @return Sum of errors.
+   *
+   * This computes the sum of errors in the resampling:
+   *
+   * \f[
+   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)\,,
+   * \f]
+   *
+   * where \f$W\f$ is the sum of weights.
+   */
+  template<class V1, class V2>
+  static typename V1::value_type se(const V1 lws, const V2 os);
 
 protected:
   /**
@@ -575,12 +640,19 @@ typename V1::value_type bi::Resampler::ess(const V1 lws) {
 }
 
 template<class V1, class V2>
-typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
+typename V1::value_type bi::Resampler::sse(const V1 lws, const V2 os) {
   real lW = logsumexp_reduce(lws);
 
   return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      BI_REAL(0.0),
-      thrust::plus<real>(), resample_error<real>(lW, lws.size()));
-    }
+      BI_REAL(0.0), thrust::plus<real>(), resample_se<real>(lW, lws.size()));
+}
+
+template<class V1, class V2>
+typename V1::value_type bi::Resampler::se(const V1 lws, const V2 os) {
+  real lW = logsumexp_reduce(lws);
+
+  return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
+      BI_REAL(0.0), thrust::plus<real>(), resample_e<real>(lW, lws.size()));
+}
 
 #endif

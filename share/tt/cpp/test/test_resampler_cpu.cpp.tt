@@ -64,7 +64,8 @@ int main(int argc, char* argv[]) {
   dimids[1] = PDim;
   dimids[2] = repDim;
   
-  int sqerrVar = bi::nc_def_var(ncid, "sqerr", NC_DOUBLE, dimids);
+  int sseVar = bi::nc_def_var(ncid, "sse", NC_DOUBLE, dimids);
+  int seVar = bi::nc_def_var(ncid, "se", NC_DOUBLE, dimids);
   int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids);
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
   int zVar = bi::nc_def_var(ncid, "z", NC_DOUBLE, zDim);
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
   host_matrix<real,-1,-1,-1,1> x(maxP*REPS, 1);  // particles
   host_matrix<real,-1,-1,-1,1> lW(maxP, REPS); // log-weights
   host_matrix<int,-1,-1,-1,1> times(REPS, PS);
-  host_matrix<real,-1,-1,-1,1> sqerrs(REPS, PS);
+  host_matrix<real,-1,-1,-1,1> ses(REPS, PS), sses(REPS, PS);
   host_vector<int,-1,1> actualPs(PS);
   host_vector<real,-1,1> zs(ZS);
   
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
   #endif
   TicToc timer;
   int z, p, rep, time;
-  real sqerr;
+  real se, sse;
   for (z = 0; z < ZS; ++z) {
     /* generate log-weights */
     if (z > 0) {
@@ -192,16 +193,19 @@ int main(int argc, char* argv[]) {
         synchronize();
         time = timer.toc();
 
-        /* error */
+        /* errors */
         [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
         synchronize();
-        sqerr = resam.error(lws, os);
+        se = resam.se(lws, os);
+        sse = resam.sse(lws, os);
         [% ELSE %]
-        sqerr = 0.0;
+        se = 0.0;
+        sse = 0.0;
         [% END %]
         
-        sqerrs(rep, p) = sqerr;
+        ses(rep, p) = se;
+        sses(rep, p) = sse;
         times(rep, p) = time;
       }
     }
@@ -215,7 +219,8 @@ int main(int argc, char* argv[]) {
     count[1] = PS;
     count[2] = REPS;
     
-    bi::nc_put_vara(ncid, sqerrVar, start, count, sqerrs.buf());
+    bi::nc_put_vara(ncid, seVar, start, count, ses.buf());
+    bi::nc_put_vara(ncid, sseVar, start, count, sses.buf());
     bi::nc_put_vara(ncid, timeVar, start, count, times.buf());
 
     std::cerr << std::endl;
@@ -233,4 +238,3 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
