@@ -544,12 +544,16 @@ inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_refere
   /* pre-condition */
   BI_ASSERT(this->size() == o.size());
 
+  typedef typename V1::value_type T1;
+
   if (V1::on_device) {
     if (this->inc() == 1) {
-      if (o.inc() == 1) {
+      if (o.inc() == 1 && equals<T,T1>::value) {
         /* asynchronous linear copy */
         CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
                 this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+      } else if (o.inc() == 1) {
+        thrust::copy(o.fast_begin(), o.fast_end(), this->fast_begin());
       } else {
         thrust::copy(o.begin(), o.end(), this->fast_begin());
       }
@@ -560,8 +564,10 @@ inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_refere
     }
   } else if (!this->same(o)) {
     if (this->inc() == 1) {
-      if (o.inc() == 1) {
+      if (o.inc() == 1 && equals<T,T1>::value) {
         memcpy(this->buf(), o.buf(), this->size() * sizeof(T));
+      } else if (o.inc() == 1) {
+        thrust::copy(o.fast_begin(), o.fast_end(), this->fast_begin());
       } else {
         thrust::copy(o.begin(), o.end(), this->fast_begin());
       }

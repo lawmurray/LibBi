@@ -599,16 +599,17 @@ bi::gpu_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& bi::gp
     T,size1_value,size2_value,lead_value,inc_value>::operator=(const M1& o) {
   /* pre-conditions */
   BI_ASSERT(this->size1() == o.size1() && this->size2() == o.size2());
-  BI_ASSERT((equals<T,typename M1::value_type>::value));
+
+  typedef typename M1::value_type T1;
 
   if (!this->same(o)) {
     cudaMemcpyKind kind =
         (M1::on_device) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
-    if (this->contiguous() && o.contiguous()) {
+    if (equals<T1,T>::value && this->contiguous() && o.contiguous()) {
       /* plain linear copy */
       CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
               this->lead()*this->size2()*sizeof(T), kind, 0));
-    } else if (this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
+    } else if (equals<T1,T>::value && this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
         && o.lead() * sizeof(T) <= CUDA_PITCH_LIMIT && this->inc() == 1
         && o.inc() == 1) {
       /* pitched 2d copy */

@@ -193,9 +193,11 @@ protected:
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
     int lead_value = -1, int inc_value = -1>
-class host_matrix_handle: public host_storage_buf<T>, public host_storage_size1<
-    size1_value>, public host_storage_size2<size2_value>, public host_storage_lead<
-    lead_value>, public host_storage_inc<inc_value> {
+class host_matrix_handle: public host_storage_buf<T>,
+    public host_storage_size1<size1_value>,
+    public host_storage_size2<size2_value>,
+    public host_storage_lead<lead_value>,
+    public host_storage_inc<inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -206,8 +208,8 @@ public:
   /**
    * Shallow copy.
    */
-  void copy(const host_matrix_handle<T,size1_value,size2_value,lead_value,
-      inc_value>& o);
+  void copy(
+      const host_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>& o);
 
   /**
    * Access element.
@@ -299,7 +301,7 @@ inline T& bi::host_matrix_handle<T,size1_value,size2_value,lead_value,
   BI_ASSERT(i >= 0 && i < this->size1());
   BI_ASSERT(j >= 0 && j < this->size2());
 
-  return this->buf()[j*this->lead() + i*this->inc()];
+  return this->buf()[j * this->lead() + i * this->inc()];
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -310,7 +312,7 @@ inline const T& bi::host_matrix_handle<T,size1_value,size2_value,lead_value,
   BI_ASSERT(i >= 0 && i < this->size1());
   BI_ASSERT(j >= 0 && j < this->size2());
 
-  return this->buf()[j*this->lead() + i*this->inc()];
+  return this->buf()[j * this->lead() + i * this->inc()];
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -353,7 +355,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 inline bool bi::host_matrix_handle<T,size1_value,size2_value,lead_value,
     inc_value>::can_vec() const {
-  return this->lead() == this->size1()*this->inc();
+  return this->lead() == this->size1() * this->inc();
 }
 
 template<class T, int size1_value, int size2_value, int lead_value,
@@ -454,7 +456,7 @@ public:
    */
   host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>& operator=(
       const host_matrix_reference<T,size1_value,size2_value,lead_value,
-      inc_value>& o);
+          inc_value>& o);
 
   /**
    * Generic assignment.
@@ -550,12 +552,12 @@ inline bi::host_matrix_reference<T,size1_value,size2_value,lead_value,
   BI_ASSERT(rows >= 0);
   BI_ASSERT(cols >= 0);
   BI_ASSERT(inc >= 1);
-  BI_ASSERT(lead < 0 || lead >= rows*inc);
+  BI_ASSERT(lead < 0 || lead >= rows * inc);
 
   this->setBuf(data);
   this->setSize1(rows);
   this->setSize2(cols);
-  this->setLead((lead < 0) ? rows*inc : lead);
+  this->setLead((lead < 0) ? rows * inc : lead);
   this->setInc(inc);
 }
 
@@ -587,27 +589,28 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value>
 template<class M1>
 bi::host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>&
-    bi::host_matrix_reference<T,size1_value,size2_value,lead_value,
-    inc_value>::operator=(const M1& o) {
+bi::host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::operator=(
+    const M1& o) {
   /* pre-conditions */
   BI_ASSERT(o.size1() == this->size1() && o.size2() == this->size2());
-  BI_ASSERT((equals<T,typename M1::value_type>::value));
+
+  typedef typename M1::value_type T1;
 
   size_type i;
   if (M1::on_device) {
     /* device to host copy */
-    if (this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
+    if (equals<T1,T>::value && this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
         && o.lead() * sizeof(T) <= CUDA_PITCH_LIMIT && this->inc() == 1
         && o.inc() == 1) {
       /* pitched 2d copy */
       CUDA_CHECKED_CALL(cudaMemcpy2DAsync(this->buf(), this->lead()*sizeof(T),
-          o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
-          cudaMemcpyDeviceToHost, 0));
-    } else if (this->size1() == this->lead() && o.size1() == o.lead() &&
-        this->inc() == 1 && o.inc() == 1) {
+              o.buf(), o.lead()*sizeof(T), this->size1()*sizeof(T), this->size2(),
+              cudaMemcpyDeviceToHost, 0));
+    } else if (equals<T1,T>::value && this->size1() == this->lead()
+        && o.size1() == o.lead() && this->inc() == 1 && o.inc() == 1) {
       /* plain linear copy */
       CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
-          this->lead()*this->size2()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+              this->lead()*this->size2()*sizeof(T), cudaMemcpyDeviceToHost, 0));
     } else {
       /* copy column-by-column */
       for (i = 0; i < this->size2(); ++i) {
@@ -616,8 +619,8 @@ bi::host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>&
     }
   } else if (!this->same(o)) {
     /* host to host copy */
-    if (this->lead() == this->size1() && o.lead() == o.size1()
-        && this->inc() == 1 && o.inc() == 1) {
+    if (equals<T1,T>::value && this->lead() == this->size1()
+        && o.lead() == o.size1() && this->inc() == 1 && o.inc() == 1) {
       memcpy(this->buf(), o.buf(), this->size1() * this->size2() * sizeof(T));
     } else {
       /* copy column-by-column */
@@ -650,7 +653,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::iterator bi::host_matrix_reference<T,size1_value,
     size2_value,lead_value,inc_value>::begin() {
-  strided_pitched_range <pointer> range(pointer(this->buf()),
+  strided_pitched_range<pointer> range(pointer(this->buf()),
       pointer(this->buf() + this->lead() * this->size2()), this->size1(),
       this->lead(), this->inc());
 
@@ -662,7 +665,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::const_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::begin() const {
-  strided_pitched_range <const_pointer> range(const_pointer(this->buf()),
+  strided_pitched_range<const_pointer> range(const_pointer(this->buf()),
       const_pointer(this->buf() + this->lead() * this->size2()),
       this->size1(), this->lead(), this->inc());
 
@@ -674,10 +677,9 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::iterator bi::host_matrix_reference<T,size1_value,
     size2_value,lead_value,inc_value>::end() {
-  strided_pitched_range < pointer
-      > range(pointer(this->buf()),
-          pointer(this->buf() + this->lead() * this->size2()), this->size1(),
-          this->lead(), this->inc());
+  strided_pitched_range<pointer> range(pointer(this->buf()),
+      pointer(this->buf() + this->lead() * this->size2()), this->size1(),
+      this->lead(), this->inc());
 
   return range.end();
 }
@@ -687,10 +689,9 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::const_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::end() const {
-  strided_pitched_range < const_pointer
-      > range(const_pointer(this->buf()),
-          const_pointer(this->buf() + this->lead() * this->size2()),
-          this->size1(), this->lead(), this->inc());
+  strided_pitched_range<const_pointer> range(const_pointer(this->buf()),
+      const_pointer(this->buf() + this->lead() * this->size2()),
+      this->size1(), this->lead(), this->inc());
 
   return range.end();
 }
@@ -700,8 +701,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::row_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::row_begin() {
-  cross_range < iterator
-      > range(this->begin(), this->end(), this->size1(), this->size2());
+  cross_range<iterator> range(this->begin(), this->end(), this->size1(),
+      this->size2());
 
   return range.begin();
 }
@@ -711,8 +712,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::const_row_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::row_begin() const {
-  cross_range < const_iterator
-      > range(this->begin(), this->end(), this->size1(), this->size2());
+  cross_range<const_iterator> range(this->begin(), this->end(), this->size1(),
+      this->size2());
 
   return range.begin();
 }
@@ -722,8 +723,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::row_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::row_end() {
-  cross_range < iterator
-      > range(this->begin(), this->end(), this->size1(), this->size2());
+  cross_range<iterator> range(this->begin(), this->end(), this->size1(),
+      this->size2());
 
   return range.end();
 }
@@ -733,8 +734,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline typename bi::host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value>::const_row_iterator bi::host_matrix_reference<T,
     size1_value,size2_value,lead_value,inc_value>::row_end() const {
-  cross_range < const_iterator
-      > range(this->begin(), this->end(), this->size1(), this->size2());
+  cross_range<const_iterator> range(this->begin(), this->end(), this->size1(),
+      this->size2());
 
   return range.end();
 }
@@ -755,9 +756,10 @@ template<class T, int size1_value, int size2_value, int lead_value,
 template<class Archive>
 void bi::host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::serialize(
     Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object
-      <host_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>
-      > (*this);
+  ar
+      & boost::serialization::base_object
+          < host_matrix_handle<T,size1_value,size2_value,lead_value,inc_value>
+          > (*this);
 }
 
 namespace bi {
@@ -788,7 +790,7 @@ namespace bi {
  */
 template<class T = real, int size1_value = -1, int size2_value = -1,
     int lead_value = -1, int inc_value = 1, class A = pipelined_allocator<
-    aligned_allocator<T> > >
+        aligned_allocator<T> > >
 class host_matrix: public host_matrix_reference<T,size1_value,size2_value,
     lead_value,inc_value> {
 public:
@@ -910,12 +912,12 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::host_matrix(
     const size_type rows, const size_type cols) :
     host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-    NULL, rows, cols, rows, 1), own(true) {
+        NULL, rows, cols, rows, 1), own(true) {
   /* pre-condition */
   BI_ASSERT(rows >= 0 && cols >= 0);
 
-  if (rows*cols > 0) {
-    T* ptr = alloc.allocate(rows*cols);
+  if (rows * cols > 0) {
+    T* ptr = alloc.allocate(rows * cols);
     this->setBuf(ptr);
   }
 }
@@ -925,8 +927,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
 bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::host_matrix(
     const host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) :
     host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-    const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()),
-    own(false) {
+        const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()), own(
+        false) {
   //
 }
 
@@ -936,12 +938,13 @@ template<class M1>
 bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::host_matrix(
     const M1 o) :
     host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>(
-        const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()),
-        own(false) {
+        const_cast<T*>(o.buf()), o.size1(), o.size2(), o.lead(), o.inc()), own(
+        false) {
   /* shallow copy is now done, do deep copy if necessary */
   if (M1::on_device) {
-    T* ptr = (this->size1()*this->size2() > 0) ?
-        alloc.allocate(this->size1()*this->size2()) : NULL;
+    T* ptr =
+        (this->size1() * this->size2() > 0) ?
+            alloc.allocate(this->size1() * this->size2()) : NULL;
     this->setBuf(ptr);
     this->setLead(this->size1());
     this->setInc(1);
@@ -954,7 +957,7 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::~host_matrix() {
   if (own) {
-    alloc.deallocate(this->buf(), this->lead()*this->size2());
+    alloc.deallocate(this->buf(), this->lead() * this->size2());
   }
 }
 
@@ -963,10 +966,9 @@ template<class T, int size1_value, int size2_value, int lead_value,
 inline bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& bi::host_matrix<
     T,size1_value,size2_value,lead_value,inc_value,A>::operator=(
     const host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) {
-  host_matrix_reference < T, size1_value, size2_value, lead_value, inc_value
-      > ::operator=(
-          static_cast<host_matrix_reference<T,size1_value,size2_value,
-              lead_value,inc_value> >(o));
+  host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::operator=(
+      static_cast<host_matrix_reference<T,size1_value,size2_value,lead_value,
+          inc_value> >(o));
   return *this;
 }
 
@@ -976,8 +978,8 @@ template<class M1>
 inline bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& bi::host_matrix<
     T,size1_value,size2_value,lead_value,inc_value,A>::operator=(
     const M1& o) {
-  host_matrix_reference < T, size1_value, size2_value, lead_value, inc_value
-      > ::operator=(o);
+  host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::operator=(
+      o);
   return *this;
 }
 
@@ -990,14 +992,14 @@ void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
         "Cannot resize host_matrix constructed as view of other matrix");
 
     /* allocate new buffer */
-    T* ptr = (rows*cols > 0) ? alloc.allocate(rows*cols) : NULL;
+    T* ptr = (rows * cols > 0) ? alloc.allocate(rows * cols) : NULL;
 
     /* copy across contents */
     if (preserve) {
       size_type i, j;
       for (j = 0; j < bi::min(this->size2(), cols); ++j) {
         for (i = 0; i < bi::min(this->size1(), rows); ++i) {
-          ptr[j*rows + i] = (*this)(i, j);
+          ptr[j * rows + i] = (*this)(i, j);
         }
       }
     }
@@ -1020,8 +1022,8 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::swap(
     host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o) {
-  host_matrix_reference<T,size1_value,size2_value,lead_value,
-      inc_value>::swap(o);
+  host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>::swap(
+      o);
   std::swap(this->own, o.own);
 }
 
@@ -1030,9 +1032,10 @@ template<class T, int size1_value, int size2_value, int lead_value,
 template<class Archive>
 void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::serialize(
     Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<
-      host_matrix_reference<T,size1_value,size2_value,lead_value,inc_value>
-      > (*this);
+  ar
+      & boost::serialization::base_object
+          < host_matrix_reference<T,size1_value,size2_value,lead_value,
+              inc_value> > (*this);
 }
 
 #endif

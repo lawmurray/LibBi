@@ -523,14 +523,18 @@ inline bi::gpu_vector_reference<T,size_value,inc_value>& bi::gpu_vector_referenc
   /* pre-condition */
   //BI_ASSERT(this->size() == o.size());
 
+  typedef typename V1::value_type T1;
+
   if (!this->same(o)) {
     if (this->inc() == 1) {
-      if (o.inc() == 1) {
+      if (o.inc() == 1 && equals<T1,T>::value) {
         /* asynchronous linear copy */
         cudaMemcpyKind kind = (V1::on_device) ?
                 cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice;
         CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
                 this->size()*sizeof(T), kind, 0));
+      } else if (o.inc() == 1) {
+        thrust::copy(o.fast_begin(), o.fast_end(), this->fast_begin());
       } else {
         thrust::copy(o.begin(), o.end(), this->fast_begin());
       }
