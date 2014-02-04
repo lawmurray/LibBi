@@ -85,7 +85,6 @@ int main(int argc, char* argv[]) {
 
   /* buffers for weight-sets and results */
   typedef typename loc_temp_vector<LOCATION,real>::type vector_type;
-  typedef typename loc_temp_vector<ON_HOST,double>::type double_vector_type;
   typedef typename loc_temp_matrix<LOCATION,real>::type matrix_type;
   typedef typename loc_temp_vector<LOCATION,int>::type int_vector_type;
   typedef typename loc_temp_matrix<LOCATION,int>::type int_matrix_type;
@@ -94,6 +93,9 @@ int main(int argc, char* argv[]) {
   typedef typename loc_temp_matrix<OTHER_LOCATION,real>::type matrix_alt_type;
   typedef typename loc_temp_vector<OTHER_LOCATION,int>::type int_vector_alt_type;
   typedef typename loc_temp_matrix<OTHER_LOCATION,int>::type int_matrix_alt_type;
+
+  typedef typename loc_temp_vector<ON_HOST,double>::type err_vector_type;
+  typedef typename loc_temp_vector<ON_HOST,int>::type err_int_vector_type;
   
   /* generate particles (all on host so weight sets match on host and device) */
   int maxP = std::pow(2, PS + 4);
@@ -132,12 +134,14 @@ int main(int argc, char* argv[]) {
       actualPs(p) = actualP;
       
       vector_type lws(actualP);
-      double_vector_type lws_double(actualP);
       vector_alt_type lws_other(actualP);
       int_vector_type as(actualP);
       int_vector_alt_type as_other(actualP);
       int_vector_type os(actualP);
       int_vector_type Os(actualP);
+      err_vector_type lws_err(actualP);
+      err_int_vector_type os_err(actualP);
+
       seq_elements(as, 0); // needed for sort and ess    
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
@@ -195,14 +199,15 @@ int main(int argc, char* argv[]) {
         synchronize();
         time = timer.toc();
 
-        /* errors */
+        /* errors, always computed on host in double precision for comparability */
         [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
+        synchronize();        
+        lws_err = lws;
+        os_err = os;
         synchronize();
-        lws_double = lws;
-        synchronize();
-        se = resam.se(lws_double, os);
-        sse = resam.sse(lws_double, os);
+        se = resam.se(lws_err, os_err);
+        sse = resam.sse(lws_err, os_err);
         [% ELSE %]
         se = 0.0;
         sse = 0.0;
