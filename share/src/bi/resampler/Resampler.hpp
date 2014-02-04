@@ -641,18 +641,22 @@ typename V1::value_type bi::Resampler::ess(const V1 lws) {
 
 template<class V1, class V2>
 typename V1::value_type bi::Resampler::sse(const V1 lws, const V2 os) {
-  real lW = logsumexp_reduce(lws);
+  typedef typename V1::value_type T1;
+
+  T1 lW = logsumexp_reduce(lws);
 
   return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      BI_REAL(0.0), thrust::plus<real>(), resample_se<real>(lW, lws.size()));
+      T1(0.0), thrust::plus<T1>(), resample_se<T1>(lW, lws.size()));
 }
 
 template<class V1, class V2>
 typename V1::value_type bi::Resampler::se(const V1 lws, const V2 os) {
-  real lW = logsumexp_reduce(lws);
+  typedef typename V1::value_type T1;
+
+  T1 lW = logsumexp_reduce(lws);
 
   return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      BI_REAL(0.0), thrust::plus<real>(), resample_e<real>(lW, lws.size()));
+      T1(0.0), thrust::plus<T1>(), resample_e<T1>(lW, lws.size()));
 }
 
 #endif

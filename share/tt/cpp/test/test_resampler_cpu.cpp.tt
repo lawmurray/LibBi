@@ -27,13 +27,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#ifndef ENABLE_CUDA
-#define LOCATION ON_HOST
-#define OTHER_LOCATION ON_DEVICE
-#else
+[% IF client.get_named_arg('with-cuda') %]
 #define LOCATION ON_DEVICE
 #define OTHER_LOCATION ON_HOST
-#endif
+[% ELSE %]
+#define LOCATION ON_HOST
+#define OTHER_LOCATION ON_DEVICE
+[% END %]
 
 int main(int argc, char* argv[]) {
   using namespace bi;
@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
 
   /* buffers for weight-sets and results */
   typedef typename loc_temp_vector<LOCATION,real>::type vector_type;
+  typedef typename loc_temp_vector<ON_HOST,double>::type double_vector_type;
   typedef typename loc_temp_matrix<LOCATION,real>::type matrix_type;
   typedef typename loc_temp_vector<LOCATION,int>::type int_vector_type;
   typedef typename loc_temp_matrix<LOCATION,int>::type int_matrix_type;
@@ -131,6 +132,7 @@ int main(int argc, char* argv[]) {
       actualPs(p) = actualP;
       
       vector_type lws(actualP);
+      double_vector_type lws_double(actualP);
       vector_alt_type lws_other(actualP);
       int_vector_type as(actualP);
       int_vector_alt_type as_other(actualP);
@@ -197,8 +199,10 @@ int main(int argc, char* argv[]) {
         [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
         synchronize();
-        se = resam.se(lws, os);
-        sse = resam.sse(lws, os);
+        lws_double = lws;
+        synchronize();
+        se = resam.se(lws_double, os);
+        sse = resam.sse(lws_double, os);
         [% ELSE %]
         se = 0.0;
         sse = 0.0;

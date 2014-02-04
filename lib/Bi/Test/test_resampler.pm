@@ -67,6 +67,12 @@ Sort weights prior to resampling.
 Copy weights to host/device and ancestors back to host/device as part of
 test and timing.
 
+=item C<--with-cuda> (default off)
+
+Use this to actually run CUDA code, C<--enable-cuda> will not achieve this
+automatically for C<test_resampler>, as the intention may be to time
+resampling on CPU when copying weight vectors from GPU.
+
 =item C<-C> (default 0)
 
 Number of steps to take for Metropolis resampler.
@@ -102,6 +108,11 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'with-copy',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-cuda',
       type => 'bool',
       default => 0
     },
