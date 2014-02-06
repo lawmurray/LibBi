@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
       real epsilon = 1.0e-2*wmax;
       real lambda = 1.0 - alpha - beta;
       int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
-      resam.setSteps(B);
+      resam.setSteps(B/C);
       [% END %]
     
       for (rep = 0; rep < REPS; ++rep) {
