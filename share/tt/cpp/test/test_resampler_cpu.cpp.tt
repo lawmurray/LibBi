@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   dimids2[1] = PDim;
 
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
-  int ZVar = bi::nc_def_var(ncid, "z", NC_DOUBLE, ZDim);
+  int ZVar = bi::nc_def_var(ncid, "Z", NC_DOUBLE, ZDim);
   int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids3);
   int bias2Var = bi::nc_def_var(ncid, "bias2", NC_DOUBLE, dimids2);
   int tr_varVar = bi::nc_def_var(ncid, "tr_var", NC_DOUBLE, dimids2);  
@@ -210,9 +210,8 @@ int main(int argc, char* argv[]) {
       ws = lws;
       synchronize();
       expu_elements(ws, ws);
-      divscal_elements(ws, sum_reduce(ws), ws);
+      mulscal_elements(ws, P/sum_reduce(ws), ws);
       
-      divscal_elements(vec(O), P, vec(O));
       mean(O, mu);
       var(O, mu, sigma2);
       sub_elements(mu, ws, eps);
