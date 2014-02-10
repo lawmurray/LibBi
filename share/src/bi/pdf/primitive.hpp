@@ -38,11 +38,11 @@ void gaussian_densities(const M1 Z, const T1 logZ, V1 p,
  *
  * @param Z Standardised Gaussian variates.
  * @param logZ Log of normalisation constant.
- * @param[in,out] p Densities.
+ * @param[in,out] lp Log-densities.
  * @param clear Clear @p p? If false, the density is multiplied into @p p.
  */
 template<class M1, class T1, class V1>
-void gaussian_log_densities(const M1 Z, const T1 logZ, V1 p,
+void gaussian_log_densities(const M1 Z, const T1 logZ, V1 lp,
     const bool clear = false);
 
 /**
