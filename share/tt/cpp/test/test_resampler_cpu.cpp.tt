@@ -83,9 +83,9 @@ int main(int argc, char* argv[]) {
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
   int ZVar = bi::nc_def_var(ncid, "z", NC_DOUBLE, ZDim);
   int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids3);
-  int biasVar = bi::nc_def_var(ncid, "bias", NC_DOUBLE, dimids2);
-  int variabilityVar = bi::nc_def_var(ncid, "variability", NC_DOUBLE, dimids2);  
-    
+  int bias2Var = bi::nc_def_var(ncid, "bias2", NC_DOUBLE, dimids2);
+  int tr_varVar = bi::nc_def_var(ncid, "tr_var", NC_DOUBLE, dimids2);  
+  
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
   MetropolisResampler resam(C);
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 
   /* result storage */  
   host_matrix<int> times(REPS, PS);
-  host_vector<real> bias(PS), variability(PS);
+  host_vector<real> bias2(PS), tr_var(PS);
   host_vector<int> Ps(PS);
   host_vector<real> Zs(ZS);
   
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
       seq_elements(as, 0); // needed for sort and ess
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
-      real W = P*bi::exp(-0.25*zs(z)*zs(z))/(2.0*bi::sqrt(BI_PI));
+      real W = P*bi::exp(-0.25*Z*Z)/(2.0*bi::sqrt(BI_PI));
       real wmax = (1.0/BI_SQRT_TWO_PI)/W;
       real beta = 1.0/P;
       real alpha = (1.0 - wmax)/(P*wmax);
@@ -207,7 +207,9 @@ int main(int argc, char* argv[]) {
       }
       
       [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
-      expu_elements(lws, ws);
+      ws = lws;
+      synchronize();
+      expu_elements(ws, ws);
       divscal_elements(ws, sum_reduce(ws), ws);
       
       divscal_elements(vec(O), P, vec(O));
@@ -215,11 +217,11 @@ int main(int argc, char* argv[]) {
       var(O, mu, sigma2);
       sub_elements(mu, ws, eps);
             
-      bias(p) = bi::sqrt(sumsq_reduce(eps)/P);
-      variability(p) = sum_reduce(sigma2)/P;
+      bias2(p) = sumsq_reduce(eps);
+      tr_var(p) = sum_reduce(sigma2);
       [% ELSE %]
-      bias(p) = 0.0;
-      variability(p) = 0.0;
+      bias2(p) = 0.0;
+      tr_var(p) = 0.0;
       [% END %]
     }
 
@@ -239,8 +241,8 @@ int main(int argc, char* argv[]) {
     count2[1] = PS;
     
     bi::nc_put_vara(ncid, timeVar, start3, count3, times.buf());
-    bi::nc_put_vara(ncid, biasVar, start2, count2, bias.buf());
-    bi::nc_put_vara(ncid, variabilityVar, start2, count2, variability.buf());
+    bi::nc_put_vara(ncid, bias2Var, start2, count2, bias2.buf());
+    bi::nc_put_vara(ncid, tr_varVar, start2, count2, tr_var.buf());
 
     std::cerr << std::endl;
   }
