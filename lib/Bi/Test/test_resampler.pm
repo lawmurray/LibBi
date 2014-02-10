@@ -119,7 +119,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'C',
       type => 'int',
-      default => 0
+      default => 1
     }
 );
 
