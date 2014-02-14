@@ -158,6 +158,8 @@ sse_real asinh(const bi::sse_real x);
 sse_real acosh(const bi::sse_real x);
 //double atanh(const double x);
 sse_real atanh(const bi::sse_real x);
+//double heaviside(const double x);
+sse_real heaviside(const bi::sse_real x);
 
 }
 
@@ -383,6 +385,14 @@ inline bi::sse_real bi::acosh(const bi::sse_real x) {
 
 inline bi::sse_real bi::atanh(const bi::sse_real x) {
   BI_SSE_UNIVARIATE(atanh, x)
+}
+
+//inline double heaviside(const double x) {
+//  return (x < 0) ? 0 : 1;
+//}
+
+inline bi::sse_real bi::heaviside(const bi::sse_real x) {
+  BI_SSE_UNIVARIATE(heaviside, x)
 }
 
 #endif
