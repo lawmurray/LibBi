@@ -129,6 +129,48 @@ public:
   void bridge(Random& rng, const ScheduleIterator iter,
       const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws,
       const V2 as);
+
+  /**
+   * Resample after bridge weighting.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param now Current step in time schedule.
+   * @param[in,out] s State.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry after resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
+   */
+  template<Location L, class V1, class V2>
+  bool bridgeResample(Random& rng, const ScheduleElement now, State<B,L>& s,
+      V1 lws, V2 as);
+
+  /**
+   * Resample after bridge weighting with conditioned outcome for first
+   * particle.
+   *
+   * @tparam L Location.
+   * @tparam V1 Vector type.
+   * @tparam V2 Vector type.
+   * @tparam R #concept::Resampler type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param now Current step in time schedule.
+   * @param[in,out] s State.
+   * @param a Conditioned ancestor of first particle.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry after resampling.
+   *
+   * @return True if resampling was performed, false otherwise.
+   */
+  template<Location L, class V1, class V2>
+  bool bridgeResample(Random& rng, const ScheduleElement now, State<B,L>& s,
+      const int a, V1 lws, V2 as);
+
   //@}
 };
 
@@ -271,15 +313,14 @@ template<bi::Location L, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 blws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = this->resample(rng, *iter, s, lws, as);
   do {
     this->bridge(rng, iter, last, s, lws, blws, as);
-    r = this->resample(rng, *iter, s, lws, as) || r;
+    r = this->bridgeResample(rng, *iter, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  ll += this->correct(*iter, s, lws, blws, as);
+  real ll = this->correct(*iter, s, lws, blws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
@@ -290,16 +331,15 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lws, V1 blws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = resample(rng, *iter, s, lws, as);
   do {
     this->bridge(rng, iter, last, s, lws, blws, as);
-    r = this->resample(rng, *iter, s, lws, as) || r;
+    r = this->bridgeResample(rng, *iter, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
   row(s.getDyn(), 0) = column(X, iter->indexOutput());
-  ll += this->correct(*iter, s, lws, blws, as);
+  real ll = this->correct(*iter, s, lws, blws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
@@ -325,6 +365,47 @@ void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
 
     axpy(1.0, blws, lws);
   }
+}
+
+template<class B, class S, class R, class IO1>
+template<bi::Location L, class V1, class V2>
+bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
+    const ScheduleElement now, State<B,L>& s, V1 lws, V2 as) {
+  /* pre-condition */
+  BI_ASSERT(s.size() == lws.size());
+
+  bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+  if (r) {
+    if (resampler_needs_max<R>::value) {
+      this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+    }
+    this->resam->resample(rng, lws, as, s);
+  } else {
+    seq_elements(as, 0);
+    Resampler::normalise(lws);
+  }
+  return r;
+}
+
+template<class B, class S, class R, class IO1>
+template<bi::Location L, class V1, class V2>
+bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
+    const ScheduleElement now, State<B,L>& s, const int a, V1 lws, V2 as) {
+  /* pre-condition */
+  BI_ASSERT(s.size() == lws.size());
+  BI_ASSERT(a == 0);
+
+  bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+  if (r) {
+    if (resampler_needs_max<R>::value) {
+      this->resam->setMaxLogWeight(getMaxLogWeight(now, s));
+    }
+    this->resam->cond_resample(rng, a, a, lws, as, s);
+  } else {
+    seq_elements(as, 0);
+    Resampler::normalise(lws);
+  }
+  return r;
 }
 
 #endif

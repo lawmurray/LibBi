@@ -356,15 +356,14 @@ template<bi::Location L, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 qlws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = this->resample(rng, *iter, s, lws, as);
   do {
     this->lookahead(rng, iter, last, s, lws, qlws, as);
     r = this->resample(rng, *iter, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  ll += this->correct(*iter, s, lws, qlws, as);
+  real ll = this->correct(*iter, s, lws, qlws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
@@ -375,8 +374,7 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lws, V1 qlws, V2 as) {
-  bool r = false;
-  real ll = 0.0;
+  bool r = this->resample(rng, *iter, s, lws, as);
   do {
     this->lookahead(rng, iter, last, s, lws, qlws, as);
     r = this->resample(rng, *iter, s, lws, as) || r;
@@ -384,7 +382,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
   row(s.getDyn(), 0) = column(X, iter->indexOutput());
-  ll += this->correct(*iter, s, lws, qlws, as);
+  real ll = this->correct(*iter, s, lws, qlws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
