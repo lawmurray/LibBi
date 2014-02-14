@@ -29,32 +29,12 @@ the following additional options:
 
 Number of samples to draw.
 
-=item C<--ninit> (default 1)
-
-Number of initialisation sets, starting from C<--init-np> in C<--init-file>,
-on which to test.
-
-=item C<--nobs> (default 1)
-
-Number of observation sets, starting from C<--obs-np> in C<--obs-file>, on
-which to test.
-
 =back
 
 =cut
 our @CLIENT_OPTIONS = (
     {
       name => 'nruns',
-      type => 'int',
-      default => 1
-    },
-    {
-      name => 'ninit',
-      type => 'int',
-      default => 1
-    },
-    {
-      name => 'nobs',
       type => 'int',
       default => 1
     }
