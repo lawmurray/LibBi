@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT) {
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
     [% IF client.get_named_arg('filter') == 'adaptive' %]
     bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE, SimulatorNetCDFBuffer::FLEXI);
     [% ELSE %]

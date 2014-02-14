@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
   /* output */
   KalmanFilterNetCDFBuffer* bufOutput;
-  if (WITH_OUTPUT) {
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
     bufOutput = new KalmanFilterNetCDFBuffer(m, 1, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
   } else {
     bufOutput = NULL;
