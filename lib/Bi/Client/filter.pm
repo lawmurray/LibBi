@@ -61,8 +61,8 @@ be used instead.
 
 =item C<bridge>
 
-Particle filter with bridging potential. Bridging weights are assigned
-according to the L<bridge> top-level block.
+Particle filter with intermediate bridging weights. Bridging weights are
+assigned according to the L<bridge> top-level block.
 
 =item C<adaptive>
 
@@ -99,7 +99,6 @@ Number of particles to use.
 Threshold for effective sample size (ESS) resampling trigger. Particles will
 only be resampled if ESS is below this proportion of C<--nparticles>. To
 always resample, use C<--ess-rel 1>. To never resample, use C<--ess-rel 0>.
-
 
 =item C<--resampler> (default C<systematic>)
 
@@ -170,6 +169,23 @@ True to shrink the kernel density estimate to preserve covariance
 =item C<-C> (default 0)
 
 Number of steps to take.
+
+=back
+
+=head2 Bridge particle filter-specific options
+
+The following additional options are available when C<--filter> is set to
+C<'bridge'>:
+
+=over 4
+
+=item C<--bridge-ess-rel> (default 0.5)
+
+Threshold for effective sample size (ESS) resampling trigger after
+intermediate bridge weighting steps. See C<--ess-rel> for further
+details. When sampling bridges between fully-observed states,
+C<--ess-rel> should be set to 1 and C<--bridge-ess-rel> tuned
+instead to minimise variance in marginal likelihood estimates.
 
 =back
 
@@ -252,6 +268,11 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'ess-rel',
+      type => 'float',
+      default => 0.5
+    },
+    {
+      name => 'bridge-ess-rel',
       type => 'float',
       default => 0.5
     },

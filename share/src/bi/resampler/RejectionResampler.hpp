@@ -63,7 +63,7 @@ public:
  * ESS threshold to determine whether or not to resample at each time.
  * Instead, it simply samples at every time step. This is for two reasons:
  *
- * @li it is only possible in the current implementation to compute a bound
+ * @li it is only possible in the current implementation to compute a (good) bound
  * on the incremental log-likelihood for a single time point, not accumulated
  * across multiple time points when resampling may be skipped at certain
  * times, and
@@ -83,18 +83,6 @@ public:
    * @name High-level interface
    */
   //@{
-  /**
-   * A rejection resampler should always resample, as the maximum weight is
-   * only efficient at a particular time.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggered(const V1 lws) const
-      throw (ParticleFilterDegeneratedException);
-
   /**
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
    */
@@ -179,12 +167,6 @@ struct resampler_needs_max<RejectionResampler> {
 #ifdef __CUDACC__
 #include "../cuda/resampler/RejectionResamplerGPU.cuh"
 #endif
-
-template<class V1>
-bool bi::RejectionResampler::isTriggered(const V1 lws) const
-    throw (ParticleFilterDegeneratedException) {
-  return true;
-}
 
 template<class V1, class V2, class O1>
 void bi::RejectionResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {

@@ -16,93 +16,6 @@
 
 namespace bi {
 /**
- * @internal
- *
- * Functor for determining sum of squared errors in particular resampling.
- */
-template<class T>
-struct resample_se: public std::binary_function<T,int,T> {
-  const T lW;
-  const T P;
-  // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
-  //   Fermi, so we set the type of P to T instead of int
-
-  /**
-   * Constructor.
-   */
-  CUDA_FUNC_HOST
-  resample_se(const T lW, const int P) :
-      lW(lW), P(P) {
-    //
-  }
-
-  /**
-   * Apply functor.
-   *
-   * @param lw Log-weight for this index.
-   * @param o Number of offspring for this index.
-   *
-   * @return Contribution to error for this index.
-   */
-  CUDA_FUNC_BOTH
-  T operator()(const T& lw, const int& o) {
-    T eps;
-
-    if (bi::is_finite(lw)) {
-      eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
-      eps *= eps;
-    } else {
-      eps = 0.0;
-    }
-
-    return eps;
-  }
-};
-
-/**
- * @internal
- *
- * Functor for determining sum of errors in particular resampling.
- */
-template<class T>
-struct resample_e: public std::binary_function<T,int,T> {
-  const T lW;
-  const T P;
-  // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
-  //   Fermi, so we set the type of P to T instead of int
-
-  /**
-   * Constructor.
-   */
-  CUDA_FUNC_HOST
-  resample_e(const T lW, const int P) :
-      lW(lW), P(P) {
-    //
-  }
-
-  /**
-   * Apply functor.
-   *
-   * @param lw Log-weight for this index.
-   * @param o Number of offspring for this index.
-   *
-   * @return Contribution to error for this index.
-   */
-  CUDA_FUNC_BOTH
-  T operator()(const T& lw, const int& o) {
-    T eps;
-
-    if (bi::is_finite(lw)) {
-      eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
-    } else {
-      eps = 0.0;
-    }
-
-    return eps;
-  }
-};
-
-/**
  * %Resampler for particle filter.
  *
  * @ingroup method_resampler
@@ -114,18 +27,10 @@ public:
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
-  Resampler(const double essRel = 0.5);
-
-  /**
-   * Get relative ESS threshold.
-   */
-  double getEssRel() const;
-
-  /**
-   * Set relative ESS threshold.
-   */
-  void setEssRel(const double essRel = 0.5);
+  Resampler(const double essRel = 0.5, const double essRelBridge = 0.5);
 
   /**
    * Get maximum log-weight.
@@ -308,6 +213,16 @@ public:
   bool isTriggered(const V1 lws) const;
 
   /**
+   * Is ESS-based condition for bridge resampling triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggeredBridge(const V1 lws) const;
+
+  /**
    * Compute effective sample size (ESS) of log-weights.
    *
    * @tparam V1 Vector type.
@@ -369,6 +284,11 @@ protected:
    * Relative ESS threshold.
    */
   double essRel;
+
+  /**
+   * Realtive ESS threshold for bridge sampling.
+   */
+  double bridgeEssRel;
 
   /**
    * Maximum log-weight.
@@ -515,10 +435,6 @@ public:
 
 #include "boost/mpl/if.hpp"
 
-inline double bi::Resampler::getEssRel() const {
-  return essRel;
-}
-
 inline double bi::Resampler::getMaxLogWeight() const {
   return maxLogWeight;
 }
@@ -629,6 +545,11 @@ bool bi::Resampler::isTriggered(const V1 lws) const {
 }
 
 template<class V1>
+bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
+  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
+}
+
+template<class V1>
 typename V1::value_type bi::Resampler::ess(const V1 lws) {
   typename V1::value_type result = ess_reduce(lws);
 
@@ -637,26 +558,6 @@ typename V1::value_type bi::Resampler::ess(const V1 lws) {
   } else {
     return 0.0; // may be nan
   }
-}
-
-template<class V1, class V2>
-typename V1::value_type bi::Resampler::sse(const V1 lws, const V2 os) {
-  typedef typename V1::value_type T1;
-
-  T1 lW = logsumexp_reduce(lws);
-
-  return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      T1(0.0), thrust::plus<T1>(), resample_se<T1>(lW, lws.size()));
-}
-
-template<class V1, class V2>
-typename V1::value_type bi::Resampler::se(const V1 lws, const V2 os) {
-  typedef typename V1::value_type T1;
-
-  T1 lW = logsumexp_reduce(lws);
-
-  return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      T1(0.0), thrust::plus<T1>(), resample_e<T1>(lW, lws.size()));
 }
 
 #endif

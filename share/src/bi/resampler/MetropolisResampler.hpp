@@ -66,8 +66,11 @@ public:
    * @param B Number of Metropolis steps to take.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
-  MetropolisResampler(const int B, const double essRel = 0.5);
+  MetropolisResampler(const int B, const double essRel = 0.5,
+      const double bridgeEssRel = 0.5);
 
   /**
    * Set number of steps to take.

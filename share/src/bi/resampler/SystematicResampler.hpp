@@ -70,8 +70,11 @@ public:
    * @param sort True to pre-sort weights, false otherwise.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
-  SystematicResampler(const bool sort = true, const double essRel = 0.5);
+  SystematicResampler(const bool sort = true, const double essRel = 0.5,
+      const double bridgeEssRel = 0.5);
 
   /**
    * @name High-level interface

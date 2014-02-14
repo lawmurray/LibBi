@@ -147,18 +147,18 @@ int main(int argc, char* argv[]) {
     } else {
       h = B_REL*hopt(m.getDynSize(), NPARTICLES);
     }
-    MultinomialResampler base(WITH_SORT, ESS_REL);
-    KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, WITH_SHRINK, ESS_REL);
+    MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+    KernelResampler<BOOST_TYPEOF(thetabase)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler resam(C, ESS_REL);
+    MetropolisResampler resam(C, ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(WITH_SORT, ESS_REL);
+    MultinomialResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(WITH_SORT, ESS_REL);
+    SystematicResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler resam(WITH_SORT, ESS_REL);
+    StratifiedResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
     [% END %]
 
     /* particle filter */
@@ -188,28 +188,28 @@ int main(int argc, char* argv[]) {
   /* theta-particles resampler */
   [% IF client.get_named_arg('with-mpi') %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler thetabase(C, SAMPLE_ESS_REL);
+    MetropolisResampler thetabase(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetabase;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
+    MultinomialResampler thetabase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
+    SystematicResampler thetabase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetabase(WITH_SORT, SAMPLE_ESS_REL);
+    StratifiedResampler thetabase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% END %]
-    DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase, SAMPLE_ESS_REL);
+    DistributedResampler<BOOST_TYPEOF(thetabase)> thetaresam(&thetabase, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
     [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler thetaresam(C, SAMPLE_ESS_REL);
+    MetropolisResampler thetaresam(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler thetaresam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
+    MultinomialResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
+    SystematicResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% ELSE %]
-    StratifiedResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL);
+    StratifiedResampler thetaresam(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
     [% END %]
   [% END %]
   
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(out, SMC2CacheFactory<LOCATION>::create(m, bufOutput));
   BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory::create(m, filter, out));
   BOOST_AUTO(sampler, SMC2Factory::create(m, pmmh, &thetaresam,
-      NMOVES, adapter, ADAPTER_SCALE, ADAPTER_ESS_REL, out));
+      NMOVES, adapter, ADAPTER_SCALE, ADAPTER_ESS_REL, BRIDGE_ESS_REL, out));
 
   /* sample */
   #ifdef ENABLE_GPERFTOOLS

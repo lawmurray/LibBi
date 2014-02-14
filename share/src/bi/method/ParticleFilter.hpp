@@ -604,7 +604,7 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
-  bool r = iter->isObserved() && resample(rng, *iter, s, lws, as);
+  bool r = resample(rng, *iter, s, lws, as);
   do {
     ++iter;
     predict(rng, *iter, s);
@@ -619,7 +619,7 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class M1, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
-  bool r = iter->isObserved() && resample(rng, *iter, s, lws, as);
+  bool r = resample(rng, *iter, s, lws, as);
   do {
     ++iter;
     predict(rng, *iter, s);
@@ -660,7 +660,7 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r = resam != NULL && resam->isTriggered(lws);
+  bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
   if (r) {
     if (resampler_needs_max<R>::value) {
       resam->setMaxLogWeight(getMaxLogWeight(now, s));
@@ -681,7 +681,7 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r = resam != NULL && resam->isTriggered(lws);
+  bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
   if (r) {
     if (resampler_needs_max<R>::value) {
       resam->setMaxLogWeight(getMaxLogWeight(now, s));

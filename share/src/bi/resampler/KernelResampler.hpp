@@ -33,9 +33,11 @@ public:
    * @param shrink True to apply shrinkage, false otherwise.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
   KernelResampler(R* base, const real h, const bool shrink = true,
-      const double essRel = 0.5);
+      const double essRel = 0.5, const double bridgeEssRel = 0.5);
 
   /**
    * @name High-level interface
@@ -123,9 +125,9 @@ private:
 
 template<class R>
 bi::KernelResampler<R>::KernelResampler(R* base, const real h,
-    const bool shrink, const double essRel) :
-    Resampler(essRel), base(base), h(h), a(std::sqrt(1.0 - std::pow(h, 2))), shrink(
-        shrink) {
+    const bool shrink, const double essRel, const double bridgeEssRel) :
+    Resampler(essRel, bridgeEssRel), base(base), h(h), a(
+        std::sqrt(1.0 - std::pow(h, 2))), shrink(shrink) {
   //
 }
 
