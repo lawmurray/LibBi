@@ -60,10 +60,11 @@ sub gen {
     my $model = shift;
 
     # pre-condition
-    assert($model->isa('Bi::Model')) if DEBUG;
+    assert(!defined $model || $model->isa('Bi::Model')) if DEBUG;
 
-    # model
-    $self->process_templates('model', { 'model' => $model });
+    if (defined $model) {
+	    $self->process_templates('model', { 'model' => $model });
+    }
 }
 
 =item B<process_templates>(I<template_name>, I<vars>, I<output_name>)

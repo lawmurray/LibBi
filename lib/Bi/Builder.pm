@@ -108,7 +108,6 @@ use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Spec;
 use File::Slurp;
 use File::Path;
-use Fcntl qw(:flock);
 
 =item B<new>(I<name>, I<verbose>)
 
@@ -148,7 +147,6 @@ sub new {
         _diagnostics => 0,
         _gperftools => 0,
         _tstamps => {},
-        _lockfh => undef,
     };
     bless $self, $class;
     
@@ -241,11 +239,9 @@ sub build {
     my $self = shift;
     my $client = shift;
     
-    $self->_lock;
     $self->_autogen;
     $self->_configure;
     $self->_make($client);
-    $self->_unlock;
 }
 
 =item B<get_dir>
@@ -412,35 +408,6 @@ sub _make {
     }
     symlink($target, $client);
     chdir($cwd);
-}
-
-=item B<_lock>()
-
-Lock the build directory.
-
-=cut
-sub _lock {
-    my $self = shift;
-
-    my $fh;
-    my $file = File::Spec->catfile($self->get_dir, 'lock');
-    open($fh, ">", $file) || die("could not open lock file\n");
-    flock($fh, LOCK_EX) || die("could not lock build directory\n");
-    $self->{_lockfh} = $fh;
-}
-
-=item B<_unlock>()
-
-Unlock the build directory.
-
-=cut
-sub _unlock {
-    my $self = shift;
-
-    my $fh = $self->{_lockfh};
-    flock($fh, LOCK_UN);
-    close $fh;
-    $self->{_lockfh} = $fh;
 }
 
 =item B<_stamp>(I<filename>)
