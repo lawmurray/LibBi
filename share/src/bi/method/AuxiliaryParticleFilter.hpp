@@ -441,7 +441,6 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(
     bi::gather(as, qlws, qlws);
     axpy(-1.0, qlws, lws);
     qlws.clear();
-
     Resampler::normalise(lws);
 
     this->m.observationLogDensities(s,
