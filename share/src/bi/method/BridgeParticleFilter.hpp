@@ -382,7 +382,7 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
     this->resam->resample(rng, lws, as, s);
   } else {
     seq_elements(as, 0);
-    //Resampler::normalise(lws);
+    Resampler::normalise(lws);
   }
   return r;
 }
@@ -403,7 +403,7 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
     this->resam->cond_resample(rng, a, a, lws, as, s);
   } else {
     seq_elements(as, 0);
-    //Resampler::normalise(lws);
+    Resampler::normalise(lws);
   }
   return r;
 }
