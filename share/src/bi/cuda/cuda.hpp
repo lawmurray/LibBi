@@ -95,7 +95,12 @@
     BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
-#define CUDA_CHECKED_CALL(call) call
+#define CUDA_CHECKED_CALL(call) \
+  { \
+    cudaError_t cudaErr; \
+    cudaErr = call; \
+    BI_ERROR_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
+  }
 #endif
 
 /**
@@ -114,7 +119,12 @@
     BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
-#define CUDA_CHECK
+#define CUDA_CHECK \
+  { \
+    cudaError_t cudaErr; \
+    cudaErr = cudaGetLastError(); \
+    BI_ERROR_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
+  }
 #endif
 
 /**
