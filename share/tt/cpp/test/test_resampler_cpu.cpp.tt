@@ -21,8 +21,8 @@
 #include "bi/math/loc_matrix.hpp"
 #include "bi/misc/TicToc.hpp"
 #include "bi/buffer/netcdf.hpp"
-
 #include "bi/math/io.hpp"
+#include "bi/primitive/pinned_allocator.hpp"
 
 #include <iostream>
 #include <string>
@@ -139,6 +139,13 @@ int main(int argc, char* argv[]) {
       vector_alt_type lws_alt(P);
       int_vector_alt_type as_alt(P);
 
+      /* temporaries for transfer from device */
+      [% IF client.get_named_arg('with-cuda') %]
+      host_matrix<int,-1,-1,-1,1,bi::pinned_allocator<int> > O_tmp(REPS, P);
+      host_vector<real,-1,-1,bi::pinned_allocator<real> > lws_tmp(P);
+      [% END %]
+      
+      /* for standardised computation of metrics */
       host_matrix<double> O(REPS, P);
       host_vector<double> mu(P), sigma2(P), eps(P), ws(P);
       
@@ -202,13 +209,23 @@ int main(int argc, char* argv[]) {
         
         [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
+        [% IF client.get_named_arg('with-cuda') %]
+        row(O_tmp, rep) = os;
+        [% ELSE %]
         row(O, rep) = os;
+        [% END %]
         [% END %]
       }
       
       [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
-      ws = lws;
+      [% IF client.get_named_arg('with-cuda') %]
+      lws_tmp = lws;
       synchronize();
+      O = O_tmp; // move into double storage
+      ws = lws_tmp;
+      [% ELSE %]
+      ws = lws;
+      [% END %]
       expu_elements(ws, ws);
       mulscal_elements(ws, P/sum_reduce(ws), ws);
       
