@@ -100,16 +100,6 @@ int main(int argc, char* argv[]) {
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
 
-  /* output */
-  ParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    [% IF client.get_named_arg('filter') == 'adaptive' %]
-    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE, SimulatorNetCDFBuffer::FLEXI);
-    [% ELSE %]
-    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-    [% END %]
-  }
-
   /* state and intermediate results */
   [% IF client.get_named_arg('filter') == 'kalman' %]
   NPARTICLES = 1;
@@ -124,13 +114,13 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
-    BOOST_AUTO(out, bi::KalmanFilterCacheFactory<LOCATION>::create(bufOutput));
-    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
+    BOOST_AUTO(out, bi::KalmanFilterCacheFactory<LOCATION>::create());
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, out)));
   [% ELSE %]
     [% IF client.get_named_arg('filter') == 'adaptive' %]
-    BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create());
     [% ELSE %]
-    BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create());
     [% END %]
 
     /* resampler */
@@ -187,38 +177,59 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   #endif
 
-  std::cout << std::setw(13) << "\"Log-likelihood\"";
-  #ifdef ENABLE_TIMING
-  std::cout << std::setw(13) << "\"Time (us)\"";
-  #endif
-  std::cout << std::endl;
-
-  int k = 0;
+  host_matrix<real> lls(REPS, PS), times(REPS, PS);
+  host_vector<int> Ps(PS);
+  int p, P, k;
   real ll, t;
-  while (k < NRUNS) {
-    try {
-      #ifdef ENABLE_TIMING
-      synchronize();
-      timer.tic();
-      #endif
-      ll = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
-      std::cout << std::setw(13) << ll;
-      #ifdef ENABLE_TIMING
-      synchronize();
-      t = timer.toc();
-      std::cout << std::setw(13) << t;
-      #endif
-      std::cout << std::endl;
-      
-      ++k;
-    } catch (ParticleFilterDegeneratedException e) {
-      //
+  
+  for (p = 0; p < PS; ++p) {
+    P = NPARTICLES*std::pow(2, p);
+    Ps(p) = P;
+    s.resize(P, false);
+    
+    for (k = 0; k < REPS; ++k) {
+      try {
+        #ifdef ENABLE_TIMING
+        synchronize();
+        timer.tic();
+        #endif
+        ll = filter->filter(rng, sched.begin(), sched.end(), s, bufInit);
+        #ifdef ENABLE_TIMING
+        synchronize();
+        t = timer.toc();
+        #endif
+        lls(k,p) = ll;
+        times(k,p) = t;
+      } catch (ParticleFilterDegeneratedException e) {
+        lls(k,p) = -1.0/0.0;
+        times(k,p) = -1.0/0.0;
+      }
     }
   }
 
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
+ 
+  /* output */
+  int ncid = bi::nc_create(OUTPUT_FILE, NC_NETCDF4);
+
+  int PDim = bi::nc_def_dim(ncid, "P", PS);
+  int repDim = bi::nc_def_dim(ncid, "rep", REPS);
+
+  std::vector<int> dimids2(2);
+  dimids2[0] = PDim;
+  dimids2[1] = repDim;
+
+  int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids2);
+  int llVar = bi::nc_def_var(ncid, "loglikelihood", NC_REAL, dimids2);
+  int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
+      
+  bi::nc_put_var(ncid, timeVar, times.buf());
+  bi::nc_put_var(ncid, llVar, lls.buf());
+  bi::nc_put_var(ncid, PVar, Ps.buf());
+  
+  bi::nc_close(ncid);
  
   delete filter;
   delete out;

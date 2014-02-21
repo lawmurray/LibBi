@@ -56,7 +56,7 @@ Number of weight vector sizes to use.
 
 =item C<--reps> (default 100)
 
-Number of trials on each combination of parameters and sizes.
+Number of trials on each combination of parameterisations and sizes.
 
 =item C<--with-sort> (default on)
 

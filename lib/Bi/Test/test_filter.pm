@@ -25,18 +25,30 @@ the following additional options:
 
 =over 4
 
-=item C<--nruns> (default 1)
+=item C<--Ps> (default 1)
 
-Number of samples to draw.
+Number of sizes to use. The first size is set to the value of C<--nparticles>,
+each subsequent size multiples this by two.
+
+=item C<--reps> (default 100)
+
+Number of trials on each size.
+
+
 
 =back
 
 =cut
 our @CLIENT_OPTIONS = (
     {
-      name => 'nruns',
+      name => 'Ps',
       type => 'int',
       default => 1
+    },
+    {
+      name => 'reps',
+      type => 'int',
+      default => 100
     }
 );
 
