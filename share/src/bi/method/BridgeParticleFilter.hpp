@@ -354,7 +354,7 @@ void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
   BI_ASSERT(lws.size() == blws.size());
   BI_ASSERT(lws.size() == as.size());
 
-  if (last->indexObs() > iter->indexObs() && iter->hasDelta()
+  if (last->indexObs() > iter->indexObs() && iter->hasBridge()
       && !iter->isObserved()) {
     bi::gather(as, blws, blws);
     axpy(-1.0, blws, lws);

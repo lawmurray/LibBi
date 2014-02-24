@@ -60,6 +60,11 @@ public:
   int indexOutput() const;
 
   /**
+   * Bridge index.
+   */
+  int indexBridge() const;
+
+  /**
    * Observation index.
    */
   int indexObs() const;
@@ -78,6 +83,11 @@ public:
    * Is there an output at this time?
    */
   bool hasOutput() const;
+
+  /**
+   * Is there a bridge weighting at this time?
+   */
+  bool hasBridge() const;
 
   /**
    * Is there an observation to be updated at this time?
@@ -121,6 +131,11 @@ private:
   int kOutput;
 
   /**
+   * Bridge index.
+   */
+  int kBridge;
+
+  /**
    * Observation index.
    */
   int kObs;
@@ -141,6 +156,11 @@ private:
   bool bOutput;
 
   /**
+   * Is there a bridge weighting at this time?
+   */
+  bool bBridge;
+
+  /**
    * Is there an observation to be updated at this time?
    */
   bool bObs;
@@ -153,8 +173,9 @@ private:
 }
 
 inline bi::ScheduleElement::ScheduleElement() :
-    t1(0.0), t2(0.0), k(0), kDelta(0), kInput(0), kOutput(0), kObs(0), bDelta(
-        false), bInput(false), bOutput(false), bObs(false), bObserved(false) {
+    t1(0.0), t2(0.0), k(0), kDelta(0), kInput(0), kOutput(0), kBridge(0), kObs(
+        0), bDelta(false), bInput(false), bOutput(false), bBridge(false), bObs(
+        false), bObserved(false) {
   //
 }
 
@@ -186,6 +207,10 @@ inline int bi::ScheduleElement::indexOutput() const {
   return kOutput;
 }
 
+inline int bi::ScheduleElement::indexBridge() const {
+  return kBridge;
+}
+
 inline int bi::ScheduleElement::indexObs() const {
   return kObs;
 }
@@ -200,6 +225,10 @@ inline bool bi::ScheduleElement::hasInput() const {
 
 inline bool bi::ScheduleElement::hasOutput() const {
   return bOutput;
+}
+
+inline bool bi::ScheduleElement::hasBridge() const {
+  return bBridge;
 }
 
 inline bool bi::ScheduleElement::hasObs() const {

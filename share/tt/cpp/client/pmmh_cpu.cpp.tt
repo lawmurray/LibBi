@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   }
   
   /* schedule */
-  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, bufInput, bufObs);
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs);
 
   /* state and intermediate results */
   [% IF client.get_named_arg('filter') == 'kalman' %]

@@ -118,11 +118,12 @@ public:
    * @param t Start time.
    * @param T End time.
    * @param K Number of dense output points.
+   * @param M Number of dense bridge points.
    * @param in Input file.
    * @param obs Observation file.
    */
   template<class B, class IO1, class IO2>
-  Schedule(B& m, const real t, const real T, const int K, IO1* in, IO2* obs);
+  Schedule(B& m, const real t, const real T, const int K, const int M, IO1* in, IO2* obs);
 
   /**
    * Shallow copy constructor.
@@ -153,6 +154,11 @@ public:
    * Number of output events in the schedule.
    */
   int numOutputs() const;
+
+  /**
+   * Number of bridge events in the schedule.
+   */
+  int numBridges() const;
 
   /**
    * Number of observation events in the schedule.
@@ -205,18 +211,19 @@ private:
 #include <algorithm>
 
 template<class B, class IO1, class IO2>
-bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
+bi::Schedule::Schedule(B& m, const real t, const real T, const int K, const int M, IO1* in,
     IO2* obs) :
     delta(m.getDelta()) {
   /* pre-conditions */
   BI_ASSERT(T >= t);
   BI_ASSERT(K >= 0);
+  BI_ASSERT(M >= 0);
 
   User2Scaled<real> user2scaled(delta);
   Scaled2User<real> scaled2user(delta);
 
   const real st = user2scaled(t), sT = user2scaled(T);
-  std::vector<real> ts, tDeltas, tInputs, tOutputs, tObs;
+  std::vector<real> ts, tDeltas, tInputs, tOutputs, tBridges, tObs;
   ScheduleElement elem;
   int i;
 
@@ -236,6 +243,12 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     tOutputs.push_back(st + (sT - st) * i / K);
   }
   tOutputs.push_back(sT);
+
+  /* bridge times */
+  for (i = 0; i < M; ++i) {
+    tBridges.push_back(st + (sT - st)*i / M);
+  }
+  tBridges.push_back(sT);
 
   /* input times */
   if (in != NULL) {
@@ -266,6 +279,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
   merge_unique(ts, tDeltas.begin(), tDeltas.end());
   merge_unique(ts, tInputs.begin() + elem.kInput, tInputs.end());
   merge_unique(ts, tOutputs.begin(), tOutputs.end());
+  merge_unique(ts, tBridges.begin(), tBridges.end());
   //merge_unique(ts, tObs.begin() + elem.kObs, tObs.end());
   //^ tObs already merged into tOutputs above
 
@@ -284,6 +298,8 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
+    elem.bBridge = elem.kBridge < int(tBridges.size())
+        && tBridges[elem.kBridge] == ts[elem.k];
 
     /* observations persist on half-open intervals (t-1, t], except for the
      * first input, which is on the closed interval [t-1, t] */
@@ -303,6 +319,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     if (elem.bOutput) {
       ++elem.kOutput;
     }
+    if (elem.bBridge) {
+      ++elem.kBridge;
+    }
     if (elem.bObserved) {
       ++elem.kObs;
     }
@@ -311,6 +330,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
   elem.bDelta = false;
   elem.bInput = false;
   elem.bOutput = false;
+  elem.bBridge = false;
   elem.bObs = false;
   elems.push_back(elem);  // see end() semantics for why this extra
 }
@@ -329,6 +349,10 @@ inline int bi::Schedule::numInputs() const {
 
 inline int bi::Schedule::numOutputs() const {
   return elems.back().indexOutput() - elems.front().indexOutput();
+}
+
+inline int bi::Schedule::numBridges() const {
+  return elems.back().indexBridge() - elems.front().indexBridge();
 }
 
 inline int bi::Schedule::numObs() const {

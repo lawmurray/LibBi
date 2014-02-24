@@ -179,6 +179,13 @@ C<'bridge'>:
 
 =over 4
 
+=item C<--nbridges> (default 0)
+
+Number of dense bridge times. This argument gives the number of equispaced
+times at which to assign bridge weights, and potentially resample. With
+C<--end-time T> and C<--nbridges K>, then for each C<k> in C<0,...,K-1>,
+brdige weighting will occur at time C<T*k/K>.
+
 =item C<--bridge-ess-rel> (default 0.5)
 
 Threshold for effective sample size (ESS) resampling trigger after
@@ -272,11 +279,6 @@ our @CLIENT_OPTIONS = (
       default => 0.5
     },
     {
-      name => 'bridge-ess-rel',
-      type => 'float',
-      default => 0.5
-    },
-    {
       name => 'resampler',
       type => 'string',
       default => 'systematic'
@@ -305,6 +307,16 @@ our @CLIENT_OPTIONS = (
       name => 'C',
       type => 'int',
       default => 0
+    },
+    {
+      name => 'nbridges',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'bridge-ess-rel',
+      type => 'float',
+      default => 0.5
     },
     {
       name => 'stopper',
