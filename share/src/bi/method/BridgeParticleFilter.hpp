@@ -354,7 +354,7 @@ void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
   BI_ASSERT(lws.size() == blws.size());
   BI_ASSERT(lws.size() == as.size());
 
-  if (last->indexObs() > iter->indexObs() && iter->hasBridge()
+  if (iter->hasBridge() && last->indexObs() > iter->indexObs()
       && !iter->isObserved()) {
     bi::gather(as, blws, blws);
     axpy(-1.0, blws, lws);
@@ -374,15 +374,18 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
-  if (r) {
-    if (resampler_needs_max<R>::value) {
-      this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+  bool r = false;
+  if (now.hasBridge() && !now.isObserved()) {
+    bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+      }
+      this->resam->resample(rng, lws, as, s);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
     }
-    this->resam->resample(rng, lws, as, s);
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
   }
   return r;
 }
