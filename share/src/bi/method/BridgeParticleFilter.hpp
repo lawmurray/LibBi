@@ -126,7 +126,7 @@ public:
    * @param[in,out] as Ancestry.
    */
   template<Location L, class V1, class V2>
-  void bridge(Random& rng, const ScheduleIterator iter,
+  real bridge(Random& rng, const ScheduleIterator iter,
       const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws,
       const V2 as);
 
@@ -313,14 +313,15 @@ template<bi::Location L, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 blws, V2 as) {
+  real ll = 0.0;
   bool r = this->resample(rng, *iter, s, lws, as);
   do {
-    this->bridge(rng, iter, last, s, lws, blws, as);
+    ll += this->bridge(rng, iter, last, s, lws, blws, as);
     r = this->bridgeResample(rng, *iter, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  real ll = this->correct(*iter, s, lws, blws, as);
+  ll += this->correct(*iter, s, lws, blws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
@@ -331,15 +332,16 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lws, V1 blws, V2 as) {
+  real ll = 0.0;
   bool r = resample(rng, *iter, s, lws, as);
   do {
-    this->bridge(rng, iter, last, s, lws, blws, as);
+    ll += this->bridge(rng, iter, last, s, lws, blws, as);
     r = this->bridgeResample(rng, *iter, s, lws, as) || r;
     ++iter;
     this->predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
   row(s.getDyn(), 0) = column(X, iter->indexOutput());
-  real ll = this->correct(*iter, s, lws, blws, as);
+  ll += this->correct(*iter, s, lws, blws, as);
   this->output(*iter, s, r, lws, as);
 
   return ll;
@@ -347,13 +349,14 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
+real bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 blws, const V2 as) {
   /* pre-condition */
   BI_ASSERT(lws.size() == blws.size());
   BI_ASSERT(lws.size() == as.size());
 
+  real ll = 0.0;
   if (iter->hasBridge() && last->indexObs() > iter->indexObs()
       && !iter->isObserved()) {
     bi::gather(as, blws, blws);
@@ -364,7 +367,9 @@ void bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
         this->getSim()->getObs()->getMask(iter->indexObs()), blws);
 
     axpy(1.0, blws, lws);
+    ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
   }
+  return ll;
 }
 
 template<class B, class S, class R, class IO1>
@@ -376,7 +381,7 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
 
   bool r = false;
   if (now.hasBridge() && !now.isObserved()) {
-    bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+    r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
         this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
@@ -398,15 +403,18 @@ bool bi::BridgeParticleFilter<B,S,R,IO1>::bridgeResample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
-  if (r) {
-    if (resampler_needs_max<R>::value) {
-      this->resam->setMaxLogWeight(getMaxLogWeight(now, s));
+  bool r = false;
+  if (now.hasBridge() && !now.isObserved()) {
+    r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        this->resam->setMaxLogWeight(getMaxLogWeight(now, s));
+      }
+      this->resam->cond_resample(rng, a, a, lws, as, s);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
     }
-    this->resam->cond_resample(rng, a, a, lws, as, s);
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
   }
   return r;
 }

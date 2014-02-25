@@ -441,10 +441,10 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(
     bi::gather(as, qlws, qlws);
     axpy(-1.0, qlws, lws);
     qlws.clear();
-    Resampler::normalise(lws);
 
     this->m.observationLogDensities(s,
         this->getSim()->getObs()->getMask(now.indexObs()), lws);
+
     ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
   }
   return ll;

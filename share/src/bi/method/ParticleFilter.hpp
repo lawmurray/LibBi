@@ -660,15 +660,18 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
-  if (r) {
-    if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(getMaxLogWeight(now, s));
+  bool r = false;
+  if (now.isObserved()) {
+    r = resam != NULL && resam->isTriggered(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        resam->setMaxLogWeight(getMaxLogWeight(now, s));
+      }
+      resam->resample(rng, lws, as, s);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
     }
-    resam->resample(rng, lws, as, s);
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
   }
   return r;
 }
@@ -681,15 +684,18 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r = now.isObserved() && resam != NULL && resam->isTriggered(lws);
-  if (r) {
-    if (resampler_needs_max<R>::value) {
-      resam->setMaxLogWeight(getMaxLogWeight(now, s));
+  bool r = false;
+  if (now.isObserved()) {
+    r = resam != NULL && resam->isTriggered(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        resam->setMaxLogWeight(getMaxLogWeight(now, s));
+      }
+      resam->cond_resample(rng, a, a, lws, as, s);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
     }
-    resam->cond_resample(rng, a, a, lws, as, s);
-  } else {
-    seq_elements(as, 0);
-    Resampler::normalise(lws);
   }
   return r;
 }
