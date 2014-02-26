@@ -337,7 +337,7 @@ public:
    *
    * @param now Current step in time schedule.
    * @param s State.
-   * @param r Was resampling performed?
+   * @param r Was resampling performed since last output?
    * @param lws Log-weights.
    * @param as Ancestry.
    */
@@ -604,13 +604,15 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
-  bool r = resample(rng, *iter, s, lws, as);
+  real ll = 0.0;
+  bool r = false;
   do {
+    r = resample(rng, *iter, s, lws, as);
     ++iter;
     predict(rng, *iter, s);
-  } while (iter + 1 != last && !iter->hasOutput());
-  real ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
+    ll += correct(*iter, s, lws);
+    output(*iter, s, r, lws, as);
+  } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
 }
@@ -619,14 +621,18 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class M1, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
-  bool r = resample(rng, *iter, s, lws, as);
+  real ll = 0.0;
+  bool r = false;
   do {
+    r = resample(rng, *iter, s, lws, as);
     ++iter;
     predict(rng, *iter, s);
-  } while (iter + 1 != last && !iter->hasOutput());
-  row(s.getDyn(), 0) = column(X, iter->indexOutput());
-  real ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
+    if (iter->hasOutput()) {
+      row(s.getDyn(), 0) = column(X, iter->indexOutput());
+    }
+    ll += correct(*iter, s, lws);
+    output(*iter, s, r, lws, as);
+  } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
 }
@@ -660,8 +666,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r = false;
-  if (now.isObserved()) {
+  bool r = now.isObserved();
+  if (r) {
     r = resam != NULL && resam->isTriggered(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
@@ -672,6 +678,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else {
+    seq_elements(as, 0);
   }
   return r;
 }
@@ -684,8 +692,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r = false;
-  if (now.isObserved()) {
+  bool r = now.isObserved();
+  if (r) {
     r = resam != NULL && resam->isTriggered(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
@@ -696,6 +704,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else {
+    seq_elements(as, 0);
   }
   return r;
 }
@@ -712,7 +722,7 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
     const State<B,L>& s, const bool r, const V1 lws, const V2 as) {
-  if (out != NULL && now.hasOutput()) {
+  if (now.hasOutput() && out != NULL) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
     out->writeState(k, s.getDyn(), as, r);
@@ -736,12 +746,8 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L>
 real bi::ParticleFilter<B,S,R,IO1>::getMaxLogWeight(const ScheduleElement now,
     State<B,L>& s) {
-  real maxlw = 0.0;
-  if (now.isObserved()) {
-    maxlw = this->m.observationMaxLogDensity(s,
-        sim->getObs()->getMask(now.indexObs()));
-  }
-  return maxlw;
+  return this->m.observationMaxLogDensity(s,
+      sim->getObs()->getMask(now.indexObs()));
 }
 
 #endif
