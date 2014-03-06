@@ -442,6 +442,8 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::init(Random& rng,
   if (out != NULL) {
     out->clear();
   }
+
+  std::cout << "Initialising chain with " << s.getParameters1() << std::endl;
 }
 
 template<class B, class F, class IO1>
@@ -738,6 +740,9 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::report(const int c,
     std::cerr << "accept";
   }
   std::cerr << "\taccept=" << (double)accepted / total;
+  std::cerr << "\t(" << s.getParameters1() << " vs. "
+            << s.getParameters2() << ")";
+
   std::cerr << std::endl;
 }
 
