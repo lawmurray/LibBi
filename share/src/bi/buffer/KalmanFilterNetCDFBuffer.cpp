@@ -54,7 +54,7 @@ void bi::KalmanFilterNetCDFBuffer::create(const size_t T) {
   mu1Var = nc_def_var(ncid, "mu1_", NC_REAL, dimidsVec);
   U1Var = nc_def_var(ncid, "U1_", NC_REAL, dimidsMat);
   mu2Var = nc_def_var(ncid, "mu2_", NC_REAL, dimidsVec);
-  U2Var = nc_def_var(ncid, "U2_", NC_REAL, dimidsVec);
+  U2Var = nc_def_var(ncid, "U2_", NC_REAL, dimidsMat);
   CVar = nc_def_var(ncid, "C_", NC_REAL, dimidsVec);
 
   /* index variables */
