@@ -177,10 +177,12 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   #endif
 
-  host_matrix<real> lls(REPS, PS), times(REPS, PS);
+  host_matrix<real> lls(REPS, PS);
+  host_matrix<long> times(REPS, PS);
   host_vector<int> Ps(PS);
   int p, P, k;
-  real ll, t;
+  real ll;
+  long t;
   
   for (p = 0; p < PS; ++p) {
     P = NPARTICLES*std::pow(2, p);
@@ -202,7 +204,7 @@ int main(int argc, char* argv[]) {
         times(k,p) = t;
       } catch (ParticleFilterDegeneratedException e) {
         lls(k,p) = -1.0/0.0;
-        times(k,p) = -1.0/0.0;
+        times(k,p) = -1;
       }
     }
   }
@@ -221,7 +223,7 @@ int main(int argc, char* argv[]) {
   dimids2[0] = PDim;
   dimids2[1] = repDim;
 
-  int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids2);
+  int timeVar = bi::nc_def_var(ncid, "time", NC_LONG, dimids2);
   int llVar = bi::nc_def_var(ncid, "loglikelihood", NC_REAL, dimids2);
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
       
