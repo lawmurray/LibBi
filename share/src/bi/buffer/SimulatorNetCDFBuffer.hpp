@@ -219,6 +219,19 @@ public:
       M1 X) const;
 
   /**
+   * Read state variable.
+   *
+   * @param type Variable type.
+   * @param id Variable id.
+   * @param k Time index.
+   * @param p First sample index.
+   * @param[out] X State. Rows index samples, columns variables.
+   */
+  template<class M1>
+  void readStateVar(const VarType type, const int id, const size_t k,
+      const size_t p, M1 X) const;
+
+  /**
    * Write state.
    *
    * @tparam M1 Matrix type.
@@ -231,6 +244,20 @@ public:
   template<class M1>
   void writeState(const VarType type, const size_t k, const size_t p,
       const M1 X);
+
+  /**
+   * Read state variable.
+   *
+   * @param type Variable type.
+   * @param id Variable id.
+   * @param k Time index.
+   * @param p First sample index.
+   * @param X State. Rows index samples, columns variables.
+   */
+  template<class M1>
+  void writeStateVar(const VarType type, const int id, const size_t k,
+      const size_t p, const M1 X);
+
 
   /**
    * Read offset along @c nrp dimension for time. Flexi schema only.
@@ -517,55 +544,63 @@ void bi::SimulatorNetCDFBuffer::writeState(const size_t k, const size_t p,
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
     const size_t p, M1 X) const {
-  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
-
   Var* var;
-  std::vector<size_t> offsets, counts;
-  std::vector<int> dimids;
-  int start, size, id, i, j, varid;
+  int id, start, size;
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
     start = var->getStart();
     size = var->getSize();
 
-    if (var->hasInput()) {
-      varid = vars[type][id];
-      BI_ASSERT(varid >= 0);
+    readStateVar(type, id, k, p, columns(X, start, size));
+  }
+}
 
-      j = 0;
-      dimids = nc_inq_vardimid(ncid, varid);
-      offsets.resize(dimids.size());
-      counts.resize(dimids.size());
+template<class M1>
+void bi::SimulatorNetCDFBuffer::readStateVar(const VarType type, const int id,
+    const size_t k, const size_t p, M1 X) const {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
-      if (j < dimids.size() && dimids[j] == nrDim) {
-        offsets[j] = k;
-        counts[j] = 1;
-        ++j;
-      }
-      for (i = var->getNumDims() - 1; i >= 0; --i) {
-        offsets[j] = 0;
-        counts[j] = nc_inq_dimlen(ncid, dimids[j]);
-        ++j;
-      }
-      if (j < dimids.size() && dimids[j] == npDim) {
-        offsets[j] = p;
-        counts[j] = X.size1();
-        ++j;
-      }
-      if (j < dimids.size() && dimids[j] == nrpDim) {
-        offsets[j] = readStart(k);
-        counts[j] = readLen(k);
-      }
+  Var* var = m.getVar(type, id);
+  std::vector<size_t> offsets, counts;
+  std::vector<int> dimids;
+  int i, j, varid;
 
-      if (M1::on_device || !X.contiguous()) {
-        temp_matrix_type X1(X.size1(), size);
-        nc_get_vara(ncid, varid, offsets, counts, X1.buf());
-        columns(X, start, size) = X1;
-      } else {
-        nc_get_vara(ncid, varid, offsets, counts,
-            columns(X, start, size).buf());
-      }
+  if (var->hasInput()) {
+    varid = vars[type][id];
+    BI_ASSERT(varid >= 0);
+
+    j = 0;
+    dimids = nc_inq_vardimid(ncid, varid);
+    offsets.resize(dimids.size());
+    counts.resize(dimids.size());
+
+    if (j < dimids.size() && dimids[j] == nrDim) {
+      offsets[j] = k;
+      counts[j] = 1;
+      ++j;
+    }
+    for (i = var->getNumDims() - 1; i >= 0; --i) {
+      offsets[j] = 0;
+      counts[j] = nc_inq_dimlen(ncid, dimids[j]);
+      ++j;
+    }
+    if (j < dimids.size() && dimids[j] == npDim) {
+      offsets[j] = p;
+      counts[j] = X.size1();
+      ++j;
+    }
+    if (j < dimids.size() && dimids[j] == nrpDim) {
+      offsets[j] = readStart(k);
+      counts[j] = readLen(k);
+    }
+
+    if (M1::on_device || !X.contiguous()) {
+      temp_matrix_type X1(X.size1(), X.size2());
+      nc_get_vara(ncid, varid, offsets, counts, X1.buf());
+      X = X1;
+    } else {
+      nc_get_vara(ncid, varid, offsets, counts, X.buf());
     }
   }
 }
@@ -573,12 +608,8 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
 template<class M1>
 void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
     const size_t p, const M1 X) {
-  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
-
   Var* var;
-  std::vector<size_t> offsets, counts;
-  std::vector<int> dimids;
-  int start, size, id, i, j, varid;
+  int id, start, size;
 
   if (schema == FLEXI) {
     /* write offset and length */
@@ -588,50 +619,61 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
     writeLen(k, len);
   }
 
-  /* write data */
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
     start = var->getStart();
     size = var->getSize();
 
-    if (var->hasOutput()) {
-      varid = vars[type][id];
-      BI_ASSERT(varid >= 0);
+    writeStateVar(type, id, k, p, columns(X, start, size));
+  }
+}
 
-      j = 0;
-      dimids = nc_inq_vardimid(ncid, varid);
-      offsets.resize(dimids.size());
-      counts.resize(dimids.size());
+template<class M1>
+void bi::SimulatorNetCDFBuffer::writeStateVar(const VarType type,
+    const int id, const size_t k, const size_t p, const M1 X) {
+  typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
-      if (j < static_cast<int>(dimids.size()) && dimids[j] == nrDim) {
-        offsets[j] = k;
-        counts[j] = 1;
-        ++j;
-      }
-      for (i = var->getNumDims() - 1; i >= 0; --i) {
-        offsets[j] = 0;
-        counts[j] = nc_inq_dimlen(ncid, dimids[j]);
-        ++j;
-      }
-      if (j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
-        offsets[j] = p;
-        counts[j] = X.size1();
-        ++j;
-      }
-      if (j < static_cast<int>(dimids.size()) && dimids[j] == nrpDim) {
-        offsets[j] = readStart(k);
-        counts[j] = readLen(k);
-      }
+  Var* var = m.getVar(type, id);
+  std::vector<size_t> offsets, counts;
+  std::vector<int> dimids;
+  int i, j, varid;
 
-      if (M1::on_device || !X.contiguous()) {
-        temp_matrix_type X1(X.size1(), size);
-        X1 = columns(X, start, size);
-        synchronize(M1::on_device);
-        nc_put_vara(ncid, varid, offsets, counts, X1.buf());
-      } else {
-        nc_put_vara(ncid, varid, offsets, counts,
-            columns(X, start, size).buf());
-      }
+  if (var->hasOutput()) {
+    varid = vars[type][id];
+    BI_ASSERT(varid >= 0);
+
+    j = 0;
+    dimids = nc_inq_vardimid(ncid, varid);
+    offsets.resize(dimids.size());
+    counts.resize(dimids.size());
+
+    if (j < static_cast<int>(dimids.size()) && dimids[j] == nrDim) {
+      offsets[j] = k;
+      counts[j] = 1;
+      ++j;
+    }
+    for (i = var->getNumDims() - 1; i >= 0; --i) {
+      offsets[j] = 0;
+      counts[j] = nc_inq_dimlen(ncid, dimids[j]);
+      ++j;
+    }
+    if (j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+      offsets[j] = p;
+      counts[j] = X.size1();
+      ++j;
+    }
+    if (j < static_cast<int>(dimids.size()) && dimids[j] == nrpDim) {
+      offsets[j] = readStart(k);
+      counts[j] = readLen(k);
+    }
+
+    if (M1::on_device || !X.contiguous()) {
+      temp_matrix_type X1(X.size1(), X.size2());
+      X1 = X;
+      synchronize(M1::on_device);
+      nc_put_vara(ncid, varid, offsets, counts, X1.buf());
+    } else {
+      nc_put_vara(ncid, varid, offsets, counts, X.buf());
     }
   }
 }

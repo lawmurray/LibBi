@@ -198,7 +198,7 @@ private:
   /**
    * Maximum number of samples to store in cache.
    */
-  static const int NUM_SAMPLES = 4096 / sizeof(real);
+  static const int NUM_SAMPLES = 16384 / sizeof(real);
 
   /**
    * Serialize.
@@ -257,8 +257,9 @@ struct ParticleMCMCCacheFactory {
 template<class IO1, bi::Location CL>
 template<class B>
 bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(B& m, IO1* out) :
-    SimulatorCache<IO1,CL>(out), m(m), llCache(NUM_SAMPLES), lpCache(NUM_SAMPLES), parameterCache(
-        NUM_SAMPLES, m.getNetSize(P_VAR)), first(0), len(0), out(out) {
+    SimulatorCache<IO1,CL>(out), m(m), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, m.getNetSize(P_VAR)), first(
+        0), len(0), out(out) {
   //
 }
 
@@ -388,8 +389,7 @@ void bi::ParticleMCMCCache<IO1,CL>::readTrajectory(const int p, M1 X) {
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p,
-    const M1 X) {
+void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -464,9 +464,30 @@ void bi::ParticleMCMCCache<IO1,CL>::flush() {
     lpCache.flush();
     parameterCache.flush();
 
-    for (int k = 0; k < int(trajectoryCache.size()); ++k) {
-      out->writeState(k, first, trajectoryCache[k]->get(0, len));
-      trajectoryCache[k]->flush();
+    /* don't do it time-by-time, to much seeking in looping over variables
+     * several times... */
+    //for (int k = 0; k < int(trajectoryCache.size()); ++k) {
+    //  out->writeState(k, first, trajectoryCache[k]->get(0, len));
+    //  trajectoryCache[k]->flush();
+    //}
+    /* ...do it variable-by-variable instead, and loop over times several
+     * times */
+    Var* var;
+    int id, i, k, start, size;
+    VarType types[2] = { D_VAR, R_VAR }, type;
+
+    for (i = 0; i < 2; ++i) {
+      type = types[i];
+      for (id = 0; id < m.getNumVars(type); ++id) {
+        var = m.getVar(type, id);
+        start = var->getStart();
+        size = var->getSize();
+
+        for (k = 0; k < int(trajectoryCache.size()); ++k) {
+          out->writeStateVar(type, id, k, first,
+              columns(trajectoryCache[k]->get(0, len), start, size));
+        }
+      }
     }
   }
 }
