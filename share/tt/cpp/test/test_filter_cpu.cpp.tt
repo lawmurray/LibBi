@@ -33,7 +33,6 @@
 [% ELSE %]
 #include "bi/method/ParticleFilter.hpp"
 [% END %]
-#include "bi/cache/ParticleFilterCache.hpp"
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
 #include "bi/resampler/RejectionResampler.hpp"
@@ -116,15 +115,8 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
-    BOOST_AUTO(out, bi::KalmanFilterCacheFactory<LOCATION>::create());
-    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, out)));
+    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim)));
   [% ELSE %]
-    [% IF client.get_named_arg('filter') == 'adaptive' %]
-    BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create());
-    [% ELSE %]
-    BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create());
-    [% END %]
-
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]
     real h;
@@ -149,9 +141,9 @@ int main(int argc, char* argv[]) {
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'lookahead' %]
-      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
+      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam)));
     [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-      BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam, out)));
+      BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam)));
     [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -165,9 +157,9 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, out)));
+      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper)));
     [% ELSE %]
-      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
+      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam)));
     [% END %]
   [% END %]
 
@@ -236,7 +228,6 @@ int main(int argc, char* argv[]) {
   bi::nc_close(ncid);
  
   delete filter;
-  delete out;
   delete sim;
   delete obs;
   delete in;

@@ -135,6 +135,8 @@ public:
 private:
   /**
    * Ancestry cache.
+   *
+   * @todo Move to ParticleMCMCCache, as not needed in context of filter only.
    */
   #ifdef ENABLE_GPU_CACHE
   AncestryCache<CL> ancestryCache;
