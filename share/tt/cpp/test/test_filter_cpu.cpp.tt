@@ -16,7 +16,6 @@
 
 [% IF client.get_named_arg('filter') == 'kalman' %]
 #include "bi/method/ExtendedKalmanFilter.hpp"
-#include "bi/cache/KalmanFilterCache.hpp"
 [% ELSE %]
 [% IF client.get_named_arg('filter') == 'lookahead' %]
 #include "bi/method/AuxiliaryParticleFilter.hpp"
@@ -24,7 +23,6 @@
 #include "bi/method/BridgeParticleFilter.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
 #include "bi/method/AdaptiveParticleFilter.hpp"
-#include "bi/cache/AdaptiveParticleFilterCache.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
@@ -220,7 +218,7 @@ int main(int argc, char* argv[]) {
   int timeVar = bi::nc_def_var(ncid, "time", NC_LONG, dimids2);
   int llVar = bi::nc_def_var(ncid, "loglikelihood", NC_REAL, dimids2);
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
-      
+  
   bi::nc_put_var(ncid, timeVar, times.buf());
   bi::nc_put_var(ncid, llVar, lls.buf());
   bi::nc_put_var(ncid, PVar, Ps.buf());
