@@ -13,3 +13,4 @@
 
 LAPACK_FUNC_DEF(potrf, dpotrf, spotrf)
 LAPACK_FUNC_DEF(potrs, dpotrs, spotrs)
+LAPACK_FUNC_DEF(syevx, dsyevx, ssyevx)

@@ -555,6 +555,40 @@ void axpyscal_elements(const V1 x, const typename V1::value_type a,
     const typename V1::value_type b, V2 y);
 
 /**
+ * Upper bound with scalar.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector.
+ * @param a The scalar.
+ * @param[out] y Output vector.
+ *
+ * @see op_elements
+ */
+template<class V1, class V2>
+void minscal_elements(const V1 x, const typename V1::value_type k, V2 y);
+
+/**
+ * Lower bound with scalar.
+ *
+ * @ingroup primitive_vector
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param x Input vector.
+ * @param a The scalar.
+ * @param[out] y Output vector.
+ *
+ * @see op_elements
+ */
+template<class V1, class V2>
+void maxscal_elements(const V1 x, const typename V1::value_type k, V2 y);
+
+/**
  * Fill with constant.
  *
  * @ingroup primitive_vector
@@ -1129,6 +1163,18 @@ template<class V1, class V2>
 inline void bi::axpyscal_elements(V1 x, const typename V1::value_type a,
     const typename V1::value_type b, V2 y) {
   op_elements(x, y, axpy_constant_functor<typename V1::value_type>(a, b));
+}
+
+template<class V1, class V2>
+inline void bi::minscal_elements(const V1 x, const typename V1::value_type k,
+    V2 y) {
+  op_elements(x, y, min_constant_functor<typename V1::value_type>(k));
+}
+
+template<class V1, class V2>
+inline void bi::maxscal_elements(const V1 x, const typename V1::value_type k,
+    V2 y) {
+  op_elements(x, y, max_constant_functor<typename V1::value_type>(k));
 }
 
 template<class V1>

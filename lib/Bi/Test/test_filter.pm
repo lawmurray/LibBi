@@ -67,9 +67,8 @@ sub process_args {
     my $binary;
     if ($filter eq 'kalman') {
         $self->set_named_arg('with-transform-extended', 1);
-    } else {
-        $binary = 'test_filter';
     }
+    $binary = 'test_filter';
     $self->{_binary} = $binary;
 }
 

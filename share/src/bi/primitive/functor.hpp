@@ -427,6 +427,42 @@ struct greater_constant_functor : public std::unary_function<T,bool> {
 /**
  * @ingroup primitive_functor
  *
+ * \f$\min(x, k)\f$; constant minimum.
+ */
+template<typename T>
+struct min_constant_functor : public std::unary_function<T,bool> {
+  T k;
+
+  min_constant_functor(const T k) : k(k) {
+    //
+  }
+
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return (x < k) ? x : k;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * \f$\max(x, k)\f$; constant maximum.
+ */
+template<typename T>
+struct max_constant_functor : public std::unary_function<T,bool> {
+  T k;
+
+  max_constant_functor(const T k) : k(k) {
+    //
+  }
+
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return (x > k) ? x : k;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
  * \f$\exp(2x)\f$; exponentiate and square unary functor. NaN given zero.
  */
 template<class T>
