@@ -123,7 +123,7 @@ sub get_shape {
             if ($self->get_indexes->[$i]->is_range) {
                 push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
             }
-        }        
+        }
         return new Bi::Expression::Shape($shape);
     } else {
         return $self->get_var->get_shape;

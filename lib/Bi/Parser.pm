@@ -477,7 +477,7 @@ sub target {
         die("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased\n");
     }
     
-    my @indexes = map { new Bi::Expression::Index(new Bi::Expression::DimAliasIdentifier($_)) } @$aliases;
+    my @indexes = map { $_->has_name ? $_->gen_index : $_->gen_range } @$aliases;
     my $left = new Bi::Expression::VarIdentifier($var, \@indexes);
     
     my $action = new Bi::Action;

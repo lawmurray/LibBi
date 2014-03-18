@@ -87,8 +87,8 @@ sub clone {
     my $self = shift;
     
     my $clone = {
-    	_start => $self->get_start->clone,
-    	_end => $self->get_end->clone
+    	_start => $self->has_start ? $self->get_start->clone : undef,
+    	_end => $self->has_end ? $self->get_end->clone : undef
     };
     bless $clone, ref($self);
     
@@ -182,8 +182,10 @@ sub equals {
     
     return (
         ref($obj) eq ref($self) &&
-        $self->get_start->equals($obj->get_start) &&
-        $self->get_end->equals($obj->get_end));
+        $self->has_start == $obj->has_start &&
+        (!$self->has_start || $self->get_start->equals($obj->get_start)) &&
+        $self->has_end == $obj->has_end &&
+        (!$self->has_end || $self->get_end->equals($obj->get_end)));
 }
 
 1;
