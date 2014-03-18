@@ -10,4 +10,4 @@ PROCESS macro/arg_list.bi.tt
 [%-action.get_left.get_var.get_name-%]
 [%-IF action.get_aliases.size-%]
 [[% FOREACH alias IN action.get_aliases %][% IF alias.has_name %][% alias.get_name %][% IF alias.has_range %]=[% END %][% END %][% IF alias.has_range %][% alias.get_range.to_bi %][% END %][% IF !loop.last %],[% END %][% END %]]
-[%-END-%] [% action.get_op %] [% action.get_name %][% arg_list(action) %] // Action[% action.get_id %]
+[%-END-%] [% action.get_op %] [% action.get_name %][% arg_list(action) %] // Action[% action.get_id %] [% action.is_matrix %]

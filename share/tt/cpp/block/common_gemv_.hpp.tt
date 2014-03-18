@@ -46,7 +46,7 @@ public:
   BOOST_AUTO(X, [% get_var(x) %]);
   BOOST_AUTO(Y, [% get_var(target) %]);
 
-  [% IF x.is_common && !y.is_common %]
+  [% IF x.is_common && !target.is_common %]
   bi::gemv(1.0, A, vec(X), 0.0, row(Y, 0));
   set_rows(rows(1, Y.size1() - 1), row(Y, 0));
   [% ELSE %]

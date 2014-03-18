@@ -57,8 +57,6 @@ sub evaluate {
     # insert actions
     my $lefts = [];
     my $rights = [];
-    my $action = new Bi::Action;
-    $action->set_op('<-');
     
     foreach my $extract (@$extracts) {
     	my $dims = [ map { $model->lookup_dim($_) } @{$extract->get_shape->get_sizes} ];
@@ -73,12 +71,14 @@ sub evaluate {
         
         push(@$lefts, $left);
         push(@$rights, $right);
-        
+
+        my $action = new Bi::Action;
+        $action->set_op('<-');
         $action->set_left($left);
         $action->set_right($right);
         $action->validate;
 
-        $model->get_block('parameter')->push_child($action->clone);        
+        $model->get_block('parameter')->push_child($action);
     }
     
     return ($lefts, $rights);

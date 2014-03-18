@@ -1330,7 +1330,7 @@ void bi::syevx(char jobz, char range, char uplo, M1 A,
   typedef typename M1::value_type T1;
 
   /* pre-conditions */
-  BI_ASSERT(jobs == 'N' || jobz == 'V');
+  BI_ASSERT(jobz == 'N' || jobz == 'V');
   BI_ASSERT(range == 'A' || range == 'V' || range == 'I');
   BI_ASSERT(uplo == 'U' || uplo == 'L');
 

@@ -17,7 +17,7 @@
   /* variables */
   [% FOREACH ref IN expr.get_all_var_refs %]
   [% IF action.is_matrix %]
-  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_expr.get_name %]>(s, p));
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p));
   [% ELSIF ref.get_indexes.size > 0 %]
   const VarCoord[% ref.get_var.get_id %] cox[% loop.index %](
   [%-un = 0-%]
