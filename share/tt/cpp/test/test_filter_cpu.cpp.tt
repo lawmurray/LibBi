@@ -195,8 +195,7 @@ int main(int argc, char* argv[]) {
         lls(k,p) = ll;
         times(k,p) = t;
       } catch (ParticleFilterDegeneratedException e) {
-        lls(k,p) = -1.0/0.0;
-        times(k,p) = -1;
+        --k; // try again
       }
     }
   }

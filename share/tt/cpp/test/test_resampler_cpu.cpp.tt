@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 
   int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
   int ZVar = bi::nc_def_var(ncid, "Z", NC_DOUBLE, ZDim);
-  int timeVar = bi::nc_def_var(ncid, "time", NC_INT, dimids3);
+  int timeVar = bi::nc_def_var(ncid, "time", NC_INT64, dimids3);
   int bias2Var = bi::nc_def_var(ncid, "bias2", NC_DOUBLE, dimids2);
   int tr_varVar = bi::nc_def_var(ncid, "tr_var", NC_DOUBLE, dimids2);  
   
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   /* result storage */  
-  host_matrix<int> times(REPS, PS);
+  host_matrix<long> times(REPS, PS);
   host_vector<real> bias2(PS), tr_var(PS);
   host_vector<int> Ps(PS);
   host_vector<real> Zs(ZS);
