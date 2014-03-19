@@ -66,15 +66,16 @@ sub evaluate {
         });
         $model->push_var($var);
         
-        my $left = new Bi::Expression::VarIdentifier($var);
+        my $left = new Bi::Expression::VarIdentifier($var, $var->gen_ranges);
         my $right = $extract;
         
         push(@$lefts, $left);
         push(@$rights, $right);
 
         my $action = new Bi::Action;
-        $action->set_op('<-');
+        $action->set_aliases($var->gen_aliases);
         $action->set_left($left);
+        $action->set_op('<-');
         $action->set_right($right);
         $action->validate;
 

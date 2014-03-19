@@ -122,13 +122,13 @@ sub _unroll_expr {
     $model->push_var($var);
 
     # action to evaluate expression
-    my $left = new Bi::Expression::VarIdentifier($var);
-    my $right = $expr->clone; 
-        
+    my $left = new Bi::Expression::VarIdentifier($var, $var->gen_ranges);
+    
     my $action = new Bi::Action;
+    $action->set_aliases($var->gen_aliases);
     $action->set_left($left);
     $action->set_op('<-');
-    $action->set_right($right);
+    $action->set_right($expr);
     $action->validate;
     
     if (!$action->can_nest) {

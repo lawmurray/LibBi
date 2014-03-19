@@ -467,7 +467,10 @@ sub accept {
     my @args = @_;
 
     @{$self->{_args}} = map { $_->accept($visitor, @args) } @{$self->get_args};
-    map { $self->get_named_args->{$_} = $self->get_named_args->{$_}->accept($visitor, @args) } keys %{$self->get_named_args};
+    my $key;
+    foreach $key (keys %{$self->get_named_args}) {
+	    $self->get_named_args->{$key} = $self->get_named_args->{$key}->accept($visitor, @args);
+    }
 }
 
 =item B<equals>(I<obj>)

@@ -72,7 +72,6 @@ sub validate {
     unless ($self->get_left->get_shape->equals($self->get_shape)) {
     	die("incompatible sizes on left and right sides of action.\n");
     }
-    
 
     $self->set_parent('cholesky_');
     $self->set_can_combine(0);

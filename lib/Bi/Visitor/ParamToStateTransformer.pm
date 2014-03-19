@@ -60,7 +60,7 @@ sub evaluate {
     # 'proposal_initial' block
     $proposal_initial_block->unshift_children($proposal_parameter_block->get_children);    
     $proposal_parameter_block->clear;
-    
+
     # change param variables to state variables    
     $model->accept($self);
 }

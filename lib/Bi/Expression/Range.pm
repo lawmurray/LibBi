@@ -49,7 +49,7 @@ sub new {
     my $end = shift;
     
     assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
-    assert(!defined $end || $end->isa('Bi::Expression')) if DEBUG;
+    assert(defined $end && $end->isa('Bi::Expression')) if DEBUG;
     
     my $self = {
         _start => $start,

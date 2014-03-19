@@ -93,20 +93,9 @@ sub visit_after {
         my @exprs = pop(@$args);
         $str = $exprs[0];
     } elsif ($node->isa('Bi::Expression::Range')) {
-        my $start;
-        my $end;
-        if ($node->has_end) {
-        	$end = pop(@$args);
-        }
-        if ($node->has_start) {
-        	$start = pop(@$args);
-        }
-      	assert (defined $start) if DEBUG;
-        if (defined $start && defined $end) {
-        	$str = "$start:$end";
-        } else {
-        	$str = $start;
-        }
+        my $end = pop(@$args);
+        my $start = pop(@$args);
+      	$str = "$start:$end";
     } elsif ($node->isa('Bi::Expression::TernaryOperator')) {
         my @exprs = splice(@$args, -3);
         $str = '(' . $exprs[0] . ' ? ' . $exprs[1] . ' : ' . $exprs[2] . ')';

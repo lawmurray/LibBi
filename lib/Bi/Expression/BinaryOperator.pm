@@ -139,7 +139,11 @@ sub get_shape {
         unless ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) {
             die("incompatible sizes in element-wise operation\n");
         }
-        return $self->get_expr1->get_shape;
+        if (!$self->get_expr1->is_scalar) {
+	        return $self->get_expr1->get_shape;
+        } else {
+        	return $self->get_expr2->get_shape;
+        }
     }
 }
 

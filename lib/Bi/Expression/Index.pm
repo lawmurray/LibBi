@@ -43,7 +43,7 @@ sub new {
     my $class = shift;
     my $expr = shift;
     
-    assert(defined $expr) if DEBUG;
+    assert(defined $expr && $expr->isa('Bi::Expression')) if DEBUG;
     
     my $self = {
         _expr => $expr
@@ -101,7 +101,7 @@ Size of the range.
 
 =cut
 sub get_size {
-    return 1;
+    return new Bi::Expression::IntegerLiteral(1);
 }
 
 =item B<accept>(I<visitor>, ...)

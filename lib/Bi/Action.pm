@@ -172,9 +172,9 @@ sub set_left {
     $self->{_left} = $left;
     
     # set default aliases if they haven't been set already
-    #if (@{$self->get_aliases} == 0) {
-    #	$self->set_aliases($left->get_var->gen_aliases);
-    #}
+    if (@{$self->get_aliases} == 0) {
+    	$self->set_aliases($left->get_var->gen_aliases);
+    }
 }
 
 =item B<get_op>

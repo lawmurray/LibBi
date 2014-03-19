@@ -48,7 +48,7 @@ sub new {
     my $name = shift;
     my $range = shift;
     
-    assert (!defined $range || $range->isa('Bi::Expression::Range')) if DEBUG;
+    assert (!defined $range || $range->isa('Bi::Expression::Range') || $range->isa('Bi::Expression::Index')) if DEBUG;
 
     if (defined $range && !$range->is_const) {
         die("a dimension range on the left must be a constant expression.\n");
@@ -119,7 +119,7 @@ sub set_range {
     my $self = shift;
     my $range = shift;
 
-    assert (!defined $range || $range->isa('Bi::Expression::Range')) if DEBUG;
+    assert (!defined $range || $range->isa('Bi::Expression::Range') || $range->isa('Bi::Expression::Index')) if DEBUG;
     
     if (!$range->is_const) {
         die("a dimension range on the left must be a constant expression.\n");
@@ -146,7 +146,7 @@ Get the size.
 sub get_size {
     my $self = shift;
 
-    if ($self->has_range && $self->get_range->has_end) {
+    if ($self->has_range && $self->get_range->is_range) {
       return $self->get_range->get_end->eval_const - $self->get_range->get_start->eval_const + 1;
     } else {
       return 1;
