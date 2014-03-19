@@ -466,9 +466,10 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
-    @{$self->{_args}} = map { $_->accept($visitor, @args) } @{$self->get_args};
-    my $key;
-    foreach $key (keys %{$self->get_named_args}) {
+    for (my $i = 0; $i < @{$self->get_args}; ++$i) {
+        $self->get_args->[$i] = $self->get_args->[$i]->accept($visitor, @args);
+    }
+    foreach my $key (keys %{$self->get_named_args}) {
 	    $self->get_named_args->{$key} = $self->get_named_args->{$key}->accept($visitor, @args);
     }
 }

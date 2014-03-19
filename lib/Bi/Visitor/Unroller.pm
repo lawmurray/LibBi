@@ -74,7 +74,7 @@ sub visit_after {
     } elsif ($node->isa('Bi::Action')) {
         if ($node->unroll_args) {
             # write arguments to intermediate variables first
-            for (my $i = 0; $i > $node->num_args; ++$i) {
+            for (my $i = 0; $i < $node->num_args; ++$i) {
                 my $arg = $node->get_args->[$i];
                 if (!$arg->is_const && !$arg->is_basic) {
                     my $action = $self->_unroll_expr($model, $arg);

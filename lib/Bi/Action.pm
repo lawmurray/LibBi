@@ -591,8 +591,9 @@ sub accept {
     $self = $visitor->visit_before($self, @args);
     Bi::ArgHandler::accept($self, $visitor, @args);
     $self->{_left} = $self->get_left->accept($visitor, @args);
-    @{$self->{_aliases}} = map { $_->accept($visitor, @args) } @{$self->get_aliases};
-
+    for (my $i = 0; $i < @{$self->get_aliases}; ++$i) {
+    	$self->get_aliases->[$i] = $self->get_aliases->[$i]->accept($visitor, @args);
+    }
     return $visitor->visit_after($self, @args);
 }
 

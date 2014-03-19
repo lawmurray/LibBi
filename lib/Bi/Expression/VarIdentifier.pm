@@ -187,7 +187,9 @@ sub accept {
     my @args = @_;
 
     $self = $visitor->visit_before($self, @args);
-    @{$self->{_indexes}} = map { $_->accept($visitor, @args) } @{$self->get_indexes};
+    for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
+        $self->get_indexes->[$i] = $self->get_indexes->[$i]->accept($visitor, @args);
+    }
 
     return $visitor->visit_after($self, @args);
 }

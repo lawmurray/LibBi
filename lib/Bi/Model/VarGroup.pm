@@ -203,7 +203,9 @@ sub accept {
     my @args = @_;
 
     $self = $visitor->visit_before($self, @args);
-    @{$self->{_vars}} = map { $_->accept($visitor, @args) } @{$self->get_vars};
+    for (my $i = 0; $i < @{$self->get_vars}; ++$i) {
+    	$self->get_vars->[$i] = $self->get_vars->[$i]->accept($visitor, @args);
+    }
     return $visitor->visit_after($self, @args);
 }
 
