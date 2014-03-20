@@ -151,14 +151,13 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
   typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int>::type as(P);
 
-  bool r = false;
   real ll;
 
   ScheduleIterator iter = first;
   this->init(rng, *iter, s, lws, as, inInit);
   this->output0(s);
   ll = this->correct(*iter, s, lws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   if (this->out != NULL) {
     this->out->push(P);
   }
@@ -181,14 +180,13 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
   typename loc_temp_vector<L,real>::type lws(P);
   typename loc_temp_vector<L,int>::type as(P);
 
-  bool r = false;
   real ll;
 
   ScheduleIterator iter = first;
   this->init(rng, theta, *iter, s, lws, as);
   this->output0(s);
   ll = this->correct(*iter, s, lws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   if (this->out != NULL) {
     this->out->push(P);
   }

@@ -186,7 +186,6 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
-  bool r = false;
   real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P), blws(P);
@@ -196,7 +195,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->init(rng, *iter, s, lws, blws, as, inInit);
   this->output0(s);
   ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, blws, as);
   }
@@ -215,7 +214,6 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different init() call
 
   const int P = s.size();
-  int r = 0;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P), blws(P);
@@ -225,7 +223,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->init(rng, theta, *iter, s, lws, blws, as);
   this->output0(s);
   ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, blws, as);
   }
@@ -244,7 +242,6 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different step() call
 
   const int P = s.size();
-  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P), blws(P);
@@ -255,7 +252,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   row(s.getDyn(), 0) = column(X, 0);
   this->output0(s);
   ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, X, lws, blws, as);
   }
@@ -271,14 +268,13 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 blws, V2 as) {
   real ll = 0.0;
-  bool r = false;
   do {
     ll += this->bridge(rng, iter, last, s, lws, blws);
-    r = this->resample(rng, *iter, s, lws, blws, as);
+    this->resample(rng, *iter, s, lws, blws, as);
     ++iter;
     this->predict(rng, *iter, s);
     ll += this->correct(*iter, s, lws, blws);
-    this->output(*iter, s, r, lws, as);
+    this->output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -289,18 +285,19 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lws, V1 blws, V2 as) {
+  typename sim_temp_vector<V2>::type as1(as.size());
+
   real ll = 0.0;
-  bool r = false;
   do {
     ll += this->bridge(rng, iter, last, s, lws, blws);
-    r = this->resample(rng, *iter, s, lws, blws, as);
+    this->resample(rng, *iter, s, lws, blws, as);
     ++iter;
     this->predict(rng, *iter, s);
     if (iter->hasOutput()) {
       row(s.getDyn(), 0) = column(X, iter->indexOutput());
     }
     ll += this->correct(*iter, s, lws, blws);
-    this->output(*iter, s, r, lws, as);
+    this->output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;

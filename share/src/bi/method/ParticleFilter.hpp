@@ -337,12 +337,11 @@ public:
    *
    * @param now Current step in time schedule.
    * @param s State.
-   * @param r Was resampling performed since last output?
    * @param lws Log-weights.
    * @param as Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const ScheduleElement now, const State<B,L>& s, const bool r,
+  void output(const ScheduleElement now, const State<B,L>& s,
       const V1 lws, const V2 as);
 
   /**
@@ -478,7 +477,6 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
-  bool r = false;
   real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
@@ -488,7 +486,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   init(rng, *iter, s, lws, as, inInit);
   output0(s);
   ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
+  output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
@@ -507,7 +505,6 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different init() call
 
   const int P = s.size();
-  bool r = false;
   real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
@@ -517,7 +514,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   init(rng, theta, *iter, s, lws, as);
   output0(s);
   ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
+  output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, as);
   }
@@ -536,7 +533,6 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different step() call
 
   const int P = s.size();
-  bool r = false;
   real ll = 0.0;
 
   typename loc_temp_vector<L,real>::type lws(P);
@@ -547,7 +543,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
   row(s.getDyn(), 0) = column(X, 0);
   output0(s);
   ll = correct(*iter, s, lws);
-  output(*iter, s, r, lws, as);
+  output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, X, lws, as);
   }
@@ -605,13 +601,12 @@ template<bi::Location L, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
   real ll = 0.0;
-  bool r = false;
   do {
-    r = resample(rng, *iter, s, lws, as);
+    resample(rng, *iter, s, lws, as);
     ++iter;
     predict(rng, *iter, s);
     ll += correct(*iter, s, lws);
-    output(*iter, s, r, lws, as);
+    output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -622,16 +617,15 @@ template<bi::Location L, class M1, class V1, class V2>
 real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
   real ll = 0.0;
-  bool r = false;
   do {
-    r = resample(rng, *iter, s, lws, as);
+    resample(rng, *iter, s, lws, as);
     ++iter;
     predict(rng, *iter, s);
     if (iter->hasOutput()) {
       row(s.getDyn(), 0) = column(X, iter->indexOutput());
     }
     ll += correct(*iter, s, lws);
-    output(*iter, s, r, lws, as);
+    output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -721,11 +715,11 @@ void bi::ParticleFilter<B,S,R,IO1>::output0(const State<B,L>& s) {
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
-    const State<B,L>& s, const bool r, const V1 lws, const V2 as) {
+    const State<B,L>& s, const V1 lws, const V2 as) {
   if (now.hasOutput() && out != NULL) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
-    out->writeState(k, s.getDyn(), as, r);
+    out->writeState(k, s.getDyn(), as);
     out->writeLogWeights(k, lws);
   }
 }

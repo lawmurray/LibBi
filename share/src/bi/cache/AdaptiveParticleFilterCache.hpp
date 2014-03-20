@@ -72,10 +72,9 @@ public:
    * @param k Time index.
    * @param X State.
    * @param as Ancestors.
-   * @param r Was resampling performed?
    */
   template<class M1, class V1>
-  void writeState(const int k, const M1 X, const V1 as, const bool r);
+  void writeState(const int k, const M1 X, const V1 as);
 
   /**
    * Push down to ParticleFilterCache. This is a special method for
@@ -259,7 +258,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeLogWeights(const int k,
 template<class IO1, bi::Location CL>
 template<class M1, class V1>
 void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
-    const M1 X, const V1 as, const bool r) {
+    const M1 X, const V1 as) {
   /* pre-condition */
   assert(X.size1() == as.size());
 

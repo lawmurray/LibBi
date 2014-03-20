@@ -89,10 +89,11 @@ public:
    * @param k Time index.
    * @param X State.
    * @param as Ancestors.
-   * @param r Was resampling performed?
+   * @param r Was resampling performed? This is for optimisation only, if
+   * resampling is not performed the prune step is omitted internally.
    */
   template<class M1, class V1>
-  void writeState(const int k, const M1 X, const V1 as, const bool r);
+  void writeState(const int k, const M1 X, const V1 as, const bool r = true);
 
   /**
    * @name Diagnostics

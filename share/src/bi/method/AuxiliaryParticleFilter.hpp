@@ -286,7 +286,6 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
-  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P), qlws(P);
@@ -296,7 +295,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   init(rng, *iter, s, lws, qlws, as, inInit);
   this->output0(s);
   ll = this->correct(*iter, s, lws, qlws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, qlws, as);
   }
@@ -315,7 +314,6 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different init() call
 
   const int P = s.size();
-  int r = 0;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P), qlws(P);
@@ -325,7 +323,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   init(rng, theta, *iter, s, lws, qlws, as);
   this->output0(s);
   ll = this->correct(*iter, s, lws, qlws);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, qlws, as);
   }
@@ -344,7 +342,6 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   // a different step() call
 
   const int P = s.size();
-  bool r = false;
   real ll;
 
   typename loc_temp_vector<L,real>::type lws(P), qlws(P);
@@ -355,7 +352,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
   row(s.getDyn(), 0) = column(X, 0);
   this->output0(s);
   ll = this->correct(*iter, s, lws, qlws, as);
-  this->output(*iter, s, r, lws, as);
+  this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, X, lws, qlws, as);
   }
@@ -396,14 +393,13 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 qlws, V2 as) {
   real ll = 0.0;
-  bool r = false;
   do {
     ll += this->lookahead(rng, iter, last, s, lws, qlws);
-    r = this->resample(rng, *iter, s, lws, qlws, as);
+    this->resample(rng, *iter, s, lws, qlws, as);
     ++iter;
     this->predict(rng, *iter, s);
     ll += this->correct(*iter, s, lws, qlws);
-    this->output(*iter, s, r, lws, as);
+    this->output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -415,17 +411,16 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
     ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
     const M1 X, V1 lws, V1 qlws, V2 as) {
   real ll = 0.0;
-  bool r = false;
   do {
     ll += this->lookahead(rng, iter, last, s, lws, qlws);
-    r = this->resample(rng, *iter, s, lws, qlws, as);
+    this->resample(rng, *iter, s, lws, qlws, as);
     ++iter;
     this->predict(rng, *iter, s);
     if (iter->hasOutput()) {
       row(s.getDyn(), 0) = column(X, iter->indexOutput());
     }
     ll += this->correct(*iter, s, lws, qlws);
-    this->output(*iter, s, r, lws, as);
+    this->output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -502,6 +497,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws, V2 as) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
+  typename sim_temp_vector<V2>::type as1(as.size());
 
   bool r = now.hasBridge() || now.isObserved();
   if (r) {
