@@ -672,6 +672,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else if (now.hasOutput()) {
+    seq_elements(as, 0);
   }
   return r;
 }
@@ -696,6 +698,8 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else if (now.hasOutput()) {
+    seq_elements(as, 0);
   }
   return r;
 }

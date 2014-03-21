@@ -498,25 +498,29 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
-  bool r1 = now.isObserved();
-  bool r2 = !r1 && now.hasBridge();
-  bool r = r1 || r2;
-
-  if (r) {
-    if (r1) {
-      r = this->resam != NULL && this->resam->isTriggered(lws);
-    } else if (r2) {
-      r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
-    }
-
+  bool r = false;
+  if (now.isObserved()) {
+    r = this->resam != NULL && this->resam->isTriggered(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
         this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
       }
-      if (r1) {
+      this->resam->resample(rng, lws, as, s);
+      bi::gather(as, qlws, qlws);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
+    }
+  } else if (now.hasBridge()) {
+    r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+      }
+      if (now.hasOutput()) {
         this->resam->resample(rng, lws, as, s);
         bi::gather(as, qlws, qlws);
-      } else if (r2) {
+      } else {
         typename sim_temp_vector<V2>::type as1(as.size());
         this->resam->resample(rng, lws, as1, s);
         bi::gather(as1, qlws, qlws);
@@ -526,6 +530,8 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else if (now.hasOutput()) {
+    seq_elements(as, 0);
   }
   return r;
 }
@@ -539,27 +545,31 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
   BI_ASSERT(s.size() == lws.size());
   BI_ASSERT(a == 0);
 
-  bool r1 = now.isObserved();
-  bool r2 = !r1 && now.hasBridge();
-  bool r = r1 || r2;
-
-  if (r) {
-    if (r1) {
-      r = this->resam != NULL && this->resam->isTriggered(lws);
-    } else if (r2) {
-      r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
-    }
-
+  bool r = false;
+  if (now.isObserved()) {
+    r = this->resam != NULL && this->resam->isTriggered(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
         this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
       }
-      if (r1) {
-        this->resam->cond_resample(rng, a, a, lws, as, s);
+      this->resam->cond_resample(rng, a, a, lws, as, s);
+      bi::gather(as, qlws, qlws);
+    } else {
+      seq_elements(as, 0);
+      Resampler::normalise(lws);
+    }
+  } else if (now.hasBridge()) {
+    r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
+    if (r) {
+      if (resampler_needs_max<R>::value) {
+        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+      }
+      if (now.hasOutput()) {
+        this->resam->resample(rng, lws, as, s);
         bi::gather(as, qlws, qlws);
-      } else if (r2) {
+      } else {
         typename sim_temp_vector<V2>::type as1(as.size());
-        this->resam->cond_resample(rng, a, a, lws, as1, s);
+        this->resam->cond_resample(rng, a, a, lws, as, s);
         bi::gather(as1, qlws, qlws);
         bi::gather(as1, as, as);
       }
@@ -567,6 +577,8 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
       seq_elements(as, 0);
       Resampler::normalise(lws);
     }
+  } else if (now.hasOutput()) {
+    seq_elements(as, 0);
   }
   return r;
 }
