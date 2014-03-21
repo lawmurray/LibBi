@@ -70,7 +70,7 @@ public:
    */
   static const int Ndims = [% model.get_all_dims.size %];
   
-  [%-FOREACH type IN TYPES.keys %]
+  [%-FOREACH type IN TYPES.keys.sort %]
   /**
    * Size of [% type %] net.
    */

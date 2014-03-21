@@ -630,7 +630,7 @@ sub exec {
     my @argv;
     
     my $key;
-    foreach $key (keys %{$self->{_args}}) {
+    foreach $key (sort keys %{$self->{_args}}) {
         if (defined $self->{_args}->{$key}) {
             if (length($key) == 1) {
                 push(@argv, "-$key");

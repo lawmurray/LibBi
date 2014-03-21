@@ -391,7 +391,7 @@ sub validate {
 	        $self->push_child($block);
 	    }
 	}
-	foreach $name (keys %MAP_BLOCKS) {
+	foreach $name (sort keys %MAP_BLOCKS) {
 		if (!$self->is_block($name)) {
 			$block = $self->get_block($MAP_BLOCKS{$name})->clone;
 			$block->set_name($name);

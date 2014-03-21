@@ -82,7 +82,7 @@ sub visit_after {
                     push(@$actions, $action);
                 }
             }
-            foreach my $name (keys %{$node->get_named_args}) {
+            foreach my $name (sort keys %{$node->get_named_args}) {
                 my $arg = $node->get_named_args->{$name};
                 if (!$arg->is_const && !$arg->is_basic) {
                     my $action = $self->_unroll_expr($model, $arg);
