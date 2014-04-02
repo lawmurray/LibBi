@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
   
     for (p = 0; p < PS; ++p) {
       P = std::pow(2, p + 4);
-      //std::cerr << " " << P;
+      std::cerr << " " << P;
       Ps(p) = P;
 
       /* configure */
@@ -158,7 +158,6 @@ int main(int argc, char* argv[]) {
       real epsilon = 1.0e-2;
       int B = (int)bi::ceil(bi::log(epsilon)/bi::log(1.0 - beta));
       resam.setSteps(B/C);
-      std::cerr << " " << B;
       [% END %]
 
       /* test */      
