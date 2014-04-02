@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
   
     for (p = 0; p < PS; ++p) {
       P = std::pow(2, p + 4);
-      std::cerr << " " << P;
+      //std::cerr << " " << P;
       Ps(p) = P;
 
       /* configure */
@@ -152,14 +152,13 @@ int main(int argc, char* argv[]) {
       seq_elements(as, 0); // needed for sort and ess
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
-      real W = P*bi::exp(-0.25*Z*Z)/(2.0*bi::sqrt(BI_PI));
-      real wmax = (1.0/BI_SQRT_TWO_PI)/W;
-      real beta = 1.0/P;
-      real alpha = (1.0 - wmax)/(P*wmax);
-      real epsilon = 1.0e-2*wmax;
-      real lambda = 1.0 - alpha - beta;
-      int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
+      real EW = bi::exp(-0.25*Z*Z)/(2.0*bi::sqrt(BI_PI));
+      real wmax = 1.0/bi::sqrt(BI_PI);
+      real beta = EW/wmax;
+      real epsilon = 1.0e-2;
+      int B = (int)bi::ceil(bi::log(epsilon)/bi::log(1.0 - beta));
       resam.setSteps(B/C);
+      std::cerr << " " << B;
       [% END %]
 
       /* test */      
