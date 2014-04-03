@@ -527,7 +527,9 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
         bi::gather(as1, as, as);
       }
     } else {
-      seq_elements(as, 0);
+      if (now.hasOutput()) {
+        seq_elements(as, 0);
+      }
       Resampler::normalise(lws);
     }
   } else if (now.hasOutput()) {
@@ -574,7 +576,9 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
         bi::gather(as1, as, as);
       }
     } else {
-      seq_elements(as, 0);
+      if (now.hasOutput()) {
+        seq_elements(as, 0);
+      }
       Resampler::normalise(lws);
     }
   } else if (now.hasOutput()) {
