@@ -414,14 +414,12 @@ void bi::Simulator<B,F,O,IO1>::simulate(const ScheduleIterator first,
   term();
 }
 
-#include "../math/io.hpp"
-
 template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(Random& rng, const ScheduleElement now,
     State<B,L>& s, IO2* inInit) {
-  /* time */
   s.setTime(now.getTime());
+  s.clear();
 
   /* static inputs */
   if (in != NULL) {
@@ -482,8 +480,8 @@ template<class B, class F, class O, class IO1>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O,IO1>::init(const ScheduleElement now, State<B,L>& s,
     IO2* inInit) {
-  /* time */
   s.setTime(now.getTime());
+  s.clear();
 
   /* static inputs */
   if (in != NULL) {
@@ -545,8 +543,8 @@ void bi::Simulator<B,F,O,IO1>::init(Random& rng, const V1 theta,
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
-  /* time */
   s.setTime(now.getTime());
+  s.clear();
 
   /* static inputs */
   if (in != NULL) {
@@ -579,8 +577,8 @@ void bi::Simulator<B,F,O,IO1>::init(const V1 theta, const ScheduleElement now,
   /* pre-condition */
   BI_ASSERT(theta.size() == B::NP);
 
-  /* time */
   s.setTime(now.getTime());
+  s.clear();
 
   /* static inputs */
   if (in != NULL) {
