@@ -637,6 +637,7 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
     s.getLogLikelihood2() = -1.0 / 0.0;
   } else {
     /* likelihood */
+    s.getLogLikelihood2() = -1.0/0.0; // in case of exception
     s.getLogLikelihood2() = filter->filter(rng, first, last,
         s.getParameters2(), s);
 
@@ -645,6 +646,7 @@ void bi::ParticleMarginalMetropolisHastings<B,F,IO1>::logLikelihood(
      (virtual) trajectory with no weight. */
     if (filtermode == CONDITIONED && bi::exp(s.getLogPrior1()) > 0) {
       try {
+        s.getLogLikelihood1() = -1.0/0.0; // in case of exception
         s.getLogLikelihood1() = filter->filter(rng, first, last,
             s.getParameters1(), s);
       } catch (CholeskyException e) {
