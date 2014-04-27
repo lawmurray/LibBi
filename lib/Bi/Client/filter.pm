@@ -64,10 +64,14 @@ be used instead.
 Particle filter with intermediate bridging weights. Bridging weights are
 assigned according to the L<bridge> top-level block.
 
+=begin comment
+
 =item C<adaptive>
 
 Bootstrap particle filter with adaptive number of particles at each time
 step.
+
+=end comment
 
 =item C<kalman>
 
@@ -196,6 +200,7 @@ instead to minimise variance in marginal likelihood estimates.
 
 =back
 
+=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
@@ -242,9 +247,11 @@ criterion.
 
 =item C<--block-particles>
 
-Number of particles .
+Number of particles.
 
 =back
+
+=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
