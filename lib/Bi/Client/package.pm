@@ -391,7 +391,7 @@ sub validate {
     }
     
     # check for things that might be missing from manifest
-    my @maybe = (<*.bi>, <*.conf>, <*.sh>, <data/*.nc>);
+    my @maybe = (<*.bi>, <*.conf>, <*.sh>, <data/*.nc>, <oct/*.m>);
     foreach $file (@maybe) {
         if (!exists $manifest{$file}) {
             warn("Is $file missing from MANIFEST?\n");

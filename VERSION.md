@@ -12,7 +12,8 @@ New features:
 * Added `log` argument to `pdf` action.
 * Added matrix-matrix multiply.
 * Added range syntax, e.g. `x[0:4]`.
-* Added checks for `*.sh` and `data/*.nc` files to `libbi package --validate`.
+* Added checks for `*.sh`, `data/*.nc` and `oct/*.m` files to
+  `libbi package --validate` checks.
 
 Changes:
 
