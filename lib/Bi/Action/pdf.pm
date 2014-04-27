@@ -6,6 +6,7 @@ pdf - arbitrary probability density function.
 
     x ~ I<expression>
     x ~ pdf(pdf = I<expression>, max_pdf = I<expression>)
+    x ~ pdf(pdf = I<log_expression>, log = 1)
 
 =head1 DESCRIPTION
 

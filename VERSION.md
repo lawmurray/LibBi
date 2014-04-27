@@ -1,6 +1,46 @@
 LibBi VERSION
 =============
 
+v1.1.0
+------
+
+New features:
+
+* Added bridge particle filter.
+* Added built-in variables `t_now`, `t_last_input` and `t_next_obs`.
+* Added `transpose` and `cholesky` actions.
+* Added `log` argument to `pdf` action.
+* Added matrix-matrix multiply.
+* Added range syntax, e.g. `x[0:4]`.
+* Added checks for `*.sh` and `data/*.nc` files to `libbi package --validate`.
+
+Changes:
+
+* Removed ill-defined `uninformative` action.
+* Action syntax made stricter: an action that returns a scalar cannot be
+  applied to a vector on the left.
+
+Performance:
+
+* Minor performance improvements in GPU random number generation and
+  resampling.
+* Minor I/O performance improvements.
+
+Fixes:
+
+* Restored NetCDF 4.1 support.
+* Fixed initialisation of parameters from init file when
+  `--with-transform-initial-to-param` used.
+* Fixed `C_` and `U2_` variables in Kalman filter output files.
+* Fixed reporting of log-likelihood in PMCMC output when particle filter
+  degenerates.
+* Fixed build error when model name does not begin with an uppercase letter.
+* Fixed runtime error when empty `--output-file` given.
+* Fixed race condition in locking the build directory under some
+  circumstances.
+* Fixed unnecessary recompiles triggered by new hash implementation in newer
+  versions of Perl.
+
 v1.0.2
 ------
 
