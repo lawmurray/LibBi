@@ -646,7 +646,7 @@ sub identifier {
         if (defined($indexes) && @$indexes > 0) {
         	if (@$indexes != @{$var->get_dims}) {
 	            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
-    	        my $plural2 = (@$indexes == 1) ? '' : 's'; 
+    	        my $plural2 = (@$indexes == 1) ? '' : 'es'; 
         	    die("variable '" . $name . "' extends along " .
             	    scalar(@{$var->get_dims}) . " dimension$plural1, but " . scalar(@$indexes) .
                 	" index$plural2 given\n");
