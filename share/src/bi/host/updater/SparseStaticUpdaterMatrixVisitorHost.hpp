@@ -45,7 +45,6 @@ public:
 
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
-#include "../../traits/target_traits.hpp"
 #include "../../traits/var_traits.hpp"
 
 template<class B, class S, bi::Location L, class PX, class OX>

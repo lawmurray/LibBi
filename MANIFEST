@@ -512,7 +512,6 @@ share/src/bi/traits/action_traits.hpp
 share/src/bi/traits/block_traits.hpp
 share/src/bi/traits/dim_traits.hpp
 share/src/bi/traits/resampler_traits.hpp
-share/src/bi/traits/target_traits.hpp
 share/src/bi/traits/var_traits.hpp
 share/src/bi/typelist/append.hpp
 share/src/bi/typelist/back.hpp

@@ -48,7 +48,6 @@ public:
 #include "shared.cuh"
 #include "../typelist/front.hpp"
 #include "../typelist/pop_front.hpp"
-#include "../traits/target_traits.hpp"
 
 template<class B, class S1, class S2>
 inline void bi::global_store_visitor<B,S1,S2>::accept(State<B,ON_DEVICE>& s,

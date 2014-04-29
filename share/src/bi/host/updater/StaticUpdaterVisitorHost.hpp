@@ -39,7 +39,6 @@ public:
 
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
-#include "../../traits/target_traits.hpp"
 
 template<class B, class S, class PX, class OX>
 inline void bi::StaticUpdaterVisitorHost<B,S,PX,OX>::accept(

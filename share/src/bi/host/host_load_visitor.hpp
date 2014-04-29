@@ -49,7 +49,6 @@ public:
 
 #include "../typelist/front.hpp"
 #include "../typelist/pop_front.hpp"
-#include "../traits/target_traits.hpp"
 #include "../math/view.hpp"
 
 template<class B, class S1, class S2>

@@ -49,7 +49,6 @@ public:
 
 #include "../typelist/front.hpp"
 #include "../typelist/pop_front.hpp"
-#include "../traits/target_traits.hpp"
 #include "../math/view.hpp"
 
 template<class B, class S1, class S2>
@@ -61,13 +60,7 @@ inline void bi::sse_host_load_visitor<B,S1,S2>::accept(
   typedef typename front::target_type target_type;
   typedef typename front::coord_type coord_type;
 
-  int ix = 0;
-  coord_type cox;
-  while (ix < action_size<front>::value) {
-    x(action_start<S1,front>::value + ix) = sse_host::fetch<B,target_type>(s, p)(cox.index());
-    ++cox;
-    ++ix;
-  }
+  subrange(x, action_start<S1,front>::value, action_size<front>::value) = sse_host::fetch<B,target_type>(s, p);
   sse_host_load_visitor<B,S1,pop_front>::accept(s, p, x);
 }
 
