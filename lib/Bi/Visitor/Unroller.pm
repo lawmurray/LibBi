@@ -68,7 +68,7 @@ sub visit_after {
             }
             my $action = $self->_unroll_expr($model, $node);
             $node = $action->get_left->clone;
-            push(@$actions, $action);
+            push(@$actions, $action->accept($self, $model, $actions));
         }
         push(@results, $node);
     } elsif ($node->isa('Bi::Action')) {
