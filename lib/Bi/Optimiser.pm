@@ -69,8 +69,13 @@ sub optimise {
     my $model = $self->{_model};
         
     Bi::Visitor::Standardiser->evaluate($model);
-    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);    
-    Bi::Visitor::StaticReplacer->evaluate($model, $lefts, $rights);    
+    my ($lefts, $rights) = Bi::Visitor::StaticExtractor->evaluate($model);
+    foreach my $block (@{$model->get_blocks}) {
+    	if ($block->get_name ne 'parameter') {
+    		# ^ static expressions won't have been evaluated yet in this block
+	        Bi::Visitor::StaticReplacer->evaluate($block, $lefts, $rights);        		
+    	}
+    }
     Bi::Visitor::Unroller->evaluate($model);
     Bi::Visitor::Wrapper->evaluate($model);
 }
