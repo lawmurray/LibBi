@@ -23,6 +23,7 @@ use overload
     '*' => \&_op_mul;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<data>, I<start1>, I<size1>, I<start2>, I<size2>, I<lead>)
 

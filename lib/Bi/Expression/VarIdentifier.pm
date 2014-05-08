@@ -24,6 +24,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<var>, I<indexes>)
 
@@ -186,12 +187,14 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
-    $self = $visitor->visit_before($self, @args);
-    for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
-        $self->get_indexes->[$i] = $self->get_indexes->[$i]->accept($visitor, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
+    	    $self->get_indexes->[$i] = $self->get_indexes->[$i]->accept($visitor, @args);
+    	}
+    	$new = $visitor->visit_after($self, @args);
     }
-
-    return $visitor->visit_after($self, @args);
+    return $new;
 }
 
 =item B<equals>(I<obj>)

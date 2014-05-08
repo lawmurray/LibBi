@@ -31,6 +31,8 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
+
 use Bi::Expression;
 
 =item B<new>(I<name>, I<dims>, I<args>, I<named_args>)

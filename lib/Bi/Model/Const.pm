@@ -19,6 +19,8 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
+
 use Bi::Expression;
 
 our $_next_const_id = 0;
@@ -132,10 +134,12 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
-    $self = $visitor->visit_before($self, @args);
-    $self->{_expr} = $self->get_expr->accept($visitor, @args);
-    
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+        $self->{_expr} = $self->get_expr->accept($visitor, @args);
+        $new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

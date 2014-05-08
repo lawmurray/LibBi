@@ -154,10 +154,10 @@ sub visit_after {
     push(@$statics, $is_static);
     if ($is_static) {
         if ($num_statics > 0) {
-            splice(@$extracts, -$num_statics, $num_statics, $node);
+            splice(@$extracts, -$num_statics, $num_statics, $node->clone);
         } else {
         	assert($node->is_static) if DEBUG;
-            push(@$extracts, $node);
+            push(@$extracts, $node->clone);
         }
     }
     

@@ -23,6 +23,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<start>, I<end>)
 
@@ -160,15 +161,17 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self = $visitor->visit_before($self, @args);
-    if ($self->has_start) {
-        $self->{_start} = $self->get_start->accept($visitor, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    if ($self->has_start) {
+    	    $self->{_start} = $self->get_start->accept($visitor, @args);
+    	}
+    	if ($self->has_end) {
+        	$self->{_end} = $self->get_end->accept($visitor, @args);
+    	}
+    	$new = $visitor->visit_after($self, @args);
     }
-    if ($self->has_end) {
-        $self->{_end} = $self->get_end->accept($visitor, @args);
-    }
-    
-    return $visitor->visit_after($self, @args);
+    return $new;
 }
 
 =item B<equals>(I<obj>)
