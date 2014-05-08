@@ -19,9 +19,8 @@ related to the development of LibBi:
 * P. E. Jacob, L. M. Murray, and S. Rubenthaler. Path storage in the particle
   filter, 2013. [\[arXiv\]](http://arxiv.org/abs/1307.3180)
 
-* L. M. Murray, A. Lee, and P. E. Jacob, Rethinking resampling in the particle
-  filter on graphics processing units,
-  2013. [\[arXiv\]](http://arxiv.org/abs/1301.4019)
+* L. M. Murray, A. Lee, and P. E. Jacob. Parallel resampling in the particle
+  filter, 2013. [\[arXiv\]](http://arxiv.org/abs/1301.4019)
 
 * L. M. Murray, GPU acceleration of Runge-Kutta integrators. *IEEE
   Transactions on Parallel and Distributed Systems*, vol. 23, pp. 94-101,
