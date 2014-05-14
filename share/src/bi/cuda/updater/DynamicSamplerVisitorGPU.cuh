@@ -55,6 +55,7 @@ public:
 
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
+#include "../../traits/action_traits.hpp"
 
 template<class B, class S, class T1, class PX, class OX>
 inline void bi::DynamicSamplerVisitorGPU<B,S,T1,PX,OX>::accept(RngGPU& rng,

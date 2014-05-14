@@ -14,3 +14,4 @@
 MAGMA_FUNC_DEF(potrf, dpotrf_gpu, spotrf_gpu)
 MAGMA_FUNC_DEF(potrs, dpotrs_gpu, spotrs_gpu)
 MAGMA_FUNC_DEF(get_potrf_nb, get_dpotrf_nb, get_spotrf_nb)
+//MAGMA_FUNC_DEF(syevx, dsyevx_gpu, ssyevx_gpu)

@@ -19,10 +19,14 @@ namespace bi {
 void bi_init(const int threads = 0);
 }
 
-#include "cuda/cuda.hpp"
 #include "misc/omp.hpp"
 #include "ode/IntegratorConstants.hpp"
+
+#ifdef ENABLE_CUDA
+#include "cuda/math/magma.hpp"
+#include "cuda/cuda.hpp"
 #include "cuda/device.hpp"
+#endif
 
 #ifdef ENABLE_MPI
 #include "boost/mpi.hpp"
@@ -32,8 +36,10 @@ void bi_init(const int threads = 0);
 void bi::bi_init(const int threads) {
   bi_omp_init(threads);
   bi_ode_init();
+
   #ifdef ENABLE_CUDA
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  magma_init();
   #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   int rank = world.rank();
