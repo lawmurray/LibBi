@@ -335,7 +335,7 @@ sub accept {
 
     my $new = $visitor->visit_before($self, @args);
     if (refaddr($new) == refaddr($self)) {
-        Bi::ArgHandler::accept($self, $visitor);
+        Bi::ArgHandler::accept($self, $visitor, @args);
         $new = $visitor->visit_after($self, @args);
     }
     return $new;
