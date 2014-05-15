@@ -229,6 +229,21 @@ public:
   bool resample(Random& rng, const ScheduleElement now, State<B,L>& s,
       const int a, V1 lws, V1 qlws, V2 as);
   //@}
+
+protected:
+  /**
+   * Compute the maximum log-weight of a particle at the current time under
+   * the bridge density.
+   *
+   * @tparam L Location.
+   *
+   * @param s State.
+   *
+   * @return Maximum log-weight.
+   */
+  template<Location L>
+  real getMaxLogWeightBridge(const ScheduleElement now, State<B,L>& s);
+
 };
 
 /**
@@ -515,7 +530,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
-        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+        this->resam->setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
       }
       if (now.hasOutput()) {
         this->resam->resample(rng, lws, as, s);
@@ -564,7 +579,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
     if (r) {
       if (resampler_needs_max<R>::value) {
-        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
+        this->resam->setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
       }
       if (now.hasOutput()) {
         this->resam->resample(rng, lws, as, s);
@@ -585,6 +600,14 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
     seq_elements(as, 0);
   }
   return r;
+}
+
+template<class B, class S, class R, class IO1>
+template<bi::Location L>
+real bi::AuxiliaryParticleFilter<B,S,R,IO1>::getMaxLogWeightBridge(
+    const ScheduleElement now, State<B,L>& s) {
+  return this->m.bridgeMaxLogDensity(s,
+      this->sim->getObs()->getMask(now.indexObs()));
 }
 
 #endif
