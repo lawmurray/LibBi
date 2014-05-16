@@ -687,10 +687,10 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
       bool success = false;
       T1 smallest = amin_reduce(d);
       T1 factor;
-      if (1.0e-15 * smallest > 0.0) {
-        factor = 1.0e-15 * smallest;
+      if (1.0e-9 * smallest > 0.0) {
+        factor = 1.0e-9 * smallest;
       } else {
-        factor = 1.0e-15;
+        factor = 1.0e-9;
       }
 
       while (!success) {
