@@ -36,10 +36,10 @@ This package includes a stochastic SIR (susceptible/infectious/recovered)
 epidemiological compartmental model of the form
 
 \begin{eqnarray}
-dS(t) &=& -\beta(t)S(t)I(t)\, dt\\
-dI(t) &=& \left(\beta(t)S(t)I(t)-\nu(t)I(t)\right)\, dt\\
-dR(t) &=& \nu(t)I(t)\, dt\\
-d\log\beta(t) &=& \left(\theta_{\beta,1}-\theta_{\beta,2}\log\beta(t)\right)\, dt+\theta_{\beta,3}\, dW_{\beta}(t)\\
+dS(t) &=& -\beta(t)S(t)I(t)\, dt \\\\
+dI(t) &=& \left(\beta(t)S(t)I(t)-\nu(t)I(t)\right)\, dt \\\\
+dR(t) &=& \nu(t)I(t)\, dt \\\\
+d\log\beta(t) &=& \left(\theta_{\beta,1}-\theta_{\beta,2}\log\beta(t)\right)\, dt+\theta_{\beta,3}\, dW_{\beta}(t) \\\\
 d\log\nu(t) &=& \left(\theta_{\nu,1}-\theta_{\nu,2}\log\nu(t)\right)\, dt+\theta_{\nu,3}\, dW_{\nu}(t).
 \end{eqnarray}
 
