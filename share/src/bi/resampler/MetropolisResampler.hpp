@@ -56,7 +56,7 @@ public:
  * @ingroup method_resampler
  *
  * Implements the Metropolis resampler as described in @ref Murray2011a
- * "Murray (2011)".
+ * "Murray (2011)" and @ref Murray2014 "Murray, Lee & Jacob (2014)".
  */
 class MetropolisResampler: public Resampler {
 public:

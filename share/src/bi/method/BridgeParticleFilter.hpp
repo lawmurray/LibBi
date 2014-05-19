@@ -21,6 +21,9 @@ namespace bi {
  * @tparam R #concept::Resampler type.
  * @tparam IO1 Output type.
  *
+ * Implementes the bridge particle filter as described in
+ * @ref DelMoral2014 "Del Moral & Murray (2014)".
+ *
  * @section Concepts
  *
  * #concept::Filter

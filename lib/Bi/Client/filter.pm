@@ -61,8 +61,9 @@ be used instead.
 
 =item C<bridge>
 
-Particle filter with intermediate bridging weights. Bridging weights are
-assigned according to the L<bridge> top-level block.
+Particle filter with intermediate bridging weights, as described in
+Del Moral & Murray (2014). Bridging weights are assigned according to the
+L<bridge> top-level block.
 
 =begin comment
 

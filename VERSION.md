@@ -6,7 +6,7 @@ v1.1.0
 
 New features:
 
-* Added bridge particle filter.
+* Added bridge particle filter (from Del Moral & Murray, 2014).
 * Added built-in variables `t_now`, `t_last_input` and `t_next_obs`.
 * Added `transpose` and `cholesky` actions.
 * Added `log` argument to `pdf` action.

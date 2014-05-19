@@ -59,6 +59,9 @@ public:
  *
  * @ingroup method_resampler
  *
+ * Implements the rejection resampler as described in
+ * @ref Murray2014 "Murray, Lee & Jacob (2014)".
+ *
  * Unlike other resamplers, the rejection resampler does not use an
  * ESS threshold to determine whether or not to resample at each time.
  * Instead, it simply samples at every time step. This is for two reasons:
