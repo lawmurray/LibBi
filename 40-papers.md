@@ -16,11 +16,16 @@ Please cite the following paper if you use LibBi:
 The following papers may be of interest, which detail novel contributions
 related to the development of LibBi:
 
-* P. E. Jacob, L. M. Murray, and S. Rubenthaler. Path storage in the particle
-  filter, 2013. [\[arXiv\]](http://arxiv.org/abs/1307.3180)
+* Del Moral, P. & Murray, L. M. Sequential Monte Carlo with highly informative
+  observations, 2014. [\[arXiv\]]((http://arxiv.org/abs/1405.4081)
 
 * L. M. Murray, A. Lee, and P. E. Jacob. Parallel resampling in the particle
-  filter, 2013. [\[arXiv\]](http://arxiv.org/abs/1301.4019)
+  filter, 2014. [\[arXiv\]](http://arxiv.org/abs/1301.4019)
+
+* P. E. Jacob, L. M. Murray, and S. Rubenthaler. Path storage in the particle
+  filter, 2013. *Statistics and Computing*, to
+  appear. [\[doi\]](http://dx.doi.org/10.1007/s11222-013-9445-x)
+  [\[arXiv\]](http://arxiv.org/abs/1307.3180)
 
 * L. M. Murray, GPU acceleration of Runge-Kutta integrators. *IEEE
   Transactions on Parallel and Distributed Systems*, vol. 23, pp. 94-101,
