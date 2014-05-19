@@ -17,7 +17,7 @@ The following papers may be of interest, which detail novel contributions
 related to the development of LibBi:
 
 * Del Moral, P. & Murray, L. M. Sequential Monte Carlo with highly informative
-  observations, 2014. [\[arXiv\]]((http://arxiv.org/abs/1405.4081)
+  observations, 2014. [\[arXiv\]](http://arxiv.org/abs/1405.4081)
 
 * L. M. Murray, A. Lee, and P. E. Jacob. Parallel resampling in the particle
   filter, 2014. [\[arXiv\]](http://arxiv.org/abs/1301.4019)
