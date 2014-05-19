@@ -28,8 +28,8 @@ related to the development of LibBi:
   [\[arXiv\]](http://arxiv.org/abs/1307.3180)
 
 * L. M. Murray, GPU acceleration of Runge-Kutta integrators. *IEEE
-  Transactions on Parallel and Distributed Systems*, vol. 23, pp. 94-101,
-  2012. [\[doi\]](http://dx.doi.org/10.1109/TPDS.2011.61)
+  Transactions on Parallel and Distributed Systems*, vol. 23, pp. 94-101, 2012.
+  [\[doi\]](http://dx.doi.org/10.1109/TPDS.2011.61)
 
 Papers related to specific applications of LibBi are usually referenced in
 their respective package, some of which are available in the
