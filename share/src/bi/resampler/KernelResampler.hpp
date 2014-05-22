@@ -44,7 +44,7 @@ public:
    */
   //@{
   /**
-   * @copydoc concept::Resampler::resample(Random&, V1, V2, State<B,L>&)
+   * @copydoc Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
   template<class V1, class V2, class B, Location L>
   void resample(Random& rng, V1 lws, V2 as, State<B,L>& s);
@@ -55,14 +55,14 @@ public:
    */
   //@{
   /**
-   * @copydoc concept::Resampler::ancestors
+   * @copydoc Resampler::ancestors
    */
   template<class V1, class V2>
   void ancestors(Random& rng, const V1 lws, V2 as)
       throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc concept::Resampler::offspring
+   * @copydoc Resampler::offspring
    */
   template<class V1, class V2>
   void offspring(Random& rng, const V1 lws, V2 os, const int P)

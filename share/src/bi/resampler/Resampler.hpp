@@ -33,6 +33,10 @@ public:
   Resampler(const double essRel = 0.5, const double essRelBridge = 0.5);
 
   /**
+   * @name High-level interface.
+   */
+  //@{
+  /**
    * Get maximum log-weight.
    */
   double getMaxLogWeight() const;
@@ -41,6 +45,93 @@ public:
    * Set maximum log-weight.
    */
   void setMaxLogWeight(const double maxLogWeight);
+
+  /**
+   * Is ESS-based condition triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggered(const V1 lws) const;
+
+  /**
+   * Is ESS-based condition for bridge resampling triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggeredBridge(const V1 lws) const;
+
+  /**
+   * Resample state.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integral vector type.
+   * @tparam O1 Compatible copy() type.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry.
+   * @param[in,out] s State.
+   *
+   * The weights @p lws are set to be uniform after the resampling.
+   */
+  template<class V1, class V2, class O1>
+  void resample(Random& rng, V1& lws, V2& as, O1& s)
+      throw (ParticleFilterDegeneratedException);
+  //@}
+
+  /**
+   * @name Low-level interface.
+   */
+  //@{
+  /**
+   * Select ancestors.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] as Ancestors.
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select offspring.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] os Offspring.
+   * @param P Total number of offspring to select.
+   */
+  template<class V1, class V2>
+  void offspring(Random& rng, const V1 lws, V2 os, const int P)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select cumulative offspring.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] Os Cimulative offspring.
+   * @param P Total number of offspring to select.
+   */
+  template<class V1, class V2>
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 os, const int P)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Compute offspring vector from ancestors vector.
@@ -114,25 +205,6 @@ public:
   static void permute(V1 as);
 
   /**
-   * Correct weights after resampling with proposal.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param as Ancestry.
-   * @param qlws Proposal log-weights.
-   * @param[in,out] lws Log-weights.
-   *
-   * Assuming that a resample has been performed using the weights @p qlws,
-   * The weights @p lws are set as importance weights, such that if
-   * \f$a^i = p\f$, \f$w^i = w^p/w^{*p}\f$, where \f$w^{*p}\f$ are the
-   * proposal weights (@p qlws) and \f$w^p\f$ the particle weights (@p lws).
-   */
-  template<class V1, class V2, class V3>
-  static void correct(const V1 as, const V2 qlws, V3 lws);
-
-  /**
    * In-place copy based on ancestry.
    *
    * @tparam V1 Vector type.
@@ -144,7 +216,6 @@ public:
    * The copy is performed in-place. For each particle @c i that is to be
    * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
    * @c i. This ensures that all particles are either read or (over)written,
-   * but not both. Use permute() to ensure that an ancestry satisfies this
    * constraint.
    */
   template<class V1, class M1>
@@ -203,26 +274,6 @@ public:
   static void normalise(V1 lws);
 
   /**
-   * Is ESS-based condition triggered?
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggered(const V1 lws) const;
-
-  /**
-   * Is ESS-based condition for bridge resampling triggered?
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggeredBridge(const V1 lws) const;
-
-  /**
    * Compute effective sample size (ESS) of log-weights.
    *
    * @tparam V1 Vector type.
@@ -278,6 +329,7 @@ public:
    */
   template<class V1, class V2>
   static typename V1::value_type se(const V1 lws, const V2 os);
+  //@}
 
 protected:
   /**
@@ -431,12 +483,20 @@ public:
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
-#include "thrust/inner_product.h"
-
 #include "boost/mpl/if.hpp"
 
 inline double bi::Resampler::getMaxLogWeight() const {
   return maxLogWeight;
+}
+
+template<class V1>
+inline bool bi::Resampler::isTriggered(const V1 lws) const {
+  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
+}
+
+template<class V1>
+inline bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
+  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
 }
 
 template<class V1, class V2>
@@ -474,28 +534,6 @@ template<class V1>
 void bi::Resampler::permute(const V1 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::permute(as);
-}
-
-template<class V1, class V2, class V3>
-void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
-  /* pre-condition */
-  BI_ASSERT(qlws.size() == lws.size());
-
-  typedef typename sim_temp_vector<V3>::type vector_type;
-  typedef typename V3::value_type T3;
-
-  const int P = as.size();
-
-  vector_type lws1(lws.size());
-  lws1 = lws;
-  lws.resize(P);
-
-  BOOST_AUTO(iter1,
-      thrust::make_permutation_iterator(lws1.begin(), as.begin()));
-  BOOST_AUTO(iter2,
-      thrust::make_permutation_iterator(qlws.begin(), as.begin()));
-  thrust::transform(iter1, iter1 + P, iter2, lws.begin(),
-      thrust::minus<T3>());
 }
 
 template<class V1, class M1>
@@ -540,23 +578,13 @@ void bi::Resampler::normalise(V1 lws) {
 }
 
 template<class V1>
-bool bi::Resampler::isTriggered(const V1 lws) const {
-  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
-}
-
-template<class V1>
-bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
-  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
-}
-
-template<class V1>
 typename V1::value_type bi::Resampler::ess(const V1 lws) {
   typename V1::value_type result = ess_reduce(lws);
 
   if (result > 0.0) {
     return result;
   } else {
-    return 0.0; // may be nan
+    return 0.0;  // may be nan
   }
 }
 

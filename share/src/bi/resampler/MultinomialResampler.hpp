@@ -80,7 +80,7 @@ public:
    */
   //@{
   /**
-   * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
+   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
   void resample(Random& rng, V1 lws, V2 as, O1& s)
@@ -92,7 +92,7 @@ public:
    */
   //@{
   /**
-   * @copydoc concept::Resampler::ancestors
+   * @copydoc Resampler::ancestors
    */
   template<class V1, class V2>
   void ancestors(Random& rng, const V1 lws, V2 as)
@@ -107,7 +107,7 @@ public:
   void precompute(const V1 lws, const V2 as, MultinomialPrecompute<L>& pre);
 
   /**
-   * @copydoc concept::Resampler::offspring
+   * @copydoc Resampler::offspring
    */
   template<class V1, class V2>
   void offspring(Random& rng, const V1 lws, V2 os, const int P)
