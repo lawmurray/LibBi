@@ -124,26 +124,6 @@ public:
       const ScheduleIterator last, const V1 theta, State<B,L>& s);
 
   /**
-   * Filter forward conditioned on a single particle.
-   *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param first Start of time schedule.
-   * @param last End of time schedule.
-   * @param[out] s State.
-   * @param X Path on which to condition. Rows index variables, columns
-   * index times.
-   *
-   * This is the <em>conditional</em> particle filter of
-   * @ref Andrieu2010 "Andrieu, Doucet \& Holenstein (2010)".
-   */
-  template<bi::Location L, class V1, class M1>
-  real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, State<B,L>& s, const M1 X);
-
-  /**
    * Sample single particle trajectory.
    *
    * @tparam M1 Matrix type.
@@ -228,30 +208,6 @@ public:
       State<B,L>& s, V1 lws, V2 as);
 
   /**
-   * Resample, predict and correct, conditionally.
-   *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param X Path on which to condition. Rows index variables, columns
-   * index times.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry after resampling.
-   *
-   * @return Estimate of the incremental log-likelihood.
-   */
-  template<bi::Location L, class M1, class V1, class V2>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, const M1 X, V1 lws, V2 as);
-
-  /**
    * Predict.
    *
    * @tparam L Location.
@@ -296,27 +252,6 @@ public:
   template<Location L, class V1, class V2>
   bool resample(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lws,
       V2 as);
-
-  /**
-   * Resample with conditioned outcome for first particle.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   * @tparam R #concept::Resampler type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param[in,out] s State.
-   * @param a Conditioned ancestor of first particle.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry after resampling.
-   *
-   * @return True if resampling was performed, false otherwise.
-   */
-  template<Location L, class V1, class V2>
-  bool resample(Random& rng, const ScheduleElement now, State<B,L>& s,
-      const int a, V1 lws, V2 as);
 
   /**
    * Output static variables.
@@ -613,25 +548,6 @@ real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class M1, class V1, class V2>
-real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, const M1 X, V1 lws, V2 as) {
-  real ll = 0.0;
-  do {
-    resample(rng, *iter, s, lws, as);
-    ++iter;
-    predict(rng, *iter, s);
-    if (iter->hasOutput()) {
-      row(s.getDyn(), 0) = column(X, iter->indexOutput());
-    }
-    ll += correct(*iter, s, lws);
-    output(*iter, s, lws, as);
-  } while (iter + 1 != last && !iter->isObserved());
-
-  return ll;
-}
-
-template<class B, class S, class R, class IO1>
 template<bi::Location L>
 void bi::ParticleFilter<B,S,R,IO1>::predict(Random& rng,
     const ScheduleElement next, State<B,L>& s) {
@@ -668,32 +584,6 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
         resam->setMaxLogWeight(getMaxLogWeight(now, s));
       }
       resam->resample(rng, lws, as, s);
-    } else {
-      seq_elements(as, 0);
-      Resampler::normalise(lws);
-    }
-  } else if (now.hasOutput()) {
-    seq_elements(as, 0);
-  }
-  return r;
-}
-
-template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
-    const ScheduleElement now, State<B,L>& s, const int a, V1 lws, V2 as) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == lws.size());
-  BI_ASSERT(a == 0);
-
-  bool r = now.isObserved();
-  if (r) {
-    r = resam != NULL && resam->isTriggered(lws);
-    if (r) {
-      if (resampler_needs_max<R>::value) {
-        resam->setMaxLogWeight(getMaxLogWeight(now, s));
-      }
-      resam->cond_resample(rng, a, a, lws, as, s);
     } else {
       seq_elements(as, 0);
       Resampler::normalise(lws);

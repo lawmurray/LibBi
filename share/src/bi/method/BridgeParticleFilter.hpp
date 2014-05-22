@@ -92,29 +92,6 @@ public:
       State<B,L>& s, V1 lws, V1 blws, V2 as);
 
   /**
-   * Resample, predict and correct.
-   *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param X Path on which to condition. Rows index variables, columns
-   * index times.
-   * @param[in,out] lws Log-weights.
-   * @param[in,out] blws Bridge log-weights.
-   * @param[out] as Ancestry after resampling.
-   */
-  template<bi::Location L, class M1, class V1, class V2>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, const M1 X, V1 lws, V1 blws, V2 as);
-
-  /**
    * Update particle weights using lookahead.
    *
    * @tparam L Location.
@@ -276,29 +253,6 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
     this->resample(rng, *iter, s, lws, blws, as);
     ++iter;
     this->predict(rng, *iter, s);
-    ll += this->correct(*iter, s, lws, blws);
-    this->output(*iter, s, lws, as);
-  } while (iter + 1 != last && !iter->isObserved());
-
-  return ll;
-}
-
-template<class B, class S, class R, class IO1>
-template<bi::Location L, class M1, class V1, class V2>
-real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
-    ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    const M1 X, V1 lws, V1 blws, V2 as) {
-  typename sim_temp_vector<V2>::type as1(as.size());
-
-  real ll = 0.0;
-  do {
-    ll += this->bridge(rng, iter, last, s, lws, blws);
-    this->resample(rng, *iter, s, lws, blws, as);
-    ++iter;
-    this->predict(rng, *iter, s);
-    if (iter->hasOutput()) {
-      row(s.getDyn(), 0) = column(X, iter->indexOutput());
-    }
     ll += this->correct(*iter, s, lws, blws);
     this->output(*iter, s, lws, as);
   } while (iter + 1 != last && !iter->isObserved());

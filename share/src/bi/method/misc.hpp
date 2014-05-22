@@ -10,21 +10,6 @@
 
 namespace bi {
 /**
- * Particle filtering modes.
- */
-enum FilterMode {
-  /**
-   * Unconditioned filter.
-   */
-  UNCONDITIONED,
-
-  /**
-   * Filter conditioned on current state trajectory.
-   */
-  CONDITIONED
-};
-
-/**
  * Optimisation modes.
  */
 enum OptimiserMode {

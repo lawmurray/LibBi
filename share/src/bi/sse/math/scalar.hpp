@@ -116,10 +116,10 @@
 #endif
 #define BI_SSE_PREFETCH _mm_prefetch
 
-/**
- * 128-bit packed floating point type.
- */
 namespace bi {
+  /**
+   * 128-bit packed floating point type.
+   */
   union sse_real {
     #ifdef ENABLE_SINGLE
     struct {
@@ -159,7 +159,6 @@ namespace bi {
         return unpacked.b;
       }
     }
-
     #endif
 
     sse_real() {
@@ -176,31 +175,30 @@ namespace bi {
     }
   };
 
-sse_real& operator+=(sse_real& o1, const sse_real& o2);
-sse_real& operator-=(sse_real& o1, const sse_real& o2);
-sse_real& operator*=(sse_real& o1, const sse_real& o2);
-sse_real& operator/=(sse_real& o1, const sse_real& o2);
-sse_real operator+(const sse_real& o1, const sse_real& o2);
-sse_real operator-(const sse_real& o1, const sse_real& o2);
-sse_real operator*(const sse_real& o1, const sse_real& o2);
-sse_real operator/(const sse_real& o1, const sse_real& o2);
-sse_real operator+(const real& o1, const sse_real& o2);
-sse_real operator-(const real& o1, const sse_real& o2);
-sse_real operator*(const real& o1, const sse_real& o2);
-sse_real operator/(const real& o1, const sse_real& o2);
-sse_real operator+(const sse_real& o1, const real& o2);
-sse_real operator-(const sse_real& o1, const real& o2);
-sse_real operator*(const sse_real& o1, const real& o2);
-sse_real operator/(const sse_real& o1, const real& o2);
-sse_real operator==(const sse_real& o1, const sse_real& o2);
-sse_real operator!=(const sse_real& o1, const sse_real& o2);
-sse_real operator<(const sse_real& o1, const sse_real& o2);
-sse_real operator<=(const sse_real& o1, const sse_real& o2);
-sse_real operator>(const sse_real& o1, const sse_real& o2);
-sse_real operator>=(const sse_real& o1, const sse_real& o2);
-const sse_real operator-(const sse_real& o);
-const sse_real operator+(const sse_real& o);
-
+  sse_real& operator+=(sse_real& o1, const sse_real& o2);
+  sse_real& operator-=(sse_real& o1, const sse_real& o2);
+  sse_real& operator*=(sse_real& o1, const sse_real& o2);
+  sse_real& operator/=(sse_real& o1, const sse_real& o2);
+  sse_real operator+(const sse_real& o1, const sse_real& o2);
+  sse_real operator-(const sse_real& o1, const sse_real& o2);
+  sse_real operator*(const sse_real& o1, const sse_real& o2);
+  sse_real operator/(const sse_real& o1, const sse_real& o2);
+  sse_real operator+(const real& o1, const sse_real& o2);
+  sse_real operator-(const real& o1, const sse_real& o2);
+  sse_real operator*(const real& o1, const sse_real& o2);
+  sse_real operator/(const real& o1, const sse_real& o2);
+  sse_real operator+(const sse_real& o1, const real& o2);
+  sse_real operator-(const sse_real& o1, const real& o2);
+  sse_real operator*(const sse_real& o1, const real& o2);
+  sse_real operator/(const sse_real& o1, const real& o2);
+  sse_real operator==(const sse_real& o1, const sse_real& o2);
+  sse_real operator!=(const sse_real& o1, const sse_real& o2);
+  sse_real operator<(const sse_real& o1, const sse_real& o2);
+  sse_real operator<=(const sse_real& o1, const sse_real& o2);
+  sse_real operator>(const sse_real& o1, const sse_real& o2);
+  sse_real operator>=(const sse_real& o1, const sse_real& o2);
+  const sse_real operator-(const sse_real& o);
+  const sse_real operator+(const sse_real& o);
 }
 
 BI_FORCE_INLINE inline bi::sse_real& bi::operator+=(bi::sse_real& o1, const bi::sse_real& o2) {

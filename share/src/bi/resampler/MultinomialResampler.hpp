@@ -85,27 +85,6 @@ public:
   template<class V1, class V2, class O1>
   void resample(Random& rng, V1 lws, V2 as, O1& s)
       throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, O1&)
-   */
-  template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
-      O1& s) throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
-   */
-  template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as, O1& s)
-      throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -176,67 +155,6 @@ void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
   permute(as);
   copy(as, s);
   lws.clear();
-}
-
-template<class V1, class V2, class O1>
-void bi::MultinomialResampler::cond_resample(Random& rng, const int ka,
-    const int k, V1 lws, V2 as, O1& s)
-        throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == as.size());
-  BI_ASSERT(k >= 0 && k < as.size());
-  BI_ASSERT(ka >= 0 && ka < lws.size());
-
-  int P;
-  if (!sort) {
-    // change this?
-    P = 0;
-  } else {
-    P = s.size();
-  }
-  typename sim_temp_vector<V1>::type lws1(P), Ws(P);
-  typename sim_temp_vector<V2>::type ps(P);
-
-  ancestors(rng, lws, as, lws.size(), ka, k, false, lws1, ps, Ws);
-  BI_ASSERT(*(as.begin() + k) == ka);
-  permute(as);
-  copy(as, s);
-  lws.clear();
-}
-
-template<class V1, class V2, class V3, class O1>
-void bi::MultinomialResampler::resample(Random& rng, const V1 qlws, V2 lws,
-    V3 as, O1& s) throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  const int P = qlws.size();
-  BI_ASSERT(qlws.size() == P);
-  BI_ASSERT(lws.size() == P);
-  BI_ASSERT(as.size() == P);
-
-  ancestors(rng, qlws, as);
-  permute(as);
-  correct(as, qlws, lws);
-  normalise(lws);
-  copy(as, s);
-}
-
-template<class V1, class V2, class V3, class O1>
-void bi::MultinomialResampler::resample(Random& rng, const int a,
-    const V1 qlws, V2 lws, V3 as, O1& s)
-        throw (ParticleFilterDegeneratedException) {
-  /* pre-conditions */
-  const int P = qlws.size();
-  BI_ASSERT(qlws.size() == P);
-  BI_ASSERT(lws.size() == P);
-  BI_ASSERT(as.size() == P);
-  BI_ASSERT(a >= 0 && a < P);
-
-  ancestors(rng, qlws, as);
-  set_elements(subrange(as, 0, 1), a);
-  permute(as);
-  correct(as, qlws, lws);
-  normalise(lws);
-  copy(as, s);
 }
 
 template<class V1, class V2>

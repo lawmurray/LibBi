@@ -91,32 +91,6 @@ public:
    */
   template<class V1, class V2, class O1>
   void resample(Random& rng, V1 lws, V2 as, O1& s);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const V1, V2, V3, O1&)
-   */
-  template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const V1 qlws, V2 lws, V3 as, O1& s);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, const int a, V1 lws, V2 as, O1& s);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const int, const V1, V2, V3, O1&)
-   */
-  template<class V1, class V2, class V3, class O1>
-  void resample(Random& rng, const int a, const V1 qlws, V2 lws, V3 as,
-      O1& s);
-
-  /**
-   * @copydoc concept::Resampler::resample(Random&, const int, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void cond_resample(Random& rng, const int ka, const int k, V1 lws, V2 as,
-      O1& s) throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -179,60 +153,6 @@ void bi::RejectionResampler::resample(Random& rng, V1 lws, V2 as, O1& s) {
   ancestorsPermute(rng, lws, as, maxLogWeight);
   copy(as, s);
   lws.clear();
-}
-
-template<class V1, class V2, class O1>
-void bi::RejectionResampler::resample(Random& rng, const int a, V1 lws, V2 as,
-    O1& s) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == as.size());
-  BI_ASSERT(a >= 0 && a < as.size());
-
-  ancestors(rng, lws, as, maxLogWeight);
-  set_elements(subrange(as, 0, 1), a);
-  permute(a);
-  copy(as, s);
-  lws.clear();
-}
-
-template<class V1, class V2, class V3, class O1>
-void bi::RejectionResampler::resample(Random& rng, const V1 qlws, V2 lws,
-    V3 as, O1& s) {
-  /* pre-condition */
-  const int P = qlws.size();
-  BI_ASSERT(qlws.size() == P);
-  BI_ASSERT(lws.size() == P);
-  BI_ASSERT(as.size() == P);
-
-  ancestorsPermute(rng, qlws, as, maxLogWeight);
-  copy(as, s);
-  correct(as, qlws, lws);
-  normalise(lws);
-}
-
-template<class V1, class V2, class V3, class O1>
-void bi::RejectionResampler::resample(Random& rng, const int a, const V1 qlws,
-    V2 lws, V3 as, O1& s) {
-  /* pre-condition */
-  const int P = qlws.size();
-  BI_ASSERT(qlws.size() == P);
-  BI_ASSERT(lws.size() == P);
-  BI_ASSERT(as.size() == P);
-  BI_ASSERT(a >= 0 && a < P);
-
-  ancestors(rng, qlws, as, maxLogWeight);
-  set_elements(subrange(as, 0, 1), a);
-  permute(as);
-  copy(as, s);
-  correct(as, qlws, lws);
-  normalise(lws);
-}
-
-template<class V1, class V2, class O1>
-void bi::RejectionResampler::cond_resample(Random& rng, const int ka,
-    const int k, V1 lws, V2 as, O1& s)
-        throw (ParticleFilterDegeneratedException) {
-  BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class V1, class V2>

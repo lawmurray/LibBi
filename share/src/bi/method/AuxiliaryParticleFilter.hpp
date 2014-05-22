@@ -129,29 +129,6 @@ public:
       State<B,L>& s, V1 lws, V1 qlws, V2 as);
 
   /**
-   * Resample, predict and correct.
-   *
-   * @tparam L Location.
-   * @tparam M1 Matrix type.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param X Path on which to condition. Rows index variables, columns
-   * index times.
-   * @param[in,out] lws Log-weights.
-   * @param[in,out] qlws Resampling log-weights.
-   * @param[out] as Ancestry after resampling.
-   */
-  template<bi::Location L, class M1, class V1, class V2>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, const M1 X, V1 lws, V1 qlws, V2 as);
-
-  /**
    * Perform lookahead.
    *
    * @tparam L Location.
@@ -205,29 +182,6 @@ public:
   template<Location L, class V1, class V2>
   bool resample(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lws,
       V1 qlws, V2 as);
-
-  /**
-   * Resample after bridge weighting with conditioned outcome for first
-   * particle.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   * @tparam R #concept::Resampler type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param[in,out] s State.
-   * @param a Conditioned ancestor of first particle.
-   * @param[in,out] lws Log-weights.
-   * @param[in,out] qlws Bridge log-weights.
-   * @param[out] as Ancestry after resampling.
-   *
-   * @return True if resampling was performed, false otherwise.
-   */
-  template<Location L, class V1, class V2>
-  bool resample(Random& rng, const ScheduleElement now, State<B,L>& s,
-      const int a, V1 lws, V1 qlws, V2 as);
   //@}
 
 protected:
@@ -421,27 +375,6 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class M1, class V1, class V2>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
-    ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    const M1 X, V1 lws, V1 qlws, V2 as) {
-  real ll = 0.0;
-  do {
-    ll += this->lookahead(rng, iter, last, s, lws, qlws);
-    this->resample(rng, *iter, s, lws, qlws, as);
-    ++iter;
-    this->predict(rng, *iter, s);
-    if (iter->hasOutput()) {
-      row(s.getDyn(), 0) = column(X, iter->indexOutput());
-    }
-    ll += this->correct(*iter, s, lws, qlws);
-    this->output(*iter, s, lws, as);
-  } while (iter + 1 != last && !iter->isObserved());
-
-  return ll;
-}
-
-template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
 real bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
@@ -538,55 +471,6 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
       } else {
         typename sim_temp_vector<V2>::type as1(as.size());
         this->resam->resample(rng, lws, as1, s);
-        bi::gather(as1, qlws, qlws);
-        bi::gather(as1, as, as);
-      }
-    } else {
-      if (now.hasOutput()) {
-        seq_elements(as, 0);
-      }
-      Resampler::normalise(lws);
-    }
-  } else if (now.hasOutput()) {
-    seq_elements(as, 0);
-  }
-  return r;
-}
-
-template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
-    const ScheduleElement now, State<B,L>& s, const int a, V1 lws, V1 qlws,
-    V2 as) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == lws.size());
-  BI_ASSERT(a == 0);
-
-  bool r = false;
-  if (now.isObserved()) {
-    r = this->resam != NULL && this->resam->isTriggered(lws);
-    if (r) {
-      if (resampler_needs_max<R>::value) {
-        this->resam->setMaxLogWeight(this->getMaxLogWeight(now, s));
-      }
-      this->resam->cond_resample(rng, a, a, lws, as, s);
-      bi::gather(as, qlws, qlws);
-    } else {
-      seq_elements(as, 0);
-      Resampler::normalise(lws);
-    }
-  } else if (now.hasBridge()) {
-    r = this->resam != NULL && this->resam->isTriggeredBridge(lws);
-    if (r) {
-      if (resampler_needs_max<R>::value) {
-        this->resam->setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
-      }
-      if (now.hasOutput()) {
-        this->resam->resample(rng, lws, as, s);
-        bi::gather(as, qlws, qlws);
-      } else {
-        typename sim_temp_vector<V2>::type as1(as.size());
-        this->resam->cond_resample(rng, a, a, lws, as, s);
         bi::gather(as1, qlws, qlws);
         bi::gather(as1, as, as);
       }

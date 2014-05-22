@@ -127,11 +127,6 @@
   }
 #endif
 
-/**
- * Synchronize on device. Corresponds to a call to cudaThreadSynchronize().
- *
- * @note Does nothing unless ENABLE_CUDA defined.
- */
 namespace bi {
   /**
    * Synchronize with device.
