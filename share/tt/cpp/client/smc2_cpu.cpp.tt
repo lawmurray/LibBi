@@ -169,15 +169,15 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
-      Stopper stopper(NPARTICLES, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
+      Stopper stopper(NPARTICLES, MAX_PARTICLES, sched.numObs());
       [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-      SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
+      SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
       [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-      MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
+      MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
       [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-      StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
+      StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
-      VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, BLOCK_PARTICLES, sched.numObs());
+      VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
       [% END %]
       BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, outFilter)));
     [% ELSE %]

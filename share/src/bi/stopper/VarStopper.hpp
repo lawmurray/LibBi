@@ -13,13 +13,12 @@ namespace bi {
  *
  * @ingroup method_stopper
  */
-class VarStopper : public Stopper {
+class VarStopper: public Stopper {
 public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  VarStopper(const real threshold, const int maxP, const int blockP,
-      const int T);
+  VarStopper(const real threshold, const int maxP, const int T);
 
   /**
    * @copydoc Stopper::stop()
@@ -41,8 +40,8 @@ private:
 }
 
 inline bi::VarStopper::VarStopper(const real threshold, const int maxP,
-    const int blockP, const int T) :
-    Stopper(threshold, maxP, blockP, T), sum(0.0) {
+    const int T) :
+    Stopper(threshold, maxP, T), sum(0.0) {
   //
 }
 
@@ -51,11 +50,11 @@ bool bi::VarStopper::stop(const V1 lws, const real maxlw) {
   /* pre-condition */
   BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  real mu = sumexp_reduce(lws) / this->blockP;
-  real s2 = sumexpsq_reduce(lws) / this->blockP;
+  real mu = sumexp_reduce(lws) / lws.size();
+  real s2 = sumexpsq_reduce(lws) / lws.size();
   real val = s2 - mu * mu;
 
-  sum += this->blockP * mu / val;
+  sum += lws.size() * mu / val;
 
   real minsum = this->T * this->threshold;
 

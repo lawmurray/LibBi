@@ -18,7 +18,7 @@ public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  MinimumESSStopper(const real threshold, const int maxP, const int blockP,
+  MinimumESSStopper(const real threshold, const int maxP,
       const int T);
 
   /**
@@ -46,8 +46,8 @@ private:
 }
 
 inline bi::MinimumESSStopper::MinimumESSStopper(const real threshold,
-    const int maxP, const int blockP, const int T) :
-    Stopper(threshold, maxP, blockP, T), sumw(0.0), sumw2(0.0) {
+    const int maxP, const int T) :
+    Stopper(threshold, maxP, T), sumw(0.0), sumw2(0.0) {
   //
 }
 

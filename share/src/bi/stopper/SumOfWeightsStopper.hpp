@@ -18,7 +18,7 @@ public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  SumOfWeightsStopper(const real threshold, const int maxP, const int blockP,
+  SumOfWeightsStopper(const real threshold, const int maxP,
       const int T);
 
   /**
@@ -41,8 +41,8 @@ private:
 }
 
 inline bi::SumOfWeightsStopper::SumOfWeightsStopper(const real threshold,
-    const int maxP, const int blockP, const int T) :
-    Stopper(threshold, maxP, blockP, T), sumw(0.0) {
+    const int maxP, const int T) :
+    Stopper(threshold, maxP, T), sumw(0.0) {
   //
 }
 
