@@ -31,6 +31,10 @@
  *   @ingroup method
  *   Stoppers for adaptive particle filters.
  *
+ *   @defgroup method_adapter Adapters
+ *   @ingroup method
+ *   Adapters for proposal distributions.
+ *
  *   @defgroup method_updater Updaters
  *   @ingroup method
  *   Lower level components of methods.

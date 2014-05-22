@@ -33,7 +33,7 @@ namespace bi {
  * @tparam R #concept::Resampler type.
  * @tparam IO1 Output type.
  */
-template<class B, class F, class R, class IO1>
+template<class B, class F, class R, class IO1 = SMC2Cache<> >
 class SMC2 {
 public:
   /**

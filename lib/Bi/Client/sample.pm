@@ -73,6 +73,10 @@ Particle marginal Metropolis-Hastings (PMMH).
 
 Sequential Monte Carlo Squared (SMC^2).
 
+=item C<sr>
+
+Sequential rejection (SR).
+
 =back
 
 For PMMH, the proposal works according to the L<proposal_parameter> top-level
@@ -229,6 +233,8 @@ sub process_args {
         }
     } elsif ($sampler eq 'smc2') {
         $binary = 'smc2';
+    } elsif ($sampler eq 'sr') {
+    	$binary = 'sr';
     } else {
         $binary = 'pmmh';
     }

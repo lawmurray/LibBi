@@ -81,7 +81,6 @@ public:
    * Sample.
    *
    * @tparam L Location.
-   * @tparam F #concept::Filter type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.

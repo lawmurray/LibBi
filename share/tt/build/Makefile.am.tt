@@ -15,6 +15,7 @@ CLIENTS = [
     'pmmh',
     'simulate',
     'smc2',
+    'sr',
     'test',
     'test_resampler',
     'test_filter'
