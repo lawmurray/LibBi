@@ -86,11 +86,6 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void offspring(Random& rng, const V1 lws, V2 o, const int n, int ka,
-      bool sorted, V3 lws1, V4 ps, V3 Ws)
-          throw (ParticleFilterDegeneratedException);
-
-  template<class V1, class V2, class V3, class V4>
   void offspring(Random& rng, const V1 lws, V2 os, const int n, bool sorted,
       V3 lws1, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
 
@@ -102,12 +97,7 @@ public:
       throw (ParticleFilterDegeneratedException);
 
   template<class V1, class V2, class V3, class V4>
-  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
-      int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-          throw (ParticleFilterDegeneratedException);
-
-  template<class V1, class V2, class V3, class V4>
-  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int n,
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int P,
       bool sorted, V3 lws1, V4 ps, V3 Ws)
           throw (ParticleFilterDegeneratedException);
 
@@ -121,11 +111,6 @@ public:
   template<class V1, class V2, class V3, class V4>
   void ancestors(Random& rng, const V1 lws, V2 as, int P, bool sorted,
       V3 lws1, V4 ps, V3 Ws) throw (ParticleFilterDegeneratedException);
-
-  template<class V1, class V2, class V3, class V4>
-  void ancestors(Random& rng, const V1 lws, V2 as, int P, int ka, int k,
-      bool sorted, V3 lws1, V4 ps, V3 Ws)
-          throw (ParticleFilterDegeneratedException);
   //@}
 
 protected:
@@ -271,52 +256,6 @@ void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
   }
 }
 
-template<class V1, class V2, class V3, class V4>
-void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, V2 os,
-    const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-        throw (ParticleFilterDegeneratedException) {
-  /// @todo May only work if ka == 0
-
-  /* pre-condition */
-  BI_ASSERT(lws.size() == os.size());
-  BI_ASSERT(ka >= 0 && ka < lws.size());
-
-  typedef typename V1::value_type T1;
-  typedef typename sim_temp_vector<V1>::type vector_type;
-  typedef typename sim_temp_vector<V2>::type int_vector_type;
-
-  const int P = lws.size();
-
-  if (sort) {
-    int_vector_type Os(P), temp(P);
-
-    if (!sorted) {
-      lws1 = lws;
-      seq_elements(ps, 0);
-      bi::sort_by_key(lws1, ps);
-      sumexpu_inclusive_scan(lws1, Ws);
-    }
-
-    T1 W = *(Ws.end() - 1);  // sum of weights
-
-    if (W > 0) {
-      BI_ASSERT_MSG(false, "Not yet implemented");
-
-#ifndef NDEBUG
-      int m = sum_reduce(os);
-      BI_ASSERT_MSG(m == n,
-          "Stratified resampler gives " << m << " offspring, should give " << n);
-#endif
-    } else {
-      throw ParticleFilterDegeneratedException();
-    }
-  } else {
-    int_vector_type Os(P);
-    cumulativeOffspring(rng, lws, Os, n, ka, sorted, lws1, ps, Ws);
-    bi::adjacent_difference(Os, os);
-  }
-}
-
 template<class V1, class V2>
 void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
     V2 Os, const int n) throw (ParticleFilterDegeneratedException) {
@@ -387,44 +326,6 @@ void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
   }
 }
 
-template<class V1, class V2, class V3, class V4>
-void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws,
-    V2 Os, const int n, int ka, bool sorted, V3 lws1, V4 ps, V3 Ws)
-        throw (ParticleFilterDegeneratedException) {
-  /// @todo May only work if ka == 0
-
-  /* pre-condition */
-  BI_ASSERT(lws.size() == Os.size());
-  BI_ASSERT(ka >= 0 && ka < lws.size());
-
-  typedef typename V1::value_type T1;
-  typedef typename sim_temp_vector<V1>::type vector_type;
-  typedef typename sim_temp_vector<V2>::type int_vector_type;
-
-  const int P = lws.size();
-
-  if (sort) {
-    int_vector_type os(P);
-    offspring(rng, lws, os, n, ka, sorted, lws1, ps, Ws);
-    sum_inclusive_scan(os, Os);
-  } else {
-    sumexpu_inclusive_scan(lws, Ws);
-    T1 W = *(Ws.end() - 1);  // sum of weights
-
-    if (W > 0) {
-      BI_ERROR_MSG(false, "Not yet implemented");
-
-#ifndef NDEBUG
-      int m = *(Os.end() - 1);
-      BI_ASSERT_MSG(m == n,
-          "Stratified resampler gives " << m << " offspring, should give " << n);
-#endif
-    } else {
-      throw ParticleFilterDegeneratedException();
-    }
-  }
-}
-
 template<class V1, class V2>
 void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
@@ -451,22 +352,6 @@ void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as,
 
   cumulativeOffspring(rng, lws, Os, P, sorted, lws1, ps, Ws);
   cumulativeOffspringToAncestors(Os, as);
-}
-
-template<class V1, class V2, class V3, class V4>
-void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    int P, int ka, int k, bool sorted, V3 lws1, V4 ps, V3 Ws)
-        throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(as.size() == P);
-
-  typename sim_temp_vector<V2>::type Os(lws.size());
-
-  cumulativeOffspring(rng, lws, Os, P, ka, sorted, lws1, ps, Ws);
-  cumulativeOffspringToAncestors(Os, as);
-
-  /* post-condition */
-  BI_ASSERT(*(as.begin() + k) == ka);
 }
 
 template<class V1, class V2>

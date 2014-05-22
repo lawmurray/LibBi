@@ -55,13 +55,6 @@ public:
   template<Location L, class V1>
   real filter(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, const V1 theta, State<B,L>& s);
-
-  /**
-   * @copydoc ParticleFilter::filter(Random&, Schedule&, const V1, State<B,L>&, M1)
-   */
-  template<Location L, class V1, class M1>
-  real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, State<B,L>& s, M1 X);
   //@}
 
   /**
@@ -206,35 +199,6 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
   this->output(*iter, s, lws, as);
   while (iter + 1 != last) {
     ll += step(rng, iter, last, s, lws, blws, as);
-  }
-  this->term();
-  this->outputT(ll);
-
-  return ll;
-}
-
-template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class M1>
-real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
-    State<B,L>& s, M1 X) {
-  // this implementation is (should be) the same as filter() above, but with
-  // a different step() call
-
-  const int P = s.size();
-  real ll;
-
-  typename loc_temp_vector<L,real>::type lws(P), blws(P);
-  typename loc_temp_vector<L,int,-1,1>::type as(P);
-
-  ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, lws, blws, as);
-  row(s.getDyn(), 0) = column(X, 0);
-  this->output0(s);
-  ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, lws, as);
-  while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, X, lws, blws, as);
   }
   this->term();
   this->outputT(ll);

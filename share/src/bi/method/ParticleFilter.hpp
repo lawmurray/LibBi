@@ -460,35 +460,6 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class M1>
-real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
-    State<B,L>& s, M1 X) {
-  // this implementation is (should be) the same as filter() above, but with
-  // a different step() call
-
-  const int P = s.size();
-  real ll = 0.0;
-
-  typename loc_temp_vector<L,real>::type lws(P);
-  typename loc_temp_vector<L,int>::type as(P);
-
-  ScheduleIterator iter = first;
-  init(rng, theta, *iter, s, lws, as);
-  row(s.getDyn(), 0) = column(X, 0);
-  output0(s);
-  ll = correct(*iter, s, lws);
-  output(*iter, s, lws, as);
-  while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, X, lws, as);
-  }
-  term();
-  outputT(ll);
-
-  return ll;
-}
-
-template<class B, class S, class R, class IO1>
 template<class M1>
 void bi::ParticleFilter<B,S,R,IO1>::sampleTrajectory(Random& rng, M1 X) {
   /* pre-condition */
