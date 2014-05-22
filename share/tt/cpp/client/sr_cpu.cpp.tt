@@ -43,6 +43,7 @@
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
 
+#include "bi/adapter/Adapter.hpp"
 #include "bi/adapter/GaussianAdapter.hpp"
 
 #include "bi/method/Simulator.hpp"
@@ -185,10 +186,10 @@ int main(int argc, char* argv[]) {
   [% END %]
     
   /* adapter */
-  GaussianAdapter* adapter = NULL;
+  Adapter* adapter = NULL;
   
   /* stopper */
-  MinimumESSStopper* stopper = NULL;
+  Stopper* stopper = NULL;
   
   /* sampler */
   BOOST_AUTO(out, SMC2CacheFactory<LOCATION>::create(m, bufOutput));
