@@ -19,7 +19,7 @@ namespace bi {
  *
  * @tparam B Model type.
  * @tparam S Simulator type.
- * @tparam R #concept::Resampler type.
+ * @tparam R Resampler type.
  * @tparam IO1 Output type.
  *
  * @section Concepts

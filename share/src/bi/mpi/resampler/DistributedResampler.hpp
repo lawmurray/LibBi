@@ -31,7 +31,7 @@ public:
   DistributedResampler(R* base, const double essRel = 0.5);
 
   /**
-   * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
+   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
   void resample(Random&, V1 lws, V2 as, O1& s)

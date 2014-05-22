@@ -30,7 +30,7 @@ namespace bi {
  *
  * @tparam B Model type
  * @tparam F ParticleMarginalMetropolisHastings type.
- * @tparam R #concept::Resampler type.
+ * @tparam R Resampler type.
  * @tparam IO1 Output type.
  */
 template<class B, class F, class R, class IO1 = SMC2Cache<> >
