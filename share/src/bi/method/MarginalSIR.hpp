@@ -24,14 +24,18 @@
 
 namespace bi {
 /**
- * Sequential Monte Carlo squared (SMC^2).
+ * Marginal sequential importance resampling.
  *
- * @ingroup method
+ * @ingroup method_sampler
  *
  * @tparam B Model type
  * @tparam F MarginalMH type.
  * @tparam R Resampler type.
  * @tparam IO1 Output type.
+ *
+ * Implements sequential importance resampling over parameters, which, when
+ * combined with a particle filter, gives the SMC^2 method described in
+ * @ref Chopin2013 "Chopin, Jacob \& Papaspiliopoulos (2013)".
  */
 template<class B, class F, class R, class IO1 = MarginalSIRCache<> >
 class MarginalSIR {

@@ -15,12 +15,17 @@
  *
  * @anchor Andrieu2010
  * Andrieu, C.; Doucet, A. & Holenstein, R. Particle Markov chain Monte Carlo
- * methods. <i>Journal of the Royal Statistical Society Series B</i>,
+ * methods. <i>Journal of the Royal Statistical Society B</i>,
  * <b>2010</b>, 72, 269-302.
  *
  * @anchor Bentley1979
  * Bentley, J. L. & Saxe, J. B. Generating sorted lists of random numbers.
  * <i>Carnegie Mellon University</i>, <b>1979</b>.
+ *
+ * @anchor Chopin2013
+ * Chopin, N.; Jacob, P. & Papaspiliopoulos, O. SMC\f$^2\f$: An Efficient
+ * Algorithm for Sequential Analysis of State Space Models. <i>Journal of the
+ * Royal Statistical Society B</b>, <b>2013</b>, 75, 397-426.
  *
  * @anchor DelMoral2014
  * Del Moral, P. & Murray L. M. Sequential Monte Carlo with highly informative

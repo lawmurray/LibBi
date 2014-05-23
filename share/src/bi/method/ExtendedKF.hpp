@@ -18,7 +18,7 @@ namespace bi {
 /**
  * Extended Kalman filter.
  *
- * @ingroup method
+ * @ingroup method_filter
  *
  * @tparam B Model type.
  * @tparam S Simulator type.

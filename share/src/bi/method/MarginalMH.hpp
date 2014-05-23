@@ -19,15 +19,18 @@
 
 namespace bi {
 /**
- * Particle Marginal Metropolis-Hastings (PMMH) sampler.
+ * Marginal Metropolis-Hastings.
  *
- * See @ref Andrieu2010 "Andrieu, Doucet \& Holenstein (2010)".
- *
- * @ingroup method
+ * @ingroup method_sampler
  *
  * @tparam B Model type
  * @tparam F Filter type.
  * @tparam IO1 Output type.
+ *
+ * Implements a marginal Metropolis--Hastings sampler, which, when combined
+ * with a particle filter, gives the particle marginal Metropolis--Hastings
+ * sampler described in @ref Andrieu2010 "Andrieu, Doucet \& Holenstein (2010)".
+ *
  */
 template<class B, class F, class IO1 = ParticleMCMCCache<> >
 class MarginalMH {

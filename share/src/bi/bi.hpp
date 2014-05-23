@@ -23,6 +23,14 @@
  * @defgroup method Methods
  * Inference methods.
  *
+ *   @defgroup method_sampler Samplers
+ *   @ingroup method
+ *   Samplers for parameters.
+ *
+ *   @defgroup method_filter Filters
+ *   @ingroup method
+ *   Kalman and particle filters.
+ *
  *   @defgroup method_resampler Resamplers
  *   @ingroup method
  *   Resamplers for particle filters.

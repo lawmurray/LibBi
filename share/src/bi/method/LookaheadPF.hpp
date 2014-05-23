@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Auxiliary particle filter with lookahead.
  *
- * @ingroup method
+ * @ingroup method_filter
  *
  * @tparam B Model type.
  * @tparam S Simulator type.

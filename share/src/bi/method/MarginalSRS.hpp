@@ -13,9 +13,9 @@
 
 namespace bi {
 /**
- * Sequential Monte Carlo with rejection control.
+ * Marginal sequential rejection sampling.
  *
- * @ingroup method
+ * @ingroup method_sampler
  *
  * @tparam B Model type
  * @tparam F Filter type.

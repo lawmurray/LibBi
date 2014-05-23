@@ -16,7 +16,7 @@ namespace bi {
 /**
  * Adaptive particle filter.
  *
- * @ingroup method
+ * @ingroup method_filter
  *
  * @tparam B Model type.
  * @tparam S Simulator type.
