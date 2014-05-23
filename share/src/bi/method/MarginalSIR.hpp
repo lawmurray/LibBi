@@ -36,6 +36,10 @@ namespace bi {
  * Implements sequential importance resampling over parameters, which, when
  * combined with a particle filter, gives the SMC^2 method described in
  * @ref Chopin2013 "Chopin, Jacob \& Papaspiliopoulos (2013)".
+ *
+ * @todo Add support for Kalman filters.
+ * @todo Add support for adapter classes.
+ * @todo Add support for stopper classes for theta particles.
  */
 template<class B, class F, class R, class IO1 = MarginalSIRCache<> >
 class MarginalSIR {

@@ -31,6 +31,7 @@ namespace bi {
  * with a particle filter, gives the particle marginal Metropolis--Hastings
  * sampler described in @ref Andrieu2010 "Andrieu, Doucet \& Holenstein (2010)".
  *
+ * @todo Add proposal adaptation using adapter classes.
  */
 template<class B, class F, class IO1 = ParticleMCMCCache<> >
 class MarginalMH {
