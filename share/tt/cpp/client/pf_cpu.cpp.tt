@@ -14,19 +14,19 @@
 #include "bi/kd/kde.hpp"
 #include "bi/random/Random.hpp"
 [% IF client.get_named_arg('filter') == 'lookahead' %]
-#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/LookaheadPF.hpp"
 [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-#include "bi/method/BridgeParticleFilter.hpp"
+#include "bi/method/BridgePF.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-#include "bi/method/AdaptiveParticleFilter.hpp"
-#include "bi/cache/AdaptiveParticleFilterCache.hpp"
+#include "bi/method/AdaptivePF.hpp"
+#include "bi/cache/AdaptivePFCache.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
 [% ELSE %]
-#include "bi/method/ParticleFilter.hpp"
+#include "bi/method/BootstrapPF.hpp"
 [% END %]
 
 #include "bi/method/Simulator.hpp"
@@ -39,7 +39,7 @@
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
 #include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/cache/ParticleFilterCache.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"
 #ifdef ENABLE_MPI
@@ -162,15 +162,15 @@ int main(int argc, char* argv[]) {
   
   /* filter */
   [% IF client.get_named_arg('filter') == 'adaptive' %]
-    BOOST_AUTO(out, AdaptiveParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, AdaptivePFCacheFactory<LOCATION>::create(bufOutput));
   [% ELSE %]
-    BOOST_AUTO(out, ParticleFilterCacheFactory<LOCATION>::create(bufOutput));
+    BOOST_AUTO(out, BootstrapPFCacheFactory<LOCATION>::create(bufOutput));
   [% END %]
 
   [% IF client.get_named_arg('filter') == 'lookahead' %]
-    BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (LookaheadPFFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-    BOOST_AUTO(filter, (BridgeParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (BridgePFFactory::create(m, sim, &resam, out)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
     /* stopper */
     [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -184,9 +184,9 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('stopper') == 'var' %]
     VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
     [% END %]
-    BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, out)));
+    BOOST_AUTO(filter, (AdaptivePFFactory::create(m, sim, &resam, &stopper, out)));
   [% ELSE %]
-    BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, out)));
+    BOOST_AUTO(filter, (BootstrapPFFactory::create(m, sim, &resam, out)));
   [% END %]
 
   #ifdef ENABLE_GPERFTOOLS

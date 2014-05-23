@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_PARTICLEMCMCNETCDFBUFFER_HPP
-#define BI_BUFFER_PARTICLEMCMCNETCDFBUFFER_HPP
+#ifndef BI_BUFFER_MCMCNETCDFBUFFER_HPP
+#define BI_BUFFER_MCMCNETCDFBUFFER_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
 #include "../state/State.hpp"
@@ -21,7 +21,7 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class ParticleMCMCNetCDFBuffer: public SimulatorNetCDFBuffer {
+class MCMCNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -30,7 +30,7 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  ParticleMCMCNetCDFBuffer(const Model& m, const std::string& file,
+  MCMCNetCDFBuffer(const Model& m, const std::string& file,
       const FileMode mode = READ_ONLY, const SchemaMode schema = MULTI);
 
   /**
@@ -42,7 +42,7 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  ParticleMCMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
+  MCMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = MULTI);
 
@@ -107,23 +107,23 @@ protected:
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::readLogLikelihoods(const size_t p, V1 ll) {
+void bi::MCMCNetCDFBuffer::readLogLikelihoods(const size_t p, V1 ll) {
   readRange(llVar, p, ll);
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::writeLogLikelihoods(const size_t p,
+void bi::MCMCNetCDFBuffer::writeLogLikelihoods(const size_t p,
     const V1 ll) {
   writeRange(llVar, p, ll);
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
+void bi::MCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
   readRange(lpVar, p, lp);
 }
 
 template<class V1>
-void bi::ParticleMCMCNetCDFBuffer::writeLogPriors(const size_t p,
+void bi::MCMCNetCDFBuffer::writeLogPriors(const size_t p,
     const V1 lp) {
   writeRange(lpVar, p, lp);
 }

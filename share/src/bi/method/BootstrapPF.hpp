@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_PARTICLEFILTER_HPP
-#define BI_METHOD_PARTICLEFILTER_HPP
+#ifndef BI_METHOD_BootstrapPF_HPP
+#define BI_METHOD_BootstrapPF_HPP
 
 #include "Simulator.hpp"
-#include "../cache/ParticleFilterCache.hpp"
+#include "../cache/BootstrapPFCache.hpp"
 
 namespace bi {
 /**
- * Particle filter.
+ * Bootstrap particle filter.
  *
  * @ingroup method
  *
@@ -27,7 +27,7 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class IO1>
-class ParticleFilter {
+class BootstrapPF {
 public:
   /**
    * Constructor.
@@ -37,7 +37,7 @@ public:
    * @param resam Resampler.
    * @param out Output.
    */
-  ParticleFilter(B& m, S* sim = NULL, R* resam = NULL, IO1* out = NULL);
+  BootstrapPF(B& m, S* sim = NULL, R* resam = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -276,8 +276,8 @@ public:
    * @param as Ancestry.
    */
   template<Location L, class V1, class V2>
-  void output(const ScheduleElement now, const State<B,L>& s,
-      const V1 lws, const V2 as);
+  void output(const ScheduleElement now, const State<B,L>& s, const V1 lws,
+      const V2 as);
 
   /**
    * Output marginal log-likelihood estimate.
@@ -327,37 +327,37 @@ protected:
 };
 
 /**
- * Factory for creating ParticleFilter objects.
+ * Factory for creating BootstrapPF objects.
  *
  * @ingroup method
  *
- * @see ParticleFilter
+ * @see BootstrapPF
  */
-struct ParticleFilterFactory {
+struct BootstrapPFFactory {
   /**
    * Create particle filter.
    *
-   * @return ParticleFilter object. Caller has ownership.
+   * @return BootstrapPF object. Caller has ownership.
    *
-   * @see ParticleFilter::ParticleFilter()
+   * @see BootstrapPF::BootstrapPF()
    */
   template<class B, class S, class R, class IO1>
-  static ParticleFilter<B,S,R,IO1>* create(B& m, S* sim = NULL, R* resam =
-      NULL, IO1* out = NULL) {
-    return new ParticleFilter<B,S,R,IO1>(m, sim, resam, out);
+  static BootstrapPF<B,S,R,IO1>* create(B& m, S* sim = NULL, R* resam = NULL,
+      IO1* out = NULL) {
+    return new BootstrapPF<B,S,R,IO1>(m, sim, resam, out);
   }
 
   /**
    * Create particle filter.
    *
-   * @return ParticleFilter object. Caller has ownership.
+   * @return BootstrapPF object. Caller has ownership.
    *
-   * @see ParticleFilter::ParticleFilter()
+   * @see BootstrapPF::BootstrapPF()
    */
   template<class B, class S, class R>
-  static ParticleFilter<B,S,R,ParticleFilterCache<> >* create(B& m, S* sim =
-      NULL, R* resam = NULL) {
-    return new ParticleFilter<B,S,R,ParticleFilterCache<> >(m, sim, resam);
+  static BootstrapPF<B,S,R,BootstrapPFCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL) {
+    return new BootstrapPF<B,S,R,BootstrapPFCache<> >(m, sim, resam);
   }
 };
 }
@@ -367,8 +367,7 @@ struct ParticleFilterFactory {
 #include "../traits/resampler_traits.hpp"
 
 template<class B, class S, class R, class IO1>
-bi::ParticleFilter<B,S,R,IO1>::ParticleFilter(B& m, S* sim, R* resam,
-    IO1* out) :
+bi::BootstrapPF<B,S,R,IO1>::BootstrapPF(B& m, S* sim, R* resam, IO1* out) :
     m(m), sim(sim), resam(resam), out(out) {
   /* pre-conditions */
   BI_ASSERT(sim != NULL);
@@ -377,38 +376,38 @@ bi::ParticleFilter<B,S,R,IO1>::ParticleFilter(B& m, S* sim, R* resam,
 }
 
 template<class B, class S, class R, class IO1>
-inline S* bi::ParticleFilter<B,S,R,IO1>::getSim() {
+inline S* bi::BootstrapPF<B,S,R,IO1>::getSim() {
   return sim;
 }
 
 template<class B, class S, class R, class IO1>
-inline void bi::ParticleFilter<B,S,R,IO1>::setSim(S* sim) {
+inline void bi::BootstrapPF<B,S,R,IO1>::setSim(S* sim) {
   this->sim = sim;
 }
 
 template<class B, class S, class R, class IO1>
-inline R* bi::ParticleFilter<B,S,R,IO1>::getResam() {
+inline R* bi::BootstrapPF<B,S,R,IO1>::getResam() {
   return resam;
 }
 
 template<class B, class S, class R, class IO1>
-inline void bi::ParticleFilter<B,S,R,IO1>::setResam(R* resam) {
+inline void bi::BootstrapPF<B,S,R,IO1>::setResam(R* resam) {
   this->resam = resam;
 }
 
 template<class B, class S, class R, class IO1>
-inline IO1* bi::ParticleFilter<B,S,R,IO1>::getOutput() {
+inline IO1* bi::BootstrapPF<B,S,R,IO1>::getOutput() {
   return out;
 }
 
 template<class B, class S, class R, class IO1>
-inline void bi::ParticleFilter<B,S,R,IO1>::setOutput(IO1* out) {
+inline void bi::BootstrapPF<B,S,R,IO1>::setOutput(IO1* out) {
   this->out = out;
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class IO2>
-real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::BootstrapPF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
@@ -433,7 +432,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::BootstrapPF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) {
   // this implementation is (should be) the same as filter() above, but with
@@ -461,7 +460,7 @@ real bi::ParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<class M1>
-void bi::ParticleFilter<B,S,R,IO1>::sampleTrajectory(Random& rng, M1 X) {
+void bi::BootstrapPF<B,S,R,IO1>::sampleTrajectory(Random& rng, M1 X) {
   /* pre-condition */
   BI_ASSERT(out != NULL);
 
@@ -472,8 +471,8 @@ void bi::ParticleFilter<B,S,R,IO1>::sampleTrajectory(Random& rng, M1 X) {
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2, class IO2>
-void bi::ParticleFilter<B,S,R,IO1>::init(Random& rng,
-    const ScheduleElement now, State<B,L>& s, V1 lws, V2 as, IO2* inInit) {
+void bi::BootstrapPF<B,S,R,IO1>::init(Random& rng, const ScheduleElement now,
+    State<B,L>& s, V1 lws, V2 as, IO2* inInit) {
   /* pre-condition */
   BI_ASSERT(s.size() == as.size());
   BI_ASSERT(s.size() == lws.size());
@@ -488,7 +487,7 @@ void bi::ParticleFilter<B,S,R,IO1>::init(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2, class V3>
-void bi::ParticleFilter<B,S,R,IO1>::init(Random& rng, const V1 theta,
+void bi::BootstrapPF<B,S,R,IO1>::init(Random& rng, const V1 theta,
     const ScheduleElement now, State<B,L>& s, V2 lws, V3 as) {
   /* pre-condition */
   BI_ASSERT(s.size() == as.size());
@@ -504,7 +503,7 @@ void bi::ParticleFilter<B,S,R,IO1>::init(Random& rng, const V1 theta,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
+real bi::BootstrapPF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
   real ll = 0.0;
   do {
@@ -520,14 +519,14 @@ real bi::ParticleFilter<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
-void bi::ParticleFilter<B,S,R,IO1>::predict(Random& rng,
+void bi::BootstrapPF<B,S,R,IO1>::predict(Random& rng,
     const ScheduleElement next, State<B,L>& s) {
   sim->advance(rng, next, s);
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::ParticleFilter<B,S,R,IO1>::correct(const ScheduleElement now,
+real bi::BootstrapPF<B,S,R,IO1>::correct(const ScheduleElement now,
     State<B,L>& s, V1 lws) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
@@ -542,7 +541,7 @@ real bi::ParticleFilter<B,S,R,IO1>::correct(const ScheduleElement now,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
+bool bi::BootstrapPF<B,S,R,IO1>::resample(Random& rng,
     const ScheduleElement now, State<B,L>& s, V1 lws, V2 as) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
@@ -567,7 +566,7 @@ bool bi::ParticleFilter<B,S,R,IO1>::resample(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
-void bi::ParticleFilter<B,S,R,IO1>::output0(const State<B,L>& s) {
+void bi::BootstrapPF<B,S,R,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
     out->writeParameters(s.get(P_VAR));
   }
@@ -575,7 +574,7 @@ void bi::ParticleFilter<B,S,R,IO1>::output0(const State<B,L>& s) {
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
+void bi::BootstrapPF<B,S,R,IO1>::output(const ScheduleElement now,
     const State<B,L>& s, const V1 lws, const V2 as) {
   if (now.hasOutput() && out != NULL) {
     const int k = now.indexOutput();
@@ -586,20 +585,20 @@ void bi::ParticleFilter<B,S,R,IO1>::output(const ScheduleElement now,
 }
 
 template<class B, class S, class R, class IO1>
-void bi::ParticleFilter<B,S,R,IO1>::outputT(const real ll) {
+void bi::BootstrapPF<B,S,R,IO1>::outputT(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
   }
 }
 
 template<class B, class S, class R, class IO1>
-void bi::ParticleFilter<B,S,R,IO1>::term() {
+void bi::BootstrapPF<B,S,R,IO1>::term() {
   sim->term();
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
-real bi::ParticleFilter<B,S,R,IO1>::getMaxLogWeight(const ScheduleElement now,
+real bi::BootstrapPF<B,S,R,IO1>::getMaxLogWeight(const ScheduleElement now,
     State<B,L>& s) {
   return this->m.observationMaxLogDensity(s,
       sim->getObs()->getMask(now.indexObs()));

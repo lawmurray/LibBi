@@ -25,9 +25,9 @@ enum OptimiserMode {
 };
 
 /**
- * SMC2 adaptation strategies.
+ * MarginalSIR adaptation strategies.
  */
-enum SMC2Adapter {
+enum MarginalSIRAdapter {
   /**
    * No adaptation.
    */

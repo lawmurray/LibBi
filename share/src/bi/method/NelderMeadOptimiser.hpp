@@ -108,7 +108,7 @@ public:
    * @param out Output.
    * @param mode Mode of operation.
    *
-   * @see ParticleFilter
+   * @see BootstrapPF
    */
   NelderMeadOptimiser(B& m, F* filter = NULL, IO1* out = NULL,
       const OptimiserMode mode = MAXIMUM_LIKELIHOOD);

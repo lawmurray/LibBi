@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CACHE_KALMANFILTERCACHE_HPP
-#define BI_CACHE_KALMANFILTERCACHE_HPP
+#ifndef BI_CACHE_ExtendedKFCACHE_HPP
+#define BI_CACHE_ExtendedKFCACHE_HPP
 
 #include "SimulatorCache.hpp"
 #include "../buffer/KalmanFilterNetCDFBuffer.hpp"
@@ -21,29 +21,29 @@ namespace bi {
  * @tparam CL Location.
  */
 template<class IO1 = KalmanFilterNetCDFBuffer, Location CL = ON_HOST>
-class KalmanFilterCache: public SimulatorCache<IO1,CL> {
+class ExtendedKFCache: public SimulatorCache<IO1,CL> {
 public:
   /**
    * Constructor.
    *
    * @param out output buffer.
    */
-  KalmanFilterCache(IO1* out = NULL);
+  ExtendedKFCache(IO1* out = NULL);
 
   /**
    * Shallow copy.
    */
-  KalmanFilterCache(const KalmanFilterCache<IO1,CL>& o);
+  ExtendedKFCache(const ExtendedKFCache<IO1,CL>& o);
 
   /**
    * Destructor.
    */
-  ~KalmanFilterCache();
+  ~ExtendedKFCache();
 
   /**
    * Deep assignment.
    */
-  KalmanFilterCache<IO1,CL>& operator=(const KalmanFilterCache<IO1,CL>& o);
+  ExtendedKFCache<IO1,CL>& operator=(const ExtendedKFCache<IO1,CL>& o);
 
   /**
    * Read predicted mean.
@@ -139,7 +139,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(KalmanFilterCache<IO1,CL>& o);
+  void swap(ExtendedKFCache<IO1,CL>& o);
 
   /**
    * Clear cache.
@@ -217,56 +217,56 @@ private:
 };
 
 /**
- * Factory for creating KalmanFilterCache objects.
+ * Factory for creating ExtendedKFCache objects.
  *
  * @ingroup io_cache
  *
  * @see Forcer
  */
 template<Location CL = ON_HOST>
-struct KalmanFilterCacheFactory {
+struct ExtendedKFCacheFactory {
   /**
-   * Create KalmanFilterCache.
+   * Create ExtendedKFCache.
    *
-   * @return KalmanFilterCache object. Caller has ownership.
+   * @return ExtendedKFCache object. Caller has ownership.
    *
-   * @see KalmanFilterCache::KalmanFilterCache()
+   * @see ExtendedKFCache::ExtendedKFCache()
    */
   template<class IO1>
-  static KalmanFilterCache<IO1,CL>* create(IO1* out = NULL) {
-    return new KalmanFilterCache<IO1,CL>(out);
+  static ExtendedKFCache<IO1,CL>* create(IO1* out = NULL) {
+    return new ExtendedKFCache<IO1,CL>(out);
   }
 
   /**
-   * Create KalmanFilterCache.
+   * Create ExtendedKFCache.
    *
-   * @return KalmanFilterCache object. Caller has ownership.
+   * @return ExtendedKFCache object. Caller has ownership.
    *
-   * @see KalmanFilterCache::KalmanFilterCache()
+   * @see ExtendedKFCache::ExtendedKFCache()
    */
-  static KalmanFilterCache<KalmanFilterNetCDFBuffer,CL>* create() {
-    return new KalmanFilterCache<KalmanFilterNetCDFBuffer,CL>();
+  static ExtendedKFCache<KalmanFilterNetCDFBuffer,CL>* create() {
+    return new ExtendedKFCache<KalmanFilterNetCDFBuffer,CL>();
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::KalmanFilterCache<IO1,CL>::KalmanFilterCache(IO1* out) :
+bi::ExtendedKFCache<IO1,CL>::ExtendedKFCache(IO1* out) :
     SimulatorCache<IO1,CL>(out), out(out) {
   //
 }
 
 template<class IO1, bi::Location CL>
-bi::KalmanFilterCache<IO1,CL>::KalmanFilterCache(
-    const KalmanFilterCache<IO1,CL>& o) :
+bi::ExtendedKFCache<IO1,CL>::ExtendedKFCache(
+    const ExtendedKFCache<IO1,CL>& o) :
     SimulatorCache<IO1,CL>(o), mu1Cache(o.mu1Cache), U1Cache(o.U1Cache), mu2Cache(
         o.mu2Cache), U2Cache(o.U2Cache), CCache(o.CCache), out(o.out) {
   //
 }
 
 template<class IO1, bi::Location CL>
-bi::KalmanFilterCache<IO1,CL>& bi::KalmanFilterCache<IO1,CL>::operator=(
-    const KalmanFilterCache<IO1,CL>& o) {
+bi::ExtendedKFCache<IO1,CL>& bi::ExtendedKFCache<IO1,CL>::operator=(
+    const ExtendedKFCache<IO1,CL>& o) {
   SimulatorCache<IO1,CL>::operator=(o);
   out = o.out;
   mu1Cache = o.mu1Cache;
@@ -279,20 +279,20 @@ bi::KalmanFilterCache<IO1,CL>& bi::KalmanFilterCache<IO1,CL>::operator=(
 }
 
 template<class IO1, bi::Location CL>
-bi::KalmanFilterCache<IO1,CL>::~KalmanFilterCache() {
+bi::ExtendedKFCache<IO1,CL>::~ExtendedKFCache() {
   flush();
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::KalmanFilterCache<IO1,CL>::readPredictedMean(const int k,
+void bi::ExtendedKFCache<IO1,CL>::readPredictedMean(const int k,
     V1 mu1) const {
   mu1 = mu1Cache.get(k);
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::KalmanFilterCache<IO1,CL>::writePredictedMean(const int k,
+void bi::ExtendedKFCache<IO1,CL>::writePredictedMean(const int k,
     const V1 mu1) {
   if (!mu1Cache.isValid(k)) {
     vector_type tmp;
@@ -308,13 +308,13 @@ void bi::KalmanFilterCache<IO1,CL>::writePredictedMean(const int k,
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readPredictedStd(const int k, M1 U1) {
+void bi::ExtendedKFCache<IO1,CL>::readPredictedStd(const int k, M1 U1) {
   U1 = U1Cache.get(k);
 }
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::writePredictedStd(const int k,
+void bi::ExtendedKFCache<IO1,CL>::writePredictedStd(const int k,
     const M1 U1) {
   if (!U1Cache.isValid(k)) {
     matrix_type tmp;
@@ -330,14 +330,14 @@ void bi::KalmanFilterCache<IO1,CL>::writePredictedStd(const int k,
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::KalmanFilterCache<IO1,CL>::readCorrectedMean(const int k,
+void bi::ExtendedKFCache<IO1,CL>::readCorrectedMean(const int k,
     V1 mu2) const {
   mu2 = mu2Cache.get(k);
 }
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::KalmanFilterCache<IO1,CL>::writeCorrectedMean(const int k,
+void bi::ExtendedKFCache<IO1,CL>::writeCorrectedMean(const int k,
     const V1 mu2) {
   if (!mu2Cache.isValid(k)) {
     vector_type tmp;
@@ -353,13 +353,13 @@ void bi::KalmanFilterCache<IO1,CL>::writeCorrectedMean(const int k,
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readCorrectedStd(const int k, M1 U2) {
+void bi::ExtendedKFCache<IO1,CL>::readCorrectedStd(const int k, M1 U2) {
   U2 = U2Cache.get(k);
 }
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::writeCorrectedStd(const int k,
+void bi::ExtendedKFCache<IO1,CL>::writeCorrectedStd(const int k,
     const M1 U2) {
   if (!U2Cache.isValid(k)) {
     matrix_type tmp;
@@ -375,13 +375,13 @@ void bi::KalmanFilterCache<IO1,CL>::writeCorrectedStd(const int k,
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readCross(const int k, M1 C) {
+void bi::ExtendedKFCache<IO1,CL>::readCross(const int k, M1 C) {
   C = CCache.get(k);
 }
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::writeCross(const int k, const M1 C) {
+void bi::ExtendedKFCache<IO1,CL>::writeCross(const int k, const M1 C) {
   if (!CCache.isValid(k)) {
     matrix_type tmp;
     CCache.set(k, tmp);
@@ -395,7 +395,7 @@ void bi::KalmanFilterCache<IO1,CL>::writeCross(const int k, const M1 C) {
 }
 
 template<class IO1, bi::Location CL>
-inline void bi::KalmanFilterCache<IO1,CL>::writeLL(const real ll) {
+inline void bi::ExtendedKFCache<IO1,CL>::writeLL(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
   }
@@ -403,28 +403,28 @@ inline void bi::KalmanFilterCache<IO1,CL>::writeLL(const real ll) {
 
 template<class IO1, bi::Location CL>
 template<class M1>
-void bi::KalmanFilterCache<IO1,CL>::readTrajectory(const int p,
+void bi::ExtendedKFCache<IO1,CL>::readTrajectory(const int p,
     M1 X) const {
   //
 }
 
 template<class IO1, bi::Location CL>
-void bi::KalmanFilterCache<IO1,CL>::swap(KalmanFilterCache<IO1,CL>& o) {
+void bi::ExtendedKFCache<IO1,CL>::swap(ExtendedKFCache<IO1,CL>& o) {
   SimulatorCache<IO1,CL>::swap(o);
 }
 
 template<class IO1, bi::Location CL>
-void bi::KalmanFilterCache<IO1,CL>::clear() {
+void bi::ExtendedKFCache<IO1,CL>::clear() {
   SimulatorCache<IO1,CL>::clear();
 }
 
 template<class IO1, bi::Location CL>
-void bi::KalmanFilterCache<IO1,CL>::empty() {
+void bi::ExtendedKFCache<IO1,CL>::empty() {
   SimulatorCache<IO1,CL>::empty();
 }
 
 template<class IO1, bi::Location CL>
-void bi::KalmanFilterCache<IO1,CL>::flush() {
+void bi::ExtendedKFCache<IO1,CL>::flush() {
   SimulatorCache<IO1,CL>::flush();
   mu1Cache.flush();
   U1Cache.flush();
@@ -435,7 +435,7 @@ void bi::KalmanFilterCache<IO1,CL>::flush() {
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::KalmanFilterCache<IO1,CL>::save(Archive& ar,
+void bi::ExtendedKFCache<IO1,CL>::save(Archive& ar,
     const unsigned version) const {
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & mu1Cache;
@@ -447,7 +447,7 @@ void bi::KalmanFilterCache<IO1,CL>::save(Archive& ar,
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::KalmanFilterCache<IO1,CL>::load(Archive& ar,
+void bi::ExtendedKFCache<IO1,CL>::load(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
   ar & mu1Cache;

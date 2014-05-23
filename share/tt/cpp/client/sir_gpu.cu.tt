@@ -8,4 +8,4 @@
 
 [%-PROCESS client/misc/header.cpp.tt-%]
 
-#include "pmmh_cpu.cpp"
+#include "sir_cpu.cpp"

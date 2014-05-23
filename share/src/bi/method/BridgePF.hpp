@@ -5,14 +5,14 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_BRIDGEPARTICLEFILTER_HPP
-#define BI_METHOD_BRIDGEPARTICLEFILTER_HPP
+#ifndef BI_METHOD_BRIDGEPF_HPP
+#define BI_METHOD_BRIDGEPF_HPP
 
-#include "AuxiliaryParticleFilter.hpp"
+#include "LookaheadPF.hpp"
 
 namespace bi {
 /**
- * Particle filter with bridge weighting function.
+ * Bridge particle filter.
  *
  * @ingroup method
  *
@@ -21,7 +21,7 @@ namespace bi {
  * @tparam R Resampler type.
  * @tparam IO1 Output type.
  *
- * Implementes the bridge particle filter as described in
+ * Implements the bridge particle filter as described in
  * @ref DelMoral2014 "Del Moral & Murray (2014)".
  *
  * @section Concepts
@@ -29,12 +29,12 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class IO1>
-class BridgeParticleFilter: public AuxiliaryParticleFilter<B,S,R,IO1> {
+class BridgePF: public LookaheadPF<B,S,R,IO1> {
 public:
   /**
-   * @copydoc ParticleFilter::ParticleFilter()
+   * @copydoc BootstrapPF::BootstrapPF()
    */
-  BridgeParticleFilter(B& m, S* sim = NULL, R* resam = NULL, IO1* out = NULL);
+  BridgePF(B& m, S* sim = NULL, R* resam = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -43,14 +43,14 @@ public:
    */
   //@{
   /**
-   * @copydoc ParticleFilter::filter(Random&, const ScheduleIterator, const ScheduleIterator, State<B,L>&, IO2*)
+   * @copydoc BootstrapPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, State<B,L>&, IO2*)
    */
   template<Location L, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, State<B,L>& s, IO2* inInit);
 
   /**
-   * @copydoc ParticleFilter::filter(Random&, Schedule&, const V1, State<B,L>&)
+   * @copydoc BootstrapPF::filter(Random&, Schedule&, const V1, State<B,L>&)
    */
   template<Location L, class V1>
   real filter(Random& rng, const ScheduleIterator first,
@@ -105,38 +105,37 @@ public:
 };
 
 /**
- * Factory for creating BridgeParticleFilter objects.
+ * Factory for creating BridgePF objects.
  *
  * @ingroup method
  *
- * @see BridgeParticleFilter
+ * @see BridgePF
  */
-struct BridgeParticleFilterFactory {
+struct BridgePFFactory {
   /**
    * Create auxiliary particle filter.
    *
-   * @return BridgeParticleFilter object. Caller has ownership.
+   * @return BridgePF object. Caller has ownership.
    *
-   * @see BridgeParticleFilter::BridgeParticleFilter()
+   * @see BridgePF::BridgePF()
    */
   template<class B, class S, class R, class IO1>
-  static BridgeParticleFilter<B,S,R,IO1>* create(B& m, S* sim = NULL,
-      R* resam = NULL, IO1* out = NULL) {
-    return new BridgeParticleFilter<B,S,R,IO1>(m, sim, resam, out);
+  static BridgePF<B,S,R,IO1>* create(B& m, S* sim = NULL, R* resam = NULL,
+      IO1* out = NULL) {
+    return new BridgePF<B,S,R,IO1>(m, sim, resam, out);
   }
 
   /**
    * Create auxiliary particle filter.
    *
-   * @return BridgeParticleFilter object. Caller has ownership.
+   * @return BridgePF object. Caller has ownership.
    *
-   * @see BridgeParticleFilter::BridgeParticleFilter()
+   * @see BridgePF::BridgePF()
    */
   template<class B, class S, class R>
-  static BridgeParticleFilter<B,S,R,ParticleFilterCache<> >* create(B& m,
-      S* sim = NULL, R* resam = NULL) {
-    return new BridgeParticleFilter<B,S,R,ParticleFilterCache<> >(m, sim,
-        resam);
+  static BridgePF<B,S,R,BootstrapPFCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL) {
+    return new BridgePF<B,S,R,BootstrapPFCache<> >(m, sim, resam);
   }
 };
 }
@@ -147,15 +146,14 @@ struct BridgeParticleFilterFactory {
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class IO1>
-bi::BridgeParticleFilter<B,S,R,IO1>::BridgeParticleFilter(B& m, S* sim,
-    R* resam, IO1* out) :
-    AuxiliaryParticleFilter<B,S,R,IO1>(m, sim, resam, out) {
+bi::BridgePF<B,S,R,IO1>::BridgePF(B& m, S* sim, R* resam, IO1* out) :
+    LookaheadPF<B,S,R,IO1>(m, sim, resam, out) {
   //
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class IO2>
-real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::BridgePF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
@@ -180,7 +178,7 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::BridgePF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) {
   // this implementation is (should be) the same as filter() above, but with
@@ -208,9 +206,8 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
-    ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    V1 lws, V1 blws, V2 as) {
+real bi::BridgePF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
+    const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws, V2 as) {
   real ll = 0.0;
   do {
     ll += this->bridge(rng, iter, last, s, lws, blws);
@@ -226,9 +223,8 @@ real bi::BridgeParticleFilter<B,S,R,IO1>::step(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::BridgeParticleFilter<B,S,R,IO1>::bridge(Random& rng,
-    const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
-    V1 lws, V1 blws) {
+real bi::BridgePF<B,S,R,IO1>::bridge(Random& rng, const ScheduleIterator iter,
+    const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws) {
   /* pre-condition */
   BI_ASSERT(lws.size() == blws.size());
 

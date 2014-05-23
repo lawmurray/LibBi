@@ -6,8 +6,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_SMC2_HPP
-#define BI_METHOD_SMC2_HPP
+#ifndef BI_METHOD_MARGINALSIR_HPP
+#define BI_METHOD_MARGINALSIR_HPP
 
 #include "misc.hpp"
 #include "../state/ThetaParticle.hpp"
@@ -29,12 +29,12 @@ namespace bi {
  * @ingroup method
  *
  * @tparam B Model type
- * @tparam F ParticleMarginalMetropolisHastings type.
+ * @tparam F MarginalMH type.
  * @tparam R Resampler type.
  * @tparam IO1 Output type.
  */
-template<class B, class F, class R, class IO1 = SMC2Cache<> >
-class SMC2 {
+template<class B, class F, class R, class IO1 = MarginalSIRCache<> >
+class MarginalSIR {
 public:
   /**
    * Constructor.
@@ -49,9 +49,9 @@ public:
    * @param adapterScale Scaling factor for local proposals.
    * @param out Output.
    */
-  SMC2(B& m, F* pmmh = NULL, R* resam = NULL, const int Nmoves = 1,
-      const SMC2Adapter adapter = NO_ADAPTER, const real adapterScale = 0.5,
-      const real adapterEssRel = 0.25, IO1* out = NULL);
+  MarginalSIR(B& m, F* pmmh = NULL, R* resam = NULL, const int Nmoves = 1,
+      const MarginalSIRAdapter adapter = NO_ADAPTER, const real adapterScale =
+          0.5, const real adapterEssRel = 0.25, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -205,7 +205,8 @@ public:
   template<Location L, class V1, class M1>
   real rejuvenate(Random& rng, const ScheduleIterator first,
       const ScheduleIterator now, ThetaParticle<B,L>& s,
-      const std::vector<ThetaParticle<B,L>*>& thetas, GaussianPdf<V1,M1>& q, const real ess);
+      const std::vector<ThetaParticle<B,L>*>& thetas, GaussianPdf<V1,M1>& q,
+      const real ess);
 
   /**
    * Output.
@@ -263,7 +264,7 @@ private:
   /**
    * Rejuvenate with local moves?
    */
-  SMC2Adapter adapter;
+  MarginalSIRAdapter adapter;
 
   /**
    * Scale of local proposal standard deviation when rejuvenating, relative
@@ -287,38 +288,38 @@ private:
   static const int NP = B::NP;
 
   /**
-  * @name Timing
-  */
-    //@{
-    /**
-  * Report rejuvenate timings to stderr.
-  */
-    void reportRejuvenate(int timestep, long usecs);
-    //@}
+   * @name Timing
+   */
+  //@{
+  /**
+   * Report rejuvenate timings to stderr.
+   */
+  void reportRejuvenate(int timestep, long usecs);
+  //@}
 };
 
 /**
- * Factory for creating SMC2 objects.
+ * Factory for creating MarginalSIR objects.
  *
  * @ingroup method
  *
- * @see SMC2
+ * @see MarginalSIR
  */
-struct SMC2Factory {
+struct MarginalSIRFactory {
   /**
    * Create particle MCMC sampler.
    *
-   * @return SMC2 object. Caller has ownership.
+   * @return MarginalSIR object. Caller has ownership.
    *
-   * @see SMC2::SMC2()
+   * @see MarginalSIR::MarginalSIR()
    */
   template<class B, class F, class R, class IO1>
-  static SMC2<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
-      const int Nmoves = 1, const SMC2Adapter adapter = NO_ADAPTER,
+  static MarginalSIR<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
+      const int Nmoves = 1, const MarginalSIRAdapter adapter = NO_ADAPTER,
       const real adapterScale = 0.5, const real adapterEssRel = 0.25,
       IO1* out = NULL) {
-    return new SMC2<B,F,R,IO1>(m, pmmh, resam, Nmoves, adapter, adapterScale,
-        adapterEssRel, out);
+    return new MarginalSIR<B,F,R,IO1>(m, pmmh, resam, Nmoves, adapter,
+        adapterScale, adapterEssRel, out);
   }
 };
 }
@@ -331,18 +332,19 @@ struct SMC2Factory {
 #include "boost/typeof/typeof.hpp"
 
 template<class B, class F, class R, class IO1>
-bi::SMC2<B,F,R,IO1>::SMC2(B& m, F* pmmh, R* resam, const int Nmoves,
-    const SMC2Adapter adapter, const real adapterScale, const real adapterEssRel, IO1* out) :
-m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
-    adapterScale), adapterEssRel(adapterEssRel), out(out) {
+bi::MarginalSIR<B,F,R,IO1>::MarginalSIR(B& m, F* pmmh, R* resam,
+    const int Nmoves, const MarginalSIRAdapter adapter,
+    const real adapterScale, const real adapterEssRel, IO1* out) :
+    m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
+        adapterScale), adapterEssRel(adapterEssRel), out(out) {
   //
 }
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class IO2>
-void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, ThetaParticle<B,L>& s, IO2* inInit,
-    const int C) {
+void bi::MarginalSIR<B,F,R,IO1>::sample(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last,
+    ThetaParticle<B,L>& s, IO2* inInit, const int C) {
   typedef typename temp_host_vector<real>::type host_logweight_vector_type;
   typedef typename temp_host_vector<int>::type host_ancestor_vector_type;
 
@@ -375,7 +377,7 @@ void bi::SMC2<B,F,R,IO1>::sample(Random& rng, const ScheduleIterator first,
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
+real bi::MarginalSIR<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
     ThetaParticle<B,L>& s, std::vector<ThetaParticle<B,L>*>& thetas, V1 lws,
     V2 as) {
   /* pre-condition */
@@ -417,10 +419,10 @@ real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
-    ScheduleIterator& iter, const ScheduleIterator last,
-    ThetaParticle<B,L>& s, std::vector<ThetaParticle<B,L>*>& thetas, V1 lws,
-    V2 as) {
+real bi::MarginalSIR<B,F,R,IO1>::step(Random& rng,
+    const ScheduleIterator first, ScheduleIterator& iter,
+    const ScheduleIterator last, ThetaParticle<B,L>& s,
+    std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, V2 as) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -468,7 +470,7 @@ real bi::SMC2<B,F,R,IO1>::step(Random& rng, const ScheduleIterator first,
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2, class M2>
-void bi::SMC2<B,F,R,IO1>::adapt(
+void bi::MarginalSIR<B,F,R,IO1>::adapt(
     const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
     GaussianPdf<V2,M2>& q) {
   typedef typename sim_temp_vector<V2>::type vector_type;
@@ -505,8 +507,9 @@ void bi::SMC2<B,F,R,IO1>::adapt(
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-void bi::SMC2<B,F,R,IO1>::resample(Random& rng, const ScheduleElement now,
-    V1 lws, V2 as, std::vector<ThetaParticle<B,L>*>& thetas) {
+void bi::MarginalSIR<B,F,R,IO1>::resample(Random& rng,
+    const ScheduleElement now, V1 lws, V2 as,
+    std::vector<ThetaParticle<B,L>*>& thetas) {
   if (now.isObserved()) {
     resam->resample(rng, lws, as, thetas);
   }
@@ -514,7 +517,7 @@ void bi::SMC2<B,F,R,IO1>::resample(Random& rng, const ScheduleElement now,
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class M1>
-real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
+real bi::MarginalSIR<B,F,R,IO1>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
     ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
     GaussianPdf<V1,M1>& q, const real ess) {
@@ -535,7 +538,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
     s = theta;
     for (move = 0; move < Nmoves; ++move) {
       pmmh->getFilter()->setOutput(&s.getOutput());
-      if (adapter == NO_ADAPTER || ess < P*adapterEssRel) {
+      if (adapter == NO_ADAPTER || ess < P * adapterEssRel) {
         accept = pmmh->step(rng, first, last, s);
       } else {
         accept = pmmh->step(rng, first, last, s, q, adapter == LOCAL_ADAPTER);
@@ -565,19 +568,19 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
 }
 
 template<class B, class F, class R, class IO1>
-void bi::SMC2<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
+void bi::MarginalSIR<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
-  fprintf(stderr, "%d: SMC2::rejuvenate proc %d %ld us\n", timestep, rank, usecs);
+  fprintf(stderr, "%d: MarginalSIR::rejuvenate proc %d %ld us\n", timestep, rank, usecs);
 #else
-  fprintf(stderr, "%d: SMC2::rejuvenate %ld us\n", timestep, usecs);
+  fprintf(stderr, "%d: MarginalSIR::rejuvenate %ld us\n", timestep, usecs);
 #endif
 }
 
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-void bi::SMC2<B,F,R,IO1>::output(
+void bi::MarginalSIR<B,F,R,IO1>::output(
     const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
     const V2 les) {
   if (out != NULL) {
@@ -591,8 +594,8 @@ void bi::SMC2<B,F,R,IO1>::output(
 }
 
 template<class B, class F, class R, class IO1>
-void bi::SMC2<B,F,R,IO1>::report(const ScheduleElement now, const real ess,
-    const bool r, const real acceptRate) {
+void bi::MarginalSIR<B,F,R,IO1>::report(const ScheduleElement now,
+    const real ess, const bool r, const real acceptRate) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -611,7 +614,7 @@ void bi::SMC2<B,F,R,IO1>::report(const ScheduleElement now, const real ess,
 }
 
 template<class B, class F, class R, class IO1>
-void bi::SMC2<B,F,R,IO1>::term() {
+void bi::MarginalSIR<B,F,R,IO1>::term() {
   //
 }
 

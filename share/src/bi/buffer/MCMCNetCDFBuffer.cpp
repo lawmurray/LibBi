@@ -5,9 +5,9 @@
  * $Rev$
  * $Date$
  */
-#include "ParticleMCMCNetCDFBuffer.hpp"
+#include "MCMCNetCDFBuffer.hpp"
 
-bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
+bi::MCMCNetCDFBuffer::MCMCNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode, const SchemaMode schema) :
     SimulatorNetCDFBuffer(m, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
@@ -17,7 +17,7 @@ bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
   }
 }
 
-bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
+bi::MCMCNetCDFBuffer::MCMCNetCDFBuffer(const Model& m,
     const size_t P, const size_t T, const std::string& file,
     const FileMode mode, const SchemaMode schema) :
     SimulatorNetCDFBuffer(m, P, T, file, mode, schema) {
@@ -28,10 +28,10 @@ bi::ParticleMCMCNetCDFBuffer::ParticleMCMCNetCDFBuffer(const Model& m,
   }
 }
 
-void bi::ParticleMCMCNetCDFBuffer::create() {
+void bi::MCMCNetCDFBuffer::create() {
   nc_redef(ncid);
 
-  nc_put_att(ncid, "libbi_schema", "ParticleMCMC");
+  nc_put_att(ncid, "libbi_schema", "MCMC");
   nc_put_att(ncid, "libbi_schema_version", 1);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
@@ -41,7 +41,7 @@ void bi::ParticleMCMCNetCDFBuffer::create() {
   nc_enddef(ncid);
 }
 
-void bi::ParticleMCMCNetCDFBuffer::map() {
+void bi::MCMCNetCDFBuffer::map() {
   std::vector<int> dimids;
 
   llVar = nc_inq_varid(ncid, "loglikelihood");

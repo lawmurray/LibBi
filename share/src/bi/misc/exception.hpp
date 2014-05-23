@@ -53,7 +53,7 @@ namespace bi {
   /**
    * Conditional particle filter failed.
    */
-  struct ConditionalParticleFilterException {
+  struct ConditionalBootstrapPFException {
     //
   };
 

@@ -5,10 +5,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_AUXILIARYPARTICLEFILTER_HPP
-#define BI_METHOD_AUXILIARYPARTICLEFILTER_HPP
+#ifndef BI_METHOD_LOOKAHEADPF_HPP
+#define BI_METHOD_LOOKAHEADPF_HPP
 
-#include "ParticleFilter.hpp"
+#include "BootstrapPF.hpp"
 
 namespace bi {
 /**
@@ -26,13 +26,12 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class IO1>
-class AuxiliaryParticleFilter: public ParticleFilter<B,S,R,IO1> {
+class LookaheadPF: public BootstrapPF<B,S,R,IO1> {
 public:
   /**
-   * @copydoc ParticleFilter::ParticleFilter()
+   * @copydoc BootstrapPF::BootstrapPF()
    */
-  AuxiliaryParticleFilter(B& m, S* sim = NULL, R* resam = NULL, IO1* out =
-      NULL);
+  LookaheadPF(B& m, S* sim = NULL, R* resam = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -41,14 +40,14 @@ public:
    */
   //@{
   /**
-   * @copydoc ParticleFilter::filter(Random&, const ScheduleIterator, const ScheduleIterator, State<B,L>&, IO2*)
+   * @copydoc BootstrapPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, State<B,L>&, IO2*)
    */
   template<Location L, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, State<B,L>& s, IO2* inInit);
 
   /**
-   * @copydoc ParticleFilter::filter(Random&, Schedule&, const V1, State<B,L>&)
+   * @copydoc BootstrapPF::filter(Random&, Schedule&, const V1, State<B,L>&)
    */
   template<Location L, class V1>
   real filter(Random& rng, const ScheduleIterator first,
@@ -194,38 +193,37 @@ protected:
 };
 
 /**
- * Factory for creating AuxiliaryParticleFilter objects.
+ * Factory for creating LookaheadPF objects.
  *
  * @ingroup method
  *
- * @see AuxiliaryParticleFilter
+ * @see LookaheadPF
  */
-struct AuxiliaryParticleFilterFactory {
+struct LookaheadPFFactory {
   /**
    * Create auxiliary particle filter.
    *
-   * @return AuxiliaryParticleFilter object. Caller has ownership.
+   * @return LookaheadPF object. Caller has ownership.
    *
-   * @see AuxiliaryParticleFilter::AuxiliaryParticleFilter()
+   * @see LookaheadPF::LookaheadPF()
    */
   template<class B, class S, class R, class IO1>
-  static AuxiliaryParticleFilter<B,S,R,IO1>* create(B& m, S* sim = NULL,
-      R* resam = NULL, IO1* out = NULL) {
-    return new AuxiliaryParticleFilter<B,S,R,IO1>(m, sim, resam, out);
+  static LookaheadPF<B,S,R,IO1>* create(B& m, S* sim = NULL, R* resam = NULL,
+      IO1* out = NULL) {
+    return new LookaheadPF<B,S,R,IO1>(m, sim, resam, out);
   }
 
   /**
    * Create auxiliary particle filter.
    *
-   * @return AuxiliaryParticleFilter object. Caller has ownership.
+   * @return LookaheadPF object. Caller has ownership.
    *
-   * @see AuxiliaryParticleFilter::AuxiliaryParticleFilter()
+   * @see LookaheadPF::LookaheadPF()
    */
   template<class B, class S, class R>
-  static AuxiliaryParticleFilter<B,S,R,ParticleFilterCache<> >* create(B& m,
-      S* sim = NULL, R* resam = NULL) {
-    return new AuxiliaryParticleFilter<B,S,R,ParticleFilterCache<> >(m, sim,
-        resam);
+  static LookaheadPF<B,S,R,BootstrapPFCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL) {
+    return new LookaheadPF<B,S,R,BootstrapPFCache<> >(m, sim, resam);
   }
 };
 }
@@ -236,15 +234,14 @@ struct AuxiliaryParticleFilterFactory {
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class IO1>
-bi::AuxiliaryParticleFilter<B,S,R,IO1>::AuxiliaryParticleFilter(B& m, S* sim,
-    R* resam, IO1* out) :
-    ParticleFilter<B,S,R,IO1>(m, sim, resam, out) {
+bi::LookaheadPF<B,S,R,IO1>::LookaheadPF(B& m, S* sim, R* resam, IO1* out) :
+    BootstrapPF<B,S,R,IO1>(m, sim, resam, out) {
   //
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class IO2>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::LookaheadPF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
@@ -269,7 +266,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
+real bi::LookaheadPF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) {
   // this implementation is (should be) the same as filter() above, but with
@@ -297,34 +294,32 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2, class IO2>
-void bi::AuxiliaryParticleFilter<B,S,R,IO1>::init(Random& rng,
-    const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws, V2 as,
-    IO2* inInit) {
+void bi::LookaheadPF<B,S,R,IO1>::init(Random& rng, const ScheduleElement now,
+    State<B,L>& s, V1 lws, V1 qlws, V2 as, IO2* inInit) {
   /* pre-condition */
   BI_ASSERT(lws.size() == qlws.size());
   BI_ASSERT(qlws.size() == as.size());
 
-  ParticleFilter<B,S,R,IO1>::init(rng, now, s, lws, as, inInit);
+  BootstrapPF<B,S,R,IO1>::init(rng, now, s, lws, as, inInit);
   qlws.clear();
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2, class V3>
-void bi::AuxiliaryParticleFilter<B,S,R,IO1>::init(Random& rng, const V1 theta,
+void bi::LookaheadPF<B,S,R,IO1>::init(Random& rng, const V1 theta,
     const ScheduleElement now, State<B,L>& s, V2 lws, V2 qlws, V3 as) {
   /* pre-condition */
   BI_ASSERT(lws.size() == qlws.size());
   BI_ASSERT(qlws.size() == as.size());
 
-  ParticleFilter<B,S,R,IO1>::init(rng, theta, now, s, lws, as);
+  BootstrapPF<B,S,R,IO1>::init(rng, theta, now, s, lws, as);
   qlws.clear();
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
-    ScheduleIterator& iter, const ScheduleIterator last, State<B,L>& s,
-    V1 lws, V1 qlws, V2 as) {
+real bi::LookaheadPF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
+    const ScheduleIterator last, State<B,L>& s, V1 lws, V1 qlws, V2 as) {
   real ll = 0.0;
   do {
     ll += this->lookahead(rng, iter, last, s, lws, qlws);
@@ -340,7 +335,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::step(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
+real bi::LookaheadPF<B,S,R,IO1>::lookahead(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, State<B,L>& s,
     V1 lws, V1 qlws) {
   /* pre-condition */
@@ -385,8 +380,8 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::lookahead(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(
-    const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws) {
+real bi::LookaheadPF<B,S,R,IO1>::correct(const ScheduleElement now,
+    State<B,L>& s, V1 lws, V1 qlws) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
 
@@ -405,7 +400,7 @@ real bi::AuxiliaryParticleFilter<B,S,R,IO1>::correct(
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1, class V2>
-bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
+bool bi::LookaheadPF<B,S,R,IO1>::resample(Random& rng,
     const ScheduleElement now, State<B,L>& s, V1 lws, V1 qlws, V2 as) {
   /* pre-condition */
   BI_ASSERT(s.size() == lws.size());
@@ -452,7 +447,7 @@ bool bi::AuxiliaryParticleFilter<B,S,R,IO1>::resample(Random& rng,
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
-real bi::AuxiliaryParticleFilter<B,S,R,IO1>::getMaxLogWeightBridge(
+real bi::LookaheadPF<B,S,R,IO1>::getMaxLogWeightBridge(
     const ScheduleElement now, State<B,L>& s) {
   return this->m.bridgeMaxLogDensity(s,
       this->sim->getObs()->getMask(now.indexObs()));

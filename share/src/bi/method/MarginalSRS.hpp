@@ -5,11 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_SEQUENTIALREJECTION_HPP
-#define BI_METHOD_SEQUENTIALREJECTION_HPP
+#ifndef BI_METHOD_MARGINALSRS_HPP
+#define BI_METHOD_MARGINALSRS_HPP
 
 #include "../state/Schedule.hpp"
-#include "../cache/SMC2Cache.hpp"
+#include "../cache/MarginalSIRCache.hpp"
 
 namespace bi {
 /**
@@ -23,8 +23,8 @@ namespace bi {
  * @tparam S Stopper type.
  * @tparam IO1 Output type.
  */
-template<class B, class F, class A, class S, class IO1 = SMC2Cache<> >
-class SequentialRejection {
+template<class B, class F, class A, class S, class IO1 = MarginalSIRCache<> >
+class MarginalSRS {
 public:
   /**
    * Constructor.
@@ -37,8 +37,8 @@ public:
    * @param stopper Stopper.
    * @param out Output.
    */
-  SequentialRejection(B& m, F* filter = NULL, A* adapter = NULL, S* stopper =
-      NULL, IO1* out = NULL);
+  MarginalSRS(B& m, F* filter = NULL, A* adapter = NULL, S* stopper = NULL,
+      IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -166,106 +166,105 @@ private:
 };
 
 /**
- * Factory for creating SequentialRejection objects.
+ * Factory for creating MarginalSRS objects.
  *
  * @ingroup method
  *
  * @tparam CL Cache location.
  *
- * @see SequentialRejection
+ * @see MarginalSRS
  */
-struct SequentialRejectionFactory {
+struct MarginalSRSFactory {
   /**
    * Create sequential rejection sampler.
    *
-   * @return SequentialRejection object. Caller has ownership.
+   * @return MarginalSRS object. Caller has ownership.
    *
-   * @see SequentialRejection::SequentialRejection()
+   * @see MarginalSRS::MarginalSRS()
    */
   template<class B, class F, class A, class S, class IO1>
-  static SequentialRejection<B,F,A,S,IO1>* create(B& m, F* filter = NULL,
-      A* adapter = NULL, S* stopper = NULL, IO1* out = NULL) {
-    return new SequentialRejection<B,F,A,S,IO1>(m, filter, adapter, stopper,
-        out);
+  static MarginalSRS<B,F,A,S,IO1>* create(B& m, F* filter = NULL, A* adapter =
+      NULL, S* stopper = NULL, IO1* out = NULL) {
+    return new MarginalSRS<B,F,A,S,IO1>(m, filter, adapter, stopper, out);
   }
 
   /**
    * Create sequential rejection sampler.
    *
-   * @return SequentialRejection object. Caller has ownership.
+   * @return MarginalSRS object. Caller has ownership.
    *
-   * @see SequentialRejection::SequentialRejection()
+   * @see MarginalSRS::MarginalSRS()
    */
   template<class B, class F, class A, class S>
-  static SequentialRejection<B,F,A,S>* create(B& m, F* filter = NULL,
+  static MarginalSRS<B,F,A,S>* create(B& m, F* filter = NULL,
       A* adapter = NULL, S* stopper = NULL) {
-    return new SequentialRejection<B,F,A,S>(m, filter, adapter, stopper);
+    return new MarginalSRS<B,F,A,S>(m, filter, adapter, stopper);
   }
 };
 }
 
 template<class B, class F, class A, class S, class IO1>
-bi::SequentialRejection<B,F,A,S,IO1>::SequentialRejection(B& m, F* filter,
-    A* adapter, S* stopper, IO1* out) :
+bi::MarginalSRS<B,F,A,S,IO1>::MarginalSRS(B& m, F* filter, A* adapter,
+    S* stopper, IO1* out) :
     m(m), filter(filter), out(out) {
   //
 }
 
 template<class B, class F, class A, class S, class IO1>
-F* bi::SequentialRejection<B,F,A,S,IO1>::getFilter() {
+F* bi::MarginalSRS<B,F,A,S,IO1>::getFilter() {
   return filter;
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::setFilter(F* filter) {
+void bi::MarginalSRS<B,F,A,S,IO1>::setFilter(F* filter) {
   this->filter = filter;
 }
 
 template<class B, class F, class A, class S, class IO1>
-A* bi::SequentialRejection<B,F,A,S,IO1>::getAdapter() {
+A* bi::MarginalSRS<B,F,A,S,IO1>::getAdapter() {
   return adapter;
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::setAdapter(A* adapter) {
+void bi::MarginalSRS<B,F,A,S,IO1>::setAdapter(A* adapter) {
   this->adapter = adapter;
 }
 
 template<class B, class F, class A, class S, class IO1>
-S* bi::SequentialRejection<B,F,A,S,IO1>::getStopper() {
+S* bi::MarginalSRS<B,F,A,S,IO1>::getStopper() {
   return stopper;
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::setStopper(S* stopper) {
+void bi::MarginalSRS<B,F,A,S,IO1>::setStopper(S* stopper) {
   this->stopper = stopper;
 }
 
 template<class B, class F, class A, class S, class IO1>
-IO1* bi::SequentialRejection<B,F,A,S,IO1>::getOutput() {
+IO1* bi::MarginalSRS<B,F,A,S,IO1>::getOutput() {
   return out;
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::setOutput(IO1* out) {
+void bi::MarginalSRS<B,F,A,S,IO1>::setOutput(IO1* out) {
   this->out = out;
 }
 
 template<class B, class F, class A, class S, class IO1>
 template<bi::Location L, class IO2>
-void bi::SequentialRejection<B,F,A,S,IO1>::sample(Random& rng,
+void bi::MarginalSRS<B,F,A,S,IO1>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
 
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::init() {
+void bi::MarginalSRS<B,F,A,S,IO1>::init() {
 
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::SequentialRejection<B,F,A,S,IO1>::term() {
+void bi::MarginalSRS<B,F,A,S,IO1>::term() {
 
 }
 

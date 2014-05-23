@@ -5,16 +5,16 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_AdaptiveParticleFilter_HPP
-#define BI_METHOD_AdaptiveParticleFilter_HPP
+#ifndef BI_METHOD_ADAPTIVEPF_HPP
+#define BI_METHOD_ADAPTIVEPF_HPP
 
-#include "ParticleFilter.hpp"
+#include "BootstrapPF.hpp"
 #include "../resampler/Resampler.hpp"
 #include "../stopper/Stopper.hpp"
 
 namespace bi {
 /**
- * Adaptive N Particle filter.
+ * Adaptive particle filter.
  *
  * @ingroup method
  *
@@ -29,7 +29,7 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class R, class S2, class IO1>
-class AdaptiveParticleFilter: public ParticleFilter<B,S,R,IO1> {
+class AdaptivePF: public BootstrapPF<B,S,R,IO1> {
 public:
   /**
    * Constructor.
@@ -40,8 +40,8 @@ public:
    * @param stopper Stopping criterion for adapting number of particles.
    * @param out Output.
    */
-  AdaptiveParticleFilter(B& m, S* sim = NULL, R* resam = NULL, S2* stopper =
-      NULL, IO1* out = NULL);
+  AdaptivePF(B& m, S* sim = NULL, R* resam = NULL, S2* stopper = NULL,
+      IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -92,41 +92,40 @@ private:
 };
 
 /**
- * Factory for creating AdaptiveParticleFilter objects.
+ * Factory for creating AdaptivePF objects.
  *
  * @ingroup method
  *
  * @tparam CL Cache location.
  *
- * @see AdaptiveParticleFilter
+ * @see AdaptivePF
  */
-struct AdaptiveParticleFilterFactory {
+struct AdaptivePFFactory {
   /**
    * Create adaptive N particle filter.
    *
-   * @return AdaptiveParticleFilter object. Caller has ownership.
+   * @return AdaptivePF object. Caller has ownership.
    *
-   * @see AdaptiveParticleFilter::AdaptiveParticleFilter()
+   * @see AdaptivePF::AdaptivePF()
    */
   template<class B, class S, class R, class S2, class IO1>
-  static AdaptiveParticleFilter<B,S,R,S2,IO1>* create(B& m, S* sim = NULL,
+  static AdaptivePF<B,S,R,S2,IO1>* create(B& m, S* sim = NULL,
       R* resam = NULL, S2* stopper = NULL, IO1* out = NULL) {
-    return new AdaptiveParticleFilter<B,S,R,S2,IO1>(m, sim, resam, stopper,
-        out);
+    return new AdaptivePF<B,S,R,S2,IO1>(m, sim, resam, stopper, out);
   }
 
   /**
    * Create adaptive N particle filter.
    *
-   * @return AdaptiveParticleFilter object. Caller has ownership.
+   * @return AdaptivePF object. Caller has ownership.
    *
-   * @see AdaptiveParticleFilter::AdaptiveParticleFilter()
+   * @see AdaptivePF::AdaptivePF()
    */
   template<class B, class S, class R, class S2>
-  static AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >* create(B& m,
-      S* sim = NULL, R* resam = NULL, S2* stopper = NULL) {
-    return new AdaptiveParticleFilter<B,S,R,S2,ParticleFilterCache<> >(m, sim,
-        resam, stopper);
+  static AdaptivePF<B,S,R,S2,BootstrapPFCache<> >* create(B& m, S* sim = NULL,
+      R* resam = NULL, S2* stopper = NULL) {
+    return new AdaptivePF<B,S,R,S2,BootstrapPFCache<> >(m, sim, resam,
+        stopper);
   }
 };
 }
@@ -135,15 +134,15 @@ struct AdaptiveParticleFilterFactory {
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class S2, class IO1>
-bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::AdaptiveParticleFilter(B& m, S* sim,
-    R* resam, S2* stopper, IO1* out) :
-    ParticleFilter<B,S,R,IO1>(m, sim, resam, out), stopper(stopper) {
+bi::AdaptivePF<B,S,R,S2,IO1>::AdaptivePF(B& m, S* sim, R* resam, S2* stopper,
+    IO1* out) :
+    BootstrapPF<B,S,R,IO1>(m, sim, resam, out), stopper(stopper) {
   //
 }
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class IO2>
-real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
+real bi::AdaptivePF<B,S,R,S2,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) {
   const int P = s.size();
@@ -172,7 +171,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class V1>
-real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
+real bi::AdaptivePF<B,S,R,S2,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) {
   const int P = s.size();
@@ -201,9 +200,8 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::filter(Random& rng,
 
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class V1, class V2>
-real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
-    ScheduleIterator& iter, const ScheduleIterator last,
-    State<B,L>& s, V1& lws, V2& as) {
+real bi::AdaptivePF<B,S,R,S2,IO1>::step(Random& rng, ScheduleIterator& iter,
+    const ScheduleIterator last, State<B,L>& s, V1& lws, V2& as) {
   const int maxP = stopper->getMaxParticles();
   const int blockP = stopper->getBlockSize();
 
@@ -246,7 +244,7 @@ real bi::AdaptiveParticleFilter<B,S,R,S2,IO1>::step(Random& rng,
     finished = stopper->stop(lws1, maxlw);
   } while (!finished);
 
-  int length = bi::max(block - 1, 1) * blockP; // drop last block
+  int length = bi::max(block - 1, 1) * blockP;  // drop last block
   if (this->out != NULL) {
     this->out->push(length);
   }

@@ -15,22 +15,22 @@
 #include "bi/method/NelderMeadOptimiser.hpp"
 
 [% IF client.get_named_arg('filter') == 'kalman' %]
-#include "bi/method/ExtendedKalmanFilter.hpp"
+#include "bi/method/ExtendedKF.hpp"
 #include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
 [% ELSE %]
 [% IF client.get_named_arg('filter') == 'lookahead' %]
-#include "bi/method/AuxiliaryParticleFilter.hpp"
+#include "bi/method/LookaheadPF.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-#include "bi/method/AdaptiveParticleFilter.hpp"
+#include "bi/method/AdaptivePF.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
 [% ELSE %]
-#include "bi/method/ParticleFilter.hpp"
+#include "bi/method/BootstrapPF.hpp"
 [% END %]
-#include "bi/cache/ParticleFilterCache.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
 #include "bi/resampler/RejectionResampler.hpp"
@@ -119,9 +119,9 @@ int main(int argc, char* argv[]) {
     /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
   	KalmanFilterNetCDFBuffer* outFilter = NULL;
-    BOOST_AUTO(filter, (ExtendedKalmanFilterFactory::create(m, sim, outFilter)));
+    BOOST_AUTO(filter, (ExtendedKFFactory::create(m, sim, outFilter)));
   [% ELSE %]
-    BOOST_AUTO(outFilter, bi::ParticleFilterCacheFactory<LOCATION>::create());
+    BOOST_AUTO(outFilter, bi::BootstrapPFCacheFactory<LOCATION>::create());
 
     /* resampler */
     [% IF client.get_named_arg('resampler') == 'kernel' %]
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'lookahead' %]
-      BOOST_AUTO(filter, (AuxiliaryParticleFilterFactory::create(m, sim, &resam, outFilter)));
+      BOOST_AUTO(filter, (LookaheadPFFactory::create(m, sim, &resam, outFilter)));
     [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -161,9 +161,9 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptiveParticleFilterFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
+      BOOST_AUTO(filter, (AdaptivePFFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
     [% ELSE %]
-      BOOST_AUTO(filter, (ParticleFilterFactory::create(m, sim, &resam, outFilter)));
+      BOOST_AUTO(filter, (BootstrapPFFactory::create(m, sim, &resam, outFilter)));
     [% END %]
   [% END %]
   

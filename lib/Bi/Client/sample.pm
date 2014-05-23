@@ -59,23 +59,23 @@ result is a posterior prediction.
 
 =back
 
-=item C<--sampler> (default C<pmmh>)
+=item C<--sampler> (default C<mh>)
 
 The type of sampler to use for C<--target posterior>; one of:
 
 =over 8
 
-=item C<pmmh>
+=item C<mh> or (deprecated) C<pmmh>
 
-Particle marginal Metropolis-Hastings (PMMH).
+Marginal Metropolis-Hastings.
 
-=item C<smc2>
+=item C<sir> or (deprecated) C<smc2>
 
-Sequential Monte Carlo Squared (SMC^2).
+Marginal sequential importance resampling.
 
-=item C<sr>
+=item C<srs>
 
-Sequential rejection (SR).
+Marginal sequential rejection sampling.
 
 =back
 
@@ -96,7 +96,7 @@ Number of samples to draw.
 
 =back
 
-=head2 SMC2-specific options
+=head2 MarginalSIR-specific options
 
 =over 4
 
@@ -231,12 +231,12 @@ sub process_args {
         if (!$self->is_named_arg('with-transform-obs-to-state')) {
             $self->set_named_arg('with-transform-obs-to-state', 1);
         }
-    } elsif ($sampler eq 'smc2') {
-        $binary = 'smc2';
-    } elsif ($sampler eq 'sr') {
-    	$binary = 'sr';
+    } elsif ($sampler eq 'sir' || $sampler eq 'smc2') {
+        $binary = 'sir';
+    } elsif ($sampler eq 'srs') {
+    	$binary = 'srs';
     } else {
-        $binary = 'pmmh';
+        $binary = 'mh';
     }
     $self->{_binary} = $binary;
 }

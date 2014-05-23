@@ -6,10 +6,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_SMC2NETCDFBUFFER_HPP
-#define BI_BUFFER_SMC2NETCDFBUFFER_HPP
+#ifndef BI_BUFFER_SMCNETCDFBUFFER_HPP
+#define BI_BUFFER_SMCNETCDFBUFFER_HPP
 
-#include "ParticleMCMCNetCDFBuffer.hpp"
+#include "MCMCNetCDFBuffer.hpp"
 #include "../state/State.hpp"
 #include "../method/misc.hpp"
 
@@ -21,7 +21,7 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class SMC2NetCDFBuffer: public ParticleMCMCNetCDFBuffer {
+class SMCNetCDFBuffer: public MCMCNetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -30,7 +30,7 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  SMC2NetCDFBuffer(const Model& m, const std::string& file,
+  SMCNetCDFBuffer(const Model& m, const std::string& file,
       const FileMode mode = READ_ONLY, const SchemaMode schema = MULTI);
   /**
    * Constructor.
@@ -41,30 +41,30 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  SMC2NetCDFBuffer(const Model& m, const size_t P, const size_t T,
+  SMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = MULTI);
 
   /**
-   * @copydoc #concept::SMC2NetCDFBuffer::readLogWeights()
+   * @copydoc #concept::SMCNetCDFBuffer::readLogWeights()
    */
   template<class V1>
   void readLogWeights(V1 lws);
 
   /**
-   * @copydoc #concept::SMC2NetCDFBuffer::writeLogWeights()
+   * @copydoc #concept::SMCNetCDFBuffer::writeLogWeights()
    */
   template<class V1>
   void writeLogWeights(const V1 lws);
 
   /**
-   * @copydoc #concept::SMC2NetCDFBuffer::readLogEvidences()
+   * @copydoc #concept::SMCNetCDFBuffer::readLogEvidences()
    */
   template<class V1>
   void readLogEvidences(V1 les);
 
   /**
-   * @copydoc #concept::SMC2NetCDFBuffer::writeLogEvidences()
+   * @copydoc #concept::SMCNetCDFBuffer::writeLogEvidences()
    */
   template<class V1>
   void writeLogEvidences(const V1 les);
@@ -97,22 +97,22 @@ protected:
 #include "../math/temp_matrix.hpp"
 
 template<class V1>
-void bi::SMC2NetCDFBuffer::readLogWeights(V1 lws) {
+void bi::SMCNetCDFBuffer::readLogWeights(V1 lws) {
   readRange(lwVar, 0, lws);
 }
 
 template<class V1>
-void bi::SMC2NetCDFBuffer::writeLogWeights(const V1 lws) {
+void bi::SMCNetCDFBuffer::writeLogWeights(const V1 lws) {
   writeRange(lwVar, 0, lws);
 }
 
 template<class V1>
-void bi::SMC2NetCDFBuffer::readLogEvidences(V1 les) {
+void bi::SMCNetCDFBuffer::readLogEvidences(V1 les) {
   readRange(leVar, 0, les);
 }
 
 template<class V1>
-void bi::SMC2NetCDFBuffer::writeLogEvidences(const V1 les) {
+void bi::SMCNetCDFBuffer::writeLogEvidences(const V1 les) {
   writeRange(leVar, 0, les);
 }
 

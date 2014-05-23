@@ -5,19 +5,19 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CACHE_ADAPTIVEPARTICLEFILTERCACHE_HPP
-#define BI_CACHE_ADAPTIVEPARTICLEFILTERCACHE_HPP
+#ifndef BI_CACHE_ADAPTIVEPFCACHE_HPP
+#define BI_CACHE_ADAPTIVEPFCACHE_HPP
 
-#include "ParticleFilterCache.hpp"
+#include "BootstrapPFCache.hpp"
 #include "CacheObject.hpp"
 #include "CacheCross.hpp"
 #include "Cache1D.hpp"
 
 namespace bi {
 /**
- * Additional wrapper around ParticleFilterCache for use of
- * AdaptiveParticleFilter. Buffers output in memory until stopping criterion
- * is met, and then passes only surviving particles to ParticleFilterCache
+ * Additional wrapper around BootstrapPFCache for use of
+ * AdaptivePF. Buffers output in memory until stopping criterion
+ * is met, and then passes only surviving particles to BootstrapPFCache
  * for output.
  *
  * @ingroup io_cache
@@ -26,30 +26,30 @@ namespace bi {
  * @tparam CL Location.
  */
 template<class IO1 = ParticleFilterNetCDFBuffer, Location CL = ON_HOST>
-class AdaptiveParticleFilterCache: public ParticleFilterCache<IO1,CL> {
+class AdaptivePFCache: public BootstrapPFCache<IO1,CL> {
 public:
   /**
    * Constructor.
    *
    * @param out output buffer.
    */
-  AdaptiveParticleFilterCache(IO1* out = NULL);
+  AdaptivePFCache(IO1* out = NULL);
 
   /**
    * Shallow copy.
    */
-  AdaptiveParticleFilterCache(const AdaptiveParticleFilterCache<IO1,CL>& o);
+  AdaptivePFCache(const AdaptivePFCache<IO1,CL>& o);
 
   /**
    * Destructor.
    */
-  ~AdaptiveParticleFilterCache();
+  ~AdaptivePFCache();
 
   /**
    * Deep assignment.
    */
-  AdaptiveParticleFilterCache<IO1,CL>& operator=(
-      const AdaptiveParticleFilterCache<IO1,CL>& o);
+  AdaptivePFCache<IO1,CL>& operator=(
+      const AdaptivePFCache<IO1,CL>& o);
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeTime()
@@ -77,9 +77,9 @@ public:
   void writeState(const int k, const M1 X, const V1 as);
 
   /**
-   * Push down to ParticleFilterCache. This is a special method for
-   * AdaptiveParticleFilterCache that pushes temporary storage of particles
-   * into ParticleFilterCache once the stopping criterion is met.
+   * Push down to BootstrapPFCache. This is a special method for
+   * AdaptivePFCache that pushes temporary storage of particles
+   * into BootstrapPFCache once the stopping criterion is met.
    *
    * @param P Number of particles to push down (allows last block to be
    * omitted, for example).
@@ -89,7 +89,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(AdaptiveParticleFilterCache<IO1,CL>& o);
+  void swap(AdaptivePFCache<IO1,CL>& o);
 
   /**
    * Clear cache.
@@ -161,58 +161,58 @@ private:
 };
 
 /**
- * Factory for creating ParticleFilterCache objects.
+ * Factory for creating BootstrapPFCache objects.
  *
  * @ingroup io_cache
  *
  * @see Forcer
  */
 template<Location CL = ON_HOST>
-struct AdaptiveParticleFilterCacheFactory {
+struct AdaptivePFCacheFactory {
   /**
-   * Create AdaptiveParticleFilterCache.
+   * Create AdaptivePFCache.
    *
-   * @return AdaptiveParticleFilterCache object. Caller has ownership.
+   * @return AdaptivePFCache object. Caller has ownership.
    *
-   * @see AdaptiveParticleFilterCache::AdaptiveParticleFilterCache()
+   * @see AdaptivePFCache::AdaptivePFCache()
    */
   template<class IO1>
-  static AdaptiveParticleFilterCache<IO1,CL>* create(IO1* out = NULL) {
-    return new AdaptiveParticleFilterCache<IO1,CL>(out);
+  static AdaptivePFCache<IO1,CL>* create(IO1* out = NULL) {
+    return new AdaptivePFCache<IO1,CL>(out);
   }
 
   /**
-   * Create AdaptiveParticleFilterCache.
+   * Create AdaptivePFCache.
    *
-   * @return AdaptiveParticleFilterCache object. Caller has ownership.
+   * @return AdaptivePFCache object. Caller has ownership.
    *
-   * @see AdaptiveParticleFilterCache::ParticleFilterCache()
+   * @see AdaptivePFCache::BootstrapPFCache()
    */
-  static AdaptiveParticleFilterCache<ParticleFilterNetCDFBuffer,CL>* create() {
-    return new AdaptiveParticleFilterCache<ParticleFilterNetCDFBuffer,CL>();
+  static AdaptivePFCache<ParticleFilterNetCDFBuffer,CL>* create() {
+    return new AdaptivePFCache<ParticleFilterNetCDFBuffer,CL>();
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::AdaptiveParticleFilterCache<IO1,CL>::AdaptiveParticleFilterCache(IO1* out) :
-    ParticleFilterCache<IO1,CL>(out), base(-1), P(0) {
+bi::AdaptivePFCache<IO1,CL>::AdaptivePFCache(IO1* out) :
+    BootstrapPFCache<IO1,CL>(out), base(-1), P(0) {
   //
 }
 
 template<class IO1, bi::Location CL>
-bi::AdaptiveParticleFilterCache<IO1,CL>::AdaptiveParticleFilterCache(
-    const AdaptiveParticleFilterCache<IO1,CL>& o) :
-    ParticleFilterCache<IO1,CL>(o), timeCache(o.timeCache), particleCache(
+bi::AdaptivePFCache<IO1,CL>::AdaptivePFCache(
+    const AdaptivePFCache<IO1,CL>& o) :
+    BootstrapPFCache<IO1,CL>(o), timeCache(o.timeCache), particleCache(
         o.particleCache), logWeightCache(o.logWeightCache), ancestorCache(
         o.ancestorCache), base(o.base), P(o.P) {
   //
 }
 
 template<class IO1, bi::Location CL>
-bi::AdaptiveParticleFilterCache<IO1,CL>& bi::AdaptiveParticleFilterCache<IO1,
-    CL>::operator=(const AdaptiveParticleFilterCache<IO1,CL>& o) {
-  ParticleFilterCache<IO1,CL>::operator=(o);
+bi::AdaptivePFCache<IO1,CL>& bi::AdaptivePFCache<IO1,
+    CL>::operator=(const AdaptivePFCache<IO1,CL>& o) {
+  BootstrapPFCache<IO1,CL>::operator=(o);
   timeCache = o.timeCache;
   particleCache = o.particleCache;
   logWeightCache = o.logWeightCache;
@@ -223,12 +223,12 @@ bi::AdaptiveParticleFilterCache<IO1,CL>& bi::AdaptiveParticleFilterCache<IO1,
 }
 
 template<class IO1, bi::Location CL>
-bi::AdaptiveParticleFilterCache<IO1,CL>::~AdaptiveParticleFilterCache() {
+bi::AdaptivePFCache<IO1,CL>::~AdaptivePFCache() {
   flush();
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::writeTime(const int k,
+void bi::AdaptivePFCache<IO1,CL>::writeTime(const int k,
     const real& t) {
   if (base < 0) {
     base = k;
@@ -238,7 +238,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeTime(const int k,
 
 template<class IO1, bi::Location CL>
 template<class V1>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::writeLogWeights(const int k,
+void bi::AdaptivePFCache<IO1,CL>::writeLogWeights(const int k,
     const V1 lws) {
   int j = k - base;
 
@@ -257,7 +257,7 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeLogWeights(const int k,
 
 template<class IO1, bi::Location CL>
 template<class M1, class V1>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
+void bi::AdaptivePFCache<IO1,CL>::writeState(const int k,
     const M1 X, const V1 as) {
   /* pre-condition */
   assert(X.size1() == as.size());
@@ -290,13 +290,13 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::writeState(const int k,
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::push(const int P) {
+void bi::AdaptivePFCache<IO1,CL>::push(const int P) {
   int k = 0;
   while (timeCache.isValid(k)) {
-    ParticleFilterCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
-    ParticleFilterCache<IO1,CL>::writeState(base + k, rows(particleCache.get(k), 0, P),
+    BootstrapPFCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
+    BootstrapPFCache<IO1,CL>::writeState(base + k, rows(particleCache.get(k), 0, P),
         subrange(ancestorCache.get(k), 0, P), true);
-    ParticleFilterCache<IO1,CL>::writeLogWeights(base + k,
+    BootstrapPFCache<IO1,CL>::writeLogWeights(base + k,
         subrange(logWeightCache.get(k), 0, P));
     ++k;
   }
@@ -310,9 +310,9 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::push(const int P) {
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
-    AdaptiveParticleFilterCache<IO1,CL>& o) {
-  ParticleFilterCache<IO1,CL>::swap(o);
+void bi::AdaptivePFCache<IO1,CL>::swap(
+    AdaptivePFCache<IO1,CL>& o) {
+  BootstrapPFCache<IO1,CL>::swap(o);
   timeCache.swap(o.timeCache);
   particleCache.swap(o.particleCache);
   logWeightCache.swap(o.logWeightCache);
@@ -322,8 +322,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::swap(
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::clear() {
-  ParticleFilterCache<IO1,CL>::clear();
+void bi::AdaptivePFCache<IO1,CL>::clear() {
+  BootstrapPFCache<IO1,CL>::clear();
   timeCache.clear();
   particleCache.clear();
   logWeightCache.clear();
@@ -333,8 +333,8 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::clear() {
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
-  ParticleFilterCache<IO1,CL>::empty();
+void bi::AdaptivePFCache<IO1,CL>::empty() {
+  BootstrapPFCache<IO1,CL>::empty();
   timeCache.empty();
   particleCache.empty();
   logWeightCache.empty();
@@ -344,9 +344,9 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::empty() {
 }
 
 template<class IO1, bi::Location CL>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
+void bi::AdaptivePFCache<IO1,CL>::flush() {
   push(P);
-  ParticleFilterCache<IO1,CL>::flush();
+  BootstrapPFCache<IO1,CL>::flush();
   timeCache.flush();
   particleCache.flush();
   logWeightCache.flush();
@@ -355,10 +355,10 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::flush() {
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::save(Archive& ar,
+void bi::AdaptivePFCache<IO1,CL>::save(Archive& ar,
     const unsigned version) const {
   ar
-      & boost::serialization::base_object < ParticleFilterCache<IO1,CL>
+      & boost::serialization::base_object < BootstrapPFCache<IO1,CL>
           > (*this);
   ar & particleCache;
   ar & logWeightCache;
@@ -369,10 +369,10 @@ void bi::AdaptiveParticleFilterCache<IO1,CL>::save(Archive& ar,
 
 template<class IO1, bi::Location CL>
 template<class Archive>
-void bi::AdaptiveParticleFilterCache<IO1,CL>::load(Archive& ar,
+void bi::AdaptivePFCache<IO1,CL>::load(Archive& ar,
     const unsigned version) {
   ar
-      & boost::serialization::base_object < ParticleFilterCache<IO1,CL>
+      & boost::serialization::base_object < BootstrapPFCache<IO1,CL>
           > (*this);
   ar & particleCache;
   ar & logWeightCache;

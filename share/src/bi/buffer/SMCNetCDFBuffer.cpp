@@ -5,13 +5,13 @@
  * $Rev $
  * $Date$
  */
-#include "SMC2NetCDFBuffer.hpp"
+#include "SMCNetCDFBuffer.hpp"
 
 #include <string>
 
-bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m,
+bi::SMCNetCDFBuffer::SMCNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode, const SchemaMode schema) :
-    ParticleMCMCNetCDFBuffer(m, file, mode, schema) {
+    MCMCNetCDFBuffer(m, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {
@@ -19,10 +19,10 @@ bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m,
   }
 }
 
-bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const size_t P,
+bi::SMCNetCDFBuffer::SMCNetCDFBuffer(const Model& m, const size_t P,
     const size_t T, const std::string& file, const FileMode mode,
     const SchemaMode schema) :
-    ParticleMCMCNetCDFBuffer(m, P, T, file, mode, schema) {
+    MCMCNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {
@@ -30,11 +30,11 @@ bi::SMC2NetCDFBuffer::SMC2NetCDFBuffer(const Model& m, const size_t P,
   }
 }
 
-void bi::SMC2NetCDFBuffer::create() {
+void bi::SMCNetCDFBuffer::create() {
   nc_redef(ncid);
 
-  nc_put_att(ncid, "libbi_schema", "SMC2");
-  nc_put_att(ncid, "libbi_schema_version", 2);
+  nc_put_att(ncid, "libbi_schema", "SMC");
+  nc_put_att(ncid, "libbi_schema_version", 1);
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   lwVar = nc_def_var(ncid, "logweight", NC_REAL, npDim);
@@ -43,7 +43,7 @@ void bi::SMC2NetCDFBuffer::create() {
   nc_enddef(ncid);
 }
 
-void bi::SMC2NetCDFBuffer::map() {
+void bi::SMCNetCDFBuffer::map() {
   std::vector<int> dimids;
 
   lwVar = nc_inq_varid(ncid, "logweight");

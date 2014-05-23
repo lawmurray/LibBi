@@ -6,7 +6,7 @@
  * all variables.
  *
  * @bug smc^2 output has variables for states (e.g. alpha, P, Z) but they are
- * blank (fixed by removing D_VARS and R_VARS from SMC2 output).
+ * blank (fixed by removing D_VARS and R_VARS from MarginalSIR output).
  *
  * @bug ANPF filter.nc output has some garbage values (unaffected by recent
  * refactorization).

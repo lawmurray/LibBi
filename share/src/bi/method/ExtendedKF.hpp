@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_EXTENDEDKALMANFILTER_HPP
-#define BI_METHOD_EXTENDEDKALMANFILTER_HPP
+#ifndef BI_METHOD_EXTENDEDKF_HPP
+#define BI_METHOD_EXTENDEDKF_HPP
 
 #include "Simulator.hpp"
 #include "Observer.hpp"
@@ -29,7 +29,7 @@ namespace bi {
  * #concept::Filter
  */
 template<class B, class S, class IO1>
-class ExtendedKalmanFilter {
+class ExtendedKF {
 public:
   /**
    * Constructor.
@@ -38,7 +38,7 @@ public:
    * @param sim Simulator.
    * @param out Output.
    */
-  ExtendedKalmanFilter(B& m, S* sim = NULL, IO1* out = NULL);
+  ExtendedKF(B& m, S* sim = NULL, IO1* out = NULL);
 
   /**
    * @name High-level interface.
@@ -297,24 +297,23 @@ protected:
 };
 
 /**
- * Factory for creating ExtendedKalmanFilter objects.
+ * Factory for creating ExtendedKF objects.
  *
  * @ingroup method
  *
- * @see ExtendedKalmanFilter
+ * @see ExtendedKF
  */
-struct ExtendedKalmanFilterFactory {
+struct ExtendedKFFactory {
   /**
    * Create extended Kalman filter.
    *
-   * @return ExtendedKalmanFilter object. Caller has ownership.
+   * @return ExtendedKF object. Caller has ownership.
    *
-   * @see ExtendedKalmanFilter::ExtendedKalmanFilter()
+   * @see ExtendedKF::ExtendedKF()
    */
   template<class B, class S, class IO1>
-  static ExtendedKalmanFilter<B,S,IO1>* create(B& m, S* sim = NULL, IO1* out =
-      NULL) {
-    return new ExtendedKalmanFilter<B,S,IO1>(m, sim, out);
+  static ExtendedKF<B,S,IO1>* create(B& m, S* sim = NULL, IO1* out = NULL) {
+    return new ExtendedKF<B,S,IO1>(m, sim, out);
   }
 };
 }
@@ -327,35 +326,34 @@ struct ExtendedKalmanFilterFactory {
 #include "../math/loc_temp_matrix.hpp"
 
 template<class B, class S, class IO1>
-bi::ExtendedKalmanFilter<B,S,IO1>::ExtendedKalmanFilter(B& m, S* sim,
-    IO1* out) :
+bi::ExtendedKF<B,S,IO1>::ExtendedKF(B& m, S* sim, IO1* out) :
     m(m), sim(sim), out(out) {
   //
 }
 
 template<class B, class S, class IO1>
-inline S* bi::ExtendedKalmanFilter<B,S,IO1>::getSim() {
+inline S* bi::ExtendedKF<B,S,IO1>::getSim() {
   return sim;
 }
 
 template<class B, class S, class IO1>
-inline void bi::ExtendedKalmanFilter<B,S,IO1>::setSim(S* sim) {
+inline void bi::ExtendedKF<B,S,IO1>::setSim(S* sim) {
   this->sim = sim;
 }
 
 template<class B, class S, class IO1>
-inline IO1* bi::ExtendedKalmanFilter<B,S,IO1>::getOutput() {
+inline IO1* bi::ExtendedKF<B,S,IO1>::getOutput() {
   return out;
 }
 
 template<class B, class S, class IO1>
-inline void bi::ExtendedKalmanFilter<B,S,IO1>::setOutput(IO1* out) {
+inline void bi::ExtendedKF<B,S,IO1>::setOutput(IO1* out) {
   this->out = out;
 }
 
 template<class B, class S, class IO1>
 template<bi::Location L, class IO2>
-real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
+real bi::ExtendedKF<B,S,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
     IO2* inInit) throw (CholeskyException) {
   typedef typename loc_temp_vector<L,real>::type vector_type;
@@ -381,7 +379,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1>
-real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
+real bi::ExtendedKF<B,S,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
     State<B,L>& s) throw (CholeskyException) {
   typedef typename loc_temp_vector<L,real>::type vector_type;
@@ -407,7 +405,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::filter(Random& rng,
 
 template<class B, class S, class IO1>
 template<class M1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::sampleTrajectory(Random& rng, M1 X) {
+void bi::ExtendedKF<B,S,IO1>::sampleTrajectory(Random& rng, M1 X) {
   typedef typename sim_temp_vector<M1>::type vector_type;
   typedef typename sim_temp_matrix<M1>::type matrix_type;
 
@@ -441,9 +439,8 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::sampleTrajectory(Random& rng, M1 X) {
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1, class IO2>
-void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
-    const ScheduleElement now, State<B,L>& s, V1 mu1, M1 U1, M1 C,
-    IO2* inInit) {
+void bi::ExtendedKF<B,S,IO1>::init(Random& rng, const ScheduleElement now,
+    State<B,L>& s, V1 mu1, M1 U1, M1 C, IO2* inInit) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
   BOOST_AUTO(F, reshape(s.template getVar<VarGroupF>(), ND + NR, ND + NR));
@@ -451,7 +448,7 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
   BOOST_AUTO(G, reshape(s.template getVar<VarGroupG>(), ND + NR, NO));
   BOOST_AUTO(R, reshape(s.template getVar<VarGroupR>(), NO, NO));
 
-  ident(F);
+  ident (F);
   Q.clear();
   G.clear();
   R.clear();
@@ -483,9 +480,8 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V2, class V1, class M1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
-    const ScheduleElement now, const V2 theta, State<B,L>& s, V1 mu1, M1 U1,
-    M1 C) {
+void bi::ExtendedKF<B,S,IO1>::init(Random& rng, const ScheduleElement now,
+    const V2 theta, State<B,L>& s, V1 mu1, M1 U1, M1 C) {
   // this should be the same as init() above, but with a different call to
   // sim->init()
 
@@ -496,7 +492,7 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
   BOOST_AUTO(G, reshape(s.template getVar<VarGroupG>(), ND + NR, NO));
   BOOST_AUTO(R, reshape(s.template getVar<VarGroupR>(), NO, NO));
 
-  ident(F);
+  ident (F);
   Q.clear();
   G.clear();
   R.clear();
@@ -528,7 +524,7 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::init(Random& rng,
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1>
-real bi::ExtendedKalmanFilter<B,S,IO1>::step(ScheduleIterator& iter,
+real bi::ExtendedKF<B,S,IO1>::step(ScheduleIterator& iter,
     const ScheduleIterator last, State<B,L>& s, V1 mu1, M1 U1, V1 mu2, M1 U2,
     M1 C) throw (CholeskyException) {
   do {
@@ -543,7 +539,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::step(ScheduleIterator& iter,
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
+void bi::ExtendedKF<B,S,IO1>::predict(const ScheduleElement next,
     State<B,L>& s, V1 mu1, M1 U1, const V1 mu2, const M1 U2, M1 C)
         throw (CholeskyException) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
@@ -582,13 +578,13 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::predict(const ScheduleElement next,
   chol(Sigma, U1);
 
   /* reset Jacobian, as it has now been multiplied in */
-  ident(F);
+  ident (F);
   Q.clear();
 }
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1>
-real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
+real bi::ExtendedKF<B,S,IO1>::correct(const ScheduleElement now,
     State<B,L>& s, const V1 mu1, const M1 U1, V1 mu2, M1 U2)
         throw (CholeskyException) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
@@ -667,7 +663,7 @@ real bi::ExtendedKalmanFilter<B,S,IO1>::correct(const ScheduleElement now,
 
 template<class B, class S, class IO1>
 template<bi::Location L>
-void bi::ExtendedKalmanFilter<B,S,IO1>::output0(const State<B,L>& s) {
+void bi::ExtendedKF<B,S,IO1>::output0(const State<B,L>& s) {
   if (out != NULL) {
     out->writeParameters(s.get(P_VAR));
   }
@@ -675,7 +671,7 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::output0(const State<B,L>& s) {
 
 template<class B, class S, class IO1>
 template<bi::Location L, class V1, class M1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::output(const ScheduleElement now,
+void bi::ExtendedKF<B,S,IO1>::output(const ScheduleElement now,
     const State<B,L>& s, const V1 mu1, const M1 U1, const V1 mu2, const M1 U2,
     const M1 C) {
   if (out != NULL && now.hasOutput()) {
@@ -692,14 +688,14 @@ void bi::ExtendedKalmanFilter<B,S,IO1>::output(const ScheduleElement now,
 }
 
 template<class B, class S, class IO1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::outputT(const real ll) {
+void bi::ExtendedKF<B,S,IO1>::outputT(const real ll) {
   if (out != NULL) {
     out->writeLL(ll);
   }
 }
 
 template<class B, class S, class IO1>
-void bi::ExtendedKalmanFilter<B,S,IO1>::term() {
+void bi::ExtendedKF<B,S,IO1>::term() {
   sim->term();
 }
 

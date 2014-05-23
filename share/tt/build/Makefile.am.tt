@@ -12,10 +12,10 @@ CLIENTS = [
     'ekf',
     'nm',
     'pf',
-    'pmmh',
+    'mh',
     'simulate',
-    'smc2',
-    'sr',
+    'sir',
+    'srs',
     'test',
     'test_resampler',
     'test_filter'
@@ -62,8 +62,8 @@ libbi_a_SOURCES = \
   src/bi/buffer/NetCDFBuffer.cpp \
   src/bi/buffer/OptimiserNetCDFBuffer.cpp \
   src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \
-  src/bi/buffer/ParticleMCMCNetCDFBuffer.cpp \
-  src/bi/buffer/SMC2NetCDFBuffer.cpp \
+  src/bi/buffer/MCMCNetCDFBuffer.cpp \
+  src/bi/buffer/SMCNetCDFBuffer.cpp \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
   src/bi/buffer/SparseInputNetCDFBuffer.cpp \
   src/bi/cache/Cache.cpp \

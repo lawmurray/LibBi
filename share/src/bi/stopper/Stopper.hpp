@@ -15,7 +15,7 @@ namespace bi {
  *
  * @ingroup method_stopper
  *
- * Used by AdaptiveParticleFilter to determine when a sufficient number of
+ * Used by AdaptivePF to determine when a sufficient number of
  * particles have been propagated. Call #stop() any number of times with
  * additional weights of new particles, then #reset() again before reuse.
  */

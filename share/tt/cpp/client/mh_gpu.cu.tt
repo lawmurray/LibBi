@@ -8,4 +8,4 @@
 
 [%-PROCESS client/misc/header.cpp.tt-%]
 
-#include "smc2_cpu.cpp"
+#include "mh_cpu.cpp"

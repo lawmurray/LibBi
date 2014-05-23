@@ -13,7 +13,7 @@
 
 namespace bi {
 /**
- * State for ParticleMarginalMetropolisHastings.
+ * State for MarginalMH.
  *
  * @ingroup state
  */

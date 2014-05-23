@@ -11,18 +11,18 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "CacheCross.hpp"
-#include "../buffer/ParticleMCMCNetCDFBuffer.hpp"
+#include "../buffer/MCMCNetCDFBuffer.hpp"
 
 namespace bi {
 /**
- * Cache for ParticleMCMCNetCDFBuffer reads and writes.
+ * Cache for MCMCNetCDFBuffer reads and writes.
  *
  * @ingroup io_cache
  *
  * @tparam IO1 Output type.
  * @tparam CL Location.
  */
-template<class IO1 = ParticleMCMCNetCDFBuffer, Location CL = ON_HOST>
+template<class IO1 = MCMCNetCDFBuffer, Location CL = ON_HOST>
 class ParticleMCMCCache: public SimulatorCache<IO1,CL> {
 public:
   /**
@@ -255,8 +255,8 @@ struct ParticleMCMCCacheFactory {
    * @see ParticleMCMCCache::ParticleMCMCCache()
    */
   template<class B>
-  static ParticleMCMCCache<ParticleMCMCNetCDFBuffer,CL>* create(B& m) {
-    return new ParticleMCMCCache<ParticleMCMCNetCDFBuffer,CL>(m);
+  static ParticleMCMCCache<MCMCNetCDFBuffer,CL>* create(B& m) {
+    return new ParticleMCMCCache<MCMCNetCDFBuffer,CL>(m);
   }
 };
 }

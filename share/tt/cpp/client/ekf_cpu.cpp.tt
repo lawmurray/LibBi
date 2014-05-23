@@ -12,7 +12,7 @@
 #include "model/[% class_name %].hpp"
 
 #include "bi/random/Random.hpp"
-#include "bi/method/ExtendedKalmanFilter.hpp"
+#include "bi/method/ExtendedKF.hpp"
 #include "bi/method/Simulator.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sim, SimulatorFactory::create(m, in, obs));
   
   /* filter */
-  BOOST_AUTO(filter, ExtendedKalmanFilterFactory::create(m, sim, bufOutput));
+  BOOST_AUTO(filter, ExtendedKFFactory::create(m, sim, bufOutput));
 
   /* filter */
   #ifdef ENABLE_GPERFTOOLS

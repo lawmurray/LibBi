@@ -10,11 +10,11 @@
 
 #include "../math/loc_vector.hpp"
 #include "../state/ThetaState.hpp"
-#include "../cache/ParticleFilterCache.hpp"
+#include "../cache/BootstrapPFCache.hpp"
 
 namespace bi {
 /**
- * Single \f$\theta\f$-particle state for SMC2.
+ * Single \f$\theta\f$-particle state for MarginalSIR.
  *
  * @ingroup state
  */
@@ -67,7 +67,7 @@ public:
   /**
    * Get output.
    */
-  ParticleFilterCache<ParticleFilterNetCDFBuffer,L>& getOutput();
+  BootstrapPFCache<ParticleFilterNetCDFBuffer,L>& getOutput();
 
   /**
    * Resize.
@@ -81,7 +81,7 @@ private:
   /**
    * Cache to store history.
    */
-  ParticleFilterCache<ParticleFilterNetCDFBuffer,L> cache;
+  BootstrapPFCache<ParticleFilterNetCDFBuffer,L> cache;
 
   /**
    * Log-weights of \f$x\f$-particles.
@@ -167,7 +167,7 @@ typename bi::ThetaParticle<B,L>::int_vector_type&
 }
 
 template<class B, bi::Location L>
-typename bi::ParticleFilterCache<bi::ParticleFilterNetCDFBuffer,L>& bi::ThetaParticle<B,L>::getOutput() {
+typename bi::BootstrapPFCache<bi::ParticleFilterNetCDFBuffer,L>& bi::ThetaParticle<B,L>::getOutput() {
   return cache;
 }
 
