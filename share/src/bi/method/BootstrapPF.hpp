@@ -5,10 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_BootstrapPF_HPP
-#define BI_METHOD_BootstrapPF_HPP
+#ifndef BI_METHOD_BOOTSTRAPPF_HPP
+#define BI_METHOD_BOOTSTRAPPF_HPP
 
 #include "Simulator.hpp"
+#include "../state/BootstrapPFState.hpp"
 #include "../cache/BootstrapPFCache.hpp"
 
 namespace bi {
@@ -21,10 +22,6 @@ namespace bi {
  * @tparam S Simulator type.
  * @tparam R Resampler type.
  * @tparam IO1 Output type.
- *
- * @section Concepts
- *
- * #concept::Filter
  */
 template<class B, class S, class R, class IO1>
 class BootstrapPF {
@@ -96,14 +93,14 @@ public:
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
-   * @param[out] s State.
+   * @param[out] s BootstrapPFState.
    * @param inInit Initialisation file.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit);
+      const ScheduleIterator last, BootstrapPFState<B,L>& s, IO2* inInit);
 
   /**
    * %Filter forward, with fixed parameters.
@@ -115,13 +112,32 @@ public:
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param theta Parameters.
-   * @param[out] s State.
+   * @param[out] s BootstrapPFState.
    *
    * @return Estimate of the marginal log-likelihood.
    */
   template<Location L, class V1>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, State<B,L>& s);
+      const ScheduleIterator last, const V1 theta, BootstrapPFState<B,L>& s);
+
+  /**
+   * Resample, predict and correct.
+   *
+   * @tparam L Location.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param[in,out] iter Current position in time schedule. Advanced on
+   * return.
+   * @param last End of time schedule.
+   * @param[in,out] s BootstrapPFState.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry after resampling.
+   *
+   * @return Estimate of the incremental log-likelihood.
+   */
+  template<Location L>
+  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+      BootstrapPFState<B,L>& s);
 
   /**
    * Sample single particle trajectory.
@@ -151,61 +167,34 @@ public:
    * Initialise.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param[out] s State.
-   * @param[out] lws Log-weights.
-   * @param[out] as Ancestry.
+   * @param[out] s BootstrapPFState.
    * @param inInit Initialisation file.
    */
-  template<Location L, class V1, class V2, class IO2>
-  void init(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lws,
-      V2 as, IO2* inInit);
+  template<Location L, class IO2>
+  void init(Random& rng, const ScheduleElement now, BootstrapPFState<B,L>& s,
+      IO2* inInit);
 
   /**
    * Initialise, with fixed parameters.
    *
    * @tparam L Location.
    * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   * @tparam V3 Vector type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
    * @param theta Parameters.
-   * @param[out] s State.
+   * @param[out] s BootstrapPFState.
    * @param[out] lws Log-weights.
    * @param[out] as Ancestry.
    * @param inInit Initialisation file.
    */
-  template<Location L, class V1, class V2, class V3>
+  template<Location L, class V1>
   void init(Random& rng, const V1 theta, const ScheduleElement now,
-      State<B,L>& s, V2 lws, V3 as);
-
-  /**
-   * Resample, predict and correct.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry after resampling.
-   *
-   * @return Estimate of the incremental log-likelihood.
-   */
-  template<bi::Location L, class V1, class V2>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, V1 lws, V2 as);
+      BootstrapPFState<B,L>& s);
 
   /**
    * Predict.
@@ -214,70 +203,60 @@ public:
    *
    * @param[in,out] rng Random number generator.
    * @param next Next step in time schedule.
-   * @param[in,out] s State.
+   * @param[in,out] s BootstrapPFState.
    */
   template<Location L>
-  void predict(Random& rng, const ScheduleElement next, State<B,L>& s);
+  void predict(Random& rng, const ScheduleElement next,
+      BootstrapPFState<B,L>& s);
 
   /**
    * Update particle weights using observations at the current time.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
    *
    * @param now Current step in time schedule.
-   * @param s State.
-   * @param lws Log-weights.
+   * @param s BootstrapPFState.
    *
    * @return Estimate of the incremental log-likelihood.
    */
-  template<Location L, class V1>
-  real correct(const ScheduleElement now, State<B,L>& s, V1 lws);
+  template<Location L>
+  real correct(const ScheduleElement now, BootstrapPFState<B,L>& s);
 
   /**
    * Resample.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param[in,out] s State.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry after resampling.
+   * @param[in,out] s BootstrapPFState.
    *
    * @return True if resampling was performed, false otherwise.
    */
-  template<Location L, class V1, class V2>
-  bool resample(Random& rng, const ScheduleElement now, State<B,L>& s, V1 lws,
-      V2 as);
+  template<Location L>
+  bool resample(Random& rng, const ScheduleElement now,
+      BootstrapPFState<B,L>& s);
 
   /**
    * Output static variables.
    *
    * @param L Location.
    *
-   * @param s State.
+   * @param s BootstrapPFState.
    */
   template<Location L>
-  void output0(const State<B,L>& s);
+  void output0(const BootstrapPFState<B,L>& s);
 
   /**
    * Output dynamic variables.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
    *
    * @param now Current step in time schedule.
-   * @param s State.
-   * @param lws Log-weights.
-   * @param as Ancestry.
+   * @param s BootstrapPFState.
    */
-  template<Location L, class V1, class V2>
-  void output(const ScheduleElement now, const State<B,L>& s, const V1 lws,
-      const V2 as);
+  template<Location L>
+  void output(const ScheduleElement now, const BootstrapPFState<B,L>& s);
 
   /**
    * Output marginal log-likelihood estimate.
@@ -298,12 +277,12 @@ protected:
    *
    * @tparam L Location.
    *
-   * @param s State.
+   * @param s BootstrapPFState.
    *
    * @return Maximum log-weight.
    */
   template<Location L>
-  real getMaxLogWeight(const ScheduleElement now, State<B,L>& s);
+  real getMaxLogWeight(const ScheduleElement now, BootstrapPFState<B,L>& s);
 
   /**
    * Model.
@@ -408,21 +387,18 @@ inline void bi::BootstrapPF<B,S,R,IO1>::setOutput(IO1* out) {
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class IO2>
 real bi::BootstrapPF<B,S,R,IO1>::filter(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit) {
+    const ScheduleIterator first, const ScheduleIterator last,
+    BootstrapPFState<B,L>& s, IO2* inInit) {
   const int P = s.size();
   real ll = 0.0;
 
-  typename loc_temp_vector<L,real>::type lws(P);
-  typename loc_temp_vector<L,int>::type as(P);
-
   ScheduleIterator iter = first;
-  init(rng, *iter, s, lws, as, inInit);
+  init(rng, *iter, s, inInit);
   output0(s);
-  ll = correct(*iter, s, lws);
-  output(*iter, s, lws, as);
+  ll = correct(*iter, s);
+  output(*iter, s);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, as);
+    ll += step(rng, iter, last, s);
   }
   term();
   outputT(ll);
@@ -434,23 +410,20 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
 real bi::BootstrapPF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
-    State<B,L>& s) {
+    BootstrapPFState<B,L>& s) {
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 
   const int P = s.size();
   real ll = 0.0;
 
-  typename loc_temp_vector<L,real>::type lws(P);
-  typename loc_temp_vector<L,int>::type as(P);
-
   ScheduleIterator iter = first;
-  init(rng, theta, *iter, s, lws, as);
+  init(rng, theta, *iter, s);
   output0(s);
-  ll = correct(*iter, s, lws);
-  output(*iter, s, lws, as);
+  ll = correct(*iter, s);
+  output(*iter, s);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, as);
+    ll += step(rng, iter, last, s);
   }
   term();
   outputT(ll);
@@ -470,48 +443,40 @@ void bi::BootstrapPF<B,S,R,IO1>::sampleTrajectory(Random& rng, M1 X) {
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2, class IO2>
+template<bi::Location L, class IO2>
 void bi::BootstrapPF<B,S,R,IO1>::init(Random& rng, const ScheduleElement now,
-    State<B,L>& s, V1 lws, V2 as, IO2* inInit) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == as.size());
-  BI_ASSERT(s.size() == lws.size());
-
+    BootstrapPFState<B,L>& s, IO2* inInit) {
   sim->init(rng, now, s, inInit);
-  lws.clear();
-  seq_elements(as, 0);
+  s.logWeights().clear();
+  seq_elements(s.ancestors(), 0);
   if (out != NULL) {
     out->clear();
   }
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2, class V3>
+template<bi::Location L, class V1>
 void bi::BootstrapPF<B,S,R,IO1>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, State<B,L>& s, V2 lws, V3 as) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == as.size());
-  BI_ASSERT(s.size() == lws.size());
-
+    const ScheduleElement now, BootstrapPFState<B,L>& s) {
   sim->init(rng, theta, now, s);
-  lws.clear();
-  seq_elements(as, 0);
+  s.logWeights().clear();
+  seq_elements(s.ancestors(), 0);
   if (out != NULL) {
     out->clear();
   }
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
+template<bi::Location L>
 real bi::BootstrapPF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, V1 lws, V2 as) {
+    const ScheduleIterator last, BootstrapPFState<B,L>& s) {
   real ll = 0.0;
   do {
-    resample(rng, *iter, s, lws, as);
+    resample(rng, *iter, s);
     ++iter;
     predict(rng, *iter, s);
-    ll += correct(*iter, s, lws);
-    output(*iter, s, lws, as);
+    ll += correct(*iter, s);
+    output(*iter, s);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
@@ -520,67 +485,63 @@ real bi::BootstrapPF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
 void bi::BootstrapPF<B,S,R,IO1>::predict(Random& rng,
-    const ScheduleElement next, State<B,L>& s) {
+    const ScheduleElement next, BootstrapPFState<B,L>& s) {
   sim->advance(rng, next, s);
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1>
+template<bi::Location L>
 real bi::BootstrapPF<B,S,R,IO1>::correct(const ScheduleElement now,
-    State<B,L>& s, V1 lws) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == lws.size());
-
+    BootstrapPFState<B,L>& s) {
   real ll = 0.0;
   if (now.isObserved()) {
-    m.observationLogDensities(s, sim->getObs()->getMask(now.indexObs()), lws);
-    ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
+    m.observationLogDensities(s, sim->getObs()->getMask(now.indexObs()),
+        s.logWeights());
+    ll = logsumexp_reduce(s.logWeights())
+        - bi::log(static_cast<real>(s.size()));
   }
   return ll;
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
+template<bi::Location L>
 bool bi::BootstrapPF<B,S,R,IO1>::resample(Random& rng,
-    const ScheduleElement now, State<B,L>& s, V1 lws, V2 as) {
-  /* pre-condition */
-  BI_ASSERT(s.size() == lws.size());
-
+    const ScheduleElement now, BootstrapPFState<B,L>& s) {
   bool r = now.isObserved();
   if (r) {
-    r = resam != NULL && resam->isTriggered(lws);
+    r = resam != NULL && resam->isTriggered(s.logWeights());
     if (r) {
       if (resampler_needs_max<R>::value) {
         resam->setMaxLogWeight(getMaxLogWeight(now, s));
       }
-      resam->resample(rng, lws, as, s);
+      resam->resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
     } else {
-      seq_elements(as, 0);
-      Resampler::normalise(lws);
+      seq_elements(s.ancestors(), 0);
+      Resampler::normalise(s.logWeights());
     }
   } else if (now.hasOutput()) {
-    seq_elements(as, 0);
+    seq_elements(s.ancestors(), 0);
   }
   return r;
 }
 
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
-void bi::BootstrapPF<B,S,R,IO1>::output0(const State<B,L>& s) {
+void bi::BootstrapPF<B,S,R,IO1>::output0(const BootstrapPFState<B,L>& s) {
   if (out != NULL) {
     out->writeParameters(s.get(P_VAR));
   }
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
+template<bi::Location L>
 void bi::BootstrapPF<B,S,R,IO1>::output(const ScheduleElement now,
-    const State<B,L>& s, const V1 lws, const V2 as) {
+    const BootstrapPFState<B,L>& s) {
   if (now.hasOutput() && out != NULL) {
     const int k = now.indexOutput();
     out->writeTime(k, now.getTime());
-    out->writeState(k, s.getDyn(), as);
-    out->writeLogWeights(k, lws);
+    out->writeState(k, s.getDyn(), s.ancestors());
+    out->writeLogWeights(k, s.logWeights());
   }
 }
 
@@ -599,7 +560,7 @@ void bi::BootstrapPF<B,S,R,IO1>::term() {
 template<class B, class S, class R, class IO1>
 template<bi::Location L>
 real bi::BootstrapPF<B,S,R,IO1>::getMaxLogWeight(const ScheduleElement now,
-    State<B,L>& s) {
+    BootstrapPFState<B,L>& s) {
   return this->m.observationMaxLogDensity(s,
       sim->getObs()->getMask(now.indexObs()));
 }

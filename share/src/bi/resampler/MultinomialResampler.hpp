@@ -83,7 +83,7 @@ public:
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s)
+  void resample(Random& rng, V1 lws, V2 as, O1 s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -103,8 +103,8 @@ public:
       MultinomialPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
 
-  template<class V1, class V2, Location L>
-  void precompute(const V1 lws, const V2 as, MultinomialPrecompute<L>& pre);
+  template<class V1, Location L>
+  void precompute(const V1 lws, MultinomialPrecompute<L>& pre);
 
   /**
    * @copydoc Resampler::offspring
@@ -146,7 +146,7 @@ struct precompute_type<MultinomialResampler,L> {
 #include "thrust/gather.h"
 
 template<class V1, class V2, class O1>
-void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
+void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());
@@ -161,7 +161,7 @@ template<class V1, class V2>
 void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
   MultinomialPrecompute<V1::location> pre;
-  precompute(lws, as, pre);
+  precompute(lws, pre);
   ancestors(rng, lws, as, pre);
 }
 
@@ -173,8 +173,8 @@ void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
   impl::ancestors(rng, lws, as, pre);
 }
 
-template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::precompute(const V1 lws, const V2 as,
+template<class V1, bi::Location L>
+void bi::MultinomialResampler::precompute(const V1 lws,
     MultinomialPrecompute<L>& pre) {
   const int P = lws.size();
   real lZ;

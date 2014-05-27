@@ -156,7 +156,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'sampler',
       type => 'string',
-      default => 'pmmh'
+      default => 'mh'
     },
     {
       name => 'nsamples',

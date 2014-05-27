@@ -11,6 +11,7 @@
 #include "BootstrapPF.hpp"
 #include "../resampler/Resampler.hpp"
 #include "../stopper/Stopper.hpp"
+#include "../state/BootstrapPFState.hpp"
 
 namespace bi {
 /**
@@ -50,38 +51,25 @@ public:
    */
   //@{
   /**
-   * %Filter forward.
-   *
-   * @tparam L Location.
-   * @tparam IO2 Input type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param first Start of time schedule.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param inInit Initialisation file.
-   *
-   * @return Estimate of the marginal log-likelihood.
+   * @copydoc BootstrapPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, BootstrapPFState<B,L>&, IO2*)
    */
   template<Location L, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit);
-
-  template<Location L, class V1>
-  real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, State<B,L>& s);
-  //@}
+      const ScheduleIterator last, BootstrapPFState<B,L>& s, IO2* inInit);
 
   /**
-   * @name Low-level interface.
-   *
-   * Largely used by other features of the library or for finer control over
-   * performance and behaviour.
+   * @copydoc BootstrapPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, BootstrapPFState<B,L>&, IO2*)
    */
-  //@{
-  template<bi::Location L, class V1, class V2>
+  template<Location L, class V1>
+  real filter(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, const V1 theta, BootstrapPFState<B,L>& s);
+
+  /**
+   * @copydoc BootstrapPF::step(Random&, ScheduleIterator&, const ScheduleIterator, BootstrapPFState<B,L>&)
+   */
+  template<bi::Location L>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, V1& lws, V2& as);
+      BootstrapPFState<B,L>& s);
   //@}
 
 private:
@@ -143,25 +131,21 @@ bi::AdaptivePF<B,S,R,S2,IO1>::AdaptivePF(B& m, S* sim, R* resam, S2* stopper,
 template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class IO2>
 real bi::AdaptivePF<B,S,R,S2,IO1>::filter(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit) {
+    const ScheduleIterator first, const ScheduleIterator last,
+    BootstrapPFState<B,L>& s, IO2* inInit) {
   const int P = s.size();
-
-  typename loc_temp_vector<L,real>::type lws(P);
-  typename loc_temp_vector<L,int>::type as(P);
-
   real ll;
 
   ScheduleIterator iter = first;
-  this->init(rng, *iter, s, lws, as, inInit);
+  this->init(rng, *iter, s, inInit);
   this->output0(s);
-  ll = this->correct(*iter, s, lws);
-  this->output(*iter, s, lws, as);
+  ll = this->correct(*iter, s);
+  this->output(*iter, s);
   if (this->out != NULL) {
     this->out->push(P);
   }
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, as);
+    ll += step(rng, iter, last, s);
   }
   this->term();
   this->outputT(ll);
@@ -173,24 +157,20 @@ template<class B, class S, class R, class S2, class IO1>
 template<bi::Location L, class V1>
 real bi::AdaptivePF<B,S,R,S2,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
-    State<B,L>& s) {
+    BootstrapPFState<B,L>& s) {
   const int P = s.size();
-
-  typename loc_temp_vector<L,real>::type lws(P);
-  typename loc_temp_vector<L,int>::type as(P);
-
   real ll;
 
   ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, lws, as);
+  this->init(rng, theta, *iter, s);
   this->output0(s);
-  ll = this->correct(*iter, s, lws);
-  this->output(*iter, s, lws, as);
+  ll = this->correct(*iter, s);
+  this->output(*iter, s);
   if (this->out != NULL) {
     this->out->push(P);
   }
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, as);
+    ll += step(rng, iter, last, s);
   }
   this->term();
   this->outputT(ll);
@@ -199,21 +179,25 @@ real bi::AdaptivePF<B,S,R,S2,IO1>::filter(Random& rng,
 }
 
 template<class B, class S, class R, class S2, class IO1>
-template<bi::Location L, class V1, class V2>
+template<bi::Location L>
 real bi::AdaptivePF<B,S,R,S2,IO1>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, V1& lws, V2& as) {
+    const ScheduleIterator last, BootstrapPFState<B,L>& s) {
+  typedef typename loc_temp_vector<L,real>::type vector_type;
+  typedef typename loc_temp_matrix<L,real>::type matrix_type;
+
+  const int P = s.size();
+  const int N = s.getDyn().size2();
   const int maxP = stopper->getMaxParticles();
   const int blockP = stopper->getBlockSize();
 
-  typename loc_temp_matrix<L,real>::type X(s.size(), s.getDyn().size2());
-  typename loc_temp_vector<L,int>::type as_base(maxP);
-  typename loc_temp_vector<L,real>::type lws_base(maxP);
+  matrix_type X(P, N);
+  vector_type lws(P);
 
   X = s.getDyn();
-  lws_base.clear();
+  lws = s.logWeights();
 
-  typename precompute_type<R,V1::location>::type pre;
-  this->resam->precompute(lws, as, pre);
+  typename precompute_type<R,L>::type pre;
+  this->resam->precompute(lws, pre);
 
   bool finished = false;
   int block = 0;
@@ -223,40 +207,35 @@ real bi::AdaptivePF<B,S,R,S2,IO1>::step(Random& rng, ScheduleIterator& iter,
   /* propagate block by block */
   this->stopper->reset();
   do {
+    if (s.sizeMax() < (block + 1) * blockP) {
+      s.resizeMax((block + 1) * blockP);
+    }
     s.setRange(block * blockP, blockP);
-    BOOST_AUTO(as1, subrange(as_base, block * blockP, blockP));
-    BOOST_AUTO(lws1, subrange(lws_base, block * blockP, blockP));
-
     iter1 = iter;
-    this->resam->ancestors(rng, lws, as1, pre);
-    this->resam->copy(as1, X, s.getDyn());
+    this->resam->ancestors(rng, lws, s.ancestors(), pre);
+    this->resam->copy(s.ancestors(), X, s.getDyn());
     do {
       ++iter1;
       this->predict(rng, *iter1, s);
-      this->output(*iter1, s, true, lws1, as1);
+      this->output(*iter1, s);
     } while (iter1 + 1 != last && !iter1->isObserved());
-    this->correct(*iter1, s, lws1);
+    this->correct(*iter1, s);
 
     if (block == 0) {
       maxlw = this->getMaxLogWeight(*iter1, s);
     }
     ++block;
-    finished = stopper->stop(lws1, maxlw);
+    finished = stopper->stop(s.logWeights(), maxlw);
   } while (!finished);
 
   int length = bi::max(block - 1, 1) * blockP;  // drop last block
   if (this->out != NULL) {
     this->out->push(length);
   }
-  lws.resize(length);
-  as.resize(length);
-  lws = subrange(lws_base, 0, length);
-  as = subrange(as_base, 0, length);
   s.setRange(0, length);
-  //s.resizeMax(length);
-
-  ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(length));
+  //s.trim(); // optional, saves memory but means reallocation
   iter = iter1;  // caller expects iter to be advanced at end of step()
+  ll = logsumexp_reduce(s.logWeights()) - bi::log(static_cast<real>(length));
 
   return ll;
 }

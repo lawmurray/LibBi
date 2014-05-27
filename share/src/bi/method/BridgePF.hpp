@@ -9,6 +9,7 @@
 #define BI_METHOD_BRIDGEPF_HPP
 
 #include "LookaheadPF.hpp"
+#include "../state/AuxiliaryPFState.hpp"
 
 namespace bi {
 /**
@@ -43,19 +44,26 @@ public:
    */
   //@{
   /**
-   * @copydoc BootstrapPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, State<B,L>&, IO2*)
+   * @copydoc LookaheadPF::filter(Random&, const ScheduleIterator, const ScheduleIterator, AuxiliaryPFState<B,L>&, IO2*)
    */
   template<Location L, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit);
+      const ScheduleIterator last, AuxiliaryPFState<B,L>& s, IO2* inInit);
 
   /**
-   * @copydoc BootstrapPF::filter(Random&, Schedule&, const V1, State<B,L>&)
+   * @copydoc LookaheadPF::filter(Random&, Schedule&, const V1, AuxiliaryPFState<B,L>&)
    */
   template<Location L, class V1>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, State<B,L>& s);
-  //@}
+      const ScheduleIterator last, const V1 theta, AuxiliaryPFState<B,L>& s);
+
+  /**
+   * @copydoc LookaheadPF::step(Random&, ScheduleIterator&, const ScheduleIterator, BootstrapPFState<B,L>&)
+   */
+  template<bi::Location L>
+  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+      AuxiliaryPFState<B,L>& s);
+//@}
 
   /**
    * @name Low-level interface.
@@ -65,42 +73,19 @@ public:
    */
   //@{
   /**
-   * Resample, predict and correct.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s State.
-   * @param[in,out] lws Log-weights.
-   * @param[in,out] blws Bridge log-weights.
-   * @param[out] as Ancestry.
-   */
-  template<bi::Location L, class V1, class V2>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, V1 lws, V1 blws, V2 as);
-
-  /**
    * Update particle weights using lookahead.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
    *
    * @param iter Current position in time schedule.
    * @param last End of time schedule.
    * @param[in,out] s State.
-   * @param[in,out] lws Log-weights.
-   * @param[in,out] blws Bridge log-weights.
    *
    * @return Normalising constant contribution.
    */
-  template<Location L, class V1>
+  template<Location L>
   real bridge(Random& rng, const ScheduleIterator iter,
-      const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws);
+      const ScheduleIterator last, AuxiliaryPFState<B,L>& s);
   //@}
 };
 
@@ -154,21 +139,18 @@ bi::BridgePF<B,S,R,IO1>::BridgePF(B& m, S* sim, R* resam, IO1* out) :
 template<class B, class S, class R, class IO1>
 template<bi::Location L, class IO2>
 real bi::BridgePF<B,S,R,IO1>::filter(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit) {
+    const ScheduleIterator first, const ScheduleIterator last,
+    AuxiliaryPFState<B,L>& s, IO2* inInit) {
   const int P = s.size();
   real ll = 0.0;
 
-  typename loc_temp_vector<L,real>::type lws(P), blws(P);
-  typename loc_temp_vector<L,int,-1,1>::type as(P);
-
   ScheduleIterator iter = first;
-  this->init(rng, *iter, s, lws, blws, as, inInit);
+  this->init(rng, *iter, s, inInit);
   this->output0(s);
-  ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, lws, as);
+  ll = this->correct(*iter, s);
+  this->output(*iter, s);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, blws, as);
+    ll += step(rng, iter, last, s);
   }
   this->term();
   this->outputT(ll);
@@ -180,23 +162,20 @@ template<class B, class S, class R, class IO1>
 template<bi::Location L, class V1>
 real bi::BridgePF<B,S,R,IO1>::filter(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, const V1 theta,
-    State<B,L>& s) {
+    AuxiliaryPFState<B,L>& s) {
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 
   const int P = s.size();
   real ll;
 
-  typename loc_temp_vector<L,real>::type lws(P), blws(P);
-  typename loc_temp_vector<L,int,-1,1>::type as(P);
-
   ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, lws, blws, as);
+  this->init(rng, theta, *iter, s);
   this->output0(s);
-  ll = this->correct(*iter, s, lws, blws);
-  this->output(*iter, s, lws, as);
+  ll = this->correct(*iter, s);
+  this->output(*iter, s);
   while (iter + 1 != last) {
-    ll += step(rng, iter, last, s, lws, blws, as);
+    ll += step(rng, iter, last, s);
   }
   this->term();
   this->outputT(ll);
@@ -205,40 +184,39 @@ real bi::BridgePF<B,S,R,IO1>::filter(Random& rng,
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1, class V2>
+template<bi::Location L>
 real bi::BridgePF<B,S,R,IO1>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws, V2 as) {
+    const ScheduleIterator last, AuxiliaryPFState<B,L>& s) {
   real ll = 0.0;
   do {
-    ll += this->bridge(rng, iter, last, s, lws, blws);
-    this->resample(rng, *iter, s, lws, blws, as);
+    ll += this->bridge(rng, iter, last, s);
+    this->resample(rng, *iter, s);
     ++iter;
     this->predict(rng, *iter, s);
-    ll += this->correct(*iter, s, lws, blws);
-    this->output(*iter, s, lws, as);
+    ll += this->correct(*iter, s);
+    this->output(*iter, s);
   } while (iter + 1 != last && !iter->isObserved());
 
   return ll;
 }
 
 template<class B, class S, class R, class IO1>
-template<bi::Location L, class V1>
+template<bi::Location L>
 real bi::BridgePF<B,S,R,IO1>::bridge(Random& rng, const ScheduleIterator iter,
-    const ScheduleIterator last, State<B,L>& s, V1 lws, V1 blws) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == blws.size());
-
+    const ScheduleIterator last, AuxiliaryPFState<B,L>& s) {
   real ll = 0.0;
   if (iter->hasBridge() && !iter->isObserved()
       && last->indexObs() > iter->indexObs()) {
-    axpy(-1.0, blws, lws);
-    blws.clear();
+    axpy(-1.0, s.logAuxWeights(), s.logWeights());
+    s.logAuxWeights().clear();
 
     this->m.bridgeLogDensities(s,
-        this->getSim()->getObs()->getMask(iter->indexObs()), blws);
+        this->getSim()->getObs()->getMask(iter->indexObs()),
+        s.logAuxWeights());
 
-    axpy(1.0, blws, lws);
-    ll = logsumexp_reduce(lws) - bi::log(static_cast<real>(s.size()));
+    axpy(1.0, s.logAuxWeights(), s.logWeights());
+    ll = logsumexp_reduce(s.logWeights())
+        - bi::log(static_cast<real>(s.size()));
   }
   return ll;
 }

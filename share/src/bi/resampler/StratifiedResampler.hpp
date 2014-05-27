@@ -70,7 +70,7 @@ public:
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s)
+  void resample(Random& rng, V1 lws, V2 as, O1 s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -156,7 +156,7 @@ protected:
 #include "thrust/for_each.h"
 
 template<class V1, class V2, class O1>
-void bi::StratifiedResampler::resample(Random& rng, V1 lws, V2 as, O1& s)
+void bi::StratifiedResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
     throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == as.size());

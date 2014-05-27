@@ -81,7 +81,7 @@ public:
    * The weights @p lws are set to be uniform after the resampling.
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1& lws, V2& as, O1& s)
+  void resample(Random& rng, V1& lws, V2& as, O1 s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -220,19 +220,6 @@ public:
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 X);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam B Model type.
-   * @tparam L Location.
-   *
-   * @param as Ancestry.
-   * @param[in,out] s State.
-   */
-  template<class V1, class B, Location L>
-  static void copy(const V1 as, State<B,L>& s);
 
   /**
    * In-place copy based on ancestry.
@@ -539,13 +526,6 @@ void bi::Resampler::permute(const V1 as) {
 template<class V1, class M1>
 void bi::Resampler::copy(const V1 as, M1 s) {
   gather_rows(as, s, s);
-}
-
-template<class V1, class B, bi::Location L>
-void bi::Resampler::copy(const V1 as, State<B,L>& s) {
-  s.setRange(s.start(), bi::max(s.size(), as.size()));
-  copy(as, s.getDyn());
-  s.setRange(s.start(), as.size());
 }
 
 template<class V1, class T1>

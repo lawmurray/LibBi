@@ -847,27 +847,19 @@ public:
       const M1& o);
 
   /**
-   * Resize matrix.
-   *
-   * @param rows New number of rows.
-   * @param cols New number of columns.
-   * @param preserve True to preserve existing contents of vector, false
-   * otherwise.
-   *
-   * In general, this invalidates any gpu_matrix_reference objects
-   * constructed from the gpu_matrix.
+   * @copydoc host_vector::resize()
    */
   void resize(const size_type rows, const size_type cols,
       const bool preserve = false);
 
   /**
-   * Swap data between two matrices.
-   *
-   * @param o Matrix.
-   *
-   * Swaps the underlying data between the two vectors, updating leading,
-   * size and ownership as appropriate. This is a pointer swap, no data is
-   * copied.
+   * @copydoc host_vector::trim()
+   */
+  void trim(const size_type i, const size_type rows, const size_type j,
+      const size_type cols, const bool preserve = true);
+
+  /**
+   * @copydoc host_vector::swap()
    */
   void swap(gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>& o);
 
@@ -982,57 +974,27 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
     const size_type rows, const size_type cols, const bool preserve) {
+  trim(0, rows, 0, cols, preserve);
+}
+
+template<class T, int size1_value, int size2_value, int lead_value,
+    int inc_value, class A>
+void bi::gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::trim(
+    const size_type i, const size_type rows, const size_type j,
+    const size_type cols, const bool preserve) {
+  /* pre-conditions */
+  BI_ASSERT(i < this->size1() && j < this->size2());
+  BI_ERROR_MSG(own,
+      "Cannot resize host_matrix constructed as view of other matrix");
+
   if (rows != this->size1() || cols != this->size2()) {
-    BI_ERROR_MSG(own,
-        "Cannot resize gpu_matrix constructed as view of other matrix");
-
-    /* allocate new buffer */
-    T* ptr;
-    if (rows * cols > 0) {
-      ptr = alloc.allocate(rows * cols);
-    } else {
-      ptr = NULL;
-    }
-
-    /* copy across contents */
+    gpu_matrix<T,size1_value,size2_value,lead_value,inc_value,A> X(rows, cols);
     if (preserve) {
-      if (rows * sizeof(T) <= CUDA_PITCH_LIMIT
-          && this->lead() * sizeof(T) <= CUDA_PITCH_LIMIT
-          && this->inc() == 1) {
-        /* pitched 2d copy */
-        CUDA_CHECKED_CALL(cudaMemcpy2DAsync(ptr, rows*sizeof(T),
-                this->buf(), this->lead()*sizeof(T),
-                bi::min(rows, this->size1())*sizeof(T),
-                bi::min(cols, this->size2()), cudaMemcpyDeviceToDevice, 0));
-      } else if (rows == this->lead() && this->inc() == 1) {
-        /* plain linear copy */
-        CUDA_CHECKED_CALL(cudaMemcpyAsync(ptr, this->buf(),
-                rows*bi::min(cols, this->size2())*sizeof(T),
-                cudaMemcpyDeviceToDevice, 0));
-      } else {
-        BI_ASSERT(this->inc() == 1);
-
-        /* copy column-by-column */
-        size_type j;
-        for (j = 0; j < bi::min(cols, this->size2()); ++j) {
-          CUDA_CHECKED_CALL(cudaMemcpyAsync(ptr + rows*j, this->buf() +
-                  this->lead()*j, bi::min(rows, this->size1())*sizeof(T),
-                  cudaMemcpyDeviceToDevice, 0));
-        }
-      }
+      const size_t m = std::min(rows, this->size1() - i);
+      const size_t n = std::min(cols, this->size2() - j);
+      subrange(X, 0, m, 0, n) = subrange(*this, i, m, j, n);
     }
-
-    /* free old buffer */
-    if (this->buf() != NULL) {
-      alloc.deallocate(this->buf(), this->size1() * this->size2());
-    }
-
-    /* assign new buffer */
-    this->setBuf(ptr);
-    this->setSize1(rows);
-    this->setSize2(cols);
-    this->setLead(rows);
-    this->setInc(1);
+    this->swap(X);
   }
 }
 

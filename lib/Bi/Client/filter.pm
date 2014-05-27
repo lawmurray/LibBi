@@ -274,7 +274,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'filter',
       type => 'string',
-      default => 'pf'
+      default => 'bootstrap'
     },
     {
       name => 'nparticles',

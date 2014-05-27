@@ -82,7 +82,7 @@ inline bi::Stopper::Stopper(const real threshold, const int maxP, const int T) :
 template<class V1>
 bool bi::Stopper::stop(const V1 lws, const real maxlw) {
   P += lws.size();
-  return P >= std::min(threshold, maxP);
+  return P >= threshold || P >= maxP;
 }
 
 inline void bi::Stopper::reset() {

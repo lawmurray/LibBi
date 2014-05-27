@@ -112,7 +112,8 @@ struct ForcerFactory {
 }
 
 template<class IO1, bi::Location CL>
-bi::Forcer<IO1,CL>::Forcer(IO1* in) : in(in) {
+bi::Forcer<IO1,CL>::Forcer(IO1* in) :
+    in(in) {
   //
 }
 

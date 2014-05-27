@@ -865,6 +865,22 @@ public:
       const bool preserve = false);
 
   /**
+   * Trim matrix.
+   *
+   * @param i Starting row.
+   * @param rows New number of rows.
+   * @param j Starting column.
+   * @param cols New number of columns.
+   * @param preserve True to preserve existing contents of vector, false
+   * otherwise.
+   *
+   * In general, this invalidates any host_matrix_reference objects
+   * constructed from the host_matrix.
+   */
+  void trim(const size_type i, const size_type rows, const size_type j,
+      const size_type cols, const bool preserve = true);
+
+  /**
    * Swap data between two matrices.
    *
    * @param o Matrix.
@@ -987,34 +1003,28 @@ template<class T, int size1_value, int size2_value, int lead_value,
     int inc_value, class A>
 void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::resize(
     const size_type rows, const size_type cols, const bool preserve) {
+  trim(0, rows, 0, cols, preserve);
+}
+
+template<class T, int size1_value, int size2_value, int lead_value,
+    int inc_value, class A>
+void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::trim(
+    const size_type i, const size_type rows, const size_type j,
+    const size_type cols, const bool preserve) {
+  /* pre-conditions */
+  BI_ASSERT(i < this->size1() && j < this->size2());
+  BI_ERROR_MSG(own,
+      "Cannot resize host_matrix constructed as view of other matrix");
+
   if (rows != this->size1() || cols != this->size2()) {
-    BI_ERROR_MSG(own,
-        "Cannot resize host_matrix constructed as view of other matrix");
-
-    /* allocate new buffer */
-    T* ptr = (rows * cols > 0) ? alloc.allocate(rows * cols) : NULL;
-
-    /* copy across contents */
+    host_matrix<T,size1_value,size2_value,lead_value,inc_value,A> X(rows, cols);
+    X(rows, cols);
     if (preserve) {
-      size_type i, j;
-      for (j = 0; j < bi::min(this->size2(), cols); ++j) {
-        for (i = 0; i < bi::min(this->size1(), rows); ++i) {
-          ptr[j * rows + i] = (*this)(i, j);
-        }
-      }
+      const size_t m = std::min(rows, this->size1() - i);
+      const size_t n = std::min(cols, this->size2() - j);
+      subrange(X, 0, m, 0, n) = subrange(*this, i, m, j, n);
     }
-
-    /* free old buffer */
-    if (this->buf() != NULL) {
-      alloc.deallocate(this->buf(), this->size1() * this->size2());
-    }
-
-    /* assign new buffer */
-    this->setBuf(ptr);
-    this->setSize1(rows);
-    this->setSize2(cols);
-    this->setLead(rows);
-    this->setInc(1);
+    this->swap(X);
   }
 }
 

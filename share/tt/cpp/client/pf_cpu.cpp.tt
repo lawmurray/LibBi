@@ -15,11 +15,16 @@
 #include "bi/random/Random.hpp"
 [% IF client.get_named_arg('filter') == 'lookahead' %]
 #include "bi/method/LookaheadPF.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/state/AuxiliaryPFState.hpp"
 [% ELSIF client.get_named_arg('filter') == 'bridge' %]
 #include "bi/method/BridgePF.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/state/AuxiliaryPFState.hpp"
 [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
 #include "bi/method/AdaptivePF.hpp"
 #include "bi/cache/AdaptivePFCache.hpp"
+#include "bi/state/BootstrapPFState.hpp"
 #include "bi/stopper/Stopper.hpp"
 #include "bi/stopper/SumOfWeightsStopper.hpp"
 #include "bi/stopper/MinimumESSStopper.hpp"
@@ -27,6 +32,8 @@
 #include "bi/stopper/VarStopper.hpp"
 [% ELSE %]
 #include "bi/method/BootstrapPF.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/state/BootstrapPFState.hpp"
 [% END %]
 
 #include "bi/method/Simulator.hpp"
@@ -90,8 +97,18 @@ int main(int argc, char* argv[]) {
   model_type m;
   
   /* state */
-  State<model_type,LOCATION> s(NPARTICLES);
-  NPARTICLES = s.size(); // may change according to implementation
+  NPARTICLES = bi::roundup(NPARTICLES);
+  MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
+  BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
+  [% IF client.get_named_arg('filter') == 'lookahead' %]
+  AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES);
+  [% ELSIF client.get_named_arg('filter') == 'bridge' %]
+  AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES);
+  [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+  BootstrapPFState<model_type,LOCATION> s(NPARTICLES);
+  [% ELSE %]
+  BootstrapPFState<model_type,LOCATION> s(NPARTICLES);
+  [% END %]
 
   /* inputs */
   SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;

@@ -295,7 +295,7 @@ void bi::AdaptivePFCache<IO1,CL>::push(const int P) {
   while (timeCache.isValid(k)) {
     BootstrapPFCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
     BootstrapPFCache<IO1,CL>::writeState(base + k, rows(particleCache.get(k), 0, P),
-        subrange(ancestorCache.get(k), 0, P), true);
+        subrange(ancestorCache.get(k), 0, P));
     BootstrapPFCache<IO1,CL>::writeLogWeights(base + k,
         subrange(logWeightCache.get(k), 0, P));
     ++k;
