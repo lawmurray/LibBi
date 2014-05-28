@@ -153,14 +153,14 @@ if test x$mpi = xtrue; then
     if test x$vampir = xtrue; then
 	    AC_CHECK_PROG(have_mpicxxvt, [mpicxx-vt], [true], [false])
 	    if test x$have_mpicxxvt = xfalse; then
-	       AC_MSG_ERROR([program not found (required with --enable-vampir)])
+	       AC_MSG_ERROR([Vampir compiler wrapper not found (only required with --enable-vampir)])
 	    fi
 		CXX="mpicxx-vt --vt:cxx $CXX --vt:inst manual --vt:mpi"
 		CXXCPP="mpicxx-vt --vt:cxx $CXXCPP --vt:mpi"
 	else
 	    AC_CHECK_PROG(have_mpicxx, [mpicxx], [true], [false])
 	    if test x$have_mpicxx = xfalse; then
-	       AC_MSG_ERROR([program not found (required with --enable-mpi)])
+	       AC_MSG_ERROR([MPI compiler wrapper not found (only required with --enable-mpi)])
 	    fi
 		CXX="mpicxx"
 		CXXCPP="mpicxx -E"
@@ -171,8 +171,8 @@ fi
 #LT_INIT
 
 # Checks for libraries
-AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required library not found])])
-AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required standard math library not found])])
+AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required gfortran library not found])])
 
 # Intel MKL if available, needing special treatment given multiple libs...
 AC_SEARCH_LIBS([mkl_blas_dgemv], [mkl_intel mkl_intel_lp64], [], [], [-lmkl_sequential -lmkl_core])
@@ -183,33 +183,33 @@ AC_CHECK_LIB([mkl_core], [mkl_blas_dgemv], [], [])
 AC_CHECK_LIB([atlas], [main], [], [])
 
 # ...otherwise search for alternatives
-AC_SEARCH_LIBS([cblas_dgemv], [openblaso openblas cblas gslcblas], [], [AC_MSG_ERROR([required library not found])])
-AC_SEARCH_LIBS([dgemv_], [openblaso openblas blas f77blas], [], [AC_MSG_ERROR([required library not found])])
-AC_SEARCH_LIBS([dpotrf_], [openblaso openblas lapack], [], [AC_MSG_ERROR([required library not found])])
+AC_SEARCH_LIBS([cblas_dgemv], [openblaso openblas cblas gslcblas], [], [AC_MSG_ERROR([required CBLAS library not found])])
+AC_SEARCH_LIBS([dgemv_], [openblaso openblas blas f77blas], [], [AC_MSG_ERROR([required BLAS library not found])])
+AC_SEARCH_LIBS([dpotrf_], [openblaso openblas lapack], [], [AC_MSG_ERROR([required LAPACK library not found])])
 
-AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required library not found])])
-AC_CHECK_LIB([gsl], [main], [], [AC_MSG_ERROR([required library not found])])
-AC_CHECK_LIB([netcdf], [main], [], [AC_MSG_ERROR([required library not found])])
+AC_CHECK_LIB([qrupdate], [dch1dn_], [], [AC_MSG_ERROR([required QRUpdate library not found])])
+AC_CHECK_LIB([gsl], [main], [], [AC_MSG_ERROR([required GSL library not found])])
+AC_CHECK_LIB([netcdf], [main], [], [AC_MSG_ERROR([required NetCDF library not found])])
 AC_CHECK_LIB([profiler], [main], [], [])
 
 if test x$cuda = xtrue; then
     AC_CHECK_LIB([cuda], [main], [], [])
-    AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
-    AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
-    AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
+    AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([CUDA library not found (only required with --enable-cuda)])])
+    AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([CURAND library (part of CUDA) not found (only required with --enable-cuda)])])
+    AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([CUBLAS library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], []) # removed in MAGMA 1.4, so not required
-    AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([library not found (required with --enable-cuda)])])
+    AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([library not found (only required with --enable-cuda)])])
 fi
 
 if test x$mpi = xtrue; then
-    AC_CHECK_LIB([mpi], [main], [], [AC_MSG_ERROR([library not found (required with --enable-mpi)])])
-    AC_CHECK_LIB([boost_mpi], [main], [], [AC_MSG_ERROR([library not found (required with --enable-mpi)])])
-    AC_CHECK_LIB([boost_serialization], [main], [], [AC_MSG_ERROR([library not found (required with --enable-mpi)])])
+    AC_CHECK_LIB([mpi], [main], [], [AC_MSG_ERROR([MPI library not found (only required with --enable-mpi)])])
+    AC_CHECK_LIB([boost_mpi], [main], [], [AC_MSG_ERROR([Boost.MPI library not found (only required with --enable-mpi)])])
+    AC_CHECK_LIB([boost_serialization], [main], [], [AC_MSG_ERROR([Boost.Serialization library not found (only required with --enable-mpi)])])
 fi
 
 # Checks for library functions
 m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
-    AC_MSG_ERROR([required math function not found]))])
+    AC_MSG_ERROR([required standard math function not found]))])
 
 # Checks for header files
 AC_HEADER_ASSERT
@@ -219,7 +219,7 @@ AC_CHECK_HEADER([netcdf.h], [], \
 
 AC_CHECK_HEADERS([mkl_cblas.h cblas.h gsl/gsl_cblas.h], [], [], [-])
 if test x$ac_cv_header_mkl_cblas_h = xfalse && test x$ac_cv_header_cblas_h = xfalse && x$ac_cv_header_gsl_gsl_cblas_h = xfalse; then
-    AC_MSG_ERROR([required header not found])
+    AC_MSG_ERROR([required CBLAS header not found])
 fi
 
 AC_CHECK_HEADERS([\
@@ -232,7 +232,7 @@ AC_CHECK_HEADERS([\
     boost/random/uniform_real.hpp \
     boost/random/variate_generator.hpp \
     boost/typeof/typeof.hpp \
-    ], [], AC_MSG_ERROR([required boost header not found]), [-])
+    ], [], AC_MSG_ERROR([required Boost header not found]), [-])
 
 AC_CHECK_HEADERS([\
     thrust/adjacent_difference.h \
@@ -266,18 +266,18 @@ AC_CHECK_HEADERS([\
 AC_CHECK_HEADER([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not found]), [-])
 
 if test x$cuda = xtrue; then
-    AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (required with --enable-cuda)]), [-])
-    AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (required with --enable-cuda)]), [-])
-    AC_CHECK_HEADERS([magma_s.h magma_d.h], [], AC_MSG_ERROR([MAGMA header not found (required with --enable-cuda)]), [-])
+    AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (only required with --enable-cuda)]), [-])
+    AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (only required with --enable-cuda)]), [-])
+    AC_CHECK_HEADERS([magma_s.h magma_d.h], [], AC_MSG_ERROR([MAGMA header not found (only required with --enable-cuda)]), [-])
 fi
 
 if test x$mpi = xtrue; then
-    AC_CHECK_HEADER([mpi.h], [], [AC_MSG_ERROR([MPI header not found (required with --enable-mpi)])], [])
-	AC_CHECK_HEADER([boost/mpi.hpp], [], [AC_MSG_ERROR([MPI header not found (required with --enable-mpi)])], [])
+    AC_CHECK_HEADER([mpi.h], [], [AC_MSG_ERROR([MPI header not found (only required with --enable-mpi)])], [])
+	AC_CHECK_HEADER([boost/mpi.hpp], [], [AC_MSG_ERROR([Boost.MPI header not found (only required with --enable-mpi)])], [])
 fi
 
 if test x$gperftools = xtrue; then
-    AC_CHECK_HEADER([google/profiler.h], [], [AC_MSG_ERROR([gperftools header not found (required with --enable-gperftools)])], [])
+    AC_CHECK_HEADER([google/profiler.h], [], [AC_MSG_ERROR([Gperftools header not found (only required with --enable-gperftools)])], [])
 fi
 
 # Restore user's flags
