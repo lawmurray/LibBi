@@ -285,9 +285,9 @@ sub _autogen {
         if ($? == -1) {
             die("./autogen.sh failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./autogen.sh died with signal %d, see $builddir/autogen.log for details\n", $? & 127));
+            die(sprintf("./autogen.sh died with signal %d. See $builddir/autogen.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./autogen.sh failed with return code %d, see $builddir/autogen.log for details\n", $ret >> 8));
+            die(sprintf("./autogen.sh failed with return code %d. Make sure autoconf and automake are installed. See $builddir/autogen.log for details\n", $ret >> 8));
         }
         chdir($cwd) || warn("could not change back to working directory '$cwd'\n");
     }
@@ -354,9 +354,9 @@ sub _configure {
         if ($? == -1) {
             die("./configure failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./configure died with signal %d, see $builddir/configure.log and $builddir/config.log for details\n", $? & 127));
+            die(sprintf("./configure died with signal %d. See $builddir/configure.log and $builddir/config.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./configure failed with return code %d, see $builddir/configure.log and $builddir/config.log for details\n", $ret >> 8));
+            die(sprintf("./configure failed with return code %d." . _configure_whats_missing('configure.log') . " See $builddir/configure.log and $builddir/config.log for details\n", $ret >> 8));
         }        
         chdir($cwd);
     }
@@ -473,6 +473,23 @@ sub _last_modified {
     } else {
         return time;
     }
+}
+
+=item B<_configure_whats_missing>(I<configure_log>)
+
+Try to work out what might be missing when configure fails. Return an
+appropriate message.
+
+=cut
+sub _configure_whats_missing {
+    my $configure_log = shift;
+    
+    my @lines = read_file($configure_log);
+    my $helpful = '';
+    if ($lines[$#lines] =~ /^configure: error: (.*?)$/) {
+    	$helpful = " $1.";
+    }
+    return $helpful;
 }
 
 1;
