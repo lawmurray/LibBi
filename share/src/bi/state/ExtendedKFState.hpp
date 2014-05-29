@@ -39,22 +39,22 @@ public:
   /*
    * Uncorrected and correct means.
    */
-  typename State<B,L>::vector_type mu1(M), mu2(M);
+  typename State<B,L>::vector_type mu1, mu2;
 
   /*
    * Square-roots of uncorrected and corrected covariance matrices,
    * cross-covariance matrix.
    */
-  typename State<B,L>::matrix_type U1(M, M), U2(M, M), C(M, M);
+  typename State<B,L>::matrix_type U1, U2, C;
 
   /* views */
-  typename State<B,>::matrix_reference_type F, Q, G, R;
+  typename State<B,L>::matrix_reference_type F, Q, G, R;
 
 private:
   /**
    * Number of dynamic variables.
    */
-  static const int M = NR + ND;
+  static const int M = B::NR + B::ND;
 
   /**
    * Serialize.
@@ -79,10 +79,10 @@ private:
 template<class B, bi::Location L>
 bi::ExtendedKFState<B,L>::ExtendedKFState() :
     State<B,L>(), mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M), F(
-        reshape(getVar<VarGroupF>(), ND + NR, ND + NR)), Q(
-        reshape(getVar<VarGroupQ>(), ND + NR, ND + NR)), G(
-        reshape(getVar<VarGroupG>(), ND + NR, NO)), R(
-        reshape(getVar<VarGroupR>(), NO, NO)) {
+        reshape(this->getVar<VarGroupF>(), M, M)), Q(
+        reshape(this->getVar<VarGroupQ>(), M, M)), G(
+        reshape(this->getVar<VarGroupG>(), M, B::NO)), R(
+        reshape(this->getVar<VarGroupR>(), B::NO, B::NO)) {
   //
 }
 
@@ -123,8 +123,8 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::ExtendedKFState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < State<B,L> > (*this);
-  load_resizable_vector(ar, version, lws);
-  load_resizable_vector(ar, version, as);
+  load_resizable_vector(ar, version, mu1);
+  load_resizable_vector(ar, version, mu2);
   load_resizable_matrix(ar, version, U1);
   load_resizable_matrix(ar, version, U2);
   load_resizable_matrix(ar, version, C);

@@ -32,12 +32,12 @@ AM_LDFLAGS = $(OPENMP_LDFLAGS) $(CUDA_LDFLAGS)
 # CUDA files setup
 if ENABLE_MPI
 if ENABLE_VAMPIR
-NVCC = mpicxx-vt --vt:cxx "perl nvcc_wrapper.pl nvcc" --vt:inst manual --vt:mpi
+NVCC = mpicxx-vt --vt:cxx nvcc --vt:inst manual --vt:mpi
 else
-NVCC = perl nvcc_wrapper.pl nvcc `mpicxx -showme:compile`
+NVCC = nvcc `mpicxx -showme:compile`
 endif
 else
-NVCC = perl nvcc_wrapper.pl nvcc
+NVCC = nvcc
 endif
 
 NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
