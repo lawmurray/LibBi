@@ -171,12 +171,13 @@ sub _create_mean_action {
     
     my $mean = $node->mean;
     my $left = $node->get_left->clone;
+    my $op = ($node->get_op eq '~') ? '<-' : $node->get_op;
     my $right = $mean;
         
     my $action = new Bi::Action;
     $action->set_aliases($node->get_aliases);
     $action->set_left($left);
-    $action->set_op('<-');
+    $action->set_op($op);
     $action->set_right($right);
     $action->validate;
         

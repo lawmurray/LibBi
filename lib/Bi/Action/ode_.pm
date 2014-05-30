@@ -54,7 +54,7 @@ sub validate {
     $self->process_args($ACTION_ARGS);    
     $self->ensure_op('=');
 
-    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
     	die("incompatible sizes on left and right sides of action.\n");
     }
 

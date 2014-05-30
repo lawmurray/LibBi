@@ -69,7 +69,7 @@ sub validate {
     if ($uplo ne 'U' && $uplo ne 'L') {
         die("unrecognised value '$uplo' for argument 'uplo' of action 'cholesky'\n");
     }
-    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
     	die("incompatible sizes on left and right sides of action.\n");
     }
 
