@@ -1012,14 +1012,12 @@ void bi::host_matrix<T,size1_value,size2_value,lead_value,inc_value,A>::trim(
     const size_type i, const size_type rows, const size_type j,
     const size_type cols, const bool preserve) {
   /* pre-conditions */
-  BI_ASSERT(i < this->size1() && j < this->size2());
   BI_ERROR_MSG(own,
       "Cannot resize host_matrix constructed as view of other matrix");
 
   if (rows != this->size1() || cols != this->size2()) {
     host_matrix<T,size1_value,size2_value,lead_value,inc_value,A> X(rows, cols);
-    X(rows, cols);
-    if (preserve) {
+    if (preserve && i < this->size1() && j < this->size2()) {
       const size_t m = std::min(rows, this->size1() - i);
       const size_t n = std::min(cols, this->size2() - j);
       subrange(X, 0, m, 0, n) = subrange(*this, i, m, j, n);

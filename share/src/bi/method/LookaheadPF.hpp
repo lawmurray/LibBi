@@ -36,7 +36,7 @@ public:
    */
   //@{
   /**
-   * @copydoc BootstrapPF::step(Random&, ScheduleIterator&, const ScheduleIterator, BootstrapPFState<B,L>&)
+   * @copydoc BootstrapPF::step()
    */
   template<bi::Location L, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
@@ -51,32 +51,14 @@ public:
    */
   //@{
   /**
-   * Initialise.
-   *
-   * @tparam L Location.
-   * @tparam IO1 Output type.
-   * @tparam IO2 Input type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param[out] s State.
-   * @param out Output buffer.
-   * @param inInit Initialisation file.
+   * @copydoc BootstrapPF::init()
    */
   template<Location L, class IO1, class IO2>
   void init(Random& rng, const ScheduleElement now, AuxiliaryPFState<B,L>& s,
       IO1* out, IO2* inInit);
 
   /**
-   * Initialise, with fixed parameters and starting at time zero.
-   *
-   * @tparam L Location.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param theta Parameters.
-   * @param[out] s State.
-   * @param out Output buffer.
+   * @copydoc BootstrapPF::init()
    */
   template<Location L, class V1, class IO1>
   void init(Random& rng, const V1 theta, const ScheduleElement now,
@@ -99,28 +81,13 @@ public:
       const ScheduleIterator last, AuxiliaryPFState<B,L>& s);
 
   /**
-   * Update particle weights using observations at the current time.
-   *
-   * @tparam L Location.
-   *
-   * @param now Current step in time schedule.
-   * @param s State.
-   *
-   * @return Estimate of the incremental log-likelihood.
+   * @copydoc BootstrapPF::correct()
    */
   template<Location L>
-  real correct(const ScheduleElement now, AuxiliaryPFState<B,L>& s);
+  real correct(Random& rng, const ScheduleElement now, AuxiliaryPFState<B,L>& s);
 
   /**
-   * Resample after bridge weighting.
-   *
-   * @tparam L Location.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param[in,out] s State.
-   *
-   * @return True if resampling was performed, false otherwise.
+   * @copydoc BootstrapPF::resample()
    */
   template<Location L>
   bool resample(Random& rng, const ScheduleElement now,
@@ -182,7 +149,7 @@ real bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     this->resample(rng, *iter, s);
     ++iter;
     this->predict(rng, *iter, s);
-    ll += this->correct(*iter, s);
+    ll += this->correct(rng, *iter, s);
     this->output(*iter, s, out);
   } while (iter + 1 != last && !iter->isObserved());
 
@@ -217,7 +184,7 @@ real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
       this->sim.lookahead(rng, *iter1, s);
     } while (!iter1->isObserved());
     this->m.lookaheadObservationLogDensities(s,
-        this->sim.getObs()->getMask(iter1->indexObs()), s.logAuxWeights());
+        this->sim.obs.getMask(iter1->indexObs()), s.logAuxWeights());
 
     /* restore previous state */
     s.getDyn() = X;
@@ -234,7 +201,7 @@ real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
 
 template<class B, class S, class R>
 template<bi::Location L>
-real bi::LookaheadPF<B,S,R>::correct(const ScheduleElement now,
+real bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
     AuxiliaryPFState<B,L>& s) {
   real ll = 0.0;
   if (now.isObserved()) {
@@ -242,7 +209,7 @@ real bi::LookaheadPF<B,S,R>::correct(const ScheduleElement now,
     s.logAuxWeights().clear();
 
     this->m.observationLogDensities(s,
-        this->sim.getObs()->getMask(now.indexObs()), s.logWeights());
+        this->sim.obs.getMask(now.indexObs()), s.logWeights());
 
     ll = logsumexp_reduce(s.logWeights())
         - bi::log(static_cast<real>(s.size()));
@@ -299,7 +266,7 @@ template<bi::Location L>
 real bi::LookaheadPF<B,S,R>::getMaxLogWeightBridge(const ScheduleElement now,
     AuxiliaryPFState<B,L>& s) {
   return this->m.bridgeMaxLogDensity(s,
-      this->sim.getObs()->getMask(now.indexObs()));
+      this->sim.obs.getMask(now.indexObs()));
 }
 
 #endif

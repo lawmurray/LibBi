@@ -44,7 +44,7 @@ public:
    */
   //@{
   /**
-   * @copydoc BootstrapPF::step
+   * @copydoc BootstrapPF::step()
    */
   template<bi::Location L, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
@@ -59,7 +59,7 @@ public:
    */
   //@{
   /**
-   * @copydoc BootstrapPF::output
+   * @copydoc BootstrapPF::output()
    */
   template<Location L, class IO1>
   void output(const ScheduleElement now, const BootstrapPFState<B,L>& s,
@@ -124,7 +124,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
       this->predict(rng, *iter1, s);
       output(*iter1, s);
     } while (iter1 + 1 != last && !iter1->isObserved());
-    this->correct(*iter1, s);
+    this->correct(rng, *iter1, s);
 
     if (block == 0) {
       maxlw = this->getMaxLogWeight(*iter1, s);

@@ -379,14 +379,10 @@ sub process_args {
 
     $self->Bi::Client::process_args(@_);
     my $filter = $self->get_named_arg('filter');
-    my $binary;
     if ($filter eq 'kalman') {
         $self->set_named_arg('with-transform-extended', 1);
-        $binary = 'ekf';
-    } else {
-        $binary = 'pf';
     }
-    $self->{_binary} = $binary;
+    $self->{_binary} = 'filter';
 }
 
 1;

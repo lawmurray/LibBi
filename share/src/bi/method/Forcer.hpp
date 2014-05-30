@@ -102,11 +102,7 @@ struct ForcerFactory {
    */
   template<class IO1>
   static Forcer<IO1,CL>* create(IO1* in) {
-    if (in == NULL) {
-      return NULL;
-    } else {
-      return new Forcer<IO1,CL>(in);
-    }
+    return new Forcer<IO1,CL>(in);
   }
 };
 }
@@ -134,7 +130,7 @@ template<class B, bi::Location L>
 inline void bi::Forcer<IO1,CL>::update0(State<B,L>& s) {
   if (cache0.isValid(0)) {
     vec(s.get(F_VAR)) = cache0.get(0);
-  } else {
+  } else if (in != NULL) {
     in->read0(F_VAR, s.get(F_VAR));
     cache0.set(0, vec(s.get(F_VAR)));
   }

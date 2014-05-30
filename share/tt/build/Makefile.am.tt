@@ -9,11 +9,10 @@
 [%
 # client programs
 CLIENTS = [
-    'ekf',
     'nm',
-    'pf',
     'mh',
     'simulate',
+    'filter',
     'sir',
     'srs',
     'test',

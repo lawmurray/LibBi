@@ -25,8 +25,42 @@ public:
   /**
    * Pass-through constructor.
    */
-  template<typename... Args>
-  Filter(Args... args);
+  template<class T1>
+  Filter(T1& o1) : F(o1) {
+    //
+  }
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  Filter(T1& o1, T2& o2) : F(o1, o2) {
+    //
+  }
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  Filter(T1& o1, T2& o2, T3& o3) : F(o1, o2, o3) {
+    //
+  }
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  Filter(T1& o1, T2& o2, T3& o3, T4& o4) : F(o1, o2, o3, o4) {
+    //
+  }
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  Filter(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) : F(o1, o2, o3, o4, o5) {
+    //
+  }
 
   /**
    * %Filter forward.
@@ -74,12 +108,6 @@ public:
 #include <utility>
 
 template<class F>
-template<typename... Args>
-bi::Filter<F>::Filter(Args... args) : F(args...) {
-  //
-}
-
-template<class F>
 template<class S, class IO1, class IO2>
 real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S& s, IO1* out, IO2* inInit) {
@@ -89,7 +117,7 @@ real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
   ScheduleIterator iter = first;
   this->init(rng, *iter, s, out, inInit);
   this->output0(s, out);
-  ll = this->correct(*iter, s);
+  ll = this->correct(rng, *iter, s);
   this->output(*iter, s, out);
   while (iter + 1 != last) {
     ll += this->step(rng, iter, last, s, out);
@@ -113,7 +141,7 @@ real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
   ScheduleIterator iter = first;
   this->init(rng, theta, *iter, s, out);
   this->output0(s, out);
-  ll = this->correct(*iter, s);
+  ll = this->correct(rng, *iter, s);
   this->output(*iter, s, out);
   while (iter + 1 != last) {
     ll += this->step(rng, iter, last, s, out);

@@ -11,33 +11,39 @@
 
 #include "model/[% class_name %].hpp"
 
+#include "bi/ode/IntegratorConstants.hpp"
+#include "bi/misc/TicToc.hpp"
 #include "bi/kd/kde.hpp"
+
 #include "bi/random/Random.hpp"
+#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
 #include "bi/method/Simulator.hpp"
-#include "bi/method/FilterFactory.hpp"
-#include "bi/state/BootstrapPFState.hpp"
-#include "bi/state/AuxiliaryPFState.hpp"
-#include "bi/cache/BootstrapPFCache.hpp"
-#include "bi/cache/AdaptivePFCache.hpp"
-#include "bi/stopper/Stopper.hpp"
-#include "bi/stopper/SumOfWeightsStopper.hpp"
-#include "bi/stopper/MinimumESSStopper.hpp"
-#include "bi/stopper/StdDevStopper.hpp"
-#include "bi/stopper/VarStopper.hpp"
+
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
 #include "bi/resampler/RejectionResampler.hpp"
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
-#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/ode/IntegratorConstants.hpp"
-#include "bi/misc/TicToc.hpp"
 #ifdef ENABLE_MPI
 #include "bi/mpi/resampler/DistributedResampler.hpp"
 #endif
+
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
+
+#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
+#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "bi/cache/ExtendedKFCache.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/cache/AdaptivePFCache.hpp"
+
+#include "bi/method/FilterFactory.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
@@ -81,17 +87,16 @@ int main(int argc, char* argv[]) {
 
   /* model */
   model_type m;
-  
+
   /* state */
   NPARTICLES = bi::roundup(NPARTICLES);
   MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
   BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
-  [% IF client.get_named_arg('filter') == 'lookahead' %]
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  NPARTICLES = 1;
+  ExtendedKFState<model_type,LOCATION> s;
+  [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
   AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES);
-  [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES);
-  [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BootstrapPFState<model_type,LOCATION> s(NPARTICLES);
   [% ELSE %]
   BootstrapPFState<model_type,LOCATION> s(NPARTICLES);
   [% END %]
@@ -112,14 +117,30 @@ int main(int argc, char* argv[]) {
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs);
 
   /* output */
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  KalmanFilterNetCDFBuffer* bufOutput = NULL;
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
+    bufOutput = new KalmanFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+  }
+  BOOST_AUTO(out, ExtendedKFCacheFactory<LOCATION>::create(bufOutput));
+  [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
   ParticleFilterNetCDFBuffer* bufOutput = NULL;
   if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    [% IF client.get_named_arg('filter') == 'adaptive' %]
     bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE, SimulatorNetCDFBuffer::FLEXI);
-    [% ELSE %]
-    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-    [% END %]
   }
+  BOOST_AUTO(out, AdaptivePFCacheFactory<LOCATION>::create(bufOutput));
+  [% ELSE %]
+  ParticleFilterNetCDFBuffer* bufOutput = NULL;
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
+    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+  }
+  BOOST_AUTO(out, BootstrapPFCacheFactory<LOCATION>::create(bufOutput));
+  [% END %]
+    
+  /* simulator */
+  BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
+  BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
 
   /* resampler */
   [% IF client.get_named_arg('with-mpi') %]
@@ -158,38 +179,30 @@ int main(int argc, char* argv[]) {
     [% END %]
   [% END %]
   
-  /* simulator */
-  BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
-  BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
-  BOOST_AUTO(sim, SimulatorFactory::create(m, in, obs));
-  
-  /* filter */
-  [% IF client.get_named_arg('filter') == 'adaptive' %]
-    BOOST_AUTO(out, AdaptivePFCacheFactory<LOCATION>::create(bufOutput));
-  [% ELSE %]
-    BOOST_AUTO(out, BootstrapPFCacheFactory<LOCATION>::create(bufOutput));
+  /* stopper */
+  [% IF client.get_named_arg('stopper') == 'deterministic' %]
+  Stopper stopper(NPARTICLES, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+  SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+  MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+  StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'var' %]
+  VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
   [% END %]
 
-  [% IF client.get_named_arg('filter') == 'lookahead' %]
-    BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, resam)));
+  /* filter */
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *sim)));
+  [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, resam)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-    BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-    /* stopper */
-    [% IF client.get_named_arg('stopper') == 'deterministic' %]
-    Stopper stopper(NPARTICLES, MAX_PARTICLES, sched.numObs());
-    [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-    SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-    [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-    MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-    [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-    StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-    [% ELSIF client.get_named_arg('stopper') == 'var' %]
-    VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-    [% END %]
-    BOOST_AUTO(filter, (AdaptivePFFactory::create(m, sim, &resam, &stopper, out)));
+  BOOST_AUTO(filter, (AdaptivePFFactory::create(m, *sim, resam, stopper)));
   [% ELSE %]
-    BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
   [% END %]
 
   #ifdef ENABLE_GPERFTOOLS

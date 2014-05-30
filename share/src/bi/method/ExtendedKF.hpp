@@ -42,10 +42,10 @@ public:
    */
   //@{
   /**
-   * @copydoc BootstrapPF::step(Random&, ScheduleIterator&, const ScheduleIterator, BootstrapPFState<B,L>&)
+   * @copydoc BootstrapPF::step()
    */
   template<Location L, class IO1>
-  real step(ScheduleIterator& iter, const ScheduleIterator last,
+  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       ExtendedKFState<B,L>& s, IO1* out) throw (CholeskyException);
 
   /**
@@ -100,26 +100,28 @@ public:
    *
    * @tparam L Location.
    *
+   * @param rng Random number generator.
    * @param next Next step in time schedule.
    * @param[in,out] s State.
    */
   template<Location L>
-  void predict(const ScheduleElement next, ExtendedKFState<B,L>& s)
-      throw (CholeskyException);
+  void predict(Random& rng, const ScheduleElement next,
+      ExtendedKFState<B,L>& s) throw (CholeskyException);
 
   /**
    * Correct prediction with observation to produce filter density.
    *
    * @tparam L Location.
    *
+   * @param rng Random number generator.
    * @param now Current step in time schedule.
    * @param[in,out] s State.
    *
    * @return Estimate of the incremental log-likelihood.
    */
   template<Location L>
-  real correct(const ScheduleElement now, ExtendedKFState<B,L>& s)
-      throw (CholeskyException);
+  real correct(Random& rng, const ScheduleElement now,
+      ExtendedKFState<B,L>& s) throw (CholeskyException);
 
   /**
    * Output static variables.
@@ -236,20 +238,16 @@ template<class B, class S>
 template<bi::Location L, class IO1, class IO2>
 void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
     ExtendedKFState<B,L>& s, IO1* out, IO2* inInit) {
-  ident(s.F);
-  s.Q.clear();
-  s.G.clear();
-  s.R.clear();
-
   /* initialise */
   sim.init(rng, now, s, inInit);
+  ident(s.F());
 
   /* predicted mean */
   s.mu1 = row(s.getDyn(), 0);
 
   /* Cholesky factor of predicted covariance */
-  s.U1 = s.Q;
-  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F, 0, NR, NR, ND);
+  s.U1 = s.Q();
+  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F(), 0, NR, NR, ND);
   trmm(1.0, subrange(s.U1, 0, NR, 0, NR), subrange(s.U1, 0, NR, NR, ND));
 
   /* across-time covariance */
@@ -267,10 +265,10 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
     const V1 theta, ExtendedKFState<B,L>& s, IO1* out) {
   // this should be the same as init() above, but with a different call to
   // sim.init()
-  ident(s.F);
-  s.Q.clear();
-  s.G.clear();
-  s.R.clear();
+  ident(s.F());
+  s.Q().clear();
+  s.G().clear();
+  s.R().clear();
 
   /* initialise */
   sim.init(rng, theta, now, s);
@@ -279,8 +277,8 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
   s.mu1 = row(s.getDyn(), 0);
 
   /* Cholesky factor of predicted covariance */
-  s.U1 = s.Q;
-  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F, 0, NR, NR, ND);
+  s.U1 = s.Q();
+  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F(), 0, NR, NR, ND);
   trmm(1.0, subrange(s.U1, 0, NR, 0, NR), subrange(s.U1, 0, NR, NR, ND));
 
   /* across-time covariance */
@@ -294,14 +292,14 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
 
 template<class B, class S>
 template<bi::Location L, class IO1>
-real bi::ExtendedKF<B,S>::step(ScheduleIterator& iter,
+real bi::ExtendedKF<B,S>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, ExtendedKFState<B,L>& s, IO1* out)
         throw (CholeskyException) {
   do {
     ++iter;
-    predict(*iter, s);
+    predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  real ll = correct(*iter, s);
+  real ll = correct(rng, *iter, s);
   output(*iter, s, out);
 
   return ll;
@@ -309,12 +307,12 @@ real bi::ExtendedKF<B,S>::step(ScheduleIterator& iter,
 
 template<class B, class S>
 template<bi::Location L>
-void bi::ExtendedKF<B,S>::predict(const ScheduleElement next,
+void bi::ExtendedKF<B,S>::predict(Random& rng, const ScheduleElement next,
     ExtendedKFState<B,L>& s) throw (CholeskyException) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
   /* predict */
-  sim.advance(next, s);
+  sim.advance(rng, next, s);
 
   /* predicted mean */
   s.mu1 = row(s.getDyn(), 0);
@@ -322,13 +320,13 @@ void bi::ExtendedKF<B,S>::predict(const ScheduleElement next,
   /* across-time block of square-root covariance */
   columns(s.C, 0, NR).clear();
   subrange(s.C, 0, NR, NR, ND).clear();
-  subrange(s.C, NR, ND, NR, ND) = subrange(s.F, NR, ND, NR, ND);
+  subrange(s.C, NR, ND, NR, ND) = subrange(s.F(), NR, ND, NR, ND);
   trmm(1.0, s.U2, s.C);
 
   /* current-time block of square-root covariance */
   rows(s.U1, NR, ND).clear();
-  subrange(s.U1, 0, NR, 0, NR) = subrange(s.Q, 0, NR, 0, NR);
-  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F, 0, NR, NR, ND);
+  subrange(s.U1, 0, NR, 0, NR) = subrange(s.Q(), 0, NR, 0, NR);
+  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F(), 0, NR, NR, ND);
   trmm(1.0, subrange(s.U1, 0, NR, 0, NR), subrange(s.U1, 0, NR, NR, ND));
 
   /* predicted covariance */
@@ -344,13 +342,13 @@ void bi::ExtendedKF<B,S>::predict(const ScheduleElement next,
   chol(Sigma, s.U1);
 
   /* reset Jacobian, as it has now been multiplied in */
-  ident(s.F);
-  s.Q.clear();
+  ident(s.F());
+  s.Q().clear();
 }
 
 template<class B, class S>
 template<bi::Location L>
-real bi::ExtendedKF<B,S>::correct(const ScheduleElement now,
+real bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     ExtendedKFState<B,L>& s) throw (CholeskyException) {
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
   typedef typename loc_temp_vector<L,real>::type vector_type;
@@ -361,10 +359,10 @@ real bi::ExtendedKF<B,S>::correct(const ScheduleElement now,
   s.U2 = s.U1;
 
   if (now.isObserved()) {
-    BOOST_AUTO(mask, sim.getObs()->getMask(now.indexObs()));
+    BOOST_AUTO(mask, sim.obs.getMask(now.indexObs()));
     const int W = mask.size();
 
-    sim.observe(s);
+    sim.observe(rng, s);
 
     matrix_type C(M, W), U3(W, W), Sigma3(W, W), R3(W, W);
     vector_type y(W), z(W), mu3(W);
@@ -387,17 +385,17 @@ real bi::ExtendedKF<B,S>::correct(const ScheduleElement now,
     }
 
     /* project matrices and vectors to active variables in mask */
-    gather_columns(map, s.G, s.C);
-    gather_matrix(map, map, s.R, R3);
+    gather_columns(map, s.G(), C);
+    gather_matrix(map, map, s.R(), R3);
     gather(map, row(s.get(O_VAR), 0), mu3);
     gather(map, row(s.get(OY_VAR), 0), y);
 
-    trmm(1.0, s.U1, s.C);
+    trmm(1.0, s.U1, C);
 
     Sigma3.clear();
-    syrk(1.0, s.C, 0.0, Sigma3, 'U', 'T');
+    syrk(1.0, C, 0.0, Sigma3, 'U', 'T');
     syrk(1.0, R3, 1.0, Sigma3, 'U', 'T');
-    trmm(1.0, s.U1, s.C, 'L', 'U', 'T');
+    trmm(1.0, s.U1, C, 'L', 'U', 'T');
     chol(Sigma3, U3, 'U');
 
     /* incremental log-likelihood */
@@ -408,16 +406,16 @@ real bi::ExtendedKF<B,S>::correct(const ScheduleElement now,
         - bi::log(prod_reduce(diagonal(U3)));
 
     if (now.indexTime() > 0) {
-      condition(s.mu2, s.U2, mu3, U3, s.C, y);
+      condition(s.mu2, s.U2, mu3, U3, C, y);
     } else {
       condition(subrange(s.mu2, NR, ND), subrange(s.U2, NR, ND, NR, ND), mu3,
-          U3, rows(s.C, NR, ND), y);
+          U3, rows(C, NR, ND), y);
     }
     row(s.getDyn(), 0) = s.mu2;
 
     /* reset Jacobian */
-    s.G.clear();
-    s.R.clear();
+    s.G().clear();
+    s.R().clear();
   }
 
   return ll;

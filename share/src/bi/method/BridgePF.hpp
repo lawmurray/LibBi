@@ -39,7 +39,7 @@ public:
    */
   //@{
   /**
-   * @copydoc LookaheadPF::step(Random&, ScheduleIterator&, const ScheduleIterator, BootstrapPFState<B,L>&)
+   * @copydoc LookaheadPF::step()
    */
   template<bi::Location L, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
@@ -90,7 +90,7 @@ real bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     this->resample(rng, *iter, s);
     ++iter;
     this->predict(rng, *iter, s);
-    ll += this->correct(*iter, s);
+    ll += this->correct(rng, *iter, s);
     this->output(*iter, s, out);
   } while (iter + 1 != last && !iter->isObserved());
 
@@ -108,7 +108,7 @@ real bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
     s.logAuxWeights().clear();
 
     this->m.bridgeLogDensities(s,
-        this->sim.getObs()->getMask(iter->indexObs()), s.logAuxWeights());
+        this->sim.obs.getMask(iter->indexObs()), s.logAuxWeights());
 
     axpy(1.0, s.logAuxWeights(), s.logWeights());
     ll = logsumexp_reduce(s.logWeights())

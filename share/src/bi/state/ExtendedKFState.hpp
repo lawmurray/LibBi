@@ -37,6 +37,14 @@ public:
   ExtendedKFState& operator=(const ExtendedKFState<B,L>& o);
 
   /*
+   * Views of Jacobian matrices etc.
+   */
+  typename State<B,L>::matrix_reference_type F();
+  typename State<B,L>::matrix_reference_type Q();
+  typename State<B,L>::matrix_reference_type G();
+  typename State<B,L>::matrix_reference_type R();
+
+  /*
    * Uncorrected and correct means.
    */
   typename State<B,L>::vector_type mu1, mu2;
@@ -46,9 +54,6 @@ public:
    * cross-covariance matrix.
    */
   typename State<B,L>::matrix_type U1, U2, C;
-
-  /* views */
-  typename State<B,L>::matrix_reference_type F, Q, G, R;
 
 private:
   /**
@@ -78,18 +83,13 @@ private:
 
 template<class B, bi::Location L>
 bi::ExtendedKFState<B,L>::ExtendedKFState() :
-    State<B,L>(), mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M), F(
-        reshape(this->getVar<VarGroupF>(), M, M)), Q(
-        reshape(this->getVar<VarGroupQ>(), M, M)), G(
-        reshape(this->getVar<VarGroupG>(), M, B::NO)), R(
-        reshape(this->getVar<VarGroupR>(), B::NO, B::NO)) {
+    mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M) {
   //
 }
 
 template<class B, bi::Location L>
 bi::ExtendedKFState<B,L>::ExtendedKFState(const ExtendedKFState<B,L>& o) :
-    State<B,L>(o), mu1(o.mu1), mu2(o.mu2), U1(o.U1), U2(o.U2), C(o.C), F(o.F), Q(
-        o.Q), G(o.G), R(o.R) {
+    State<B,L>(o), mu1(o.mu1), mu2(o.mu2), U1(o.U1), U2(o.U2), C(o.C) {
   //
 }
 
@@ -107,6 +107,26 @@ bi::ExtendedKFState<B,L>& bi::ExtendedKFState<B,L>::operator=(
 }
 
 template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::ExtendedKFState<B,L>::F() {
+  return reshape(this->template getVar<VarGroupF>(), M, M);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::ExtendedKFState<B,L>::Q() {
+  return reshape(this->template getVar<VarGroupQ>(), M, M);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::ExtendedKFState<B,L>::G() {
+  return reshape(this->template getVar<VarGroupG>(), M, B::NO);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::matrix_reference_type bi::ExtendedKFState<B,L>::R() {
+  return reshape(this->template getVar<VarGroupR>(), B::NO, B::NO);
+}
+
+template<class B, bi::Location L>
 template<class Archive>
 void bi::ExtendedKFState<B,L>::save(Archive& ar,
     const unsigned version) const {
@@ -116,7 +136,6 @@ void bi::ExtendedKFState<B,L>::save(Archive& ar,
   save_resizable_matrix(ar, version, U1);
   save_resizable_matrix(ar, version, U2);
   save_resizable_matrix(ar, version, C);
-  ar & F & Q & G & R;
 }
 
 template<class B, bi::Location L>
@@ -128,7 +147,6 @@ void bi::ExtendedKFState<B,L>::load(Archive& ar, const unsigned version) {
   load_resizable_matrix(ar, version, U1);
   load_resizable_matrix(ar, version, U2);
   load_resizable_matrix(ar, version, C);
-  ar & F & Q & G & R;
 }
 
 #endif

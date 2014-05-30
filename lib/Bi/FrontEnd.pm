@@ -199,6 +199,10 @@ sub client {
         }
         if ($client->get_named_arg('with-transform-extended')) {
             Bi::Visitor::ExtendedTransformer->evaluate($model);
+        } else {
+        	# needs to add some variable groups anyway so that ExtendedKF
+        	# C++ class doesn't cause compile errors
+            Bi::Visitor::ExtendedTransformer->dont_evaluate($model);
         }
         if ($client->get_named_arg('with-transform-iterated-filtering')) {
             Bi::Visitor::IteratedFilteringTransformer->evaluate($model);

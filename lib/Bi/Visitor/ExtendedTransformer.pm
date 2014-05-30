@@ -93,6 +93,22 @@ sub evaluate {
     $model->get_block('observation')->accept($self, $model, $J, $vars, $J_vars, $S_vars);
 }
 
+=item B<evaluate>(I<model>)
+
+Don't evaluate, but add the variable groups added anyway, otherwise
+ExtendedKF doesn't compile.
+
+=cut
+sub dont_evaluate {
+    my $class = shift;
+    my $model = shift;
+    
+    $model->push_var_group(new Bi::Model::VarGroup('state_aux_', 'F'));
+    $model->push_var_group(new Bi::Model::VarGroup('state_aux_', 'G'));
+    $model->push_var_group(new Bi::Model::VarGroup('state_aux_', 'Q'));
+    $model->push_var_group(new Bi::Model::VarGroup('state_aux_', 'R'));
+}
+
 =item B<visit_after>(I<node>, I<J>)
 
 Visit node of model

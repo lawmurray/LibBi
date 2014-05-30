@@ -903,13 +903,12 @@ template<class T, int size_value, int inc_value, class A>
 void bi::host_vector<T,size_value,inc_value,A>::trim(const size_type i,
     const size_type size, const bool preserve) {
   /* pre-conditions */
-  BI_ASSERT(i < this->size());
   BI_ERROR_MSG(own,
       "Cannot resize host_vector constructed as view of other vector");
 
   if (size != this->size()) {
     host_vector<T,size_value,inc_value,A> x(size);
-    if (preserve) {
+    if (preserve && i < this->size()) {
       const size_t n = std::min(size, this->size() - i);
       subrange(x, 0, n) = subrange(*this, i, n);
     }

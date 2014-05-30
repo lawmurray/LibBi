@@ -410,7 +410,7 @@ real bi::MarginalSIR<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
     filter->setOutput(&theta.getOutput());
     filter->init(rng, theta.getParameters1(), now, theta,
         theta.getLogWeights(), theta.getAncestors());
-    theta.getIncLogLikelihood() = filter->correct(now, theta,
+    theta.getIncLogLikelihood() = filter->correct(rng, now, theta,
         theta.getLogWeights());
     theta.getLogLikelihood1() = theta.getIncLogLikelihood();
     filter->output(now, theta, 0, theta.getLogWeights(),

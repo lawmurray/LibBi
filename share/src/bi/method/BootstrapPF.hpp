@@ -139,13 +139,15 @@ public:
    *
    * @tparam L Location.
    *
+   * @param rng Random number generator.
    * @param now Current step in time schedule.
    * @param s State.
    *
    * @return Estimate of the incremental log-likelihood.
    */
   template<Location L>
-  real correct(const ScheduleElement now, BootstrapPFState<B,L>& s);
+  real correct(Random& rng, const ScheduleElement now,
+      BootstrapPFState<B,L>& s);
 
   /**
    * Resample.
@@ -289,7 +291,7 @@ real bi::BootstrapPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     resample(rng, *iter, s);
     ++iter;
     predict(rng, *iter, s);
-    ll += correct(*iter, s);
+    ll += correct(rng, *iter, s);
     output(*iter, s, out);
   } while (iter + 1 != last && !iter->isObserved());
 
@@ -305,11 +307,11 @@ void bi::BootstrapPF<B,S,R>::predict(Random& rng, const ScheduleElement next,
 
 template<class B, class S, class R>
 template<bi::Location L>
-real bi::BootstrapPF<B,S,R>::correct(const ScheduleElement now,
+real bi::BootstrapPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
     BootstrapPFState<B,L>& s) {
   real ll = 0.0;
   if (now.isObserved()) {
-    m.observationLogDensities(s, sim.getObs()->getMask(now.indexObs()),
+    m.observationLogDensities(s, sim.obs.getMask(now.indexObs()),
         s.logWeights());
     ll = logsumexp_reduce(s.logWeights())
         - bi::log(static_cast<real>(s.size()));
@@ -378,7 +380,7 @@ template<bi::Location L>
 real bi::BootstrapPF<B,S,R>::getMaxLogWeight(const ScheduleElement now,
     BootstrapPFState<B,L>& s) {
   return this->m.observationMaxLogDensity(s,
-      sim.getObs()->getMask(now.indexObs()));
+      sim.obs.getMask(now.indexObs()));
 }
 
 #endif

@@ -107,17 +107,14 @@ struct ObserverFactory {
    */
   template<class IO1>
   static Observer<IO1,CL>* create(IO1* in) {
-    if (in == NULL) {
-      return NULL;
-    } else {
-      return new Observer<IO1,CL>(in);
-    }
+    return new Observer<IO1,CL>(in);
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::Observer<IO1,CL>::Observer(IO1* in) : in(in) {
+bi::Observer<IO1,CL>::Observer(IO1* in) :
+    in(in) {
   //
 }
 

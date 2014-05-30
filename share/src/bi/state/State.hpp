@@ -17,6 +17,47 @@
 
 namespace bi {
 /**
+ * Round up number of trajectories as required by implementation.
+ *
+ * @param P Minimum number of trajectories.
+ *
+ * @return Number of trajectories.
+ *
+ * The following rules are applied:
+ *
+ * @li for @p L on device, @p P must be either less than 32, or a
+ * multiple of 32, and
+ * @li for @p L on host with SSE enabled, @p P must be zero, one or a
+ * multiple of four (single precision) or two (double precision).
+ */
+int roundup(const int P);
+}
+
+#ifdef ENABLE_SSE
+#include "../sse/math/scalar.hpp"
+#endif
+
+inline int bi::roundup(const int P) {
+  int P1 = P;
+
+  #if defined(ENABLE_CUDA)
+  /* either < 32 or a multiple of 32 number of trajectories required */
+  if (P1 > 32) {
+    P1 = ((P1 + 31) / 32) * 32;
+  }
+  #elif defined(ENABLE_SSE)
+  /* zero, one or a multiple of 4 (single precision) or 2 (double
+   * precision) required */
+  if (P1 > 1) {
+    P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
+  }
+  #endif
+
+  return P1;
+}
+
+namespace bi {
+/**
  * %State of Model %model.
  *
  * @ingroup state
@@ -53,7 +94,7 @@ public:
    * @param P Number of trajectories to store.
    */
   CUDA_FUNC_BOTH
-  State(const int P = 0);
+  State(const int P = 1);
 
   /**
    * Shallow copy constructor.
@@ -464,7 +505,7 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
 
 template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
-  rows(Xdn, 0, P).clear();
+  rows(Xdn, p, P).clear();
   Kdn.clear();
 }
 

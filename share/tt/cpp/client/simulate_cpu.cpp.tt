@@ -78,12 +78,12 @@ int main(int argc, char* argv[]) {
     bufOutput = new SimulatorNetCDFBuffer(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE,
         NetCDFBuffer::REPLACE);
   }
-
+  BOOST_AUTO(out, bi::SimulatorCacheFactory<LOCATION>::create(bufOutput));
+  
   /* simulator */
   BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, bi::ObserverFactory<LOCATION>::create(bufObs));
-  BOOST_AUTO(out, bi::SimulatorCacheFactory<LOCATION>::create(bufOutput));
-  BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs, out));
+  BOOST_AUTO(sim, bi::SimulatorFactory::create(m, *in, *obs));
 
   /* simulate */
   #ifdef ENABLE_GPERFTOOLS
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
   TicToc timer;
   #endif
   
-  sim->simulate(rng, sched.begin(), sched.end(), s, bufInit);
+  sim->simulate(rng, sched.begin(), sched.end(), s, out, bufInit);
   synchronize();
 
   #ifdef ENABLE_TIMING
