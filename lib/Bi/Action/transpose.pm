@@ -53,7 +53,7 @@ sub validate {
         push(@$shape, $A->get_shape->get_size1);
     }
     $self->set_shape(new Bi::Expression::Shape($shape));
-    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
     	die("incompatible sizes on left and right sides of action.\n");
     }
     

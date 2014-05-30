@@ -58,7 +58,7 @@ sub validate {
     $self->ensure_scalar('shape');
     $self->ensure_scalar('scale');
 
-    unless ($self->get_left->get_shape->equals($self->get_shape)) {
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
     	die("incompatible sizes on left and right sides of action.\n");
     }
 
