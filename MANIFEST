@@ -663,4 +663,12 @@ share/tt/package/README.md.tt
 share/tt/package/run.sh.tt
 share/tt/package/VERSION.md.tt
 t/001_load.t
+t/002_help.t
+t/003_gen.t
+t/004_build_tools.t
+t/010_cpu.t
+t/020_cpu_sse.t
+t/030_gpu_cuda.t
+Test.bi
+test.conf
 VERSION.md
