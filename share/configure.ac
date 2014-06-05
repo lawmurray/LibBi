@@ -172,7 +172,7 @@ fi
 
 # Checks for libraries
 AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required standard math library not found])])
-AC_CHECK_LIB([gfortran], [main], [], [AC_MSG_ERROR([required gfortran library not found])])
+AC_CHECK_LIB([gfortran], [main], [], [])
 
 # Intel MKL if available, needing special treatment given multiple libs...
 AC_SEARCH_LIBS([mkl_blas_dgemv], [mkl_intel mkl_intel_lp64], [], [], [-lmkl_sequential -lmkl_core])

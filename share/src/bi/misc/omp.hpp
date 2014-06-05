@@ -16,7 +16,9 @@
 #include "../cuda/math/cublas.hpp"
 #endif
 
+#ifdef ENABLE_OPENMP
 #include "omp.h"
+#endif
 
 /**
  * Thread id.
