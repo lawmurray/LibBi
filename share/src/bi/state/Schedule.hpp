@@ -123,7 +123,8 @@ public:
    * @param obs Observation file.
    */
   template<class B, class IO1, class IO2>
-  Schedule(B& m, const real t, const real T, const int K, const int M, IO1* in, IO2* obs);
+  Schedule(B& m, const real t, const real T, const int K, const int M,
+      IO1& in, IO2& obs);
 
   /**
    * Shallow copy constructor.
@@ -211,8 +212,8 @@ private:
 #include <algorithm>
 
 template<class B, class IO1, class IO2>
-bi::Schedule::Schedule(B& m, const real t, const real T, const int K, const int M, IO1* in,
-    IO2* obs) :
+bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
+    const int M, IO1& in, IO2& obs) :
     delta(m.getDelta()) {
   /* pre-conditions */
   BI_ASSERT(T >= t);
@@ -246,34 +247,31 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, const int 
 
   /* bridge times */
   for (i = 0; i < M; ++i) {
-    tBridges.push_back(st + (sT - st)*i / M);
+    tBridges.push_back(st + (sT - st) * i / M);
   }
   tBridges.push_back(sT);
 
   /* input times */
-  if (in != NULL) {
-    tInputs = in->getTimes();
-    std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
-        user2scaled);
-    BOOST_AUTO(lower, std::lower_bound(tInputs.begin(), tInputs.end(), st));
-    BOOST_AUTO(upper, std::upper_bound(lower, tInputs.end(), sT));
-    elem.kInput = std::distance(tInputs.begin(), lower);
-    tInputs.resize(std::distance(tInputs.begin(), upper));
-    if (elem.kInput > 0 && elem.kInput < tInputs.size() && tInputs[elem.kInput] >= st) {
-      --elem.kInput; // start time falls between input update times, so need previous
-    }
+  in.readTimes(tInputs);
+  std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
+      user2scaled);
+  BOOST_AUTO(lowerInputs, std::lower_bound(tInputs.begin(), tInputs.end(), st));
+  BOOST_AUTO(upperInputs, std::upper_bound(lowerInputs, tInputs.end(), sT));
+  elem.kInput = std::distance(tInputs.begin(), lowerInputs);
+  tInputs.resize(std::distance(tInputs.begin(), upperInputs));
+  if (elem.kInput > 0 && elem.kInput < tInputs.size()
+      && tInputs[elem.kInput] >= st) {
+    --elem.kInput;  // start time falls between input update times, so need previous
   }
 
   /* observation times */
-  if (obs != NULL) {
-    tObs = obs->getTimes();
-    std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
-    BOOST_AUTO(lower, std::lower_bound(tObs.begin(), tObs.end(), st));
-    BOOST_AUTO(upper, std::upper_bound(lower, tObs.end(), sT));
-    merge_unique(tOutputs, lower, upper);  // output at each obs time
-    elem.kObs = std::distance(tObs.begin(), lower);
-    tObs.resize(std::distance(tObs.begin(), upper));
-  }
+  obs.readTimes(tObs);
+  std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
+  BOOST_AUTO(lowerObs, std::lower_bound(tObs.begin(), tObs.end(), st));
+  BOOST_AUTO(upperObs, std::upper_bound(lowerObs, tObs.end(), sT));
+  merge_unique(tOutputs, lowerObs, upperObs);  // output at each obs time
+  elem.kObs = std::distance(tObs.begin(), lowerObs);
+  tObs.resize(std::distance(tObs.begin(), upperObs));
 
   /* combination of all (unique) times */
   merge_unique(ts, tDeltas.begin(), tDeltas.end());
@@ -292,9 +290,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, const int 
 
     /* inputs persist on half-open intervals (t, t+1], except for the first
      * input, which is on the closed interval [t, t+1] */
-    elem.bInput = elem.kInput < int(tInputs.size()) &&
-        ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1]) ||
-        (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
+    elem.bInput = elem.kInput < int(tInputs.size())
+        && ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1])
+            || (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
@@ -303,10 +301,11 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, const int 
 
     /* observations persist on half-open intervals (t-1, t], except for the
      * first input, which is on the closed interval [t-1, t] */
-    elem.bObs = elem.kObs < int(tObs.size()) &&
-        ((elem.kObs == 0 && tObs.size() > 0) ||
-          elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
-    elem.bObserved = elem.kObs < int(tObs.size()) && tObs[elem.kObs] == ts[elem.k];
+    elem.bObs = elem.kObs < int(tObs.size())
+        && ((elem.kObs == 0 && tObs.size() > 0)
+            || elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
+    elem.bObserved = elem.kObs < int(tObs.size())
+        && tObs[elem.kObs] == ts[elem.k];
 
     elems.push_back(elem);
 

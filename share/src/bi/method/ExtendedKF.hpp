@@ -44,15 +44,15 @@ public:
   /**
    * @copydoc BootstrapPF::step()
    */
-  template<Location L, class IO1>
+  template<class S1, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      ExtendedKFState<B,L>& s, IO1* out) throw (CholeskyException);
+      S1& s, IO1& out) throw (CholeskyException);
 
   /**
-   * @copydoc BootstrapPF::sampleTrajectory()
+   * @copydoc BootstrapPF::samplePath()
    */
   template<class M1, class IO1>
-  void sampleTrajectory(Random& rng, M1 X, IO1* out);
+  void samplePath(Random& rng, M1 X, IO1& out);
   //@}
 
   /**
@@ -65,7 +65,7 @@ public:
   /**
    * Initialise.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
@@ -75,14 +75,14 @@ public:
    * @param out Output buffer.
    * @param inInit Initialisation file.
    */
-  template<Location L, class IO1, class IO2>
-  void init(Random& rng, const ScheduleElement now, ExtendedKFState<B,L>& s,
-      IO1* out, IO2* inInit);
+  template<class S1, class IO1, class IO2>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out,
+      IO2& inInit);
 
   /**
    * Initialise, with fixed parameters.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam V1 Vector type.
    * @tparam IO1 Output type.
    *
@@ -91,27 +91,27 @@ public:
    * @param theta Parameters.
    * @param s State.
    */
-  template<Location L, class V1, class IO1>
-  void init(Random& rng, const ScheduleElement now, const V1 theta,
-      ExtendedKFState<B,L>& s, IO1* out);
+  template<class S1, class V1, class IO1>
+  void init(Random& rng, const ScheduleElement now, const V1 theta, S1& s,
+      IO1& out);
 
   /**
    * Predict.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param rng Random number generator.
    * @param next Next step in time schedule.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void predict(Random& rng, const ScheduleElement next,
-      ExtendedKFState<B,L>& s) throw (CholeskyException);
+  template<class S1>
+  void predict(Random& rng, const ScheduleElement next, S1& s)
+      throw (CholeskyException);
 
   /**
    * Correct prediction with observation to produce filter density.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param rng Random number generator.
    * @param now Current step in time schedule.
@@ -119,35 +119,34 @@ public:
    *
    * @return Estimate of the incremental log-likelihood.
    */
-  template<Location L>
-  real correct(Random& rng, const ScheduleElement now,
-      ExtendedKFState<B,L>& s) throw (CholeskyException);
+  template<class S1>
+  real correct(Random& rng, const ScheduleElement now, S1& s)
+      throw (CholeskyException);
 
   /**
    * Output static variables.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param s State.
    * @param out Output buffer.
    */
-  template<Location L, class IO1>
-  void output0(const ExtendedKFState<B,L>& s, IO1* out);
+  template<class S1, class IO1>
+  void output0(const S1& s, IO1& out);
 
   /**
    * Output.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param now Current step in time schedule.
    * @param s State.
    * @param out Output buffer.
    */
-  template<Location L, class IO1>
-  void output(const ScheduleElement now, const ExtendedKFState<B,L>& s,
-      IO1* out);
+  template<class S1, class IO1>
+  void output(const ScheduleElement now, const S1& s, IO1& out);
 
   /**
    * Output marginal log-likelihood estimate.
@@ -158,7 +157,7 @@ public:
    * @param out Output buffer.
    */
   template<class IO1>
-  void outputT(const real ll, IO1* out);
+  void outputT(const real ll, IO1& out);
 
   /**
    * Clean up.
@@ -202,23 +201,23 @@ bi::ExtendedKF<B,S>::ExtendedKF(B& m, S& sim) :
 
 template<class B, class S>
 template<class M1, class IO1>
-void bi::ExtendedKF<B,S>::sampleTrajectory(Random& rng, M1 X, IO1* out) {
+void bi::ExtendedKF<B,S>::samplePath(Random& rng, M1 X, IO1& out) {
   typedef typename sim_temp_vector<M1>::type vector_type;
   typedef typename sim_temp_matrix<M1>::type matrix_type;
 
   matrix_type U1(M, M), U2(M, M), C(M, M);
   vector_type mu1(M), mu2(M);
 
-  int k = out->size();
+  int k = out.size();
   try {
     while (k > 0) {
-      out->readCorrectedMean(k - 1, mu1);
-      out->readCorrectedStd(k - 1, U1);
+      out.readCorrectedMean(k - 1, mu1);
+      out.readCorrectedStd(k - 1, U1);
 
-      if (k < out->size()) {
-        out->readPredictedMean(k, mu2);
-        out->readPredictedStd(k, U2);
-        out->readCross(k, C);
+      if (k < out.size()) {
+        out.readPredictedMean(k, mu2);
+        out.readPredictedStd(k, U2);
+        out.readCross(k, C);
 
         condition(mu1, U1, mu2, U2, C, column(X, k));
       }
@@ -235,9 +234,9 @@ void bi::ExtendedKF<B,S>::sampleTrajectory(Random& rng, M1 X, IO1* out) {
 }
 
 template<class B, class S>
-template<bi::Location L, class IO1, class IO2>
-void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
-    ExtendedKFState<B,L>& s, IO1* out, IO2* inInit) {
+template<class S1, class IO1, class IO2>
+void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
+    IO1& out, IO2& inInit) {
   /* initialise */
   sim.init(rng, now, s, inInit);
   ident(s.F());
@@ -254,15 +253,13 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
   s.C.clear();
 
   /* within-time covariance */
-  if (out != NULL) {
-    out->clear();
-  }
+  out.clear();
 }
 
 template<class B, class S>
-template<bi::Location L, class V1, class IO1>
+template<class S1, class V1, class IO1>
 void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
-    const V1 theta, ExtendedKFState<B,L>& s, IO1* out) {
+    const V1 theta, S1& s, IO1& out) {
   // this should be the same as init() above, but with a different call to
   // sim.init()
   ident(s.F());
@@ -285,16 +282,13 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
   s.C.clear();
 
   /* within-time covariance */
-  if (out != NULL) {
-    out->clear();
-  }
+  out.clear();
 }
 
 template<class B, class S>
-template<bi::Location L, class IO1>
+template<class S1, class IO1>
 real bi::ExtendedKF<B,S>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, ExtendedKFState<B,L>& s, IO1* out)
-        throw (CholeskyException) {
+    const ScheduleIterator last, S1& s, IO1& out) throw (CholeskyException) {
   do {
     ++iter;
     predict(rng, *iter, s);
@@ -306,10 +300,10 @@ real bi::ExtendedKF<B,S>::step(Random& rng, ScheduleIterator& iter,
 }
 
 template<class B, class S>
-template<bi::Location L>
+template<class S1>
 void bi::ExtendedKF<B,S>::predict(Random& rng, const ScheduleElement next,
-    ExtendedKFState<B,L>& s) throw (CholeskyException) {
-  typedef typename loc_temp_matrix<L,real>::type matrix_type;
+    S1& s) throw (CholeskyException) {
+  typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
 
   /* predict */
   sim.advance(rng, next, s);
@@ -347,12 +341,12 @@ void bi::ExtendedKF<B,S>::predict(Random& rng, const ScheduleElement next,
 }
 
 template<class B, class S>
-template<bi::Location L>
+template<class S1>
 real bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
-    ExtendedKFState<B,L>& s) throw (CholeskyException) {
-  typedef typename loc_temp_matrix<L,real>::type matrix_type;
-  typedef typename loc_temp_vector<L,real>::type vector_type;
-  typedef typename loc_temp_vector<L,int>::type int_vector_type;
+    S1& s) throw (CholeskyException) {
+  typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
+  typedef typename loc_temp_vector<S1::location,real>::type vector_type;
+  typedef typename loc_temp_vector<S1::location,int>::type int_vector_type;
 
   real ll = 0.0;
   s.mu2 = s.mu1;
@@ -422,36 +416,24 @@ real bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class S>
-template<bi::Location L, class IO1>
-void bi::ExtendedKF<B,S>::output0(const ExtendedKFState<B,L>& s, IO1* out) {
-  if (out != NULL) {
-    out->writeParameters(s.get(P_VAR));
-  }
+template<class S1, class IO1>
+void bi::ExtendedKF<B,S>::output0(const S1& s, IO1& out) {
+  out.write0(s);
 }
 
 template<class B, class S>
-template<bi::Location L, class IO1>
-void bi::ExtendedKF<B,S>::output(const ScheduleElement now,
-    const ExtendedKFState<B,L>& s, IO1* out) {
-  if (out != NULL && now.hasOutput()) {
-    const int k = now.indexOutput();
-
-    out->writeTime(k, now.getTime());
-    out->writeState(k, s.getDyn());
-    out->writePredictedMean(k, s.mu1);
-    out->writePredictedStd(k, s.U1);
-    out->writeCorrectedMean(k, s.mu2);
-    out->writeCorrectedStd(k, s.U2);
-    out->writeCross(k, s.C);
+template<class S1, class IO1>
+void bi::ExtendedKF<B,S>::output(const ScheduleElement now, const S1& s,
+    IO1& out) {
+  if (now.hasOutput()) {
+    out.write(now.indexOutput(), now.getTime(), s);
   }
 }
 
 template<class B, class S>
 template<class IO1>
-void bi::ExtendedKF<B,S>::outputT(const real ll, IO1* out) {
-  if (out != NULL) {
-    out->writeLL(ll);
-  }
+void bi::ExtendedKF<B,S>::outputT(const real ll, IO1& out) {
+  out.writeT(ll);
 }
 
 template<class B, class S>

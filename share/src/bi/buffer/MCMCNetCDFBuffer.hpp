@@ -47,6 +47,17 @@ public:
       const SchemaMode schema = MULTI);
 
   /**
+   * Write sample.
+   *
+   * @tparam S1 State type.
+   *
+   * @param c Sample index.
+   * @param s State.
+   */
+  template<class S1>
+  void write(const int c, const S1& s);
+
+  /**
    * Read log-likelihoods.
    *
    * @param p Index of first sample.
@@ -104,6 +115,17 @@ protected:
   int lpVar;
 };
 
+}
+
+template<class S1>
+void bi::MCMCNetCDFBuffer::write(const int c, const S1& s) {
+  if (c == 0) {
+    //writeTimes(0, s.getTimes());
+  }
+  writeLogLikelihood(c, s.logLikelihood1);
+  writeLogPrior(c, s.logPrior1);
+  writeParameter(c, s.theta1);
+  writePath(c, s.path);
 }
 
 template<class V1>

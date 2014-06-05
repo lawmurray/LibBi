@@ -42,7 +42,7 @@
 #include "bi/method/Simulator.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
+#include "bi/buffer/InputNetCDFBuffer.hpp"
 #include "bi/buffer/OptimiserNetCDFBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
 
@@ -91,15 +91,15 @@ int main(int argc, char* argv[]) {
   NPARTICLES = s.size(); // may change according to implementation
 
   /* inputs */
-  SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
+  InputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
   if (!INPUT_FILE.empty()) {
-    bufInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+    bufInput = new InputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   }
   if (!INIT_FILE.empty()) {
-    bufInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+    bufInit = new InputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
   }
   if (!OBS_FILE.empty()) {
-    bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
+    bufObs = new InputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
   /* schedule */

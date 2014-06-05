@@ -9,7 +9,7 @@
 #define BI_METHOD_MARGINALSRS_HPP
 
 #include "../state/Schedule.hpp"
-#include "../cache/MarginalSIRCache.hpp"
+#include "../cache/SMCCache.hpp"
 
 namespace bi {
 /**
@@ -23,7 +23,7 @@ namespace bi {
  * @tparam S Stopper type.
  * @tparam IO1 Output type.
  */
-template<class B, class F, class A, class S, class IO1 = MarginalSIRCache<> >
+template<class B, class F, class A, class S, class IO1 = SMCCache<> >
 class MarginalSRS {
 public:
   /**
@@ -38,7 +38,7 @@ public:
    * @param out Output.
    */
   MarginalSRS(B& m, F* filter = NULL, A* adapter = NULL, S* stopper = NULL,
-      IO1* out = NULL);
+      IO1& out = NULL);
 
   /**
    * @name High-level interface.
@@ -93,14 +93,14 @@ public:
    *
    * @return Output.
    */
-  IO1* getOutput();
+  IO1& getOutput();
 
   /**
    * Set output.
    *
    * @param out Output buffer.
    */
-  void setOutput(IO1* out);
+  void setOutput(IO1& out);
 
   /**
    * Sample.
@@ -117,7 +117,7 @@ public:
    */
   template<Location L, class IO2>
   void sample(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit = NULL);
+      const ScheduleIterator last, State<B,L>& s, IO2& inInit = NULL);
   //@}
 
   /**
@@ -162,7 +162,7 @@ private:
   /**
    * Output buffer.
    */
-  IO1* out;
+  IO1& out;
 };
 
 /**
@@ -184,7 +184,7 @@ struct MarginalSRSFactory {
    */
   template<class B, class F, class A, class S, class IO1>
   static MarginalSRS<B,F,A,S,IO1>* create(B& m, F* filter = NULL, A* adapter =
-      NULL, S* stopper = NULL, IO1* out = NULL) {
+      NULL, S* stopper = NULL, IO1& out = NULL) {
     return new MarginalSRS<B,F,A,S,IO1>(m, filter, adapter, stopper, out);
   }
 
@@ -205,7 +205,7 @@ struct MarginalSRSFactory {
 
 template<class B, class F, class A, class S, class IO1>
 bi::MarginalSRS<B,F,A,S,IO1>::MarginalSRS(B& m, F* filter, A* adapter,
-    S* stopper, IO1* out) :
+    S* stopper, IO1& out) :
     m(m), filter(filter), out(out) {
   //
 }
@@ -241,12 +241,12 @@ void bi::MarginalSRS<B,F,A,S,IO1>::setStopper(S* stopper) {
 }
 
 template<class B, class F, class A, class S, class IO1>
-IO1* bi::MarginalSRS<B,F,A,S,IO1>::getOutput() {
+IO1& bi::MarginalSRS<B,F,A,S,IO1>::getOutput() {
   return out;
 }
 
 template<class B, class F, class A, class S, class IO1>
-void bi::MarginalSRS<B,F,A,S,IO1>::setOutput(IO1* out) {
+void bi::MarginalSRS<B,F,A,S,IO1>::setOutput(IO1& out) {
   this->out = out;
 }
 
@@ -254,7 +254,7 @@ template<class B, class F, class A, class S, class IO1>
 template<bi::Location L, class IO2>
 void bi::MarginalSRS<B,F,A,S,IO1>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit) {
+    IO2& inInit) {
 
 }
 

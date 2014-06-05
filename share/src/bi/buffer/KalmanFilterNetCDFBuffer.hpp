@@ -44,6 +44,12 @@ public:
       const SchemaMode schema = DEFAULT);
 
   /**
+   * @copydoc OutputBuffer::write()
+   */
+  template<class S1>
+  void write(const size_t k, const real t, const S1& s);
+
+  /**
    * Read predicted mean.
    *
    * @tparam V1 Vector type.
@@ -52,7 +58,7 @@ public:
    * @param[out] mu1 Vector.
    */
   template<class V1>
-  void readPredictedMean(const size_t k, V1 mu1) const;
+  void readPredictedMean(const size_t k, V1 mu1);
 
   /**
    * Write predicted mean.
@@ -74,7 +80,7 @@ public:
    * @param[out] U1 Matrix.
    */
   template<class M1>
-  void readPredictedStd(const size_t k, M1 U1) const;
+  void readPredictedStd(const size_t k, M1 U1);
 
   /**
    * Write Cholesky factor of predicted covariance.
@@ -96,7 +102,7 @@ public:
    * @param[out] mu2 Vector.
    */
   template<class V1>
-  void readCorrectedMean(const size_t k, V1 mu2) const;
+  void readCorrectedMean(const size_t k, V1 mu2);
 
   /**
    * Write corrected mean.
@@ -118,7 +124,7 @@ public:
    * @param[out] U2 Matrix.
    */
   template<class M1>
-  void readCorrectedStd(const size_t k, M1 U2) const;
+  void readCorrectedStd(const size_t k, M1 U2);
 
   /**
    * Write Cholesky factor of corrected covariance.
@@ -140,7 +146,7 @@ public:
    * @param[out] C Matrix.
    */
   template<class M1>
-  void readCross(const size_t k, M1 C) const;
+  void readCross(const size_t k, M1 C);
 
   /**
    * Write across-time covariance.
@@ -222,9 +228,20 @@ protected:
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
 
+template<class S1>
+void bi::KalmanFilterNetCDFBuffer::write(const size_t k, const real t,
+    const S1& s) {
+  SimulatorNetCDFBuffer::write(k, t, s);
+  writePredictedMean(k, s.mu1);
+  writePredictedStd(k, s.U1);
+  writeCorrectedMean(k, s.mu2);
+  writeCorrectedStd(k, s.U2);
+  writeCross(k, s.C);
+}
+
 template<class V1>
 void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const size_t k,
-    V1 mu1) const {
+    V1 mu1) {
   readVector(mu1Var, k, mu1);
 }
 
@@ -236,7 +253,7 @@ void bi::KalmanFilterNetCDFBuffer::writePredictedMean(const size_t k,
 
 template<class M1>
 void bi::KalmanFilterNetCDFBuffer::readPredictedStd(const size_t k,
-    M1 U1) const {
+    M1 U1) {
   readMatrix(U1Var, k, U1);
 }
 
@@ -248,7 +265,7 @@ void bi::KalmanFilterNetCDFBuffer::writePredictedStd(const size_t k,
 
 template<class V1>
 void bi::KalmanFilterNetCDFBuffer::readCorrectedMean(const size_t k,
-    V1 mu2) const {
+    V1 mu2) {
   readVector(mu2Var, k, mu2);
 }
 
@@ -260,7 +277,7 @@ void bi::KalmanFilterNetCDFBuffer::writeCorrectedMean(const size_t k,
 
 template<class M1>
 void bi::KalmanFilterNetCDFBuffer::readCorrectedStd(const size_t k,
-    M1 U2) const {
+    M1 U2) {
   readMatrix(U2Var, k, U2);
 }
 
@@ -271,7 +288,7 @@ void bi::KalmanFilterNetCDFBuffer::writeCorrectedStd(const size_t k,
 }
 
 template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readCross(const size_t k, M1 C) const {
+void bi::KalmanFilterNetCDFBuffer::readCross(const size_t k, M1 C) {
   readMatrix(CVar, k, C);
 }
 

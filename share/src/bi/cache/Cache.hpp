@@ -179,7 +179,7 @@ inline bool bi::Cache::isValid(const int p) const {
 
 inline void bi::Cache::setValid(const int p, const bool valid) {
   /* pre-condition */
-  BI_ASSERT(p >= 0 && p < (int)valids.size());
+  BI_ASSERT(p >= 0 && p < (int )valids.size());
 
   valids[p] = valid;
 }
@@ -193,7 +193,7 @@ inline bool bi::Cache::isDirty(const int p) const {
 
 inline void bi::Cache::setDirty(const int p, const bool dirty) {
   /* pre-condition */
-  BI_ASSERT(p >= 0 && p < (int)dirties.size());
+  BI_ASSERT(p >= 0 && p < (int )dirties.size());
 
   dirties[p] = dirty;
 }

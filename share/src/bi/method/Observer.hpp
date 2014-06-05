@@ -9,7 +9,7 @@
 #define BI_METHOD_OBSERVER_HPP
 
 #include "../state/Mask.hpp"
-#include "../buffer/SparseInputNetCDFBuffer.hpp"
+#include "../buffer/InputNetCDFBuffer.hpp"
 #include "../cache/Cache2D.hpp"
 #include "../cache/CacheObject.hpp"
 
@@ -22,7 +22,7 @@ namespace bi {
  * @tparam IO1 Input type.
  * @tparam CL Location for caches.
  */
-template<class IO1 = SparseInputNetCDFBuffer, Location CL = ON_HOST>
+template<class IO1 = InputNetCDFBuffer, Location CL = ON_HOST>
 class Observer {
 public:
   /**
@@ -30,7 +30,7 @@ public:
    *
    * @param in Input.
    */
-  Observer(IO1* in);
+  Observer(IO1& in);
 
   /**
    * Get mask on host.
@@ -71,7 +71,7 @@ private:
   /**
    * Input.
    */
-  IO1* in;
+  IO1& in;
 
   /**
    * Cache.
@@ -106,14 +106,14 @@ struct ObserverFactory {
    * @see Observer::Observer()
    */
   template<class IO1>
-  static Observer<IO1,CL>* create(IO1* in) {
+  static Observer<IO1,CL>* create(IO1& in) {
     return new Observer<IO1,CL>(in);
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::Observer<IO1,CL>::Observer(IO1* in) :
+bi::Observer<IO1,CL>::Observer(IO1& in) :
     in(in) {
   //
 }
@@ -122,7 +122,7 @@ template<class IO1, bi::Location CL>
 const bi::Mask<bi::ON_HOST>& bi::Observer<IO1,CL>::getHostMask(const int k) {
   if (!maskHostCache.isValid(k)) {
     Mask<ON_HOST> mask;
-    in->readMask(k, O_VAR, mask);
+    in.readMask(k, O_VAR, mask);
     maskHostCache.set(k, mask);
   }
   return maskHostCache.get(k);
@@ -142,11 +142,11 @@ void bi::Observer<IO1,CL>::update(const int k, State<B,L>& s) {
   if (cache.isValid(k)) {
     vec(s.get(OY_VAR)) = cache.get(k);
   } else {
-    in->readState(k, O_VAR, getHostMask(k), s.get(OY_VAR));
+    in.read(k, O_VAR, getHostMask(k), s.get(OY_VAR));
     cache.set(k, vec(s.get(OY_VAR)));
   }
   s.get(O_VAR) = s.get(OY_VAR);
-  s.setNextObsTime(in->getTime(k));
+  s.setNextObsTime(in.getTime(k));
 }
 
 template<class IO1, bi::Location CL>

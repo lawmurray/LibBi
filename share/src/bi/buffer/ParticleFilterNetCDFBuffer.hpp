@@ -18,8 +18,6 @@ namespace bi {
  */
 class ParticleFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
-  using SimulatorNetCDFBuffer::writeState;
-
   /**
    * Constructor.
    *
@@ -42,6 +40,12 @@ public:
   ParticleFilterNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = DEFAULT);
+
+  /**
+   * @copydoc OutputBuffer::write()
+   */
+  template<class S1>
+  void write(const size_t k, const real t, const S1& s);
 
   /**
    * Read particle log-weights.
@@ -88,19 +92,6 @@ public:
   void writeAncestors(const size_t k, const V1 a);
 
   /**
-   * Write dynamic state and ancestors.
-   *
-   * @tparam M1 Matrix type.
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param X State.
-   * @param as Ancestors.
-   */
-  template<class M1, class V1>
-  void writeState(const size_t k, const M1 X, const V1 as);
-
-  /**
    * Write marginal log-likelihood estimate.
    *
    * @param ll Marginal log-likelihood estimate.
@@ -133,6 +124,14 @@ protected:
    */
   int llVar;
 };
+}
+
+template<class S1>
+void bi::ParticleFilterNetCDFBuffer::write(const size_t k, const real t,
+    const S1& s) {
+  SimulatorNetCDFBuffer::write(k, t, s);
+  writeLogWeights(k, s.lws);
+  writeAncestors(k, s.as);
 }
 
 template<class V1>
@@ -183,13 +182,6 @@ void bi::ParticleFilterNetCDFBuffer::writeAncestors(const size_t k,
   } else {
     writeVector(aVar, k, as);
   }
-}
-
-template<class M1, class V1>
-void bi::ParticleFilterNetCDFBuffer::writeState(const size_t k, const M1 X,
-    const V1 as) {
-  SimulatorNetCDFBuffer::writeState(k, X);
-  writeAncestors(k, as);
 }
 
 #endif

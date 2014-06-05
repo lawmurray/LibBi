@@ -263,7 +263,7 @@ int bi::SimulatorNetCDFBuffer::mapDim(Dim* dim) {
   return dimid;
 }
 
-void bi::SimulatorNetCDFBuffer::readTime(const size_t k, real& t) const {
+void bi::SimulatorNetCDFBuffer::readTime(const size_t k, real& t) {
   nc_get_var1(ncid, tVar, k, &t);
 }
 
@@ -271,7 +271,7 @@ void bi::SimulatorNetCDFBuffer::writeTime(const size_t k, const real& t) {
   nc_put_var1(ncid, tVar, k, &t);
 }
 
-long bi::SimulatorNetCDFBuffer::readStart(const size_t k) const {
+long bi::SimulatorNetCDFBuffer::readStart(const size_t k) {
   long start;
   nc_get_var1(ncid, startVar, k, &start);
   return start;
@@ -282,7 +282,7 @@ void bi::SimulatorNetCDFBuffer::writeStart(const size_t k,
   nc_put_var1(ncid, startVar, k, &start);
 }
 
-long bi::SimulatorNetCDFBuffer::readLen(const size_t k) const {
+long bi::SimulatorNetCDFBuffer::readLen(const size_t k) {
   long len;
   nc_get_var1(ncid, lenVar, k, &len);
   return len;

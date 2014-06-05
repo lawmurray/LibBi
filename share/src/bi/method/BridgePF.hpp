@@ -41,9 +41,9 @@ public:
   /**
    * @copydoc LookaheadPF::step()
    */
-  template<bi::Location L, class IO1>
+  template<class S1, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      AuxiliaryPFState<B,L>& s, IO1* out);
+      S1& s, IO1& out);
 //@}
 
   /**
@@ -56,7 +56,7 @@ public:
   /**
    * Update particle weights using lookahead.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param iter Current position in time schedule.
    * @param last End of time schedule.
@@ -64,9 +64,9 @@ public:
    *
    * @return Normalising constant contribution.
    */
-  template<Location L>
+  template<class S1>
   real bridge(Random& rng, const ScheduleIterator iter,
-      const ScheduleIterator last, AuxiliaryPFState<B,L>& s);
+      const ScheduleIterator last, S1& s);
   //@}
 };
 }
@@ -81,9 +81,9 @@ bi::BridgePF<B,S,R>::BridgePF(B& m, S& sim, R& resam) :
 }
 
 template<class B, class S, class R>
-template<bi::Location L, class IO1>
+template<class S1, class IO1>
 real bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, AuxiliaryPFState<B,L>& s, IO1* out) {
+    const ScheduleIterator last, S1& s, IO1& out) {
   real ll = 0.0;
   do {
     ll += this->bridge(rng, iter, last, s);
@@ -98,9 +98,9 @@ real bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
 }
 
 template<class B, class S, class R>
-template<bi::Location L>
+template<class S1>
 real bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
-    const ScheduleIterator last, AuxiliaryPFState<B,L>& s) {
+    const ScheduleIterator last, S1& s) {
   real ll = 0.0;
   if (iter->hasBridge() && !iter->isObserved()
       && last->indexObs() > iter->indexObs()) {

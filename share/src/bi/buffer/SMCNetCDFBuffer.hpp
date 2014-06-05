@@ -46,25 +46,52 @@ public:
       const SchemaMode schema = MULTI);
 
   /**
-   * @copydoc #concept::SMCNetCDFBuffer::readLogWeights()
+   * Write sample.
+   *
+   * @tparam S1 State type.
+   *
+   * @param c Sample index.
+   * @param s State.
+   */
+  template<class S1>
+  void write(const int c, const S1& s);
+
+  /**
+   * Read log-weights.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
    */
   template<class V1>
   void readLogWeights(V1 lws);
 
   /**
-   * @copydoc #concept::SMCNetCDFBuffer::writeLogWeights()
+   * Write log-weights.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
    */
   template<class V1>
   void writeLogWeights(const V1 lws);
 
   /**
-   * @copydoc #concept::SMCNetCDFBuffer::readLogEvidences()
+   * Write incremental log-evidences.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param les Log-evidences.
    */
   template<class V1>
   void readLogEvidences(V1 les);
 
   /**
-   * @copydoc #concept::SMCNetCDFBuffer::writeLogEvidences()
+   * Write incremental log-evidences.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param les Log-evidences.
    */
   template<class V1>
   void writeLogEvidences(const V1 les);
@@ -95,6 +122,13 @@ protected:
 #include "../math/view.hpp"
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
+
+template<class S1>
+void bi::SMCNetCDFBuffer::write(const int c, const S1& s) {
+  MCMCNetCDFBuffer::write(c, s);
+  writeLogWeights(s.lws);
+  writeLogEvidences(s.les);
+}
 
 template<class V1>
 void bi::SMCNetCDFBuffer::readLogWeights(V1 lws) {

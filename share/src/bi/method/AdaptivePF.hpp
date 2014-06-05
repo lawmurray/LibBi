@@ -48,7 +48,7 @@ public:
    */
   template<bi::Location L, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      BootstrapPFState<B,L>& s, IO1* out);
+      BootstrapPFState<B,L>& s, IO1& out);
   //@}
 
   /**
@@ -63,7 +63,7 @@ public:
    */
   template<Location L, class IO1>
   void output(const ScheduleElement now, const BootstrapPFState<B,L>& s,
-      IO1* out);
+      IO1& out);
   //@}
 
 private:
@@ -86,7 +86,7 @@ bi::AdaptivePF<B,S,R,S2>::AdaptivePF(B& m, S& sim, R& resam, S2& stopper) :
 template<class B, class S, class R, class S2>
 template<bi::Location L, class IO1>
 real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, BootstrapPFState<B,L>& s, IO1* out) {
+    const ScheduleIterator last, BootstrapPFState<B,L>& s, IO1& out) {
   typedef typename loc_temp_vector<L,real>::type vector_type;
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
 
@@ -134,9 +134,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   } while (!finished);
 
   int length = bi::max(block - 1, 1) * blockP;  // drop last block
-  if (out != NULL) {
-    out->push(length);
-  }
+  out.push(length);
   s.setRange(0, length);
   //s.trim(); // optional, saves memory but means reallocation
   iter = iter1;  // caller expects iter to be advanced at end of step()
@@ -148,12 +146,12 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
 template<class B, class S, class R, class S2>
 template<bi::Location L, class IO1>
 void bi::AdaptivePF<B,S,R,S2>::output(const ScheduleElement now,
-    const BootstrapPFState<B,L>& s, IO1* out) {
+    const BootstrapPFState<B,L>& s, IO1& out) {
   BootstrapPF<B,S,R>::output(now, s, out);
-  if (out != NULL && now.indexOutput() == 0) {
+  if (now.indexOutput() == 0) {
     /* need to call push()---see AdaptivePFCache---other pushes handled in
      * step() */
-    out->push(s.size());
+    out.push(s.size());
   }
 }
 

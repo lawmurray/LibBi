@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CACHE_PARTICLEMCMCCACHE_HPP
-#define BI_CACHE_PARTICLEMCMCCACHE_HPP
+#ifndef BI_CACHE_MCMCCACHE_HPP
+#define BI_CACHE_MCMCCACHE_HPP
 
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
@@ -22,8 +22,8 @@ namespace bi {
  * @tparam IO1 Output type.
  * @tparam CL Location.
  */
-template<class IO1 = MCMCNetCDFBuffer, Location CL = ON_HOST>
-class ParticleMCMCCache: public SimulatorCache<IO1,CL> {
+template<Location CL = ON_HOST, class IO1 = MCMCNetCDFBuffer>
+class MCMCCache: public SimulatorCache<CL,IO1> {
 public:
   /**
    * Constructor.
@@ -34,22 +34,28 @@ public:
    * @param out Output buffer.
    */
   template<class B>
-  ParticleMCMCCache(B& m, IO1* out = NULL);
+  MCMCCache(B& m, IO1& out = NULL);
 
   /**
    * Shallow copy constructor.
    */
-  ParticleMCMCCache(const ParticleMCMCCache<IO1,CL>& o);
+  MCMCCache(const MCMCCache<CL,IO1>& o);
 
   /**
    * Destructor.
    */
-  ~ParticleMCMCCache();
+  ~MCMCCache();
+
+  /**
+   * @copydoc MCMCNetCDFBuffer::write()
+   */
+  template<class S1>
+  void write(const int c, const S1& s);
 
   /**
    * Deep assignment operator.
    */
-  ParticleMCMCCache<IO1,CL>& operator=(const ParticleMCMCCache<IO1,CL>& o);
+  MCMCCache<CL,IO1>& operator=(const MCMCCache<CL,IO1>& o);
 
   /**
    * Read log-likelihood.
@@ -108,18 +114,18 @@ public:
   void writeParameter(const int p, const V1 theta);
 
   /**
-   * Read state trajectory sample.
+   * Read state path sample.
    *
    * @tparam M1 Matrix type.
    *
    * @param p Sample index.
-   * @param[out] X Trajectory. Rows index variables, columns index times.
+   * @param[out] X Path. Rows index variables, columns index times.
    */
   template<class M1>
-  void readTrajectory(const int p, M1 X);
+  void readPath(const int p, M1 X);
 
   /**
-   * Write state trajectory sample.
+   * Write state path sample.
    *
    * @tparam M1 Matrix type.
    *
@@ -127,7 +133,7 @@ public:
    * @param X Trajectories. Rows index variables, columns index times.
    */
   template<class M1>
-  void writeTrajectory(const int p, const M1 X);
+  void writePath(const int p, const M1 X);
 
   /**
    * Is cache full?
@@ -137,7 +143,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(ParticleMCMCCache<IO1,CL>& o);
+  void swap(MCMCCache<CL,IO1>& o);
 
   /**
    * Clear cache.
@@ -160,7 +166,7 @@ private:
    *
    * @param type Variable type.
    */
-  void flushTrajectories(const VarType type);
+  void flushPaths(const VarType type);
 
   /**
    * Model.
@@ -185,7 +191,7 @@ private:
   /**
    * Trajectories cache.
    */
-  std::vector<CacheCross<real,CL>*> trajectoryCache;
+  std::vector<CacheCross<real,CL>*> pathCache;
 
   /**
    * Id of first sample in cache.
@@ -200,7 +206,7 @@ private:
   /**
    * Output buffer.
    */
-  IO1* out;
+  IO1& out;
 
   /**
    * Maximum number of samples to store in cache.
@@ -225,74 +231,39 @@ private:
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
 };
-
-/**
- * Factory for creating ParticleMCMCCache objects.
- *
- * @ingroup io_cache
- *
- * @see Forcer
- */
-template<Location CL = ON_HOST>
-struct ParticleMCMCCacheFactory {
-  /**
-   * Create ParticleMCMCCache.
-   *
-   * @return ParticleMCMCCache object. Caller has ownership.
-   *
-   * @see ParticleMCMCCache::ParticleMCMCCache()
-   */
-  template<class B, class IO1>
-  static ParticleMCMCCache<IO1,CL>* create(B& m, IO1* out = NULL) {
-    return new ParticleMCMCCache<IO1,CL>(m, out);
-  }
-
-  /**
-   * Create ParticleMCMCCache.
-   *
-   * @return ParticleMCMCCache object. Caller has ownership.
-   *
-   * @see ParticleMCMCCache::ParticleMCMCCache()
-   */
-  template<class B>
-  static ParticleMCMCCache<MCMCNetCDFBuffer,CL>* create(B& m) {
-    return new ParticleMCMCCache<MCMCNetCDFBuffer,CL>(m);
-  }
-};
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class B>
-bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(B& m, IO1* out) :
-    SimulatorCache<IO1,CL>(out), m(m), llCache(NUM_SAMPLES), lpCache(
+bi::MCMCCache<CL,IO1>::MCMCCache(B& m, IO1& out) :
+    SimulatorCache<CL,IO1>(out), m(m), llCache(NUM_SAMPLES), lpCache(
         NUM_SAMPLES), parameterCache(NUM_SAMPLES, m.getNetSize(P_VAR)), first(
         0), len(0), out(out) {
   //
 }
 
-template<class IO1, bi::Location CL>
-bi::ParticleMCMCCache<IO1,CL>::ParticleMCMCCache(
-    const ParticleMCMCCache<IO1,CL>& o) :
-    SimulatorCache<IO1,CL>(o), m(o.m), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+template<bi::Location CL, class IO1>
+bi::MCMCCache<CL,IO1>::MCMCCache(const MCMCCache<CL,IO1>& o) :
+    SimulatorCache<CL,IO1>(o), m(o.m), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
         o.parameterCache), first(o.first), len(o.len), out(o.out) {
-  trajectoryCache.resize(o.trajectoryCache.size());
-  for (int i = 0; i < trajectoryCache.size(); ++i) {
-    trajectoryCache[i] = new CacheCross<real,CL>(*o.trajectoryCache[i]);
+  pathCache.resize(o.pathCache.size());
+  for (int i = 0; i < pathCache.size(); ++i) {
+    pathCache[i] = new CacheCross<real,CL>(*o.pathCache[i]);
   }
 }
 
-template<class IO1, bi::Location CL>
-bi::ParticleMCMCCache<IO1,CL>::~ParticleMCMCCache() {
+template<bi::Location CL, class IO1>
+bi::MCMCCache<CL,IO1>::~MCMCCache() {
   flush();
-  for (int i = 0; i < int(trajectoryCache.size()); ++i) {
-    delete trajectoryCache[i];
+  for (int i = 0; i < int(pathCache.size()); ++i) {
+    delete pathCache[i];
   }
 }
 
-template<class IO1, bi::Location CL>
-bi::ParticleMCMCCache<IO1,CL>& bi::ParticleMCMCCache<IO1,CL>::operator=(
-    const ParticleMCMCCache<IO1,CL>& o) {
-  SimulatorCache<IO1,CL>::operator=(o);
+template<bi::Location CL, class IO1>
+bi::MCMCCache<CL,IO1>& bi::MCMCCache<CL,IO1>::operator=(
+    const MCMCCache<CL,IO1>& o) {
+  SimulatorCache<CL,IO1>::operator=(o);
 
   empty();
   llCache = o.llCache;
@@ -302,26 +273,37 @@ bi::ParticleMCMCCache<IO1,CL>& bi::ParticleMCMCCache<IO1,CL>::operator=(
   len = o.len;
   out = o.out;
 
-  trajectoryCache.resize(o.trajectoryCache.size());
-  for (int i = 0; i < trajectoryCache.size(); ++i) {
-    trajectoryCache[i] = new CacheCross<real,CL>();
-    trajectoryCache[i] = *o.trajectoryCache[i];
+  pathCache.resize(o.pathCache.size());
+  for (int i = 0; i < pathCache.size(); ++i) {
+    pathCache[i] = new CacheCross<real,CL>();
+    pathCache[i] = *o.pathCache[i];
   }
 
   return *this;
 }
 
-template<class IO1, bi::Location CL>
-real bi::ParticleMCMCCache<IO1,CL>::readLogLikelihood(const int p) {
+template<bi::Location CL, class IO1>
+template<class S1>
+void bi::MCMCCache<CL,IO1>::write(const int c, const S1& s) {
+  if (c == 0) {
+    //writeTimes(0, s.getTimes());
+  }
+  writeLogLikelihood(c, s.logLikelihood1);
+  writeLogPrior(c, s.logPrior1);
+  writeParameter(c, s.theta1);
+  writePath(c, s.path);
+}
+
+template<bi::Location CL, class IO1>
+real bi::MCMCCache<CL,IO1>::readLogLikelihood(const int p) {
   /* pre-condition */
   BI_ASSERT(p >= first && p < first + len);
 
   return llCache.get(p - first);
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::writeLogLikelihood(const int p,
-    const real ll) {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::writeLogLikelihood(const int p, const real ll) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -334,17 +316,16 @@ void bi::ParticleMCMCCache<IO1,CL>::writeLogLikelihood(const int p,
   llCache.set(p - first, ll);
 }
 
-template<class IO1, bi::Location CL>
-real bi::ParticleMCMCCache<IO1,CL>::readLogPrior(const int p) {
+template<bi::Location CL, class IO1>
+real bi::MCMCCache<CL,IO1>::readLogPrior(const int p) {
   /* pre-condition */
   BI_ASSERT(p >= first && p < first + len);
 
   return lpCache.get(p - first);
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::writeLogPrior(const int p,
-    const real lp) {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::writeLogPrior(const int p, const real lp) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -357,19 +338,18 @@ void bi::ParticleMCMCCache<IO1,CL>::writeLogPrior(const int p,
   lpCache.set(p - first, lp);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::ParticleMCMCCache<IO1,CL>::readParameter(const int p, V1 theta) {
+void bi::MCMCCache<CL,IO1>::readParameter(const int p, V1 theta) {
   /* pre-condition */
   BI_ASSERT(p >= first && p < first + len);
 
   theta = parameterCache.get(p - first);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::ParticleMCMCCache<IO1,CL>::writeParameter(const int p,
-    const V1 theta) {
+void bi::MCMCCache<CL,IO1>::writeParameter(const int p, const V1 theta) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -382,21 +362,21 @@ void bi::ParticleMCMCCache<IO1,CL>::writeParameter(const int p,
   parameterCache.set(p - first, theta);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class M1>
-void bi::ParticleMCMCCache<IO1,CL>::readTrajectory(const int p, M1 X) {
+void bi::MCMCCache<CL,IO1>::readPath(const int p, M1 X) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
-  BI_ASSERT(X.size2() == trajectoryCache.size());
+  BI_ASSERT(X.size2() == pathCache.size());
 
-  for (int t = 0; t < trajectoryCache.size(); ++t) {
-    column(X, t) = trajectoryCache[t]->get(p - first);
+  for (int t = 0; t < pathCache.size(); ++t) {
+    column(X, t) = pathCache[t]->get(p - first);
   }
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class M1>
-void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
+void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   /* pre-condition */
   BI_ASSERT(len == 0 || (p >= first && p <= first + len));
 
@@ -407,84 +387,80 @@ void bi::ParticleMCMCCache<IO1,CL>::writeTrajectory(const int p, const M1 X) {
     len = p - first + 1;
   }
 
-  if (int(trajectoryCache.size()) < X.size2()) {
-    trajectoryCache.resize(X.size2(), NULL);
+  if (int(pathCache.size()) < X.size2()) {
+    pathCache.resize(X.size2(), NULL);
   }
   for (int t = 0; t < X.size2(); ++t) {
-    if (trajectoryCache[t] == NULL) {
-      trajectoryCache[t] = new CacheCross<real,CL>(NUM_SAMPLES,
-          m.getDynSize());
+    if (pathCache[t] == NULL) {
+      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES, m.getDynSize());
     }
-    trajectoryCache[t]->set(p - first, column(X, t));
+    pathCache[t]->set(p - first, column(X, t));
   }
 }
 
-template<class IO1, bi::Location CL>
-bool bi::ParticleMCMCCache<IO1,CL>::isFull() const {
+template<bi::Location CL, class IO1>
+bool bi::MCMCCache<CL,IO1>::isFull() const {
   return len == NUM_SAMPLES;
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::swap(ParticleMCMCCache<IO1,CL>& o) {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::swap(MCMCCache<CL,IO1>& o) {
   llCache.swap(o.llCache);
   lpCache.swap(o.lpCache);
   parameterCache.swap(o.parameterCache);
-  trajectoryCache.swap(o.trajectoryCache);
+  pathCache.swap(o.pathCache);
   std::swap(first, o.first);
   std::swap(len, o.len);
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::clear() {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::clear() {
   llCache.clear();
   lpCache.clear();
   parameterCache.clear();
-  for (int t = 0; t < int(trajectoryCache.size()); ++t) {
-    trajectoryCache[t]->clear();
+  for (int t = 0; t < int(pathCache.size()); ++t) {
+    pathCache[t]->clear();
   }
   first = 0;
   len = 0;
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::empty() {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::empty() {
   llCache.empty();
   lpCache.empty();
   parameterCache.empty();
-  for (int k = 0; k < trajectoryCache.size(); ++k) {
-    trajectoryCache[k]->empty();
-    delete trajectoryCache[k];
+  for (int k = 0; k < pathCache.size(); ++k) {
+    pathCache[k]->empty();
+    delete pathCache[k];
   }
-  trajectoryCache.resize(0);
+  pathCache.resize(0);
   first = 0;
   len = 0;
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::flush() {
-  if (out != NULL) {
-    out->writeLogLikelihoods(first, llCache.get(0, len));
-    out->writeLogPriors(first, lpCache.get(0, len));
-    out->writeParameters(first, parameterCache.get(0, len));
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::flush() {
+  out.writeLogLikelihoods(first, llCache.get(0, len));
+  out.writeLogPriors(first, lpCache.get(0, len));
+  out.writeParameters(first, parameterCache.get(0, len));
 
-    llCache.flush();
-    lpCache.flush();
-    parameterCache.flush();
+  llCache.flush();
+  lpCache.flush();
+  parameterCache.flush();
 
-    flushTrajectories(R_VAR);
-    flushTrajectories(D_VAR);
-  }
+  flushPaths(R_VAR);
+  flushPaths(D_VAR);
 }
 
-template<class IO1, bi::Location CL>
-void bi::ParticleMCMCCache<IO1,CL>::flushTrajectories(const VarType type) {
+template<bi::Location CL, class IO1>
+void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
   /* don't do it time-by-time, too much seeking in looping over variables
    * several times... */
-  //for (int k = 0; k < int(trajectoryCache.size()); ++k) {
-  //  out->writeState(k, first, trajectoryCache[k]->get(0, len));
-  //  trajectoryCache[k]->flush();
+  //for (int k = 0; k < int(pathCache.size()); ++k) {
+  //  out.writeState(k, first, pathCache[k]->get(0, len));
+  //  pathCache[k]->flush();
   //}
-
   /* ...do it variable-by-variable instead, and loop over times several
    * times */
   Var* var;
@@ -495,33 +471,31 @@ void bi::ParticleMCMCCache<IO1,CL>::flushTrajectories(const VarType type) {
     start = var->getStart() + ((type == D_VAR) ? m.getNetSize(R_VAR) : 0);
     size = var->getSize();
 
-    for (k = 0; k < int(trajectoryCache.size()); ++k) {
-      out->writeStateVar(type, id, k, first,
-          columns(trajectoryCache[k]->get(0, len), start, size));
+    for (k = 0; k < int(pathCache.size()); ++k) {
+      out.writeStateVar(type, id, k, first,
+          columns(pathCache[k]->get(0, len), start, size));
     }
   }
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::ParticleMCMCCache<IO1,CL>::save(Archive& ar,
-    const unsigned version) const {
+void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
-  ar & trajectoryCache;
+  ar & pathCache;
   ar & first;
   ar & len;
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::ParticleMCMCCache<IO1,CL>::load(Archive& ar,
-    const unsigned version) {
+void bi::MCMCCache<CL,IO1>::load(Archive& ar, const unsigned version) {
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
-  ar & trajectoryCache;
+  ar & pathCache;
   ar & first;
   ar & len;
 }

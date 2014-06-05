@@ -9,7 +9,8 @@
 #define BI_BUFFER_SIMULATORNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "../state/State.hpp"
+#include "OutputBuffer.hpp"
+#include "../state/ScheduleElement.hpp"
 #include "../method/misc.hpp"
 
 #include <vector>
@@ -20,7 +21,7 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class SimulatorNetCDFBuffer: public NetCDFBuffer {
+class SimulatorNetCDFBuffer: public OutputBuffer, public NetCDFBuffer {
 public:
   /**
    * Schema flags.
@@ -71,12 +72,24 @@ public:
       const SchemaMode schema = DEFAULT);
 
   /**
+   * @copydoc OutputBuffer::write()
+   */
+  template<class S1>
+  void write(const size_t k, const real t, const S1& s);
+
+  /**
+   * @copydoc OutputBuffer::write0()
+   */
+  template<class S1>
+  void write0(const S1& s);
+
+  /**
    * Read time.
    *
    * @param k Time index.
    * @param[out] t Time.
    */
-  void readTime(const size_t k, real& t) const;
+  void readTime(const size_t k, real& t);
 
   /**
    * Write time.
@@ -95,7 +108,7 @@ public:
    * @param[out] ts Times.
    */
   template<class V1>
-  void readTimes(const size_t k, V1 ts) const;
+  void readTimes(const size_t k, V1 ts);
 
   /**
    * Write times.
@@ -117,7 +130,7 @@ public:
    * @param[out] X Parameters.
    */
   template<class M1>
-  void readParameters(M1 X) const;
+  void readParameters(M1 X);
 
   /**
    * Read static parameters.
@@ -140,7 +153,7 @@ public:
    * @param[out] X Parameters.
    */
   template<class M1>
-  void readParameters(const size_t p, M1 X) const;
+  void readParameters(const size_t p, M1 X);
 
   /**
    * Read static parameters.
@@ -164,7 +177,7 @@ public:
    * @param[out] X State.
    */
   template<class M1>
-  void readState(const size_t k, M1 X) const;
+  void readState(const size_t k, M1 X);
 
   /**
    * Write dynamic state.
@@ -189,7 +202,7 @@ public:
    * @param[out] X State.
    */
   template<class M1>
-  void readState(const size_t k, const size_t p, M1 X) const;
+  void readState(const size_t k, const size_t p, M1 X);
 
   /**
    * Write dynamic state.
@@ -215,8 +228,7 @@ public:
    * @param[out] s State. Rows index samples, columns variables.
    */
   template<class M1>
-  void readState(const VarType type, const size_t k, const size_t p,
-      M1 X) const;
+  void readState(const VarType type, const size_t k, const size_t p, M1 X);
 
   /**
    * Read state variable.
@@ -229,7 +241,7 @@ public:
    */
   template<class M1>
   void readStateVar(const VarType type, const int id, const size_t k,
-      const size_t p, M1 X) const;
+      const size_t p, M1 X);
 
   /**
    * Write state.
@@ -258,7 +270,6 @@ public:
   void writeStateVar(const VarType type, const int id, const size_t k,
       const size_t p, const M1 X);
 
-
   /**
    * Read offset along @c nrp dimension for time. Flexi schema only.
    *
@@ -266,7 +277,7 @@ public:
    *
    * @return Offset along @c nrp dimension.
    */
-  long readStart(const size_t k) const;
+  long readStart(const size_t k);
 
   /**
    * Write offset along @c nrp dimension for time. Flexi schema only.
@@ -283,7 +294,7 @@ public:
    *
    * @return Length along @c nrp dimension.
    */
-  long readLen(const size_t k) const;
+  long readLen(const size_t k);
 
   /**
    * Write length along @c nrp dimension for time. Flexi schema only.
@@ -356,7 +367,7 @@ protected:
    * @param[out] x Vector.
    */
   template<class V1>
-  void readRange(const int varid, const size_t k, V1 x) const;
+  void readRange(const int varid, const size_t k, V1 x);
 
   /**
    * Write range of variable along single dimension.
@@ -380,7 +391,7 @@ protected:
    * @param[out] x Vector.
    */
   template<class V1>
-  void readVector(const int varid, const size_t k, V1 x) const;
+  void readVector(const int varid, const size_t k, V1 x);
 
   /**
    * Write vector.
@@ -404,7 +415,7 @@ protected:
    * @param X Matrix.
    */
   template<class M1>
-  void readMatrix(const int varid, const size_t k, M1 X) const;
+  void readMatrix(const int varid, const size_t k, M1 X);
 
   /**
    * Write matrix.
@@ -481,8 +492,20 @@ protected:
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
+template<class S1>
+void bi::SimulatorNetCDFBuffer::write(const size_t k, const real t,
+    const S1& s) {
+  writeTime(k, t);
+  writeState(k, s.getDyn());
+}
+
+template<class S1>
+void bi::SimulatorNetCDFBuffer::write0(const S1& s) {
+  writeParameters(s.get(P_VAR));
+}
+
 template<class V1>
-void bi::SimulatorNetCDFBuffer::readTimes(const size_t k, V1 ts) const {
+void bi::SimulatorNetCDFBuffer::readTimes(const size_t k, V1 ts) {
   readRange(tVar, k, ts);
 }
 
@@ -492,7 +515,7 @@ void bi::SimulatorNetCDFBuffer::writeTimes(const size_t k, const V1 ts) {
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readParameters(M1 X) const {
+void bi::SimulatorNetCDFBuffer::readParameters(M1 X) {
   readState(P_VAR, 0, 0, X);
 }
 
@@ -502,7 +525,7 @@ void bi::SimulatorNetCDFBuffer::writeParameters(M1 X) {
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readParameters(const size_t p, M1 X) const {
+void bi::SimulatorNetCDFBuffer::readParameters(const size_t p, M1 X) {
   readState(P_VAR, 0, p, X);
 }
 
@@ -512,7 +535,7 @@ void bi::SimulatorNetCDFBuffer::writeParameters(const size_t p, M1 X) {
 }
 
 template<class M1>
-void bi::SimulatorNetCDFBuffer::readState(const size_t k, M1 X) const {
+void bi::SimulatorNetCDFBuffer::readState(const size_t k, M1 X) {
   readState(R_VAR, k, 0, columns(X, 0, m.getNetSize(R_VAR)));
   readState(D_VAR, k, 0,
       columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
@@ -527,7 +550,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const size_t k, const M1 X) {
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const size_t k, const size_t p,
-    M1 X) const {
+    M1 X) {
   readState(R_VAR, k, p, columns(X, 0, m.getNetSize(R_VAR)));
   readState(D_VAR, k, p,
       columns(X, m.getNetSize(R_VAR), m.getNetSize(D_VAR)));
@@ -543,7 +566,7 @@ void bi::SimulatorNetCDFBuffer::writeState(const size_t k, const size_t p,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
-    const size_t p, M1 X) const {
+    const size_t p, M1 X) {
   Var* var;
   int id, start, size;
 
@@ -558,7 +581,7 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readStateVar(const VarType type, const int id,
-    const size_t k, const size_t p, M1 X) const {
+    const size_t k, const size_t p, M1 X) {
   typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
   Var* var = m.getVar(type, id);
@@ -623,7 +646,6 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
     var = m.getVar(type, id);
     start = var->getStart();
     size = var->getSize();
-
     writeStateVar(type, id, k, p, columns(X, start, size));
   }
 }
@@ -680,7 +702,7 @@ void bi::SimulatorNetCDFBuffer::writeStateVar(const VarType type,
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readRange(const int varid, const size_t k,
-    V1 x) const {
+    V1 x) {
   typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
 
   std::vector<size_t> start(1), count(1);
@@ -715,7 +737,7 @@ void bi::SimulatorNetCDFBuffer::writeRange(const int varid, const size_t k,
 
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readVector(const int varid, const size_t k,
-    V1 x) const {
+    V1 x) {
   typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
 
   std::vector<size_t> start(2), count(2);
@@ -756,7 +778,7 @@ void bi::SimulatorNetCDFBuffer::writeVector(const int varid, const size_t k,
 
 template<class M1>
 void bi::SimulatorNetCDFBuffer::readMatrix(const int varid, const size_t k,
-    M1 X) const {
+    M1 X) {
   typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
   std::vector<size_t> start(3), count(3);

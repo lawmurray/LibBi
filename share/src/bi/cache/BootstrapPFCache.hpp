@@ -24,25 +24,25 @@ namespace bi {
  *
  * @ingroup io_cache
  *
- * @tparam IO1 Buffer type.
  * @tparam CL Location.
+ * @tparam IO1 Buffer type.
  */
-template<class IO1 = ParticleFilterNetCDFBuffer, Location CL = ON_HOST>
-class BootstrapPFCache: public SimulatorCache<IO1,CL> {
+template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
+class BootstrapPFCache: public SimulatorCache<CL,IO1> {
 public:
-  using SimulatorCache<IO1,CL>::writeState;
+  using SimulatorCache<CL,IO1>::writeState;
 
   /**
    * Constructor.
    *
    * @param out output buffer.
    */
-  BootstrapPFCache(IO1* out = NULL);
+  BootstrapPFCache(IO1& out = NULL);
 
   /**
    * Shallow copy.
    */
-  BootstrapPFCache(const BootstrapPFCache<IO1,CL>& o);
+  BootstrapPFCache(const BootstrapPFCache<CL,IO1>& o);
 
   /**
    * Destructor.
@@ -52,8 +52,7 @@ public:
   /**
    * Deep assignment.
    */
-  BootstrapPFCache<IO1,CL>& operator=(
-      const BootstrapPFCache<IO1,CL>& o);
+  BootstrapPFCache<CL,IO1>& operator=(const BootstrapPFCache<CL,IO1>& o);
 
   /**
    * Get the most recent log-weights vector.
@@ -92,10 +91,10 @@ public:
   void writeLL(const real ll);
 
   /**
-   * @copydoc AncestryCache::readTrajectory()
+   * @copydoc AncestryCache::readPath()
    */
   template<class M1>
-  void readTrajectory(const int p, M1 X) const;
+  void readPath(const int p, M1 X) const;
 
   /**
    * Write-through to the underlying buffer, as well as efficient caching
@@ -114,7 +113,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(BootstrapPFCache<IO1,CL>& o);
+  void swap(BootstrapPFCache<CL,IO1>& o);
 
   /**
    * Clear cache.
@@ -137,11 +136,11 @@ private:
    *
    * @todo Move to ParticleMCMCCache, as not needed in context of filter only.
    */
-  #ifdef ENABLE_GPU_CACHE
+#ifdef ENABLE_GPU_CACHE
   AncestryCache<CL> ancestryCache;
-  #else
+#else
   AncestryCache<ON_HOST> ancestryCache;
-  #endif
+#endif
 
   /**
    * Most recent log-weights.
@@ -151,7 +150,7 @@ private:
   /**
    * Output buffer.
    */
-  IO1* out;
+  IO1& out;
 
   /**
    * Serialize.
@@ -171,59 +170,26 @@ private:
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
 };
-
-/**
- * Factory for creating BootstrapPFCache objects.
- *
- * @ingroup io_cache
- *
- * @see Forcer
- */
-template<Location CL = ON_HOST>
-struct BootstrapPFCacheFactory {
-  /**
-   * Create BootstrapPFCache.
-   *
-   * @return BootstrapPFCache object. Caller has ownership.
-   *
-   * @see BootstrapPFCache::BootstrapPFCache()
-   */
-  template<class IO1>
-  static BootstrapPFCache<IO1,CL>* create(IO1* out = NULL) {
-    return new BootstrapPFCache<IO1,CL>(out);
-  }
-
-  /**
-   * Create BootstrapPFCache.
-   *
-   * @return BootstrapPFCache object. Caller has ownership.
-   *
-   * @see BootstrapPFCache::BootstrapPFCache()
-   */
-  static BootstrapPFCache<ParticleFilterNetCDFBuffer,CL>* create() {
-    return new BootstrapPFCache<ParticleFilterNetCDFBuffer,CL>();
-  }
-};
 }
 
-template<class IO1, bi::Location CL>
-bi::BootstrapPFCache<IO1,CL>::BootstrapPFCache(IO1* out) :
-    SimulatorCache<IO1,CL>(out), out(out) {
+template<bi::Location CL, class IO1>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(IO1& out) :
+    SimulatorCache<CL,IO1>(out), out(out) {
   //
 }
 
-template<class IO1, bi::Location CL>
-bi::BootstrapPFCache<IO1,CL>::BootstrapPFCache(
-    const BootstrapPFCache<IO1,CL>& o) :
-    SimulatorCache<IO1,CL>(o), ancestryCache(o.ancestryCache), logWeightsCache(
+template<bi::Location CL, class IO1>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(
+    const BootstrapPFCache<CL,IO1>& o) :
+    SimulatorCache<CL,IO1>(o), ancestryCache(o.ancestryCache), logWeightsCache(
         o.logWeightsCache), out(o.out) {
   //
 }
 
-template<class IO1, bi::Location CL>
-bi::BootstrapPFCache<IO1,CL>& bi::BootstrapPFCache<IO1,CL>::operator=(
-    const BootstrapPFCache<IO1,CL>& o) {
-  SimulatorCache<IO1,CL>::operator=(o);
+template<bi::Location CL, class IO1>
+bi::BootstrapPFCache<CL,IO1>& bi::BootstrapPFCache<CL,IO1>::operator=(
+    const BootstrapPFCache<CL,IO1>& o) {
+  SimulatorCache<CL,IO1>::operator=(o);
 
   ancestryCache = o.ancestryCache;
   logWeightsCache = o.logWeightsCache;
@@ -232,77 +198,67 @@ bi::BootstrapPFCache<IO1,CL>& bi::BootstrapPFCache<IO1,CL>::operator=(
   return *this;
 }
 
-template<class IO1, bi::Location CL>
-bi::BootstrapPFCache<IO1,CL>::~BootstrapPFCache() {
+template<bi::Location CL, class IO1>
+bi::BootstrapPFCache<CL,IO1>::~BootstrapPFCache() {
   flush();
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 const typename bi::Cache1D<real,CL>::vector_reference_type bi::BootstrapPFCache<
-    IO1,CL>::getLogWeights() const {
+    CL,IO1>::getLogWeights() const {
   return logWeightsCache.get(0, logWeightsCache.size());
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::BootstrapPFCache<IO1,CL>::readLogWeights(const int k,
-    V1 lws) const {
-  BI_ASSERT(out != NULL);
+void bi::BootstrapPFCache<CL,IO1>::readLogWeights(const int k, V1 lws) const {
+  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
 
-  out->readLogWeights(k, lws);
+  out.readLogWeights(k, lws);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::BootstrapPFCache<IO1,CL>::writeLogWeights(const int k,
+void bi::BootstrapPFCache<CL,IO1>::writeLogWeights(const int k,
     const V1 lws) {
-  if (out != NULL) {
-    out->writeLogWeights(k, lws);
-  }
+  out.writeLogWeights(k, lws);
   logWeightsCache.resize(lws.size());
   logWeightsCache.set(0, lws.size(), lws);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::BootstrapPFCache<IO1,CL>::readAncestors(const int k,
-    V1 as) const {
-  BI_ASSERT(out != NULL);
+void bi::BootstrapPFCache<CL,IO1>::readAncestors(const int k, V1 as) const {
+  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
 
-  out->readAncestors(k, as);
+  out.readAncestors(k, as);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::BootstrapPFCache<IO1,CL>::writeAncestors(const int k,
-    const V1 as) {
-  if (out != NULL) {
-    out->writeAncestors(k, as);
-  }
+void bi::BootstrapPFCache<CL,IO1>::writeAncestors(const int k, const V1 as) {
+  out.writeAncestors(k, as);
 }
 
-template<class IO1, bi::Location CL>
-inline void bi::BootstrapPFCache<IO1,CL>::writeLL(const real ll) {
-  if (out != NULL) {
-    out->writeLL(ll);
-  }
+template<bi::Location CL, class IO1>
+inline void bi::BootstrapPFCache<CL,IO1>::writeLL(const real ll) {
+  out.writeLL(ll);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class M1>
-void bi::BootstrapPFCache<IO1,CL>::readTrajectory(const int p,
-    M1 X) const {
-  ancestryCache.readTrajectory(p, X);
+void bi::BootstrapPFCache<CL,IO1>::readPath(const int p, M1 X) const {
+  ancestryCache.readPath(p, X);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class M1, class V1>
-void bi::BootstrapPFCache<IO1,CL>::writeState(const int k,
-    const M1 X, const V1 as) {
-  SimulatorCache<IO1,CL>::writeState(k, X);
+void bi::BootstrapPFCache<CL,IO1>::writeState(const int k, const M1 X,
+    const V1 as) {
+  SimulatorCache<CL,IO1>::writeState(k, X);
   writeAncestors(k, as);
 
-  #if defined(ENABLE_CUDA) and !defined(ENABLE_GPU_CACHE)
+#if defined(ENABLE_CUDA) and !defined(ENABLE_GPU_CACHE)
   typename temp_host_matrix<real>::type X1(X.size1(), X.size2());
   typename temp_host_vector<int>::type as1(as.size());
   X1 = X;
@@ -310,50 +266,49 @@ void bi::BootstrapPFCache<IO1,CL>::writeState(const int k,
   synchronize();
 
   ancestryCache.writeState(k, X1, as1);
-  #else
+#else
   ancestryCache.writeState(k, X, as);
-  #endif
+#endif
 }
 
-template<class IO1, bi::Location CL>
-void bi::BootstrapPFCache<IO1,CL>::swap(BootstrapPFCache<IO1,CL>& o) {
-  SimulatorCache<IO1,CL>::swap(o);
+template<bi::Location CL, class IO1>
+void bi::BootstrapPFCache<CL,IO1>::swap(BootstrapPFCache<CL,IO1>& o) {
+  SimulatorCache<CL,IO1>::swap(o);
   ancestryCache.swap(o.ancestryCache);
   logWeightsCache.swap(o.logWeightsCache);
 }
 
-template<class IO1, bi::Location CL>
-void bi::BootstrapPFCache<IO1,CL>::clear() {
-  SimulatorCache<IO1,CL>::clear();
+template<bi::Location CL, class IO1>
+void bi::BootstrapPFCache<CL,IO1>::clear() {
+  SimulatorCache<CL,IO1>::clear();
   ancestryCache.clear();
 }
 
-template<class IO1, bi::Location CL>
-void bi::BootstrapPFCache<IO1,CL>::empty() {
-  SimulatorCache<IO1,CL>::empty();
+template<bi::Location CL, class IO1>
+void bi::BootstrapPFCache<CL,IO1>::empty() {
+  SimulatorCache<CL,IO1>::empty();
   ancestryCache.empty();
 }
 
-template<class IO1, bi::Location CL>
-void bi::BootstrapPFCache<IO1,CL>::flush() {
+template<bi::Location CL, class IO1>
+void bi::BootstrapPFCache<CL,IO1>::flush() {
   //ancestryCache.flush();
-  SimulatorCache<IO1,CL>::flush();
+  SimulatorCache<CL,IO1>::flush();
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::BootstrapPFCache<IO1,CL>::save(Archive& ar,
+void bi::BootstrapPFCache<CL,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
+  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
   ar & ancestryCache;
   ar & logWeightsCache;
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::BootstrapPFCache<IO1,CL>::load(Archive& ar,
-    const unsigned version) {
-  ar & boost::serialization::base_object < SimulatorCache<IO1,CL> > (*this);
+void bi::BootstrapPFCache<CL,IO1>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
   ar & ancestryCache;
   ar & logWeightsCache;
 }

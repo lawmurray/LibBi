@@ -29,10 +29,6 @@ Pseudorandom number generator seed.
 Run with C<N> threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-=item C<--with-output> (default on)
-
-Enable output.
-
 =item C<--with-gdb> (default off)
 
 Run within the C<gdb> debugger.
@@ -193,19 +189,23 @@ our @EXEC_OPTIONS = (
 our @CLIENT_OPTIONS = (
     {
       name => 'init-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'input-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'obs-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'output-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'init-ns',
@@ -246,11 +246,6 @@ our @CLIENT_OPTIONS = (
       name => 'nthreads',
       type => 'int',
       default => 0
-    },
-    {
-      name => 'with-output',
-      type => 'bool',
-      default => 1
     },
     {
       name => 'gperftools-file',
@@ -336,6 +331,11 @@ our @CLIENT_OPTIONS = (
       type => 'int',
       deprecated => 1,
       message => 'use --nthreads instead'
+    },
+    {
+      name => 'with-output',
+      type => 'bool',
+      deprecated => 1
     },
 );
 

@@ -5,11 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_STATE_THETAPARTICLE_HPP
-#define BI_STATE_THETAPARTICLE_HPP
+#ifndef BI_STATE_MARGINALSIRSTATE_HPP
+#define BI_STATE_MARGINALSIRSTATE_HPP
 
 #include "../math/loc_vector.hpp"
-#include "../state/ThetaState.hpp"
+#include "../state/MarginalMHState.hpp"
 #include "../cache/BootstrapPFCache.hpp"
 
 namespace bi {
@@ -19,7 +19,7 @@ namespace bi {
  * @ingroup state
  */
 template<class B, Location L>
-class ThetaParticle : public ThetaState<B,L> {
+class MarginalSIRState : public MarginalMHState<B,L> {
 public:
   /**
    * Vector type.
@@ -37,17 +37,17 @@ public:
    * @param P Number of \f$x\f$-particles.
    * @param T Number of time points.
    */
-  ThetaParticle(const int P = 0, const int T = 0);
+  MarginalSIRState(const int P = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
    */
-  ThetaParticle(const ThetaParticle<B,L>& o);
+  MarginalSIRState(const MarginalSIRState<B,L>& o);
 
   /**
    * Deep assignment operator.
    */
-  ThetaParticle& operator=(const ThetaParticle<B,L>& o);
+  MarginalSIRState& operator=(const MarginalSIRState<B,L>& o);
 
   /**
    * Incremental log-likelihood.
@@ -119,8 +119,8 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::ThetaParticle<B,L>::ThetaParticle(const int P, const int T) :
-    ThetaState<B,L>(P, T),
+bi::MarginalSIRState<B,L>::MarginalSIRState(const int P, const int T) :
+    MarginalMHState<B,L>(P, T),
     lws(P),
     as(P),
     incLogLikelihood(-1.0/0.0) {
@@ -128,8 +128,8 @@ bi::ThetaParticle<B,L>::ThetaParticle(const int P, const int T) :
 }
 
 template<class B, bi::Location L>
-bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
-    ThetaState<B,L>(o),
+bi::MarginalSIRState<B,L>::MarginalSIRState(const MarginalSIRState<B,L>& o) :
+    MarginalMHState<B,L>(o),
     cache(o.cache),
     lws(o.lws),
     as(o.as),
@@ -138,9 +138,9 @@ bi::ThetaParticle<B,L>::ThetaParticle(const ThetaParticle<B,L>& o) :
 }
 
 template<class B, bi::Location L>
-bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
-    const ThetaParticle<B,L>& o) {
-  ThetaState<B,L>::operator=(o);
+bi::MarginalSIRState<B,L>& bi::MarginalSIRState<B,L>::operator=(
+    const MarginalSIRState<B,L>& o) {
+  MarginalMHState<B,L>::operator=(o);
   cache = o.cache;
   lws = o.lws;
   as = o.as;
@@ -150,38 +150,38 @@ bi::ThetaParticle<B,L>& bi::ThetaParticle<B,L>::operator=(
 }
 
 template<class B, bi::Location L>
-real& bi::ThetaParticle<B,L>::getIncLogLikelihood() {
+real& bi::MarginalSIRState<B,L>::getIncLogLikelihood() {
   return incLogLikelihood;
 }
 
 template<class B, bi::Location L>
-typename bi::ThetaParticle<B,L>::vector_type&
-    bi::ThetaParticle<B,L>::getLogWeights() {
+typename bi::MarginalSIRState<B,L>::vector_type&
+    bi::MarginalSIRState<B,L>::getLogWeights() {
   return lws;
 }
 
 template<class B, bi::Location L>
-typename bi::ThetaParticle<B,L>::int_vector_type&
-    bi::ThetaParticle<B,L>::getAncestors() {
+typename bi::MarginalSIRState<B,L>::int_vector_type&
+    bi::MarginalSIRState<B,L>::getAncestors() {
   return as;
 }
 
 template<class B, bi::Location L>
-typename bi::BootstrapPFCache<bi::ParticleFilterNetCDFBuffer,L>& bi::ThetaParticle<B,L>::getOutput() {
+typename bi::BootstrapPFCache<bi::ParticleFilterNetCDFBuffer,L>& bi::MarginalSIRState<B,L>::getOutput() {
   return cache;
 }
 
 template<class B, bi::Location L>
-void bi::ThetaParticle<B,L>::resize(const int P, const bool preserve) {
-  ThetaState<B,L>::resize(P, preserve);
+void bi::MarginalSIRState<B,L>::resize(const int P, const bool preserve) {
+  MarginalMHState<B,L>::resize(P, preserve);
   lws.resize(P, preserve);
   as.resize(P, preserve);
 }
 
 template<class B, bi::Location L>
 template<class Archive>
-void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
+void bi::MarginalSIRState<B,L>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object<MarginalMHState<B,L> >(*this);
   ar & cache;
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
@@ -190,8 +190,8 @@ void bi::ThetaParticle<B,L>::save(Archive& ar, const unsigned version) const {
 
 template<class B, bi::Location L>
 template<class Archive>
-void bi::ThetaParticle<B,L>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<ThetaState<B,L> >(*this);
+void bi::MarginalSIRState<B,L>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object<MarginalMHState<B,L> >(*this);
   ar & cache;
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);

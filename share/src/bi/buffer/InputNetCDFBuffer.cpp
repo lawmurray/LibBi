@@ -5,22 +5,22 @@
  * $Rev$
  * $Date$
  */
-#include "SparseInputNetCDFBuffer.hpp"
+#include "InputNetCDFBuffer.hpp"
 
-bi::SparseInputNetCDFBuffer::SparseInputNetCDFBuffer(const Model& m,
+bi::InputNetCDFBuffer::InputNetCDFBuffer(const Model& m,
     const std::string& file, const long ns, const long np) :
     NetCDFBuffer(file), m(m), vars(NUM_VAR_TYPES), nsDim(-1), npDim(-1), ns(
         ns), np(np) {
   map();
 }
 
-void bi::SparseInputNetCDFBuffer::setnp(const long np) {
+void bi::InputNetCDFBuffer::setnp(const long np) {
   BI_ERROR_MSG(npDim < 0 || np < nc_inq_dimlen(ncid, npDim),
       "Given index " << np << " outside range of np dimension");
   this->np = np;
 }
 
-void bi::SparseInputNetCDFBuffer::readMask(const size_t k, const VarType type,
+void bi::InputNetCDFBuffer::readMask(const size_t k, const VarType type,
     Mask<ON_HOST>& mask) {
   typedef typename temp_host_matrix<real>::type temp_matrix_type;
 
@@ -64,7 +64,7 @@ void bi::SparseInputNetCDFBuffer::readMask(const size_t k, const VarType type,
   }
 }
 
-void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
+void bi::InputNetCDFBuffer::readMask0(const VarType type,
     Mask<ON_HOST>& mask) {
   typedef typename temp_host_matrix<real>::type temp_matrix_type;
   mask.resize(m.getNumVars(type), false);
@@ -109,7 +109,7 @@ void bi::SparseInputNetCDFBuffer::readMask0(const VarType type,
   }
 }
 
-void bi::SparseInputNetCDFBuffer::map() {
+void bi::InputNetCDFBuffer::map() {
   int ncDim, ncVar;
   Var* var;
   std::string name;
@@ -222,8 +222,8 @@ void bi::SparseInputNetCDFBuffer::map() {
 
     if (times.empty() || tnxt > times.back()) {
       times.push_back(tnxt);
-      recStarts.push_back(std::vector<size_t>(recDims.size(), 0));
-      recLens.push_back(std::vector<size_t>(recDims.size(), 0));
+      recStarts.push_back(std::vector < size_t > (recDims.size(), 0));
+      recLens.push_back(std::vector < size_t > (recDims.size(), 0));
     }
     recStarts.back()[k] = starts[k];
     recLens.back()[k] = lens[k];
@@ -238,7 +238,7 @@ void bi::SparseInputNetCDFBuffer::map() {
   }
 }
 
-std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
+std::pair<int,int> bi::InputNetCDFBuffer::mapVarDim(const Var* var) {
   /* pre-condition */
   BI_ASSERT(var != NULL);
 
@@ -256,7 +256,8 @@ std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
     dimids = nc_inq_vardimid(ncid, ncVar);
 
     /* check for ns-dimension */
-    if (nsDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == nsDim) {
+    if (nsDim >= 0 && j < static_cast<int>(dimids.size())
+        && dimids[j] == nsDim) {
       ++j;
     }
 
@@ -270,11 +271,13 @@ std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
     }
 
     /* check for np-dimension */
-    if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+    if (npDim >= 0 && j < static_cast<int>(dimids.size())
+        && dimids[j] == npDim) {
       ++j;
     } else if (j < static_cast<int>(dimids.size())) {
       /* check for model dimensions */
-      for (i = var->getNumDims() - 1; i >= 0 && j < static_cast<int>(dimids.size()); --i, ++j) {
+      for (i = var->getNumDims() - 1;
+          i >= 0 && j < static_cast<int>(dimids.size()); --i, ++j) {
         dim = var->getDim(i);
         ncDim = dimids[j];
 
@@ -287,7 +290,8 @@ std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
           "Variable " << nc_inq_varname(ncid, ncVar) << " is missing one or more dimensions, in file " << file);
 
       /* check again for np dimension */
-      if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+      if (npDim >= 0 && j < static_cast<int>(dimids.size())
+          && dimids[j] == npDim) {
         ++j;
       }
     }
@@ -298,7 +302,7 @@ std::pair<int,int> bi::SparseInputNetCDFBuffer::mapVarDim(const Var* var) {
   return std::make_pair(k, ncVar);
 }
 
-int bi::SparseInputNetCDFBuffer::mapTimeDim(int ncVar) {
+int bi::InputNetCDFBuffer::mapTimeDim(int ncVar) {
   int ncDim, j = 0;
 
   /* check dimensions */
@@ -313,7 +317,7 @@ int bi::SparseInputNetCDFBuffer::mapTimeDim(int ncVar) {
   return ncDim;
 }
 
-int bi::SparseInputNetCDFBuffer::mapCoordDim(int ncVar) {
+int bi::InputNetCDFBuffer::mapCoordDim(int ncVar) {
   int ncDim, j = 0;
 
   /* check dimensions */
@@ -328,7 +332,7 @@ int bi::SparseInputNetCDFBuffer::mapCoordDim(int ncVar) {
   return ncDim;
 }
 
-void bi::SparseInputNetCDFBuffer::readTime(int ncVar, const long start,
+void bi::InputNetCDFBuffer::readTime(int ncVar, const long start,
     size_t* const len, real* const t) {
   /* pre-condition */
   BI_ASSERT(start >= 0);

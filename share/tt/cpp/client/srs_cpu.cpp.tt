@@ -49,8 +49,8 @@
 #include "bi/method/Simulator.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/buffer/SparseInputNetCDFBuffer.hpp"
-#include "bi/cache/MarginalSIRCache.hpp"
+#include "bi/buffer/InputNetCDFBuffer.hpp"
+#include "bi/cache/SMC2Cache.hpp"
 #include "bi/ode/IntegratorConstants.hpp"
 #include "bi/misc/TicToc.hpp"
 
@@ -98,22 +98,22 @@ int main(int argc, char* argv[]) {
   model_type m;
 
   /* inputs */
-  SparseInputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
+  InputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
   if (!INPUT_FILE.empty()) {
-    bufInput = new SparseInputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+    bufInput = new InputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   }
   if (!INIT_FILE.empty()) {
-    bufInit = new SparseInputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+    bufInit = new InputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
   }
   if (!OBS_FILE.empty()) {
-    bufObs = new SparseInputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
+    bufObs = new InputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
   }
 
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs);
 
   /* state and intermediate results */
-  State<model_type,LOCATION> s(NPARTICLES);
+  MarginalSRSState<model_type,LOCATION> s(NPARTICLES, sched.numObs());
   NPARTICLES = s.size(); // may change according to implementation
   NSAMPLES = State<model_type,LOCATION>::roundup(NSAMPLES); // so that number of samples for later prediction is of correct multiple
 
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
   Stopper* stopper = NULL;
   
   /* sampler */
-  BOOST_AUTO(out, MarginalSIRCacheFactory<LOCATION>::create(m, bufOutput));
+  BOOST_AUTO(out, SMC2CacheFactory<LOCATION>::create(m, bufOutput));
   BOOST_AUTO(sampler, MarginalSRSFactory::create(m, filter, adapter, stopper, out));
 
   /* sample */

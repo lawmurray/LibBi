@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_STATE_AuxiliaryPFState_HPP
-#define BI_STATE_AuxiliaryPFState_HPP
+#ifndef BI_STATE_AUXILIARYPFSTATE_HPP
+#define BI_STATE_AUXILIARYPFSTATE_HPP
 
 #include "BootstrapPFState.hpp"
 
@@ -56,12 +56,12 @@ public:
    */
   void resizeMax(const int maxP, const bool preserve = true);
 
+private:
   /**
    * Proposal log-weights.
    */
   typename State<B,L>::vector_type qlws;
 
-private:
   /**
    * Serialize.
    */

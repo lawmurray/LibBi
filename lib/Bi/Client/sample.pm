@@ -211,34 +211,29 @@ sub process_args {
     my $self = shift;
 
     $self->Bi::Client::filter::process_args(@_);
-    
-    # work out client program
+
     my $target = $self->get_named_arg('target');
     my $sampler = $self->get_named_arg('sampler');
     my $filter = $self->get_named_arg('filter');
-    my $binary;
     
     if ($target eq 'prior' || $target eq 'prediction') {
-        $binary = 'simulate';
         if (!$self->is_named_arg('with-transform-param-to-state')) {
 	        $self->set_named_arg('with-transform-param-to-state', 1);
         }
     } elsif ($target eq 'joint') {
-        $binary = 'simulate';
         if (!$self->is_named_arg('with-transform-param-to-state')) {
 	        $self->set_named_arg('with-transform-param-to-state', 1);
         }
         if (!$self->is_named_arg('with-transform-obs-to-state')) {
             $self->set_named_arg('with-transform-obs-to-state', 1);
         }
-    } elsif ($sampler eq 'sir' || $sampler eq 'smc2') {
-        $binary = 'sir';
-    } elsif ($sampler eq 'srs') {
-    	$binary = 'srs';
     } else {
-        $binary = 'mh';
+    	if ($sampler eq 'sir' || $sampler eq 'smc2') {
+	    	$self->set_named_arg('sampler', 'sir'); # standardise name
+    	}
     }
-    $self->{_binary} = $binary;
+    
+    $self->{_binary} = 'sample';
 }
 
 1;

@@ -70,15 +70,15 @@ public:
   void empty();
 
   /**
-   * Read single trajectory from the cache.
+   * Read single path from the cache.
    *
    * @tparam M1 Matrix type.
    *
    * @param p Index of particle at current time.
-   * @param[out] X Trajectory. Rows index variables, columns index times.
+   * @param[out] X Path. Rows index variables, columns index times.
    */
   template<class M1>
-  void readTrajectory(const int p, M1 X) const;
+  void readPath(const int p, M1 X) const;
 
   /**
    * Add particles at a new time to the cache.
@@ -294,7 +294,7 @@ void bi::AncestryCache<CL>::empty() {
 
 template<bi::Location CL>
 template<class M1>
-void bi::AncestryCache<CL>::readTrajectory(const int p, M1 X) const {
+void bi::AncestryCache<CL>::readPath(const int p, M1 X) const {
   /* pre-conditions */
   BI_ASSERT(X.size1() == Xs.size2());
   BI_ASSERT(p >= 0 && p < ls.size());
@@ -384,11 +384,11 @@ void bi::AncestryCache<CL>::enlarge(const int N) {
    *      have memory sizes much smaller than main memory.
    */
   int oldSize = Xs.size1();
-  #ifdef ENABLE_CUDA
+#ifdef ENABLE_CUDA
   int newSize = oldSize + N;
-  #else
-  int newSize = 2*bi::max(oldSize, N);
-  #endif
+#else
+  int newSize = 2 * bi::max(oldSize, N);
+#endif
 
   Xs.resize(newSize, Xs.size2(), true);
   as.resize(newSize, true);

@@ -38,9 +38,9 @@ public:
   /**
    * @copydoc BootstrapPF::step()
    */
-  template<bi::Location L, class IO1>
+  template<class S1, class IO1>
   real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      AuxiliaryPFState<B,L>& s, IO1* out);
+      S1& s, IO1& out);
   //@}
 
   /**
@@ -53,21 +53,21 @@ public:
   /**
    * @copydoc BootstrapPF::init()
    */
-  template<Location L, class IO1, class IO2>
-  void init(Random& rng, const ScheduleElement now, AuxiliaryPFState<B,L>& s,
-      IO1* out, IO2* inInit);
+  template<class S1, class IO1, class IO2>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out,
+      IO2& inInit);
 
   /**
    * @copydoc BootstrapPF::init()
    */
-  template<Location L, class V1, class IO1>
-  void init(Random& rng, const V1 theta, const ScheduleElement now,
-      AuxiliaryPFState<B,L>& s, IO1* out);
+  template<class S1, class V1, class IO1>
+  void init(Random& rng, const V1 theta, const ScheduleElement now, S1& s,
+      IO1& out);
 
   /**
    * Perform lookahead.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param iter Current position in time schedule.
@@ -76,22 +76,21 @@ public:
    *
    * @return Normalising constant contribution.
    */
-  template<Location L>
+  template<class S1>
   real lookahead(Random& rng, const ScheduleIterator iter,
-      const ScheduleIterator last, AuxiliaryPFState<B,L>& s);
+      const ScheduleIterator last, S1& s);
 
   /**
    * @copydoc BootstrapPF::correct()
    */
-  template<Location L>
-  real correct(Random& rng, const ScheduleElement now, AuxiliaryPFState<B,L>& s);
+  template<class S1>
+  real correct(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * @copydoc BootstrapPF::resample()
    */
-  template<Location L>
-  bool resample(Random& rng, const ScheduleElement now,
-      AuxiliaryPFState<B,L>& s);
+  template<class S1>
+  bool resample(Random& rng, const ScheduleElement now, S1& s);
   //@}
 
 protected:
@@ -99,16 +98,14 @@ protected:
    * Compute the maximum log-weight of a particle at the current time under
    * the bridge density.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param s State.
    *
    * @return Maximum log-weight.
    */
-  template<Location L>
-  real getMaxLogWeightBridge(const ScheduleElement now,
-      AuxiliaryPFState<B,L>& s);
-
+  template<class S1>
+  real getMaxLogWeightBridge(const ScheduleElement now, S1& s);
 };
 }
 
@@ -124,25 +121,25 @@ bi::LookaheadPF<B,S,R>::LookaheadPF(B& m, S& sim, R& resam) :
 }
 
 template<class B, class S, class R>
-template<bi::Location L, class IO1, class IO2>
+template<class S1, class IO1, class IO2>
 void bi::LookaheadPF<B,S,R>::init(Random& rng, const ScheduleElement now,
-    AuxiliaryPFState<B,L>& s, IO1* out, IO2* inInit) {
+    S1& s, IO1& out, IO2& inInit) {
   BootstrapPF<B,S,R>::init(rng, now, s, out, inInit);
   s.logAuxWeights().clear();
 }
 
 template<class B, class S, class R>
-template<bi::Location L, class V1, class IO1>
+template<class S1, class V1, class IO1>
 void bi::LookaheadPF<B,S,R>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, AuxiliaryPFState<B,L>& s, IO1* out) {
+    const ScheduleElement now, S1& s, IO1& out) {
   BootstrapPF<B,S,R>::init(rng, theta, now, s, out);
   s.logAuxWeights().clear();
 }
 
 template<class B, class S, class R>
-template<bi::Location L, class IO1>
+template<class S1, class IO1>
 real bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, AuxiliaryPFState<B,L>& s, IO1* out) {
+    const ScheduleIterator last, S1& s, IO1& out) {
   real ll = 0.0;
   do {
     ll += this->lookahead(rng, iter, last, s);
@@ -157,10 +154,9 @@ real bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
 }
 
 template<class B, class S, class R>
-template<bi::Location L>
+template<class S1>
 real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
-    const ScheduleIterator iter, const ScheduleIterator last,
-    AuxiliaryPFState<B,L>& s) {
+    const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
   real ll = 0.0;
   if (iter->hasBridge() && last->indexObs() > iter->indexObs()) {
     if (iter->isObserved()) {
@@ -170,7 +166,7 @@ real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
     s.logAuxWeights().clear();
 
     /* save previous state */
-    typename loc_temp_matrix<L,real>::type X(s.getDyn().size1(),
+    typename loc_temp_matrix<S1::location,real>::type X(s.getDyn().size1(),
         s.getDyn().size2());
     X = s.getDyn();
     real t = s.getTime();
@@ -200,16 +196,16 @@ real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
 }
 
 template<class B, class S, class R>
-template<bi::Location L>
+template<class S1>
 real bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
-    AuxiliaryPFState<B,L>& s) {
+    S1& s) {
   real ll = 0.0;
   if (now.isObserved()) {
     axpy(-1.0, s.logAuxWeights(), s.logWeights());
     s.logAuxWeights().clear();
 
-    this->m.observationLogDensities(s,
-        this->sim.obs.getMask(now.indexObs()), s.logWeights());
+    this->m.observationLogDensities(s, this->sim.obs.getMask(now.indexObs()),
+        s.logWeights());
 
     ll = logsumexp_reduce(s.logWeights())
         - bi::log(static_cast<real>(s.size()));
@@ -218,9 +214,9 @@ real bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class S, class R>
-template<bi::Location L>
+template<class S1>
 bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
-    AuxiliaryPFState<B,L>& s) {
+    S1& s) {
   bool r = false;
   if (now.isObserved()) {
     r = this->resam.isTriggered(s.logWeights());
@@ -244,7 +240,7 @@ bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
         this->resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
         bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
       } else {
-        typename State<B,L>::int_vector_type as1(s.ancestors().size());
+        typename S1::int_vector_type as1(s.ancestors().size());
         this->resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
         bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
         bi::gather(as1, s.ancestors(), s.ancestors());
@@ -262,11 +258,10 @@ bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class S, class R>
-template<bi::Location L>
+template<class S1>
 real bi::LookaheadPF<B,S,R>::getMaxLogWeightBridge(const ScheduleElement now,
-    AuxiliaryPFState<B,L>& s) {
-  return this->m.bridgeMaxLogDensity(s,
-      this->sim.obs.getMask(now.indexObs()));
+    S1& s) {
+  return this->m.bridgeMaxLogDensity(s, this->sim.obs.getMask(now.indexObs()));
 }
 
 #endif

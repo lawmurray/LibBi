@@ -10,11 +10,9 @@
 # client programs
 CLIENTS = [
     'nm',
-    'mh',
     'simulate',
     'filter',
-    'sir',
-    'srs',
+    'sample',
     'test',
     'test_resampler',
     'test_filter'
@@ -64,7 +62,7 @@ libbi_a_SOURCES = \
   src/bi/buffer/MCMCNetCDFBuffer.cpp \
   src/bi/buffer/SMCNetCDFBuffer.cpp \
   src/bi/buffer/SimulatorNetCDFBuffer.cpp \
-  src/bi/buffer/SparseInputNetCDFBuffer.cpp \
+  src/bi/buffer/InputNetCDFBuffer.cpp \
   src/bi/cache/Cache.cpp \
   src/bi/host/math/cblas.cpp \
   src/bi/host/math/lapack.cpp \

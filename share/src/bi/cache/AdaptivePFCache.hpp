@@ -22,23 +22,23 @@ namespace bi {
  *
  * @ingroup io_cache
  *
- * @tparam IO1 Buffer type.
  * @tparam CL Location.
+ * @tparam IO1 Buffer type.
  */
-template<class IO1 = ParticleFilterNetCDFBuffer, Location CL = ON_HOST>
-class AdaptivePFCache: public BootstrapPFCache<IO1,CL> {
+template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
+class AdaptivePFCache: public BootstrapPFCache<CL,IO1> {
 public:
   /**
    * Constructor.
    *
    * @param out output buffer.
    */
-  AdaptivePFCache(IO1* out = NULL);
+  AdaptivePFCache(IO1& out = NULL);
 
   /**
    * Shallow copy.
    */
-  AdaptivePFCache(const AdaptivePFCache<IO1,CL>& o);
+  AdaptivePFCache(const AdaptivePFCache<CL,IO1>& o);
 
   /**
    * Destructor.
@@ -48,8 +48,7 @@ public:
   /**
    * Deep assignment.
    */
-  AdaptivePFCache<IO1,CL>& operator=(
-      const AdaptivePFCache<IO1,CL>& o);
+  AdaptivePFCache<CL,IO1>& operator=(const AdaptivePFCache<CL,IO1>& o);
 
   /**
    * @copydoc SimulatorNetCDFBuffer::writeTime()
@@ -89,7 +88,7 @@ public:
   /**
    * Swap the contents of the cache with that of another.
    */
-  void swap(AdaptivePFCache<IO1,CL>& o);
+  void swap(AdaptivePFCache<CL,IO1>& o);
 
   /**
    * Clear cache.
@@ -159,60 +158,26 @@ private:
   BOOST_SERIALIZATION_SPLIT_MEMBER()
   friend class boost::serialization::access;
 };
-
-/**
- * Factory for creating BootstrapPFCache objects.
- *
- * @ingroup io_cache
- *
- * @see Forcer
- */
-template<Location CL = ON_HOST>
-struct AdaptivePFCacheFactory {
-  /**
-   * Create AdaptivePFCache.
-   *
-   * @return AdaptivePFCache object. Caller has ownership.
-   *
-   * @see AdaptivePFCache::AdaptivePFCache()
-   */
-  template<class IO1>
-  static AdaptivePFCache<IO1,CL>* create(IO1* out = NULL) {
-    return new AdaptivePFCache<IO1,CL>(out);
-  }
-
-  /**
-   * Create AdaptivePFCache.
-   *
-   * @return AdaptivePFCache object. Caller has ownership.
-   *
-   * @see AdaptivePFCache::BootstrapPFCache()
-   */
-  static AdaptivePFCache<ParticleFilterNetCDFBuffer,CL>* create() {
-    return new AdaptivePFCache<ParticleFilterNetCDFBuffer,CL>();
-  }
-};
 }
 
-template<class IO1, bi::Location CL>
-bi::AdaptivePFCache<IO1,CL>::AdaptivePFCache(IO1* out) :
-    BootstrapPFCache<IO1,CL>(out), base(-1), P(0) {
+template<bi::Location CL, class IO1>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(IO1& out) :
+    BootstrapPFCache<CL,IO1>(out), base(-1), P(0) {
   //
 }
 
-template<class IO1, bi::Location CL>
-bi::AdaptivePFCache<IO1,CL>::AdaptivePFCache(
-    const AdaptivePFCache<IO1,CL>& o) :
-    BootstrapPFCache<IO1,CL>(o), timeCache(o.timeCache), particleCache(
+template<bi::Location CL, class IO1>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const AdaptivePFCache<CL,IO1>& o) :
+    BootstrapPFCache<CL,IO1>(o), timeCache(o.timeCache), particleCache(
         o.particleCache), logWeightCache(o.logWeightCache), ancestorCache(
         o.ancestorCache), base(o.base), P(o.P) {
   //
 }
 
-template<class IO1, bi::Location CL>
-bi::AdaptivePFCache<IO1,CL>& bi::AdaptivePFCache<IO1,
-    CL>::operator=(const AdaptivePFCache<IO1,CL>& o) {
-  BootstrapPFCache<IO1,CL>::operator=(o);
+template<bi::Location CL, class IO1>
+bi::AdaptivePFCache<CL,IO1>& bi::AdaptivePFCache<CL,IO1>::operator=(
+    const AdaptivePFCache<CL,IO1>& o) {
+  BootstrapPFCache<CL,IO1>::operator=(o);
   timeCache = o.timeCache;
   particleCache = o.particleCache;
   logWeightCache = o.logWeightCache;
@@ -222,24 +187,22 @@ bi::AdaptivePFCache<IO1,CL>& bi::AdaptivePFCache<IO1,
   return *this;
 }
 
-template<class IO1, bi::Location CL>
-bi::AdaptivePFCache<IO1,CL>::~AdaptivePFCache() {
+template<bi::Location CL, class IO1>
+bi::AdaptivePFCache<CL,IO1>::~AdaptivePFCache() {
   flush();
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::writeTime(const int k,
-    const real& t) {
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::writeTime(const int k, const real& t) {
   if (base < 0) {
     base = k;
   }
   timeCache.set(k - base, t);
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class V1>
-void bi::AdaptivePFCache<IO1,CL>::writeLogWeights(const int k,
-    const V1 lws) {
+void bi::AdaptivePFCache<CL,IO1>::writeLogWeights(const int k, const V1 lws) {
   int j = k - base;
 
   if (j >= logWeightCache.size()) {
@@ -255,10 +218,10 @@ void bi::AdaptivePFCache<IO1,CL>::writeLogWeights(const int k,
   subrange(logWeightCache.get(j), P - lws.size(), lws.size()) = lws;
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class M1, class V1>
-void bi::AdaptivePFCache<IO1,CL>::writeState(const int k,
-    const M1 X, const V1 as) {
+void bi::AdaptivePFCache<CL,IO1>::writeState(const int k, const M1 X,
+    const V1 as) {
   /* pre-condition */
   assert(X.size1() == as.size());
 
@@ -289,14 +252,15 @@ void bi::AdaptivePFCache<IO1,CL>::writeState(const int k,
   subrange(ancestorCache.get(j), P - as.size(), as.size()) = as;
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::push(const int P) {
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
   int k = 0;
   while (timeCache.isValid(k)) {
-    BootstrapPFCache<IO1,CL>::writeTime(base + k, timeCache.get(k));
-    BootstrapPFCache<IO1,CL>::writeState(base + k, rows(particleCache.get(k), 0, P),
+    BootstrapPFCache<CL,IO1>::writeTime(base + k, timeCache.get(k));
+    BootstrapPFCache<CL,IO1>::writeState(base + k,
+        rows(particleCache.get(k), 0, P),
         subrange(ancestorCache.get(k), 0, P));
-    BootstrapPFCache<IO1,CL>::writeLogWeights(base + k,
+    BootstrapPFCache<CL,IO1>::writeLogWeights(base + k,
         subrange(logWeightCache.get(k), 0, P));
     ++k;
   }
@@ -309,10 +273,9 @@ void bi::AdaptivePFCache<IO1,CL>::push(const int P) {
   this->P = 0;
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::swap(
-    AdaptivePFCache<IO1,CL>& o) {
-  BootstrapPFCache<IO1,CL>::swap(o);
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::swap(AdaptivePFCache<CL,IO1>& o) {
+  BootstrapPFCache<CL,IO1>::swap(o);
   timeCache.swap(o.timeCache);
   particleCache.swap(o.particleCache);
   logWeightCache.swap(o.logWeightCache);
@@ -321,9 +284,9 @@ void bi::AdaptivePFCache<IO1,CL>::swap(
   std::swap(P, o.P);
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::clear() {
-  BootstrapPFCache<IO1,CL>::clear();
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::clear() {
+  BootstrapPFCache<CL,IO1>::clear();
   timeCache.clear();
   particleCache.clear();
   logWeightCache.clear();
@@ -332,9 +295,9 @@ void bi::AdaptivePFCache<IO1,CL>::clear() {
   P = 0;
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::empty() {
-  BootstrapPFCache<IO1,CL>::empty();
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::empty() {
+  BootstrapPFCache<CL,IO1>::empty();
   timeCache.empty();
   particleCache.empty();
   logWeightCache.empty();
@@ -343,23 +306,21 @@ void bi::AdaptivePFCache<IO1,CL>::empty() {
   P = 0;
 }
 
-template<class IO1, bi::Location CL>
-void bi::AdaptivePFCache<IO1,CL>::flush() {
+template<bi::Location CL, class IO1>
+void bi::AdaptivePFCache<CL,IO1>::flush() {
   push(P);
-  BootstrapPFCache<IO1,CL>::flush();
+  BootstrapPFCache<CL,IO1>::flush();
   timeCache.flush();
   particleCache.flush();
   logWeightCache.flush();
   ancestorCache.flush();
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::AdaptivePFCache<IO1,CL>::save(Archive& ar,
+void bi::AdaptivePFCache<CL,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar
-      & boost::serialization::base_object < BootstrapPFCache<IO1,CL>
-          > (*this);
+  ar & boost::serialization::base_object < BootstrapPFCache<CL,IO1> > (*this);
   ar & particleCache;
   ar & logWeightCache;
   ar & ancestorCache;
@@ -367,13 +328,10 @@ void bi::AdaptivePFCache<IO1,CL>::save(Archive& ar,
   ar & P;
 }
 
-template<class IO1, bi::Location CL>
+template<bi::Location CL, class IO1>
 template<class Archive>
-void bi::AdaptivePFCache<IO1,CL>::load(Archive& ar,
-    const unsigned version) {
-  ar
-      & boost::serialization::base_object < BootstrapPFCache<IO1,CL>
-          > (*this);
+void bi::AdaptivePFCache<CL,IO1>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object < BootstrapPFCache<CL,IO1> > (*this);
   ar & particleCache;
   ar & logWeightCache;
   ar & ancestorCache;

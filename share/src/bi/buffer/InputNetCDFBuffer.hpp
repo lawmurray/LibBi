@@ -5,12 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_SPARSEINPUTNETCDFBUFFER_HPP
-#define BI_BUFFER_SPARSEINPUTNETCDFBUFFER_HPP
+#ifndef BI_BUFFER_INPUTNETCDFBUFFER_HPP
+#define BI_BUFFER_INPUTNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "../state/State.hpp"
-#include "../state/Mask.hpp"
+#include "InputBuffer.hpp"
 #include "../model/Model.hpp"
 
 #include <vector>
@@ -23,7 +22,7 @@ namespace bi {
  *
  * @ingroup io_buffer
  */
-class SparseInputNetCDFBuffer: public NetCDFBuffer {
+class InputNetCDFBuffer: public InputBuffer, public NetCDFBuffer {
 public:
   /**
    * Constructor.
@@ -34,7 +33,7 @@ public:
    * @param np Index along @c np dimension to use, if it exists. -1 for whole
    * dimension.
    */
-  SparseInputNetCDFBuffer(const Model& m, const std::string& file,
+  InputNetCDFBuffer(const Model& m, const std::string& file,
       const long ns = 0, const long np = -1);
 
   /**
@@ -51,86 +50,50 @@ public:
    *
    * @return Time.
    */
-  real getTime(const size_t k) const;
+  real getTime(const size_t k);
 
   /**
-   * Get all times.
-   *
-   * @return All times.
-   *
-   * The times are in ascending order, without duplicates.
+   * @copydoc InputBuffer::readTimes()
    */
-  const std::vector<real>& getTimes() const;
+  template<class T1>
+  void readTimes(std::vector<T1>& ts);
 
   /**
-   * Read mask of dynamic variables.
-   *
-   * @param k Time index.
-   * @param type Variable type.
-   * @param[out] mask Mask.
+   * @copydoc InputBuffer::readMask()
    */
   void readMask(const size_t k, const VarType type, Mask<ON_HOST>& mask);
 
   /**
-   * Read dynamic variables.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param k Time index.
-   * @param type Variable type.
-   * @param mask Mask.
-   * @param[in,out] X State.
+   * @copydoc InputBuffer::read()
    */
   template<class M1>
-  void readState(const size_t k, const VarType type,
-      const Mask<ON_HOST>& mask, M1 X);
+  void read(const size_t k, const VarType type, const Mask<ON_HOST>& mask,
+      M1 X);
 
   /**
-   * Convenience method for reading dynamic variables when the mask is not of
-   * interest.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param k Time index.
-   * @param type Variable type.
-   * @param[in,out] X State.
+   * @copydoc InputBuffer::read()
    */
   template<class M1>
   void read(const size_t k, const VarType type, M1 X);
 
   /**
-   * Read mask of static variables.
-   *
-   * @param type Variable type.
-   * @param[out] mask Mask.
+   * @copydoc InputBuffer::readMask0()
    */
   void readMask0(const VarType type, Mask<ON_HOST>& mask);
 
   /**
-   * Read static variables.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param type Variable type.
-   * @param mask Mask.
-   * @param[in,out] X State.
+   * @copydoc InputBuffer::read0()
    */
   template<class M1>
-  void readState0(const VarType type, const Mask<ON_HOST>& mask, M1 X);
+  void read0(const VarType type, const Mask<ON_HOST>& mask, M1 X);
 
   /**
-   * Convenience method for reading static variables when the mask is not of
-   * interest.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param type Variable type.
-   * @param[in,out] X State.
+   * @copydoc InputBuffer::read0()
    */
   template<class M1>
   void read0(const VarType type, M1 X);
 
-private:
+protected:
   /**
    * Read from time variable.
    *
@@ -317,17 +280,18 @@ private:
 
 #include "boost/typeof/typeof.hpp"
 
-inline real bi::SparseInputNetCDFBuffer::getTime(const size_t k) const {
+inline real bi::InputNetCDFBuffer::getTime(const size_t k) {
   return times[k];
 }
 
-inline const std::vector<real>& bi::SparseInputNetCDFBuffer::getTimes() const {
-  return times;
+template<class T1>
+inline void bi::InputNetCDFBuffer::readTimes(std::vector<T1>& ts) {
+  ts = times;
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readState(const size_t k,
-    const VarType type, const Mask<ON_HOST>& mask, M1 X) {
+void bi::InputNetCDFBuffer::read(const size_t k, const VarType type,
+    const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
   int ncVar, r;
   long start, len;
@@ -364,15 +328,14 @@ void bi::SparseInputNetCDFBuffer::readState(const size_t k,
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::read(const size_t k, const VarType type,
-    M1 X) {
+void bi::InputNetCDFBuffer::read(const size_t k, const VarType type, M1 X) {
   Mask<ON_HOST> mask;
   readMask(k, type, mask);
-  readState(k, type, mask, X);
+  read(k, type, mask, X);
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
+void bi::InputNetCDFBuffer::read0(const VarType type,
     const Mask<ON_HOST>& mask, M1 X) {
   Var* var;
   int ncVar, r;
@@ -421,14 +384,14 @@ void bi::SparseInputNetCDFBuffer::readState0(const VarType type,
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::read0(const VarType type, M1 X) {
+void bi::InputNetCDFBuffer::read0(const VarType type, M1 X) {
   Mask<ON_HOST> mask;
   readMask0(type, mask);
   readState0(type, mask, X);
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const long start,
+void bi::InputNetCDFBuffer::readCoords(int ncVar, const long start,
     const long len, M1 C) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
@@ -442,7 +405,8 @@ void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const long start,
   dimids = nc_inq_vardimid(ncid, ncVar);
 
   /* optional ns dimension */
-  if (nsDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == nsDim) {
+  if (nsDim >= 0 && j < static_cast<int>(dimids.size())
+      && dimids[j] == nsDim) {
     offsets[j] = ns;
     counts[j] = 1;
     ++j;
@@ -471,7 +435,7 @@ void bi::SparseInputNetCDFBuffer::readCoords(int ncVar, const long start,
 }
 
 template<class M1>
-void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
+void bi::InputNetCDFBuffer::readVar(int ncVar, const long start,
     const long len, M1 X) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
@@ -485,7 +449,8 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
   bool haveP = false;
 
   /* ns dimension */
-  if (nsDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == nsDim) {
+  if (nsDim >= 0 && j < static_cast<int>(dimids.size())
+      && dimids[j] == nsDim) {
     offsets[j] = ns;
     counts[j] = 1;
     ++j;
@@ -506,7 +471,8 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
   }
 
   /* np dimension */
-  if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+  if (npDim >= 0 && j < static_cast<int>(dimids.size())
+      && dimids[j] == npDim) {
     if (nc_inq_dimlen(ncid, npDim) == 1) {
       /* special case, often occurring with simulated data sets */
       offsets[j] = 0;
@@ -539,7 +505,7 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
 }
 
 template<class V1, class M1>
-void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
+void bi::InputNetCDFBuffer::readVar(int ncVar, const long start,
     const long len, const V1 ixs, M1 X) {
   /* pre-condition */
   BI_ASSERT(ncVar >= 0);
@@ -567,7 +533,8 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
   ++j;
 
   /* np dimension */
-  if (npDim >= 0 && j < static_cast<int>(dimids.size()) && dimids[j] == npDim) {
+  if (npDim >= 0 && j < static_cast<int>(dimids.size())
+      && dimids[j] == npDim) {
     if (np >= 0) {
       BI_ASSERT(np + X.size1() <= nc_inq_dimlen(ncid, npDim));
       offsets[j] = np;
@@ -598,7 +565,7 @@ void bi::SparseInputNetCDFBuffer::readVar(int ncVar, const long start,
 }
 
 template<class M1, class V1>
-void bi::SparseInputNetCDFBuffer::serialiseCoords(const Var* var, const M1 C,
+void bi::InputNetCDFBuffer::serialiseCoords(const Var* var, const M1 C,
     V1 ixs) {
   /* pre-condition */
   BI_ASSERT(var->getNumDims() == C.size1());

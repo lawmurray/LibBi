@@ -23,7 +23,7 @@ namespace bi {
  * @tparam CL Cache location.
  */
 template<class T1, Location CL>
-class CacheCross : public Cache {
+class CacheCross: public Cache {
 public:
   /**
    * Matrix type.
@@ -164,10 +164,9 @@ inline bi::CacheCross<T1,CL>& bi::CacheCross<T1,CL>::operator=(
   return *this;
 }
 
-
 template<class T1, bi::Location CL>
-inline const typename bi::CacheCross<T1,CL>::vector_reference_type bi::CacheCross<T1,CL>::get(
-    const int i) const {
+inline const typename bi::CacheCross<T1,CL>::vector_reference_type bi::CacheCross<
+    T1,CL>::get(const int i) const {
   /* pre-condition */
   BI_ASSERT(isValid(i));
 
@@ -175,8 +174,8 @@ inline const typename bi::CacheCross<T1,CL>::vector_reference_type bi::CacheCros
 }
 
 template<class T1, bi::Location CL>
-inline const typename bi::CacheCross<T1,CL>::matrix_reference_type bi::CacheCross<T1,CL>::get(
-    const int i, const int len) const {
+inline const typename bi::CacheCross<T1,CL>::matrix_reference_type bi::CacheCross<
+    T1,CL>::get(const int i, const int len) const {
   /* pre-condition */
   BI_ASSERT(isValid(i, len));
 
@@ -199,7 +198,8 @@ inline void bi::CacheCross<T1,CL>::set(const int p, const V1 x) {
 
 template<class T1, bi::Location CL>
 template<class M1>
-inline void bi::CacheCross<T1,CL>::set(const int p, const int len, const M1 X) {
+inline void bi::CacheCross<T1,CL>::set(const int p, const int len,
+    const M1 X) {
   /* pre-condition */
   BI_ASSERT(p >= 0);
 
@@ -226,20 +226,20 @@ void bi::CacheCross<T1,CL>::swap(CacheCross<T1,CL>& o) {
 template<class T1, bi::Location CL>
 void bi::CacheCross<T1,CL>::empty() {
   Cache::empty();
-  X.resize(0,0);
+  X.resize(0, 0);
 }
 
 template<class T1, bi::Location CL>
 template<class Archive>
 void bi::CacheCross<T1,CL>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   save_resizable_matrix(ar, version, X);
 }
 
 template<class T1, bi::Location CL>
 template<class Archive>
 void bi::CacheCross<T1,CL>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   load_resizable_matrix(ar, version, X);
 }
 

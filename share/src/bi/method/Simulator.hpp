@@ -56,7 +56,7 @@ public:
    */
   template<Location L, class IO1, class IO2>
   void simulate(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO1* out, IO2* inInit);
+      const ScheduleIterator last, State<B,L>& s, IO1& out, IO2& inInit);
   //@}
 
   /**
@@ -79,7 +79,7 @@ public:
    */
   template<Location L, class IO2>
   void init(Random& rng, const ScheduleElement now, State<B,L>& s,
-      IO2* inInit = NULL);
+      IO2& inInit = NULL);
 
   /**
    * Initialise for simulation, with fixed parameters.
@@ -111,7 +111,7 @@ public:
    */
   template<Location L, class IO1>
   void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, IO1* out);
+      State<B,L>& s, IO1& out);
 
   /**
    * Advance model forward.
@@ -154,7 +154,7 @@ public:
    * @param out Output buffer.
    */
   template<Location L, class IO1>
-  void output0(const State<B,L>& s, IO1* out);
+  void output0(const State<B,L>& s, IO1& out);
 
   /**
    * Output dynamic variables.
@@ -167,7 +167,7 @@ public:
    * @param out Output buffer.
    */
   template<Location L, class IO1>
-  void output(const ScheduleElement now, const State<B,L>& s, IO1* out);
+  void output(const ScheduleElement now, const State<B,L>& s, IO1& out);
 
   /**
    * Clean up.
@@ -222,7 +222,7 @@ bi::Simulator<B,F,O>::Simulator(B& m, F& in, O& obs) :
 template<class B, class F, class O>
 template<bi::Location L, class IO1, class IO2>
 void bi::Simulator<B,F,O>::simulate(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, State<B,L>& s, IO1* out, IO2* inInit) {
+    const ScheduleIterator last, State<B,L>& s, IO1& out, IO2& inInit) {
   ScheduleIterator iter = first;
   init(rng, *iter, s, inInit);
   output0(s, out);
@@ -236,7 +236,9 @@ void bi::Simulator<B,F,O>::simulate(Random& rng, const ScheduleIterator first,
 template<class B, class F, class O>
 template<bi::Location L, class IO2>
 void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
-    State<B,L>& s, IO2* inInit) {
+    State<B,L>& s, IO2& inInit) {
+  std::vector<real> ts;
+
   s.setTime(now.getTime());
   s.clear();
 
@@ -245,17 +247,16 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
 
   /* parameters */
   m.parameterSample(rng, s);
-  if (inInit != NULL) {
-    inInit->read0(P_VAR, s.get(P_VAR));
+  if (!equals<IO2,InputBuffer>::value) {
+    inInit.readTimes(ts);
+    inInit.read0(P_VAR, s.get(P_VAR));
 
     /* when --with-transform-initial-to-param active, need to read parameters
      * that represent initial states from dynamic variables in input file */
-    BOOST_AUTO(iter,
-        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
-            now.getTime()));
-    if (iter != inInit->getTimes().end()) {
-      int k = std::distance(inInit->getTimes().begin(), iter);
-      inInit->read(k, P_VAR, s.get(P_VAR));
+    BOOST_AUTO(iter, std::find(ts.begin(), ts.end(), now.getTime()));
+    if (iter != ts.end()) {
+      int k = std::distance(ts.begin(), iter);
+      inInit.read(k, P_VAR, s.get(P_VAR));
     }
 
     s.get(PY_VAR) = s.get(P_VAR);
@@ -274,17 +275,15 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
 
   /* state variable initial values */
   m.initialSamples(rng, s);
-  if (inInit != NULL) {
-    inInit->read0(D_VAR, s.get(D_VAR));
-    inInit->read0(R_VAR, s.get(D_VAR));
+  if (!equals<IO2,InputBuffer>::value) {  // if there's actually a buffer...
+    inInit.read0(D_VAR, s.get(D_VAR));
+    inInit.read0(R_VAR, s.get(D_VAR));
 
-    BOOST_AUTO(iter,
-        std::find(inInit->getTimes().begin(), inInit->getTimes().end(),
-            now.getTime()));
-    if (iter != inInit->getTimes().end()) {
-      int k = std::distance(inInit->getTimes().begin(), iter);
-      inInit->read(k, D_VAR, s.get(D_VAR));
-      inInit->read(k, R_VAR, s.get(R_VAR));
+    BOOST_AUTO(iter, std::find(ts.begin(), ts.end(), now.getTime()));
+    if (iter != ts.end()) {
+      int k = std::distance(ts.begin(), iter);
+      inInit.read(k, D_VAR, s.get(D_VAR));
+      inInit.read(k, R_VAR, s.get(R_VAR));
     }
 
     s.get(DY_VAR) = s.get(D_VAR);
@@ -328,7 +327,7 @@ void bi::Simulator<B,F,O>::init(Random& rng, const V1 theta,
 template<class B, class F, class O>
 template<bi::Location L, class IO1>
 void bi::Simulator<B,F,O>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, IO1* out) {
+    const ScheduleIterator last, State<B,L>& s, IO1& out) {
   do {
     ++iter;
     advance(rng, *iter, s);
@@ -375,19 +374,16 @@ void bi::Simulator<B,F,O>::observe(Random& rng, State<B,L>& s) {
 
 template<class B, class F, class O>
 template<bi::Location L, class IO1>
-void bi::Simulator<B,F,O>::output0(const State<B,L>& s, IO1* out) {
-  if (out != NULL) {
-    out->writeParameters(s.get(P_VAR));
-  }
+void bi::Simulator<B,F,O>::output0(const State<B,L>& s, IO1& out) {
+  out.write0(s);
 }
 
 template<class B, class F, class O>
 template<bi::Location L, class IO1>
 void bi::Simulator<B,F,O>::output(const ScheduleElement now,
-    const State<B,L>& s, IO1* out) {
-  if (out != NULL && now.hasOutput()) {
-    out->writeTime(now.indexOutput(), now.getTime());
-    out->writeState(now.indexOutput(), s.getDyn());
+    const State<B,L>& s, IO1& out) {
+  if (now.hasOutput()) {
+    out.write(now.indexOutput(), now.getTime(), s);
   }
 }
 

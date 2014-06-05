@@ -10,7 +10,7 @@
 #define BI_METHOD_MARGINALSIR_HPP
 
 #include "misc.hpp"
-#include "../state/ThetaParticle.hpp"
+#include "../state/MarginalSIRState.hpp"
 #include "../state/Schedule.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
@@ -59,7 +59,7 @@ public:
    */
   MarginalSIR(B& m, F* pmmh = NULL, R* resam = NULL, const int Nmoves = 1,
       const MarginalSIRAdapter adapter = NO_ADAPTER, const real adapterScale =
-          0.5, const real adapterEssRel = 0.25, IO1* out = NULL);
+          0.5, const real adapterEssRel = 0.25, IO1& out = NULL);
 
   /**
    * @name High-level interface.
@@ -84,14 +84,14 @@ public:
    *
    * @return Output.
    */
-  IO1* getOutput();
+  IO1& getOutput();
 
   /**
    * Set output.
    *
    * @param out Output buffer.
    */
-  void setOutput(IO1* out);
+  void setOutput(IO1& out);
 
   /**
    * Sample.
@@ -109,8 +109,8 @@ public:
    */
   template<Location L, class IO2>
   void sample(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaParticle<B,L>& s, IO2* inInit = NULL,
-      const int C = 1);
+      const ScheduleIterator last, MarginalSIRState<B,L>& s, IO2& inInit =
+          NULL, const int C = 1);
   //@}
 
   /**
@@ -135,8 +135,8 @@ public:
    * @return Evidence.
    */
   template<Location L, class V1, class V2>
-  real init(Random& rng, const ScheduleElement now, ThetaParticle<B,L>& s,
-      std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, V2 as);
+  real init(Random& rng, const ScheduleElement now, MarginalSIRState<B,L>& s,
+      std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as);
 
   /**
    * Step \f$x\f$-particles forward.
@@ -159,8 +159,8 @@ public:
    */
   template<Location L, class V1, class V2>
   real step(Random& rng, const ScheduleIterator first, ScheduleIterator& iter,
-      const ScheduleIterator last, ThetaParticle<B,L>& s,
-      std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, V2 as);
+      const ScheduleIterator last, MarginalSIRState<B,L>& s,
+      std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as);
 
   /**
    * Adapt proposal distribution.
@@ -175,7 +175,7 @@ public:
    * @param[out] q The proposal distribution.
    */
   template<Location L, class V1, class V2, class M2>
-  void adapt(const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+  void adapt(const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
       GaussianPdf<V2,M2>& q);
 
   /**
@@ -192,7 +192,7 @@ public:
    */
   template<Location L, class V1, class V2>
   void resample(Random& rng, const ScheduleElement now, V1 lws, V2 as,
-      std::vector<ThetaParticle<B,L>*>& thetas);
+      std::vector<MarginalSIRState<B,L>*>& thetas);
 
   /**
    * Rejuvenate \f$\theta\f$-particles.
@@ -212,9 +212,9 @@ public:
    */
   template<Location L, class V1, class M1>
   real rejuvenate(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator now, ThetaParticle<B,L>& s,
-      const std::vector<ThetaParticle<B,L>*>& thetas, GaussianPdf<V1,M1>& q,
-      const real ess);
+      const ScheduleIterator now, MarginalSIRState<B,L>& s,
+      const std::vector<MarginalSIRState<B,L>*>& thetas,
+      GaussianPdf<V1,M1>& q, const real ess);
 
   /**
    * Output.
@@ -228,7 +228,7 @@ public:
    * @param les Incremental log-evidences.
    */
   template<bi::Location L, class V1, class V2>
-  void output(const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+  void output(const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
       const V2 les);
 
   /**
@@ -288,7 +288,7 @@ private:
   /**
    * Output.
    */
-  IO1* out;
+  IO1& out;
 
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -325,7 +325,7 @@ struct MarginalSIRFactory {
   static MarginalSIR<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
       const int Nmoves = 1, const MarginalSIRAdapter adapter = NO_ADAPTER,
       const real adapterScale = 0.5, const real adapterEssRel = 0.25,
-      IO1* out = NULL) {
+      IO1& out = NULL) {
     return new MarginalSIR<B,F,R,IO1>(m, pmmh, resam, Nmoves, adapter,
         adapterScale, adapterEssRel, out);
   }
@@ -342,7 +342,7 @@ struct MarginalSIRFactory {
 template<class B, class F, class R, class IO1>
 bi::MarginalSIR<B,F,R,IO1>::MarginalSIR(B& m, F* pmmh, R* resam,
     const int Nmoves, const MarginalSIRAdapter adapter,
-    const real adapterScale, const real adapterEssRel, IO1* out) :
+    const real adapterScale, const real adapterEssRel, IO1& out) :
     m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
         adapterScale), adapterEssRel(adapterEssRel), out(out) {
   //
@@ -352,11 +352,11 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class IO2>
 void bi::MarginalSIR<B,F,R,IO1>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
-    ThetaParticle<B,L>& s, IO2* inInit, const int C) {
+    MarginalSIRState<B,L>& s, IO2& inInit, const int C) {
   typedef typename temp_host_vector<real>::type host_logweight_vector_type;
   typedef typename temp_host_vector<int>::type host_ancestor_vector_type;
 
-  std::vector<ThetaParticle<B,L>*> thetas(C);  // theta-particles
+  std::vector<MarginalSIRState<B,L>*> thetas(C);  // theta-particles
   host_logweight_vector_type lws(C);  // log-weights of theta-particles
   host_logweight_vector_type les(last->indexOutput() - first->indexOutput());  // incremental log-evidences
   host_ancestor_vector_type as(C);  // ancestors of theta-particles
@@ -386,8 +386,8 @@ void bi::MarginalSIR<B,F,R,IO1>::sample(Random& rng,
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::MarginalSIR<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
-    ThetaParticle<B,L>& s, std::vector<ThetaParticle<B,L>*>& thetas, V1 lws,
-    V2 as) {
+    MarginalSIRState<B,L>& s, std::vector<MarginalSIRState<B,L>*>& thetas,
+    V1 lws, V2 as) {
   /* pre-condition */
   assert(!V1::on_device);
   assert(!V2::on_device);
@@ -397,7 +397,8 @@ real bi::MarginalSIR<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
 
   /* initialise theta-particles */
   for (i = 0; i < thetas.size(); ++i) {
-    thetas[i] = new ThetaParticle<B,L>(s.size(), s.getTrajectory().size2());
+    thetas[i] = new MarginalSIRState<B,L>(s.size(),
+        s.getTrajectory().size2());
     BOOST_AUTO(&theta, *thetas[i]);
     BOOST_AUTO(filter, pmmh->getFilter());
 
@@ -429,8 +430,8 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 real bi::MarginalSIR<B,F,R,IO1>::step(Random& rng,
     const ScheduleIterator first, ScheduleIterator& iter,
-    const ScheduleIterator last, ThetaParticle<B,L>& s,
-    std::vector<ThetaParticle<B,L>*>& thetas, V1 lws, V2 as) {
+    const ScheduleIterator last, MarginalSIRState<B,L>& s,
+    std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as) {
   typedef typename temp_host_vector<real>::type host_vector_type;
   typedef typename temp_host_matrix<real>::type host_matrix_type;
 
@@ -467,7 +468,7 @@ real bi::MarginalSIR<B,F,R,IO1>::step(Random& rng,
     // otherwise we count the new incremental likelihood twice!!
     lws(i) += theta.getIncLogLikelihood();
 
-    filter->sampleTrajectory(rng, theta.getTrajectory());
+    filter->samplePath(rng, theta.getTrajectory(), out);
 
   }
   le = logsumexp_reduce(lws) - bi::log(static_cast<real>(lws.size()));
@@ -479,7 +480,7 @@ real bi::MarginalSIR<B,F,R,IO1>::step(Random& rng,
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2, class M2>
 void bi::MarginalSIR<B,F,R,IO1>::adapt(
-    const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+    const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
     GaussianPdf<V2,M2>& q) {
   typedef typename sim_temp_vector<V2>::type vector_type;
   typedef typename sim_temp_matrix<M2>::type matrix_type;
@@ -517,7 +518,7 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::MarginalSIR<B,F,R,IO1>::resample(Random& rng,
     const ScheduleElement now, V1 lws, V2 as,
-    std::vector<ThetaParticle<B,L>*>& thetas) {
+    std::vector<MarginalSIRState<B,L>*>& thetas) {
   if (now.isObserved()) {
     resam->resample(rng, lws, as, thetas);
   }
@@ -527,8 +528,9 @@ template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class M1>
 real bi::MarginalSIR<B,F,R,IO1>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
-    ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
-    GaussianPdf<V1,M1>& q, const real ess) {
+    MarginalSIRState<B,L>& s,
+    const std::vector<MarginalSIRState<B,L>*>& thetas, GaussianPdf<V1,M1>& q,
+    const real ess) {
 #ifdef ENABLE_TIMING
   synchronize();
   TicToc clock;
@@ -589,16 +591,14 @@ void bi::MarginalSIR<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
 template<class B, class F, class R, class IO1>
 template<bi::Location L, class V1, class V2>
 void bi::MarginalSIR<B,F,R,IO1>::output(
-    const std::vector<ThetaParticle<B,L>*>& thetas, const V1 lws,
+    const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
     const V2 les) {
-  if (out != NULL) {
-    pmmh->setOutput(out);
-    for (int p = 0; p < thetas.size(); ++p) {
-      pmmh->output(p, *thetas[p]);
-    }
-    out->writeLogWeights(lws);
-    out->writeLogEvidences(les);
+  pmmh->setOutput(out);
+  for (int p = 0; p < thetas.size(); ++p) {
+    pmmh->output(p, *thetas[p]);
   }
+  out.writeLogWeights(lws);
+  out.writeLogEvidences(les);
 }
 
 template<class B, class F, class R, class IO1>

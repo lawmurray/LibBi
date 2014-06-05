@@ -65,9 +65,9 @@ public:
   /**
    * %Filter forward.
    *
-   * @tparam S State type.
-   * @tparam IO2 Input type.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
+   * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
@@ -78,15 +78,15 @@ public:
    *
    * @return Estimate of the marginal log-likelihood.
    */
-  template<class S, class IO1, class IO2>
+  template<class S1, class IO1, class IO2>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S& s, IO1* out, IO2* inInit);
+      const ScheduleIterator last, S1& s, IO1& out, IO2& inInit);
 
   /**
    * %Filter forward, with fixed parameters.
    *
    * @tparam L Location.
-   * @tparam S State type.
+   * @tparam S1 State type.
    * @tparam V1 Vector type.
    * @tparam IO1 Output type.
    *
@@ -99,18 +99,18 @@ public:
    *
    * @return Estimate of the marginal log-likelihood.
    */
-  template<class S, class V1, class IO1>
+  template<class S1, class V1, class IO1>
   real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, S& s, IO1* out);
+      const ScheduleIterator last, const V1 theta, S1& s, IO1& out);
 };
 }
 
 #include <utility>
 
 template<class F>
-template<class S, class IO1, class IO2>
+template<class S1, class IO1, class IO2>
 real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S& s, IO1* out, IO2* inInit) {
+    const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   const int P = s.size();
   real ll = 0.0;
 
@@ -129,9 +129,9 @@ real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
 }
 
 template<class F>
-template<class S, class V1, class IO1>
+template<class S1, class V1, class IO1>
 real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, const V1 theta, S& s, IO1* out) {
+    const ScheduleIterator last, const V1 theta, S1& s, IO1& out) {
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 

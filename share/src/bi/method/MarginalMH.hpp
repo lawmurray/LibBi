@@ -9,8 +9,9 @@
 #define BI_METHOD_MARGINALMH_HPP
 
 #include "../state/Schedule.hpp"
-#include "../state/ThetaState.hpp"
-#include "../cache/ParticleMCMCCache.hpp"
+#include "../state/MarginalMHState.hpp"
+#include "../cache/MCMCCache.hpp"
+#include "../buffer/NullBuffer.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
 #include "../math/view.hpp"
@@ -25,7 +26,6 @@ namespace bi {
  *
  * @tparam B Model type
  * @tparam F Filter type.
- * @tparam IO1 Output type.
  *
  * Implements a marginal Metropolis--Hastings sampler, which, when combined
  * with a particle filter, gives the particle marginal Metropolis--Hastings
@@ -33,19 +33,16 @@ namespace bi {
  *
  * @todo Add proposal adaptation using adapter classes.
  */
-template<class B, class F, class IO1 = ParticleMCMCCache<> >
+template<class B, class F>
 class MarginalMH {
 public:
   /**
    * Constructor.
    *
-   * @tparam IO2 Input type.
-   *
    * @param m Model.
    * @param filter Filter.
-   * @param out Output.
    */
-  MarginalMH(B& m, F* filter = NULL, IO1* out = NULL);
+  MarginalMH(B& m, F& filter);
 
   /**
    * @name High-level interface.
@@ -54,50 +51,24 @@ public:
    */
   //@{
   /**
-   * Get filter.
-   *
-   * @return Filter.
-   */
-  F* getFilter();
-
-  /**
-   * Set filter.
-   *
-   * @param filter Filter.
-   */
-  void setFilter(F* filter);
-
-  /**
-   * Get output.
-   *
-   * @return Output.
-   */
-  IO1* getOutput();
-
-  /**
-   * Set output.
-   *
-   * @param out Output buffer.
-   */
-  void setOutput(IO1* out);
-
-  /**
    * Sample.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param s State.
-   * @param inInit Initialisation file.
    * @param C Number of samples to draw.
+   * @param out Output buffer.
+   * @param inInit Initialisation file.
    */
-  template<Location L, class IO2>
+  template<class S1, class IO1, class IO2>
   void sample(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit = NULL,
-      const int C = 1);
+      const ScheduleIterator last, S1& s, const int C = 1, IO1& out = NULL,
+      IO2& inInit = NULL);
   //@}
 
   /**
@@ -110,7 +81,8 @@ public:
   /**
    * Initialise.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
@@ -119,14 +91,15 @@ public:
    * @param s State.
    * @param inInit Initialisation file.
    */
-  template<Location L, class IO2>
+  template<class S1, class IO1, class IO2>
   void init(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit = NULL);
+      const ScheduleIterator last, S1& s, IO1& out = NULL,
+      IO2& inInit = NULL);
 
   /**
    * Take one step.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
@@ -135,31 +108,31 @@ public:
    *
    * @return True if the step is accepted, false otherwise.
    */
-  template<Location L>
+  template<class S1>
   bool step(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaState<B,L>& s);
+      const ScheduleIterator last, S1& s);
 
-  template<Location L, class Q1>
+  template<class S1, class Q1>
   bool step(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaState<B,L>& s, Q1& q,
+      const ScheduleIterator last, S1& s, Q1& q,
       const bool localMove = false);
 
-  template<Location L>
-  bool computeAcceptReject(Random& rng, ThetaState<B,L>& s);
+  template<class S1>
+  bool acceptReject(Random& rng, S1& s);
 
   /**
    * Propose using proposal defined in model.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void propose(Random& rng, ThetaState<B,L>& s);
+  template<class S1>
+  void propose(Random& rng, S1& s);
 
   /**
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam #concept::Pdf type.
    * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
@@ -167,19 +140,18 @@ public:
    * @param localMove Should a local move be used? This means that the draw
    * from @p q is added to the local state.
    */
-  template<Location L, class Q1>
-  void propose(Random& rng, ThetaState<B,L>& s, Q1& q, const bool localMove =
-      false);
+  template<class S1, class Q1>
+  void propose(Random& rng, S1& s, Q1& q, const bool localMove = false);
 
   /**
    * Update state with log-prior density.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] s State.
    */
-  template<Location L>
-  void logPrior(ThetaState<B,L>& s);
+  template<class S1>
+  void prior(S1& s);
 
   /**
    * Update state with log-likelihood.
@@ -191,31 +163,33 @@ public:
    * @param last End of time schedule.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void logLikelihood(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, ThetaState<B,L>& s);
+  template<class S1>
+  void likelihood(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, S1& s);
 
   /**
    * Output.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
    *
    * @param c Index in output file.
    * @param s State.
+   * @param out Output buffer.
    */
-  template<Location L>
-  void output(const int c, ThetaState<B,L>& s);
+  template<class S1, class IO1>
+  void output(const int c, S1& s, IO1& out);
 
   /**
    * Report progress on stderr.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param c Number of steps taken.
    * @param s State.
    */
-  template<Location L>
-  void report(const int c, ThetaState<B,L>& s);
+  template<class S1>
+  void report(const int c, S1& s);
 
   /**
    * Terminate.
@@ -252,8 +226,8 @@ public:
    * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void accept(Random& rng, ThetaState<B,L>& s);
+  template<class S1>
+  void accept(Random& rng, S1& s);
 
   /**
    * Reject step.
@@ -270,12 +244,7 @@ private:
   /**
    * Filter.
    */
-  F* filter;
-
-  /**
-   * Output buffer.
-   */
-  IO1* out;
+  F& filter;
 
   /**
    * Was last proposal accepted?
@@ -292,123 +261,62 @@ private:
    */
   int total;
 };
-
-/**
- * Factory for creating MarginalMH objects.
- *
- * @ingroup method
- *
- * @tparam CL Cache location.
- *
- * @see MarginalMH
- */
-struct MarginalMHFactory {
-  /**
-   * Create particle MCMC sampler.
-   *
-   * @return MarginalMH object. Caller has ownership.
-   *
-   * @see MarginalMH::MarginalMH()
-   */
-  template<class B, class F, class IO1>
-  static MarginalMH<B,F,IO1>* create(B& m, F* filter = NULL,
-      IO1* out = NULL) {
-    return new MarginalMH<B,F,IO1>(m, filter, out);
-  }
-
-  /**
-   * Create particle MCMC sampler.
-   *
-   * @return MarginalMH object. Caller has ownership.
-   *
-   * @see MarginalMH::MarginalMH()
-   */
-  template<class B, class F>
-  static MarginalMH<B,F>* create(B& m, F* filter = NULL) {
-    return new MarginalMH<B,F>(m, filter);
-  }
-};
 }
 
 #include "../math/misc.hpp"
 
-template<class B, class F, class IO1>
-bi::MarginalMH<B,F,IO1>::MarginalMH(B& m, F* filter, IO1* out) :
-    m(m), filter(filter), out(out), lastAccepted(false), accepted(0), total(0) {
+template<class B, class F>
+bi::MarginalMH<B,F>::MarginalMH(B& m, F& filter) :
+    m(m), filter(filter), lastAccepted(false), accepted(0), total(0) {
   //
 }
 
-template<class B, class F, class IO1>
-F* bi::MarginalMH<B,F,IO1>::getFilter() {
-  return filter;
-}
-
-template<class B, class F, class IO1>
-void bi::MarginalMH<B,F,IO1>::setFilter(F* filter) {
-  this->filter = filter;
-}
-
-template<class B, class F, class IO1>
-IO1* bi::MarginalMH<B,F,IO1>::getOutput() {
-  return out;
-}
-
-template<class B, class F, class IO1>
-void bi::MarginalMH<B,F,IO1>::setOutput(IO1* out) {
-  this->out = out;
-}
-
-template<class B, class F, class IO1>
-template<bi::Location L, class IO2>
-void bi::MarginalMH<B,F,IO1>::sample(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last,
-    ThetaState<B,L>& s, IO2* inInit, const int C) {
+template<class B, class F>
+template<class S1, class IO1, class IO2>
+void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s, const int C, IO1& out, IO2& inInit) {
   /* pre-condition */
   BI_ASSERT(C >= 0);
 
   const int P = s.size();
-
-  int c;
-  init(rng, first, last, s, inInit);
-  for (c = 0; c < C; ++c) {
+  init(rng, first, last, s, out, inInit);
+  for (int c = 0; c < C; ++c) {
     step(rng, first, last, s);
     report(c, s);
-    output(c, s);
+    output(c, s, out);
     s.setRange(0, P);
   }
   term();
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L, class IO2>
-void bi::MarginalMH<B,F,IO1>::init(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, ThetaState<B,L>& s, IO2* inInit) {
+template<class B, class F>
+template<class S1, class IO1, class IO2>
+void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   /* log-likelihood */
-  s.getLogLikelihood1() = filter->filter(rng, first, last, s, inInit);
-  s.getParameters1() = vec(s.get(P_VAR));
+  s.logLikelihood1 = filter.filter(rng, first, last, s, BI_NO_OUT, inInit);
+  s.theta1 = vec(s.get(P_VAR));
 
   /* prior log-density */
-  row(s.get(PY_VAR), 0) = s.getParameters1();
-  s.getLogPrior1() = m.parameterLogDensity(s);
+  row(s.get(PY_VAR), 0) = s.theta1;
+  s.logPrior1 = m.parameterLogDensity(s);
 
   /* trajectory */
-  filter->sampleTrajectory(rng, s.getTrajectory());
+  filter.samplePath(rng, s.path, out);
 
-  if (out != NULL) {
-    out->clear();
-  }
+  out.clear();
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-bool bi::MarginalMH<B,F,IO1>::step(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, ThetaState<B,L>& s) {
+template<class B, class F>
+template<class S1>
+bool bi::MarginalMH<B,F>::step(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s) {
   bool result = false;
   try {
     propose(rng, s);
-    logPrior(s);
-    logLikelihood(rng, first, last, s);
-    result = computeAcceptReject(rng, s);
+    prior(s);
+    likelihood(rng, first, last, s);
+    result = acceptReject(rng, s);
   } catch (CholeskyException e) {
     result = false;
   } catch (ParticleFilterDegeneratedException e) {
@@ -426,17 +334,16 @@ bool bi::MarginalMH<B,F,IO1>::step(Random& rng, const ScheduleIterator first,
   return result;
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L, class Q1>
-bool bi::MarginalMH<B,F,IO1>::step(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, ThetaState<B,L>& s, Q1& q,
-    const bool localMove) {
+template<class B, class F>
+template<class S1, class Q1>
+bool bi::MarginalMH<B,F>::step(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s, Q1& q, const bool localMove) {
   bool result = false;
   try {
     propose(rng, s, q, localMove);
-    logPrior(s);
-    logLikelihood(rng, first, last, s);
-    result = computeAcceptReject(rng, s);
+    prior(s);
+    likelihood(rng, first, last, s);
+    result = acceptReject(rng, s);
   } catch (CholeskyException e) {
     result = false;
   } catch (ParticleFilterDegeneratedException e) {
@@ -454,23 +361,21 @@ bool bi::MarginalMH<B,F,IO1>::step(Random& rng, const ScheduleIterator first,
   return result;
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-bool bi::MarginalMH<B,F,IO1>::computeAcceptReject(Random& rng,
-    ThetaState<B,L>& s) {
+template<class B, class F>
+template<class S1>
+bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s) {
   bool result;
 
-  if (!bi::is_finite(s.getLogLikelihood2())) {
+  if (!bi::is_finite(s.logLikelihood2)) {
     result = false;
-  } else if (!bi::is_finite(s.getLogLikelihood1())) {
+  } else if (!bi::is_finite(s.logLikelihood1)) {
     result = true;
   } else {
-    real loglr = s.getLogLikelihood2() - s.getLogLikelihood1();
-    real logpr = s.getLogPrior2() - s.getLogPrior1();
-    real logqr = s.getLogProposal1() - s.getLogProposal2();
+    real loglr = s.logLikelihood2 - s.logLikelihood1;
+    real logpr = s.logPrior2 - s.logPrior1;
+    real logqr = s.logProposal1 - s.logProposal2;
 
-    if (!bi::is_finite(s.getLogProposal1())
-        && !bi::is_finite(s.getLogProposal2())) {
+    if (!bi::is_finite(s.logProposal1) && !bi::is_finite(s.logProposal2)) {
       logqr = 0.0;
     }
     real logratio = loglr + logpr + logqr;
@@ -482,126 +387,112 @@ bool bi::MarginalMH<B,F,IO1>::computeAcceptReject(Random& rng,
   return result;
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::propose(Random& rng, ThetaState<B,L>& s) {
+template<class B, class F>
+template<class S1>
+void bi::MarginalMH<B,F>::propose(Random& rng, S1& s) {
   /* proposal */
-  row(s.get(P_VAR), 0) = s.getParameters1();
+  row(s.get(P_VAR), 0) = s.theta1;
   m.proposalParameterSample(rng, s);
-  s.getParameters2() = row(s.get(P_VAR), 0);
+  s.theta2 = row(s.get(P_VAR), 0);
 
   /* reverse proposal log-density */
-  row(s.get(P_VAR), 0) = s.getParameters2();
-  row(s.get(PY_VAR), 0) = s.getParameters1();
-  s.getLogProposal1() = m.proposalParameterLogDensity(s);
+  row(s.get(P_VAR), 0) = s.theta2;
+  row(s.get(PY_VAR), 0) = s.theta1;
+  s.logProposal1 = m.proposalParameterLogDensity(s);
 
   /* proposal log-density */
-  row(s.get(P_VAR), 0) = s.getParameters1();
-  row(s.get(PY_VAR), 0) = s.getParameters2();
-  s.getLogProposal2() = m.proposalParameterLogDensity(s);
+  row(s.get(P_VAR), 0) = s.theta1;
+  row(s.get(PY_VAR), 0) = s.theta2;
+  s.logProposal2 = m.proposalParameterLogDensity(s);
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L, class Q1>
-void bi::MarginalMH<B,F,IO1>::propose(Random& rng, ThetaState<B,L>& s, Q1& q,
+template<class B, class F>
+template<class S1, class Q1>
+void bi::MarginalMH<B,F>::propose(Random& rng, S1& s, Q1& q,
     const bool localMove) {
   if (localMove) {
-    q.sample(rng, s.getParameters2());
-    s.getLogProposal2() = q.logDensity(s.getParameters2());
-    axpy(1.0, s.getParameters1(), s.getParameters2());
+    q.sample(rng, s.theta2);
+    s.logProposal2 = q.logDensity(s.theta2);
+    axpy(1.0, s.theta1, s.theta2);
 
-    axpy(-1.0, s.getParameters2(), s.getParameters1());
-    s.getLogProposal1() = q.logDensity(s.getParameters1());
-    axpy(1.0, s.getParameters2(), s.getParameters1());
+    axpy(-1.0, s.theta2, s.theta1);
+    s.logProposal1 = q.logDensity(s.theta1);
+    axpy(1.0, s.theta2, s.theta1);
   } else {
-    q.sample(rng, s.getParameters2());
-    s.getLogProposal1() = q.logDensity(s.getParameters1());
-    s.getLogProposal2() = q.logDensity(s.getParameters2());
+    q.sample(rng, s.theta2);
+    s.logProposal1 = q.logDensity(s.theta1);
+    s.logProposal2 = q.logDensity(s.theta2);
   }
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::logPrior(ThetaState<B,L>& s) {
+template<class B, class F>
+template<class S1>
+void bi::MarginalMH<B,F>::prior(S1& s) {
   /* prior log-density */
-  row(s.get(PY_VAR), 0) = s.getParameters2();
-  s.getLogPrior2() = m.parameterLogDensity(s);
-  s.getParameters2() = row(s.get(P_VAR), 0);
+  row(s.get(PY_VAR), 0) = s.theta2;
+  s.logPrior2 = m.parameterLogDensity(s);
+  s.theta2 = row(s.get(P_VAR), 0);
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::logLikelihood(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last,
-    ThetaState<B,L>& s) {
-  if (!bi::is_finite(s.getLogPrior2())) {
-    s.getLogLikelihood2() = -1.0 / 0.0;
+template<class B, class F>
+template<class S1>
+void bi::MarginalMH<B,F>::likelihood(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, S1& s) {
+  if (!bi::is_finite(s.logPrior2)) {
+    s.logLikelihood2 = -1.0 / 0.0;
   } else {
-    s.getLogLikelihood2() = -1.0 / 0.0;  // in case of exception
-    s.getLogLikelihood2() = filter->filter(rng, first, last,
-        s.getParameters2(), s);
+    s.logLikelihood2 = -1.0 / 0.0;  // in case of exception
+    s.logLikelihood2 = filter.filter(rng, first, last, s.theta2, s);
   }
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::accept(Random& rng, ThetaState<B,L>& s) {
-  std::swap(s.getParameters1(), s.getParameters2());
-  std::swap(s.getLogLikelihood1(), s.getLogLikelihood2());
-  std::swap(s.getLogPrior1(), s.getLogPrior2());
-  std::swap(s.getLogProposal1(), s.getLogProposal2());
-  filter->sampleTrajectory(rng, s.getTrajectory());
+template<class B, class F>
+template<class S1>
+void bi::MarginalMH<B,F>::accept(Random& rng, S1& s) {
+  std::swap(s.theta1, s.theta2);
+  std::swap(s.logLikelihood1, s.logLikelihood2);
+  std::swap(s.logPrior1, s.logPrior2);
+  std::swap(s.logProposal1, s.logProposal2);
+  filter.samplePath(rng, s.path, out);
 
   ++accepted;
   ++total;
   lastAccepted = true;
 }
 
-template<class B, class F, class IO1>
-void bi::MarginalMH<B,F,IO1>::reject() {
+template<class B, class F>
+void bi::MarginalMH<B,F>::reject() {
   ++total;
   lastAccepted = false;
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::output(const int c, ThetaState<B,L>& s) {
-  if (out != NULL) {
-    if (c == 0) {
-      out->writeTimes(0, getFilter()->getOutput()->getTimes());
-    }
-    out->writeLogLikelihood(c, s.getLogLikelihood1());
-    out->writeLogPrior(c, s.getLogPrior1());
-    out->writeParameter(c, s.getParameters1());
-    out->writeTrajectory(c, s.getTrajectory());
-    if (out->isFull()) {
-      out->flush();
-      out->clear();
-    }
-  }
+template<class B, class F>
+template<class S1, class IO1>
+void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
+  out.write(c, s);
 }
 
-template<class B, class F, class IO1>
-template<bi::Location L>
-void bi::MarginalMH<B,F,IO1>::report(const int c, ThetaState<B,L>& s) {
+template<class B, class F>
+template<class S1>
+void bi::MarginalMH<B,F>::report(const int c, S1& s) {
   std::cerr << c << ":\t";
   std::cerr.width(10);
-  std::cerr << s.getLogLikelihood1();
+  std::cerr << s.logLikelihood1;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.getLogPrior1();
+  std::cerr << s.logPrior1;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.getLogProposal1();
+  std::cerr << s.logProposal1;
   std::cerr << "\tbeats\t";
   std::cerr.width(10);
-  std::cerr << s.getLogLikelihood2();
+  std::cerr << s.logLikelihood2;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.getLogPrior2();
+  std::cerr << s.logPrior2;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.getLogProposal2();
+  std::cerr << s.logProposal2;
   std::cerr << '\t';
   if (this->wasLastAccepted()) {
     std::cerr << "accept";
@@ -610,23 +501,23 @@ void bi::MarginalMH<B,F,IO1>::report(const int c, ThetaState<B,L>& s) {
   std::cerr << std::endl;
 }
 
-template<class B, class F, class IO1>
-void bi::MarginalMH<B,F,IO1>::term() {
+template<class B, class F>
+void bi::MarginalMH<B,F>::term() {
   //
 }
 
-template<class B, class F, class IO1>
-inline bool bi::MarginalMH<B,F,IO1>::wasLastAccepted() {
+template<class B, class F>
+inline bool bi::MarginalMH<B,F>::wasLastAccepted() {
   return lastAccepted;
 }
 
-template<class B, class F, class IO1>
-inline int bi::MarginalMH<B,F,IO1>::getNumSteps() {
+template<class B, class F>
+inline int bi::MarginalMH<B,F>::getNumSteps() {
   return total;
 }
 
-template<class B, class F, class IO1>
-inline int bi::MarginalMH<B,F,IO1>::getNumAccepted() {
+template<class B, class F>
+inline int bi::MarginalMH<B,F>::getNumAccepted() {
   return accepted;
 }
 

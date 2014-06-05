@@ -8,7 +8,7 @@
 #ifndef BI_METHOD_FORCER_HPP
 #define BI_METHOD_FORCER_HPP
 
-#include "../buffer/SparseInputNetCDFBuffer.hpp"
+#include "../buffer/InputNetCDFBuffer.hpp"
 #include "../cache/Cache2D.hpp"
 
 namespace bi {
@@ -29,7 +29,7 @@ namespace bi {
  * the previous time index. It is up to the user of the class to maintain
  * these semantics.
  */
-template<class IO1 = SparseInputNetCDFBuffer, Location CL = ON_HOST>
+template<class IO1 = InputNetCDFBuffer, Location CL = ON_HOST>
 class Forcer {
 public:
   /**
@@ -37,7 +37,7 @@ public:
    *
    * @param in Input.
    */
-  Forcer(IO1* in);
+  Forcer(IO1& in);
 
   /**
    * Update dynamic inputs.
@@ -71,7 +71,7 @@ private:
   /**
    * Input.
    */
-  IO1* in;
+  IO1& in;
 
   /**
    * Cache of dynamic inputs.
@@ -101,14 +101,14 @@ struct ForcerFactory {
    * @see Forcer::Forcer()
    */
   template<class IO1>
-  static Forcer<IO1,CL>* create(IO1* in) {
+  static Forcer<IO1,CL>* create(IO1& in) {
     return new Forcer<IO1,CL>(in);
   }
 };
 }
 
 template<class IO1, bi::Location CL>
-bi::Forcer<IO1,CL>::Forcer(IO1* in) :
+bi::Forcer<IO1,CL>::Forcer(IO1& in) :
     in(in) {
   //
 }
@@ -119,10 +119,10 @@ inline void bi::Forcer<IO1,CL>::update(const int k, State<B,L>& s) {
   if (cache.isValid(k)) {
     vec(s.get(F_VAR)) = cache.get(k);
   } else {
-    in->read(k, F_VAR, s.get(F_VAR));
+    in.read(k, F_VAR, s.get(F_VAR));
     cache.set(k, vec(s.get(F_VAR)));
   }
-  s.setLastInputTime(in->getTime(k));
+  s.setLastInputTime(in.getTime(k));
 }
 
 template<class IO1, bi::Location CL>
@@ -130,8 +130,8 @@ template<class B, bi::Location L>
 inline void bi::Forcer<IO1,CL>::update0(State<B,L>& s) {
   if (cache0.isValid(0)) {
     vec(s.get(F_VAR)) = cache0.get(0);
-  } else if (in != NULL) {
-    in->read0(F_VAR, s.get(F_VAR));
+  } else {
+    in.read0(F_VAR, s.get(F_VAR));
     cache0.set(0, vec(s.get(F_VAR)));
   }
 }
