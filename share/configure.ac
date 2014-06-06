@@ -106,7 +106,7 @@ AC_ARG_ENABLE([gperftools],
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
     CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
-    LDFLAGS="$LDFLAGS -L/usr/local/cuda/lib64 -L$CUDA_ROOT/lib64 -L/usr/local/cuda/lib -L$CUDA_ROOT/lib"
+    LDFLAGS="$LDFLAGS -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -Wl,-rpath,$CUDA_ROOT/lib64 -Wl,-rpath,$CUDA_ROOT/lib -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/local/cuda/lib"
 #fi
 
 # Defines
