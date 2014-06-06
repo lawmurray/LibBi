@@ -24,33 +24,14 @@ CLIENTS = [
 AUTOMAKE_OPTIONS = subdir-objects
 
 # compile and link flags
-AM_CPPFLAGS = -Isrc $(OPENMP_CPPFLAGS) $(CUDA_CPPFLAGS)
+AM_CPPFLAGS = -Isrc $(OPENMP_CPPFLAGS)
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
-AM_LDFLAGS = $(OPENMP_LDFLAGS) $(CUDA_LDFLAGS)
+AM_LDFLAGS = $(OPENMP_LDFLAGS)
 
 # CUDA files setup
-if ENABLE_MPI
-if ENABLE_VAMPIR
-NVCC = mpicxx-vt --vt:cxx "perl nvcc_wrapper.pl nvcc" --vt:inst manual --vt:mpi
-else
-NVCC = perl nvcc_wrapper.pl nvcc `mpicxx -showme:compile`
-endif
-else
-NVCC = perl nvcc_wrapper.pl nvcc
-endif
-
-NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
-NVCC_CXXFLAGS = $(CUDA_CXXFLAGS) -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE='__attribute__ ((noinline))'
+NVCXXFLAGS = -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
 LINK = $(CXXLINK) # force C++ linker for CUDA files
-
-# too slow for some compiles
-#if ENABLE_ASSERT
-#  NVCC_CXXFLAGS += -G
-#endif
-
-if ENABLE_INTEL
-  NVCC_CXXFLAGS += -ccbin icc -Xcompiler=-gcc
-endif
 
 # libraries
 lib_LIBRARIES = libbi.a
@@ -161,15 +142,15 @@ endif
 .cu.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	$(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	$(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Po && \
 	rm -f $$depbase.Tpo
 
 .cu.lo:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.lo$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	$(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Plo && \
 	rm -f $$depbase.Tpo

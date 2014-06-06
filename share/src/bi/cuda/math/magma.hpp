@@ -11,7 +11,9 @@
 #define BI_CUDA_MATH_MAGMA_HPP
 
 #include "cublas.hpp"
+#ifdef HAVE_MAGMA_H
 #include "magma.h"
+#endif
 
 #include "boost/typeof/typeof.hpp"
 
@@ -36,9 +38,11 @@ namespace bi { \
   }; \
 }
 
+#ifdef HAVE_MAGMA_H
 MAGMA_FUNC(potrf, dpotrf_gpu, spotrf_gpu)
 MAGMA_FUNC(potrs, dpotrs_gpu, spotrs_gpu)
 MAGMA_FUNC(get_potrf_nb, get_dpotrf_nb, get_spotrf_nb)
 //MAGMA_FUNC(syevx, dsyevx_gpu, ssyevx_gpu)
+#endif
 
 #endif

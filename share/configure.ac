@@ -5,11 +5,6 @@ AM_INIT_AUTOMAKE([1.10 no-define foreign])
 #AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-# Save user's flags
-USER_CPPFLAGS=$CPPFLAGS
-USER_CXXFLAGS=$CXXFLAGS
-USER_LDFLAGS=$LDFLAGS
-
 # Conditionals used by make
 AC_ARG_ENABLE([assert],
      [  --enable-assert         enable assertion checking],
@@ -110,11 +105,8 @@ AC_ARG_ENABLE([gperftools],
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
-    CUDA_CPPFLAGS="-I/usr/local/cuda/include -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
-    CUDA_CXXFLAGS=
-    CUDA_LDFLAGS="-L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib"
-    CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $CUDA_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
+    LDFLAGS="$LDFLAGS -L/usr/local/cuda/lib64 -L$CUDA_ROOT/lib64 -L/usr/local/cuda/lib -L$CUDA_ROOT/lib"
 #fi
 
 # Defines
@@ -131,17 +123,13 @@ fi
 # ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
 #   Thrust 1.7, so its OpenMP backend has been re-enabled.
 
-# Checks for programs.
-AC_PROG_CXX([icpc g++])
+# Compilers etc
+AC_PROG_CXX([icpc g++-4.2 g++ clang])
+AC_PATH_PROG([NVCC], [nvcc], [nvcc], [$PATH:/usr/local/cuda/bin])
+NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_CXXCPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
-
-if test x$CXX = xicpc; then
-  intel=true
-else
-  intel=false
-fi
 
 # Compiler characteristics
 if test x$openmp = xtrue; then
@@ -153,16 +141,18 @@ if test x$mpi = xtrue; then
     if test x$vampir = xtrue; then
 	    AC_CHECK_PROG(have_mpicxxvt, [mpicxx-vt], [true], [false])
 	    if test x$have_mpicxxvt = xfalse; then
-	       AC_MSG_ERROR([Vampir compiler wrapper not found (only required with --enable-vampir)])
+	       AC_MSG_ERROR([Vampir compiler wrapper mpicxx-vt not found (only required with --enable-vampir)])
 	    fi
 		CXX="mpicxx-vt --vt:cxx $CXX --vt:inst manual --vt:mpi"
+		NVCC="mpicxx-vt --vt:cxx $NVCC --vt:inst manual --vt:mpi"
 		CXXCPP="mpicxx-vt --vt:cxx $CXXCPP --vt:mpi"
 	else
 	    AC_CHECK_PROG(have_mpicxx, [mpicxx], [true], [false])
 	    if test x$have_mpicxx = xfalse; then
-	       AC_MSG_ERROR([MPI compiler wrapper not found (only required with --enable-mpi)])
+	       AC_MSG_ERROR([MPI compiler wrapper mpicxx not found (only required with --enable-mpi)])
 	    fi
-		CXX="mpicxx"
+		CXX="$CXX `mpicxx -showme:compile`"
+        NVCC="$NVCC `mpicxx -showme:compile`"
 		CXXCPP="mpicxx -E"
 	fi
 fi
@@ -198,7 +188,7 @@ if test x$cuda = xtrue; then
     AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([CURAND library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([CUBLAS library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], []) # removed in MAGMA 1.4, so not required
-    AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([MAGMA library not found (only required with --enable-cuda)])])
+    AC_CHECK_LIB([magma], [magma_dpotrf], [], []) # MAGMA now optional
 fi
 
 if test x$mpi = xtrue; then
@@ -213,6 +203,8 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 
 # Checks for header files
 AC_HEADER_ASSERT
+
+AC_CHECK_HEADER([omp.h], [], [], [-])
 
 AC_CHECK_HEADER([netcdf.h], [], \
     AC_MSG_ERROR([required NetCDF header not found]), [-])
@@ -268,7 +260,7 @@ AC_CHECK_HEADER([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not 
 if test x$cuda = xtrue; then
     AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (only required with --enable-cuda)]), [-])
     AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (only required with --enable-cuda)]), [-])
-    AC_CHECK_HEADERS([magma_s.h magma_d.h], [], AC_MSG_ERROR([MAGMA header not found (only required with --enable-cuda)]), [-])
+    AC_CHECK_HEADER([magma.h], [], [], [-])  # now optional
 fi
 
 if test x$mpi = xtrue; then
@@ -280,11 +272,6 @@ if test x$gperftools = xtrue; then
     AC_CHECK_HEADER([google/profiler.h], [], [AC_MSG_ERROR([Gperftools header not found (only required with --enable-gperftools)])], [])
 fi
 
-# Restore user's flags
-CPPFLAGS=$USER_CPPFLAGS
-CXXFLAGS=$USER_CXXFLAGS
-LDFLAGS=$USER_LDFLAGS
-
 # Defines
 AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
@@ -294,16 +281,13 @@ AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
 AM_CONDITIONAL([ENABLE_OPENMP], [test x$openmp = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
-AM_CONDITIONAL([ENABLE_INTEL], [test x$intel = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
 AM_CONDITIONAL([ENABLE_TIMING], [test x$timing = xtrue])
 AM_CONDITIONAL([ENABLE_DIAGNOSTICS], [test x$diagnostics = xtrue])
 AM_CONDITIONAL([ENABLE_GPERFTOOLS], [test x$gperftools = xtrue])
 
 # Variables for automake
-AC_SUBST([CUDA_CPPFLAGS], $CUDA_CPPFLAGS)
-AC_SUBST([CUDA_CXXFLAGS], $CUDA_CXXFLAGS)
-AC_SUBST([CUDA_LDFLAGS], $CUDA_LDFLAGS)
+#AC_SUBST([NVCC], $NVCC)
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_HEADER_STDBOOL

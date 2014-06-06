@@ -310,9 +310,9 @@ sub _configure {
     my $linkflags = '';
     my $options = '';
 
-    if (!$self->{_force}) {
-        $options .= ' --config-cache';
-    }
+    #if (!$self->{_force}) {
+    #    $options .= ' --config-cache';
+    #}
 
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
