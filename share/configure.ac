@@ -198,7 +198,7 @@ if test x$cuda = xtrue; then
     AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([CURAND library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([CUBLAS library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], []) # removed in MAGMA 1.4, so not required
-    AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([library not found (only required with --enable-cuda)])])
+    AC_CHECK_LIB([magma], [magma_dpotrf], [], [AC_MSG_ERROR([MAGMA library not found (only required with --enable-cuda)])])
 fi
 
 if test x$mpi = xtrue; then
