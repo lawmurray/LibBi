@@ -163,7 +163,7 @@ use Carp::Assert;
 use Cwd qw(abs_path);
 use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Spec;
-use File::Path;
+use File::Path qw(mkpath);
 
 # options specific to execution
 our @EXEC_OPTIONS = (
@@ -627,6 +627,8 @@ sub exec {
     my $self = shift;
 
     my $builddir = $self->{_builddir};
+    my $exeext = ($^O eq 'cygwin' || $^O eq 'MSWin32') ? '.exe' : '';
+    my $binary = File::Spec->catfile($builddir, $self->get_binary . $exeext);
     my @argv;
     
     my $key;
@@ -642,15 +644,15 @@ sub exec {
     }
 
     if ($self->get_named_exec_arg('with-cuda-gdb')) {
-        unshift(@argv, "libtool --mode=execute cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
+        unshift(@argv, "cuda-gdb -q -ex run --args \"$binary\"");        
     } elsif ($self->get_named_exec_arg('with-cuda-memcheck')) {
-        unshift(@argv, "libtool --mode=execute cuda-memcheck $builddir/" . $self->{_binary});        
+        unshift(@argv, "cuda-memcheck \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-gdb')) {
-        unshift(@argv, "libtool --mode=execute gdb -q -ex run --args $builddir/" . $self->{_binary});
+        unshift(@argv, "gdb -q -ex run --args \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
-        unshift(@argv, "libtool --mode=execute valgrind --leak-check=full $builddir/" . $self->{_binary});
+        unshift(@argv, "valgrind --leak-check=full \"$binary\"");
     } else {
-        unshift(@argv, "$builddir/" . $self->{_binary});
+        unshift(@argv, "\"$binary\"");
     }
     if ($self->get_named_arg('with-mpi')) {
         my $np = '';

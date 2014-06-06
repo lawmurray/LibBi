@@ -368,8 +368,9 @@ Run C<make> to compile the given client program.
 
 =over 4
 
-=item I<client> The name of the client program ('simulate', 'pf', 'pmmh',
-etc).
+=item I<client>
+
+The name of the client program.
 
 =back
 
@@ -380,7 +381,9 @@ sub _make {
     my $self = shift;
     my $client = shift;
     
-    my $target = $client . "_" . ($self->{_cuda} ? 'gpu' : 'cpu');
+    my $exeext = ($^O eq 'cygwin' || $^O eq 'MSWin32') ? '.exe' : '';
+    my $target = $client . "_" . ($self->{_cuda} ? 'gpu' : 'cpu') . $exeext;
+    my $link = $client . $exeext;
     my $options = '';
     if ($self->{_force}) {
         $options .= ' --always-make';
@@ -406,7 +409,7 @@ sub _make {
     } elsif ($ret != 0) {
         die(sprintf("make failed with return code %d, see $builddir/make.log for details\n", $ret >> 8));
     }
-    symlink($target, $client);
+    symlink($target, $link);
     chdir($cwd);
 }
 
