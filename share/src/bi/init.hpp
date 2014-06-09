@@ -39,7 +39,9 @@ inline void bi::bi_init(const int threads) {
 
   #ifdef ENABLE_CUDA
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
+  #ifdef HAVE_MAGMA_H
   magma_init();
+  #endif
   #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   int rank = world.rank();

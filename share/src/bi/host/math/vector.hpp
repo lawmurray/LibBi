@@ -33,7 +33,7 @@ namespace bi {
  * Dynamic buffer.
  */
 template<class T>
-class CUDA_ALIGN(sizeof(T)) host_storage_buf {
+class host_storage_buf {
 public:
   /**
    * Pointer to underlying data.
@@ -61,7 +61,7 @@ protected:
    * Pointer to underlying data.
    */
   T* ptr;
-}BI_ALIGN(sizeof(T));
+};
 
 /**
  * Static size.

@@ -22,7 +22,7 @@ void bi::InputNetCDFBuffer::setnp(const long np) {
 
 void bi::InputNetCDFBuffer::readMask(const size_t k, const VarType type,
     Mask<ON_HOST>& mask) {
-  typedef typename temp_host_matrix<real>::type temp_matrix_type;
+  typedef temp_host_matrix<real>::type temp_matrix_type;
 
   mask.resize(m.getNumVars(type), false);
 
@@ -66,7 +66,7 @@ void bi::InputNetCDFBuffer::readMask(const size_t k, const VarType type,
 
 void bi::InputNetCDFBuffer::readMask0(const VarType type,
     Mask<ON_HOST>& mask) {
-  typedef typename temp_host_matrix<real>::type temp_matrix_type;
+  typedef temp_host_matrix<real>::type temp_matrix_type;
   mask.resize(m.getNumVars(type), false);
 
   Var* var;

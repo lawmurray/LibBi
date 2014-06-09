@@ -20,9 +20,10 @@ namespace bi {
  * @tparam B Model type.
  * @tparam L Location.
  * @tparam S1 Filter state type.
+ * @tparam IO1 Filter cache type.
  */
-template<class B, Location L, class S1>
-class MarginalMHState: public S1 {
+template<class B, Location L, class S1, class IO1>
+class MarginalMHState {
 public:
   /**
    * Host vector type.
@@ -51,6 +52,16 @@ public:
    * Assignment operator.
    */
   MarginalMHState& operator=(const MarginalMHState<B,L,S1>& o);
+
+  /**
+   * Filter state.
+   */
+  S1 sFilter;
+
+  /**
+   * Filter output.
+   */
+  IO1 outFilter;
 
   /**
    * Current state sample.
