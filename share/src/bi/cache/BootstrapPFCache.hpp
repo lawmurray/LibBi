@@ -11,7 +11,7 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "AncestryCache.hpp"
-#include "../buffer/ParticleFilterNetCDFBuffer.hpp"
+#include "../netcdf/ParticleFilterNetCDFBuffer.hpp"
 
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
@@ -19,8 +19,7 @@
 namespace bi {
 /**
  * Cache for ParticleFilterNetCDFBuffer reads and writes, and efficiently
- * holding ancestry tree for drawing trajectories from the filter-smoother
- * distribution.
+ * holding ancestry tree for drawing filter-smoother paths.
  *
  * @ingroup io_cache
  *
@@ -30,14 +29,40 @@ namespace bi {
 template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
 class BootstrapPFCache: public SimulatorCache<CL,IO1> {
 public:
-  using SimulatorCache<CL,IO1>::writeState;
+  /**
+   * Pass-through constructor.
+   */
+  BootstrapPFCache();
 
   /**
-   * Constructor.
-   *
-   * @param out output buffer.
+   * Pass-through constructor.
    */
-  BootstrapPFCache(IO1& out = NULL);
+  template<class T1>
+  BootstrapPFCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  BootstrapPFCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  BootstrapPFCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy.
@@ -62,41 +87,6 @@ public:
   const typename Cache1D<real,CL>::vector_reference_type getLogWeights() const;
 
   /**
-   * @copydoc ParticleFilterNetCDFBuffer::readLogWeights()
-   */
-  template<class V1>
-  void readLogWeights(const int k, V1 lws) const;
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::writeLogWeights()
-   */
-  template<class V1>
-  void writeLogWeights(const int k, const V1 lws);
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::readAncestors()
-   */
-  template<class V1>
-  void readAncestors(const int k, V1 a) const;
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::writeAncestors()
-   */
-  template<class V1>
-  void writeAncestors(const int k, const V1 a);
-
-  /**
-   * @copydoc ParticleFilterNetCDFBuffer::writeLL()
-   */
-  void writeLL(const real ll);
-
-  /**
-   * @copydoc AncestryCache::readPath()
-   */
-  template<class M1>
-  void readPath(const int p, M1 X) const;
-
-  /**
    * Write-through to the underlying buffer, as well as efficient caching
    * of the ancestry using AncestryCache.
    *
@@ -109,6 +99,18 @@ public:
    */
   template<class M1, class V1>
   void writeState(const int k, const M1 X, const V1 as);
+
+  /**
+   * @copydoc ParticleFilterNetCDFBuffer::writeLogWeights()
+   */
+  template<class V1>
+  void writeLogWeights(const int k, const V1 lws);
+
+  /**
+   * @copydoc AncestryCache::readPath()
+   */
+  template<class M1>
+  void readPath(const int p, M1 X) const;
 
   /**
    * Swap the contents of the cache with that of another.
@@ -148,11 +150,6 @@ private:
   Cache1D<real,CL> logWeightsCache;
 
   /**
-   * Output buffer.
-   */
-  IO1& out;
-
-  /**
    * Serialize.
    */
   template<class Archive>
@@ -173,8 +170,43 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(IO1& out) :
-    SimulatorCache<CL,IO1>(out), out(out) {
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache() {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1) :
+    SimulatorCache<CL,IO1>(o1) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2) :
+    SimulatorCache<CL,IO1>(o1, o2) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3) :
+    SimulatorCache<CL,IO1>(o1, o2, o3) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4,
+    T5& o5) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5) {
   //
 }
 
@@ -182,7 +214,7 @@ template<bi::Location CL, class IO1>
 bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(
     const BootstrapPFCache<CL,IO1>& o) :
     SimulatorCache<CL,IO1>(o), ancestryCache(o.ancestryCache), logWeightsCache(
-        o.logWeightsCache), out(o.out) {
+        o.logWeightsCache) {
   //
 }
 
@@ -193,7 +225,6 @@ bi::BootstrapPFCache<CL,IO1>& bi::BootstrapPFCache<CL,IO1>::operator=(
 
   ancestryCache = o.ancestryCache;
   logWeightsCache = o.logWeightsCache;
-  out = o.out;
 
   return *this;
 }
@@ -210,53 +241,10 @@ const typename bi::Cache1D<real,CL>::vector_reference_type bi::BootstrapPFCache<
 }
 
 template<bi::Location CL, class IO1>
-template<class V1>
-void bi::BootstrapPFCache<CL,IO1>::readLogWeights(const int k, V1 lws) const {
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readLogWeights(k, lws);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::BootstrapPFCache<CL,IO1>::writeLogWeights(const int k,
-    const V1 lws) {
-  out.writeLogWeights(k, lws);
-  logWeightsCache.resize(lws.size());
-  logWeightsCache.set(0, lws.size(), lws);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::BootstrapPFCache<CL,IO1>::readAncestors(const int k, V1 as) const {
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readAncestors(k, as);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::BootstrapPFCache<CL,IO1>::writeAncestors(const int k, const V1 as) {
-  out.writeAncestors(k, as);
-}
-
-template<bi::Location CL, class IO1>
-inline void bi::BootstrapPFCache<CL,IO1>::writeLL(const real ll) {
-  out.writeLL(ll);
-}
-
-template<bi::Location CL, class IO1>
-template<class M1>
-void bi::BootstrapPFCache<CL,IO1>::readPath(const int p, M1 X) const {
-  ancestryCache.readPath(p, X);
-}
-
-template<bi::Location CL, class IO1>
 template<class M1, class V1>
 void bi::BootstrapPFCache<CL,IO1>::writeState(const int k, const M1 X,
     const V1 as) {
-  SimulatorCache<CL,IO1>::writeState(k, X);
-  writeAncestors(k, as);
+  SimulatorCache<CL,IO1>::writeState(k, X, as);
 
 #if defined(ENABLE_CUDA) and !defined(ENABLE_GPU_CACHE)
   typename temp_host_matrix<real>::type X1(X.size1(), X.size2());
@@ -269,6 +257,21 @@ void bi::BootstrapPFCache<CL,IO1>::writeState(const int k, const M1 X,
 #else
   ancestryCache.writeState(k, X, as);
 #endif
+}
+
+template<bi::Location CL, class IO1>
+template<class V1>
+void bi::BootstrapPFCache<CL,IO1>::writeLogWeights(const int k,
+    const V1 lws) {
+  SimulatorCache<CL,IO1>::writeLogWeights(k, lws);
+  logWeightsCache.resize(lws.size());
+  logWeightsCache.set(0, lws.size(), lws);
+}
+
+template<bi::Location CL, class IO1>
+template<class M1>
+void bi::BootstrapPFCache<CL,IO1>::readPath(const int p, M1 X) const {
+  ancestryCache.readPath(p, X);
 }
 
 template<bi::Location CL, class IO1>

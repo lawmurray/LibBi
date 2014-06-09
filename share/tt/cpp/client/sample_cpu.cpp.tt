@@ -16,7 +16,7 @@
 #include "bi/kd/kde.hpp"
 
 #include "bi/random/Random.hpp"
-#include "bi/buffer/InputNetCDFBuffer.hpp"
+#include "bi/netcdf/InputNetCDFBuffer.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
 #include "bi/method/Simulator.hpp"
@@ -37,8 +37,15 @@
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
 
-#include "bi/buffer/MCMCNetCDFBuffer.hpp"
-#include "bi/buffer/SMCNetCDFBuffer.hpp"
+#include "bi/buffer/SimulatorBuffer.hpp"
+#include "bi/buffer/MCMCBuffer.hpp"
+#include "bi/buffer/SMCBuffer.hpp"
+
+#include "bi/netcdf/SimulatorNetCDFBuffer.hpp"
+#include "bi/netcdf/MCMCNetCDFBuffer.hpp"
+#include "bi/netcdf/SMCNetCDFBuffer.hpp"
+
+#include "bi/cache/SimulatorCache.hpp"
 #include "bi/cache/MCMCCache.hpp"
 #include "bi/cache/SMCCache.hpp"
 
@@ -120,15 +127,21 @@ int main(int argc, char* argv[]) {
     [% IF client.get_named_arg('filter') == 'kalman' %]
     NPARTICLES = 1;
     typedef ExtendedKFState<model_type,LOCATION> state_type;
+    typedef ExtendedKFCache<LOCATION> cache_type;
     [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
     typedef AuxiliaryPFState<model_type,LOCATION> state_type;
+    typedef BootstrapPFCache<LOCATION> cache_type;
+    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+    typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef AdaptivePFCache<LOCATION> cache_type;
     [% ELSE %]
     typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef BootstrapPFCache<LOCATION> cache_type;
     [% END %]
     [% IF client.get_named_arg('sampler') == 'sir' %]
     [% ELSIF client.get_named_arg('sampler') == 'srs' %]
     [% ELSE %]
-    MarginalMHState<model_type,LOCATION,state_type> s(NPARTICLES, sched.numOutputs());
+    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(NPARTICLES, sched.numOutputs());
     [% END %]
   [% ELSE %]
   State<model_type,LOCATION> s(NSAMPLES);
@@ -139,14 +152,13 @@ int main(int argc, char* argv[]) {
     [% IF client.get_named_arg('target') == 'posterior' %]
       [% IF client.get_named_arg('sampler') == 'sir' || client.get_named_arg('sampler') == 'srs' %]
       SMCNetCDFBuffer bufOutput(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-      SMCCache<LOCATION> out(m, bufOutput);
+      SMCCache<LOCATION,SMCNetCDFBuffer> out(m, bufOutput);
       [% ELSE %]
       MCMCNetCDFBuffer bufOutput(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-      MCMCCache<LOCATION> out(m, bufOutput);
+      MCMCCache<LOCATION,MCMCNetCDFBuffer> out(m, bufOutput);
       [% END %]
     [% ELSE %]
-    SimulatorNetCDFBuffer bufOutput(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
-    SimulatorCache<LOCATION> out(bufOutput);
+    SimulatorBuffer<SimulatorCache<LOCATION,SimulatorNetCDFBuffer> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
     [% END %]
   [% ELSE %]
   OutputBuffer out;

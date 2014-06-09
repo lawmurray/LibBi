@@ -5,11 +5,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_SIMULATORNETCDFBUFFER_HPP
-#define BI_BUFFER_SIMULATORNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_SIMULATORNETCDFBUFFER_HPP
+#define BI_NETCDF_SIMULATORNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "OutputBuffer.hpp"
 #include "../state/ScheduleElement.hpp"
 #include "../method/misc.hpp"
 
@@ -19,9 +18,9 @@ namespace bi {
 /**
  * NetCDF buffer for storing, reading and writing results of Simulator.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
-class SimulatorNetCDFBuffer: public OutputBuffer, public NetCDFBuffer {
+class SimulatorNetCDFBuffer: public NetCDFBuffer {
 public:
   /**
    * Schema flags.
@@ -70,18 +69,6 @@ public:
   SimulatorNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = DEFAULT);
-
-  /**
-   * @copydoc OutputBuffer::write()
-   */
-  template<class S1>
-  void write(const size_t k, const real t, const S1& s);
-
-  /**
-   * @copydoc OutputBuffer::write0()
-   */
-  template<class S1>
-  void write0(const S1& s);
 
   /**
    * Read time.
@@ -231,19 +218,6 @@ public:
   void readState(const VarType type, const size_t k, const size_t p, M1 X);
 
   /**
-   * Read state variable.
-   *
-   * @param type Variable type.
-   * @param id Variable id.
-   * @param k Time index.
-   * @param p First sample index.
-   * @param[out] X State. Rows index samples, columns variables.
-   */
-  template<class M1>
-  void readStateVar(const VarType type, const int id, const size_t k,
-      const size_t p, M1 X);
-
-  /**
    * Write state.
    *
    * @tparam M1 Matrix type.
@@ -256,6 +230,19 @@ public:
   template<class M1>
   void writeState(const VarType type, const size_t k, const size_t p,
       const M1 X);
+
+  /**
+   * Read state variable.
+   *
+   * @param type Variable type.
+   * @param id Variable id.
+   * @param k Time index.
+   * @param p First sample index.
+   * @param[out] X State. Rows index samples, columns variables.
+   */
+  template<class M1>
+  void readStateVar(const VarType type, const int id, const size_t k,
+      const size_t p, M1 X);
 
   /**
    * Read state variable.
@@ -492,18 +479,6 @@ protected:
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
-template<class S1>
-void bi::SimulatorNetCDFBuffer::write(const size_t k, const real t,
-    const S1& s) {
-  writeTime(k, t);
-  writeState(k, s.getDyn());
-}
-
-template<class S1>
-void bi::SimulatorNetCDFBuffer::write0(const S1& s) {
-  writeParameters(s.get(P_VAR));
-}
-
 template<class V1>
 void bi::SimulatorNetCDFBuffer::readTimes(const size_t k, V1 ts) {
   readRange(tVar, k, ts);
@@ -580,6 +555,28 @@ void bi::SimulatorNetCDFBuffer::readState(const VarType type, const size_t k,
 }
 
 template<class M1>
+void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
+    const size_t p, const M1 X) {
+  Var* var;
+  int id, start, size;
+
+  if (schema == FLEXI) {
+    /* write offset and length */
+    long offset = (k == 0) ? 0 : readStart(k - 1) + readLen(k - 1);
+    long len = p + X.size1();
+    writeStart(k, offset);
+    writeLen(k, len);
+  }
+
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
+    start = var->getStart();
+    size = var->getSize();
+    writeStateVar(type, id, k, p, columns(X, start, size));
+  }
+}
+
+template<class M1>
 void bi::SimulatorNetCDFBuffer::readStateVar(const VarType type, const int id,
     const size_t k, const size_t p, M1 X) {
   typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
@@ -625,28 +622,6 @@ void bi::SimulatorNetCDFBuffer::readStateVar(const VarType type, const int id,
     } else {
       nc_get_vara(ncid, varid, offsets, counts, X.buf());
     }
-  }
-}
-
-template<class M1>
-void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
-    const size_t p, const M1 X) {
-  Var* var;
-  int id, start, size;
-
-  if (schema == FLEXI) {
-    /* write offset and length */
-    long offset = (k == 0) ? 0 : readStart(k - 1) + readLen(k - 1);
-    long len = p + X.size1();
-    writeStart(k, offset);
-    writeLen(k, len);
-  }
-
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    var = m.getVar(type, id);
-    start = var->getStart();
-    size = var->getSize();
-    writeStateVar(type, id, k, p, columns(X, start, size));
   }
 }
 

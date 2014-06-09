@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_NETCDFBUFFER_HPP
-#define BI_BUFFER_NETCDFBUFFER_HPP
+#ifndef BI_NETCDF_NETCDFBUFFER_HPP
+#define BI_NETCDF_NETCDFBUFFER_HPP
 
 #include "../model/Model.hpp"
 #include "../method/misc.hpp"
@@ -18,7 +18,7 @@ namespace bi {
 /**
  * NetCDF input or output file.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class NetCDFBuffer {
 public:

@@ -29,11 +29,39 @@ template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
 class AdaptivePFCache: public BootstrapPFCache<CL,IO1> {
 public:
   /**
-   * Constructor.
-   *
-   * @param out output buffer.
+   * Pass-through constructor.
    */
-  AdaptivePFCache(IO1& out = NULL);
+  AdaptivePFCache();
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1>
+  AdaptivePFCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  AdaptivePFCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  AdaptivePFCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  AdaptivePFCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  AdaptivePFCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy.
@@ -161,8 +189,43 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(IO1& out) :
-    BootstrapPFCache<CL,IO1>(out), base(-1), P(0) {
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(), base(-1), P(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(T1& o1) :
+    BootstrapPFCache<CL,IO1>(o1), base(-1), P(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(T1& o1, T2& o2) :
+    BootstrapPFCache<CL,IO1>(o1, o2), base(-1), P(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(T1& o1, T2& o2, T3& o3) :
+    BootstrapPFCache<CL,IO1>(o1, o2, o3), base(-1), P(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    BootstrapPFCache<CL,IO1>(o1, o2, o3, o4), base(-1), P(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(T1& o1, T2& o2, T3& o3, T4& o4,
+    T5& o5) :
+    BootstrapPFCache<CL,IO1>(o1, o2, o3, o4, o5), base(-1), P(0) {
   //
 }
 

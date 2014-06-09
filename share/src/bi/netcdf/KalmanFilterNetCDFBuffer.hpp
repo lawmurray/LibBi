@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_KalmanFilterNetCDFBuffer_HPP
-#define BI_BUFFER_KalmanFilterNetCDFBuffer_HPP
+#ifndef BI_NETCDF_KalmanFilterNetCDFBuffer_HPP
+#define BI_NETCDF_KalmanFilterNetCDFBuffer_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
 #include "../method/misc.hpp"
@@ -16,7 +16,7 @@ namespace bi {
  * Buffer for storing, reading and writing results of Kalman filters in a
  * NetCDF file.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class KalmanFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
@@ -42,12 +42,6 @@ public:
   KalmanFilterNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = DEFAULT);
-
-  /**
-   * @copydoc OutputBuffer::write()
-   */
-  template<class S1>
-  void write(const size_t k, const real t, const S1& s);
 
   /**
    * Read predicted mean.
@@ -227,17 +221,6 @@ protected:
 
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
-
-template<class S1>
-void bi::KalmanFilterNetCDFBuffer::write(const size_t k, const real t,
-    const S1& s) {
-  SimulatorNetCDFBuffer::write(k, t, s);
-  writePredictedMean(k, s.mu1);
-  writePredictedStd(k, s.U1);
-  writeCorrectedMean(k, s.mu2);
-  writeCorrectedStd(k, s.U2);
-  writeCross(k, s.C);
-}
 
 template<class V1>
 void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const size_t k,

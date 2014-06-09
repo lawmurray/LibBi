@@ -11,7 +11,6 @@
 #include "../state/Schedule.hpp"
 #include "../state/MarginalMHState.hpp"
 #include "../cache/MCMCCache.hpp"
-#include "../buffer/NullBuffer.hpp"
 #include "../math/vector.hpp"
 #include "../math/matrix.hpp"
 #include "../math/view.hpp"
@@ -278,13 +277,13 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
   /* pre-condition */
   BI_ASSERT(C >= 0);
 
-  const int P = s.size();
+  const int P = s.sFilter.size();
   init(rng, first, last, s, out, inInit);
   for (int c = 0; c < C; ++c) {
     step(rng, first, last, s);
     report(c, s);
     output(c, s, out);
-    s.setRange(0, P);
+    s.sFilter.setRange(0, P);
   }
   term();
 }
@@ -294,15 +293,16 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   /* log-likelihood */
-  s.logLikelihood1 = filter.filter(rng, first, last, s, BI_NO_OUT, inInit);
-  s.theta1 = vec(s.get(P_VAR));
+  s.logLikelihood1 = filter.filter(rng, first, last, s.sFilter, s.outFilter,
+      inInit);
+  s.theta1 = vec(s.sFilter.get(P_VAR));
 
   /* prior log-density */
-  row(s.get(PY_VAR), 0) = s.theta1;
-  s.logPrior1 = m.parameterLogDensity(s);
+  row(s.sFilter.get(PY_VAR), 0) = s.theta1;
+  s.logPrior1 = m.parameterLogDensity(s.sFilter);
 
   /* trajectory */
-  filter.samplePath(rng, s.path, out);
+  filter.samplePath(rng, s.path, s.outFilter);
 
   out.clear();
 }
@@ -391,19 +391,19 @@ template<class B, class F>
 template<class S1>
 void bi::MarginalMH<B,F>::propose(Random& rng, S1& s) {
   /* proposal */
-  row(s.get(P_VAR), 0) = s.theta1;
-  m.proposalParameterSample(rng, s);
-  s.theta2 = row(s.get(P_VAR), 0);
+  row(s.sFilter.get(P_VAR), 0) = s.theta1;
+  m.proposalParameterSample(rng, s.sFilter);
+  s.theta2 = row(s.sFilter.get(P_VAR), 0);
 
   /* reverse proposal log-density */
-  row(s.get(P_VAR), 0) = s.theta2;
-  row(s.get(PY_VAR), 0) = s.theta1;
-  s.logProposal1 = m.proposalParameterLogDensity(s);
+  row(s.sFilter.get(P_VAR), 0) = s.theta2;
+  row(s.sFilter.get(PY_VAR), 0) = s.theta1;
+  s.logProposal1 = m.proposalParameterLogDensity(s.sFilter);
 
   /* proposal log-density */
-  row(s.get(P_VAR), 0) = s.theta1;
-  row(s.get(PY_VAR), 0) = s.theta2;
-  s.logProposal2 = m.proposalParameterLogDensity(s);
+  row(s.sFilter.get(P_VAR), 0) = s.theta1;
+  row(s.sFilter.get(PY_VAR), 0) = s.theta2;
+  s.logProposal2 = m.proposalParameterLogDensity(s.sFilter);
 }
 
 template<class B, class F>
@@ -429,9 +429,9 @@ template<class B, class F>
 template<class S1>
 void bi::MarginalMH<B,F>::prior(S1& s) {
   /* prior log-density */
-  row(s.get(PY_VAR), 0) = s.theta2;
-  s.logPrior2 = m.parameterLogDensity(s);
-  s.theta2 = row(s.get(P_VAR), 0);
+  row(s.sFilter.get(PY_VAR), 0) = s.theta2;
+  s.logPrior2 = m.parameterLogDensity(s.sFilter);
+  s.theta2 = row(s.sFilter.get(P_VAR), 0);
 }
 
 template<class B, class F>
@@ -442,7 +442,8 @@ void bi::MarginalMH<B,F>::likelihood(Random& rng,
     s.logLikelihood2 = -1.0 / 0.0;
   } else {
     s.logLikelihood2 = -1.0 / 0.0;  // in case of exception
-    s.logLikelihood2 = filter.filter(rng, first, last, s.theta2, s);
+    s.logLikelihood2 = filter.filter(rng, s.theta2, first, last, s.sFilter,
+        s.outFilter);
   }
 }
 
@@ -453,7 +454,7 @@ void bi::MarginalMH<B,F>::accept(Random& rng, S1& s) {
   std::swap(s.logLikelihood1, s.logLikelihood2);
   std::swap(s.logPrior1, s.logPrior2);
   std::swap(s.logProposal1, s.logProposal2);
-  filter.samplePath(rng, s.path, out);
+  filter.samplePath(rng, s.path, s.outFilter);
 
   ++accepted;
   ++total;

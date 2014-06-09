@@ -20,13 +20,22 @@ namespace bi {
  * @tparam F Base filter type.
  */
 template<class F>
-class Filter : public F {
+class Filter: public F {
 public:
   /**
    * Pass-through constructor.
    */
+  Filter() :
+      F() {
+    //
+  }
+
+  /**
+   * Pass-through constructor.
+   */
   template<class T1>
-  Filter(T1& o1) : F(o1) {
+  Filter(T1& o1) :
+      F(o1) {
     //
   }
 
@@ -34,7 +43,8 @@ public:
    * Pass-through constructor.
    */
   template<class T1, class T2>
-  Filter(T1& o1, T2& o2) : F(o1, o2) {
+  Filter(T1& o1, T2& o2) :
+      F(o1, o2) {
     //
   }
 
@@ -42,7 +52,8 @@ public:
    * Pass-through constructor.
    */
   template<class T1, class T2, class T3>
-  Filter(T1& o1, T2& o2, T3& o3) : F(o1, o2, o3) {
+  Filter(T1& o1, T2& o2, T3& o3) :
+      F(o1, o2, o3) {
     //
   }
 
@@ -50,7 +61,8 @@ public:
    * Pass-through constructor.
    */
   template<class T1, class T2, class T3, class T4>
-  Filter(T1& o1, T2& o2, T3& o3, T4& o4) : F(o1, o2, o3, o4) {
+  Filter(T1& o1, T2& o2, T3& o3, T4& o4) :
+      F(o1, o2, o3, o4) {
     //
   }
 
@@ -58,7 +70,8 @@ public:
    * Pass-through constructor.
    */
   template<class T1, class T2, class T3, class T4, class T5>
-  Filter(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) : F(o1, o2, o3, o4, o5) {
+  Filter(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
+      F(o1, o2, o3, o4, o5) {
     //
   }
 
@@ -86,22 +99,22 @@ public:
    * %Filter forward, with fixed parameters.
    *
    * @tparam L Location.
-   * @tparam S1 State type.
    * @tparam V1 Vector type.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
+   * @param theta Parameters.
    * @param first Start of time schedule.
    * @param last End of time schedule.
-   * @param theta Parameters.
    * @param[out] s BootstrapPFState.
    * @param[out] out Output buffer.
    *
    * @return Estimate of the marginal log-likelihood.
    */
-  template<class S1, class V1, class IO1>
-  real filter(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, const V1 theta, S1& s, IO1& out);
+  template<class V1, class S1, class IO1>
+  real filter(Random& rng, const V1 theta, const ScheduleIterator first,
+      const ScheduleIterator last, S1& s, IO1& out);
 };
 }
 
@@ -129,9 +142,10 @@ real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
 }
 
 template<class F>
-template<class S1, class V1, class IO1>
-real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, const V1 theta, S1& s, IO1& out) {
+template<class V1, class S1, class IO1>
+real bi::Filter<F>::filter(Random& rng, const V1 theta,
+    const ScheduleIterator first, const ScheduleIterator last, S1& s,
+    IO1& out) {
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 

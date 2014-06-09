@@ -5,11 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_INPUTNETCDFBUFFER_HPP
-#define BI_BUFFER_INPUTNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_INPUTNETCDFBUFFER_HPP
+#define BI_NETCDF_INPUTNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
-#include "InputBuffer.hpp"
+#include "../buffer/InputBuffer.hpp"
 #include "../model/Model.hpp"
 
 #include <vector>
@@ -20,7 +20,7 @@ namespace bi {
 /**
  * NetCDF buffer for storing and sequentially reading input in sparse format.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class InputNetCDFBuffer: public InputBuffer, public NetCDFBuffer {
 public:

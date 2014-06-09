@@ -46,12 +46,12 @@ public:
   /**
    * Shallow copy constructor.
    */
-  MarginalMHState(const MarginalMHState<B,L,S1>& o);
+  MarginalMHState(const MarginalMHState<B,L,S1,IO1>& o);
 
   /**
    * Assignment operator.
    */
-  MarginalMHState& operator=(const MarginalMHState<B,L,S1>& o);
+  MarginalMHState& operator=(const MarginalMHState<B,L,S1,IO1>& o);
 
   /**
    * Filter state.
@@ -128,27 +128,30 @@ public:
 };
 }
 
-template<class B, bi::Location L, class S1>
-bi::MarginalMHState<B,L,S1>::MarginalMHState(const int P, const int T) :
-    S1(P), path(B::NR + B::ND, T), theta1(B::NP), theta2(B::NP), logLikelihood1(
-        -1.0 / 0.0), logLikelihood2(-1.0 / 0.0), logPrior1(-1.0 / 0.0), logPrior2(
-        -1.0 / 0.0), logProposal1(-1.0 / 0.0), logProposal2(-1.0 / 0.0) {
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(const int P, const int T) :
+    sFilter(P), outFilter(), path(B::NR + B::ND, T), theta1(B::NP), theta2(
+        B::NP), logLikelihood1(-1.0 / 0.0), logLikelihood2(-1.0 / 0.0), logPrior1(
+        -1.0 / 0.0), logPrior2(-1.0 / 0.0), logProposal1(-1.0 / 0.0), logProposal2(
+        -1.0 / 0.0) {
   //
 }
 
-template<class B, bi::Location L, class S1>
-bi::MarginalMHState<B,L,S1>::MarginalMHState(const MarginalMHState<B,L,S1>& o) :
-    S1(o), path(o.path), theta1(o.theta1), theta2(o.theta2), logLikelihood1(
-        o.logLikelihood1), logLikelihood2(o.logLikelihood2), logPrior1(
-        o.logPrior1), logPrior2(o.logPrior2), logProposal1(o.logProposal1), logProposal2(
-        o.logProposal2) {
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(
+    const MarginalMHState<B,L,S1,IO1>& o) :
+    sFilter(o.sFilter), outFilter(o.outFilter), path(o.path), theta1(
+        o.theta1), theta2(o.theta2), logLikelihood1(o.logLikelihood1), logLikelihood2(
+        o.logLikelihood2), logPrior1(o.logPrior1), logPrior2(o.logPrior2), logProposal1(
+        o.logProposal1), logProposal2(o.logProposal2) {
   //
 }
 
-template<class B, bi::Location L, class S1>
-bi::MarginalMHState<B,L,S1>& bi::MarginalMHState<B,L,S1>::operator=(
-    const MarginalMHState<B,L,S1>& o) {
-  S1::operator=(o);
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalMHState<B,L,S1,IO1>& bi::MarginalMHState<B,L,S1,IO1>::operator=(
+    const MarginalMHState<B,L,S1,IO1>& o) {
+  sFilter = o.sFilter;
+  outFilter = o.outFilter;
   path = o.path;
   theta1 = o.theta1;
   theta2 = o.theta2;
@@ -162,11 +165,12 @@ bi::MarginalMHState<B,L,S1>& bi::MarginalMHState<B,L,S1>::operator=(
   return *this;
 }
 
-template<class B, bi::Location L, class S1>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalMHState<B,L,S1>::save(Archive& ar,
+void bi::MarginalMHState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < S1 > (*this);
+  ar & sFilter;
+  ar & outFilter;
   save_resizable_matrix(ar, version, path);
   save_resizable_vector(ar, version, theta1);
   save_resizable_vector(ar, version, theta2);
@@ -178,10 +182,12 @@ void bi::MarginalMHState<B,L,S1>::save(Archive& ar,
   ar & logProposal2;
 }
 
-template<class B, bi::Location L, class S1>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalMHState<B,L,S1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < S1 > (*this);
+void bi::MarginalMHState<B,L,S1,IO1>::load(Archive& ar,
+    const unsigned version) {
+  ar & sFilter;
+  ar & outFilter;
   load_resizable_matrix(ar, version, path);
   load_resizable_vector(ar, version, theta1);
   load_resizable_vector(ar, version, theta2);

@@ -6,20 +6,16 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_SMCNETCDFBUFFER_HPP
-#define BI_BUFFER_SMCNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_SMCNETCDFBUFFER_HPP
+#define BI_NETCDF_SMCNETCDFBUFFER_HPP
 
 #include "MCMCNetCDFBuffer.hpp"
-#include "../state/State.hpp"
-#include "../method/misc.hpp"
-
-#include <vector>
 
 namespace bi {
 /**
  * NetCDF buffer for storing, reading and writing results of SMC2.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class SMCNetCDFBuffer: public MCMCNetCDFBuffer {
 public:
@@ -44,17 +40,6 @@ public:
   SMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = MULTI);
-
-  /**
-   * Write sample.
-   *
-   * @tparam S1 State type.
-   *
-   * @param c Sample index.
-   * @param s State.
-   */
-  template<class S1>
-  void write(const int c, const S1& s);
 
   /**
    * Read log-weights.
@@ -117,17 +102,6 @@ protected:
    */
   int leVar;
 };
-}
-
-#include "../math/view.hpp"
-#include "../math/temp_vector.hpp"
-#include "../math/temp_matrix.hpp"
-
-template<class S1>
-void bi::SMCNetCDFBuffer::write(const int c, const S1& s) {
-  MCMCNetCDFBuffer::write(c, s);
-  writeLogWeights(s.lws);
-  writeLogEvidences(s.les);
 }
 
 template<class V1>

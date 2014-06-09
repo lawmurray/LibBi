@@ -9,7 +9,7 @@
 #define BI_CACHE_SIMULATORCACHE_HPP
 
 #include "Cache1D.hpp"
-#include "../buffer/SimulatorNetCDFBuffer.hpp"
+#include "../netcdf/SimulatorNetCDFBuffer.hpp"
 
 namespace bi {
 /**
@@ -24,14 +24,42 @@ namespace bi {
  * @tparam IO1 Buffer type.
  */
 template<Location CL = ON_HOST, class IO1 = SimulatorNetCDFBuffer>
-class SimulatorCache {
+class SimulatorCache: public IO1 {
 public:
   /**
-   * Constructor.
-   *
-   * @param out Output buffer.
+   * Pass-through constructor.
    */
-  SimulatorCache(IO1& out = NULL);
+  SimulatorCache();
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1>
+  SimulatorCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  SimulatorCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  SimulatorCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  SimulatorCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  SimulatorCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy constructor.
@@ -47,26 +75,6 @@ public:
    * Deep assignment operator.
    */
   SimulatorCache<CL,IO1>& operator=(const SimulatorCache<CL,IO1>& o);
-
-  /**
-   * @copydoc OutputBuffer::write()
-   */
-  template<class S1>
-  void write(const size_t k, const real t, const S1& s);
-
-  /**
-   * @copydoc OutputBuffer::write0()
-   */
-  template<class S1>
-  void write0(const S1& s);
-
-protected:
-  /**
-   * Get the vector of all times.
-   *
-   * @return The vector of all times.
-   */
-  const typename Cache1D<real,ON_HOST>::vector_reference_type getTimes() const;
 
   /**
    * @copydoc SimulatorNetCDFBuffer::readTime()
@@ -89,30 +97,6 @@ protected:
    */
   template<class V1>
   void writeTimes(const int k, const V1 ts);
-
-  /**
-   * @copydoc SimulatorNetCDFBuffer::readParameters()
-   */
-  template<class M1>
-  void readParameters(M1 X) const;
-
-  /**
-   * @copydoc SimulatorNetCDFBuffer::writeParameters()
-   */
-  template<class M1>
-  void writeParameters(const M1 X);
-
-  /**
-   * @copydoc SimulatorNetCDFBuffer::readState()
-   */
-  template<class M1>
-  void readState(const int k, M1 X) const;
-
-  /**
-   * @copydoc SimulatorNetCDFBuffer::writeState()
-   */
-  template<class M1>
-  void writeState(const int k, const M1 X);
 
   /**
    * Swap the contents of the cache with that of another.
@@ -151,11 +135,6 @@ private:
   int len;
 
   /**
-   * Output buffer.
-   */
-  IO1& out;
-
-  /**
    * Serialize.
    */
   template<class Archive>
@@ -176,14 +155,50 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::SimulatorCache<CL,IO1>::SimulatorCache(IO1& out) :
-    len(0), out(out) {
+bi::SimulatorCache<CL,IO1>::SimulatorCache() :
+    len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1>
+bi::SimulatorCache<CL,IO1>::SimulatorCache(T1& o1) :
+    IO1(o1), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::SimulatorCache<CL,IO1>::SimulatorCache(T1& o1, T2& o2) :
+    IO1(o1, o2), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::SimulatorCache<CL,IO1>::SimulatorCache(T1& o1, T2& o2, T3& o3) :
+    IO1(o1, o2, o3), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::SimulatorCache<CL,IO1>::SimulatorCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    IO1(o1, o2, o3, o4), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::SimulatorCache<CL,IO1>::SimulatorCache(T1& o1, T2& o2, T3& o3, T4& o4,
+    T5& o5) :
+    IO1(o1, o2, o3, o4, o5), len(0) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::SimulatorCache<CL,IO1>::SimulatorCache(const SimulatorCache<CL,IO1>& o) :
-    timeCache(o.timeCache), len(o.len), out(o.out) {
+    timeCache(o.timeCache), len(o.len) {
   //
 }
 
@@ -197,29 +212,8 @@ bi::SimulatorCache<CL,IO1>& bi::SimulatorCache<CL,IO1>::operator=(
     const SimulatorCache<CL,IO1>& o) {
   timeCache = o.timeCache;
   len = o.len;
-  out = o.out;
 
   return *this;
-}
-
-template<bi::Location CL, class IO1>
-template<class S1>
-void bi::SimulatorCache<CL,IO1>::write(const size_t k, const real t,
-    const S1& s) {
-  writeTime(k, t);
-  writeState(k, s.getDyn());
-}
-
-template<bi::Location CL, class IO1>
-template<class S1>
-void bi::SimulatorCache<CL,IO1>::write0(const S1& s) {
-  writeParameters(s.get(P_VAR));
-}
-
-template<bi::Location CL, class IO1>
-inline const typename bi::Cache1D<real,bi::ON_HOST>::vector_reference_type bi::SimulatorCache<
-    CL,IO1>::getTimes() const {
-  return timeCache.get(0, len);
 }
 
 template<bi::Location CL, class IO1>
@@ -264,36 +258,6 @@ inline void bi::SimulatorCache<CL,IO1>::writeTimes(const int k, const V1 ts) {
 }
 
 template<bi::Location CL, class IO1>
-template<class M1>
-inline void bi::SimulatorCache<CL,IO1>::readParameters(M1 X) const {
-  /* pre-conditions */
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readParameters(X);
-}
-
-template<bi::Location CL, class IO1>
-template<class M1>
-inline void bi::SimulatorCache<CL,IO1>::writeParameters(const M1 X) {
-  out.writeParameters(X);
-}
-
-template<bi::Location CL, class IO1>
-template<class M1>
-inline void bi::SimulatorCache<CL,IO1>::readState(const int k, M1 X) const {
-  /* pre-conditions */
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readState(k, X);
-}
-
-template<bi::Location CL, class IO1>
-template<class M1>
-inline void bi::SimulatorCache<CL,IO1>::writeState(const int k, const M1 X) {
-  out.writeState(k, X);
-}
-
-template<bi::Location CL, class IO1>
 inline void bi::SimulatorCache<CL,IO1>::swap(SimulatorCache<CL,IO1>& o) {
   timeCache.swap(o.timeCache);
   std::swap(len, o.len);
@@ -318,7 +282,7 @@ inline void bi::SimulatorCache<CL,IO1>::empty() {
 
 template<bi::Location CL, class IO1>
 inline void bi::SimulatorCache<CL,IO1>::flush() {
-  out.writeTimes(0, getTimes());
+  IO1::writeTimes(0, timeCache.get(0, len));
   timeCache.flush();
 }
 

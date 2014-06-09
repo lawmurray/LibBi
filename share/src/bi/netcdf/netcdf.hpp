@@ -18,8 +18,8 @@
  * represents a significant change that has made it easier to refactor
  * LibBi's NetCDF code to simply use the C interface directly.
  */
-#ifndef BI_BUFFER_NETCDF_HPP
-#define BI_BUFFER_NETCDF_HPP
+#ifndef BI_NETCDF_NETCDF_HPP
+#define BI_NETCDF_NETCDF_HPP
 
 #include <netcdf.h>
 #include <string>
@@ -37,42 +37,42 @@ namespace bi {
  */
 //@{
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_open(const std::string& path, int mode);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_create(const std::string& path, int cmode);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_set_fill(int ncid, int fillmode);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_sync(int ncid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_redef(int ncid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_enddef(int ncid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_close(int ncid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_inq_nvars(int ncid);
 //@}
@@ -82,14 +82,14 @@ int nc_inq_nvars(int ncid);
  */
 //@{
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_def_dim(int ncid, const std::string& name, size_t len);
 
 /**
  * Define unlimited dimension.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  *
  * @param ncid
  * @param name
@@ -99,17 +99,17 @@ int nc_def_dim(int ncid, const std::string& name, size_t len);
 int nc_def_dim(int ncid, const std::string& name);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_inq_dimid(int ncid, const std::string& name);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 std::string nc_inq_dimname(int ncid, int dimid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 size_t nc_inq_dimlen(int ncid, int dimid);
 //@}
@@ -119,7 +119,7 @@ size_t nc_inq_dimlen(int ncid, int dimid);
  */
 //@{
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_def_var(int ncid, const std::string& name, nc_type xtype,
     const std::vector<int>& dimids);
@@ -127,7 +127,7 @@ int nc_def_var(int ncid, const std::string& name, nc_type xtype,
 /**
  * Define scalar variable.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  *
  * @param ncid
  * @param name
@@ -140,7 +140,7 @@ int nc_def_var(int ncid, const std::string& name, nc_type xtype);
 /**
  * Define vector variable.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  *
  * @param ncid
  * @param name
@@ -154,7 +154,7 @@ int nc_def_var(int ncid, const std::string& name, nc_type xtype, int dimid);
 /**
  * Define matrix variable.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  *
  * @param ncid
  * @param name
@@ -168,22 +168,22 @@ int nc_def_var(int ncid, const std::string& name, nc_type xtype, int dimid1,
     int dimid2);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_inq_varid(int ncid, const std::string& name);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 std::string nc_inq_varname(int ncid, int varid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 int nc_inq_varndims(int ncid, int varid);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 std::vector<int> nc_inq_vardimid(int ncid, int varid);
 //@}
@@ -195,22 +195,22 @@ std::vector<int> nc_inq_vardimid(int ncid, int varid);
 /**
  * Put global attribute.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_att(int ncid, const std::string& name, const std::string& value);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_att(int ncid, const std::string& name, const int value);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_att(int ncid, const std::string& name, const float value);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_att(int ncid, const std::string& name, const double value);
 
@@ -221,225 +221,225 @@ void nc_put_att(int ncid, const std::string& name, const double value);
  */
 //@{
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var(int ncid, int varid, int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var(int ncid, int varid, long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var(int ncid, int varid, float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var(int ncid, int varid, double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var(int ncid, int varid, const int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var(int ncid, int varid, const long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var(int ncid, int varid, const float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var(int ncid, int varid, const double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const size_t index, int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const size_t index, long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const size_t index, float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const size_t index, double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const size_t index, const int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const size_t index, const long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const size_t index, const float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const size_t index, const double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_var1(int ncid, int varid, const std::vector<size_t>& index,
     double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_var1(int ncid, int varid, const std::vector<size_t>& index,
     const double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const size_t start, const size_t count,
     int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const size_t start, const size_t count,
     long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const size_t start, const size_t count,
     float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const size_t start, const size_t count,
     double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const size_t start, const size_t count,
     const int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const size_t start, const size_t count,
     const long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const size_t start, const size_t count,
     const float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const size_t start, const size_t count,
     const double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_get_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, double* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const int* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const long* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const float* ip);
 
 /**
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 void nc_put_vara(int ncid, int varid, const std::vector<size_t>& start,
     const std::vector<size_t>& count, const double* ip);

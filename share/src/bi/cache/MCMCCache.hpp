@@ -11,7 +11,7 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "CacheCross.hpp"
-#include "../buffer/MCMCNetCDFBuffer.hpp"
+#include "../netcdf/MCMCNetCDFBuffer.hpp"
 
 namespace bi {
 /**
@@ -26,15 +26,34 @@ template<Location CL = ON_HOST, class IO1 = MCMCNetCDFBuffer>
 class MCMCCache: public SimulatorCache<CL,IO1> {
 public:
   /**
-   * Constructor.
-   *
-   * @tparam B Model type.
-   *
-   * @param m Model.
-   * @param out Output buffer.
+   * Pass-through constructor.
    */
-  template<class B>
-  MCMCCache(B& m, IO1& out = NULL);
+  template<class T1>
+  MCMCCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  MCMCCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  MCMCCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy constructor.
@@ -45,12 +64,6 @@ public:
    * Destructor.
    */
   ~MCMCCache();
-
-  /**
-   * @copydoc MCMCNetCDFBuffer::write()
-   */
-  template<class S1>
-  void write(const int c, const S1& s);
 
   /**
    * Deep assignment operator.
@@ -169,11 +182,6 @@ private:
   void flushPaths(const VarType type);
 
   /**
-   * Model.
-   */
-  Model& m;
-
-  /**
    * Log-likelihoods cache.
    */
   Cache1D<real,CL> llCache;
@@ -204,11 +212,6 @@ private:
   int len;
 
   /**
-   * Output buffer.
-   */
-  IO1& out;
-
-  /**
    * Maximum number of samples to store in cache.
    */
   static const int NUM_SAMPLES = 16384 / sizeof(real);
@@ -234,18 +237,53 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-template<class B>
-bi::MCMCCache<CL,IO1>::MCMCCache(B& m, IO1& out) :
-    SimulatorCache<CL,IO1>(out), m(m), llCache(NUM_SAMPLES), lpCache(
-        NUM_SAMPLES), parameterCache(NUM_SAMPLES, m.getNetSize(P_VAR)), first(
-        0), len(0), out(out) {
+template<class T1>
+bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1) :
+    SimulatorCache<CL,IO1>(o1), llCache(NUM_SAMPLES), lpCache(NUM_SAMPLES), parameterCache(
+        NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(0), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2) :
+    SimulatorCache<CL,IO1>(o1, o2), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
+        0), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3) :
+    SimulatorCache<CL,IO1>(o1, o2, o3), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
+        0), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
+        0), len(0) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
+        0), len(0) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const MCMCCache<CL,IO1>& o) :
-    SimulatorCache<CL,IO1>(o), m(o.m), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
-        o.parameterCache), first(o.first), len(o.len), out(o.out) {
+    SimulatorCache<CL,IO1>(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+        o.parameterCache), first(o.first), len(o.len) {
   pathCache.resize(o.pathCache.size());
   for (int i = 0; i < pathCache.size(); ++i) {
     pathCache[i] = new CacheCross<real,CL>(*o.pathCache[i]);
@@ -271,7 +309,6 @@ bi::MCMCCache<CL,IO1>& bi::MCMCCache<CL,IO1>::operator=(
   parameterCache = o.parameterCache;
   first = o.first;
   len = o.len;
-  out = o.out;
 
   pathCache.resize(o.pathCache.size());
   for (int i = 0; i < pathCache.size(); ++i) {
@@ -280,18 +317,6 @@ bi::MCMCCache<CL,IO1>& bi::MCMCCache<CL,IO1>::operator=(
   }
 
   return *this;
-}
-
-template<bi::Location CL, class IO1>
-template<class S1>
-void bi::MCMCCache<CL,IO1>::write(const int c, const S1& s) {
-  if (c == 0) {
-    //writeTimes(0, s.getTimes());
-  }
-  writeLogLikelihood(c, s.logLikelihood1);
-  writeLogPrior(c, s.logPrior1);
-  writeParameter(c, s.theta1);
-  writePath(c, s.path);
 }
 
 template<bi::Location CL, class IO1>
@@ -392,7 +417,7 @@ void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   }
   for (int t = 0; t < X.size2(); ++t) {
     if (pathCache[t] == NULL) {
-      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES, m.getDynSize());
+      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES, this->m.getDynSize());
     }
     pathCache[t]->set(p - first, column(X, t));
   }
@@ -441,9 +466,9 @@ void bi::MCMCCache<CL,IO1>::empty() {
 
 template<bi::Location CL, class IO1>
 void bi::MCMCCache<CL,IO1>::flush() {
-  out.writeLogLikelihoods(first, llCache.get(0, len));
-  out.writeLogPriors(first, lpCache.get(0, len));
-  out.writeParameters(first, parameterCache.get(0, len));
+  IO1::writeLogLikelihoods(first, llCache.get(0, len));
+  IO1::writeLogPriors(first, lpCache.get(0, len));
+  IO1::writeParameters(first, parameterCache.get(0, len));
 
   llCache.flush();
   lpCache.flush();
@@ -458,7 +483,7 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
   /* don't do it time-by-time, too much seeking in looping over variables
    * several times... */
   //for (int k = 0; k < int(pathCache.size()); ++k) {
-  //  out.writeState(k, first, pathCache[k]->get(0, len));
+  //  IO1::writeState(k, first, pathCache[k]->get(0, len));
   //  pathCache[k]->flush();
   //}
   /* ...do it variable-by-variable instead, and loop over times several
@@ -466,13 +491,13 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
   Var* var;
   int id, i, k, start, size;
 
-  for (id = 0; id < m.getNumVars(type); ++id) {
-    var = m.getVar(type, id);
-    start = var->getStart() + ((type == D_VAR) ? m.getNetSize(R_VAR) : 0);
+  for (id = 0; id < this->m.getNumVars(type); ++id) {
+    var = this->m.getVar(type, id);
+    start = var->getStart() + ((type == D_VAR) ? this->m.getNetSize(R_VAR) : 0);
     size = var->getSize();
 
     for (k = 0; k < int(pathCache.size()); ++k) {
-      out.writeStateVar(type, id, k, first,
+      IO1::writeStateVar(type, id, k, first,
           columns(pathCache[k]->get(0, len), start, size));
     }
   }
@@ -481,6 +506,7 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
+  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
@@ -492,6 +518,7 @@ void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::load(Archive& ar, const unsigned version) {
+  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;

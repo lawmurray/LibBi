@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_OPTIMISERNETCDFBUFFER_HPP
-#define BI_BUFFER_OPTIMISERNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_OPTIMISERNETCDFBUFFER_HPP
+#define BI_NETCDF_OPTIMISERNETCDFBUFFER_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
 #include "../state/State.hpp"
@@ -19,7 +19,7 @@ namespace bi {
  * NetCDF buffer for storing, reading and writing results of
  * NelderMeadOptimiser.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class OptimiserNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:

@@ -8,7 +8,7 @@
 #ifndef BI_METHOD_FORCER_HPP
 #define BI_METHOD_FORCER_HPP
 
-#include "../buffer/InputNetCDFBuffer.hpp"
+#include "../netcdf/InputNetCDFBuffer.hpp"
 #include "../cache/Cache2D.hpp"
 
 namespace bi {

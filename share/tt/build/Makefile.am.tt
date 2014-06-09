@@ -35,15 +35,15 @@ LINK = $(CXXLINK) # force C++ linker for CUDA files
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
-  src/bi/buffer/KalmanFilterNetCDFBuffer.cpp \
-  src/bi/buffer/netcdf.cpp \
-  src/bi/buffer/NetCDFBuffer.cpp \
-  src/bi/buffer/OptimiserNetCDFBuffer.cpp \
-  src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \
-  src/bi/buffer/MCMCNetCDFBuffer.cpp \
-  src/bi/buffer/SMCNetCDFBuffer.cpp \
-  src/bi/buffer/SimulatorNetCDFBuffer.cpp \
-  src/bi/buffer/InputNetCDFBuffer.cpp \
+  src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
+  src/bi/netcdf/netcdf.cpp \
+  src/bi/netcdf/NetCDFBuffer.cpp \
+  src/bi/netcdf/OptimiserNetCDFBuffer.cpp \
+  src/bi/netcdf/ParticleFilterNetCDFBuffer.cpp \
+  src/bi/netcdf/MCMCNetCDFBuffer.cpp \
+  src/bi/netcdf/SMCNetCDFBuffer.cpp \
+  src/bi/netcdf/SimulatorNetCDFBuffer.cpp \
+  src/bi/netcdf/InputNetCDFBuffer.cpp \
   src/bi/cache/Cache.cpp \
   src/bi/host/math/cblas.cpp \
   src/bi/host/math/lapack.cpp \

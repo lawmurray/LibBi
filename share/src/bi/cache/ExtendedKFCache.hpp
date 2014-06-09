@@ -9,7 +9,7 @@
 #define BI_CACHE_ExtendedKFCACHE_HPP
 
 #include "SimulatorCache.hpp"
-#include "../buffer/KalmanFilterNetCDFBuffer.hpp"
+#include "../netcdf/KalmanFilterNetCDFBuffer.hpp"
 
 namespace bi {
 /**
@@ -24,11 +24,39 @@ template<Location CL = ON_HOST, class IO1 = KalmanFilterNetCDFBuffer>
 class ExtendedKFCache: public SimulatorCache<CL,IO1> {
 public:
   /**
-   * Constructor.
-   *
-   * @param out output buffer.
+   * Pass-through constructor.
    */
-  ExtendedKFCache(IO1& out = NULL);
+  ExtendedKFCache();
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1>
+  ExtendedKFCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  ExtendedKFCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  ExtendedKFCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy.
@@ -126,11 +154,6 @@ public:
   void writeCross(const int k, const M1 C);
 
   /**
-   * @copydoc KalmanFilterNetCDFBuffer::writeLL()
-   */
-  void writeLL(const real ll);
-
-  /**
    * @copydoc AncestryCache::readPath()
    */
   template<class M1>
@@ -193,11 +216,6 @@ private:
   CacheObject<matrix_type> CCache;
 
   /**
-   * Output buffer.
-   */
-  IO1& out;
-
-  /**
    * Serialize.
    */
   template<class Archive>
@@ -218,15 +236,50 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(IO1& out) :
-    SimulatorCache<CL,IO1>(out), out(out) {
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache() {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1>
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1) :
+    SimulatorCache<CL,IO1>(o1) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2) :
+    SimulatorCache<CL,IO1>(o1, o2) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3) :
+    SimulatorCache<CL,IO1>(o1, o2, o3) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4,
+    T5& o5) :
+    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(const ExtendedKFCache<CL,IO1>& o) :
     SimulatorCache<CL,IO1>(o), mu1Cache(o.mu1Cache), U1Cache(o.U1Cache), mu2Cache(
-        o.mu2Cache), U2Cache(o.U2Cache), CCache(o.CCache), out(o.out) {
+        o.mu2Cache), U2Cache(o.U2Cache), CCache(o.CCache) {
   //
 }
 
@@ -234,7 +287,6 @@ template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>& bi::ExtendedKFCache<CL,IO1>::operator=(
     const ExtendedKFCache<CL,IO1>& o) {
   SimulatorCache<CL,IO1>::operator=(o);
-  out = o.out;
   mu1Cache = o.mu1Cache;
   U1Cache = o.U1Cache;
   mu2Cache = o.mu2Cache;
@@ -266,7 +318,7 @@ void bi::ExtendedKFCache<CL,IO1>::writePredictedMean(const int k,
     mu1Cache.get(k).resize(mu1.size(), false);
   }
   mu1Cache.set(k, mu1);
-  out.writePredictedMean(k, mu1);
+  IO1::writePredictedMean(k, mu1);
 }
 
 template<bi::Location CL, class IO1>
@@ -285,7 +337,7 @@ void bi::ExtendedKFCache<CL,IO1>::writePredictedStd(const int k,
     U1Cache.get(k).resize(U1.size1(), U1.size2(), false);
   }
   U1Cache.set(k, U1);
-  out.writePredictedStd(k, U1);
+  IO1::writePredictedStd(k, U1);
 }
 
 template<bi::Location CL, class IO1>
@@ -305,7 +357,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCorrectedMean(const int k,
     mu2Cache.get(k).resize(mu2.size(), false);
   }
   mu2Cache.set(k, mu2);
-  out.writeCorrectedMean(k, mu2);
+  IO1::writeCorrectedMean(k, mu2);
 }
 
 template<bi::Location CL, class IO1>
@@ -324,7 +376,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCorrectedStd(const int k,
     U2Cache.get(k).resize(U2.size1(), U2.size2(), false);
   }
   U2Cache.set(k, U2);
-  out.writeCorrectedStd(k, U2);
+  IO1::writeCorrectedStd(k, U2);
 }
 
 template<bi::Location CL, class IO1>
@@ -342,12 +394,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCross(const int k, const M1 C) {
     CCache.get(k).resize(C.size1(), C.size2(), false);
   }
   CCache.set(k, C);
-  out.writeCross(k, C);
-}
-
-template<bi::Location CL, class IO1>
-inline void bi::ExtendedKFCache<CL,IO1>::writeLL(const real ll) {
-  out.writeLL(ll);
+  IO1::writeCross(k, C);
 }
 
 template<bi::Location CL, class IO1>

@@ -9,7 +9,7 @@
 #define BI_CACHE_SMCCACHE_HPP
 
 #include "MCMCCache.hpp"
-#include "../buffer/SMCNetCDFBuffer.hpp"
+#include "../netcdf/SMCNetCDFBuffer.hpp"
 
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
@@ -27,15 +27,39 @@ template<Location CL = ON_HOST, class IO1 = SMCNetCDFBuffer>
 class SMCCache: public MCMCCache<CL,IO1> {
 public:
   /**
-   * Constructor.
-   *
-   * @tparam B Model type.
-   *
-   * @param m Model.
-   * @param out output buffer.
+   * Pass-through constructor.
    */
-  template<class B>
-  SMCCache(B& m, IO1& out = NULL);
+  SMCCache();
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1>
+  SMCCache(T1& o1);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2>
+  SMCCache(T1& o1, T2& o2);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3>
+  SMCCache(T1& o1, T2& o2, T3& o3);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4>
+  SMCCache(T1& o1, T2& o2, T3& o3, T4& o4);
+
+  /**
+   * Pass-through constructor.
+   */
+  template<class T1, class T2, class T3, class T4, class T5>
+  SMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
 
   /**
    * Shallow copy.
@@ -76,17 +100,7 @@ public:
   template<class V1>
   void writeLogEvidences(const V1 les);
 
-  /**
-   * Swap the contents of the cache with that of another.
-   */
-  void swap(SMCCache<CL,IO1>& o);
-
 private:
-  /**
-   * Output buffer.
-   */
-  IO1& out;
-
   /**
    * Serialize.
    */
@@ -108,15 +122,48 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-template<class B>
-bi::SMCCache<CL,IO1>::SMCCache(B& m, IO1& out) :
-    MCMCCache<CL,IO1>(m, out), out(out) {
+bi::SMCCache<CL,IO1>::SMCCache() {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1>
+bi::SMCCache<CL,IO1>::SMCCache(T1& o1) :
+    MCMCCache<CL,IO1>(o1) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2>
+bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2) :
+    MCMCCache<CL,IO1>(o1, o2) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3>
+bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3) :
+    MCMCCache<CL,IO1>(o1, o2, o3) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4>
+bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3, T4& o4) :
+    MCMCCache<CL,IO1>(o1, o2, o3, o4) {
+  //
+}
+
+template<bi::Location CL, class IO1>
+template<class T1, class T2, class T3, class T4, class T5>
+bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
+    MCMCCache<CL,IO1>(o1, o2, o3, o4, o5) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::SMCCache<CL,IO1>::SMCCache(const SMCCache<CL,IO1>& o) :
-    MCMCCache<CL,IO1>(o), out(o.out) {
+    MCMCCache<CL,IO1>(o) {
   //
 }
 
@@ -124,7 +171,6 @@ template<bi::Location CL, class IO1>
 bi::SMCCache<CL,IO1>& bi::SMCCache<CL,IO1>::operator=(
     const SMCCache<CL,IO1>& o) {
   MCMCCache<CL,IO1>::operator=(o);
-  out = o.out;
 
   return *this;
 }
@@ -132,41 +178,6 @@ bi::SMCCache<CL,IO1>& bi::SMCCache<CL,IO1>::operator=(
 template<bi::Location CL, class IO1>
 bi::SMCCache<CL,IO1>::~SMCCache() {
   //flush();
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::SMCCache<CL,IO1>::readLogWeights(V1 lws) const {
-  /* pre-condition */
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readLogWeights(lws);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::SMCCache<CL,IO1>::writeLogWeights(const V1 lws) {
-  out.writeLogWeights(lws);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::SMCCache<CL,IO1>::readLogEvidences(V1 les) const {
-  /* pre-condition */
-  BI_ASSERT(!(equals<IO1,OutputBuffer>::value));
-
-  out.readLogEvidences(les);
-}
-
-template<bi::Location CL, class IO1>
-template<class V1>
-void bi::SMCCache<CL,IO1>::writeLogEvidences(const V1 les) {
-  out.writeLogEvidences(les);
-}
-
-template<bi::Location CL, class IO1>
-void bi::SMCCache<CL,IO1>::swap(SMCCache<CL,IO1>& o) {
-  MCMCCache<CL,IO1>::swap(o);
 }
 
 template<bi::Location CL, class IO1>

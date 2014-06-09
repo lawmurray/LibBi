@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_MCMCNETCDFBUFFER_HPP
-#define BI_BUFFER_MCMCNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_MCMCNETCDFBUFFER_HPP
+#define BI_NETCDF_MCMCNETCDFBUFFER_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
 #include "../state/State.hpp"
@@ -16,10 +16,9 @@
 
 namespace bi {
 /**
- * Buffer for storing, reading and writing results of ParticleMCMC in
- * NetCDF file.
+ * Buffer for storing, reading and writing results of marginal MH in a NetCDF file.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class MCMCNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
@@ -45,17 +44,6 @@ public:
   MCMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
       const std::string& file, const FileMode mode = READ_ONLY,
       const SchemaMode schema = MULTI);
-
-  /**
-   * Write sample.
-   *
-   * @tparam S1 State type.
-   *
-   * @param c Sample index.
-   * @param s State.
-   */
-  template<class S1>
-  void write(const int c, const S1& s);
 
   /**
    * Read log-likelihoods.
@@ -114,18 +102,6 @@ protected:
    */
   int lpVar;
 };
-
-}
-
-template<class S1>
-void bi::MCMCNetCDFBuffer::write(const int c, const S1& s) {
-  if (c == 0) {
-    //writeTimes(0, s.getTimes());
-  }
-  writeLogLikelihood(c, s.logLikelihood1);
-  writeLogPrior(c, s.logPrior1);
-  writeParameter(c, s.theta1);
-  writePath(c, s.path);
 }
 
 template<class V1>
@@ -134,8 +110,7 @@ void bi::MCMCNetCDFBuffer::readLogLikelihoods(const size_t p, V1 ll) {
 }
 
 template<class V1>
-void bi::MCMCNetCDFBuffer::writeLogLikelihoods(const size_t p,
-    const V1 ll) {
+void bi::MCMCNetCDFBuffer::writeLogLikelihoods(const size_t p, const V1 ll) {
   writeRange(llVar, p, ll);
 }
 
@@ -145,8 +120,7 @@ void bi::MCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
 }
 
 template<class V1>
-void bi::MCMCNetCDFBuffer::writeLogPriors(const size_t p,
-    const V1 lp) {
+void bi::MCMCNetCDFBuffer::writeLogPriors(const size_t p, const V1 lp) {
   writeRange(lpVar, p, lp);
 }
 

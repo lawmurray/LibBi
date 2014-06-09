@@ -57,10 +57,13 @@
  *
  * @defgroup io I/O
  *
- *   @defgroup io_buffer Buffers
+ *   @defgroup io_buffer Generic buffers
  *   @ingroup io
  *
- *   @defgroup io_cache Caches
+ *   @defgroup io_netcdf NetCDF buffers
+ *   @ingroup io
+ *
+ *   @defgroup io_cache Memory buffers (caches)
  *   @ingroup io
  *
  * @defgroup math Math

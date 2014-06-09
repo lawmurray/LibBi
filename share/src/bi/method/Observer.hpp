@@ -9,7 +9,7 @@
 #define BI_METHOD_OBSERVER_HPP
 
 #include "../state/Mask.hpp"
-#include "../buffer/InputNetCDFBuffer.hpp"
+#include "../netcdf/InputNetCDFBuffer.hpp"
 #include "../cache/Cache2D.hpp"
 #include "../cache/CacheObject.hpp"
 

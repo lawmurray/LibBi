@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_BUFFER_PARTICLEFILTERNETCDFBUFFER_HPP
-#define BI_BUFFER_PARTICLEFILTERNETCDFBUFFER_HPP
+#ifndef BI_NETCDF_PARTICLEFILTERNETCDFBUFFER_HPP
+#define BI_NETCDF_PARTICLEFILTERNETCDFBUFFER_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
 
@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Buffer for storing, reading and writing results of a particle filter.
  *
- * @ingroup io_buffer
+ * @ingroup io_netcdf
  */
 class ParticleFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
@@ -42,10 +42,32 @@ public:
       const SchemaMode schema = DEFAULT);
 
   /**
-   * @copydoc OutputBuffer::write()
+   * Read dynamic state.
+   *
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param[out] X State.
+   * @param[out] as Ancestry.
    */
-  template<class S1>
-  void write(const size_t k, const real t, const S1& s);
+  template<class M1, class V1>
+  void readState(const size_t k, M1 X, V1 as);
+
+  /**
+   * Write dynamic state.
+   *
+   * @tparam B Model type.
+   * @tparam M1 Matrix type.
+   * @tparam V1 Vector type.
+   *
+   * @param k Time index.
+   * @param X State.
+   * @param as Ancestry.
+   */
+  template<class M1, class V1>
+  void writeState(const size_t k, const M1 X, const V1 as);
 
   /**
    * Read particle log-weights.
@@ -126,12 +148,17 @@ protected:
 };
 }
 
-template<class S1>
-void bi::ParticleFilterNetCDFBuffer::write(const size_t k, const real t,
-    const S1& s) {
-  SimulatorNetCDFBuffer::write(k, t, s);
-  writeLogWeights(k, s.lws);
-  writeAncestors(k, s.as);
+template<class M1, class V1>
+void bi::ParticleFilterNetCDFBuffer::readState(const size_t k, M1 X, V1 as) {
+  SimulatorNetCDFBuffer::readState(k, X);
+  readAncestors(k, as);
+}
+
+template<class M1, class V1>
+void bi::ParticleFilterNetCDFBuffer::writeState(const size_t k, const M1 X,
+    const V1 as) {
+  SimulatorNetCDFBuffer::writeState(k, X);
+  writeAncestors(k, as);
 }
 
 template<class V1>
