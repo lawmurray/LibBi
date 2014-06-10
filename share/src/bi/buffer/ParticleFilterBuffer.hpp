@@ -8,6 +8,8 @@
 #ifndef BI_BUFFER_PARTICLEFILTERBUFFER_HPP
 #define BI_BUFFER_PARTICLEFILTERBUFFER_HPP
 
+#include "buffer.hpp"
+
 namespace bi {
 /**
  * Abstract buffer for storing, reading and writing results of a filter.
@@ -20,39 +22,17 @@ template<class IO1>
 class ParticleFilterBuffer: public IO1 {
 public:
   /**
-   * Pass-through constructor.
+   * Constructor.
+   *
+   * @param m Model.
+   * @param file File name.
+   * @param mode File open mode.
+   * @param P Number of trajectories to hold in file.
+   * @param T Number of time points to hold in file.
    */
-  ParticleFilterBuffer();
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  ParticleFilterBuffer(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  ParticleFilterBuffer(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  ParticleFilterBuffer(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  ParticleFilterBuffer(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  ParticleFilterBuffer(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  ParticleFilterBuffer(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Write state.
@@ -69,44 +49,10 @@ public:
 }
 
 template<class IO1>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer() {
-  //
-}
-
-template<class IO1>
-template<class T1>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(T1& o1) :
-    IO1(o1) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(T1& o1, T2& o2) :
-    IO1(o1, o2) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(T1& o1, T2& o2, T3& o3) :
-    IO1(o1, o2, o3) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(T1& o1, T2& o2, T3& o3,
-    T4& o4) :
-    IO1(o1, o2, o3, o4) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(T1& o1, T2& o2, T3& o3,
-    T4& o4, T5& o5) :
-    IO1(o1, o2, o3, o4, o5) {
+bi::ParticleFilterBuffer<IO1>::ParticleFilterBuffer(const Model& m,
+    const std::string& file, const FileMode mode, const SchemaMode schema,
+    const size_t P, const size_t T) :
+    IO1(m, file, mode, schema, P, T) {
   //
 }
 

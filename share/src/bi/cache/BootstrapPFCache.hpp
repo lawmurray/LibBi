@@ -30,39 +30,11 @@ template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
 class BootstrapPFCache: public SimulatorCache<CL,IO1> {
 public:
   /**
-   * Pass-through constructor.
+   * @copydoc ParticleFilterBuffer::ParticleFilterBuffer()
    */
-  BootstrapPFCache();
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  BootstrapPFCache(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  BootstrapPFCache(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  BootstrapPFCache(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  BootstrapPFCache(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Shallow copy.
@@ -170,43 +142,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache() {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1) :
-    SimulatorCache<CL,IO1>(o1) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2) :
-    SimulatorCache<CL,IO1>(o1, o2) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3) :
-    SimulatorCache<CL,IO1>(o1, o2, o3) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(T1& o1, T2& o2, T3& o3, T4& o4,
-    T5& o5) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5) {
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(const Model& m,
+    const std::string& file, const FileMode mode, const SchemaMode schema,
+    const size_t P, const size_t T) :
+    SimulatorCache<CL,IO1>(m, file, mode, schema, P, T) {
   //
 }
 

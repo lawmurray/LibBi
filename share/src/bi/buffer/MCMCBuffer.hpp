@@ -8,6 +8,8 @@
 #ifndef BI_BUFFER_MCMCBUFFER_HPP
 #define BI_BUFFER_MCMCBUFFER_HPP
 
+#include "buffer.hpp"
+
 namespace bi {
 /**
  * Abstract buffer for storing, reading and writing results of marginal MH.
@@ -20,39 +22,17 @@ template<class IO1>
 class MCMCBuffer: public IO1 {
 public:
   /**
-   * Pass-through constructor.
+   * Constructor.
+   *
+   * @param m Model.
+   * @param file File name.
+   * @param mode File open mode.
+   * @param P Number of trajectories to hold in file.
+   * @param T Number of time points to hold in file.
    */
-  MCMCBuffer();
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  MCMCBuffer(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  MCMCBuffer(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  MCMCBuffer(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  MCMCBuffer(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  MCMCBuffer(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  MCMCBuffer(const Model& m, const std::string& file, const FileMode mode =
+      READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
+      const size_t T = 0);
 
   /**
    * Write sample.
@@ -68,48 +48,16 @@ public:
 }
 
 template<class IO1>
-bi::MCMCBuffer<IO1>::MCMCBuffer() {
-  //
-}
-
-template<class IO1>
-template<class T1>
-bi::MCMCBuffer<IO1>::MCMCBuffer(T1& o1) :
-    IO1(o1) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2>
-bi::MCMCBuffer<IO1>::MCMCBuffer(T1& o1, T2& o2) :
-    IO1(o1, o2) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3>
-bi::MCMCBuffer<IO1>::MCMCBuffer(T1& o1, T2& o2, T3& o3) :
-    IO1(o1, o2, o3) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::MCMCBuffer<IO1>::MCMCBuffer(T1& o1, T2& o2, T3& o3, T4& o4) :
-    IO1(o1, o2, o3, o4) {
-  //
-}
-
-template<class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::MCMCBuffer<IO1>::MCMCBuffer(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
-    IO1(o1, o2, o3, o4, o5) {
+bi::MCMCBuffer<IO1>::MCMCBuffer(const Model& m, const std::string& file,
+    const FileMode mode, const SchemaMode schema, const size_t P,
+    const size_t T) :
+    IO1(m, file, mode, schema, P, T) {
   //
 }
 
 template<class IO1>
 template<class S1>
-void bi::MCMCBuffer<IO1>::write(const size_t k, const real t, const S1& s) {
+void bi::MCMCBuffer<IO1>::write(const int c, const S1& s) {
   if (c == 0) {
     //IO1::writeTimes(0, s.getTimes());
   }

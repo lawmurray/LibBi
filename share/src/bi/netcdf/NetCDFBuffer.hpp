@@ -8,6 +8,7 @@
 #ifndef BI_NETCDF_NETCDFBUFFER_HPP
 #define BI_NETCDF_NETCDFBUFFER_HPP
 
+#include "../buffer/buffer.hpp"
 #include "../model/Model.hpp"
 #include "../method/misc.hpp"
 #include "../math/scalar.hpp"
@@ -22,33 +23,6 @@ namespace bi {
  */
 class NetCDFBuffer {
 public:
-  /**
-   * File open flags.
-   */
-  enum FileMode {
-    /**
-     * Open file read-only.
-     */
-    READ_ONLY,
-
-    /**
-     * Open file for reading and writing,
-     */
-    WRITE,
-
-    /**
-     * Open file for reading and writing, replacing any existing file of the
-     * same name.
-     */
-    REPLACE,
-
-    /**
-     * Open file for reading and writing, fails if any existing file of the
-     * same name
-     */
-    NEW
-  };
-
   /**
    * Constructor.
    *

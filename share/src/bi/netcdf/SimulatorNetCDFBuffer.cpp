@@ -10,20 +10,8 @@
 #include "../math/view.hpp"
 
 bi::SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema) :
-    NetCDFBuffer(file, mode), m(m), schema(schema), nsDim(-1), nrDim(-1), npDim(
-        -1), nrpDim(-1), tVar(-1), startVar(-1), lenVar(-1), vars(
-        NUM_VAR_TYPES) {
-  if (mode == NEW || mode == REPLACE) {
-    create();
-  } else {
-    map();
-  }
-}
-
-bi::SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m,
-    const size_t P, const size_t T, const std::string& file,
-    const FileMode mode, const SchemaMode schema) :
+    const std::string& file, const FileMode mode, const SchemaMode schema,
+    const size_t P, const size_t T) :
     NetCDFBuffer(file, mode), m(m), schema(schema), nsDim(-1), nrDim(-1), npDim(
         -1), nrpDim(-1), tVar(-1), startVar(-1), lenVar(-1), vars(
         NUM_VAR_TYPES) {
@@ -86,7 +74,8 @@ void bi::SimulatorNetCDFBuffer::create(const size_t P, const size_t T) {
     type = static_cast<VarType>(i);
     vars[type].resize(m.getNumVars(type), -1);
 
-    if (((type == D_VAR || type == R_VAR) && schema != PARAM_ONLY) || type == P_VAR) {
+    if (((type == D_VAR || type == R_VAR) && schema != PARAM_ONLY)
+        || type == P_VAR) {
       for (id = 0; id < (int)vars[type].size(); ++id) {
         var = m.getVar(type, id);
         if (var->hasOutput()) {
@@ -157,7 +146,8 @@ void bi::SimulatorNetCDFBuffer::map(const size_t P, const size_t T) {
   /* other variables */
   for (i = 0; i < NUM_VAR_TYPES; ++i) {
     type = static_cast<VarType>(i);
-    if (((type == D_VAR || type == R_VAR) && schema != PARAM_ONLY) || type == P_VAR) {
+    if (((type == D_VAR || type == R_VAR) && schema != PARAM_ONLY)
+        || type == P_VAR) {
       vars[type].resize(m.getNumVars(type), -1);
       for (id = 0; id < m.getNumVars(type); ++id) {
         var = m.getVar(type, id);
@@ -228,7 +218,8 @@ int bi::SimulatorNetCDFBuffer::mapVar(Var* var) {
   for (j = var->getNumDims() - 1; j >= 0; --j, ++i) {
     dim = var->getDim(j);
     BI_ERROR_MSG(
-        i < static_cast<int>(dimids.size()) && dimids[i] == nc_inq_dimid(ncid, dim->getName()),
+        i < static_cast<int>(dimids.size())
+            && dimids[i] == nc_inq_dimid(ncid, dim->getName()),
         "Dimension " << i << " of variable " << var->getOutputName() << " should be " << dim->getName() << ", in file " << file);
     ++i;
   }

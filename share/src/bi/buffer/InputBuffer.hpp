@@ -8,6 +8,7 @@
 #ifndef BI_BUFFER_INPUTBUFFER_HPP
 #define BI_BUFFER_INPUTBUFFER_HPP
 
+#include "buffer.hpp"
 #include "../state/Mask.hpp"
 
 #include <vector>

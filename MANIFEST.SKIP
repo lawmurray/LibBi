@@ -3,6 +3,7 @@
 \.git
 \.Bi
 \.LibBi
+\.Test
 \.#MANIFEST.SKIP
 \.includepath
 \.project

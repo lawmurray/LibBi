@@ -28,22 +28,12 @@ public:
    * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   */
-  MCMCNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY, const SchemaMode schema = MULTI);
-
-  /**
-   * Constructor.
-   *
-   * @param m Model.
    * @param P Number of samples in file.
    * @param T Number of times in file.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
    */
-  MCMCNetCDFBuffer(const Model& m, const size_t P, const size_t T,
+  MCMCNetCDFBuffer(const Model& m,
       const std::string& file, const FileMode mode = READ_ONLY,
-      const SchemaMode schema = MULTI);
+      const SchemaMode schema = MULTI, const size_t P = 0, const size_t T = 0);
 
   /**
    * Read log-likelihoods.

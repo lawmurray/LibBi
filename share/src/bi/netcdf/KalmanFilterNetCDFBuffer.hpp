@@ -21,27 +21,11 @@ namespace bi {
 class KalmanFilterNetCDFBuffer: public SimulatorNetCDFBuffer {
 public:
   /**
-   * Constructor.
-   *
-   * @param m Model.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
+   * @copydoc KalmanFilterBuffer::KalmanFilterBuffer()
    */
   KalmanFilterNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT);
-
-  /**
-   * Constructor.
-   *
-   * @param m Model.
-   * @param P Number of trajectories to hold in file.
-   * @param T Number of time points to hold in file.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
-   */
-  KalmanFilterNetCDFBuffer(const Model& m, const size_t P, const size_t T,
-      const std::string& file, const FileMode mode = READ_ONLY,
-      const SchemaMode schema = DEFAULT);
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Read predicted mean.
@@ -223,8 +207,7 @@ protected:
 #include "../math/temp_matrix.hpp"
 
 template<class V1>
-void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const size_t k,
-    V1 mu1) {
+void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const size_t k, V1 mu1) {
   readVector(mu1Var, k, mu1);
 }
 
@@ -235,8 +218,7 @@ void bi::KalmanFilterNetCDFBuffer::writePredictedMean(const size_t k,
 }
 
 template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readPredictedStd(const size_t k,
-    M1 U1) {
+void bi::KalmanFilterNetCDFBuffer::readPredictedStd(const size_t k, M1 U1) {
   readMatrix(U1Var, k, U1);
 }
 
@@ -247,8 +229,7 @@ void bi::KalmanFilterNetCDFBuffer::writePredictedStd(const size_t k,
 }
 
 template<class V1>
-void bi::KalmanFilterNetCDFBuffer::readCorrectedMean(const size_t k,
-    V1 mu2) {
+void bi::KalmanFilterNetCDFBuffer::readCorrectedMean(const size_t k, V1 mu2) {
   readVector(mu2Var, k, mu2);
 }
 
@@ -259,8 +240,7 @@ void bi::KalmanFilterNetCDFBuffer::writeCorrectedMean(const size_t k,
 }
 
 template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readCorrectedStd(const size_t k,
-    M1 U2) {
+void bi::KalmanFilterNetCDFBuffer::readCorrectedStd(const size_t k, M1 U2) {
   readMatrix(U2Var, k, U2);
 }
 

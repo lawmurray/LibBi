@@ -26,34 +26,11 @@ template<Location CL = ON_HOST, class IO1 = MCMCNetCDFBuffer>
 class MCMCCache: public SimulatorCache<CL,IO1> {
 public:
   /**
-   * Pass-through constructor.
+   * @copydoc MCMCBuffer::MCMCBuffer()
    */
-  template<class T1>
-  MCMCCache(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  MCMCCache(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  MCMCCache(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  MCMCCache(const Model& m, const std::string& file, const FileMode mode =
+      READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
+      const size_t T = 0);
 
   /**
    * Shallow copy constructor.
@@ -237,44 +214,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-template<class T1>
-bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1) :
-    SimulatorCache<CL,IO1>(o1), llCache(NUM_SAMPLES), lpCache(NUM_SAMPLES), parameterCache(
-        NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(0), len(0) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2>
-bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2) :
-    SimulatorCache<CL,IO1>(o1, o2), llCache(NUM_SAMPLES), lpCache(
-        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
-        0), len(0) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3>
-bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3) :
-    SimulatorCache<CL,IO1>(o1, o2, o3), llCache(NUM_SAMPLES), lpCache(
-        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
-        0), len(0) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4), llCache(NUM_SAMPLES), lpCache(
-        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
-        0), len(0) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::MCMCCache<CL,IO1>::MCMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5), llCache(NUM_SAMPLES), lpCache(
+bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const std::string& file,
+    const FileMode mode, const SchemaMode schema, const size_t P,
+    const size_t T) :
+    SimulatorCache<CL,IO1>(m, file, mode, schema, P, T), llCache(NUM_SAMPLES), lpCache(
         NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
         0), len(0) {
   //
@@ -417,7 +360,8 @@ void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   }
   for (int t = 0; t < X.size2(); ++t) {
     if (pathCache[t] == NULL) {
-      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES, this->m.getDynSize());
+      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES,
+          this->m.getDynSize());
     }
     pathCache[t]->set(p - first, column(X, t));
   }
@@ -493,7 +437,8 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
 
   for (id = 0; id < this->m.getNumVars(type); ++id) {
     var = this->m.getVar(type, id);
-    start = var->getStart() + ((type == D_VAR) ? this->m.getNetSize(R_VAR) : 0);
+    start = var->getStart()
+        + ((type == D_VAR) ? this->m.getNetSize(R_VAR) : 0);
     size = var->getSize();
 
     for (k = 0; k < int(pathCache.size()); ++k) {

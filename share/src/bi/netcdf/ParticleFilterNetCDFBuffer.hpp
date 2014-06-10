@@ -24,22 +24,12 @@ public:
    * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   */
-  ParticleFilterNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT);
-
-  /**
-   * Constructor.
-   *
-   * @param m Model.
    * @param P Number of samples in file.
    * @param T Number of times in file.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
    */
-  ParticleFilterNetCDFBuffer(const Model& m, const size_t P, const size_t T,
-      const std::string& file, const FileMode mode = READ_ONLY,
-      const SchemaMode schema = DEFAULT);
+  ParticleFilterNetCDFBuffer(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Read dynamic state.

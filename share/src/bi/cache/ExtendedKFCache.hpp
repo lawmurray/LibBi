@@ -24,39 +24,11 @@ template<Location CL = ON_HOST, class IO1 = KalmanFilterNetCDFBuffer>
 class ExtendedKFCache: public SimulatorCache<CL,IO1> {
 public:
   /**
-   * Pass-through constructor.
+   * @copydoc KalmanFilterBuffer::KalmanFilterBuffer()
    */
-  ExtendedKFCache();
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  ExtendedKFCache(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  ExtendedKFCache(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  ExtendedKFCache(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  ExtendedKFCache(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Shallow copy.
@@ -236,43 +208,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache() {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1) :
-    SimulatorCache<CL,IO1>(o1) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2) :
-    SimulatorCache<CL,IO1>(o1, o2) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3) :
-    SimulatorCache<CL,IO1>(o1, o2, o3) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(T1& o1, T2& o2, T3& o3, T4& o4,
-    T5& o5) :
-    SimulatorCache<CL,IO1>(o1, o2, o3, o4, o5) {
+bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(const Model& m,
+    const std::string& file, const FileMode mode, const SchemaMode schema,
+    const size_t P, const size_t T) :
+    SimulatorCache<CL,IO1>(m, file, mode, schema, P, T) {
   //
 }
 

@@ -27,39 +27,11 @@ template<Location CL = ON_HOST, class IO1 = SMCNetCDFBuffer>
 class SMCCache: public MCMCCache<CL,IO1> {
 public:
   /**
-   * Pass-through constructor.
+   * @copydoc SMCBuffer::SMCBuffer()
    */
-  SMCCache();
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  SMCCache(T1& o1);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  SMCCache(T1& o1, T2& o2);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  SMCCache(T1& o1, T2& o2, T3& o3);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  SMCCache(T1& o1, T2& o2, T3& o3, T4& o4);
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  SMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5);
+  SMCCache(const Model& m, const std::string& file, const FileMode mode =
+      READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
+      const size_t T = 0);
 
   /**
    * Shallow copy.
@@ -122,42 +94,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::SMCCache<CL,IO1>::SMCCache() {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1>
-bi::SMCCache<CL,IO1>::SMCCache(T1& o1) :
-    MCMCCache<CL,IO1>(o1) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2>
-bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2) :
-    MCMCCache<CL,IO1>(o1, o2) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3>
-bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3) :
-    MCMCCache<CL,IO1>(o1, o2, o3) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4>
-bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3, T4& o4) :
-    MCMCCache<CL,IO1>(o1, o2, o3, o4) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-template<class T1, class T2, class T3, class T4, class T5>
-bi::SMCCache<CL,IO1>::SMCCache(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
-    MCMCCache<CL,IO1>(o1, o2, o3, o4, o5) {
+bi::SMCCache<CL,IO1>::SMCCache(const Model& m, const std::string& file,
+    const FileMode mode, const SchemaMode schema, const size_t P,
+    const size_t T) :
+    MCMCCache<CL,IO1>(m, file, mode, schema, P, T) {
   //
 }
 

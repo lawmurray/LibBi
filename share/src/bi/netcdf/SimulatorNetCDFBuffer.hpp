@@ -23,52 +23,17 @@ namespace bi {
 class SimulatorNetCDFBuffer: public NetCDFBuffer {
 public:
   /**
-   * Schema flags.
-   */
-  enum SchemaMode {
-    /**
-     * Default schema.
-     */
-    DEFAULT,
-
-    /**
-     * Have multiple parameter samples.
-     */
-    MULTI,
-
-    /**
-     * Multiple parameter samples, but parameters only.
-     */
-    PARAM_ONLY,
-
-    /**
-     * Use flexi schema.
-     */
-    FLEXI
-  };
-
-  /**
    * Constructor.
    *
    * @param m Model.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   */
-  SimulatorNetCDFBuffer(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT);
-
-  /**
-   * Constructor.
-   *
-   * @param m Model.
    * @param P Number of samples to hold in file.
    * @param T Number of times to hold in file.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
    */
-  SimulatorNetCDFBuffer(const Model& m, const size_t P, const size_t T,
-      const std::string& file, const FileMode mode = READ_ONLY,
-      const SchemaMode schema = DEFAULT);
+  SimulatorNetCDFBuffer(const Model& m, const std::string& file,
+      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
+      const size_t P = 0, const size_t T = 0);
 
   /**
    * Read time.

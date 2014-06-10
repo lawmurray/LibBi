@@ -151,14 +151,14 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('output-file') != '' %]
     [% IF client.get_named_arg('target') == 'posterior' %]
       [% IF client.get_named_arg('sampler') == 'sir' || client.get_named_arg('sampler') == 'srs' %]
-      SMCNetCDFBuffer bufOutput(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+      SMCNetCDFBuffer bufOutput(m, append_rank(OUTPUT_FILE), REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
       SMCCache<LOCATION,SMCNetCDFBuffer> out(m, bufOutput);
       [% ELSE %]
-      MCMCNetCDFBuffer bufOutput(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
+      MCMCNetCDFBuffer bufOutput(m, append_rank(OUTPUT_FILE), REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
       MCMCCache<LOCATION,MCMCNetCDFBuffer> out(m, bufOutput);
       [% END %]
     [% ELSE %]
-    SimulatorBuffer<SimulatorCache<LOCATION,SimulatorNetCDFBuffer> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
+    SimulatorBuffer<SimulatorCache<LOCATION,SimulatorNetCDFBuffer> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
     [% END %]
   [% ELSE %]
   OutputBuffer out;
