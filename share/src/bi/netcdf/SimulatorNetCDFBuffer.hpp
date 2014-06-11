@@ -282,6 +282,21 @@ protected:
   int lenVar;
 
   /**
+   * Last time index written (for FLEXI schema).
+   */
+  size_t k;
+
+  /**
+   * Last starting index (for FLEXI schema).
+   */
+  long start;
+
+  /**
+   * Last length (for FLEXI schema).
+   */
+  long len;
+
+  /**
    * Model dimensions.
    */
   std::vector<int> dims;
@@ -334,11 +349,16 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
   int id, start, size;
 
   if (schema == FLEXI) {
-    /* write offset and length */
-    long offset = (k == 0) ? 0 : readStart(k - 1) + readLen(k - 1);
-    long len = p + X.size1();
-    writeStart(k, offset);
-    writeLen(k, len);
+    /* write starting index and length */
+    BI_ERROR_MSG(this->k == k - 1, "writes must be in time order with flexible schemas");
+    BI_ERROR(p == 0);
+
+    this->k = k;
+    this->start += this->len;
+    this->len = X.size1();
+
+    writeStart(k, this->start);
+    writeLen(k, this->len);
   }
 
   for (id = 0; id < m.getNumVars(type); ++id) {
@@ -384,8 +404,8 @@ void bi::SimulatorNetCDFBuffer::writeStateVar(const VarType type,
       ++j;
     }
     if (j < static_cast<int>(dimids.size()) && dimids[j] == nrpDim) {
-      offsets[j] = readStart(k);
-      counts[j] = readLen(k);
+      offsets[j] = this->start;
+      counts[j] = this->len;
     }
 
     if (M1::on_device || !X.contiguous()) {

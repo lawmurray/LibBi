@@ -8,6 +8,10 @@
 #ifndef BI_NULL_SIMULATORNULLBUFFER_HPP
 #define BI_NULL_SIMULATORNULLBUFFER_HPP
 
+#include "../model/Model.hpp"
+#include "../buffer/buffer.hpp"
+#include "../math/scalar.hpp"
+
 namespace bi {
 /**
  * Null output buffer for simulation.

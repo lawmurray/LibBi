@@ -8,6 +8,9 @@
 #ifndef BI_NULL_INPUTNULLBUFFER_HPP
 #define BI_NULL_INPUTNULLBUFFER_HPP
 
+#include "../model/Model.hpp"
+#include "../buffer/buffer.hpp"
+#include "../math/scalar.hpp"
 #include "../state/Mask.hpp"
 
 namespace bi {

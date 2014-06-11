@@ -14,7 +14,6 @@ int bi::nc_open(const std::string& path, int mode) {
   int ncid, status;
   status = ::nc_open(path.c_str(), mode, &ncid);
   BI_ERROR_MSG(status == NC_NOERR, "Could not open " << path);
-
   return ncid;
 }
 

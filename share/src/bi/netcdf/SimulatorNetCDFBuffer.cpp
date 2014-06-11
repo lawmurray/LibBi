@@ -13,8 +13,8 @@ bi::SimulatorNetCDFBuffer::SimulatorNetCDFBuffer(const Model& m,
     const std::string& file, const FileMode mode, const SchemaMode schema,
     const size_t P, const size_t T) :
     NetCDFBuffer(file, mode), m(m), schema(schema), nsDim(-1), nrDim(-1), npDim(
-        -1), nrpDim(-1), tVar(-1), startVar(-1), lenVar(-1), vars(
-        NUM_VAR_TYPES) {
+        -1), nrpDim(-1), tVar(-1), startVar(-1), k(-1), start(0), len(0), lenVar(
+        -1), vars(NUM_VAR_TYPES) {
   if (mode == NEW || mode == REPLACE) {
     create(P, T);
   } else {

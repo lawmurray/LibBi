@@ -22,7 +22,7 @@ namespace bi {
  *
  * @ingroup io_netcdf
  */
-class InputNetCDFBuffer: public InputBuffer, public NetCDFBuffer {
+class InputNetCDFBuffer: public NetCDFBuffer {
 public:
   /**
    * Constructor.

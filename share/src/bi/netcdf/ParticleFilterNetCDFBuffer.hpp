@@ -113,10 +113,8 @@ template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const size_t k,
     const V1 lws) {
   if (schema == FLEXI) {
-    size_t start = readStart(k);
-    size_t len = readLen(k);
-    BI_ERROR(lws.size() == len);
-    writeRange(lwVar, start, lws);
+    BI_ERROR(lws.size() == this->len);
+    writeRange(lwVar, this->start, lws);
   } else {
     writeVector(lwVar, k, lws);
   }
@@ -126,10 +124,8 @@ template<class V1>
 void bi::ParticleFilterNetCDFBuffer::writeAncestors(const size_t k,
     const V1 as) {
   if (schema == FLEXI) {
-    size_t start = readStart(k);
-    size_t len = readLen(k);
-    BI_ERROR(as.size() == len);
-    writeRange(aVar, start, as);
+    BI_ERROR(as.size() == this->len);
+    writeRange(aVar, this->start, as);
   } else {
     writeVector(aVar, k, as);
   }
