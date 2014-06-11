@@ -76,34 +76,34 @@ public:
 }
 
 inline real bi::InputNullBuffer::getTime(const size_t k) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  BI_ERROR_MSG(false, "time index outside valid range");
 }
 
 template<class T1>
 inline void bi::InputNullBuffer::readTimes(std::vector<T1>& ts) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  ts.clear();
 }
 
 template<class M1>
 void bi::InputNullBuffer::read(const size_t k, const VarType type,
     const Mask<ON_HOST>& mask, M1 X) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  BI_ERROR_MSG(false, "time index outside valid range");
 }
 
 template<class M1>
 void bi::InputNullBuffer::read(const size_t k, const VarType type, M1 X) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  BI_ERROR_MSG(false, "time index outside valid range");
 }
 
 template<class M1>
 void bi::InputNullBuffer::read0(const VarType type, const Mask<ON_HOST>& mask,
     M1 X) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  //
 }
 
 template<class M1>
 void bi::InputNullBuffer::read0(const VarType type, M1 X) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  //
 }
 
 #endif

@@ -92,7 +92,8 @@ public:
    */
   void flush();
 
-private:
+public:
+  // hack that these two are public... used directly in MCMCBuffer::write()
   /**
    * Time cache.
    */
@@ -103,6 +104,7 @@ private:
    */
   int len;
 
+private:
   /**
    * Serialize.
    */

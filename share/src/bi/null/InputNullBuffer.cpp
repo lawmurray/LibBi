@@ -14,10 +14,10 @@ bi::InputNullBuffer::InputNullBuffer(const Model& m,
 
 void bi::InputNullBuffer::readMask(const size_t k, const VarType type,
     Mask<ON_HOST>& mask) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  BI_ERROR_MSG(false, "time index outside valid range");
 }
 
 void bi::InputNullBuffer::readMask0(const VarType type,
     Mask<ON_HOST>& mask) {
-  BI_ERROR_MSG(false, "can't read from null buffer");
+  mask.clear();
 }
