@@ -204,9 +204,9 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 # Checks for header files
 AC_HEADER_ASSERT
 
-AC_CHECK_HEADER([omp.h], [], [], [-])
+AC_CHECK_HEADERS([omp.h], [], [], [-])
 
-AC_CHECK_HEADER([netcdf.h], [], \
+AC_CHECK_HEADERS([netcdf.h], [], \
     AC_MSG_ERROR([required NetCDF header not found]), [-])
 
 AC_CHECK_HEADERS([mkl_cblas.h cblas.h gsl/gsl_cblas.h], [], [], [-])
@@ -255,21 +255,21 @@ AC_CHECK_HEADERS([\
     thrust/tuple.h \
     ], [], AC_MSG_ERROR([required Thrust header not found]), [-])
 
-AC_CHECK_HEADER([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not found]), [-])
+AC_CHECK_HEADERS([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not found]), [-])
 
 if test x$cuda = xtrue; then
-    AC_CHECK_HEADER([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (only required with --enable-cuda)]), [-])
-    AC_CHECK_HEADER([curand.h], [], AC_MSG_ERROR([CURAND header not found (only required with --enable-cuda)]), [-])
-    AC_CHECK_HEADER([magma.h], [], [], [-])  # now optional
+    AC_CHECK_HEADERS([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (only required with --enable-cuda)]), [-])
+    AC_CHECK_HEADERS([curand.h], [], AC_MSG_ERROR([CURAND header not found (only required with --enable-cuda)]), [-])
+    AC_CHECK_HEADERS([magma.h], [], [], [-])  # now optional
 fi
 
 if test x$mpi = xtrue; then
-    AC_CHECK_HEADER([mpi.h], [], [AC_MSG_ERROR([MPI header not found (only required with --enable-mpi)])], [])
-	AC_CHECK_HEADER([boost/mpi.hpp], [], [AC_MSG_ERROR([Boost.MPI header not found (only required with --enable-mpi)])], [])
+    AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([MPI header not found (only required with --enable-mpi)])], [])
+	AC_CHECK_HEADERS([boost/mpi.hpp], [], [AC_MSG_ERROR([Boost.MPI header not found (only required with --enable-mpi)])], [])
 fi
 
 if test x$gperftools = xtrue; then
-    AC_CHECK_HEADER([google/profiler.h], [], [AC_MSG_ERROR([Gperftools header not found (only required with --enable-gperftools)])], [])
+    AC_CHECK_HEADERS([google/profiler.h], [], [AC_MSG_ERROR([Gperftools header not found (only required with --enable-gperftools)])], [])
 fi
 
 # Defines
