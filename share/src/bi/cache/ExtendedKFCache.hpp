@@ -23,6 +23,8 @@ namespace bi {
 template<Location CL = ON_HOST, class IO1 = KalmanFilterNetCDFBuffer>
 class ExtendedKFCache: public SimulatorCache<CL,IO1> {
 public:
+  typedef SimulatorCache<CL,IO1> parent_type;
+
   /**
    * @copydoc KalmanFilterBuffer::KalmanFilterBuffer()
    */
@@ -211,13 +213,13 @@ template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(const Model& m,
     const std::string& file, const FileMode mode, const SchemaMode schema,
     const size_t P, const size_t T) :
-    SimulatorCache<CL,IO1>(m, file, mode, schema, P, T) {
+    parent_type(m, file, mode, schema, P, T) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(const ExtendedKFCache<CL,IO1>& o) :
-    SimulatorCache<CL,IO1>(o), mu1Cache(o.mu1Cache), U1Cache(o.U1Cache), mu2Cache(
+    parent_type(o), mu1Cache(o.mu1Cache), U1Cache(o.U1Cache), mu2Cache(
         o.mu2Cache), U2Cache(o.U2Cache), CCache(o.CCache) {
   //
 }
@@ -225,7 +227,7 @@ bi::ExtendedKFCache<CL,IO1>::ExtendedKFCache(const ExtendedKFCache<CL,IO1>& o) :
 template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>& bi::ExtendedKFCache<CL,IO1>::operator=(
     const ExtendedKFCache<CL,IO1>& o) {
-  SimulatorCache<CL,IO1>::operator=(o);
+  parent_type::operator=(o);
   mu1Cache = o.mu1Cache;
   U1Cache = o.U1Cache;
   mu2Cache = o.mu2Cache;
@@ -257,7 +259,7 @@ void bi::ExtendedKFCache<CL,IO1>::writePredictedMean(const int k,
     mu1Cache.get(k).resize(mu1.size(), false);
   }
   mu1Cache.set(k, mu1);
-  IO1::writePredictedMean(k, mu1);
+  parent_type::writePredictedMean(k, mu1);
 }
 
 template<bi::Location CL, class IO1>
@@ -276,7 +278,7 @@ void bi::ExtendedKFCache<CL,IO1>::writePredictedStd(const int k,
     U1Cache.get(k).resize(U1.size1(), U1.size2(), false);
   }
   U1Cache.set(k, U1);
-  IO1::writePredictedStd(k, U1);
+  parent_type::writePredictedStd(k, U1);
 }
 
 template<bi::Location CL, class IO1>
@@ -296,7 +298,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCorrectedMean(const int k,
     mu2Cache.get(k).resize(mu2.size(), false);
   }
   mu2Cache.set(k, mu2);
-  IO1::writeCorrectedMean(k, mu2);
+  parent_type::writeCorrectedMean(k, mu2);
 }
 
 template<bi::Location CL, class IO1>
@@ -315,7 +317,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCorrectedStd(const int k,
     U2Cache.get(k).resize(U2.size1(), U2.size2(), false);
   }
   U2Cache.set(k, U2);
-  IO1::writeCorrectedStd(k, U2);
+  parent_type::writeCorrectedStd(k, U2);
 }
 
 template<bi::Location CL, class IO1>
@@ -333,7 +335,7 @@ void bi::ExtendedKFCache<CL,IO1>::writeCross(const int k, const M1 C) {
     CCache.get(k).resize(C.size1(), C.size2(), false);
   }
   CCache.set(k, C);
-  IO1::writeCross(k, C);
+  parent_type::writeCross(k, C);
 }
 
 template<bi::Location CL, class IO1>
@@ -344,22 +346,37 @@ void bi::ExtendedKFCache<CL,IO1>::readPath(const int p, M1 X) const {
 
 template<bi::Location CL, class IO1>
 void bi::ExtendedKFCache<CL,IO1>::swap(ExtendedKFCache<CL,IO1>& o) {
-  SimulatorCache<CL,IO1>::swap(o);
+  parent_type::swap(o);
+  mu1Cache.swap(o.mu1Cache);
+  U1Cache.swap(o.U1Cache);
+  mu2Cache.swap(o.mu2Cache);
+  U2Cache.swap(o.U2Cache);
+  CCache.swap(o.CCache);
 }
 
 template<bi::Location CL, class IO1>
 void bi::ExtendedKFCache<CL,IO1>::clear() {
-  SimulatorCache<CL,IO1>::clear();
+  parent_type::clear();
+  mu1Cache.clear();
+  U1Cache.clear();
+  mu2Cache.clear();
+  U2Cache.clear();
+  CCache.clear();
 }
 
 template<bi::Location CL, class IO1>
 void bi::ExtendedKFCache<CL,IO1>::empty() {
-  SimulatorCache<CL,IO1>::empty();
+  parent_type::empty();
+  mu1Cache.empty();
+  U1Cache.empty();
+  mu2Cache.empty();
+  U2Cache.empty();
+  CCache.empty();
 }
 
 template<bi::Location CL, class IO1>
 void bi::ExtendedKFCache<CL,IO1>::flush() {
-  SimulatorCache<CL,IO1>::flush();
+  parent_type::flush();
   mu1Cache.flush();
   U1Cache.flush();
   mu2Cache.flush();
@@ -371,7 +388,7 @@ template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::ExtendedKFCache<CL,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & mu1Cache;
   ar & U1Cache;
   ar & mu2Cache;
@@ -382,7 +399,7 @@ void bi::ExtendedKFCache<CL,IO1>::save(Archive& ar,
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::ExtendedKFCache<CL,IO1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & mu1Cache;
   ar & U1Cache;
   ar & mu2Cache;

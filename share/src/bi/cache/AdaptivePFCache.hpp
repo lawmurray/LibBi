@@ -28,6 +28,8 @@ namespace bi {
 template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
 class AdaptivePFCache: public BootstrapPFCache<CL,IO1> {
 public:
+  typedef BootstrapPFCache<CL,IO1> parent_type;
+
   /**
    * @copydoc ParticleFilterBuffer::ParticleFilterBuffer()
    */
@@ -164,22 +166,22 @@ template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const Model& m,
     const std::string& file, const FileMode mode, const SchemaMode schema,
     const size_t P, const size_t T) :
-    BootstrapPFCache<CL,IO1>(m, file, mode, schema, P, T), base(-1), P(0) {
+    parent_type(m, file, mode, schema, P, T), base(-1), P(0) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const AdaptivePFCache<CL,IO1>& o) :
-    BootstrapPFCache<CL,IO1>(o), timeCache(o.timeCache), particleCache(
-        o.particleCache), logWeightCache(o.logWeightCache), ancestorCache(
-        o.ancestorCache), base(o.base), P(o.P) {
+    parent_type(o), timeCache(o.timeCache), particleCache(o.particleCache), logWeightCache(
+        o.logWeightCache), ancestorCache(o.ancestorCache), base(o.base), P(
+        o.P) {
   //
 }
 
 template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>& bi::AdaptivePFCache<CL,IO1>::operator=(
     const AdaptivePFCache<CL,IO1>& o) {
-  BootstrapPFCache<CL,IO1>::operator=(o);
+  parent_type::operator=(o);
   timeCache = o.timeCache;
   particleCache = o.particleCache;
   logWeightCache = o.logWeightCache;
@@ -258,11 +260,10 @@ template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
   int k = 0;
   while (timeCache.isValid(k)) {
-    BootstrapPFCache<CL,IO1>::writeTime(base + k, timeCache.get(k));
-    BootstrapPFCache<CL,IO1>::writeState(base + k,
-        rows(particleCache.get(k), 0, P),
+    parent_type::writeTime(base + k, timeCache.get(k));
+    parent_type::writeState(base + k, rows(particleCache.get(k), 0, P),
         subrange(ancestorCache.get(k), 0, P));
-    BootstrapPFCache<CL,IO1>::writeLogWeights(base + k,
+    parent_type::writeLogWeights(base + k,
         subrange(logWeightCache.get(k), 0, P));
     ++k;
   }
@@ -277,7 +278,7 @@ void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
 
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::swap(AdaptivePFCache<CL,IO1>& o) {
-  BootstrapPFCache<CL,IO1>::swap(o);
+  parent_type::swap(o);
   timeCache.swap(o.timeCache);
   particleCache.swap(o.particleCache);
   logWeightCache.swap(o.logWeightCache);
@@ -288,7 +289,7 @@ void bi::AdaptivePFCache<CL,IO1>::swap(AdaptivePFCache<CL,IO1>& o) {
 
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::clear() {
-  BootstrapPFCache<CL,IO1>::clear();
+  parent_type::clear();
   timeCache.clear();
   particleCache.clear();
   logWeightCache.clear();
@@ -299,7 +300,7 @@ void bi::AdaptivePFCache<CL,IO1>::clear() {
 
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::empty() {
-  BootstrapPFCache<CL,IO1>::empty();
+  parent_type::empty();
   timeCache.empty();
   particleCache.empty();
   logWeightCache.empty();
@@ -311,7 +312,7 @@ void bi::AdaptivePFCache<CL,IO1>::empty() {
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::flush() {
   push(P);
-  BootstrapPFCache<CL,IO1>::flush();
+  parent_type::flush();
   timeCache.flush();
   particleCache.flush();
   logWeightCache.flush();
@@ -322,7 +323,7 @@ template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::AdaptivePFCache<CL,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < BootstrapPFCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & particleCache;
   ar & logWeightCache;
   ar & ancestorCache;
@@ -333,7 +334,7 @@ void bi::AdaptivePFCache<CL,IO1>::save(Archive& ar,
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::AdaptivePFCache<CL,IO1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < BootstrapPFCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & particleCache;
   ar & logWeightCache;
   ar & ancestorCache;

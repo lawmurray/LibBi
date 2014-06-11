@@ -25,6 +25,8 @@ namespace bi {
 template<Location CL = ON_HOST, class IO1 = MCMCNetCDFBuffer>
 class MCMCCache: public SimulatorCache<CL,IO1> {
 public:
+  typedef SimulatorCache<CL,IO1> parent_type;
+
   /**
    * @copydoc MCMCBuffer::MCMCBuffer()
    */
@@ -217,7 +219,7 @@ template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const std::string& file,
     const FileMode mode, const SchemaMode schema, const size_t P,
     const size_t T) :
-    SimulatorCache<CL,IO1>(m, file, mode, schema, P, T), llCache(NUM_SAMPLES), lpCache(
+    parent_type(m, file, mode, schema, P, T), llCache(NUM_SAMPLES), lpCache(
         NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
         0), len(0) {
   //
@@ -225,7 +227,7 @@ bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const std::string& file,
 
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const MCMCCache<CL,IO1>& o) :
-    SimulatorCache<CL,IO1>(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+parent_type(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
         o.parameterCache), first(o.first), len(o.len) {
   pathCache.resize(o.pathCache.size());
   for (int i = 0; i < pathCache.size(); ++i) {
@@ -244,7 +246,7 @@ bi::MCMCCache<CL,IO1>::~MCMCCache() {
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>& bi::MCMCCache<CL,IO1>::operator=(
     const MCMCCache<CL,IO1>& o) {
-  SimulatorCache<CL,IO1>::operator=(o);
+  parent_type::operator=(o);
 
   empty();
   llCache = o.llCache;
@@ -374,6 +376,7 @@ bool bi::MCMCCache<CL,IO1>::isFull() const {
 
 template<bi::Location CL, class IO1>
 void bi::MCMCCache<CL,IO1>::swap(MCMCCache<CL,IO1>& o) {
+  parent_type::swap(o);
   llCache.swap(o.llCache);
   lpCache.swap(o.lpCache);
   parameterCache.swap(o.parameterCache);
@@ -392,6 +395,7 @@ void bi::MCMCCache<CL,IO1>::clear() {
   }
   first = 0;
   len = 0;
+  parent_type::clear();
 }
 
 template<bi::Location CL, class IO1>
@@ -406,13 +410,14 @@ void bi::MCMCCache<CL,IO1>::empty() {
   pathCache.resize(0);
   first = 0;
   len = 0;
+  parent_type::empty();
 }
 
 template<bi::Location CL, class IO1>
 void bi::MCMCCache<CL,IO1>::flush() {
-  IO1::writeLogLikelihoods(first, llCache.get(0, len));
-  IO1::writeLogPriors(first, lpCache.get(0, len));
-  IO1::writeParameters(first, parameterCache.get(0, len));
+  parent_type::writeLogLikelihoods(first, llCache.get(0, len));
+  parent_type::writeLogPriors(first, lpCache.get(0, len));
+  parent_type::writeParameters(first, parameterCache.get(0, len));
 
   llCache.flush();
   lpCache.flush();
@@ -420,6 +425,7 @@ void bi::MCMCCache<CL,IO1>::flush() {
 
   flushPaths(R_VAR);
   flushPaths(D_VAR);
+  parent_type::flush();
 }
 
 template<bi::Location CL, class IO1>
@@ -451,7 +457,7 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object <parent_type> (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
@@ -463,7 +469,7 @@ void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < SimulatorCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object <parent_type> (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;

@@ -26,27 +26,14 @@ namespace bi {
 template<Location CL = ON_HOST, class IO1 = SMCNetCDFBuffer>
 class SMCCache: public MCMCCache<CL,IO1> {
 public:
+  typedef MCMCCache<CL,IO1> parent_type;
+
   /**
    * @copydoc SMCBuffer::SMCBuffer()
    */
   SMCCache(const Model& m, const std::string& file = "", const FileMode mode =
       READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
       const size_t T = 0);
-
-  /**
-   * Shallow copy.
-   */
-  SMCCache(const SMCCache<CL,IO1>& o);
-
-  /**
-   * Destructor.
-   */
-  ~SMCCache();
-
-  /**
-   * Deep assignment.
-   */
-  SMCCache<CL,IO1>& operator=(const SMCCache<CL,IO1>& o);
 
   /**
    * @copydoc SMCNetCDFBuffer::readLogWeights()
@@ -97,39 +84,20 @@ template<bi::Location CL, class IO1>
 bi::SMCCache<CL,IO1>::SMCCache(const Model& m, const std::string& file,
     const FileMode mode, const SchemaMode schema, const size_t P,
     const size_t T) :
-    MCMCCache<CL,IO1>(m, file, mode, schema, P, T) {
+    parent_type(m, file, mode, schema, P, T) {
   //
-}
-
-template<bi::Location CL, class IO1>
-bi::SMCCache<CL,IO1>::SMCCache(const SMCCache<CL,IO1>& o) :
-    MCMCCache<CL,IO1>(o) {
-  //
-}
-
-template<bi::Location CL, class IO1>
-bi::SMCCache<CL,IO1>& bi::SMCCache<CL,IO1>::operator=(
-    const SMCCache<CL,IO1>& o) {
-  MCMCCache<CL,IO1>::operator=(o);
-
-  return *this;
-}
-
-template<bi::Location CL, class IO1>
-bi::SMCCache<CL,IO1>::~SMCCache() {
-  //flush();
 }
 
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::SMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object < MCMCCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
 }
 
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::SMCCache<CL,IO1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < MCMCCache<CL,IO1> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
 }
 
 #endif
