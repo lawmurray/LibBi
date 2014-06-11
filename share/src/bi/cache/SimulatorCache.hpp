@@ -9,21 +9,18 @@
 #define BI_CACHE_SIMULATORCACHE_HPP
 
 #include "Cache1D.hpp"
-#include "../netcdf/SimulatorNetCDFBuffer.hpp"
+#include "../null/SimulatorNullBuffer.hpp"
 
 namespace bi {
 /**
- * Cache for SimulatorNetCDFBuffer reads and writes. This caches reads and
- * writes of times. Reads and writes of variables are assumed to be large
- * and contiguous, such that NetCDF/HDF5's own buffering mechanisms, or even
- * direct reads/write on disk, are efficient enough.
+ * Cache for simulation.
  *
  * @ingroup io_cache
  *
  * @tparam CL Location.
  * @tparam IO1 Buffer type.
  */
-template<Location CL = ON_HOST, class IO1 = SimulatorNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = SimulatorNullBuffer>
 class SimulatorCache: public IO1 {
 public:
   /**

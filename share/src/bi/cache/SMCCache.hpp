@@ -9,21 +9,21 @@
 #define BI_CACHE_SMCCACHE_HPP
 
 #include "MCMCCache.hpp"
-#include "../netcdf/SMCNetCDFBuffer.hpp"
+#include "../null/SMCNullBuffer.hpp"
 
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 
 namespace bi {
 /**
- * Cache for SMCNetCDFBuffer reads and writes.
+ * Cache for SMC.
  *
  * @ingroup io_cache
  *
  * @tparam CL Location.
  * @tparam IO1 Buffer type.
  */
-template<Location CL = ON_HOST, class IO1 = SMCNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = SMCNullBuffer>
 class SMCCache: public MCMCCache<CL,IO1> {
 public:
   typedef MCMCCache<CL,IO1> parent_type;

@@ -5,22 +5,22 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_CACHE_ExtendedKFCACHE_HPP
-#define BI_CACHE_ExtendedKFCACHE_HPP
+#ifndef BI_CACHE_EXTENDEDKFCACHE_HPP
+#define BI_CACHE_EXTENDEDKFCACHE_HPP
 
 #include "SimulatorCache.hpp"
-#include "../netcdf/KalmanFilterNetCDFBuffer.hpp"
+#include "../null/KalmanFilterNullBuffer.hpp"
 
 namespace bi {
 /**
- * Cache for KalmanFilterNetCDFBuffer reads and writes.
+ * Cache for Kalman filter.
  *
  * @ingroup io_cache
  *
  * @tparam CL Location.
  * @tparam IO1 Buffer type.
  */
-template<Location CL = ON_HOST, class IO1 = KalmanFilterNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = KalmanFilterNullBuffer>
 class ExtendedKFCache: public SimulatorCache<CL,IO1> {
 public:
   typedef SimulatorCache<CL,IO1> parent_type;

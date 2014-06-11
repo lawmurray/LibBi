@@ -11,22 +11,21 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "AncestryCache.hpp"
-#include "../netcdf/ParticleFilterNetCDFBuffer.hpp"
+#include "../null/ParticleFilterNullBuffer.hpp"
 
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/base_object.hpp"
 
 namespace bi {
 /**
- * Cache for ParticleFilterNetCDFBuffer reads and writes, and efficiently
- * holding ancestry tree for drawing filter-smoother paths.
+ * Cache for particle filter.
  *
  * @ingroup io_cache
  *
  * @tparam CL Location.
  * @tparam IO1 Buffer type.
  */
-template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = ParticleFilterNullBuffer>
 class BootstrapPFCache: public SimulatorCache<CL,IO1> {
 public:
   typedef SimulatorCache<CL,IO1> parent_type;

@@ -11,18 +11,18 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "CacheCross.hpp"
-#include "../netcdf/MCMCNetCDFBuffer.hpp"
+#include "../null/MCMCNullBuffer.hpp"
 
 namespace bi {
 /**
- * Cache for MCMCNetCDFBuffer reads and writes.
+ * Cache for MCMC.
  *
  * @ingroup io_cache
  *
  * @tparam IO1 Output type.
  * @tparam CL Location.
  */
-template<Location CL = ON_HOST, class IO1 = MCMCNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = MCMCNullBuffer>
 class MCMCCache: public SimulatorCache<CL,IO1> {
 public:
   typedef SimulatorCache<CL,IO1> parent_type;

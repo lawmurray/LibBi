@@ -25,7 +25,7 @@ namespace bi {
  * @tparam CL Location.
  * @tparam IO1 Buffer type.
  */
-template<Location CL = ON_HOST, class IO1 = ParticleFilterNetCDFBuffer>
+template<Location CL = ON_HOST, class IO1 = ParticleFilterNullBuffer>
 class AdaptivePFCache: public BootstrapPFCache<CL,IO1> {
 public:
   typedef BootstrapPFCache<CL,IO1> parent_type;
