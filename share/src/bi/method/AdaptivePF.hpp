@@ -34,8 +34,9 @@ public:
    * @param sim Simulator.
    * @param resam Resampler.
    * @param stopper Stopping criterion for adapting number of particles.
+   * @param blockP Block size.
    */
-  AdaptivePF(B& m, S& sim, R& resam, S2& stopper);
+  AdaptivePF(B& m, S& sim, R& resam, S2& stopper, const int blockP);
 
   /**
    * @name High-level interface.
@@ -71,6 +72,11 @@ private:
    * Stopping criterion.
    */
   S2& stopper;
+
+  /**
+   * Block size.
+   */
+  int blockP;
 };
 }
 
@@ -78,8 +84,9 @@ private:
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, class S, class R, class S2>
-bi::AdaptivePF<B,S,R,S2>::AdaptivePF(B& m, S& sim, R& resam, S2& stopper) :
-    BootstrapPF<B,S,R>(m, sim, resam), stopper(stopper) {
+bi::AdaptivePF<B,S,R,S2>::AdaptivePF(B& m, S& sim, R& resam, S2& stopper,
+    const int blockP) :
+    BootstrapPF<B,S,R>(m, sim, resam), stopper(stopper), blockP(blockP) {
   //
 }
 
@@ -92,8 +99,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
 
   const int P = s.size();
   const int N = s.getDyn().size2();
-  const int maxP = stopper->getMaxParticles();
-  const int blockP = stopper->getBlockSize();
+  const int maxP = stopper.getMaxParticles();
 
   matrix_type X(P, N);
   vector_type lws(P);
@@ -110,7 +116,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   BOOST_AUTO(iter1, iter);
 
   /* propagate block by block */
-  this->stopper->reset();
+  this->stopper.reset();
   do {
     if (s.sizeMax() < (block + 1) * blockP) {
       s.resizeMax((block + 1) * blockP);
@@ -122,7 +128,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
     do {
       ++iter1;
       this->predict(rng, *iter1, s);
-      output(*iter1, s);
+      output(*iter1, s, out);
     } while (iter1 + 1 != last && !iter1->isObserved());
     this->correct(rng, *iter1, s);
 
@@ -130,7 +136,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
       maxlw = this->getMaxLogWeight(*iter1, s);
     }
     ++block;
-    finished = stopper->stop(s.logWeights(), maxlw);
+    finished = stopper.stop(s.logWeights(), maxlw);
   } while (!finished);
 
   int length = bi::max(block - 1, 1) * blockP;  // drop last block

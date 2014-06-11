@@ -18,7 +18,8 @@
 
 namespace bi {
 /**
- * NetCDF buffer for storing and sequentially reading input in sparse format.
+ * NetCDF buffer for storin
+ * g and sequentially reading input in sparse format.
  *
  * @ingroup io_netcdf
  */
@@ -380,7 +381,7 @@ template<class M1>
 void bi::InputNetCDFBuffer::read0(const VarType type, M1 X) {
   Mask<ON_HOST> mask;
   readMask0(type, mask);
-  readState0(type, mask, X);
+  read0(type, mask, X);
 }
 
 template<class M1>

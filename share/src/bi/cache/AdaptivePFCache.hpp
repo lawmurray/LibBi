@@ -115,7 +115,7 @@ private:
   /**
    * Caches for times while adapting.
    */
-  Cache1D<real,CL> timeCache;
+  Cache1D<real,CL> pushCache;
 
   /**
    * Caches for particles while adapting, indexed by time.
@@ -172,7 +172,7 @@ bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const Model& m,
 
 template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const AdaptivePFCache<CL,IO1>& o) :
-    parent_type(o), timeCache(o.timeCache), particleCache(o.particleCache), logWeightCache(
+    parent_type(o), pushCache(o.pushCache), particleCache(o.particleCache), logWeightCache(
         o.logWeightCache), ancestorCache(o.ancestorCache), base(o.base), P(
         o.P) {
   //
@@ -182,7 +182,7 @@ template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>& bi::AdaptivePFCache<CL,IO1>::operator=(
     const AdaptivePFCache<CL,IO1>& o) {
   parent_type::operator=(o);
-  timeCache = o.timeCache;
+  pushCache = o.pushCache;
   particleCache = o.particleCache;
   logWeightCache = o.logWeightCache;
   ancestorCache = o.ancestorCache;
@@ -201,7 +201,7 @@ void bi::AdaptivePFCache<CL,IO1>::writeTime(const int k, const real& t) {
   if (base < 0) {
     base = k;
   }
-  timeCache.set(k - base, t);
+  pushCache.set(k - base, t);
 }
 
 template<bi::Location CL, class IO1>
@@ -259,8 +259,8 @@ void bi::AdaptivePFCache<CL,IO1>::writeState(const int k, const M1 X,
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
   int k = 0;
-  while (timeCache.isValid(k)) {
-    parent_type::writeTime(base + k, timeCache.get(k));
+  while (pushCache.isValid(k)) {
+    parent_type::writeTime(base + k, pushCache.get(k));
     parent_type::writeState(base + k, rows(particleCache.get(k), 0, P),
         subrange(ancestorCache.get(k), 0, P));
     parent_type::writeLogWeights(base + k,
@@ -268,7 +268,7 @@ void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
     ++k;
   }
 
-  timeCache.clear();
+  pushCache.clear();
   particleCache.clear();
   logWeightCache.clear();
   ancestorCache.clear();
@@ -279,7 +279,7 @@ void bi::AdaptivePFCache<CL,IO1>::push(const int P) {
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::swap(AdaptivePFCache<CL,IO1>& o) {
   parent_type::swap(o);
-  timeCache.swap(o.timeCache);
+  pushCache.swap(o.pushCache);
   particleCache.swap(o.particleCache);
   logWeightCache.swap(o.logWeightCache);
   ancestorCache.swap(o.ancestorCache);
@@ -290,7 +290,7 @@ void bi::AdaptivePFCache<CL,IO1>::swap(AdaptivePFCache<CL,IO1>& o) {
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::clear() {
   parent_type::clear();
-  timeCache.clear();
+  pushCache.clear();
   particleCache.clear();
   logWeightCache.clear();
   ancestorCache.clear();
@@ -301,7 +301,7 @@ void bi::AdaptivePFCache<CL,IO1>::clear() {
 template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::empty() {
   parent_type::empty();
-  timeCache.empty();
+  pushCache.empty();
   particleCache.empty();
   logWeightCache.empty();
   ancestorCache.empty();
@@ -313,7 +313,7 @@ template<bi::Location CL, class IO1>
 void bi::AdaptivePFCache<CL,IO1>::flush() {
   push(P);
   parent_type::flush();
-  timeCache.flush();
+  pushCache.flush();
   particleCache.flush();
   logWeightCache.flush();
   ancestorCache.flush();

@@ -24,7 +24,7 @@ public:
    *
    * @param P Number of \f$x\f$-particles.
    */
-  ExtendedKFState();
+  ExtendedKFState(const int P = 0);
 
   /**
    * Shallow copy constructor.
@@ -82,7 +82,7 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::ExtendedKFState<B,L>::ExtendedKFState() :
+bi::ExtendedKFState<B,L>::ExtendedKFState(const int P) :
     mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M) {
   //
 }

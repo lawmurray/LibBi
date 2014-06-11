@@ -48,7 +48,7 @@ public:
    */
   template<class B, class S, class R, class S2>
   static Filter<AdaptivePF<B,S,R,S2> >* createAdaptivePF(B& m, S& sim,
-      R& resam, S2& stopper);
+      R& resam, S2& stopper, const int blockP);
 
   /**
    * Create extended Kalman filter.
@@ -77,9 +77,9 @@ bi::Filter<bi::BridgePF<B,S,R> >* bi::FilterFactory::createBridgePF(B& m,
 }
 
 template<class B, class S, class R, class S2>
-bi::Filter<bi::AdaptivePF<B,S,R,S2> >* bi::FilterFactory::createAdaptivePF(B& m,
-    S& sim, R& resam, S2& stopper) {
-  return new Filter<AdaptivePF<B,S,R,S2> >(m, sim, resam, stopper);
+bi::Filter<bi::AdaptivePF<B,S,R,S2> >* bi::FilterFactory::createAdaptivePF(
+    B& m, S& sim, R& resam, S2& stopper, const int blockP) {
+  return new Filter<AdaptivePF<B,S,R,S2> >(m, sim, resam, stopper, blockP);
 }
 
 template<class B, class S>

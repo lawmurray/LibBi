@@ -66,6 +66,7 @@ public:
    */
   void resizeMax(const int maxP, const bool preserve = true);
 
+private:
   /**
    * Log-weights.
    */
@@ -76,7 +77,6 @@ public:
    */
   typename State<B,L>::int_vector_type as;
 
-private:
   /**
    * Serialize.
    */

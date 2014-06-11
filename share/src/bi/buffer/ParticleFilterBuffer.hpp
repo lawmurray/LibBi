@@ -70,8 +70,8 @@ template<class S1>
 void bi::ParticleFilterBuffer<IO1>::write(const size_t k, const real t,
     const S1& s) {
   parent_type::writeTime(k, t);
-  parent_type::writeState(k, s.getDyn(), s.as);
-  parent_type::writeLogWeights(k, s.lws);
+  parent_type::writeState(k, s.getDyn(), s.ancestors());
+  parent_type::writeLogWeights(k, s.logWeights());
 }
 
 template<class IO1>

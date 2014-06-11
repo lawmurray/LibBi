@@ -87,12 +87,13 @@ public:
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
    * @param theta Parameters.
+   * @param now Current step in time schedule.
    * @param s State.
+   * @param out Output buffer.
    */
   template<class S1, class V1, class IO1>
-  void init(Random& rng, const ScheduleElement now, const V1 theta, S1& s,
+  void init(Random& rng, const V1 theta, const ScheduleElement now, S1& s,
       IO1& out);
 
   /**
@@ -252,14 +253,14 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
   /* across-time covariance */
   s.C.clear();
 
-  /* within-time covariance */
-  out.clear();
+  /* clear cache (problems here, and not necessary anyway) */
+  //out.clear();
 }
 
 template<class B, class S>
 template<class S1, class V1, class IO1>
-void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
-    const V1 theta, S1& s, IO1& out) {
+void bi::ExtendedKF<B,S>::init(Random& rng, const V1 theta,
+    const ScheduleElement now, S1& s, IO1& out) {
   // this should be the same as init() above, but with a different call to
   // sim.init()
   ident(s.F());
@@ -281,8 +282,8 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now,
   /* across-time covariance */
   s.C.clear();
 
-  /* within-time covariance */
-  out.clear();
+  /* clear cache (problems here, and not necessary anyway) */
+  //out.clear();
 }
 
 template<class B, class S>

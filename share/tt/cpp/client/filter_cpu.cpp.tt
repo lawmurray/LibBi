@@ -16,7 +16,6 @@
 #include "bi/kd/kde.hpp"
 
 #include "bi/random/Random.hpp"
-#include "bi/buffer/InputNetCDFBuffer.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
 #include "bi/method/Simulator.hpp"
@@ -37,11 +36,19 @@
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
 
-#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
-#include "bi/buffer/ParticleFilterNetCDFBuffer.hpp"
-#include "bi/cache/ExtendedKFCache.hpp"
-#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/buffer/KalmanFilterBuffer.hpp"
+#include "bi/buffer/ParticleFilterBuffer.hpp"
+
+#include "bi/cache/SimulatorCache.hpp"
 #include "bi/cache/AdaptivePFCache.hpp"
+
+#include "bi/netcdf/InputNetCDFBuffer.hpp"
+#include "bi/netcdf/KalmanFilterNetCDFBuffer.hpp"
+#include "bi/netcdf/ParticleFilterNetCDFBuffer.hpp"
+
+#include "bi/null/InputNullBuffer.hpp"
+#include "bi/null/KalmanFilterNullBuffer.hpp"
+#include "bi/null/ParticleFilterNullBuffer.hpp"
 
 #include "bi/method/FilterFactory.hpp"
 
@@ -92,21 +99,21 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('input-file') != '' %]
   InputNetCDFBuffer bufInput(m, INPUT_FILE, INPUT_NS, INPUT_NP);
   [% ELSE %]
-  InputBuffer bufInput;
+  InputNullBuffer bufInput(m);
   [% END %]
   
   /* init file */
   [% IF client.get_named_arg('init-file') != '' %]
   InputNetCDFBuffer bufInit(m, INIT_FILE, INIT_NS, INIT_NP);
   [% ELSE %]
-  InputBuffer bufInit;
+  InputNullBuffer bufInit(m);
   [% END %]
 
   /* obs file */
   [% IF client.get_named_arg('obs-file') != '' %]
   InputNetCDFBuffer bufObs(m, OBS_FILE, OBS_NS, OBS_NP);
   [% ELSE %]
-  InputBuffer bufObs;
+  InputNullBuffer bufObs(m);
   [% END %]
 
   /* schedule */
@@ -127,25 +134,28 @@ int main(int argc, char* argv[]) {
 
   /* output */
   [% IF client.get_named_arg('filter') == 'kalman' %]
-  KalmanFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new KalmanFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-  }
-  BOOST_AUTO(out, ExtendedKFCacheFactory<LOCATION>::create(bufOutput));
+    [% IF client.get_named_arg('output-file') != '' %]
+    typedef KalmanFilterNetCDFBuffer buffer_type;
+    [% ELSE %]
+    typedef KalmanFilterNullBuffer buffer_type;
+    [% END %]
+    KalmanFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  ParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE, SimulatorNetCDFBuffer::FLEXI);
-  }
-  BOOST_AUTO(out, AdaptivePFCacheFactory<LOCATION>::create(bufOutput));
+    [% IF client.get_named_arg('output-file') != '' %]
+    typedef ParticleFilterNetCDFBuffer buffer_type;
+    [% ELSE %]
+    typedef ParticleFilterNullBuffer buffer_type;
+    [% END %]
+    ParticleFilterBuffer<AdaptivePFCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
   [% ELSE %]
-  ParticleFilterNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new ParticleFilterNetCDFBuffer(m, NPARTICLES, sched.numOutputs(), append_rank(OUTPUT_FILE), NetCDFBuffer::REPLACE);
-  }
-  BOOST_AUTO(out, BootstrapPFCacheFactory<LOCATION>::create(bufOutput));
+    [% IF client.get_named_arg('output-file') != '' %]
+    typedef ParticleFilterNetCDFBuffer buffer_type;
+    [% ELSE %]
+    typedef ParticleFilterNullBuffer buffer_type;
+    [% END %]
+    ParticleFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
   [% END %]
-    
+     
   /* simulator */
   BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
@@ -209,7 +219,7 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
   BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (AdaptivePFFactory::create(m, *sim, resam, stopper)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, BLOCK_PARTICLES)));
   [% ELSE %]
   BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
   [% END %]
@@ -237,7 +247,6 @@ int main(int argc, char* argv[]) {
   #endif
 
   delete filter;
-  delete out;
   delete sim;
   delete obs;
   delete in;
