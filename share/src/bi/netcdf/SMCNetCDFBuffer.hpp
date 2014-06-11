@@ -33,16 +33,6 @@ public:
       const size_t P = 0, const size_t T = 0);
 
   /**
-   * Read log-weights.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  void readLogWeights(V1 lws);
-
-  /**
    * Write log-weights.
    *
    * @tparam V1 Vector type.
@@ -51,16 +41,6 @@ public:
    */
   template<class V1>
   void writeLogWeights(const V1 lws);
-
-  /**
-   * Write incremental log-evidences.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param les Log-evidences.
-   */
-  template<class V1>
-  void readLogEvidences(V1 les);
 
   /**
    * Write incremental log-evidences.
@@ -96,18 +76,8 @@ protected:
 }
 
 template<class V1>
-void bi::SMCNetCDFBuffer::readLogWeights(V1 lws) {
-  readRange(lwVar, 0, lws);
-}
-
-template<class V1>
 void bi::SMCNetCDFBuffer::writeLogWeights(const V1 lws) {
   writeRange(lwVar, 0, lws);
-}
-
-template<class V1>
-void bi::SMCNetCDFBuffer::readLogEvidences(V1 les) {
-  readRange(leVar, 0, les);
 }
 
 template<class V1>

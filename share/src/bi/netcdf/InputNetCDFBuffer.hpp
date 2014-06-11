@@ -37,13 +37,6 @@ public:
       const long ns = 0, const long np = -1);
 
   /**
-   * Set index along @c np dimension.
-   *
-   * @param np Index.
-   */
-  void setnp(const long np = 0);
-
-  /**
    * Get time.
    *
    * @param k Time index.

@@ -56,16 +56,8 @@ void bi::OptimiserNetCDFBuffer::map() {
       "Only dimension of variable optimiser.size should be np, in file " << file);
 }
 
-void bi::OptimiserNetCDFBuffer::readValue(const size_t k, real& x) {
-  nc_get_var1(ncid, valueVar, k, &x);
-}
-
 void bi::OptimiserNetCDFBuffer::writeValue(const size_t k, const real& x) {
   nc_put_var1(ncid, valueVar, k, &x);
-}
-
-void bi::OptimiserNetCDFBuffer::readSize(const size_t k, real& x) {
-  nc_get_var1(ncid, sizeVar, k, &x);
 }
 
 void bi::OptimiserNetCDFBuffer::writeSize(const size_t k, const real& x) {

@@ -14,12 +14,6 @@ bi::InputNetCDFBuffer::InputNetCDFBuffer(const Model& m,
   map();
 }
 
-void bi::InputNetCDFBuffer::setnp(const long np) {
-  BI_ERROR_MSG(npDim < 0 || np < nc_inq_dimlen(ncid, npDim),
-      "Given index " << np << " outside range of np dimension");
-  this->np = np;
-}
-
 void bi::InputNetCDFBuffer::readMask(const size_t k, const VarType type,
     Mask<ON_HOST>& mask) {
   typedef temp_host_matrix<real>::type temp_matrix_type;

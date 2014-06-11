@@ -36,19 +36,9 @@ public:
       const SchemaMode schema = PARAM_ONLY, const size_t T = 0);
 
   /**
-   * @copydoc concept::OptimiserBuffer::readValue()
-   */
-  void readValue(const size_t k, real& x);
-
-  /**
    * @copydoc concept::OptimiserBuffer::writeValue()
    */
   void writeValue(const size_t k, const real& x);
-
-  /**
-   * @copydoc concept::OptimiserBuffer::readSize()
-   */
-  void readSize(const size_t k, real& x);
 
   /**
    * @copydoc concept::OptimiserBuffer::writeSize()

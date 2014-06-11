@@ -13,8 +13,7 @@
 
 namespace bi {
 /**
- * Buffer for storing, reading and writing results of Kalman filters in a
- * NetCDF file.
+ * Buffer for writing results of Kalman filters in a NetCDF file.
  *
  * @ingroup io_netcdf
  */
@@ -28,17 +27,6 @@ public:
       const size_t P = 0, const size_t T = 0);
 
   /**
-   * Read predicted mean.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param[out] mu1 Vector.
-   */
-  template<class V1>
-  void readPredictedMean(const size_t k, V1 mu1);
-
-  /**
    * Write predicted mean.
    *
    * @tparam V1 Vector type.
@@ -48,17 +36,6 @@ public:
    */
   template<class V1>
   void writePredictedMean(const size_t k, const V1 mu1);
-
-  /**
-   * Read Cholesky factor of predicted covariance.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param k Time index.
-   * @param[out] U1 Matrix.
-   */
-  template<class M1>
-  void readPredictedStd(const size_t k, M1 U1);
 
   /**
    * Write Cholesky factor of predicted covariance.
@@ -72,17 +49,6 @@ public:
   void writePredictedStd(const size_t k, const M1 U1);
 
   /**
-   * Read corrected mean.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param[out] mu2 Vector.
-   */
-  template<class V1>
-  void readCorrectedMean(const size_t k, V1 mu2);
-
-  /**
    * Write corrected mean.
    *
    * @tparam V1 Vector type.
@@ -94,17 +60,6 @@ public:
   void writeCorrectedMean(const size_t k, const V1 mu2);
 
   /**
-   * Read Cholesky factor of corrected covariance.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param k Time index.
-   * @param[out] U2 Matrix.
-   */
-  template<class M1>
-  void readCorrectedStd(const size_t k, M1 U2);
-
-  /**
    * Write Cholesky factor of corrected covariance.
    *
    * @tparam M1 Matrix type.
@@ -114,17 +69,6 @@ public:
    */
   template<class M1>
   void writeCorrectedStd(const size_t k, const M1 U2);
-
-  /**
-   * Read across-time covariance.
-   *
-   * @tparam M1 Matrix type.
-   *
-   * @param k Time index.
-   * @param[out] C Matrix.
-   */
-  template<class M1>
-  void readCross(const size_t k, M1 C);
 
   /**
    * Write across-time covariance.
@@ -207,19 +151,9 @@ protected:
 #include "../math/temp_matrix.hpp"
 
 template<class V1>
-void bi::KalmanFilterNetCDFBuffer::readPredictedMean(const size_t k, V1 mu1) {
-  readVector(mu1Var, k, mu1);
-}
-
-template<class V1>
 void bi::KalmanFilterNetCDFBuffer::writePredictedMean(const size_t k,
     const V1 mu1) {
   writeVector(mu1Var, k, mu1);
-}
-
-template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readPredictedStd(const size_t k, M1 U1) {
-  readMatrix(U1Var, k, U1);
 }
 
 template<class M1>
@@ -229,30 +163,15 @@ void bi::KalmanFilterNetCDFBuffer::writePredictedStd(const size_t k,
 }
 
 template<class V1>
-void bi::KalmanFilterNetCDFBuffer::readCorrectedMean(const size_t k, V1 mu2) {
-  readVector(mu2Var, k, mu2);
-}
-
-template<class V1>
 void bi::KalmanFilterNetCDFBuffer::writeCorrectedMean(const size_t k,
     const V1 mu2) {
   writeVector(mu2Var, k, mu2);
 }
 
 template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readCorrectedStd(const size_t k, M1 U2) {
-  readMatrix(U2Var, k, U2);
-}
-
-template<class M1>
 void bi::KalmanFilterNetCDFBuffer::writeCorrectedStd(const size_t k,
     const M1 U2) {
   writeMatrix(U2Var, k, U2);
-}
-
-template<class M1>
-void bi::KalmanFilterNetCDFBuffer::readCross(const size_t k, M1 C) {
-  readMatrix(CVar, k, C);
 }
 
 template<class M1>

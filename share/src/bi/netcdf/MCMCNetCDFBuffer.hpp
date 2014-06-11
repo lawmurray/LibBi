@@ -16,7 +16,7 @@
 
 namespace bi {
 /**
- * Buffer for storing, reading and writing results of marginal MH in a NetCDF file.
+ * Buffer for writing results of marginal MH in a NetCDF file.
  *
  * @ingroup io_netcdf
  */
@@ -36,15 +36,6 @@ public:
       const SchemaMode schema = MULTI, const size_t P = 0, const size_t T = 0);
 
   /**
-   * Read log-likelihoods.
-   *
-   * @param p Index of first sample.
-   * @param[out] ll Log-likelihoods.
-   */
-  template<class V1>
-  void readLogLikelihoods(const size_t p, V1 ll);
-
-  /**
    * Write log-likelihoods.
    *
    * @param p Index of first sample.
@@ -52,15 +43,6 @@ public:
    */
   template<class V1>
   void writeLogLikelihoods(const size_t p, const V1 ll);
-
-  /**
-   * Read log-prior densities.
-   *
-   * @param p Index of first sample.
-   * @param[out] lp Log-prior densities.
-   */
-  template<class V1>
-  void readLogPriors(const size_t p, V1 lp);
 
   /**
    * Write log-prior densities.
@@ -95,18 +77,8 @@ protected:
 }
 
 template<class V1>
-void bi::MCMCNetCDFBuffer::readLogLikelihoods(const size_t p, V1 ll) {
-  readRange(llVar, p, ll);
-}
-
-template<class V1>
 void bi::MCMCNetCDFBuffer::writeLogLikelihoods(const size_t p, const V1 ll) {
   writeRange(llVar, p, ll);
-}
-
-template<class V1>
-void bi::MCMCNetCDFBuffer::readLogPriors(const size_t p, V1 lp) {
-  readRange(lpVar, p, lp);
 }
 
 template<class V1>

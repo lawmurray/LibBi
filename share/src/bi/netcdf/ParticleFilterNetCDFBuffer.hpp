@@ -32,20 +32,6 @@ public:
       const size_t P = 0, const size_t T = 0);
 
   /**
-   * Read dynamic state.
-   *
-   * @tparam B Model type.
-   * @tparam M1 Matrix type.
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param[out] X State.
-   * @param[out] as Ancestry.
-   */
-  template<class M1, class V1>
-  void readState(const size_t k, M1 X, V1 as);
-
-  /**
    * Write dynamic state.
    *
    * @tparam B Model type.
@@ -60,17 +46,6 @@ public:
   void writeState(const size_t k, const M1 X, const V1 as);
 
   /**
-   * Read particle log-weights.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param[out] lws Log-weights.
-   */
-  template<class V1>
-  void readLogWeights(const size_t k, V1 lws);
-
-  /**
    * Write particle log-weights.
    *
    * @tparam V1 Vector type.
@@ -80,17 +55,6 @@ public:
    */
   template<class V1>
   void writeLogWeights(const size_t k, const V1 lws);
-
-  /**
-   * Read particle ancestors.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param k Time index.
-   * @param[out] a Ancestry.
-   */
-  template<class V1>
-  void readAncestors(const size_t k, V1 a);
 
   /**
    * Write particle ancestors.
@@ -139,28 +103,10 @@ protected:
 }
 
 template<class M1, class V1>
-void bi::ParticleFilterNetCDFBuffer::readState(const size_t k, M1 X, V1 as) {
-  SimulatorNetCDFBuffer::readState(k, X);
-  readAncestors(k, as);
-}
-
-template<class M1, class V1>
 void bi::ParticleFilterNetCDFBuffer::writeState(const size_t k, const M1 X,
     const V1 as) {
   SimulatorNetCDFBuffer::writeState(k, X);
   writeAncestors(k, as);
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readLogWeights(const size_t k, V1 lws) {
-  if (schema == FLEXI) {
-    size_t start = readStart(k);
-    size_t len = readLen(k);
-    BI_ERROR(lws.size() == len);
-    readRange(lwVar, start, lws);
-  } else {
-    readVector(lwVar, k, lws);
-  }
 }
 
 template<class V1>
@@ -173,18 +119,6 @@ void bi::ParticleFilterNetCDFBuffer::writeLogWeights(const size_t k,
     writeRange(lwVar, start, lws);
   } else {
     writeVector(lwVar, k, lws);
-  }
-}
-
-template<class V1>
-void bi::ParticleFilterNetCDFBuffer::readAncestors(const size_t k, V1 as) {
-  if (schema == FLEXI) {
-    size_t start = readStart(k);
-    size_t len = readLen(k);
-    BI_ERROR(as.size() == len);
-    readRange(aVar, start, as);
-  } else {
-    readVector(aVar, k, as);
   }
 }
 

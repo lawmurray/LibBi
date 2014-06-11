@@ -10,7 +10,6 @@
 # client programs
 CLIENTS = [
     'nm',
-    'simulate',
     'filter',
     'sample',
     'test',
@@ -44,6 +43,13 @@ libbi_a_SOURCES = \
   src/bi/netcdf/SMCNetCDFBuffer.cpp \
   src/bi/netcdf/SimulatorNetCDFBuffer.cpp \
   src/bi/netcdf/InputNetCDFBuffer.cpp \
+  src/bi/null/InputNullBuffer.cpp \
+  src/bi/null/KalmanFilterNullBuffer.cpp \
+  src/bi/null/MCMCNullBuffer.cpp \
+  src/bi/null/OptimiserNullBuffer.cpp \
+  src/bi/null/ParticleFilterNullBuffer.cpp \
+  src/bi/null/SimulatorNullBuffer.cpp \
+  src/bi/null/SMCNullBuffer.cpp \
   src/bi/cache/Cache.cpp \
   src/bi/host/math/cblas.cpp \
   src/bi/host/math/lapack.cpp \
