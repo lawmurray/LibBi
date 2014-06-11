@@ -27,7 +27,7 @@ public:
    * @param P Number of samples in file.
    * @param T Number of times in file.
    */
-  ParticleFilterNetCDFBuffer(const Model& m, const std::string& file,
+  ParticleFilterNetCDFBuffer(const Model& m, const std::string& file = "",
       const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
       const size_t P = 0, const size_t T = 0);
 
@@ -108,7 +108,7 @@ public:
    *
    * @param ll Marginal log-likelihood estimate.
    */
-  void writeLL(const real ll);
+  void writeLogLikelihood(const real ll);
 
 protected:
   /**

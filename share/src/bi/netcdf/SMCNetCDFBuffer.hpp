@@ -28,7 +28,7 @@ public:
    * @param P Number of samples in file.
    * @param T Number of times in file.
    */
-  SMCNetCDFBuffer(const Model& m, const std::string& file,
+  SMCNetCDFBuffer(const Model& m, const std::string& file = "",
       const FileMode mode = READ_ONLY, const SchemaMode schema = MULTI,
       const size_t P = 0, const size_t T = 0);
 

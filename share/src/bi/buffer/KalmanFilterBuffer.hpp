@@ -8,7 +8,7 @@
 #ifndef BI_BUFFER_KALMANFILTERBUFFER_HPP
 #define BI_BUFFER_KALMANFILTERBUFFER_HPP
 
-#include "buffer.hpp"
+#include "SimulatorBuffer.hpp"
 
 namespace bi {
 /**
@@ -19,8 +19,10 @@ namespace bi {
  * @ingroup io_buffer
  */
 template<class IO1>
-class KalmanFilterBuffer: public IO1 {
+class KalmanFilterBuffer: public SimulatorBuffer<IO1> {
 public:
+  typedef SimulatorBuffer<IO1> parent_type;
+
   /**
    * Constructor.
    *
@@ -45,14 +47,21 @@ public:
    */
   template<class S1>
   void write(const size_t k, const real t, const S1& s);
+
+  /**
+   * Write marginal log-likelihood
+   *
+   * @param ll Marginal log-likelihood.
+   */
+  void writeT(const real ll);
 };
 }
 
 template<class IO1>
 bi::KalmanFilterBuffer<IO1>::KalmanFilterBuffer(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
+    const std::string& file = "", const FileMode mode, const SchemaMode schema,
     const size_t P, const size_t T) :
-    IO1(m, file, mode, schema, P, T) {
+    parent_type(m, file, mode, schema, P, T) {
   //
 }
 
@@ -60,13 +69,18 @@ template<class IO1>
 template<class S1>
 void bi::KalmanFilterBuffer<IO1>::write(const size_t k, const real t,
     const S1& s) {
-  IO1::writeTime(k, t);
-  IO1::writeState(k, s.getDyn(), s.as);
-  IO1::writePredictedMean(k, s.mu1);
-  IO1::writePredictedStd(k, s.U1);
-  IO1::writeCorrectedMean(k, s.mu2);
-  IO1::writeCorrectedStd(k, s.U2);
-  IO1::writeCross(k, s.C);
+  parent_type::writeTime(k, t);
+  parent_type::writeState(k, s.getDyn());
+  parent_type::writePredictedMean(k, s.mu1);
+  parent_type::writePredictedStd(k, s.U1);
+  parent_type::writeCorrectedMean(k, s.mu2);
+  parent_type::writeCorrectedStd(k, s.U2);
+  parent_type::writeCross(k, s.C);
+}
+
+template<class IO1>
+void bi::KalmanFilterBuffer<IO1>::writeT(const real ll) {
+  parent_type::writeLogLikelihood(ll);
 }
 
 #endif

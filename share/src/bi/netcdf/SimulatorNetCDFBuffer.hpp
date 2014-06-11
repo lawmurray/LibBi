@@ -31,7 +31,7 @@ public:
    * @param P Number of samples to hold in file.
    * @param T Number of times to hold in file.
    */
-  SimulatorNetCDFBuffer(const Model& m, const std::string& file,
+  SimulatorNetCDFBuffer(const Model& m, const std::string& file = "",
       const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
       const size_t P = 0, const size_t T = 0);
 

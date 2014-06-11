@@ -156,6 +156,6 @@ void bi::KalmanFilterNetCDFBuffer::map(const size_t T) {
       "Variable LL has " << dimids.size() << " dimensions, should have none, in file " << file);
 }
 
-void bi::KalmanFilterNetCDFBuffer::writeLL(const real ll) {
+void bi::KalmanFilterNetCDFBuffer::writeLogLikelihood(const real ll) {
   nc_put_var(ncid, llVar, &ll);
 }

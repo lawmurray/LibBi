@@ -86,6 +86,6 @@ void bi::ParticleFilterNetCDFBuffer::map() {
       "Variable LL has " << dimids.size() << " dimensions, should have 0, in file " << file);
 }
 
-void bi::ParticleFilterNetCDFBuffer::writeLL(const real ll) {
+void bi::ParticleFilterNetCDFBuffer::writeLogLikelihood(const real ll) {
   nc_put_var(ncid, llVar, &ll);
 }

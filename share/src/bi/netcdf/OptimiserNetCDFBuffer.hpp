@@ -32,7 +32,7 @@ public:
    * @param T Number of times to hold in file.
    */
   OptimiserNetCDFBuffer(const Model& m,
-      const std::string& file, const FileMode mode = READ_ONLY,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
       const SchemaMode schema = PARAM_ONLY, const size_t T = 0);
 
   /**

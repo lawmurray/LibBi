@@ -38,10 +38,11 @@ public:
   /**
    * Constructor.
    *
+   * @param m Model.
    * @param P Number of \f$x\f$-particles.
    * @param T Number of time points.
    */
-  MarginalMHState(const int P = 0, const int T = 0);
+  MarginalMHState(B& m, const int P = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -129,8 +130,8 @@ public:
 }
 
 template<class B, bi::Location L, class S1, class IO1>
-bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(const int P, const int T) :
-    sFilter(P), outFilter(), path(B::NR + B::ND, T), theta1(B::NP), theta2(
+bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(B& m, const int P, const int T) :
+    sFilter(P), outFilter(m), path(B::NR + B::ND, T), theta1(B::NP), theta2(
         B::NP), logLikelihood1(-1.0 / 0.0), logLikelihood2(-1.0 / 0.0), logPrior1(
         -1.0 / 0.0), logPrior2(-1.0 / 0.0), logProposal1(-1.0 / 0.0), logProposal2(
         -1.0 / 0.0) {

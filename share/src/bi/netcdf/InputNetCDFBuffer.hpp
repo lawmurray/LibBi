@@ -33,7 +33,7 @@ public:
    * @param np Index along @c np dimension to use, if it exists. -1 for whole
    * dimension.
    */
-  InputNetCDFBuffer(const Model& m, const std::string& file,
+  InputNetCDFBuffer(const Model& m, const std::string& file = "",
       const long ns = 0, const long np = -1);
 
   /**

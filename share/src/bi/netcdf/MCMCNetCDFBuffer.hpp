@@ -32,7 +32,7 @@ public:
    * @param T Number of times in file.
    */
   MCMCNetCDFBuffer(const Model& m,
-      const std::string& file, const FileMode mode = READ_ONLY,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
       const SchemaMode schema = MULTI, const size_t P = 0, const size_t T = 0);
 
   /**

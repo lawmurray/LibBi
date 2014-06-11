@@ -28,7 +28,7 @@ public:
   /**
    * @copydoc MCMCBuffer::MCMCBuffer()
    */
-  MCMCCache(const Model& m, const std::string& file, const FileMode mode =
+  MCMCCache(const Model& m, const std::string& file = "", const FileMode mode =
       READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
       const size_t T = 0);
 

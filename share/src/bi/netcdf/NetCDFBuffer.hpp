@@ -29,7 +29,7 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  NetCDFBuffer(const std::string& file, const FileMode mode = READ_ONLY);
+  NetCDFBuffer(const std::string& file = "", const FileMode mode = READ_ONLY);
 
   /**
    * Copy constructor.

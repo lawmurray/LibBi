@@ -23,7 +23,7 @@ public:
   /**
    * @copydoc KalmanFilterBuffer::KalmanFilterBuffer()
    */
-  KalmanFilterNetCDFBuffer(const Model& m, const std::string& file,
+  KalmanFilterNetCDFBuffer(const Model& m, const std::string& file = "",
       const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
       const size_t P = 0, const size_t T = 0);
 
@@ -142,7 +142,7 @@ public:
    *
    * @param ll Marginal log-likelihood estimate.
    */
-  void writeLL(const real ll);
+  void writeLogLikelihood(const real ll);
 
 protected:
   /**
