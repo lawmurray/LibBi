@@ -30,87 +30,43 @@ namespace bi {
  *
  * @tparam B Model type
  * @tparam F MarginalMH type.
+ * @tparam A Adapter type.
  * @tparam R Resampler type.
- * @tparam IO1 Output type.
  *
  * Implements sequential importance resampling over parameters, which, when
  * combined with a particle filter, gives the SMC^2 method described in
  * @ref Chopin2013 "Chopin, Jacob \& Papaspiliopoulos (2013)".
  *
- * @todo Add support for Kalman filters.
  * @todo Add support for adapter classes.
  * @todo Add support for stopper classes for theta particles.
  */
-template<class B, class F, class R, class IO1 = MarginalSIRCache<> >
+template<class B, class F, class A, class R>
 class MarginalSIR {
 public:
   /**
    * Constructor.
    *
-   * @tparam IO2 Input type.
-   *
    * @param m Model.
-   * @param pmmh PMMH sampler.
+   * @param mmh PMMH sampler.
+   * @param adapter Adapter.
    * @param resam Resampler for theta-particles.
    * @param Nmoves Number of steps per \f$\theta\f$-particle.
    * @param adapter Proposal adaptation strategy.
    * @param adapterScale Scaling factor for local proposals.
    * @param out Output.
    */
-  MarginalSIR(B& m, F* pmmh = NULL, R* resam = NULL, const int Nmoves = 1,
-      const MarginalSIRAdapter adapter = NO_ADAPTER, const real adapterScale =
-          0.5, const real adapterEssRel = 0.25, IO1& out = NULL);
+  MarginalSIR(B& m, F& mmh, A& adapter, R& resam, const int Nmoves = 1);
 
   /**
    * @name High-level interface.
    */
   //@{
   /**
-   * Get resampler.
-   *
-   * @return Resampler.
+   * @copydoc MarginalMH::sample()
    */
-  R* getResam();
-
-  /**
-   * Set resampler.
-   *
-   * @param resam Resampler.
-   */
-  void setResam(R* resam);
-
-  /**
-   * Get output.
-   *
-   * @return Output.
-   */
-  IO1& getOutput();
-
-  /**
-   * Set output.
-   *
-   * @param out Output buffer.
-   */
-  void setOutput(IO1& out);
-
-  /**
-   * Sample.
-   *
-   * @tparam L Location.
-   * @tparam IO2 Input type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param first Start of time schedule.
-   * @param last End of time schedule.
-   * @param s Prototype state. The set of \f$\theta\f$-particles are
-   * constructed from this.
-   * @param inInit Initialisation file.
-   * @param C Number of \f$\theta\f$-particles.
-   */
-  template<Location L, class IO2>
+  template<class S1, class IO1, class IO2>
   void sample(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, MarginalSIRState<B,L>& s, IO2& inInit =
-          NULL, const int C = 1);
+      const ScheduleIterator last, S1& s, const int C, IO1& out, IO2& inInit);
   //@}
 
   /**
@@ -120,116 +76,76 @@ public:
   /**
    * Initialise.
    *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
+   * @tparam S1 State type.
+   * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
-   * @param now Current step in time schedule.
-   * @param s Prototype state. The set of \f$\theta\f$-particles are
-   * constructed from this.
-   * @param[out] thetas The \f$\theta\f$-particles.
-   * @param[out] lws Log-weights of \f$\theta\f$-particles.
-   * @param[out] as Ancestors of \f$\theta\f$-particles.
+   * @param first Start of time schedule.
+   * @param s State.
+   * @param inInit Initialisation file.
    *
-   * @return Evidence.
+   * @return Log-evidence.
    */
-  template<Location L, class V1, class V2>
-  real init(Random& rng, const ScheduleElement now, MarginalSIRState<B,L>& s,
-      std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as);
+  template<class S1, class IO2>
+  real init(Random& rng, const ScheduleIterator first, S1& s, IO2& inInit);
 
   /**
    * Step \f$x\f$-particles forward.
    *
-   * @tparam L Location.
-   * @tparam V1 Vector type
-   * @tparam V2 Integer vector type.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param[in,out] iter Current position in time schedule. Advanced on
    * return.
    * @param last End of time schedule.
-   * @param[out] s Working state.
-   * @param[in,out] thetas The \f$\theta\f$-particles.
-   * @param[in,out] lws Log-weights of \f$\theta\f$-particles.
-   * @param[in,out] as Ancestors of \f$\theta\f$-particles.
+   * @param[out] s State.
    *
-   * @return Evidence.
+   * @return Log-evidence.
    */
-  template<Location L, class V1, class V2>
+  template<class S1>
   real step(Random& rng, const ScheduleIterator first, ScheduleIterator& iter,
-      const ScheduleIterator last, MarginalSIRState<B,L>& s,
-      std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as);
-
-  /**
-   * Adapt proposal distribution.
-   *
-   * @tparam L Location.
-   * @tparam V1 Vector type
-   * @tparam V2 Vector type.
-   * @tparam M2 Matrix type.
-   *
-   * @param thetas The \f$\theta\f$-particles.
-   * @param lws Log-weights of \f$\theta\f$-particles.
-   * @param[out] q The proposal distribution.
-   */
-  template<Location L, class V1, class V2, class M2>
-  void adapt(const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
-      GaussianPdf<V2,M2>& q);
+      const ScheduleIterator last, S1& s);
 
   /**
    * Resample \f$\theta\f$-particles.
    *
-   * @tparam L Location.
-   * @tparam V1 Vector type
-   * @tparam V2 Integer vector type.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param[in,out] lws Log-weights of \f$\theta\f$-particles.
-   * @param[out] as Ancestors of \f$\theta\f$-particles.
+   * @param[in,out] s State.
    */
-  template<Location L, class V1, class V2>
-  void resample(Random& rng, const ScheduleElement now, V1 lws, V2 as,
-      std::vector<MarginalSIRState<B,L>*>& thetas);
+  template<class S1>
+  void resample(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * Rejuvenate \f$\theta\f$-particles.
    *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
+   * @tparam S1 State type.
    *
+   * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param now Current position in time schedule.
-   * @param[out] s Working state.
-   * @param[in,out] thetas The set of \f$\theta\f$-particles.
-   * @param q Proposal distribution.
-   * @param ess Current effective sample size.
+   * @param[in,out] s State.
    *
    * @return Acceptance rate.
    */
-  template<Location L, class V1, class M1>
+  template<class S1>
   real rejuvenate(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator now, MarginalSIRState<B,L>& s,
-      const std::vector<MarginalSIRState<B,L>*>& thetas,
-      GaussianPdf<V1,M1>& q, const real ess);
+      const ScheduleIterator now, S1& s);
 
   /**
    * Output.
    *
-   * @tparam L Location.
-   * @tparam V1 Vector type.
-   * @tparam V2 Vector type.
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
    *
-   * @param thetas Theta-particles.
-   * @param lws Log-weights of theta-particles.
-   * @param les Incremental log-evidences.
+   * @param s State.
+   * @param out Output buffer.
    */
-  template<bi::Location L, class V1, class V2>
-  void output(const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
-      const V2 les);
+  template<class S1, class IO1>
+  void output(const S1& s, IO1& out);
 
   /**
    * Report progress on stderr.
@@ -255,40 +171,24 @@ private:
   B& m;
 
   /**
-   * PMCMC sampler.
+   * Marginal MH sampler.
    */
-  F* pmmh;
+  F& mmh;
+
+  /**
+   * Adapter.
+   */
+  A& adapter;
 
   /**
    * Resampler for the theta-particles
    */
-  R* resam;
+  R& resam;
 
   /**
    * Number of PMMH steps when rejuvenating.
    */
   int Nmoves;
-
-  /**
-   * Rejuvenate with local moves?
-   */
-  MarginalSIRAdapter adapter;
-
-  /**
-   * Scale of local proposal standard deviation when rejuvenating, relative
-   * to sample standard deviation.
-   */
-  real adapterScale;
-
-  /**
-   * Relative ESS trigger for adaptation.
-   */
-  real adapterEssRel;
-
-  /**
-   * Output.
-   */
-  IO1& out;
 
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -305,263 +205,112 @@ private:
   void reportRejuvenate(int timestep, long usecs);
   //@}
 };
-
-/**
- * Factory for creating MarginalSIR objects.
- *
- * @ingroup method
- *
- * @see MarginalSIR
- */
-struct MarginalSIRFactory {
-  /**
-   * Create particle MCMC sampler.
-   *
-   * @return MarginalSIR object. Caller has ownership.
-   *
-   * @see MarginalSIR::MarginalSIR()
-   */
-  template<class B, class F, class R, class IO1>
-  static MarginalSIR<B,F,R,IO1>* create(B& m, F* pmmh = NULL, R* resam = NULL,
-      const int Nmoves = 1, const MarginalSIRAdapter adapter = NO_ADAPTER,
-      const real adapterScale = 0.5, const real adapterEssRel = 0.25,
-      IO1& out = NULL) {
-    return new MarginalSIR<B,F,R,IO1>(m, pmmh, resam, Nmoves, adapter,
-        adapterScale, adapterEssRel, out);
-  }
-};
 }
 
-#include <cstdio>
 #include "../math/misc.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
-template<class B, class F, class R, class IO1>
-bi::MarginalSIR<B,F,R,IO1>::MarginalSIR(B& m, F* pmmh, R* resam,
-    const int Nmoves, const MarginalSIRAdapter adapter,
-    const real adapterScale, const real adapterEssRel, IO1& out) :
-    m(m), pmmh(pmmh), resam(resam), Nmoves(Nmoves), adapter(adapter), adapterScale(
-        adapterScale), adapterEssRel(adapterEssRel), out(out) {
+#include <cstdio>
+
+template<class B, class F, class A, class R>
+bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
+    const int Nmoves) :
+    m(m), mmh(mmh), adapter(adapter), resam(resam), Nmoves(Nmoves) {
   //
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class IO2>
-void bi::MarginalSIR<B,F,R,IO1>::sample(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last,
-    MarginalSIRState<B,L>& s, IO2& inInit, const int C) {
-  typedef typename temp_host_vector<real>::type host_logweight_vector_type;
-  typedef typename temp_host_vector<int>::type host_ancestor_vector_type;
-
-  std::vector<MarginalSIRState<B,L>*> thetas(C);  // theta-particles
-  host_logweight_vector_type lws(C);  // log-weights of theta-particles
-  host_logweight_vector_type les(last->indexOutput() - first->indexOutput());  // incremental log-evidences
-  host_ancestor_vector_type as(C);  // ancestors of theta-particles
-  real le = 0.0;
+template<class B, class F, class A, class R>
+template<class S1, class IO1, class IO2>
+void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, S1& s,
+    const int C, IO1& out, IO2& inInit) {
   ScheduleIterator iter = first;
-
-  /* init */
-  le = init(rng, *iter, s, thetas, lws, as);
-  int k = iter->indexOutput();
-  les(k) = le;
+  s.les(iter->indexOutput()) = init(rng, *iter, s, inInit);
   while (iter + 1 != last) {
-    le = step(rng, first, iter, last, s, thetas, lws, as);
-    k = iter->indexOutput();
-    les(k) = le;
+    s.les(iter->indexOutput()) = step(rng, first, iter, last, s);
   }
-  output(thetas, lws, les);
-
-  /* delete remaining stuff */
-  for (int i = 0; i < C; i++) {
-    delete thetas[i];
-  }
-
-  /* terminate */
+  output(s, out);
   term();
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-real bi::MarginalSIR<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
-    MarginalSIRState<B,L>& s, std::vector<MarginalSIRState<B,L>*>& thetas,
-    V1 lws, V2 as) {
-  /* pre-condition */
-  assert(!V1::on_device);
-  assert(!V2::on_device);
-
+template<class B, class F, class A, class R>
+template<class S1, class IO2>
+real bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
+    S1& s, IO2& inInit) {
   real le = 0.0;
-  int i;
+  int p;
 
   /* initialise theta-particles */
-  for (i = 0; i < thetas.size(); ++i) {
-    thetas[i] = new MarginalSIRState<B,L>(s.size(),
-        s.getTrajectory().size2());
-    BOOST_AUTO(&theta, *thetas[i]);
-    BOOST_AUTO(filter, pmmh->getFilter());
-
-    m.parameterSample(rng, theta);
-    theta.get(PY_VAR) = theta.get(P_VAR);
-    theta.getParameters1() = row(theta.get(P_VAR), 0);
-    theta.getLogPrior1() = m.parameterLogDensity(theta);
-
-    /* initialise x-particles for this theta */
-    filter->setOutput(&theta.getOutput());
-    filter->init(rng, theta.getParameters1(), now, theta,
-        theta.getLogWeights(), theta.getAncestors());
-    theta.getIncLogLikelihood() = filter->correct(rng, now, theta,
-        theta.getLogWeights());
-    theta.getLogLikelihood1() = theta.getIncLogLikelihood();
-    filter->output(now, theta, 0, theta.getLogWeights(),
-        theta.getAncestors());
-
-    /* initialise weights and ancestors */
-    lws(i) = theta.getIncLogLikelihood();
-    as(i) = i;
+  for (p = 0; p < s.size(); ++p) {
+    mmh.init(rng, first, first + 1, *s.thetas[p], inInit);
+    s.logWeights()(p) = theta.getIncLogLikelihood();
+    s.ancestors()(p) = p;
   }
-  le = logsumexp_reduce(lws) - bi::log(static_cast<real>(thetas.size()));
+  le = logsumexp_reduce(s.logWeights())
+      - bi::log(static_cast<real>(s.size()));
 
   return le;
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-real bi::MarginalSIR<B,F,R,IO1>::step(Random& rng,
-    const ScheduleIterator first, ScheduleIterator& iter,
-    const ScheduleIterator last, MarginalSIRState<B,L>& s,
-    std::vector<MarginalSIRState<B,L>*>& thetas, V1 lws, V2 as) {
-  typedef typename temp_host_vector<real>::type host_vector_type;
-  typedef typename temp_host_matrix<real>::type host_matrix_type;
-
-  int i, r;
+template<class B, class F, class A, class R>
+template<class S1>
+real bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
+    ScheduleIterator& iter, const ScheduleIterator last, S1& s) {
+  int p, r;
   real le = 0.0, acceptRate = 0.0, ess = 0.0;
-  GaussianPdf<host_vector_type,host_matrix_type> q(NP);  // proposal distro
 
-  ess = resam->ess(lws);
-  r = iter->isObserved() && resam->isTriggered(lws);
+  ess = resam->ess(s.logWeights());
+  r = iter->isObserved() && resam->isTriggered(s.logWeights());
   if (r) {
-    /* resample-move */
-    adapt(thetas, lws, q);
-    resample(rng, *iter, lws, as, thetas);
-    acceptRate = rejuvenate(rng, first, iter + 1, s, thetas, q, ess);
+    resample(rng, *iter, s.logWeights(), s.ancestors(), s.thetas);
+    acceptRate = rejuvenate(rng, first, iter + 1, s);
   } else {
-    Resampler::normalise(lws);
+    Resampler::normalise(s.logWeights());
   }
   report(*iter, ess, r, acceptRate);
 
   ScheduleIterator iter1;
-
-  for (i = 0; i < thetas.size(); i++) {
-    BOOST_AUTO(&theta, *thetas[i]);
-    BOOST_AUTO(filter, pmmh->getFilter());
+  for (p = 0; p < s.size(); ++p) {
     iter1 = iter;
-
-    filter->setOutput(&theta.getOutput());
-    theta.getIncLogLikelihood() = filter->step(rng, iter1, last, theta,
-        theta.getLogWeights(), theta.getAncestors());
-    theta.getLogLikelihood1() += theta.getIncLogLikelihood();
-
-    /* compute incremental evidence along the way */
-    // evidence needs to be updated with the previous weights
-    // otherwise we count the new incremental likelihood twice!!
-    lws(i) += theta.getIncLogLikelihood();
-
-    filter->samplePath(rng, theta.getTrajectory(), out);
-
+    s.logWeights()(p) += mmh.step(rng, iter1, last, *s.thetas[p]);
   }
-  le = logsumexp_reduce(lws) - bi::log(static_cast<real>(lws.size()));
+  le = logsumexp_reduce(s.logWeights())
+      - bi::log(static_cast<real>(s.size()));
   iter = iter1;
 
   return le;
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class V2, class M2>
-void bi::MarginalSIR<B,F,R,IO1>::adapt(
-    const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
-    GaussianPdf<V2,M2>& q) {
-  typedef typename sim_temp_vector<V2>::type vector_type;
-  typedef typename sim_temp_matrix<M2>::type matrix_type;
-
-  if (adapter != NO_ADAPTER) {
-    const int P = lws.size();
-    vector_type ws(P), mu(NP);
-    matrix_type Sigma(NP, NP), U(NP, NP), X(P, NP);
-    int p;
-
-    /* copy parameters into matrix */
-    for (p = 0; p < P; ++p) {
-      row(X, p) = row(thetas[p]->get(P_VAR), 0);
-    }
-
-    /* compute weighted mean, covariance and Cholesky factor */
-    expu_elements(lws, ws);
-    mean(X, ws, mu);
-    cov(X, ws, mu, Sigma);
-    chol(Sigma, U);
-
-    /* write proposal */
-    if (adapter == LOCAL_ADAPTER) {
-      matrix_scal(adapterScale, U);
-      q.mean().clear();
-    } else {
-      q.setMean(mu);
-    }
-    q.setStd(U);
-    q.init();
-  }
-}
-
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-void bi::MarginalSIR<B,F,R,IO1>::resample(Random& rng,
-    const ScheduleElement now, V1 lws, V2 as,
-    std::vector<MarginalSIRState<B,L>*>& thetas) {
+template<class B, class F, class A, class R>
+template<class S1>
+void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
+    const ScheduleElement now, S1& s) {
   if (now.isObserved()) {
-    resam->resample(rng, lws, as, thetas);
+    resam->resample(rng, s.logWeights(), s.ancestors(), s.thetas);
   }
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class M1>
-real bi::MarginalSIR<B,F,R,IO1>::rejuvenate(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last,
-    MarginalSIRState<B,L>& s,
-    const std::vector<MarginalSIRState<B,L>*>& thetas, GaussianPdf<V1,M1>& q,
-    const real ess) {
+template<class B, class F, class A, class R>
+template<class S1>
+real bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
+    const ScheduleIterator first, const ScheduleIterator last, S1& s) {
 #ifdef ENABLE_TIMING
   synchronize();
   TicToc clock;
 #endif
-  typedef typename temp_host_vector<real>::type host_vector_type;
-  typedef typename temp_host_matrix<real>::type host_matrix_type;
-
-  const int P = thetas.size();
   int p, move, naccept = 0;
-  bool accept = false;
-
-  for (p = 0; p < P; ++p) {
-    BOOST_AUTO(&theta, *thetas[p]);
-    s.resize(theta.size());
-    s = theta;
+  for (p = 0; p < s.size(); ++p) {
     for (move = 0; move < Nmoves; ++move) {
-      pmmh->getFilter()->setOutput(&s.getOutput());
-      if (adapter == NO_ADAPTER || ess < P * adapterEssRel) {
-        accept = pmmh->step(rng, first, last, s);
-      } else {
-        accept = pmmh->step(rng, first, last, s, q, adapter == LOCAL_ADAPTER);
-      }
-      if (accept) {
+      if (mmh.iterate(rng, first, last, *s.thetas[p])) {
         ++naccept;
-
-        theta.resize(s.size(), false);
-        theta = s;  ///@todo Avoid full copy, especially of cache
       }
     }
   }
-  int totalMoves = (Nmoves * p);
+
+  int totalMoves = Nmoves * s.size();
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -577,8 +326,8 @@ real bi::MarginalSIR<B,F,R,IO1>::rejuvenate(Random& rng,
   return static_cast<double>(naccept) / totalMoves;
 }
 
-template<class B, class F, class R, class IO1>
-void bi::MarginalSIR<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::reportRejuvenate(int timestep, long usecs) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -588,21 +337,14 @@ void bi::MarginalSIR<B,F,R,IO1>::reportRejuvenate(int timestep, long usecs) {
 #endif
 }
 
-template<class B, class F, class R, class IO1>
-template<bi::Location L, class V1, class V2>
-void bi::MarginalSIR<B,F,R,IO1>::output(
-    const std::vector<MarginalSIRState<B,L>*>& thetas, const V1 lws,
-    const V2 les) {
-  pmmh->setOutput(out);
-  for (int p = 0; p < thetas.size(); ++p) {
-    pmmh->output(p, *thetas[p]);
-  }
-  out.writeLogWeights(lws);
-  out.writeLogEvidences(les);
+template<class B, class F, class A, class R>
+template<class S1, class IO1>
+void bi::MarginalSIR<B,F,A,R>::output(const S1& s, IO1& out) {
+  out.write(s);
 }
 
-template<class B, class F, class R, class IO1>
-void bi::MarginalSIR<B,F,R,IO1>::report(const ScheduleElement now,
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now,
     const real ess, const bool r, const real acceptRate) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -621,8 +363,8 @@ void bi::MarginalSIR<B,F,R,IO1>::report(const ScheduleElement now,
   }
 }
 
-template<class B, class F, class R, class IO1>
-void bi::MarginalSIR<B,F,R,IO1>::term() {
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::term() {
   //
 }
 

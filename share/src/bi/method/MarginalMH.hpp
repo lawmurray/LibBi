@@ -66,8 +66,7 @@ public:
    */
   template<class S1, class IO1, class IO2>
   void sample(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S1& s, const int C = 1, IO1& out = NULL,
-      IO2& inInit = NULL);
+      const ScheduleIterator last, S1& s, const int C, IO1& out, IO2& inInit);
   //@}
 
   /**
@@ -81,7 +80,6 @@ public:
    * Initialise.
    *
    * @tparam S1 State type.
-   * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
@@ -90,10 +88,9 @@ public:
    * @param s State.
    * @param inInit Initialisation file.
    */
-  template<class S1, class IO1, class IO2>
+  template<class S1, class IO2>
   void init(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S1& s, IO1& out = NULL,
-      IO2& inInit = NULL);
+      const ScheduleIterator last, S1& s, IO2& inInit);
 
   /**
    * Take one step.
@@ -278,7 +275,7 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
   BI_ASSERT(C >= 0);
 
   const int P = s.sFilter.size();
-  init(rng, first, last, s, out, inInit);
+  init(rng, first, last, s, inInit);
   for (int c = 0; c < C; ++c) {
     step(rng, first, last, s);
     report(c, s);
@@ -289,9 +286,9 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
 }
 
 template<class B, class F>
-template<class S1, class IO1, class IO2>
+template<class S1, class IO2>
 void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
+    const ScheduleIterator last, S1& s, IO2& inInit) {
   /* log-likelihood */
   s.logLikelihood1 = filter.filter(rng, first, last, s.sFilter, s.outFilter,
       inInit);
@@ -303,8 +300,6 @@ void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
 
   /* trajectory */
   filter.samplePath(rng, s.path, s.outFilter);
-
-  out.clear();
 }
 
 template<class B, class F>

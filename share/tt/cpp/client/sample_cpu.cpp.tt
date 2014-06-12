@@ -16,6 +16,12 @@
 #include "bi/kd/kde.hpp"
 
 #include "bi/random/Random.hpp"
+
+#include "bi/state/State.hpp"
+#include "bi/state/MarginalMHState.hpp"
+#include "bi/state/MarginalSIRState.hpp"
+#include "bi/state/MarginalSRSState.hpp"
+
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
 #include "bi/method/Simulator.hpp"
@@ -149,7 +155,9 @@ int main(int argc, char* argv[]) {
     typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
     [% END %]
     [% IF client.get_named_arg('sampler') == 'sir' %]
+    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
     [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+    MarginalSRSState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
     [% ELSE %]
     MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
     [% END %]
@@ -188,20 +196,20 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
   BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
 
-  /* resampler */
+  /* resampler for x-particles */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
-  MetropolisResampler base(C, ESS_REL, BRIDGE_ESS_REL);
+  MetropolisResampler filterBase(C, ESS_REL, BRIDGE_ESS_REL);
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-  RejectionResampler base;
+  RejectionResampler filterBase;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  MultinomialResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  StratifiedResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
-  SystematicResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  SystematicResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
-  DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL, BRIDGE_ESS_REL);
+  DistributedResampler<BOOST_TYPEOF(filterBase)> filterResam(&filterBase, ESS_REL, BRIDGE_ESS_REL);
   [% ELSIF client.get_named_arg('with-kde') %]
   real h;
   if (B_ABS > 0.0) {
@@ -209,7 +217,25 @@ int main(int argc, char* argv[]) {
   } else {
     h = B_REL*hopt(m.getDynSize(), NPARTICLES);
   }
-  KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
+  KernelResampler<BOOST_TYPEOF(filterBase)> filterResam(&filterBase, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  BOOST_AUTO(filterResam, filterBase);
+  [% END %]
+  
+  /* resampler for theta-particles */
+  [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
+  MetropolisResampler base(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
+  RejectionResampler base;
+  [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
+  MultinomialResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
+  StratifiedResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  SystematicResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedResampler<BOOST_TYPEOF(base)> resam(&base, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
   BOOST_AUTO(resam, base);
   [% END %]
@@ -231,19 +257,21 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('filter') == 'kalman' %]
   BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *sim)));
   [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
-  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, BLOCK_PARTICLES)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, filterResam, stopper, BLOCK_PARTICLES)));
   [% ELSE %]
-  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, filterResam)));
   [% END %]
   
   /* sampler */
   [% IF client.get_named_arg('sampler') == 'sir' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *filter
+  BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, adapter, resam, NMOVES);
   [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSRS(m, *filter, adapter, stopper);
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]

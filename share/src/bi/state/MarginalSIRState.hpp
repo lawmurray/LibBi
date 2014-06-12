@@ -8,6 +8,8 @@
 #ifndef BI_STATE_MARGINALSIRSTATE_HPP
 #define BI_STATE_MARGINALSIRSTATE_HPP
 
+#include "MarginalMHState.hpp"
+
 #include <vector>
 
 namespace bi {
@@ -19,13 +21,15 @@ namespace bi {
  * @tparam B Model type.
  * @tparam L Location.
  * @tparam S1 Filter state type.
- * @tparam IO1 Filter cache type.
+ * @tparam IO1 Output type.
  */
 template<class B, Location L, class S1, class IO1>
 class MarginalSIRState {
 public:
   static const Location location = L;
   static const bool on_device = (L == ON_DEVICE);
+
+  typedef MarginalMHState<B,L,S1,IO1> particle_type;
 
   typedef real value_type;
   typedef typename loc_vector<L,value_type>::type vector_type;
@@ -82,14 +86,9 @@ public:
   const int_vector_reference_type ancestors() const;
 
   /**
-   * Filter states.
+   * \f$\theta\f$-particles.
    */
-  std::vector<S1*> sFilters;
-
-  /**
-   * Filter outputs.
-   */
-  std::vector<IO1*> outFilters;
+  std::vector<particle_type*> thetas;
 
 private:
   /**
@@ -98,14 +97,14 @@ private:
   vector_type lws;
 
   /**
+   * Log-evidences.
+   */
+  vector_type les;
+
+  /**
    * Ancestors.
    */
   int_vector_type as;
-
-  /**
-   * Incremental log-likelihood.
-   */
-  real incLogLikelihood;
 
   /**
    * Index of starting \f$\theta\f$-particle.
@@ -140,29 +139,19 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int T) :
-    sFilters(Ptheta), outFilters(Ptheta), lws(Ptheta), as(Ptheta), incLogLikelihood(
-        -1.0 / 0.0), ptheta(0), Ptheta(Ptheta) {
-  int p;
-  for (p = 0; p < Ptheta; ++p) {
-    sFilters[p] = new S1(Px, T);
-  }
-  for (p = 0; p < Ptheta; ++p) {
-    outFilters[p] = new IO1(m);
+    thetas(Ptheta), lws(Ptheta), les(T), as(Ptheta), ptheta(0), Ptheta(Ptheta) {
+  for (int p = 0; p < thetas.size(); ++p) {
+    thetas[p] = new particle_type(Px, T);
   }
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    sFilters(o.sFilters.size()), outFilters(o.outFilters.size()), lws(o.lws), as(
-        o.as), incLogLikelihood(o.incLogLikelihood), ptheta(o.ptheta), Ptheta(
-        o.Ptheta) {
-  int p;
-  for (p = 0; p < Ptheta; ++p) {
-    sFilters[p] = new S1(*o.sFilters[p]);
-  }
-  for (p = 0; p < Ptheta; ++p) {
-    outFilters[p] = new IO1(*o.outFilters[p]);
+    thetas(o.thetas.size()), lws(o.lws), les(o.les), as(o.as), ptheta(
+        o.ptheta), Ptheta(o.Ptheta) {
+  for (int p = 0; p < thetas.size(); ++p) {
+    thetas[p] = new particle_type(*o.thetas[p]);
   }
 }
 
@@ -173,17 +162,13 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   BI_ASSERT(o.size() == size());
 
   lws = o.lws;
+  les = o.les;
   as = o.as;
-  incLogLikelihood = o.incLogLikelihood;
   ptheta = o.ptheta;
   Ptheta = o.Ptheta;
 
-  int p;
-  for (p = 0; p < Ptheta; ++p) {
-    *sFilters[p] = *o.sFilters[p];
-  }
-  for (p = 0; p < Ptheta; ++p) {
-    *outFilters[p] = *o.outFilters[p];
+  for (int p = 0; p < thetas.size(); ++p) {
+    *thetas[p] = *o.thetas[p];
   }
   return *this;
 }
@@ -212,7 +197,7 @@ typename bi::MarginalSIRState<B,L,S1,IO1>::int_vector_reference_type bi::Margina
 }
 
 template<class B, bi::Location L, class S1, class IO1>
-const bi::MarginalSIRState<B,L,S1,IO1>::int_vector_reference_type bi::MarginalSIRState<
+const typename bi::MarginalSIRState<B,L,S1,IO1>::int_vector_reference_type bi::MarginalSIRState<
     B,L,S1,IO1>::ancestors() const {
   return subrange(as, ptheta, Ptheta);
 }
@@ -222,16 +207,13 @@ template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
   save_resizable_vector(ar, version, lws);
+  save_resizable_vector(ar, version, les);
   save_resizable_vector(ar, version, as);
 
-  int p;
-  for (p = 0; p < sFilters.size(); ++p) {
-    ar & *sFilters[p];
+  for (int p = 0; p < thetas.size(); ++p) {
+    ar & *thetas[p];
   }
-  for (p = 0; p < outFilters.size(); ++p) {
-    ar & *outFilters[p];
-  }
-  ar & incLogLikelihood & ptheta & Ptheta;
+  ar & ptheta & Ptheta;
 }
 
 template<class B, bi::Location L, class S1, class IO1>
@@ -239,16 +221,13 @@ template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
   load_resizable_vector(ar, version, lws);
+  load_resizable_vector(ar, version, les);
   load_resizable_vector(ar, version, as);
 
-  int p;
-  for (p = 0; p < sFilters.size(); ++p) {
-    ar & *sFilters[p];
+  for (int p = 0; p < thetas.size(); ++p) {
+    ar & *thetas[p];
   }
-  for (p = 0; p < outFilters.size(); ++p) {
-    ar & *outFilters[p];
-  }
-  ar & incLogLikelihood & ptheta & Ptheta;
+  ar & ptheta & Ptheta;
 }
 
 #endif

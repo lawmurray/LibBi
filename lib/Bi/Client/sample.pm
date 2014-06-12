@@ -67,19 +67,19 @@ The type of sampler to use for C<--target posterior>; one of:
 
 =item C<mh> or (deprecated) C<pmmh>
 
-Marginal Metropolis-Hastings.
+Marginal Metropolis-Hastings (MH).
 
 =item C<sir> or (deprecated) C<smc2>
 
-Marginal sequential importance resampling.
+Marginal sequential importance resampling (SIR).
 
 =item C<srs>
 
-Marginal sequential rejection sampling.
+Marginal sequential rejection sampling (SRS).
 
 =back
 
-For PMMH, the proposal works according to the L<proposal_parameter> top-level
+For MH, the proposal works according to the L<proposal_parameter> top-level
 block in the model. If this is not defined, independent draws are taken from
 the L<parameter> top-level block instead. If
 C<--with-transform-initial-to-param> is used, the L<proposal_initial>
@@ -87,7 +87,7 @@ top-level block is used to make Metropolis-Hastings proposals over initial
 conditions also. If this is not defined, independent draws are taken from the
 L<initial> top-level block instead.
 
-For SMC^2, the same blocks are used as proposals for rejuvenation steps,
+For SIR, the same blocks are used as proposals for rejuvenation steps,
 unless one of the adaptation strategies below is enabled.
 
 =item C<--nsamples> (default 1)
@@ -96,13 +96,18 @@ Number of samples to draw.
 
 =back
 
-=head2 MarginalSIR-specific options
+=head2 SIR-specific options
 
 =over 4
 
 =item C<--nmoves> (default 1)
 
-Number of PMMH steps to perform after resampling.
+Number of MH steps to perform after each resample.
+
+=item C<--sample-resampler> (default C<systematic>)
+
+The type of resampler to use on parameter particles, see C<--resampler> for
+options.
 
 =item C<--sample-ess-rel> (default 0.5)
 
