@@ -189,40 +189,29 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
 
   /* resampler */
-  [% IF client.get_named_arg('with-mpi') %]
-    [% IF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler base(C, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-    RejectionResampler base;
-    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSE %]
-    StratifiedResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% END %]
-    DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL, BRIDGE_ESS_REL);
+  [% IF client.get_named_arg('resampler') == 'metropolis' %]
+  MetropolisResampler base(C, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+  RejectionResampler base;
+  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+  MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
+  StratifiedResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
-    [% IF client.get_named_arg('resampler') == 'kernel' %]
-    real h;
-    if (B_ABS > 0.0) {
-      h = B_ABS;
-    } else {
-      h = B_REL*hopt(m.getDynSize(), NPARTICLES);
-    }
-    MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
-    MetropolisResampler resam(C, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-    RejectionResampler resam;
-    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% ELSE %]
-    StratifiedResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-    [% END %]
+  SystematicResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('with-kde') %]
+  real h;
+  if (B_ABS > 0.0) {
+    h = B_ABS;
+  } else {
+    h = B_REL*hopt(m.getDynSize(), NPARTICLES);
+  }
+  KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  BOOST_AUTO(resam, base);
   [% END %]
   
   /* stopper */

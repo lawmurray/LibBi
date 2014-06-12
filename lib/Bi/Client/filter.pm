@@ -131,10 +131,6 @@ for a Metropolis resampler (Murray 2011),
 
 for a rejection resampler (Murray, Lee & Jacob 2013), or
 
-=item C<kernel>
-
-for a kernel density resampler (Liu & West 2001).
-
 =back
 
 =back
@@ -147,9 +143,16 @@ for a kernel density resampler (Liu & West 2001).
 
 Sort weights prior to resampling.
 
+=item C<--with-kde> (default off)
+
+Resample from a kernel density estimate of the filter density (in the style
+of Liu & West 2001).
+
 =back
 
-=head2 Kernel resampler-specific options
+=head2 Kernel density estimate options
+
+The following additional options are available when C<--with-kde> is set.
 
 =over 4
 
@@ -169,6 +172,9 @@ True to shrink the kernel density estimate to preserve covariance
 
 =head2 Metropolis resampler-specific options
 
+The following additional options are available when C<--resampler> is set to
+C<metropolis>.
+
 =over 4
 
 =item C<-C> (default 0)
@@ -180,7 +186,7 @@ Number of steps to take.
 =head2 Bridge particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
-C<'bridge'>:
+C<bridge>:
 
 =over 4
 
@@ -293,6 +299,11 @@ our @CLIENT_OPTIONS = (
     },
     {
       name => 'with-sort',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-kde',
       type => 'bool',
       default => 0
     },
