@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     if (B_ABS > 0.0) {
       h = B_ABS;
     } else {
-      h = B_REL*hopt(m.getDynSize(), P);
+      h = B_REL*hopt(m.getDynSize(), NPARTICLES);
     }
     MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
     KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
@@ -253,6 +253,7 @@ int main(int argc, char* argv[]) {
   
   /* sampler */
   [% IF client.get_named_arg('sampler') == 'sir' %]
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *filter
   [% ELSIF client.get_named_arg('sampler') == 'srs' %]
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));

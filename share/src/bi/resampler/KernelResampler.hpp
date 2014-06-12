@@ -46,8 +46,8 @@ public:
   /**
    * @copydoc Resampler::resample(Random&, V1, V2, State<B,L>&)
    */
-  template<class V1, class V2, class B, Location L>
-  void resample(Random& rng, V1 lws, V2 as, State<B,L>& s);
+  template<class V1, class V2, class O1>
+  void resample(Random& rng, V1 lws, V2 as, O1 s);
   //@}
 
   /**
@@ -106,18 +106,17 @@ bi::KernelResampler<R>::KernelResampler(R* base, const real h,
 }
 
 template<class R>
-template<class V1, class V2, class B, bi::Location L>
-void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
-    State<B,L>& s) {
+template<class V1, class V2, class O1>
+void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as, O1 s) {
   /* pre-condition */
   BI_ASSERT(lws.size() == s.size());
 
-  typedef typename State<B,L>::value_type T3;
-  typedef typename loc_temp_matrix<L,T3>::type M3;
-  typedef typename loc_temp_vector<L,T3>::type V3;
+  typedef typename O1::value_type T3;
+  typedef typename loc_temp_matrix<O1::location,T3>::type M3;
+  typedef typename loc_temp_vector<O1::location,T3>::type V3;
 
-  const int P = s.size();
-  const int N = s.getDyn().size2();
+  const int P = s.size1();
+  const int N = s.size2();
 
   M3 Z(P, N), Sigma(N, N), U(N, N);
   V3 mu(N), ws(P);
@@ -125,8 +124,8 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
   /* compute statistics */
   synchronize(!ws.on_device && lws.on_device);
   expu_elements(lws, ws);
-  mean(s.getDyn(), ws, mu);
-  cov(s.getDyn(), ws, mu, Sigma);
+  mean(s, ws, mu);
+  cov(s, ws, mu, Sigma);
 
   try {
     /* Cholesky decomposition of covariance; this may throw exception, in
@@ -135,9 +134,9 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
 
     /* shrink kernel centres back toward mean to preserve covariance */
     if (shrink) {
-      matrix_scal(a, s.getDyn());
+      matrix_scal(a, s);
       scal(1.0 - a, mu);
-      add_rows(s.getDyn(), mu);
+      add_rows(s, mu);
     }
 
     /* sample kernel centres */
@@ -149,7 +148,7 @@ void bi::KernelResampler<R>::resample(Random& rng, V1 lws, V2 as,
     /* add kernel noise */
     rng.gaussians(vec(Z));
     trmm(h, U, Z, 'R', 'U');
-    matrix_axpy(1.0, Z, s.getDyn());
+    matrix_axpy(1.0, Z, s);
   } catch (CholeskyException e) {
     /* defer to base resampler */
     BI_WARN_MSG(false,
