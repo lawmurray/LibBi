@@ -309,7 +309,9 @@ double bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& theta2) {
   double ll = filter.step(rng, iter, last, theta2, theta2.out);
   theta2.logLikelihood += ll;
-  filter.samplePath(rng, theta2.path, theta2.out);
+  if (iter + 1 == last) {
+    filter.samplePath(rng, theta2.path, theta2.out);
+  }
   return ll;
 }
 
