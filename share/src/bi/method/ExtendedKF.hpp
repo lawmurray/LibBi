@@ -45,7 +45,7 @@ public:
    * @copydoc BootstrapPF::step()
    */
   template<class S1, class IO1>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       S1& s, IO1& out) throw (CholeskyException);
 
   /**
@@ -83,18 +83,15 @@ public:
    * Initialise, with fixed parameters.
    *
    * @tparam S1 State type.
-   * @tparam V1 Vector type.
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
-   * @param theta Parameters.
    * @param now Current step in time schedule.
    * @param s State.
    * @param out Output buffer.
    */
-  template<class S1, class V1, class IO1>
-  void init(Random& rng, const V1 theta, const ScheduleElement now, S1& s,
-      IO1& out);
+  template<class S1, class IO1>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out);
 
   /**
    * Predict.
@@ -121,7 +118,7 @@ public:
    * @return Estimate of the incremental log-likelihood.
    */
   template<class S1>
-  real correct(Random& rng, const ScheduleElement now, S1& s)
+  double correct(Random& rng, const ScheduleElement now, S1& s)
       throw (CholeskyException);
 
   /**
@@ -158,7 +155,7 @@ public:
    * @param out Output buffer.
    */
   template<class IO1>
-  void outputT(const real ll, IO1& out);
+  void outputT(const double ll, IO1& out);
 
   /**
    * Clean up.
@@ -258,9 +255,9 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
 }
 
 template<class B, class S>
-template<class S1, class V1, class IO1>
-void bi::ExtendedKF<B,S>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, S1& s, IO1& out) {
+template<class S1, class IO1>
+void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
+    IO1& out) {
   // this should be the same as init() above, but with a different call to
   // sim.init()
   ident(s.F());
@@ -269,7 +266,7 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const V1 theta,
   s.R().clear();
 
   /* initialise */
-  sim.init(rng, theta, now, s);
+  sim.init(rng, now, s);
 
   /* predicted mean */
   s.mu1 = row(s.getDyn(), 0);
@@ -288,13 +285,13 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const V1 theta,
 
 template<class B, class S>
 template<class S1, class IO1>
-real bi::ExtendedKF<B,S>::step(Random& rng, ScheduleIterator& iter,
+double bi::ExtendedKF<B,S>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) throw (CholeskyException) {
   do {
     ++iter;
     predict(rng, *iter, s);
   } while (iter + 1 != last && !iter->hasOutput());
-  real ll = correct(rng, *iter, s);
+  double ll = correct(rng, *iter, s);
   output(*iter, s, out);
 
   return ll;
@@ -343,13 +340,13 @@ void bi::ExtendedKF<B,S>::predict(Random& rng, const ScheduleElement next,
 
 template<class B, class S>
 template<class S1>
-real bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
+double bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     S1& s) throw (CholeskyException) {
   typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
   typedef typename loc_temp_vector<S1::location,real>::type vector_type;
   typedef typename loc_temp_vector<S1::location,int>::type int_vector_type;
 
-  real ll = 0.0;
+  double ll = 0.0;
   s.mu2 = s.mu1;
   s.U2 = s.U1;
 
@@ -433,7 +430,7 @@ void bi::ExtendedKF<B,S>::output(const ScheduleElement now, const S1& s,
 
 template<class B, class S>
 template<class IO1>
-void bi::ExtendedKF<B,S>::outputT(const real ll, IO1& out) {
+void bi::ExtendedKF<B,S>::outputT(const double ll, IO1& out) {
   out.writeT(ll);
 }
 

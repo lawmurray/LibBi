@@ -114,6 +114,11 @@ public:
   State<B,L>& operator=(const State<B,L2>& o);
 
   /**
+   * Swap.
+   */
+  void swap(State<B,L>& o);
+
+  /**
    * Set the active range of trajectories in the state.
    *
    * @param p The starting index.
@@ -445,6 +450,13 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   std::copy(o.builtin, o.builtin + 3, builtin);
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::State<B,L>::swap(State<B,L>& o) {
+  Xdn.swap(o.Xdn);
+  Kdn.swap(o.Kdn);
+  std::swap(builtin, o.builtin);
 }
 
 template<class B, bi::Location L>

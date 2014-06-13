@@ -96,7 +96,7 @@ bi::MarginalSRS<B,F,A,S>::MarginalSRS(B& m, F& filter, A& adapter, S& stopper) :
   //
 }
 
-template<class B, class F, class A, class S, class IO1>
+template<class B, class F, class A, class S>
 template<class S1, class IO1, class IO2>
 void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,

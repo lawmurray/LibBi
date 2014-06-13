@@ -37,6 +37,11 @@ public:
   BootstrapPFState& operator=(const BootstrapPFState<B,L>& o);
 
   /**
+   * Swap.
+   */
+  void swap(BootstrapPFState<B,L>& o);
+
+  /**
    * Log-weights vector.
    */
   typename State<B,L>::vector_reference_type logWeights();
@@ -117,6 +122,13 @@ bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
   as = o.as;
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::BootstrapPFState<B,L>::swap(BootstrapPFState<B,L>& o) {
+  State<B,L>::swap(o);
+  lws.swap(o.lws);
+  as.swap(o.as);
 }
 
 template<class B, bi::Location L>

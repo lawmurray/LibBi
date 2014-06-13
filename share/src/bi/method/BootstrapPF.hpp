@@ -58,7 +58,7 @@ public:
    * @return Estimate of the incremental log-likelihood.
    */
   template<class S1, class IO1>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       S1& s, IO1& out);
 
   /**
@@ -105,20 +105,18 @@ public:
       IO2& inInit);
 
   /**
-   * Initialise, with fixed parameters.
+   * Initialise.
    *
    * @tparam S1 State type.
    * @tparam V1 Vector type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param theta Parameters.
    * @param[out] s State.
    * @param[out] out Output buffer.
    */
-  template<class S1, class V1, class IO1>
-  void init(Random& rng, const V1 theta, const ScheduleElement now, S1& s,
-      IO1& out);
+  template<class S1, class IO1>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out);
 
   /**
    * Predict.
@@ -144,7 +142,7 @@ public:
    * @return Estimate of the incremental log-likelihood.
    */
   template<class S1>
-  real correct(Random& rng, const ScheduleElement now, S1& s);
+  double correct(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * Resample.
@@ -194,7 +192,7 @@ public:
    * @param out Output buffer.
    */
   template<class IO1>
-  void outputT(const real ll, IO1& out);
+  void outputT(const double ll, IO1& out);
 
   /**
    * Clean up.
@@ -213,7 +211,7 @@ protected:
    * @return Maximum log-weight.
    */
   template<class S1>
-  real getMaxLogWeight(const ScheduleElement now, S1& s);
+  double getMaxLogWeight(const ScheduleElement now, S1& s);
 
   /**
    * Model.
@@ -261,10 +259,10 @@ void bi::BootstrapPF<B,S,R>::init(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class S, class R>
-template<class S1, class V1, class IO1>
-void bi::BootstrapPF<B,S,R>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, S1& s, IO1& out) {
-  sim.init(rng, theta, now, s);
+template<class S1, class IO1>
+void bi::BootstrapPF<B,S,R>::init(Random& rng, const ScheduleElement now,
+    S1& s, IO1& out) {
+  sim.init(rng, now, s);
   s.logWeights().clear();
   seq_elements(s.ancestors(), 0);
   out.clear();
@@ -272,9 +270,9 @@ void bi::BootstrapPF<B,S,R>::init(Random& rng, const V1 theta,
 
 template<class B, class S, class R>
 template<class S1, class IO1>
-real bi::BootstrapPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
+double bi::BootstrapPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
-  real ll = 0.0;
+  double ll = 0.0;
   do {
     resample(rng, *iter, s);
     ++iter;
@@ -295,14 +293,14 @@ void bi::BootstrapPF<B,S,R>::predict(Random& rng, const ScheduleElement next,
 
 template<class B, class S, class R>
 template<class S1>
-real bi::BootstrapPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
+double bi::BootstrapPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
     S1& s) {
-  real ll = 0.0;
+  double ll = 0.0;
   if (now.isObserved()) {
     m.observationLogDensities(s, sim.obs.getMask(now.indexObs()),
         s.logWeights());
     ll = logsumexp_reduce(s.logWeights())
-        - bi::log(static_cast<real>(s.size()));
+        - bi::log(static_cast<double>(s.size()));
   }
   return ll;
 }
@@ -344,7 +342,7 @@ void bi::BootstrapPF<B,S,R>::output(const ScheduleElement now, const S1& s,
 
 template<class B, class S, class R>
 template<class IO1>
-void bi::BootstrapPF<B,S,R>::outputT(const real ll, IO1& out) {
+void bi::BootstrapPF<B,S,R>::outputT(const double ll, IO1& out) {
   out.writeT(ll);
 }
 
@@ -355,7 +353,7 @@ void bi::BootstrapPF<B,S,R>::term() {
 
 template<class B, class S, class R>
 template<class S1>
-real bi::BootstrapPF<B,S,R>::getMaxLogWeight(const ScheduleElement now,
+double bi::BootstrapPF<B,S,R>::getMaxLogWeight(const ScheduleElement now,
     S1& s) {
   return this->m.observationMaxLogDensity(s, sim.obs.getMask(now.indexObs()));
 }

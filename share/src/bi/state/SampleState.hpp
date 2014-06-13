@@ -22,7 +22,7 @@ namespace bi {
  * @tparam IO1 Filter cache type.
  */
 template<class B, Location L, class S1, class IO1>
-class SampleState: S1 {
+class SampleState: public S1 {
 public:
   /**
    * Host vector type.
@@ -105,7 +105,7 @@ public:
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::SampleState<B,L,S1,IO1>::SampleState(B& m, const int P, const int T) :
-    S1(P, T), out(m), path(B::NR + B::ND, T), logLikelihood(-1.0 / 0.0), logPrior(
+    S1(P), out(m), path(B::NR + B::ND, T), logLikelihood(-1.0 / 0.0), logPrior(
         -1.0 / 0.0), logProposal(-1.0 / 0.0) {
   //
 }

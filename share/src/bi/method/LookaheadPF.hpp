@@ -39,7 +39,7 @@ public:
    * @copydoc BootstrapPF::step()
    */
   template<class S1, class IO1>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       S1& s, IO1& out);
   //@}
 
@@ -60,9 +60,8 @@ public:
   /**
    * @copydoc BootstrapPF::init()
    */
-  template<class S1, class V1, class IO1>
-  void init(Random& rng, const V1 theta, const ScheduleElement now, S1& s,
-      IO1& out);
+  template<class S1, class IO1>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out);
 
   /**
    * Perform lookahead.
@@ -77,14 +76,14 @@ public:
    * @return Normalising constant contribution.
    */
   template<class S1>
-  real lookahead(Random& rng, const ScheduleIterator iter,
+  double lookahead(Random& rng, const ScheduleIterator iter,
       const ScheduleIterator last, S1& s);
 
   /**
    * @copydoc BootstrapPF::correct()
    */
   template<class S1>
-  real correct(Random& rng, const ScheduleElement now, S1& s);
+  double correct(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * @copydoc BootstrapPF::resample()
@@ -105,7 +104,7 @@ protected:
    * @return Maximum log-weight.
    */
   template<class S1>
-  real getMaxLogWeightBridge(const ScheduleElement now, S1& s);
+  double getMaxLogWeightBridge(const ScheduleElement now, S1& s);
 };
 }
 
@@ -129,18 +128,18 @@ void bi::LookaheadPF<B,S,R>::init(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class S, class R>
-template<class S1, class V1, class IO1>
-void bi::LookaheadPF<B,S,R>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, S1& s, IO1& out) {
-  BootstrapPF<B,S,R>::init(rng, theta, now, s, out);
+template<class S1, class IO1>
+void bi::LookaheadPF<B,S,R>::init(Random& rng, const ScheduleElement now,
+    S1& s, IO1& out) {
+  BootstrapPF<B,S,R>::init(rng, now, s, out);
   s.logAuxWeights().clear();
 }
 
 template<class B, class S, class R>
 template<class S1, class IO1>
-real bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
+double bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
-  real ll = 0.0;
+  double ll = 0.0;
   do {
     ll += this->lookahead(rng, iter, last, s);
     this->resample(rng, *iter, s);
@@ -155,9 +154,9 @@ real bi::LookaheadPF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
 
 template<class B, class S, class R>
 template<class S1>
-real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
+double bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
-  real ll = 0.0;
+  double ll = 0.0;
   if (iter->hasBridge() && last->indexObs() > iter->indexObs()) {
     if (iter->isObserved()) {
       Resampler::normalise(s.logWeights());
@@ -190,16 +189,16 @@ real bi::LookaheadPF<B,S,R>::lookahead(Random& rng,
 
     axpy(1.0, s.logAuxWeights(), s.logWeights());
     ll = logsumexp_reduce(s.logWeights())
-        - bi::log(static_cast<real>(s.size()));
+        - bi::log(static_cast<double>(s.size()));
   }
   return ll;
 }
 
 template<class B, class S, class R>
 template<class S1>
-real bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
+double bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
     S1& s) {
-  real ll = 0.0;
+  double ll = 0.0;
   if (now.isObserved()) {
     axpy(-1.0, s.logAuxWeights(), s.logWeights());
     s.logAuxWeights().clear();
@@ -208,7 +207,7 @@ real bi::LookaheadPF<B,S,R>::correct(Random& rng, const ScheduleElement now,
         s.logWeights());
 
     ll = logsumexp_reduce(s.logWeights())
-        - bi::log(static_cast<real>(s.size()));
+        - bi::log(static_cast<double>(s.size()));
   }
   return ll;
 }
@@ -259,7 +258,7 @@ bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
 
 template<class B, class S, class R>
 template<class S1>
-real bi::LookaheadPF<B,S,R>::getMaxLogWeightBridge(const ScheduleElement now,
+double bi::LookaheadPF<B,S,R>::getMaxLogWeightBridge(const ScheduleElement now,
     S1& s) {
   return this->m.bridgeMaxLogDensity(s, this->sim.obs.getMask(now.indexObs()));
 }

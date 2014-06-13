@@ -92,19 +92,17 @@ public:
    * @return Estimate of the marginal log-likelihood.
    */
   template<class S1, class IO1, class IO2>
-  real filter(Random& rng, const ScheduleIterator first,
+  double filter(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, S1& s, IO1& out, IO2& inInit);
 
   /**
-   * %Filter forward, with fixed parameters.
+   * %Filter forward.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
    * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
-   * @param theta Parameters.
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param[out] s BootstrapPFState.
@@ -112,8 +110,8 @@ public:
    *
    * @return Estimate of the marginal log-likelihood.
    */
-  template<class V1, class S1, class IO1>
-  real filter(Random& rng, const V1 theta, const ScheduleIterator first,
+  template<class S1, class IO1>
+  double filter(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, S1& s, IO1& out);
 };
 }
@@ -122,10 +120,10 @@ public:
 
 template<class F>
 template<class S1, class IO1, class IO2>
-real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
+double bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   const int P = s.size();
-  real ll = 0.0;
+  double ll = 0.0;
 
   ScheduleIterator iter = first;
   this->init(rng, *iter, s, out, inInit);
@@ -142,18 +140,17 @@ real bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
 }
 
 template<class F>
-template<class V1, class S1, class IO1>
-real bi::Filter<F>::filter(Random& rng, const V1 theta,
-    const ScheduleIterator first, const ScheduleIterator last, S1& s,
-    IO1& out) {
+template<class S1, class IO1>
+double bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s, IO1& out) {
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 
   const int P = s.size();
-  real ll = 0.0;
+  double ll = 0.0;
 
   ScheduleIterator iter = first;
-  this->init(rng, theta, *iter, s, out);
+  this->init(rng, *iter, s, out);
   this->output0(s, out);
   ll = this->correct(rng, *iter, s);
   this->output(*iter, s, out);

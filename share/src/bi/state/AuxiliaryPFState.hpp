@@ -37,6 +37,11 @@ public:
   AuxiliaryPFState& operator=(const AuxiliaryPFState<B,L>& o);
 
   /**
+   * Swap.
+   */
+  void swap(AuxiliaryPFState<B,L>& o);
+
+  /**
    * Auxiliary log-weights vector.
    */
   typename State<B,L>::vector_reference_type logAuxWeights();
@@ -101,6 +106,12 @@ bi::AuxiliaryPFState<B,L>& bi::AuxiliaryPFState<B,L>::operator=(
   qlws = o.qlws;
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::AuxiliaryPFState<B,L>::swap(AuxiliaryPFState<B,L>& o) {
+  BootstrapPFState<B,L>::swap(o);
+  qlws.swap(o.qlws);
 }
 
 template<class B, bi::Location L>

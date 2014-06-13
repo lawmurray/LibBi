@@ -36,6 +36,11 @@ public:
    */
   ExtendedKFState& operator=(const ExtendedKFState<B,L>& o);
 
+  /**
+   * Swap.
+   */
+  void swap(ExtendedKFState<B,L>& o);
+
   /*
    * Views of Jacobian matrices etc.
    */
@@ -104,6 +109,16 @@ bi::ExtendedKFState<B,L>& bi::ExtendedKFState<B,L>::operator=(
   C = o.C;
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::ExtendedKFState<B,L>::swap(ExtendedKFState<B,L>& o) {
+  State<B,L>::swap(o);
+  mu1.swap(o.mu1);
+  mu2.swap(o.mu2);
+  U1.swap(o.U1);
+  U2.swap(o.U2);
+  C.swap(o.C);
 }
 
 template<class B, bi::Location L>

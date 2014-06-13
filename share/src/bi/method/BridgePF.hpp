@@ -42,7 +42,7 @@ public:
    * @copydoc LookaheadPF::step()
    */
   template<class S1, class IO1>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       S1& s, IO1& out);
 //@}
 
@@ -65,7 +65,7 @@ public:
    * @return Normalising constant contribution.
    */
   template<class S1>
-  real bridge(Random& rng, const ScheduleIterator iter,
+  double bridge(Random& rng, const ScheduleIterator iter,
       const ScheduleIterator last, S1& s);
   //@}
 };
@@ -82,9 +82,9 @@ bi::BridgePF<B,S,R>::BridgePF(B& m, S& sim, R& resam) :
 
 template<class B, class S, class R>
 template<class S1, class IO1>
-real bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
+double bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
-  real ll = 0.0;
+  double ll = 0.0;
   do {
     ll += this->bridge(rng, iter, last, s);
     this->resample(rng, *iter, s);
@@ -99,9 +99,9 @@ real bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
 
 template<class B, class S, class R>
 template<class S1>
-real bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
+double bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
     const ScheduleIterator last, S1& s) {
-  real ll = 0.0;
+  double ll = 0.0;
   if (iter->hasBridge() && !iter->isObserved()
       && last->indexObs() > iter->indexObs()) {
     axpy(-1.0, s.logAuxWeights(), s.logWeights());
@@ -112,7 +112,7 @@ real bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
 
     axpy(1.0, s.logAuxWeights(), s.logWeights());
     ll = logsumexp_reduce(s.logWeights())
-        - bi::log(static_cast<real>(s.size()));
+        - bi::log(static_cast<double>(s.size()));
   }
   return ll;
 }

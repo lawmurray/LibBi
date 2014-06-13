@@ -184,6 +184,11 @@ our @CLIENT_OPTIONS = (
       default => '1'
     },
     {
+      name => 'sample-resampler',
+      type => 'string',
+      default => 'systematic'
+    },
+    {
       name => 'sample-ess-rel',
       type => 'float',
       default => 0.5

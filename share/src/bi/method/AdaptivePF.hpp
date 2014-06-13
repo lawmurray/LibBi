@@ -48,7 +48,7 @@ public:
    * @copydoc BootstrapPF::step()
    */
   template<bi::Location L, class IO1>
-  real step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       BootstrapPFState<B,L>& s, IO1& out);
   //@}
 
@@ -92,7 +92,7 @@ bi::AdaptivePF<B,S,R,S2>::AdaptivePF(B& m, S& sim, R& resam, S2& stopper,
 
 template<class B, class S, class R, class S2>
 template<bi::Location L, class IO1>
-real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
+double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, BootstrapPFState<B,L>& s, IO1& out) {
   typedef typename loc_temp_vector<L,real>::type vector_type;
   typedef typename loc_temp_matrix<L,real>::type matrix_type;
@@ -112,7 +112,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
 
   bool finished = false;
   int block = 0;
-  real maxlw, ll = 0.0;
+  double maxlw, ll = 0.0;
   BOOST_AUTO(iter1, iter);
 
   /* propagate block by block */
@@ -144,7 +144,7 @@ real bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   s.setRange(0, length);
   //s.trim(); // optional, saves memory but means reallocation
   iter = iter1;  // caller expects iter to be advanced at end of step()
-  ll = logsumexp_reduce(s.logWeights()) - bi::log(static_cast<real>(length));
+  ll = logsumexp_reduce(s.logWeights()) - bi::log(static_cast<double>(length));
 
   return ll;
 }

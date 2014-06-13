@@ -79,22 +79,19 @@ public:
    */
   template<Location L, class IO2>
   void init(Random& rng, const ScheduleElement now, State<B,L>& s,
-      IO2& inInit = NULL);
+      IO2& inInit);
 
   /**
    * Initialise for simulation, with fixed parameters.
    *
    * @tparam L Location.
-   * @tparam V1 Vector type.
    *
    * @param[in,out] rng Random number generator.
-   * @param theta Parameters.
    * @param now Current step in time schedule.
    * @param[out] s State.
    */
-  template<Location L, class V1>
-  void init(Random& rng, const V1 theta, const ScheduleElement now,
-      State<B,L>& s);
+  template<Location L>
+  void init(Random& rng, const ScheduleElement now, State<B,L>& s);
 
   /**
    * Advance model forward to time of next output, and output.
@@ -293,34 +290,32 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class V1>
-void bi::Simulator<B,F,O>::init(Random& rng, const V1 theta,
-    const ScheduleElement now, State<B,L>& s) {
-  /* pre-condition */
-  BI_ASSERT(theta.size() == B::NP);
-
+template<bi::Location L>
+void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
+    State<B,L>& s) {
   s.setTime(now.getTime());
-  s.clear();
 
   /* static inputs */
   in.update0(s);
 
   /* dynamic inputs */
+  s.get(F_VAR).clear();
   if (now.hasInput()) {
     in.update(now.indexInput(), s);
   }
 
   /* observations */
+  s.get(OY_VAR).clear();
   if (now.hasObs()) {
     obs.update(now.indexObs(), s);
   }
 
   /* parameters */
-  vec(s.get(P_VAR)) = theta;
   s.get(PY_VAR) = s.get(P_VAR);
   m.parameterSimulate(s);
 
   /* initial values */
+  s.getDyn().clear();
   m.initialSamples(rng, s);
 }
 
