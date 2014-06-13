@@ -35,30 +35,6 @@ public:
       READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
       const size_t T = 0);
 
-  /**
-   * @copydoc SMCNetCDFBuffer::readLogWeights()
-   */
-  template<class V1>
-  void readLogWeights(V1 lws) const;
-
-  /**
-   * @copydoc SMCNetCDFBuffer::writeLogWeights()
-   */
-  template<class V1>
-  void writeLogWeights(const V1 lws);
-
-  /**
-   * @copydoc SMCNetCDFBuffer::readLogEvidences()
-   */
-  template<class V1>
-  void readLogEvidences(V1 les) const;
-
-  /**
-   * @copydoc SMCNetCDFBuffer::writeLogEvidences()
-   */
-  template<class V1>
-  void writeLogEvidences(const V1 les);
-
 private:
   /**
    * Serialize.

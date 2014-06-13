@@ -8,7 +8,7 @@
 #ifndef BI_STATE_MARGINALSIRSTATE_HPP
 #define BI_STATE_MARGINALSIRSTATE_HPP
 
-#include "MarginalMHState.hpp"
+#include "SamplerState.hpp"
 
 #include <vector>
 
@@ -29,7 +29,7 @@ public:
   static const Location location = L;
   static const bool on_device = (L == ON_DEVICE);
 
-  typedef MarginalMHState<B,L,S1,IO1> particle_type;
+  typedef SamplerState<B,L,S1,IO1> state_type;
 
   typedef real value_type;
   typedef typename loc_vector<L,value_type>::type vector_type;
@@ -88,18 +88,23 @@ public:
   /**
    * \f$\theta\f$-particles.
    */
-  std::vector<particle_type*> thetas;
+  std::vector<state_type*> thetas;
+
+  /**
+   * Proposed state.
+   */
+  state_type theta2;
+
+  /**
+   * Log-evidences.
+   */
+  vector_type les;
 
 private:
   /**
    * Log-weights.
    */
   vector_type lws;
-
-  /**
-   * Log-evidences.
-   */
-  vector_type les;
 
   /**
    * Ancestors.
@@ -139,19 +144,20 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int T) :
-    thetas(Ptheta), lws(Ptheta), les(T), as(Ptheta), ptheta(0), Ptheta(Ptheta) {
+    thetas(Ptheta), theta2(m, Px, T), lws(Ptheta), les(T), as(Ptheta), ptheta(
+        0), Ptheta(Ptheta) {
   for (int p = 0; p < thetas.size(); ++p) {
-    thetas[p] = new particle_type(Px, T);
+    thetas[p] = new state_type(m, Px, T);
   }
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    thetas(o.thetas.size()), lws(o.lws), les(o.les), as(o.as), ptheta(
+    thetas(o.thetas.size()), theta2(o.theta2), lws(o.lws), les(o.les), as(o.as), ptheta(
         o.ptheta), Ptheta(o.Ptheta) {
   for (int p = 0; p < thetas.size(); ++p) {
-    thetas[p] = new particle_type(*o.thetas[p]);
+    thetas[p] = new state_type(*o.thetas[p]);
   }
 }
 
@@ -161,15 +167,16 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   /* pre-condition */
   BI_ASSERT(o.size() == size());
 
+  for (int p = 0; p < thetas.size(); ++p) {
+    *thetas[p] = *o.thetas[p];
+  }
+  theta2 = o.theta2;
   lws = o.lws;
   les = o.les;
   as = o.as;
   ptheta = o.ptheta;
   Ptheta = o.Ptheta;
 
-  for (int p = 0; p < thetas.size(); ++p) {
-    *thetas[p] = *o.thetas[p];
-  }
   return *this;
 }
 

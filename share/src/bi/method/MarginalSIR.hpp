@@ -10,17 +10,9 @@
 #define BI_METHOD_MARGINALSIR_HPP
 
 #include "misc.hpp"
-#include "../state/MarginalSIRState.hpp"
 #include "../state/Schedule.hpp"
-#include "../math/vector.hpp"
-#include "../math/matrix.hpp"
-#include "../math/view.hpp"
-#include "../math/operation.hpp"
-#include "../misc/location.hpp"
 #include "../misc/exception.hpp"
 #include "../primitive/vector_primitive.hpp"
-#include "../pdf/misc.hpp"
-#include "../pdf/GaussianPdf.hpp"
 
 namespace bi {
 /**
@@ -104,8 +96,8 @@ public:
    * @return Log-evidence.
    */
   template<class S1>
-  double step(Random& rng, const ScheduleIterator first, ScheduleIterator& iter,
-      const ScheduleIterator last, S1& s);
+  double step(Random& rng, const ScheduleIterator first,
+      ScheduleIterator& iter, const ScheduleIterator last, S1& s);
 
   /**
    * Resample \f$\theta\f$-particles.
@@ -189,31 +181,8 @@ private:
    * Number of PMMH steps when rejuvenating.
    */
   int Nmoves;
-
-  /* net sizes, for convenience */
-  static const int NR = B::NR;
-  static const int ND = B::ND;
-  static const int NP = B::NP;
-
-  /**
-   * @name Timing
-   */
-  //@{
-  /**
-   * Report rejuvenate timings to stderr.
-   */
-  void reportRejuvenate(int timestep, long usecs);
-  //@}
 };
 }
-
-#include "../math/misc.hpp"
-#include "../math/sim_temp_vector.hpp"
-#include "../math/sim_temp_matrix.hpp"
-
-#include "boost/typeof/typeof.hpp"
-
-#include <cstdio>
 
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
@@ -228,7 +197,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
   ScheduleIterator iter = first;
-  s.les(iter->indexOutput()) = init(rng, *iter, s, inInit);
+  s.les(iter->indexOutput()) = init(rng, iter, s, inInit);
   while (iter + 1 != last) {
     s.les(iter->indexOutput()) = step(rng, first, iter, last, s);
   }
@@ -238,18 +207,14 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
 
 template<class B, class F, class A, class R>
 template<class S1, class IO2>
-double bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
-    S1& s, IO2& inInit) {
-  double le = 0.0;
-  int p;
-
-  /* initialise theta-particles */
-  for (p = 0; p < s.size(); ++p) {
+double bi::MarginalSIR<B,F,A,R>::init(Random& rng,
+    const ScheduleIterator first, S1& s, IO2& inInit) {
+  for (int p = 0; p < s.size(); ++p) {
     mmh.init(rng, first, first + 1, *s.thetas[p], inInit);
     s.logWeights()(p) = s.thetas[p]->logLikelihood;
     s.ancestors()(p) = p;
   }
-  le = logsumexp_reduce(s.logWeights())
+  double le = logsumexp_reduce(s.logWeights())
       - bi::log(static_cast<double>(s.size()));
 
   return le;
@@ -257,15 +222,16 @@ double bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
 
 template<class B, class F, class A, class R>
 template<class S1>
-double bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
-    ScheduleIterator& iter, const ScheduleIterator last, S1& s) {
+double bi::MarginalSIR<B,F,A,R>::step(Random& rng,
+    const ScheduleIterator first, ScheduleIterator& iter,
+    const ScheduleIterator last, S1& s) {
   int p, r;
-  double le = 0.0, acceptRate = 0.0, ess = 0.0;
+  double acceptRate = 0.0, ess = 0.0;
 
-  ess = resam->ess(s.logWeights());
-  r = iter->isObserved() && resam->isTriggered(s.logWeights());
+  ess = resam.ess(s.logWeights());
+  r = iter->isObserved() && resam.isTriggered(s.logWeights());
   if (r) {
-    resample(rng, *iter, s.logWeights(), s.ancestors(), s.thetas);
+    resample(rng, *iter, s);
     acceptRate = rejuvenate(rng, first, iter + 1, s);
   } else {
     Resampler::normalise(s.logWeights());
@@ -275,11 +241,12 @@ double bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   ScheduleIterator iter1;
   for (p = 0; p < s.size(); ++p) {
     iter1 = iter;
-    s.logWeights()(p) += mmh.step(rng, iter1, last, *s.thetas[p]);
+    s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.thetas[p]);
   }
-  le = logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(s.size()));
   iter = iter1;
+
+  double le = logsumexp_reduce(s.logWeights())
+      - bi::log(static_cast<double>(s.size()));
 
   return le;
 }
@@ -289,7 +256,7 @@ template<class S1>
 void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
   if (now.isObserved()) {
-    resam->resample(rng, s.logWeights(), s.ancestors(), s.thetas);
+    resam.resample(rng, s.logWeights(), s.ancestors(), s.thetas);
   }
 }
 
@@ -304,7 +271,8 @@ double bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   int p, move, naccept = 0;
   for (p = 0; p < s.size(); ++p) {
     for (move = 0; move < Nmoves; ++move) {
-      if (mmh.iterate(rng, first, last, *s.thetas[p])) {
+      mmh.propose(rng, first, last, *s.thetas[p], s.theta2);
+      if (mmh.acceptReject(rng, *s.thetas[p], s.theta2)) {
         ++naccept;
       }
     }
@@ -318,23 +286,7 @@ double bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
 
-#ifdef ENABLE_TIMING
-  long usecs = clock.toc();
-  const int timesteps = s.getOutput().size() - 1;
-  reportRejuvenate(timesteps, usecs);
-#endif
   return static_cast<double>(naccept) / totalMoves;
-}
-
-template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::reportRejuvenate(int timestep, long usecs) {
-#ifdef ENABLE_MPI
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-  fprintf(stderr, "%d: MarginalSIR::rejuvenate proc %d %ld us\n", timestep, rank, usecs);
-#else
-  fprintf(stderr, "%d: MarginalSIR::rejuvenate %ld us\n", timestep, usecs);
-#endif
 }
 
 template<class B, class F, class A, class R>

@@ -8,6 +8,8 @@
 #ifndef BI_STATE_MARGINALSRSSTATE_HPP
 #define BI_STATE_MARGINALSRSSTATE_HPP
 
+#include "SamplerState.hpp"
+
 namespace bi {
 /**
  * State for MarginalSRS.
@@ -16,45 +18,39 @@ namespace bi {
  *
  * @tparam B Model type.
  * @tparam L Location.
- * @tparam F Filter state type.
+ * @tparam S1 Filter state type.
+ * @tparam IO1 Output type.
  */
-template<class B, Location L, template<class, bi::Location> class F>
-class MarginalSRSState: public F<B,L> {
+template<class B, Location L, class S1, class IO1>
+class MarginalSRSState: public SamplerState<B,L,S1,IO1> {
 public:
+  typedef SamplerState<B,L,S1,IO1> parent_type;
+
   /**
    * Constructor.
    *
-   * @param P Number of \f$x\f$-particles.
+   * @param m Model.
+   * @param P Number of particles.
    * @param T Number of time points.
    */
-  MarginalSRSState(const int P = 0, const int T = 0);
+  MarginalSRSState(B& m, const int P = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
    */
-  MarginalSRSState(const MarginalSRSState<B,L,F>& o);
+  MarginalSRSState(const MarginalSRSState<B,L,S1,IO1>& o);
 
   /**
    * Assignment operator.
    */
-  MarginalSRSState& operator=(const MarginalSRSState<B,L,F>& o);
+  MarginalSRSState& operator=(const MarginalSRSState<B,L,S1,IO1>& o);
 
-  /**
-   * Weight thresholds for each time.
-   */
-  typename State<B,L>::vector_reference_type thresholds();
-
-  /**
-   * Weight thresholds for each time.
-   */
-  const typename State<B,L>::vector_reference_type thresholds() const;
-
-private:
   /**
    * Weight thresholds for each time.
    */
   typename State<B,L>::vector_type omegas;
 
+private:
   /**
    * Serialize.
    */
@@ -75,51 +71,42 @@ private:
 };
 }
 
-template<class B, bi::Location L, template<class, bi::Location> class F>
-bi::MarginalSRSState<B,L,F>::MarginalSRSState(const int P, const int T) :
-    F<B,L>(P), omegas(T) {
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSRSState<B,L,S1,IO1>::MarginalSRSState(B& m, const int P,
+    const int T) :
+    parent_type(m, P, T), omegas(T) {
   //
 }
 
-template<class B, bi::Location L, template<class, bi::Location> class F>
-bi::MarginalSRSState<B,L,F>::MarginalSRSState(
-    const MarginalSRSState<B,L,F>& o) :
-    F<B,L>(o), omegas(o.omegas) {
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSRSState<B,L,S1,IO1>::MarginalSRSState(
+    const MarginalSRSState<B,L,S1,IO1>& o) :
+    parent_type(o), omegas(o.omegas) {
   //
 }
 
-template<class B, bi::Location L, template<class, bi::Location> class F>
-bi::MarginalSRSState<B,L,F>& bi::MarginalSRSState<B,L,F>::operator=(
-    const MarginalSRSState<B,L,F>& o) {
-  F<B,L>::operator=(o);
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSRSState<B,L,S1,IO1>& bi::MarginalSRSState<B,L,S1,IO1>::operator=(
+    const MarginalSRSState<B,L,S1,IO1>& o) {
+  parent_type::operator=(o);
   omegas = o.omegas;
 
   return *this;
 }
 
-template<class B, bi::Location L, template<class, bi::Location> class F>
-typename bi::State<B,L>::vector_reference_type bi::MarginalSRSState<B,L,F>::thresholds() {
-  return subrange(omegas, this->p, this->P);
-}
-
-template<class B, bi::Location L, template<class, bi::Location> class F>
-const typename bi::State<B,L>::vector_reference_type bi::MarginalSRSState<B,L,
-    F>::thresholds() const {
-  return subrange(omegas, this->p, this->P);
-}
-
-template<class B, bi::Location L, template<class, bi::Location> class F>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalSRSState<B,L,F>::save(Archive& ar,
+void bi::MarginalSRSState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < F<B,L> > (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   save_resizable_vector(ar, version, omegas);
 }
 
-template<class B, bi::Location L, template<class, bi::Location> class F>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalSRSState<B,L,F>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < F<B,L> > (*this);
+void bi::MarginalSRSState<B,L,S1,IO1>::load(Archive& ar,
+    const unsigned version) {
+  ar & boost::serialization::base_object < parent_type > (*this);
   load_resizable_vector(ar, version, omegas);
 }
 

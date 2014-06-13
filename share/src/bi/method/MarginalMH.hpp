@@ -109,9 +109,11 @@ public:
    * @param[in,out] rng Random number generator.
    * @param theta1 Current state.
    * @param theta2 Proposed state.
+   *
+   * @return Was the proposal accepted?
    */
   template<class S1>
-  void acceptReject(Random& rng, S1& theta1, S1& theta2);
+  bool acceptReject(Random& rng, S1& theta1, S1& theta2);
 
   /**
    * Extend log-likelihood to next observation.
@@ -271,12 +273,11 @@ void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
 
 template<class B, class F>
 template<class S1>
-void bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& theta1, S1& theta2) {
-  bool result = false;
+bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& theta1, S1& theta2) {
   if (!bi::is_finite(theta2.logLikelihood)) {
-    result = false;
+    lastAccepted = false;
   } else if (!bi::is_finite(theta1.logLikelihood)) {
-    result = true;
+    lastAccepted = true;
   } else {
     double loglr = theta2.logLikelihood - theta1.logLikelihood;
     double logpr = theta2.logPrior - theta1.logPrior;
@@ -289,16 +290,17 @@ void bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& theta1, S1& theta2) {
     double logratio = loglr + logpr + logqr;
     double u = rng.uniform<double>();
 
-    result = bi::log(u) < logratio;
+    lastAccepted = bi::log(u) < logratio;
   }
 
-  if (result) {
+  if (lastAccepted) {
     filter.samplePath(rng, theta2.path, theta2.out);
     theta2.swap(theta1);
     ++accepted;
   }
-  lastAccepted = result;
   ++total;
+
+  return lastAccepted;
 }
 
 template<class B, class F>
@@ -306,6 +308,7 @@ template<class S1>
 double bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& theta2) {
   double ll = filter.step(rng, iter, last, theta2, theta2.out);
+  theta2.logLikelihood += ll;
   filter.samplePath(rng, theta2.path, theta2.out);
   return ll;
 }
@@ -313,7 +316,7 @@ double bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
 template<class B, class F>
 template<class S1, class IO1>
 void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
-  out.write(c, s);
+  out.write(c, s.theta1);
 }
 
 template<class B, class F>

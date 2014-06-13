@@ -539,7 +539,6 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   for (int i = 0; i < as.size(); ++i) {
     int a = as(i);
     if (i != a) {
-      v[i]->resize(v[a]->size(), false);
       *v[i] = *v[a];
     }
   }

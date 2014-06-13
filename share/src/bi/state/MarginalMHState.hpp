@@ -8,7 +8,7 @@
 #ifndef BI_STATE_MARGINALMHSTATE_HPP
 #define BI_STATE_MARGINALMHSTATE_HPP
 
-#include "../state/SampleState.hpp"
+#include "../state/SamplerState.hpp"
 
 namespace bi {
 /**
@@ -27,7 +27,7 @@ public:
   /**
    * State type.
    */
-  typedef SampleState<B,L,S1,IO1> state_type;
+  typedef SamplerState<B,L,S1,IO1> state_type;
 
   /**
    * Constructor.
