@@ -53,8 +53,7 @@ public:
    * return.
    * @param last End of time schedule.
    * @param[in,out] s State.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry after resampling.
+   * @param out Output buffer.
    *
    * @return Estimate of the incremental log-likelihood.
    */

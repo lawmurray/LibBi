@@ -8,8 +8,7 @@
 #ifndef BI_STATE_MARGINALMHSTATE_HPP
 #define BI_STATE_MARGINALMHSTATE_HPP
 
-#include "../state/State.hpp"
-#include "../math/matrix.hpp"
+#include "../state/SampleState.hpp"
 
 namespace bi {
 /**
@@ -26,14 +25,9 @@ template<class B, Location L, class S1, class IO1>
 class MarginalMHState {
 public:
   /**
-   * Host vector type.
+   * State type.
    */
-  typedef host_vector<real> host_vector_type;
-
-  /**
-   * Matrix type.
-   */
-  typedef typename loc_temp_matrix<L,real>::type matrix_type;
+  typedef SampleState<B,L,S1,IO1> state_type;
 
   /**
    * Constructor.
@@ -55,60 +49,16 @@ public:
   MarginalMHState& operator=(const MarginalMHState<B,L,S1,IO1>& o);
 
   /**
-   * Filter state.
+   * Current state.
    */
-  S1 sFilter;
+  state_type theta1;
 
   /**
-   * Filter output.
+   * Proposed state.
    */
-  IO1 outFilter;
+  state_type theta2;
 
-  /**
-   * Current state sample.
-   */
-  matrix_type path;
-
-  /**
-   * Current parameter sample.
-   */
-  host_vector_type theta1;
-
-  /**
-   * Proposed parameter sample.
-   */
-  host_vector_type theta2;
-
-  /**
-   * Marginal log-likelihood of parameters.
-   */
-  real logLikelihood1;
-
-  /**
-   * Marginal log-likelihood of proposed parameters.
-   */
-  real logLikelihood2;
-
-  /**
-   * Log-prior density of parameters.
-   */
-  real logPrior1;
-
-  /**
-   * Log-prior density of proposed parameters.
-   */
-  real logPrior2;
-
-  /**
-   * Log-proposal of current parameters conditioned on proposed parameters.
-   */
-  real logProposal1;
-
-  /**
-   * Log-proposal of proposed parameters conditioned on current parameters.
-   */
-  real logProposal2;
-
+private:
   /**
    * Serialize.
    */
@@ -130,38 +80,24 @@ public:
 }
 
 template<class B, bi::Location L, class S1, class IO1>
-bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(B& m, const int P, const int T) :
-    sFilter(P), outFilter(m), path(B::NR + B::ND, T), theta1(B::NP), theta2(
-        B::NP), logLikelihood1(-1.0 / 0.0), logLikelihood2(-1.0 / 0.0), logPrior1(
-        -1.0 / 0.0), logPrior2(-1.0 / 0.0), logProposal1(-1.0 / 0.0), logProposal2(
-        -1.0 / 0.0) {
+bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(B& m, const int P,
+    const int T) :
+    theta1(m, P, T), theta2(m, P, T) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(
     const MarginalMHState<B,L,S1,IO1>& o) :
-    sFilter(o.sFilter), outFilter(o.outFilter), path(o.path), theta1(
-        o.theta1), theta2(o.theta2), logLikelihood1(o.logLikelihood1), logLikelihood2(
-        o.logLikelihood2), logPrior1(o.logPrior1), logPrior2(o.logPrior2), logProposal1(
-        o.logProposal1), logProposal2(o.logProposal2) {
+    theta1(o.theta1), theta2(o.theta2) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalMHState<B,L,S1,IO1>& bi::MarginalMHState<B,L,S1,IO1>::operator=(
     const MarginalMHState<B,L,S1,IO1>& o) {
-  sFilter = o.sFilter;
-  outFilter = o.outFilter;
-  path = o.path;
   theta1 = o.theta1;
   theta2 = o.theta2;
-  logLikelihood1 = o.logLikelihood1;
-  logLikelihood2 = o.logLikelihood2;
-  logPrior1 = o.logPrior1;
-  logPrior2 = o.logPrior2;
-  logProposal1 = o.logProposal1;
-  logProposal2 = o.logProposal2;
 
   return *this;
 }
@@ -170,34 +106,16 @@ template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalMHState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & sFilter;
-  ar & outFilter;
-  save_resizable_matrix(ar, version, path);
-  save_resizable_vector(ar, version, theta1);
-  save_resizable_vector(ar, version, theta2);
-  ar & logLikelihood1;
-  ar & logLikelihood2;
-  ar & logPrior1;
-  ar & logPrior2;
-  ar & logProposal1;
-  ar & logProposal2;
+  ar & theta1;
+  ar & theta2;
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalMHState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
-  ar & sFilter;
-  ar & outFilter;
-  load_resizable_matrix(ar, version, path);
-  load_resizable_vector(ar, version, theta1);
-  load_resizable_vector(ar, version, theta2);
-  ar & logLikelihood1;
-  ar & logLikelihood2;
-  ar & logPrior1;
-  ar & logPrior2;
-  ar & logProposal1;
-  ar & logProposal2;
+  ar & theta1;
+  ar & theta2;
 }
 
 #endif
