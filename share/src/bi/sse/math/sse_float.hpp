@@ -129,11 +129,11 @@ BI_FORCE_INLINE inline sse_float pow(const sse_float x, const sse_float y) {
   BI_SSEFLOAT_BIVARIATE(pow, x, y)
 }
 
-BI_FORCE_INLINE inline sse_float pow(const sse_float x, const real y) {
+BI_FORCE_INLINE inline sse_float pow(const sse_float x, const float y) {
   BI_SSEFLOAT_BIVARIATE_REAL_RIGHT(pow, x, y)
 }
 
-BI_FORCE_INLINE inline sse_float pow(const real x, const sse_float y) {
+BI_FORCE_INLINE inline sse_float pow(const float x, const sse_float y) {
   BI_SSEFLOAT_BIVARIATE_REAL_LEFT(pow, x, y)
 }
 

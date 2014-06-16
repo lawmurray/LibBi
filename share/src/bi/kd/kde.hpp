@@ -183,7 +183,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
     }
 
     /* now multithread */
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
     typename temp_host_matrix<real>::type P(p.size(), omp_get_max_threads());
 #else
     typename temp_host_matrix<real>::type P(p.size(), 1);
@@ -192,7 +192,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 
 #pragma omp parallel
     {
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       int nthreads = omp_get_num_threads();
       int tid = omp_get_thread_num();
 #else
@@ -202,11 +202,11 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
       typename V2::value_type q;
       int i, j;
 
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       omp_set_lock (&lock);
 #endif
       sim_temp_vector<M1> x1(queryTree.getSize());
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       omp_unset_lock(&lock);
 #endif
       BOOST_AUTO(x, x1.ref());
@@ -308,13 +308,13 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
         }
       }
 
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       omp_set_lock(&lock);
       omp_unset_lock(&lock);
 #endif
     }
     sum_columns(P, p);
-#ifdef defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
     omp_destroy_lock (&lock);
 #endif
   }

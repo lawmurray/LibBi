@@ -147,11 +147,11 @@ BI_FORCE_INLINE inline avx_float pow(const avx_float x,
   BI_AVXFLOAT_BIVARIATE(pow, x, y)
 }
 
-BI_FORCE_INLINE inline avx_float pow(const avx_float x, const real y) {
+BI_FORCE_INLINE inline avx_float pow(const avx_float x, const float y) {
   BI_AVXFLOAT_BIVARIATE_REAL_RIGHT(pow, x, y)
 }
 
-BI_FORCE_INLINE inline avx_float pow(const real x, const avx_float y) {
+BI_FORCE_INLINE inline avx_float pow(const float x, const avx_float y) {
   BI_AVXFLOAT_BIVARIATE_REAL_LEFT(pow, x, y)
 }
 

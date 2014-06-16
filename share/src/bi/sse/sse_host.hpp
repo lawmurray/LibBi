@@ -23,7 +23,7 @@ namespace bi {
 struct sse_host {
   typedef simd_real value_type;
   typedef host_vector_reference<simd_real> vector_reference_type;
-  typedef typename host::vector_reference_alt_type vector_reference_alt_type;
+  typedef host::vector_reference_alt_type vector_reference_alt_type;
 
   static const bool on_device = false;
 

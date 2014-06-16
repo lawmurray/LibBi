@@ -131,11 +131,11 @@ BI_FORCE_INLINE inline avx_double pow(const avx_double x,
   BI_AVXDOUBLE_BIVARIATE(pow, x, y)
 }
 
-BI_FORCE_INLINE inline avx_double pow(const avx_double x, const real y) {
+BI_FORCE_INLINE inline avx_double pow(const avx_double x, const double y) {
   BI_AVXDOUBLE_BIVARIATE_REAL_RIGHT(pow, x, y)
 }
 
-BI_FORCE_INLINE inline avx_double pow(const real x, const avx_double y) {
+BI_FORCE_INLINE inline avx_double pow(const double x, const avx_double y) {
   BI_AVXDOUBLE_BIVARIATE_REAL_LEFT(pow, x, y)
 }
 

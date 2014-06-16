@@ -124,11 +124,11 @@ BI_FORCE_INLINE inline sse_double pow(const sse_double x,
   BI_SSEDOUBLE_BIVARIATE(pow, x, y)
 }
 
-BI_FORCE_INLINE inline sse_double pow(const sse_double x, const real y) {
+BI_FORCE_INLINE inline sse_double pow(const sse_double x, const double y) {
   BI_SSEDOUBLE_BIVARIATE_REAL_RIGHT(pow, x, y)
 }
 
-BI_FORCE_INLINE inline sse_double pow(const real x, const sse_double y) {
+BI_FORCE_INLINE inline sse_double pow(const double x, const sse_double y) {
   BI_SSEDOUBLE_BIVARIATE_REAL_LEFT(pow, x, y)
 }
 
