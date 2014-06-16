@@ -246,7 +246,7 @@ inline bi::simd_real& bi::sse_host::fetch_alt(State<B,ON_HOST>& s, const int p,
   /* pre-condition */
   BI_ASSERT(!is_common_var_alt<X>::value);
 
-  return *reinterpret_cast<const simd_real*>(&s.template getVarAlt<X>(p, ix));
+  return *reinterpret_cast<simd_real*>(&s.template getVarAlt<X>(p, ix));
 }
 
 template<class B, class X>

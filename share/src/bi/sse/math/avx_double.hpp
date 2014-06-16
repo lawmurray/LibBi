@@ -70,7 +70,7 @@
 
 namespace bi {
 /**
- * 128-bit SIMD vector of doubles.
+ * 256-bit SIMD vector of doubles.
  */
 union avx_double {
   struct {

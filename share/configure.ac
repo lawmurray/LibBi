@@ -132,7 +132,7 @@ fi
 #   Thrust 1.7, so its OpenMP backend has been re-enabled.
 
 # Compilers etc
-AC_PROG_CXX([icpc g++-4.2 g++ clang])
+AC_PROG_CXX([icpc clang++ g++-4.2 g++])
 AC_PATH_PROG([NVCC], [nvcc], [nvcc], [$PATH:/usr/local/cuda/bin])
 NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_CXXCPP

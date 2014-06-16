@@ -10,6 +10,8 @@
 #ifndef BI_SSE_MATH_SCALAR_HPP
 #define BI_SSE_MATH_SCALAR_HPP
 
+#include "../../math/scalar.hpp"
+
 #ifdef ENABLE_SSE
 #include "sse_float.hpp"
 #include "sse_double.hpp"

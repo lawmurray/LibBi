@@ -13,11 +13,11 @@
 namespace bi {
 /**
  * Allocator for aligned memory. Useful to align buffers for ready loading
- * of SSE 128-bit values.
+ * of SIMD vectors.
  *
  * @ingroup primitive_allocators
  */
-template <class T, unsigned X = 16>
+template <class T, unsigned X = 32>
 class aligned_allocator {
 public:
   typedef size_t size_type;

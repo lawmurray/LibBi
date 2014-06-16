@@ -86,7 +86,7 @@
 
 namespace bi {
 /**
- * 128-bit SIMD vector of floats.
+ * 256-bit SIMD vector of floats.
  */
 union avx_float {
   struct {

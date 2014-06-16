@@ -44,7 +44,7 @@ struct temp_host_matrix {
   #ifdef ENABLE_CUDA
   typedef pipelined_allocator<pooled_allocator<pinned_allocator<T> > > allocator_type;
   #else
-  typedef aligned_allocator<T> allocator_type;
+  typedef pooled_allocator<aligned_allocator<T> > allocator_type;
   #endif
 
   /**
