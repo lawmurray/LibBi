@@ -1,6 +1,6 @@
 # Installation on Windows
 
-LibBi can run under Cygwin on Windows. CUDA support has not been tested at this stage.
+LibBi can run under Cygwin on Windows. Use of CUDA to execute code on GPUs has not been tested at this stage.
 
 ## Step 1: Install Cygwin and packages
  
@@ -29,7 +29,9 @@ Run Cygwin and enter the following at the command prompt:
     unzip thrust-1.7.0.zip
     sudo mv thrust /usr/local/include
 
-## Step 5: Install LibBi
+Note that Thrust 1.7 is the latest at time of writing. You may like to check the Thrust website <thrust.github.com> to check whether a later version is available and update the commands above accordingly.
+
+## Step 3: Install LibBi
 
 Install LibBi as per the instructions in `INSTALL.md`, running the commands in there from within Cygwin. You can then run LibBi from within Cygwin.
 

@@ -1,10 +1,10 @@
 # Installation on Mac OS X
 
-LibBi can be installed on Mac OS X by using Apple's Xcode build tools and a package manager such as Homebrew or MacPorts. The recommended package manager is Homebrew; we find that it "just works" with no additional configuration required. Instructions for MacPorts are also included below.
+LibBi can be installed on Mac OS X by using Apple's Xcode and a package manager such as Homebrew or MacPorts. The recommended package manager is Homebrew---we find that it "just works" with no additional configuration required---but instructions for MacPorts are included below also.
 
 ## Step 1: Install Xcode
  
-The easiest way to install Xcode is via the Mac App Store. Once installed, launch it and use its *Xcode > Preferences* menu item to install the *Command Line Tools* package. This will give you some of the basics required by LibBi.
+The easiest way to install Xcode is via the Mac App Store. Once installed, launch it and use the *Xcode > Preferences* menu item to install the *Command Line Tools* package. This will give you some of the basics required by LibBi.
 
 ## Step 2 (optional): Install CUDA
 
@@ -12,7 +12,7 @@ If you have a CUDA-enabled GPU and would like LibBi to be able to use it, you mu
 
 ## Step 3: Install Thrust
 
-If CUDA *is not* installed, it is necessary to install Thrust. If CUDA *is* installed, Thrust is included with it, and need not be installed separately.
+If CUDA *is not* installed, it is necessary to install Thrust. If CUDA *is* installed, Thrust is already included with it, and need not be installed separately.
 
 To install Thrust:
 
@@ -45,7 +45,7 @@ Install the MacPorts packages on which LibBi depends:
 
     sudo port install autoconf automake netcdf qrupdate atlas boost gsl
 
-To ensure that LibBi can find the gfortran libraries, symlink them into the
+To ensure that LibBi can find the `gfortran` libraries, symlink them into the
 `/opt/local/lib` directory:
 
     sudo ln -s /opt/local/lib/gcc45/libgfortran.a /opt/local/lib/.

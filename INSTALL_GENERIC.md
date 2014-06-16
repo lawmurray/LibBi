@@ -6,19 +6,18 @@ The suggested configurations for Linux, Mac OS X and Windows are given in the `I
 
 The following packages are required:
 
-  * a C++ compiler,
+  * a C++ compiler (GCC, Intel and Apple's `clang` are known to work),
   * [GNU Autotools](http://www.gnu.org/software/): autoconf and automake,
   * [Thrust](http://thrust.github.com) 1.6 or later,
   * [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) 4.2 or later,
   * [QRUpdate](http://qrupdate.sourceforge.net),
   * [GNU Scientific Library](http://www.gnu.org/software/gsl/),
-  * [Boost](http://www.boost.org) 1.43 or later, specifically Boost.Random and
-    Boost.TypeOf,
+  * [Boost](http://www.boost.org) 1.43 or later, specifically Boost.Random and Boost.TypeOf,
   * a [BLAS](http://www.netlib.org/blas/) implementation,
   * a [LAPACK](www.netlib.org/lapack/) implementation.
 
 Note that you should install, where applicable, both the compiled libraries
-and headers of these libraries; on some Linux distributions the headers are
+and headers of these libraries. On some Linux distributions the headers are
 contained in separate packages of the same name with `-devel` appended.
 
 For GPU support, the following additional packages are required:
@@ -27,7 +26,7 @@ For GPU support, the following additional packages are required:
     CURAND),
   * [MAGMA](icl.cs.utk.edu/magma/) 1.2.1 or later.
 
-The latter can be difficult to install and for almost everything you might like to do with LibBi, is not required. You may like to do without it.
+The latter can be difficult to install and, in fact, is not required for almost everything that you might like to do with LibBi. You may like to do without it.
 
 For MPI support, the following additional packages are required:
 
