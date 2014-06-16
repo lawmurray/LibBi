@@ -28,7 +28,6 @@
 #include "bi/math/function.hpp"
 #ifdef ENABLE_SSE
 #include "bi/sse/math/scalar.hpp"
-#include "bi/sse/math/function.hpp"
 #endif
 
 class Model[% model.get_name %];

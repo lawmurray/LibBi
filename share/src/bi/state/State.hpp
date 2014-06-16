@@ -830,7 +830,7 @@ int bi::State<B,L>::roundup(const int P) {
     /* zero, one or a multiple of 4 (single precision) or 2 (double
      * precision) required */
     if (P1 > 1) {
-      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
+      P1 = ((P1 + BI_SIMD_SIZE - 1)/BI_SIMD_SIZE)*BI_SIMD_SIZE;
     }
 #endif
   }

@@ -21,8 +21,8 @@ namespace bi {
  * @ingroup state_host
  */
 struct sse_host {
-  typedef sse_real value_type;
-  typedef host_vector_reference<sse_real> vector_reference_type;
+  typedef simd_real value_type;
+  typedef host_vector_reference<simd_real> vector_reference_type;
   typedef typename host::vector_reference_alt_type vector_reference_alt_type;
 
   static const bool on_device = false;
@@ -108,7 +108,7 @@ struct sse_host {
    * @return Variable.
    */
   template<class B, class X>
-  static sse_real& fetch(State<B,ON_HOST>& s, const int p, const int ix);
+  static simd_real& fetch(State<B,ON_HOST>& s, const int p, const int ix);
 
   /**
    * Fetch variable from alternative buffer.
@@ -125,7 +125,7 @@ struct sse_host {
    * @return Value of the given variable.
    */
   template<class B, class X>
-  static bi::sse_real& fetch_alt(State<B,ON_HOST>& s, const int p,
+  static bi::simd_real& fetch_alt(State<B,ON_HOST>& s, const int p,
       const int ix);
 
   /**
@@ -143,7 +143,7 @@ struct sse_host {
    * @return Variable.
    */
   template<class B, class X>
-  static const sse_real& fetch(const State<B,ON_HOST>& s, const int p,
+  static const simd_real& fetch(const State<B,ON_HOST>& s, const int p,
       const int ix);
 
   /**
@@ -161,7 +161,7 @@ struct sse_host {
    * @return Value of the given variable.
    */
   template<class B, class X>
-  static const bi::sse_real& fetch_alt(const State<B,ON_HOST>& s, const int p,
+  static const bi::simd_real& fetch_alt(const State<B,ON_HOST>& s, const int p,
       const int ix);
 };
 
@@ -204,8 +204,8 @@ inline bi::sse_host::vector_reference_type bi::sse_host::fetch(
   BI_ASSERT(!is_common_var<X>::value);
 
   BOOST_AUTO(x, row(s.template getVar<X>(), p));
-  return vector_reference_type(reinterpret_cast<sse_real*>(x.buf()), x.size(),
-      x.inc()/BI_SSE_SIZE);
+  return vector_reference_type(reinterpret_cast<simd_real*>(x.buf()), x.size(),
+      x.inc()/BI_SIMD_SIZE);
 }
 
 template<class B, class X>
@@ -221,8 +221,8 @@ inline bi::sse_host::vector_reference_type bi::sse_host::fetch(
   BI_ASSERT(!is_common_var<X>::value);
 
   BOOST_AUTO(x, row(s.template getVar<X>(), p));
-  return vector_reference_type(reinterpret_cast<sse_real*>(x.buf()), x.size(),
-      x.inc()/BI_SSE_SIZE);
+  return vector_reference_type(reinterpret_cast<simd_real*>(x.buf()), x.size(),
+      x.inc()/BI_SIMD_SIZE);
 }
 
 template<class B, class X>
@@ -232,39 +232,39 @@ inline bi::sse_host::vector_reference_alt_type bi::sse_host::fetch_alt(
 }
 
 template<class B, class X>
-inline bi::sse_real& bi::sse_host::fetch(State<B,ON_HOST>& s, const int p,
+inline bi::simd_real& bi::sse_host::fetch(State<B,ON_HOST>& s, const int p,
     const int ix) {
   /* pre-condition */
   BI_ASSERT(!is_common_var<X>::value);
 
-  return *reinterpret_cast<sse_real*>(&s.template getVar<X>(p, ix));
+  return *reinterpret_cast<simd_real*>(&s.template getVar<X>(p, ix));
 }
 
 template<class B, class X>
-inline bi::sse_real& bi::sse_host::fetch_alt(State<B,ON_HOST>& s, const int p,
+inline bi::simd_real& bi::sse_host::fetch_alt(State<B,ON_HOST>& s, const int p,
     const int ix) {
   /* pre-condition */
   BI_ASSERT(!is_common_var_alt<X>::value);
 
-  return *reinterpret_cast<const sse_real*>(&s.template getVarAlt<X>(p, ix));
+  return *reinterpret_cast<const simd_real*>(&s.template getVarAlt<X>(p, ix));
 }
 
 template<class B, class X>
-inline const bi::sse_real& bi::sse_host::fetch(const State<B,ON_HOST>& s,
+inline const bi::simd_real& bi::sse_host::fetch(const State<B,ON_HOST>& s,
     const int p, const int ix) {
   /* pre-condition */
   BI_ASSERT(!is_common_var<X>::value);
 
-  return *reinterpret_cast<const sse_real*>(&s.template getVar<X>(p, ix));
+  return *reinterpret_cast<const simd_real*>(&s.template getVar<X>(p, ix));
 }
 
 template<class B, class X>
-inline const bi::sse_real& bi::sse_host::fetch_alt(const State<B,ON_HOST>& s,
+inline const bi::simd_real& bi::sse_host::fetch_alt(const State<B,ON_HOST>& s,
     const int p, const int ix) {
   /* pre-condition */
   BI_ASSERT(!is_common_var_alt<X>::value);
 
-  return *reinterpret_cast<const sse_real*>(&s.template getVarAlt<X>(p, ix));
+  return *reinterpret_cast<const simd_real*>(&s.template getVarAlt<X>(p, ix));
 }
 
 template<class B, class S, class V1>

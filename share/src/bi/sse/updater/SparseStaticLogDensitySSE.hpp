@@ -54,11 +54,11 @@ void bi::SparseStaticLogDensitySSE<B,S>::logDensities(State<B,ON_HOST>& s,
     int p;
     PX pax;
     OX x;
-    sse_real* lp1;
+    simd_real* lp1;
 
     #pragma omp for
-    for (p = 0; p < s.size(); p += BI_SSE_SIZE) {
-      lp1 = reinterpret_cast<sse_real*>(&lp(p));
+    for (p = 0; p < s.size(); p += BI_SIMD_SIZE) {
+      lp1 = reinterpret_cast<simd_real*>(&lp(p));
       Visitor::accept(mask, s, p, pax, x, *lp1);
     }
   }

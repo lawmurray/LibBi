@@ -77,6 +77,10 @@ available this may give some performance improvement.
 
 Enable SSE code.
 
+=item C<--enable-avx> (default off)
+
+Enable AVX code.
+
 =item C<--enable-mpi> (default off)
 
 Enable MPI code.
@@ -139,6 +143,7 @@ sub new {
         _cuda => 0,
         _gpu_cache => 0,
         _sse => 0,
+        _avx => 0,
         _mpi => 0,
         _vampir => 0,
         _single => 0,
@@ -165,6 +170,8 @@ sub new {
         'disable-gpu-cache' => sub { $self->{_gpu_cache} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
         'disable-sse' => sub { $self->{_sse} = 0 },
+        'enable-avx' => sub { $self->{_avx} = 1 },
+        'disable-avx' => sub { $self->{_avx} = 0 },
         'enable-mpi' => sub { $self->{_mpi} = 1 },
         'disable-mpi' => sub { $self->{_mpi} = 0 },
         'enable-vampir' => sub { $self->{_vampir} = 1 },
@@ -182,10 +189,19 @@ sub new {
     );
     GetOptions(@args) || die("could not read command line arguments\n");
     
-    # can't support SSE when CUDA enabled at this stage
+    # can't support AVX or SSE when CUDA enabled at this stage
+    if ($self->{_cuda} && $self->{_avx}) {
+    	warn("AVX has been disabled, unsupported when CUDA also enabled\n");
+    	$self->{_avx} = 0;
+    }
     if ($self->{_cuda} && $self->{_sse}) {
     	warn("SSE has been disabled, unsupported when CUDA also enabled\n");
     	$self->{_sse} = 0;
+    }
+    
+    # some AVX instructions defer to SSE, so enable SSE too
+    if ($self->{_avx}) {
+    	$self->{_sse} = 1;
     }
     
     # enable mpirun automatically when --enable-mpi used
@@ -200,6 +216,7 @@ sub new {
     push(@builddir, 'cuda') if $self->{_cuda};
     push(@builddir, 'gpucache') if $self->{_gpu_cache};
     push(@builddir, 'sse') if $self->{_sse};
+    push(@builddir, 'avx') if $self->{_avx};
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
@@ -319,6 +336,7 @@ sub _configure {
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
     $options .= $self->{_gpu_cache} ? ' --enable-gpucache' : ' --disable-gpucache';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
+    $options .= $self->{_avx} ? ' --enable-avx' : ' --disable-avx';
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';

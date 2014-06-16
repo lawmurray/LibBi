@@ -52,7 +52,7 @@ void bi::DOPRI5Integrator<B,S>::update(const T1 t1, const T1 t2,
 
   if (bi::abs(t2 - t1) > 0.0) {
     #ifdef ENABLE_SSE
-    if (s.size() % BI_SSE_SIZE == 0) {
+    if (s.size() % BI_SIMD_SIZE == 0) {
       DOPRI5IntegratorSSE<B,S,T1>::update(t1, t2, s);
     } else {
       DOPRI5IntegratorHost<B,S,T1>::update(t1, t2, s);

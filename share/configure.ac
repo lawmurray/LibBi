@@ -46,6 +46,14 @@ AC_ARG_ENABLE([sse],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-sse]) ;;
      esac],[sse=false])
 
+AC_ARG_ENABLE([avx],
+     [  --enable-avx            use AVX code],
+     [case "${enableval}" in
+       yes) avx=true ;;
+       no)  avx=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-avx]) ;;
+     esac],[avx=false])
+
 AC_ARG_ENABLE([openmp],
      [  --enable-openmp         use OpenMP multithreading],
      [case "${enableval}" in
@@ -278,6 +286,7 @@ AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
 AM_CONDITIONAL([ENABLE_GPU_CACHE], [test x$gpucache = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
+AM_CONDITIONAL([ENABLE_AVX], [test x$avx = xtrue])
 AM_CONDITIONAL([ENABLE_OPENMP], [test x$openmp = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
