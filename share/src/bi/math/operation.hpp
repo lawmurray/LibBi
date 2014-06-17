@@ -992,7 +992,7 @@ void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x,
 
 template<class M1, class V1, class V2>
 void bi::symv(const typename M1::value_type alpha, const M1 A, const V1 x,
-    const typename V2::value_type beta, V2 y, const char uplo = 'N') {
+    const typename V2::value_type beta, V2 y, const char uplo) {
   static const Location L = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;

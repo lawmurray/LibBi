@@ -57,7 +57,7 @@ void bi::DynamicUpdaterSSE<B,S>::update(const T1 t1, const T1 t2,
     OX x;
 
     #pragma omp for
-    for (p = 0; p < s.size(); p += BI_SSE_SIZE) {
+    for (p = 0; p < s.size(); p += BI_SIMD_SIZE) {
       Visitor::accept(t1, t2, s, p, pax, x);
     }
   }

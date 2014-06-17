@@ -81,7 +81,6 @@ void dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //template<class M1, class V1, class K1, class V2>
 //void selfTreeDensity(KDTree<V1>& tree, const M1 X, const V1 lw,
 //    const K1& K, V2 p);
-
 /**
  * Cross-tree kernel density evaluation with multiple mixture model
  * weights. Simultaneously performs kernel density estimation of two 
@@ -112,7 +111,6 @@ void dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 //void crossTreeDensities(KDTree<V1>& tree1, KDTree<V1>& tree2, const M1 X1,
 //    const M1 X2, const V1 lw1, const V1 lw2, const K1& K, M2 P1, M2 P2,
 //    const bool clear = true);
-
 }
 
 #include "../math/temp_vector.hpp"
@@ -124,7 +122,7 @@ void dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 #include <stack>
 
 inline double bi::hopt(const int N, const int P) {
-  return std::pow(4.0/((N + 2)*P), 1.0/(N + 4));
+  return std::pow(4.0 / ((N + 2) * P), 1.0 / (N + 4));
 }
 
 template<class V1, class M1, class V2, class M2, class K1, class V3>
@@ -132,15 +130,17 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
     const K1& K, V3 p, const bool clear) {
   typedef typename KDTree<V1,M1>::var_type query_var_type;
   typedef typename KDTree<V2,M2>::var_type target_var_type;
-  
+
   BOOST_AUTO(queryRoot, queryTree.getRoot());
   BOOST_AUTO(targetRoot, targetTree.getRoot());
   if (clear) {
     p.clear();
   }
   if (queryRoot != NULL && targetRoot != NULL) {
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
     omp_lock_t lock;
     omp_init_lock(&lock);
+#endif
 
     /* start with breadth first search to build reasonable work set for
      * division between threads */
@@ -151,12 +151,16 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
 
     sim_temp_vector<M1> x(queryTree.getSize());
     bool done = false;
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
     while (!done && (int)queryNodes1.size() < 64*omp_get_max_threads()) {
+#else
+    while (!done) {
+#endif
       BOOST_AUTO(queryNode, queryNodes1.front());
       BOOST_AUTO(targetVar, targetVars1.front());
 
-      done = queryNode == NULL || !queryNode->isInternal() ||
-          targetVar == NULL || !targetVar->isInternal();
+      done = queryNode == NULL || !queryNode->isInternal()
+          || targetVar == NULL || !targetVar->isInternal();
       if (!done) {
         targetVar->difference(*queryNode, *x);
         if (K(*x) > 0.0) {
@@ -179,23 +183,36 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
     }
 
     /* now multithread */
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
     typename temp_host_matrix<real>::type P(p.size(), omp_get_max_threads());
+#else
+    typename temp_host_matrix<real>::type P(p.size(), 1);
+#endif
     P.clear();
 
-    #pragma omp parallel
+#pragma omp parallel
     {
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       int nthreads = omp_get_num_threads();
       int tid = omp_get_thread_num();
+#else
+      int nthreads = 1;
+      int tid = 0;
+#endif
       typename V2::value_type q;
       int i, j;
 
-      omp_set_lock(&lock);
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+      omp_set_lock (&lock);
+#endif
       sim_temp_vector<M1> x1(queryTree.getSize());
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       omp_unset_lock(&lock);
+#endif
       BOOST_AUTO(x, x1.ref());
 
       /* take share of nodes */
-      std::list<const query_var_type*> queryNodes; // list or vector appears ~6% faster than stack
+      std::list<const query_var_type*> queryNodes;  // list or vector appears ~6% faster than stack
       std::list<const target_var_type*> targetVars;
       BOOST_AUTO(queryIter, queryNodes1.begin());
       BOOST_AUTO(targetIter, targetVars1.begin());
@@ -258,7 +275,7 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
             x = queryNode->getValue();
             axpy(-1.0, targetVar->getValue(), x);
             q = bi::exp(targetVar->getLogWeight() + K.logDensity(x));
-            P(i,tid) += q;
+            P(i, tid) += q;
           } else if (queryNode->isLeaf() && targetVar->isPrune()) {
             i = queryNode->getIndex();
             q = 0.0;
@@ -267,14 +284,14 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
               axpy(-1.0, column(targetVar->getValues(), j), x);
               q += bi::exp(targetVar->getLogWeights()(j) + K.logDensity(x));
             }
-            P(i,tid) += q;
+            P(i, tid) += q;
           } else if (queryNode->isPrune() && targetVar->isLeaf()) {
             const std::vector<int>& is = queryNode->getIndices();
             for (i = 0; i < (int)is.size(); ++i) {
               x = column(queryNode->getValues(), i);
               axpy(-1.0, targetVar->getValue(), x);
               q = bi::exp(targetVar->getLogWeight() + K.logDensity(x));
-              P(is[i],tid) += q;
+              P(is[i], tid) += q;
             }
           } else if (queryNode->isPrune() && targetVar->isPrune()) {
             const std::vector<int>& is = queryNode->getIndices();
@@ -285,17 +302,21 @@ void bi::dualTreeDensity(KDTree<V1,M1>& queryTree, KDTree<V2,M2>& targetTree,
                 axpy(-1.0, column(targetVar->getValues(), j), x);
                 q += bi::exp(targetVar->getLogWeights()(j) + K.logDensity(x));
               }
-              P(is[i],tid) += q;
+              P(is[i], tid) += q;
             }
           }
         }
       }
 
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
       omp_set_lock(&lock);
       omp_unset_lock(&lock);
+#endif
     }
     sum_columns(P, p);
-    omp_destroy_lock(&lock);
+#if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
+    omp_destroy_lock (&lock);
+#endif
   }
 }
 
