@@ -139,6 +139,7 @@ void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
       ++c;
       output(c, s, out);
     }
+    adapt(s);
   }
   term();
 }

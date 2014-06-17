@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
   [% END %]
   
   /* adapter */
-  GaussianAdapter adapter;
+  GaussianAdapter<model_type,LOCATION> adapter;
   
   /* stopper */
   [% IF client.get_named_arg('stopper') == 'deterministic' %]
