@@ -62,6 +62,35 @@ public:
   void init();
 
   /**
+   * Propose new parameter.
+   *
+   * @tparam S1 State type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param first Start of time schedule.
+   * @param last End of time schedule.
+   * @param[out] s State.
+   *
+   * @return Was proposal accepted?
+   */
+  template<class S1>
+  bool propose(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, S1& s);
+
+  /**
+   * Output.
+   *
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
+   *
+   * @param c Index in output file.
+   * @param[out] s State.
+   * @param out Output buffer.
+   */
+  template<class S1, class IO1>
+  void output(const int c, S1& s, IO1& out);
+
+  /**
    * Terminate.
    */
   void term();
@@ -101,12 +130,73 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-
+  init();
+  int c = 0;
+  bool accept;
+  while (c < C) {
+    accept = propose(rng, first, last, s);
+    if (accept) {
+      ++c;
+      output(c, s, out);
+    }
+  }
+  term();
 }
 
 template<class B, class F, class A, class S>
 void bi::MarginalSRS<B,F,A,S>::init() {
 
+}
+
+template<class B, class F, class A, class S>
+template<class S1>
+bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s) {
+  bool accept = true;
+  double ll, lw, lu;
+  int k;
+
+  s.logProposal = adapter.propose(rng, s.get(PY_VAR));
+  s.logPrior = m.parameterLogDensity(s);
+  s.logLikelihood = -1.0 / 0.0;
+  try {
+    ScheduleIterator iter = first;
+    filter.init(rng, *iter, s, s.out);
+    filter.output0(s, s.out);
+    ll = filter.correct(rng, *iter, s);
+    lw = ll;
+    while (accept && iter + 1 != last) {
+      k = iter->indexObs();
+
+      /* rejection control */
+      lw -= s.lomegas(k);
+      lu = bi::log(rng.uniform(0.0, 1.0));
+      accept = lu < lw;
+      if (accept) {
+        lw = bi::max(lw, 0.0);
+      }
+
+      /* propagation and weighting */
+      ll = filter.step(rng, iter, last, s, s.out);
+      lw += ll;
+      s.logLikelihood += ll;
+
+      /* adaptation */
+      adapter.add(k, s.get(P_VAR), lw);
+    }
+    filter.term();
+  } catch (CholeskyException e) {
+    accept = false;
+  } catch (ParticleFilterDegeneratedException e) {
+    accept = false;
+  }
+  return accept;
+}
+
+template<class B, class F, class A, class S>
+template<class S1, class IO1>
+void bi::MarginalSRS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
+  out.write(c, s);
 }
 
 template<class B, class F, class A, class S>

@@ -49,14 +49,6 @@ namespace bi {
   struct ParticleFilterDegeneratedException {
     //
   };
-
-  /**
-   * Conditional particle filter failed.
-   */
-  struct ConditionalBootstrapPFException {
-    //
-  };
-
 }
 
 #endif

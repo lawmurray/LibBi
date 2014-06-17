@@ -265,8 +265,6 @@ void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
       //
     } catch (ParticleFilterDegeneratedException e) {
       //
-    } catch (ConditionalBootstrapPFException e) {
-      //
     }
   }
 }

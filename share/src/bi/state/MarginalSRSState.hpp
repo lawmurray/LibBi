@@ -48,7 +48,7 @@ public:
   /**
    * Weight thresholds for each time.
    */
-  typename State<B,L>::vector_type omegas;
+  typename State<B,L>::vector_type lomegas;
 
 private:
   /**
@@ -74,14 +74,14 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSRSState<B,L,S1,IO1>::MarginalSRSState(B& m, const int P,
     const int T) :
-    parent_type(m, P, T), omegas(T) {
+    parent_type(m, P, T), lomegas(T) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSRSState<B,L,S1,IO1>::MarginalSRSState(
     const MarginalSRSState<B,L,S1,IO1>& o) :
-    parent_type(o), omegas(o.omegas) {
+    parent_type(o), lomegas(o.lomegas) {
   //
 }
 
@@ -89,7 +89,7 @@ template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSRSState<B,L,S1,IO1>& bi::MarginalSRSState<B,L,S1,IO1>::operator=(
     const MarginalSRSState<B,L,S1,IO1>& o) {
   parent_type::operator=(o);
-  omegas = o.omegas;
+  lomegas = o.lomegas;
 
   return *this;
 }
@@ -99,7 +99,7 @@ template<class Archive>
 void bi::MarginalSRSState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
   ar & boost::serialization::base_object < parent_type > (*this);
-  save_resizable_vector(ar, version, omegas);
+  save_resizable_vector(ar, version, lomegas);
 }
 
 template<class B, bi::Location L, class S1, class IO1>
@@ -107,7 +107,7 @@ template<class Archive>
 void bi::MarginalSRSState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
   ar & boost::serialization::base_object < parent_type > (*this);
-  load_resizable_vector(ar, version, omegas);
+  load_resizable_vector(ar, version, lomegas);
 }
 
 #endif
