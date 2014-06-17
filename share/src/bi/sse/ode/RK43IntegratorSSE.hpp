@@ -93,13 +93,8 @@ void bi::RK43IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
           e = err(id)*h/(bi::max(bi::abs(old(id)), bi::abs(r1(id)))*h_rtoler + h_atoler);
           e2 += e*e;
         }
-        #ifdef ENABLE_SINGLE
-        e2max = bi::max(bi::max(e2.unpacked.a, e2.unpacked.b), bi::max(e2.unpacked.c, e2.unpacked.d));
-        #else
-        e2max = bi::max(e2.unpacked.a, e2.unpacked.b);
-        #endif
-        e2max /= N;
 
+        e2max = bi::max_reduce(e2)/N;
         if (e2max <= BI_REAL(1.0)) {
           /* accept */
           t += h;

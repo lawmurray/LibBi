@@ -71,22 +71,175 @@ union sse_double {
   } unpacked;
   __m128d packed;
 
-  sse_double(const __m128d x) :
-      packed(x) {
-    //
-  }
-
-  sse_double(const double a) {
-    packed = _mm_set1_pd(a);
-  }
-
-  sse_double() {
-    //
+  sse_double& operator=(const double& o) {
+    packed = _mm_set1_pd(o);
   }
 };
 
+BI_FORCE_INLINE inline sse_double& operator+=(sse_double& o1,
+    const sse_double& o2) {
+  o1.packed = _mm_add_pd(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_double& operator-=(sse_double& o1,
+    const sse_double& o2) {
+  o1.packed = _mm_sub_pd(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_double& operator*=(sse_double& o1,
+    const sse_double& o2) {
+  o1.packed = _mm_mul_pd(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_double& operator/=(sse_double& o1,
+    const sse_double& o2) {
+  o1.packed = _mm_div_pd(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_double operator+(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_add_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator-(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_sub_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator*(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_mul_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_div_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator+(const double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_set1_pd(o1) + o2.packed;
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator-(const double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_set1_pd(o1) - o2.packed;
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator*(const double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_set1_pd(o1) * o2.packed;
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator/(const double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_set1_pd(o1) / o2.packed;
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator+(const sse_double& o1,
+    const double& o2) {
+  sse_double res;
+  res.packed = o1.packed + _mm_set1_pd(o2);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator-(const sse_double& o1,
+    const double& o2) {
+  sse_double res;
+  res.packed = o1.packed - _mm_set1_pd(o2);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator*(const sse_double& o1,
+    const double& o2) {
+  sse_double res;
+  res.packed = o1.packed * _mm_set1_pd(o2);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
+    const double& o2) {
+  sse_double res;
+  res.packed = o1.packed / _mm_set1_pd(o2);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator==(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmpeq_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator!=(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmpneq_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator<(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmplt_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator<=(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmple_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator>(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmpgt_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_double operator>=(const sse_double& o1,
+    const sse_double& o2) {
+  sse_double res;
+  res.packed = _mm_cmpge_pd(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline const sse_double operator-(const sse_double& o) {
+  sse_double res;
+  res.packed = _mm_xor_pd(_mm_set1_pd(-0.0), o.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline const sse_double operator+(const sse_double& o) {
+  return o;
+}
+
 BI_FORCE_INLINE inline sse_double abs(const sse_double x) {
-  return _mm_andnot_pd(_mm_set1_pd(-0.0), x.packed);
+  sse_double res;
+  res.packed = _mm_andnot_pd(_mm_set1_pd(-0.0), x.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_double log(const sse_double x) {
@@ -107,16 +260,22 @@ BI_FORCE_INLINE inline sse_double nanexp(const sse_double x) {
 
 BI_FORCE_INLINE inline sse_double max(const sse_double x,
     const sse_double y) {
-  return _mm_max_pd(x.packed, y.packed);
+  sse_double res;
+  res.packed = _mm_max_pd(x.packed, y.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_double min(const sse_double x,
     const sse_double y) {
-  return _mm_min_pd(x.packed, y.packed);
+  sse_double res;
+  res.packed = _mm_min_pd(x.packed, y.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_double sqrt(const sse_double x) {
-  return _mm_sqrt_pd(x.packed);
+  sse_double res;
+  res.packed = _mm_sqrt_pd(x.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_double pow(const sse_double x,
@@ -206,126 +365,8 @@ BI_FORCE_INLINE inline sse_double atanh(const sse_double x) {
   BI_SSEDOUBLE_UNIVARIATE(atanh, x)
 }
 
-BI_FORCE_INLINE inline sse_double& operator+=(sse_double& o1,
-    const sse_double& o2) {
-  o1.packed = _mm_add_pd(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_double& operator-=(sse_double& o1,
-    const sse_double& o2) {
-  o1.packed = _mm_sub_pd(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_double& operator*=(sse_double& o1,
-    const sse_double& o2) {
-  o1.packed = _mm_mul_pd(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_double& operator/=(sse_double& o1,
-    const sse_double& o2) {
-  o1.packed = _mm_div_pd(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_double operator+(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_add_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator-(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_sub_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator*(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_mul_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_div_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator+(const double& o1,
-    const sse_double& o2) {
-  return _mm_set1_pd(o1) + o2;
-}
-
-BI_FORCE_INLINE inline sse_double operator-(const double& o1,
-    const sse_double& o2) {
-  return _mm_set1_pd(o1) - o2;
-}
-
-BI_FORCE_INLINE inline sse_double operator*(const double& o1,
-    const sse_double& o2) {
-  return _mm_set1_pd(o1) * o2;
-}
-
-BI_FORCE_INLINE inline sse_double operator/(const double& o1,
-    const sse_double& o2) {
-  return _mm_set1_pd(o1) / o2;
-}
-
-BI_FORCE_INLINE inline sse_double operator+(const sse_double& o1,
-    const double& o2) {
-  return o1 + _mm_set1_pd(o2);
-}
-
-BI_FORCE_INLINE inline sse_double operator-(const sse_double& o1,
-    const double& o2) {
-  return o1 - _mm_set1_pd(o2);
-}
-
-BI_FORCE_INLINE inline sse_double operator*(const sse_double& o1,
-    const double& o2) {
-  return o1 * _mm_set1_pd(o2);
-}
-
-BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
-    const double& o2) {
-  return o1 / _mm_set1_pd(o2);
-}
-
-BI_FORCE_INLINE inline sse_double operator==(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmpeq_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator!=(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmpneq_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator<(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmplt_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator<=(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmple_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator>(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmpgt_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_double operator>=(const sse_double& o1,
-    const sse_double& o2) {
-  return _mm_cmpge_pd(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline const sse_double operator-(const sse_double& o) {
-  return _mm_xor_pd(_mm_set1_pd(-0.0), o.packed);
-}
-
-BI_FORCE_INLINE inline const sse_double operator+(const sse_double& o) {
-  return o;
+BI_FORCE_INLINE inline double max_reduce(const sse_double x) {
+  return bi::max(x.unpacked.a, x.unpacked.b);
 }
 
 }

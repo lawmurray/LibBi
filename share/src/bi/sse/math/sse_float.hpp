@@ -79,22 +79,175 @@ union sse_float {
   } unpacked;
   __m128 packed;
 
-  sse_float(const __m128 x) :
-      packed(x) {
-    //
-  }
-
-  sse_float(const float a) {
-    packed = _mm_set1_ps(a);
-  }
-
-  sse_float() {
-    //
+  sse_float& operator=(const float& o) {
+    packed = _mm_set1_ps(o);
   }
 };
 
+BI_FORCE_INLINE inline sse_float& operator+=(sse_float& o1,
+    const sse_float& o2) {
+  o1.packed = _mm_add_ps(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_float& operator-=(sse_float& o1,
+    const sse_float& o2) {
+  o1.packed = _mm_sub_ps(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_float& operator*=(sse_float& o1,
+    const sse_float& o2) {
+  o1.packed = _mm_mul_ps(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_float& operator/=(sse_float& o1,
+    const sse_float& o2) {
+  o1.packed = _mm_div_ps(o1.packed, o2.packed);
+  return o1;
+}
+
+BI_FORCE_INLINE inline sse_float operator+(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_add_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator-(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_sub_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator*(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_mul_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator/(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_div_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator+(const float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_add_ps(_mm_set1_ps(o1), o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator-(const float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_add_ps(_mm_set1_ps(o1), o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator*(const float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_mul_ps(_mm_set1_ps(o1), o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator/(const float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_div_ps(_mm_set1_ps(o1), o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator+(const sse_float& o1,
+    const float& o2) {
+  sse_float res;
+  res.packed = _mm_add_ps(o1.packed, _mm_set1_ps(o2));
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator-(const sse_float& o1,
+    const float& o2) {
+  sse_float res;
+  res.packed = _mm_sub_ps(o1.packed, _mm_set1_ps(o2));
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator*(const sse_float& o1,
+    const float& o2) {
+  sse_float res;
+  res.packed = _mm_mul_ps(o1.packed, _mm_set1_ps(o2));
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator/(const sse_float& o1,
+    const float& o2) {
+  sse_float res;
+  res.packed = _mm_div_ps(o1.packed, _mm_set1_ps(o2));
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator==(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmpeq_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator!=(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmpneq_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator<(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmplt_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator<=(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmple_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator>(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmpgt_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline sse_float operator>=(const sse_float& o1,
+    const sse_float& o2) {
+  sse_float res;
+  res.packed = _mm_cmpge_ps(o1.packed, o2.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline const sse_float operator-(const sse_float& o) {
+  sse_float res;
+  res.packed = _mm_xor_ps(_mm_set1_ps(-0.0f), o.packed);
+  return res;
+}
+
+BI_FORCE_INLINE inline const sse_float operator+(const sse_float& o) {
+  return o;
+}
+
 BI_FORCE_INLINE inline sse_float abs(const sse_float x) {
-  return _mm_andnot_ps(_mm_set1_ps(-0.0f), x.packed);
+  sse_float res;
+  res.packed = _mm_andnot_ps(_mm_set1_ps(-0.0f), x.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_float log(const sse_float x) {
@@ -114,15 +267,21 @@ BI_FORCE_INLINE inline sse_float nanexp(const sse_float x) {
 }
 
 BI_FORCE_INLINE inline sse_float max(const sse_float x, const sse_float y) {
-  return _mm_max_ps(x.packed, y.packed);
+  sse_float res;
+  res.packed = _mm_max_ps(x.packed, y.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_float min(const sse_float x, const sse_float y) {
-  return _mm_min_ps(x.packed, y.packed);
+  sse_float res;
+  res.packed = _mm_min_ps(x.packed, y.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_float sqrt(const sse_float x) {
-  return _mm_sqrt_ps(x.packed);
+  sse_float res;
+  res.packed = _mm_sqrt_ps(x.packed);
+  return res;
 }
 
 BI_FORCE_INLINE inline sse_float pow(const sse_float x, const sse_float y) {
@@ -209,126 +368,8 @@ BI_FORCE_INLINE inline sse_float atanh(const sse_float x) {
   BI_SSEFLOAT_UNIVARIATE(atanh, x)
 }
 
-BI_FORCE_INLINE inline sse_float& operator+=(sse_float& o1,
-    const sse_float& o2) {
-  o1.packed = _mm_add_ps(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_float& operator-=(sse_float& o1,
-    const sse_float& o2) {
-  o1.packed = _mm_sub_ps(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_float& operator*=(sse_float& o1,
-    const sse_float& o2) {
-  o1.packed = _mm_mul_ps(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_float& operator/=(sse_float& o1,
-    const sse_float& o2) {
-  o1.packed = _mm_div_ps(o1.packed, o2.packed);
-  return o1;
-}
-
-BI_FORCE_INLINE inline sse_float operator+(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_add_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator-(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_sub_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator*(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_mul_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator/(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_div_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator+(const float& o1,
-    const sse_float& o2) {
-  return _mm_set1_ps(o1) + o2;
-}
-
-BI_FORCE_INLINE inline sse_float operator-(const float& o1,
-    const sse_float& o2) {
-  return _mm_set1_ps(o1) - o2;
-}
-
-BI_FORCE_INLINE inline sse_float operator*(const float& o1,
-    const sse_float& o2) {
-  return _mm_set1_ps(o1) * o2;
-}
-
-BI_FORCE_INLINE inline sse_float operator/(const float& o1,
-    const sse_float& o2) {
-  return _mm_set1_ps(o1) / o2;
-}
-
-BI_FORCE_INLINE inline sse_float operator+(const sse_float& o1,
-    const float& o2) {
-  return o1 + _mm_set1_ps(o2);
-}
-
-BI_FORCE_INLINE inline sse_float operator-(const sse_float& o1,
-    const float& o2) {
-  return o1 - _mm_set1_ps(o2);
-}
-
-BI_FORCE_INLINE inline sse_float operator*(const sse_float& o1,
-    const float& o2) {
-  return o1 * _mm_set1_ps(o2);
-}
-
-BI_FORCE_INLINE inline sse_float operator/(const sse_float& o1,
-    const float& o2) {
-  return o1 / _mm_set1_ps(o2);
-}
-
-BI_FORCE_INLINE inline sse_float operator==(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmpeq_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator!=(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmpneq_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator<(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmplt_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator<=(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmple_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator>(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmpgt_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline sse_float operator>=(const sse_float& o1,
-    const sse_float& o2) {
-  return _mm_cmpge_ps(o1.packed, o2.packed);
-}
-
-BI_FORCE_INLINE inline const sse_float operator-(const sse_float& o) {
-  return _mm_xor_ps(_mm_set1_ps(-0.0f), o.packed);
-}
-
-BI_FORCE_INLINE inline const sse_float operator+(const sse_float& o) {
-  return o;
+BI_FORCE_INLINE inline float max_reduce(const sse_float x) {
+  return bi::max(bi::max(x.unpacked.a, x.unpacked.b), bi::max(x.unpacked.c, x.unpacked.d));
 }
 
 }
