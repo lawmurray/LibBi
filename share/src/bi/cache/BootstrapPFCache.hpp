@@ -33,9 +33,9 @@ public:
   /**
    * @copydoc ParticleFilterBuffer::ParticleFilterBuffer()
    */
-  BootstrapPFCache(const Model& m, const std::string& file = "",
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
-      const size_t P = 0, const size_t T = 0);
+  BootstrapPFCache(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Shallow copy.
@@ -143,10 +143,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t P, const size_t T) :
-    parent_type(m, file, mode, schema, P, T) {
+bi::BootstrapPFCache<CL,IO1>::BootstrapPFCache(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) :
+    parent_type(m, P, T, file, mode, schema) {
   //
 }
 

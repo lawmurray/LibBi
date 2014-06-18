@@ -131,16 +131,20 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
+  std::cout << "Samples drawn: 0 of " << C;
   init();
   int c = 0;
   bool accept;
   while (c < C) {
     accept = propose(rng, first, last, s);
     if (accept) {
-      ++c;
       output(c, s, out);
+      ++c;
+      std::cout << "\rSamples drawn: " << c << " of " << C;
+      std::cout.flush();
     }
   }
+  std::cout << std::endl;
   term();
 }
 
@@ -154,7 +158,7 @@ template<class S1>
 bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
   bool accept = true;
-  double ll, lw, lu;
+  double ll, lu;
   int k;
 
   if (stopper.stop(1.0 / 0.0)) {
@@ -164,41 +168,46 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
   } else {
     /* use a priori proposal */
-    m.proposalParameterSample(rng, s);
+    m.parameterSample(rng, s);
     s.get(PY_VAR) = s.get(P_VAR);
-    s.logProposal = m.proposalParameterLogDensity(s);
+    s.logProposal = m.parameterLogDensity(s);
   }
   s.logPrior = m.parameterLogDensity(s);
   s.logLikelihood = -1.0 / 0.0;
+
   try {
     ScheduleIterator iter = first;
     filter.init(rng, *iter, s, s.out);
     filter.output0(s, s.out);
     ll = filter.correct(rng, *iter, s);
+    filter.output(*iter, s, s.out);
     s.logWeight = ll;
     while (accept && iter + 1 != last) {
       k = iter->indexObs();
 
       /* rejection control */
-      s.logWeight -= s.lomegas(k);
-      lu = bi::log(rng.uniform(0.0, 1.0));
-      accept = lu < s.logWeight;
-      if (accept) {
-        s.logWeight = bi::max(lw, 0.0);
-      }
+      //s.logWeight -= s.lomegas(k);
+      //lu = bi::log(rng.uniform(0.0, 1.0));
+      //accept = lu < s.logWeight;
+      //if (accept) {
+      //  s.logWeight = bi::max(lw, 0.0);
+      //}
 
       /* propagation and weighting */
       ll = filter.step(rng, iter, last, s, s.out);
       s.logWeight += ll;
       s.logLikelihood += ll;
-
-      /* adaptation */
-      if (!stopper.stop(1.0 / 0.0)) {
-        adapter.add(vec(s.get(P_VAR)), lw);
-        stopper.add(lw, 1.0 / 0.0);
-      }
     }
     filter.term();
+    if (accept) {
+      filter.samplePath(rng, s.path, s.out);
+    }
+
+    /* adaptation */
+    if (!stopper.stop(1.0 / 0.0)) {
+      adapter.add(vec(s.get(P_VAR)), s.logWeight);
+      stopper.add(s.logWeight, 1.0 / 0.0);
+    }
   } catch (CholeskyException e) {
     accept = false;
   } catch (ParticleFilterDegeneratedException e) {

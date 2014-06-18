@@ -23,14 +23,14 @@ public:
    * Constructor.
    *
    * @param m Model.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
    * @param P Number of samples in file.
    * @param T Number of times in file.
+   * @param file NetCDF file name.
+   * @param mode File open mode.
    */
-  SMCNetCDFBuffer(const Model& m, const std::string& file = "",
-      const FileMode mode = READ_ONLY, const SchemaMode schema = MULTI,
-      const size_t P = 0, const size_t T = 0);
+  SMCNetCDFBuffer(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = MULTI);
 
   /**
    * Write log-weights.

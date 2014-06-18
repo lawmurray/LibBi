@@ -85,14 +85,14 @@ private:
 template<class B, bi::Location L, class S1, class IO1, class Q1>
 bi::MarginalSRSState<B,L,S1,IO1,Q1>::MarginalSRSState(B& m, const int P,
     const int T) :
-    parent_type(m, P, T), q(B::NP), lomegas(T) {
+    parent_type(m, P, T), q(B::NP), lomegas(T), logWeight(0.0) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1, class Q1>
 bi::MarginalSRSState<B,L,S1,IO1,Q1>::MarginalSRSState(
     const MarginalSRSState<B,L,S1,IO1,Q1>& o) :
-    parent_type(o), q(o.q), lomegas(o.lomegas) {
+    parent_type(o), q(o.q), lomegas(o.lomegas), logWeight(o.logWeight) {
   //
 }
 
@@ -102,6 +102,7 @@ bi::MarginalSRSState<B,L,S1,IO1,Q1>& bi::MarginalSRSState<B,L,S1,IO1,Q1>::operat
   parent_type::operator=(o);
   q = o.q;
   lomegas = o.lomegas;
+  logWeight = o.logWeight;
 
   return *this;
 }
@@ -113,6 +114,7 @@ void bi::MarginalSRSState<B,L,S1,IO1,Q1>::save(Archive& ar,
   ar & boost::serialization::base_object < parent_type > (*this);
   ar & q;
   save_resizable_vector(ar, version, lomegas);
+  ar & logWeight;
 }
 
 template<class B, bi::Location L, class S1, class IO1, class Q1>
@@ -122,6 +124,7 @@ void bi::MarginalSRSState<B,L,S1,IO1,Q1>::load(Archive& ar,
   ar & boost::serialization::base_object < parent_type > (*this);
   ar & q;
   load_resizable_vector(ar, version, lomegas);
+  ar & logWeight;
 }
 
 #endif

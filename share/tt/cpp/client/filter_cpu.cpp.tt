@@ -139,21 +139,21 @@ int main(int argc, char* argv[]) {
     [% ELSE %]
     typedef KalmanFilterNullBuffer buffer_type;
     [% END %]
-    KalmanFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
+    KalmanFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, NPARTICLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, DEFAULT);
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
     [% IF client.get_named_arg('output-file') != '' %]
     typedef ParticleFilterNetCDFBuffer buffer_type;
     [% ELSE %]
     typedef ParticleFilterNullBuffer buffer_type;
     [% END %]
-    ParticleFilterBuffer<AdaptivePFCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
+    ParticleFilterBuffer<AdaptivePFCache<LOCATION,buffer_type> > out(m, NPARTICLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, DEFAULT);
   [% ELSE %]
     [% IF client.get_named_arg('output-file') != '' %]
     typedef ParticleFilterNetCDFBuffer buffer_type;
     [% ELSE %]
     typedef ParticleFilterNullBuffer buffer_type;
     [% END %]
-    ParticleFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, DEFAULT, NPARTICLES, sched.numOutputs());
+    ParticleFilterBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, NPARTICLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, DEFAULT);
   [% END %]
      
   /* simulator */

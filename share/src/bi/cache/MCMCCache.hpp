@@ -30,9 +30,9 @@ public:
   /**
    * @copydoc MCMCBuffer::MCMCBuffer()
    */
-  MCMCCache(const Model& m, const std::string& file = "", const FileMode mode =
-      READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
-      const size_t T = 0);
+  MCMCCache(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Shallow copy constructor.
@@ -216,10 +216,10 @@ protected:
 }
 
 template<bi::Location CL, class IO1>
-bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const std::string& file,
-    const FileMode mode, const SchemaMode schema, const size_t P,
-    const size_t T) :
-    parent_type(m, file, mode, schema, P, T), llCache(NUM_SAMPLES), lpCache(
+bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) :
+    parent_type(m, P, T, file, mode, schema), llCache(NUM_SAMPLES), lpCache(
         NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
         0), len(0) {
   //
@@ -227,7 +227,7 @@ bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const std::string& file,
 
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const MCMCCache<CL,IO1>& o) :
-parent_type(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+    parent_type(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
         o.parameterCache), first(o.first), len(o.len) {
   pathCache.resize(o.pathCache.size());
   for (int i = 0; i < pathCache.size(); ++i) {
@@ -455,7 +455,7 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object <parent_type> (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;
@@ -467,7 +467,7 @@ void bi::MCMCCache<CL,IO1>::save(Archive& ar, const unsigned version) const {
 template<bi::Location CL, class IO1>
 template<class Archive>
 void bi::MCMCCache<CL,IO1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object <parent_type> (*this);
+  ar & boost::serialization::base_object < parent_type > (*this);
   ar & llCache;
   ar & lpCache;
   ar & parameterCache;

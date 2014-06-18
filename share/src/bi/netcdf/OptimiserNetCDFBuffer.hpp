@@ -27,13 +27,13 @@ public:
    * Constructor.
    *
    * @param m Model.
+   * @param T Number of times to hold in file.
    * @param file NetCDF file name.
    * @param mode File open mode.
-   * @param T Number of times to hold in file.
    */
-  OptimiserNetCDFBuffer(const Model& m,
+  OptimiserNetCDFBuffer(const Model& m, const size_t T = 0,
       const std::string& file = "", const FileMode mode = READ_ONLY,
-      const SchemaMode schema = PARAM_ONLY, const size_t T = 0);
+      const SchemaMode schema = PARAM_ONLY);
 
   /**
    * @copydoc concept::OptimiserBuffer::writeValue()

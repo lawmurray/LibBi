@@ -27,14 +27,14 @@ public:
    * Constructor.
    *
    * @param m Model.
-   * @param file File name.
-   * @param mode File open mode.
    * @param P Number of trajectories to hold in file.
    * @param T Number of time points to hold in file.
+   * @param file File name.
+   * @param mode File open mode.
    */
-  SRSBuffer(const Model& m, const std::string& file = "",
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
-      const size_t P = 0, const size_t T = 0);
+  SRSBuffer(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Write sample.
@@ -50,10 +50,9 @@ public:
 }
 
 template<class IO1>
-bi::SRSBuffer<IO1>::SRSBuffer(const Model& m, const std::string& file,
-    const FileMode mode, const SchemaMode schema, const size_t P,
-    const size_t T) :
-    parent_type(m, file, mode, schema, P, T) {
+bi::SRSBuffer<IO1>::SRSBuffer(const Model& m, const size_t P, const size_t T,
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    parent_type(m, P, T, file, mode, schema) {
   //
 }
 

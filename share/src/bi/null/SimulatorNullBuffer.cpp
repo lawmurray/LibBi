@@ -7,9 +7,9 @@
  */
 #include "SimulatorNullBuffer.hpp"
 
-bi::SimulatorNullBuffer::SimulatorNullBuffer(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t P, const size_t T) {
+bi::SimulatorNullBuffer::SimulatorNullBuffer(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) {
   //
 }
 

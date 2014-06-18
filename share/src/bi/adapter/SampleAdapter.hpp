@@ -30,7 +30,8 @@ public:
    *
    * @param initialSize Initial size of buffers (number of samples).
    */
-  SampleAdapter(const int initialSize = WeightAdapter<L>::DEFAULT_INITIAL_SIZE);
+  SampleAdapter(
+      const int initialSize = WeightAdapter<L>::DEFAULT_INITIAL_SIZE);
 
   /**
    * Add new sample.
@@ -63,7 +64,7 @@ protected:
 
 template<class B, bi::Location L>
 bi::SampleAdapter<B,L>::SampleAdapter(const int initialSize) :
-    X(B::NP, initialSize), P(0) {
+    X(initialSize, B::NP), P(0) {
   //
 }
 
@@ -72,10 +73,10 @@ template<class V1>
 void bi::SampleAdapter<B,L>::add(const V1 x,
     const typename V1::value_type lw) {
   WeightAdapter<L>::add(lw);
-  if (P >= X.size2()) {
-    X.resize(X.size1(), 2 * X.size2(), true);
+  if (P >= X.size1()) {
+    X.resize(2 * X.size1(), X.size2(), true);
   }
-  column(X, P) = x;
+  row(X, P) = x;
   ++P;
 }
 

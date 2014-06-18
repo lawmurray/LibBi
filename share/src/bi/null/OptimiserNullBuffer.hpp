@@ -21,9 +21,9 @@ public:
   /**
    * @copydoc OptimiserNetCDFBuffer::OptimiserNetCDFBuffer()
    */
-  OptimiserNullBuffer(const Model& m,
+  OptimiserNullBuffer(const Model& m, const size_t T = 0,
       const std::string& file = "", const FileMode mode = READ_ONLY,
-      const SchemaMode schema = PARAM_ONLY, const size_t T = 0);
+      const SchemaMode schema = PARAM_ONLY);
 
   /**
    * @copydoc OptimiserNetCDFBuffer::writeValue()

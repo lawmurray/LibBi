@@ -26,14 +26,14 @@ public:
    * Constructor.
    *
    * @param m Model.
-   * @param file NetCDF file name.
-   * @param mode File open mode.
    * @param P Number of samples to hold in file.
    * @param T Number of times to hold in file.
+   * @param file NetCDF file name.
+   * @param mode File open mode.
    */
-  SimulatorNetCDFBuffer(const Model& m, const std::string& file = "",
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
-      const size_t P = 0, const size_t T = 0);
+  SimulatorNetCDFBuffer(const Model& m, const size_t P = 0,
+      const size_t T = 0, const std::string& file = "", const FileMode mode =
+          READ_ONLY, const SchemaMode schema = DEFAULT);
 
   /**
    * Write time.
@@ -350,7 +350,8 @@ void bi::SimulatorNetCDFBuffer::writeState(const VarType type, const size_t k,
 
   if (schema == FLEXI) {
     /* write starting index and length */
-    BI_ERROR_MSG(this->k == k - 1, "writes must be in time order with flexible schemas");
+    BI_ERROR_MSG(this->k == k - 1,
+        "writes must be in time order with flexible schemas");
     BI_ERROR(p == 0);
 
     this->k = k;
@@ -424,7 +425,7 @@ void bi::SimulatorNetCDFBuffer::writeRange(const int varid, const size_t k,
     const V1 x) {
   typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
 
-  std::vector<size_t> start(1), count(1);
+  std::vector < size_t > start(1), count(1);
   start[0] = k;
   count[0] = x.size();
   if (V1::on_device || !x.contiguous()) {
@@ -442,7 +443,7 @@ void bi::SimulatorNetCDFBuffer::writeVector(const int varid, const size_t k,
     const V1 x) {
   typedef typename sim_temp_host_vector<V1>::type temp_vector_type;
 
-  std::vector<size_t> start(2), count(2);
+  std::vector < size_t > start(2), count(2);
   start[0] = k;
   start[1] = 0;
   count[0] = 1;
@@ -463,7 +464,7 @@ void bi::SimulatorNetCDFBuffer::writeMatrix(const int varid, const size_t k,
     const M1 X) {
   typedef typename sim_temp_host_matrix<M1>::type temp_matrix_type;
 
-  std::vector<size_t> start(3), count(3);
+  std::vector < size_t > start(3), count(3);
   start[0] = k;
   start[1] = 0;
   start[2] = 0;

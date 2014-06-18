@@ -26,9 +26,9 @@ public:
   /**
    * @copydoc SimulatorBuffer::SimulatorBuffer()
    */
-  SimulatorCache(const Model& m, const std::string& file,
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
-      const size_t P = 0, const size_t T = 0);
+  SimulatorCache(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Shallow copy constructor.
@@ -126,10 +126,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::SimulatorCache<CL,IO1>::SimulatorCache(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t P, const size_t T) :
-    IO1(m, file, mode, schema, P, T), len(0) {
+bi::SimulatorCache<CL,IO1>::SimulatorCache(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) :
+    IO1(m, P, T, file, mode, schema), len(0) {
   //
 }
 

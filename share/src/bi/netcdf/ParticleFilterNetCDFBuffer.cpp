@@ -8,9 +8,9 @@
 #include "ParticleFilterNetCDFBuffer.hpp"
 
 bi::ParticleFilterNetCDFBuffer::ParticleFilterNetCDFBuffer(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t P, const size_t T) :
-    SimulatorNetCDFBuffer(m, file, mode, schema, P, T) {
+    const size_t P, const size_t T, const std::string& file,
+    const FileMode mode, const SchemaMode schema) :
+    SimulatorNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {

@@ -33,9 +33,9 @@ public:
   /**
    * @copydoc ParticleFilterBuffer::ParticleFilterBuffer()
    */
-  AdaptivePFCache(const Model& m, const std::string& file = "",
-      const FileMode mode = READ_ONLY, const SchemaMode schema = DEFAULT,
-      const size_t P = 0, const size_t T = 0);
+  AdaptivePFCache(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Shallow copy.
@@ -163,10 +163,10 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t P, const size_t T) :
-    parent_type(m, file, mode, schema, P, T), base(-1), P(0) {
+bi::AdaptivePFCache<CL,IO1>::AdaptivePFCache(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) :
+    parent_type(m, P, T, file, mode, schema), base(-1), P(0) {
   //
 }
 

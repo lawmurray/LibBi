@@ -30,9 +30,9 @@ public:
   /**
    * @copydoc MCMCBuffer::MCMCBuffer()
    */
-  SRSCache(const Model& m, const std::string& file = "", const FileMode mode =
-      READ_ONLY, const SchemaMode schema = DEFAULT, const size_t P = 0,
-      const size_t T = 0);
+  SRSCache(const Model& m, const size_t P = 0, const size_t T = 0,
+      const std::string& file = "", const FileMode mode = READ_ONLY,
+      const SchemaMode schema = DEFAULT);
 
   /**
    * Shallow copy constructor.
@@ -113,10 +113,9 @@ private:
 }
 
 template<bi::Location CL, class IO1>
-bi::SRSCache<CL,IO1>::SRSCache(const Model& m, const std::string& file,
-    const FileMode mode, const SchemaMode schema, const size_t P,
-    const size_t T) :
-    parent_type(m, file, mode, schema, P, T), lwCache(
+bi::SRSCache<CL,IO1>::SRSCache(const Model& m, const size_t P, const size_t T,
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    parent_type(m, P, T, file, mode, schema), lwCache(
         parent_type::NUM_SAMPLES) {
   //
 }
@@ -152,7 +151,8 @@ real bi::SRSCache<CL,IO1>::readLogWeight(const int p) {
 template<bi::Location CL, class IO1>
 void bi::SRSCache<CL,IO1>::writeLogWeight(const int p, const real lw) {
   /* pre-condition */
-  BI_ASSERT(this->len == 0 || (p >= this->first && p <= this->first + this->len));
+  BI_ASSERT(
+      this->len == 0 || (p >= this->first && p <= this->first + this->len));
 
   if (this->len == 0) {
     this->first = p;

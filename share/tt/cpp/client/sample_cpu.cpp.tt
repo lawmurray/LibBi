@@ -178,21 +178,21 @@ int main(int argc, char* argv[]) {
       [% ELSE %]
       typedef SMCNullBuffer buffer_type;
       [% END %]
-      SMCBuffer<SMCCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
+      SMCBuffer<SMCCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
     [% ELSIF client.get_named_arg('sampler') == 'srs' %]
       [% IF client.get_named_arg('output-file') != '' %]
       typedef SMCNetCDFBuffer buffer_type;
       [% ELSE %]
       typedef SMCNullBuffer buffer_type;
       [% END %]
-      SRSBuffer<SRSCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
+      SRSBuffer<SRSCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
     [% ELSE %]
       [% IF client.get_named_arg('output-file') != '' %]
       typedef MCMCNetCDFBuffer buffer_type;
       [% ELSE %]
       typedef MCMCNullBuffer buffer_type;
       [% END %]
-      MCMCBuffer<MCMCCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
+      MCMCBuffer<MCMCCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
     [% END %]
   [% ELSE %]
     [% IF client.get_named_arg('output-file') != '' %]
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
     [% ELSE %]
     typedef SimulatorNullBuffer buffer_type;
     [% END %]
-    SimulatorBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
+    SimulatorBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
   [% END %]
   
   /* simulator */
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]) {
   
   /* stopper */
   [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  Stopper stopper(NPARTICLES, MAX_PARTICLES, sched.numObs());
+  Stopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
   SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'miness' %]

@@ -9,10 +9,10 @@
 
 #include <string>
 
-bi::SMCNetCDFBuffer::SMCNetCDFBuffer(const Model& m, const std::string& file,
-    const FileMode mode, const SchemaMode schema, const size_t P,
-    const size_t T) :
-    MCMCNetCDFBuffer(m, file, mode, schema, P, T) {
+bi::SMCNetCDFBuffer::SMCNetCDFBuffer(const Model& m, const size_t P,
+    const size_t T, const std::string& file, const FileMode mode,
+    const SchemaMode schema) :
+    MCMCNetCDFBuffer(m, P, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
     create();
   } else {

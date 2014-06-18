@@ -7,10 +7,9 @@
  */
 #include "OptimiserNullBuffer.hpp"
 
-bi::OptimiserNullBuffer::OptimiserNullBuffer(const Model& m,
-    const std::string& file, const FileMode mode, const SchemaMode schema,
-    const size_t T) :
-    SimulatorNullBuffer(m, file, mode, schema, 0, T) {
+bi::OptimiserNullBuffer::OptimiserNullBuffer(const Model& m, const size_t T,
+    const std::string& file, const FileMode mode, const SchemaMode schema) :
+    SimulatorNullBuffer(m, 0, T, file, mode, schema) {
   //
 }
 
