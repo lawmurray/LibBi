@@ -317,6 +317,10 @@ template<class B, class F>
 template<class S1, class IO1>
 void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
   out.write(c, s.theta1);
+  if (out.isFull()) {
+    out.flush();
+    out.clear();
+  }
 }
 
 template<class B, class F>

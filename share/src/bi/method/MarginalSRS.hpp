@@ -181,7 +181,9 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     filter.output0(s, s.out);
     ll = filter.correct(rng, *iter, s);
     filter.output(*iter, s, s.out);
-    s.logWeight = ll;
+    s.logWeight = s.logPrior + ll - s.logProposal;
+
+    std::cerr << s.logWeight << '\t';
     while (accept && iter + 1 != last) {
       k = iter->indexObs();
 
@@ -192,13 +194,17 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
       //if (accept) {
       //  s.logWeight = bi::max(lw, 0.0);
       //}
-
       /* propagation and weighting */
       ll = filter.step(rng, iter, last, s, s.out);
       s.logWeight += ll;
       s.logLikelihood += ll;
+
+      std::cerr.width(10);
+      std::cerr << s.logWeight << '\t';
     }
     filter.term();
+    std::cerr << std::endl;
+
     if (accept) {
       filter.samplePath(rng, s.path, s.out);
     }
@@ -220,6 +226,10 @@ template<class B, class F, class A, class S>
 template<class S1, class IO1>
 void bi::MarginalSRS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
   out.write(c, s);
+  if (out.isFull()) {
+    out.flush();
+    out.clear();
+  }
 }
 
 template<class B, class F, class A, class S>

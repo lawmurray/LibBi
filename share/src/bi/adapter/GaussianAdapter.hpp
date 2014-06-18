@@ -51,9 +51,9 @@ void bi::GaussianAdapter<B,L>::adapt(Q1& q) const {
   temp_vector_type mu(N), ws(this->P);
   temp_matrix_type Sigma(N, N);
 
-  expu_elements(this->lws, ws);
-  mean(this->X, ws, mu);
-  cov(this->X, ws, mu, Sigma);
+  expu_elements(subrange(this->lws, 0, this->P), ws);
+  mean(rows(this->X, 0, this->P), ws, mu);
+  cov(rows(this->X, 0, this->P), ws, mu, Sigma);
 
   q.mean() = mu;
   chol(Sigma, q.std());
