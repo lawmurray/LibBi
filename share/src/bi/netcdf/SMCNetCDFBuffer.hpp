@@ -37,10 +37,11 @@ public:
    *
    * @tparam V1 Vector type.
    *
+   * @param p Index of first sample.
    * @param lws Log-weights.
    */
   template<class V1>
-  void writeLogWeights(const V1 lws);
+  void writeLogWeights(const size_t p, const V1 lws);
 
   /**
    * Write incremental log-evidences.
@@ -76,8 +77,8 @@ protected:
 }
 
 template<class V1>
-void bi::SMCNetCDFBuffer::writeLogWeights(const V1 lws) {
-  writeRange(lwVar, 0, lws);
+void bi::SMCNetCDFBuffer::writeLogWeights(const size_t p, const V1 lws) {
+  writeRange(lwVar, p, lws);
 }
 
 template<class V1>

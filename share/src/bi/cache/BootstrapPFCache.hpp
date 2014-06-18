@@ -171,7 +171,7 @@ bi::BootstrapPFCache<CL,IO1>& bi::BootstrapPFCache<CL,IO1>::operator=(
 
 template<bi::Location CL, class IO1>
 bi::BootstrapPFCache<CL,IO1>::~BootstrapPFCache() {
-  flush();
+  //
 }
 
 template<bi::Location CL, class IO1>

@@ -49,6 +49,7 @@
 #include "bi/buffer/KalmanFilterBuffer.hpp"
 #include "bi/buffer/MCMCBuffer.hpp"
 #include "bi/buffer/SMCBuffer.hpp"
+#include "bi/buffer/SRSBuffer.hpp"
 
 #include "bi/cache/SimulatorCache.hpp"
 #include "bi/cache/AdaptivePFCache.hpp"
@@ -56,6 +57,7 @@
 #include "bi/cache/ExtendedKFCache.hpp"
 #include "bi/cache/MCMCCache.hpp"
 #include "bi/cache/SMCCache.hpp"
+#include "bi/cache/SRSCache.hpp"
 
 #include "bi/netcdf/InputNetCDFBuffer.hpp"
 #include "bi/netcdf/SimulatorNetCDFBuffer.hpp"
@@ -159,7 +161,8 @@ int main(int argc, char* argv[]) {
     [% IF client.get_named_arg('sampler') == 'sir' %]
     MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
     [% ELSIF client.get_named_arg('sampler') == 'srs' %]
-    MarginalSRSState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
+    typedef GaussianPdf<> proposal_type;
+    MarginalSRSState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
     [% ELSE %]
     MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
     [% END %]
@@ -169,13 +172,20 @@ int main(int argc, char* argv[]) {
 
   /* output */
   [% IF client.get_named_arg('target') == 'posterior' %]
-    [% IF client.get_named_arg('sampler') == 'sir' || client.get_named_arg('sampler') == 'srs' %]
+    [% IF client.get_named_arg('sampler') == 'sir' %]
       [% IF client.get_named_arg('output-file') != '' %]
       typedef SMCNetCDFBuffer buffer_type;
       [% ELSE %]
       typedef SMCNullBuffer buffer_type;
       [% END %]
       SMCBuffer<SMCCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
+    [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+      [% IF client.get_named_arg('output-file') != '' %]
+      typedef SMCNetCDFBuffer buffer_type;
+      [% ELSE %]
+      typedef SMCNullBuffer buffer_type;
+      [% END %]
+      SRSBuffer<SRSCache<LOCATION,buffer_type> > out(m, OUTPUT_FILE, REPLACE, MULTI, NSAMPLES, sched.numOutputs());
     [% ELSE %]
       [% IF client.get_named_arg('output-file') != '' %]
       typedef MCMCNetCDFBuffer buffer_type;
@@ -294,6 +304,7 @@ int main(int argc, char* argv[]) {
   [% ELSE %]
   sim->simulate(rng, sched.begin(), sched.end(), s, out, bufInit);
   [% END %]
+  out.flush();
   
   #ifdef ENABLE_TIMING
   /* output timing results */

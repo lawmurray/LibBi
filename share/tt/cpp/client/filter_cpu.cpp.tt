@@ -223,6 +223,7 @@ int main(int argc, char* argv[]) {
   #endif
   
   filter->filter(rng, sched.begin(), sched.end(), s, out, bufInit);
+  out.flush();
   
   #ifdef ENABLE_TIMING
   timer.sync();

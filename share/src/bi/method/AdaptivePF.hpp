@@ -99,7 +99,6 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
 
   const int P = s.size();
   const int N = s.getDyn().size2();
-  const int maxP = stopper.getMaxParticles();
 
   matrix_type X(P, N);
   vector_type lws(P);

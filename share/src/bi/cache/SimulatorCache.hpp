@@ -141,7 +141,7 @@ bi::SimulatorCache<CL,IO1>::SimulatorCache(const SimulatorCache<CL,IO1>& o) :
 
 template<bi::Location CL, class IO1>
 bi::SimulatorCache<CL,IO1>::~SimulatorCache() {
-  flush();
+  //
 }
 
 template<bi::Location CL, class IO1>

@@ -152,7 +152,7 @@ public:
    */
   void flush();
 
-private:
+protected:
   /**
    * Flush state trajectories to disk.
    *
@@ -237,7 +237,6 @@ parent_type(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
 
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::~MCMCCache() {
-  flush();
   for (int i = 0; i < int(pathCache.size()); ++i) {
     delete pathCache[i];
   }
@@ -248,7 +247,6 @@ bi::MCMCCache<CL,IO1>& bi::MCMCCache<CL,IO1>::operator=(
     const MCMCCache<CL,IO1>& o) {
   parent_type::operator=(o);
 
-  empty();
   llCache = o.llCache;
   lpCache = o.lpCache;
   parameterCache = o.parameterCache;

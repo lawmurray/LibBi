@@ -46,7 +46,7 @@ public:
   /**
    * Clear for reuse.
    */
-  void clear();
+  void reset();
 
 protected:
   /**
@@ -80,7 +80,8 @@ void bi::SampleAdapter<B,L>::add(const V1 x,
 }
 
 template<class B, bi::Location L>
-void bi::SampleAdapter<B,L>::clear() {
+void bi::SampleAdapter<B,L>::reset() {
+  WeightAdapter<L>::reset();
   P = 0;
 }
 

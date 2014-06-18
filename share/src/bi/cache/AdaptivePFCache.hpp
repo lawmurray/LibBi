@@ -193,7 +193,7 @@ bi::AdaptivePFCache<CL,IO1>& bi::AdaptivePFCache<CL,IO1>::operator=(
 
 template<bi::Location CL, class IO1>
 bi::AdaptivePFCache<CL,IO1>::~AdaptivePFCache() {
-  flush();
+  //
 }
 
 template<bi::Location CL, class IO1>

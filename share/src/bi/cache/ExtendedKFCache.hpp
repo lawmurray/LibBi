@@ -239,7 +239,7 @@ bi::ExtendedKFCache<CL,IO1>& bi::ExtendedKFCache<CL,IO1>::operator=(
 
 template<bi::Location CL, class IO1>
 bi::ExtendedKFCache<CL,IO1>::~ExtendedKFCache() {
-  flush();
+  //
 }
 
 template<bi::Location CL, class IO1>

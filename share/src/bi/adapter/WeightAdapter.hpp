@@ -43,9 +43,9 @@ public:
   void add(const T1 lw);
 
   /**
-   * Clear for reuse.
+   * Reset for reuse.
    */
-  void clear();
+  void reset();
 
 protected:
   /**
@@ -74,7 +74,7 @@ bi::WeightAdapter<L>::WeightAdapter(const int initialSize) :
 template<bi::Location L>
 template<class T1>
 void bi::WeightAdapter<L>::add(const T1 lw) {
-  if (P >= lws.size2()) {
+  if (P >= lws.size()) {
     lws.resize(2 * lws.size(), true);
   }
   lws(P) = lw;
@@ -82,7 +82,7 @@ void bi::WeightAdapter<L>::add(const T1 lw) {
 }
 
 template<bi::Location L>
-void bi::WeightAdapter<L>::clear() {
+void bi::WeightAdapter<L>::reset() {
   P = 0;
 }
 

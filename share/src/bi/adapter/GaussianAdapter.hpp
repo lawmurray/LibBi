@@ -22,13 +22,14 @@ public:
   /**
    * @copydoc Adapter::Adapter()
    */
-  GaussianAdapter(const int initialSize = SampleAdapter<B,L>::DEFAULT_INITIAL_SIZE);
+  GaussianAdapter(const int initialSize =
+      SampleAdapter<B,L>::DEFAULT_INITIAL_SIZE);
 
   /**
    * @copydoc Adapter::adapt()
    */
-  template<class Q>
-  void adapt(Q& q) const;
+  template<class Q1>
+  void adapt(Q1& q) const;
 };
 }
 
@@ -41,8 +42,8 @@ bi::GaussianAdapter<B,L>::GaussianAdapter(const int initialSize) :
 }
 
 template<class B, bi::Location L>
-template<class Q>
-void bi::GaussianAdapter<B,L>::adapt(Q& q) const {
+template<class Q1>
+void bi::GaussianAdapter<B,L>::adapt(Q1& q) const {
   typedef typename loc_temp_vector<L,real>::type temp_vector_type;
   typedef typename loc_temp_matrix<L,real>::type temp_matrix_type;
 
