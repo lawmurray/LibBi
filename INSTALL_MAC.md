@@ -43,8 +43,8 @@ end up with a working environment.
 Install the Homebrew packages on which LibBi depends:
 
     brew tap homebrew/science
-    brew install qrupdate netcdf gsl boost
-     
+    brew install gcc47 qrupdate netcdf gsl boost
+
 ## Step 5: Install LibBi
 
 Install LibBi as per the instructions in `INSTALL.md`.
