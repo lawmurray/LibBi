@@ -518,7 +518,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last,
     ThetaParticle<B,L>& s, const std::vector<ThetaParticle<B,L>*>& thetas,
     GaussianPdf<V1,M1>& q, const real ess) {
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   synchronize();
   TicToc clock;
 #endif
@@ -556,7 +556,7 @@ real bi::SMC2<B,F,R,IO1>::rejuvenate(Random& rng,
   boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
 
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   long usecs = clock.toc();
   const int timesteps = s.getOutput().size() - 1;
   reportRejuvenate(timesteps, usecs);

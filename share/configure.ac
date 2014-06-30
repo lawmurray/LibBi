@@ -168,9 +168,9 @@ if test x$mpi = xtrue; then
 	    if test x$have_mpicxx = xfalse; then
 	       AC_MSG_ERROR([MPI compiler wrapper mpicxx not found (only required with --enable-mpi)])
 	    fi
-		CXX="$CXX `mpicxx -showme:compile`"
-        NVCC="$NVCC `mpicxx -showme:compile`"
 		CXXCPP="mpicxx -E"
+		CXXFLAGS+=" `mpicxx -showme:compile`"
+		LDFLAGS+=" `mpicxx -showme:link`"
 	fi
 fi
 

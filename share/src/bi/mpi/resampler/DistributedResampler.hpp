@@ -27,8 +27,11 @@ public:
    * @param base Base resampler.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
-  DistributedResampler(R* base, const double essRel = 0.5);
+  DistributedResampler(R* base, const double essRel = 0.5,
+      const double bridgeEssRel = 0.5);
 
   /**
    * @copydoc concept::Resampler::resample(Random&, V1, V2, O1&)
@@ -128,8 +131,8 @@ private:
 
 template<class R>
 bi::DistributedResampler<R>::DistributedResampler(R* base,
-    const double essRel) :
-    Resampler(essRel), base(base) {
+    const double essRel, const double bridgeEssRel) :
+    Resampler(essRel, bridgeEssRel), base(base) {
   //
 }
 
@@ -139,7 +142,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   synchronize();
   TicToc clock;
 #endif
@@ -170,7 +173,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
   }
   boost::mpi::broadcast(world, O, 0);
 
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportResample(timesteps, rank, usecs);
@@ -184,8 +187,10 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 }
 
 template<class R>
-void bi::DistributedResampler<R>::reportResample(int timestep, int rank, long usecs) {
-  fprintf(stderr, "%d: DistributedResampler::resample proc %d %ld us\n", timestep, rank, usecs);
+void bi::DistributedResampler<R>::reportResample(int timestep, int rank,
+    long usecs) {
+  fprintf(stderr, "%d: DistributedResampler::resample proc %d %ld us\n",
+      timestep, rank, usecs);
 }
 
 template<class R>
@@ -233,7 +238,7 @@ template<class M1, class O1>
 void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   typedef typename temp_host_vector<int>::type int_vector_type;
 
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   synchronize();
   TicToc clock;
 #endif
@@ -247,7 +252,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   int_vector_type Ps(size);  // number of particles in each process
   int_vector_type ranks(size);  // ranks sorted by number of particles
-  std::list<boost::mpi::request> reqs;
+  std::list < boost::mpi::request > reqs;
 
   sum_rows(O, Ps);
   seq_elements(ranks, 0);
@@ -310,7 +315,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
 
-#ifdef ENABLE_TIMING
+#ifdef ENABLE_DIAGNOSTICS
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportRedistribute(timesteps, rank, usecs);
@@ -318,8 +323,10 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 }
 
 template<class R>
-void bi::DistributedResampler<R>::reportRedistribute(int timestep, int rank, long usecs) {
-  fprintf(stderr, "%d: DistributedResampler::redistribute proc %d %ld us\n", timestep, rank, usecs);
+void bi::DistributedResampler<R>::reportRedistribute(int timestep, int rank,
+    long usecs) {
+  fprintf(stderr, "%d: DistributedResampler::redistribute proc %d %ld us\n",
+      timestep, rank, usecs);
 }
 
 template<class R>
