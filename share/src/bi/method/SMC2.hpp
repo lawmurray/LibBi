@@ -403,7 +403,7 @@ real bi::SMC2<B,F,R,IO1>::init(Random& rng, const ScheduleElement now,
     theta.getIncLogLikelihood() = filter->correct(now, theta,
         theta.getLogWeights());
     theta.getLogLikelihood1() = theta.getIncLogLikelihood();
-    filter->output(now, theta, 0, theta.getLogWeights(),
+    filter->output(now, theta, theta.getLogWeights(),
         theta.getAncestors());
 
     /* initialise weights and ancestors */

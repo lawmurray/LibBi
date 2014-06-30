@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(out, SMC2CacheFactory<LOCATION>::create(m, bufOutput));
   BOOST_AUTO(pmmh, ParticleMarginalMetropolisHastingsFactory::create(m, filter, out));
   BOOST_AUTO(sampler, SMC2Factory::create(m, pmmh, &thetaresam,
-      NMOVES, adapter, ADAPTER_SCALE, ADAPTER_ESS_REL, BRIDGE_ESS_REL, out));
+      NMOVES, adapter, ADAPTER_SCALE, ADAPTER_ESS_REL, out));
 
   /* sample */
   #ifdef ENABLE_GPERFTOOLS

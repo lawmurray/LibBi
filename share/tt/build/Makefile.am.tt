@@ -29,7 +29,7 @@ AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
 AM_LDFLAGS = $(OPENMP_LDFLAGS)
 
 # CUDA files setup
-NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE='__attribute__ ((noinline))'
+NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE
 NVCXXFLAGS = -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
 LINK = $(CXXLINK) # force C++ linker for CUDA files
 
@@ -147,15 +147,15 @@ endif
 .cu.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
+	perl nvcc_wrapper.pl $(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	perl nvcc_wrapper.pl $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Po && \
 	rm -f $$depbase.Tpo
 
 .cu.lo:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.lo$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
+	perl nvcc_wrapper.pl $(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	$(LIBTOOL) --tag=CC --mode=compile perl nvcc_wrapper.pl $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Plo && \
 	rm -f $$depbase.Tpo
