@@ -1,3 +1,4 @@
+
 ---
 layout: page
 title: "LibBi: Related projects"
@@ -13,7 +14,7 @@ OctBi
 
 <ul class="buttons">
   <li><a
-  href="https://github.com/libbi/OctBi/archive/master.tar.gz"><strong>Download</strong> Stable</a></li>
+  href="https://github.com/libbi/OctBi/archive/stable.tar.gz"><strong>Download</strong> Stable</a></li>
   <li><a href="https://github.com/libbi/OctBi"><strong>View</strong> Dev</a></li>
 </ul>
 
