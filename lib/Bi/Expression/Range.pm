@@ -10,6 +10,10 @@ Bi::Expression::Range - dimension range in a variable reference.
 
 L<Bi::Expression>
 
+=head1 DESCRIPTION
+
+A range has a starting and ending expression, both of which must be constant.
+
 =head1 METHODS
 
 =over 4
@@ -49,8 +53,8 @@ sub new {
     my $start = shift;
     my $end = shift;
     
-    assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
-    assert(defined $end && $end->isa('Bi::Expression')) if DEBUG;
+    assert(defined $start && $start->isa('Bi::Expression') && $start->is_const) if DEBUG;
+    assert(defined $end && $end->isa('Bi::Expression') && $end->is_const) if DEBUG;
     
     my $self = {
         _start => $start,

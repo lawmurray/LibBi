@@ -23,38 +23,44 @@ public:
 
 #include "bi/math/pi.hpp"
 
-[% sig_action_dynamic_function('simulate') %] {
-  x.template fetch<target_type>(s, p, cox.index()) = pax.template fetch_alt<target_type>(s, p, cox.index());
-}
+[% std_action_dynamic_function('simulate') %]
 
 [% sig_action_dynamic_function('sample') %] {
-  real mu, sigma, u;
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
-  mu = 0.0;
-  sigma = bi::sqrt(bi::abs(t2 - t1));
-  u = rng.gaussian(mu, sigma);
+  real mu = 0.0;
+  real sigma = bi::sqrt(bi::abs(t2 - t1));
+  real u = rng.gaussian(mu, sigma);
     
-  x.template fetch<target_type>(s, p, cox.index()) = u;
+  [% put_output(action, 'u') %]
 }
 
 [% sig_action_dynamic_function('logdensity') %] {
-  T1 sigma;
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
-  sigma = bi::sqrt(bi::abs(t2 - t1));  
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real sigma = bi::sqrt(bi::abs(t2 - t1));  
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
 
   lp += BI_REAL(-0.5)*bi::pow(xy/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [% sig_action_dynamic_function('maxlogdensity') %] {
-  T1 sigma = bi::sqrt(bi::abs(t2 - t1));
-      
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real sigma = bi::sqrt(bi::abs(t2 - t1));
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+
   lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

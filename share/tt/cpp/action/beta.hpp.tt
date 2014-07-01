@@ -19,9 +19,6 @@ beta = action.get_named_arg('beta');
 class [% class_name %] {
 public:
   [% std_action %]
-
-  [% declare_action_static_function('alpha') %]
-  [% declare_action_static_function('beta') %]
   
   [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
@@ -31,59 +28,52 @@ public:
 
 #include "bi/random/generic.hpp"
 
-[% sig_action_static_function('alpha') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(alpha) %]
-  
-  x = [% alpha.to_cpp %];
-}
-
-[% sig_action_static_function('beta') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(beta) %]
-  
-  x = [% beta.to_cpp %];
-}
-
 [% std_action_static_function('simulate') %]
 
 [% sig_action_static_function('sample') %] {
-  real a, b, u;
-    
-  alpha(s, p, cox, pax, a);
-  beta(s, p, cox, pax, b);
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real a = [% alpha.to_cpp %];
+  real b = [% beta.to_cpp %];
+  real u = bi::beta(rng, a, b);
   
-  u = bi::beta(rng, a, b);
-  
-  x.template fetch<target_type>(s, p, cox.index()) = u;
+  [% put_output(action, 'u') %]
 }
 
 [% sig_action_static_function('logdensity') %] {
-  T1 a, b, logZ;
-    
-  alpha(s, p, cox, pax, a);
-  beta(s, p, cox, pax, b);
-  
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
+  real a = [% alpha.to_cpp %];
+  real b = [% beta.to_cpp %];
+  real logZ;
+      
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+  
   logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
   lp += (a - BI_REAL(1.0))*bi::log(xy) +
       (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - xy) - logZ;
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
   
 [% sig_action_static_function('maxlogdensity') %] {
-  T1 a, b, logZ;
-    
-  alpha(s, p, cox, pax, a);
-  beta(s, p, cox, pax, b);
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real a = [% alpha.to_cpp %];
+  real b = [% beta.to_cpp %];
+  real logZ;
+  
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
 
   [% IF alpha.is_common >= 1.0 && beta.is_common %]
   if (a >= BI_REAL(1.0) && b >= BI_REAL(1.0)) {
-    T1 mode = (a - BI_REAL(1.0))/(a + b - BI_REAL(2.0));
+    real mode = (a - BI_REAL(1.0))/(a + b - BI_REAL(2.0));
     logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
     lp += (a - BI_REAL(1.0))*bi::log(mode) +
         (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - mode) - logZ;
@@ -94,7 +84,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
   
 [%-PROCESS action/misc/footer.hpp.tt-%]

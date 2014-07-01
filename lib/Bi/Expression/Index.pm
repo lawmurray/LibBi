@@ -10,6 +10,12 @@ Bi::Expression::Index - dimension index in a variable reference.
 
 L<Bi::Expression>
 
+=head1 DESCRIPTION
+
+An index is a single scalar expression. It is handled internally as a range
+with starting expression 0, ending expression 0, size 1, with a dynamic
+offset of the index expression.
+
 =head1 METHODS
 
 =over 4
@@ -21,6 +27,8 @@ package Bi::Expression::Index;
 use parent 'Bi::Expression';
 use warnings;
 use strict;
+
+use Bi::Expression::IntegerLiteral;
 
 use Carp::Assert;
 use Scalar::Util 'refaddr';
@@ -70,12 +78,30 @@ sub clone {
 
 =item B<get_expr>
 
-Get the index expression.
+Get the index expression. This is used to dynamically offset output.
 
 =cut
 sub get_expr {
     my $self = shift;
     return $self->{_expr};
+}
+
+=item B<get_start>
+
+Always 0.
+
+=cut
+sub get_start {
+    return new Bi::Expression::IntegerLiteral(0);
+}
+
+=item B<get_end>
+
+Always 0.
+
+=cut
+sub get_end {
+    return new Bi::Expression::IntegerLiteral(0);
 }
 
 =item B<is_index>
@@ -98,7 +124,7 @@ sub is_range {
 
 =item B<get_size>
 
-Size of the range.
+Always 1.
 
 =cut
 sub get_size {

@@ -35,7 +35,8 @@ public:
 
 [% sig_action_static_function('logdensity') %] {
   [% alias_dims(action) %]
-  [% fetch_parents(pdf) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
   
   [% IF log %]
   lp += [% pdf.to_cpp %];
@@ -46,7 +47,8 @@ public:
 
 [% sig_action_static_function('maxlogdensity') %] {
   [% alias_dims(action) %]
-  [% fetch_parents(max_pdf) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
   
   [% IF max_pdf.is_const && max_pdf.eval_const == 0.0 %]
   lp = BI_REAL(1.0/0.0);

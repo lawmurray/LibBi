@@ -618,7 +618,7 @@ sub _get_item {
     my $name = shift;
     
     foreach my $item (@$list) {
-        if ($item->get_name eq $name) {
+        if (defined $item->get_name && $item->get_name eq $name) {
             return $item;
         }
     }
