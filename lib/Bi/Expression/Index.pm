@@ -92,7 +92,8 @@ Always 0.
 
 =cut
 sub get_start {
-    return new Bi::Expression::IntegerLiteral(0);
+    my $self = shift;
+    return $self->{_expr};
 }
 
 =item B<get_end>
@@ -101,7 +102,8 @@ Always 0.
 
 =cut
 sub get_end {
-    return new Bi::Expression::IntegerLiteral(0);
+    my $self = shift;
+    return $self->{_expr};
 }
 
 =item B<is_index>
