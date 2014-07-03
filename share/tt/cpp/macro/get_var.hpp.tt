@@ -5,6 +5,30 @@
 ## $Rev$
 ## $Date$
 -%]
-[%-MACRO get_var(expr) BLOCK-%]
-s.template getVar<Var[% expr.get_var.get_id %]>()
+[%-MACRO get_var(expr, p) BLOCK-%]
+[% IF expr.is_matrix %]
+(bi::subrange(bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% expr.get_var.get_id %]>(s, p)), [% expr.get_var.get_shape.get_size1 %], [% expr.get_var.get_shape.get_size2 %]), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %], [% expr.get_indexes.1.get_start.to_cpp %], [% expr.get_indexes.1.get_size.to_cpp %]))
+[% ELSE %]
+(bi::subrange(pax.template fetch<Var[% expr.get_var.get_id %]>(s, p), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %]))
+[%-END-%]
+[%-END-%]
+
+[%-MACRO get_output_var(expr, p) BLOCK-%]
+[% IF expr.is_matrix %]
+(bi::subrange(bi::reshape(bi::vector_as_column_matrix(x.template fetch<target_type>(s, p)), [% expr.get_var.get_shape.get_size1 %], [% expr.get_var.get_shape.get_size2 %]), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %], [% expr.get_indexes.1.get_start.to_cpp %], [% expr.get_indexes.1.get_size.to_cpp %]))
+[% ELSE %]
+(bi::subrange(x.template fetch<target_type>(s, p), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %]))
+[%-END-%]
+[%-END-%]
+
+[%-MACRO block_gets_var(expr) BLOCK-%]
+[% IF expr.is_matrix && expr.is_common %]
+(bi::subrange(bi::reshape(s.template getVar<Var[% expr.get_var.get_id %]>(), [% expr.get_var.get_shape.get_size1 %], [% expr.get_var.get_shape.get_size2 %]), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %], [% expr.get_indexes.1.get_start.to_cpp %], [% expr.get_indexes.1.get_size.to_cpp %]))
+[% ELSIF expr.is_matrix %]
+(bi::subrange(bi::reshape(s.template getVar<Var[% expr.get_var.get_id %]>(), s.size()*[% expr.get_var.get_shape.get_size1 %], [% expr.get_var.get_shape.get_size2 %]), s.size()*[% expr.get_indexes.0.get_start.to_cpp %], s.size()*[% expr.get_indexes.0.get_size.to_cpp %], [% expr.get_indexes.1.get_start.to_cpp %], [% expr.get_indexes.1.get_size.to_cpp %]))
+[% ELSIF expr.is_vector %]
+(bi::vec(bi::columns(s.template getVar<Var[% expr.get_var.get_id %]>(), [% expr.get_indexes.0.get_start.to_cpp %], [% expr.get_indexes.0.get_size.to_cpp %])))
+[% ELSE %]
+[% THROW 'only matrices and vectors supported in matrix expressions' %]
+[%-END-%]
 [%-END-%]

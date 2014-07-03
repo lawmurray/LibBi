@@ -53,8 +53,8 @@ sub new {
     my $start = shift;
     my $end = shift;
     
-    assert(defined $start && $start->isa('Bi::Expression') && $start->is_const) if DEBUG;
-    assert(defined $end && $end->isa('Bi::Expression') && $end->is_const) if DEBUG;
+    assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
+    assert(defined $end && $end->isa('Bi::Expression')) if DEBUG;
     
     my $self = {
         _start => $start,
@@ -149,7 +149,11 @@ sub get_size {
     my $self = shift;
     
     if ($self->has_start && $self->has_end) {
-        return $self->get_end - $self->get_start + 1;
+    	if ($self->get_start->equals($self->get_end)) {
+    		return new Bi::Expression::IntegerLiteral(1);
+    	} else {
+	        return $self->get_end - $self->get_start + 1;
+    	}
     } else {
         return [];
     }

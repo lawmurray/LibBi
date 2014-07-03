@@ -168,13 +168,13 @@ sub set_left {
     my $left = shift;
     
     assert ($left->isa('Bi::Expression::VarIdentifier')) if DEBUG;
-    
-    $self->{_left} = $left;
-    
-    # set default aliases if they haven't been set already
+        
+    # set default aliases and ranges if they haven't been set already
     if (@{$self->get_aliases} == 0) {
     	$self->set_aliases($left->get_var->gen_aliases);
+    	$left->set_indexes($left->get_var->gen_ranges);
     }
+    $self->{_left} = $left;
 }
 
 =item B<get_op>

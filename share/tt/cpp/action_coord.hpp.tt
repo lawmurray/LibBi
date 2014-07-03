@@ -113,7 +113,7 @@ public:
   /**
    * Offset into dimension.
    */
-  static const int OFFSET[% loop.index %] = [% alias.get_range.get_start.eval_const %];
+  static const int OFFSET[% loop.index %] = [% IF alias.get_range.get_start.is_const %][% alias.get_range.get_start.eval_const %][% ELSE %]0[% END %];
   
   /**
    * Length along dimension.

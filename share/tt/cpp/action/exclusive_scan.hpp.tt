@@ -7,7 +7,7 @@
 %]
 
 [%-
-x = action.get_named_arg('x');
+a = action.get_named_arg('x');
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
@@ -26,8 +26,10 @@ public:
 #include "bi/math/view.hpp"
 
 [% sig_action_static_matrix_function('simulate') %] {
-  BOOST_AUTO(a, pax.template fetch<Var[% x.get_var.get_id %]>(s, p));
-  BOOST_AUTO(b, x.template fetch<target_type>(s, p));
+  [% fetch_parents(action) %]
+
+  BOOST_AUTO(a, [% get_var(a) %]);
+  BOOST_AUTO(b, [% get_output_var(b) %]);
   
   bi::exclusive_scan(a, b);
 }

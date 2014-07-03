@@ -112,7 +112,7 @@ sub _unroll_expr {
     my $expr = shift;
 
     # temporary variable to hold expression result
-    my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';
+    my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';    
     my $dims = [ map { $model->lookup_dim($_) } @{$expr->get_shape->get_sizes} ];
     
   	my $var = new Bi::Model::Var($type, undef, $dims, [], {

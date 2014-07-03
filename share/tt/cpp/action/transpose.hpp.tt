@@ -25,11 +25,10 @@ public:
 #include "bi/math/operation.hpp"
 
 [% sig_action_static_matrix_function('simulate') %] {
-  const int N1 = [% A.get_var.get_shape.get_size1 %];
-  const int N2 = [% A.get_var.get_shape.get_size2 %];
+  [% fetch_parents(action) %]
 
-  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), N1, N2));
-  BOOST_AUTO(B, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<target_type>(s, p)), N2, N1));
+  BOOST_AUTO(A, [% get_var(A) %]);
+  BOOST_AUTO(B, [% get_output_var(B) %]);
   
   bi::trans(A, B);
 }
