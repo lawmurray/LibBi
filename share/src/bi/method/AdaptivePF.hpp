@@ -109,7 +109,6 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   typename precompute_type<R,L>::type pre;
   this->resam.precompute(lws, pre);
 
-  bool finished = false;
   int block = 0;
   double maxlw, ll = 0.0;
   BOOST_AUTO(iter1, iter);
@@ -135,8 +134,8 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
       maxlw = this->getMaxLogWeight(*iter1, s);
     }
     ++block;
-    finished = stopper.stop(s.logWeights(), maxlw);
-  } while (!finished);
+    stopper.add(s.logWeights(), maxlw);
+  } while (!stopper.stop(maxlw));
 
   int length = bi::max(block - 1, 1) * blockP;  // drop last block
   out.push(length);
