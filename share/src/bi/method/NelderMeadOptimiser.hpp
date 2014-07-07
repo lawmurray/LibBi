@@ -297,7 +297,6 @@ struct NelderMeadOptimiserFactory {
 };
 }
 
-#include "../resampler/Resampler.hpp"
 #include "../math/misc.hpp"
 #include "../math/view.hpp"
 #include "../math/temp_vector.hpp"

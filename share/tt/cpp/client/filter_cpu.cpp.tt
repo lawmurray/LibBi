@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
   [% END %]
 
   /* schedule */
-  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs);
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs, WITH_OUTPUT_AT_OBS);
 
   /* state */
   NPARTICLES = bi::roundup(NPARTICLES);

@@ -121,10 +121,11 @@ public:
    * @param M Number of dense bridge points.
    * @param in Input file.
    * @param obs Observation file.
+   * @param outputAtObs Output at all observation times as well as at regular intervals?
    */
   template<class B, class IO1, class IO2>
   Schedule(B& m, const real t, const real T, const int K, const int M,
-      IO1& in, IO2& obs);
+      IO1& in, IO2& obs, const bool outputAtObs = true);
 
 	/**
 	 * Shallow copy constructor.
@@ -213,7 +214,7 @@ private:
 
 template<class B, class IO1, class IO2>
 bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
-    const int M, IO1& in, IO2& obs) :
+    const int M, IO1& in, IO2& obs, const bool outputAtObs) :
     delta(m.getDelta()) {
   /* pre-conditions */
   BI_ASSERT(T >= t);
@@ -269,7 +270,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
   std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
   BOOST_AUTO(lowerObs, std::lower_bound(tObs.begin(), tObs.end(), st));
   BOOST_AUTO(upperObs, std::upper_bound(lowerObs, tObs.end(), sT));
-  merge_unique(tOutputs, lowerObs, upperObs);  // output at each obs time
+  if (outputAtObs) {
+    merge_unique(tOutputs, lowerObs, upperObs);  // output at each obs time
+  }
   elem.kObs = std::distance(tObs.begin(), lowerObs);
   tObs.resize(std::distance(tObs.begin(), upperObs));
 
@@ -278,8 +281,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
 	merge_unique(ts, tInputs.begin() + elem.kInput, tInputs.end());
 	merge_unique(ts, tOutputs.begin(), tOutputs.end());
 	merge_unique(ts, tBridges.begin(), tBridges.end());
-	//merge_unique(ts, tObs.begin() + elem.kObs, tObs.end());
-	//^ tObs already merged into tOutputs above
+	// tObs already merged into tOutputs above, if required
 
 	/* generate schedule */
 	for (elem.k = 0; elem.k < int(ts.size()); ++elem.k) {

@@ -151,11 +151,13 @@ template<class B, class S, class R, class S2>
 template<bi::Location L, class IO1>
 void bi::AdaptivePF<B,S,R,S2>::output(const ScheduleElement now,
     const BootstrapPFState<B,L>& s, IO1& out) {
-  BootstrapPF<B,S,R>::output(now, s, out);
-  if (now.indexOutput() == 0) {
-    /* need to call push()---see AdaptivePFCache---other pushes handled in
-     * step() */
-    out.push(s.size());
+  if (now.hasOutput()) {
+    BootstrapPF<B,S,R>::output(now, s, out);
+    if (now.indexOutput() == 0) {
+      /* need to call push()---see AdaptivePFCache---other pushes handled in
+       * step() */
+      out.push(s.size());
+    }
   }
 }
 

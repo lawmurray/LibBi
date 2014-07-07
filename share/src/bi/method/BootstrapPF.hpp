@@ -316,7 +316,13 @@ bool bi::BootstrapPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
       if (resampler_needs_max<R>::value) {
         resam.setMaxLogWeight(getMaxLogWeight(now, s));
       }
-      resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
+      if (now.hasOutput()) {
+        resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
+      } else {
+        typename S1::int_vector_type as1(s.ancestors().size());
+        resam.resample(rng, s.logWeights(), as1, s.getDyn());
+        bi::gather(as1, s.ancestors(), s.ancestors());
+      }
     } else {
       seq_elements(s.ancestors(), 0);
       Resampler::normalise(s.logWeights());
@@ -337,7 +343,9 @@ template<class B, class S, class R>
 template<class S1, class IO1>
 void bi::BootstrapPF<B,S,R>::output(const ScheduleElement now, const S1& s,
     IO1& out) {
-  out.write(now.indexOutput(), now.getTime(), s);
+  if (now.hasOutput()) {
+    out.write(now.indexOutput(), now.getTime(), s);
+  }
 }
 
 template<class B, class S, class R>

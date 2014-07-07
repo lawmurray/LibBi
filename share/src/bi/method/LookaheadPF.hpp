@@ -223,8 +223,15 @@ bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
       if (resampler_needs_max<R>::value) {
         this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
       }
-      this->resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
-      bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
+      if (now.hasOutput()) {
+        this->resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
+        bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
+      } else {
+        typename S1::int_vector_type as1(s.ancestors().size());
+        this->resam.resample(rng, s.logWeights(), as1, s.getDyn());
+        bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
+        bi::gather(as1, s.ancestors(), s.ancestors());
+      }
     } else {
       seq_elements(s.ancestors(), 0);
       Resampler::normalise(s.logWeights());
@@ -240,7 +247,7 @@ bool bi::LookaheadPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
         bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
       } else {
         typename S1::int_vector_type as1(s.ancestors().size());
-        this->resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
+        this->resam.resample(rng, s.logWeights(), as1, s.getDyn());
         bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
         bi::gather(as1, s.ancestors(), s.ancestors());
       }

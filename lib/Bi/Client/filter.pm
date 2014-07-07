@@ -40,6 +40,10 @@ gives the number of additional, equispaced times at which to output. With
 C<--end-time T> and C<--noutputs K>, then for each C<k> in C<0,...,K-1>,
 the state will be output at time C<T*k/K>.
 
+=item C<--with-output-at-obs> (default 1)
+
+Output at observation times in addition to dense output times.
+
 =item C<--filter> (default C<bootstrap>)
 
 The type of filter to use; one of:
@@ -275,6 +279,11 @@ our @CLIENT_OPTIONS = (
     {
       name => 'noutputs',
       type => 'int',
+      default => 0
+    },
+    {
+      name => 'with-output-at-obs',
+      type => 'bool',
       default => 0
     },
     {
