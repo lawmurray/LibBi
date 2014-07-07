@@ -158,21 +158,24 @@ sub get_shape {
     my $self = shift;
 
     my $name = $self->get_name;
-	if ($name eq 'gemv_' || $name eq 'gemm_') {
+	if ($name eq 'gemv_') {
 		my $expr1 = $self->get_arg(0);
 		my $expr2 = $self->get_arg(1);
 		
 		if ($expr1->get_shape->get_size2 != $expr2->get_shape->get_size1) {
     		die("incompatible sizes in matrix/vector multiply\n");
     	}
-    	my $shape = [];
-    	if ($expr1->get_shape->get_size1 > 1) {
-    		push(@$shape, $expr1->get_shape->get_size1);
+    	my $sizes = [ $expr1->get_shape->get_size1 ];
+        return new Bi::Expression::Shape($sizes);
+	} elsif ($name eq 'gemm_') {
+		my $expr1 = $self->get_arg(0);
+		my $expr2 = $self->get_arg(1);
+		
+		if ($expr1->get_shape->get_size2 != $expr2->get_shape->get_size1) {
+    		die("incompatible sizes in matrix/vector multiply\n");
     	}
-    	if ($expr2->get_shape->get_size2 > 1) {
-    		push(@$shape, $expr2->get_shape->get_size2);
-    	}
-        return new Bi::Expression::Shape($shape);
+    	my $sizes = [ $expr1->get_shape->get_size1, $expr2->get_shape->get_size2 ];
+        return new Bi::Expression::Shape($sizes);
 	} elsif ($name eq 'transpose') {
 		my $expr1 = $self->get_arg(0);
     	my $shape = [];

@@ -130,56 +130,56 @@ BI_FORCE_INLINE inline avx_double operator/(const avx_double& o1,
 BI_FORCE_INLINE inline avx_double operator+(const double& o1,
     const avx_double& o2) {
   avx_double res;
-  res.packed = _mm256_set1_pd(o1) + o2.packed;
+  res.packed = _mm256_add_pd(_mm256_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator-(const double& o1,
     const avx_double& o2) {
   avx_double res;
-  res.packed = _mm256_set1_pd(o1) - o2.packed;
+  res.packed = _mm256_sub_pd(_mm256_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator*(const double& o1,
     const avx_double& o2) {
   avx_double res;
-  res.packed = _mm256_set1_pd(o1) * o2.packed;
+  res.packed = _mm256_mul_pd(_mm256_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator/(const double& o1,
     const avx_double& o2) {
   avx_double res;
-  res.packed = _mm256_set1_pd(o1) / o2.packed;
+  res.packed = _mm256_div_pd(_mm256_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator+(const avx_double& o1,
     const double& o2) {
   avx_double res;
-  res.packed = o1.packed + _mm256_set1_pd(o2);
+  res.packed = _mm256_add_pd(o1.packed, _mm256_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator-(const avx_double& o1,
     const double& o2) {
   avx_double res;
-  res.packed = o1.packed - _mm256_set1_pd(o2);
+  res.packed = _mm256_sub_pd(o1.packed, _mm256_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator*(const avx_double& o1,
     const double& o2) {
   avx_double res;
-  res.packed = o1.packed * _mm256_set1_pd(o2);
+  res.packed = _mm256_mul_pd(o1.packed, _mm256_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_double operator/(const avx_double& o1,
     const double& o2) {
   avx_double res;
-  res.packed = o1.packed / _mm256_set1_pd(o2);
+  res.packed = _mm256_div_pd(o1.packed, _mm256_set1_pd(o2));
   return res;
 }
 

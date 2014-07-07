@@ -117,22 +117,28 @@ AC_ARG_ENABLE([gperftools],
     LDFLAGS="$LDFLAGS -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -Wl,-rpath,$CUDA_ROOT/lib64 -Wl,-rpath,$CUDA_ROOT/lib -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/local/cuda/lib"
 #fi
 
-# Defines
-if test x$cuda = xtrue; then
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
-else
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
-fi
-if test x$openmp = xtrue; then
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
-else
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
-fi
-# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
-#   Thrust 1.7, so its OpenMP backend has been re-enabled.
-
 # Compilers etc
-AC_PROG_CXX([icpc clang++ g++-4.2 g++])
+#
+# On Mac OS X:
+#   * clang++ supports SSE and AVX, but not OpenMP or CUDA.
+#   * g++-4.2 supports SSE, OpenMP (but not thread local storage!) and CUDA,
+#     but not AVX.
+#   * custom g++ installs should support SSE, AVX and OpenMP, but not CUDA.
+#     HomeBrew versions seem to produce extremely slow SSE and AVX code
+#     though (this requires investigation).
+#   * g++ symlinks to clang++ by default.
+# Decision is to prefer g++-4.2 when CUDA is enabled (forcibly disabling
+# OpenMP), clang++ when SSE or AVX is enabled (so no OpenMP) and g++
+# otherwise (which will use a custom g++ install if there is one).
+#
+if test x$cuda = xtrue; then
+    compilers="icpc g++-4.2 g++ clang++"
+elif test x$sse = xtrue; then
+    compilers="icpc clang++ g++"
+else
+    compilers="icpc g++ clang++"
+fi
+AC_PROG_CXX([$compilers])
 AC_PATH_PROG([NVCC], [nvcc], [nvcc], [$PATH:/usr/local/cuda/bin])
 NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_CXXCPP
@@ -140,6 +146,9 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Compiler characteristics
+if test x$CXX = xg++-4.2; then
+  openmp=false
+fi
 if test x$openmp = xtrue; then
   AC_OPENMP
 fi
@@ -159,9 +168,9 @@ if test x$mpi = xtrue; then
 	    if test x$have_mpicxx = xfalse; then
 	       AC_MSG_ERROR([MPI compiler wrapper mpicxx not found (only required with --enable-mpi)])
 	    fi
-		CXX="$CXX `mpicxx -showme:compile`"
-        NVCC="$NVCC `mpicxx -showme:compile`"
 		CXXCPP="mpicxx -E"
+		CXXFLAGS+=" `mpicxx -showme:compile`"
+		LDFLAGS+=" `mpicxx -showme:link`"
 	fi
 fi
 
@@ -212,7 +221,7 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 # Checks for header files
 AC_HEADER_ASSERT
 
-AC_CHECK_HEADERS([omp.h], [], [], [-])
+AC_CHECK_HEADERS([omp.h], [], [openmp=false], [-])
 
 AC_CHECK_HEADERS([netcdf.h], [], \
     AC_MSG_ERROR([required NetCDF header not found]), [-])
@@ -281,6 +290,19 @@ if test x$gperftools = xtrue; then
 fi
 
 # Defines
+if test x$cuda = xtrue; then
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
+else
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
+fi
+if test x$openmp = xtrue; then
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
+else
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
+fi
+# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
+#   Thrust 1.7, so its OpenMP backend has been re-enabled.
+
 AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])

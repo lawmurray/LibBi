@@ -130,56 +130,56 @@ BI_FORCE_INLINE inline avx_float operator/(const avx_float& o1,
 BI_FORCE_INLINE inline avx_float operator+(const float& o1,
     const avx_float& o2) {
   avx_float res;
-  res.packed = _mm256_set1_ps(o1) + o2.packed;
+  res.packed = _mm256_add_ps(_mm256_set1_ps(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator-(const float& o1,
     const avx_float& o2) {
   avx_float res;
-  res.packed = _mm256_set1_ps(o1) - o2.packed;
+  res.packed = _mm256_sub_ps(_mm256_set1_ps(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator*(const float& o1,
     const avx_float& o2) {
   avx_float res;
-  res.packed = _mm256_set1_ps(o1) * o2.packed;
+  res.packed = _mm256_mul_ps(_mm256_set1_ps(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator/(const float& o1,
     const avx_float& o2) {
   avx_float res;
-  res.packed = _mm256_set1_ps(o1) / o2.packed;
+  res.packed = _mm256_div_ps(_mm256_set1_ps(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator+(const avx_float& o1,
     const float& o2) {
   avx_float res;
-  res.packed = o1.packed + _mm256_set1_ps(o2);
+  res.packed = _mm256_add_ps(o1.packed, _mm256_set1_ps(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator-(const avx_float& o1,
     const float& o2) {
   avx_float res;
-  res.packed = o1.packed - _mm256_set1_ps(o2);
+  res.packed = _mm256_sub_ps(o1.packed, _mm256_set1_ps(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator*(const avx_float& o1,
     const float& o2) {
   avx_float res;
-  res.packed = o1.packed * _mm256_set1_ps(o2);
+  res.packed = _mm256_mul_ps(o1.packed, _mm256_set1_ps(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline avx_float operator/(const avx_float& o1,
     const float& o2) {
   avx_float res;
-  res.packed = o1.packed / _mm256_set1_ps(o2);
+  res.packed = _mm256_div_ps(o1.packed, _mm256_set1_ps(o2));
   return res;
 }
 

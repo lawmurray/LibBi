@@ -20,10 +20,6 @@ range = action.make_range;
 class [% class_name %] {
 public:
   [% std_action %]
-
-  [% declare_action_static_function('lower') %]
-  [% declare_action_static_function('upper') %]
-  [% declare_action_static_function('range') %]
     
   [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
@@ -33,68 +29,53 @@ public:
 
 #include "bi/math/pi.hpp"
 
-[% sig_action_static_function('lower') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(lower) %]
-  
-  x = [% lower.to_cpp %];
-}
-
-[% sig_action_static_function('upper') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(upper) %]
-  
-  x = [% upper.to_cpp %];
-}
-
-[% sig_action_static_function('range') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(range) %]
-  
-  x = [% range.to_cpp %];
-}
-
 [% std_action_static_function('simulate') %]
 
 [% sig_action_static_function('sample') %] {
-  real mn, mx, u;
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real mn = [% lower.to_cpp %];
+  real mx = [% upper.to_cpp %];
+  real u = rng.uniform(mn, mx);
     
-  lower(s, p, cox, pax, mn);
-  upper(s, p, cox, pax, mx);
-  u = rng.uniform(mn, mx);
-    
-  x.template fetch<target_type>(s, p, cox.index()) = u;
+  [% put_output(action, 'u') %]
 }
 
 [% sig_action_static_function('logdensity') %] {
-  T1 mn, mx;
-    
-  lower(s, p, cox, pax, mn);
-  upper(s, p, cox, pax, mx);
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real mn = [% lower.to_cpp %];
+  real mx = [% upper.to_cpp %];
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
 
   if (xy >= mn && xy <= mx) {
     lp += -bi::log(mx - mn);
   } else {
     lp = BI_REAL(-1.0)/BI_REAL(0.0);
   }
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  T1 rn;
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
   
   [% IF range.is_common %]
-  range(s, p, cox, pax, rn);
+  real rn = [% range.to_cpp %];
   lp += -bi::log(rn);
   [% ELSE %]
-  lp = BI_REAL(1.0/0.0);
+  lp = BI_REAL(1.0)/BI_REAL(0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

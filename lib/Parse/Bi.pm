@@ -2083,12 +2083,35 @@ sub new {
 	},
 	{#State 226
 		ACTIONS => {
-			'IDENTIFIER' => 249,
-			'INTEGER_LITERAL' => 250
+			"-" => 9,
+			'IDENTIFIER' => 250,
+			"+" => 10,
+			'INTEGER_LITERAL' => 12,
+			'LITERAL' => 13,
+			"!" => 16,
+			"(" => 33,
+			'STRING_LITERAL' => 37
 		},
 		GOTOS => {
 			'dim_aliases' => 248,
-			'dim_alias' => 251
+			'conditional_expression' => 11,
+			'and_expression' => 14,
+			'inclusive_or_expression' => 15,
+			'pow_expression' => 17,
+			'expression' => 249,
+			'unary_operator' => 19,
+			'unary_expression' => 20,
+			'equality_expression' => 22,
+			'shift_expression' => 25,
+			'logical_or_expression' => 26,
+			'additive_expression' => 27,
+			'postfix_expression' => 29,
+			'exclusive_or_expression' => 31,
+			'relational_expression' => 32,
+			'logical_and_expression' => 34,
+			'multiplicative_expression' => 35,
+			'dim_alias' => 251,
+			'cast_expression' => 38
 		}
 	},
 	{#State 227
@@ -2263,15 +2286,19 @@ sub new {
 	},
 	{#State 249
 		ACTIONS => {
-			"=" => 265
+			":" => 265
 		},
-		DEFAULT => -91
+		DEFAULT => -94
 	},
 	{#State 250
 		ACTIONS => {
-			":" => 266
+			"," => -91,
+			"[" => 74,
+			"]" => -91,
+			"=" => 266,
+			"(" => 76
 		},
-		DEFAULT => -94
+		DEFAULT => -134
 	},
 	{#State 251
 		DEFAULT => -90
@@ -2353,21 +2380,96 @@ sub new {
 	},
 	{#State 264
 		ACTIONS => {
-			'IDENTIFIER' => 249,
-			'INTEGER_LITERAL' => 250
+			"-" => 9,
+			'IDENTIFIER' => 250,
+			"+" => 10,
+			'INTEGER_LITERAL' => 12,
+			'LITERAL' => 13,
+			"!" => 16,
+			"(" => 33,
+			'STRING_LITERAL' => 37
 		},
 		GOTOS => {
-			'dim_alias' => 272
+			'conditional_expression' => 11,
+			'and_expression' => 14,
+			'inclusive_or_expression' => 15,
+			'pow_expression' => 17,
+			'expression' => 249,
+			'unary_operator' => 19,
+			'unary_expression' => 20,
+			'equality_expression' => 22,
+			'shift_expression' => 25,
+			'logical_or_expression' => 26,
+			'additive_expression' => 27,
+			'postfix_expression' => 29,
+			'exclusive_or_expression' => 31,
+			'relational_expression' => 32,
+			'multiplicative_expression' => 35,
+			'logical_and_expression' => 34,
+			'dim_alias' => 272,
+			'cast_expression' => 38
 		}
 	},
 	{#State 265
 		ACTIONS => {
-			'INTEGER_LITERAL' => 273
+			"-" => 9,
+			'IDENTIFIER' => 68,
+			"+" => 10,
+			'INTEGER_LITERAL' => 12,
+			'LITERAL' => 13,
+			"!" => 16,
+			"(" => 33,
+			'STRING_LITERAL' => 37
+		},
+		GOTOS => {
+			'conditional_expression' => 11,
+			'and_expression' => 14,
+			'inclusive_or_expression' => 15,
+			'pow_expression' => 17,
+			'expression' => 273,
+			'unary_operator' => 19,
+			'unary_expression' => 20,
+			'equality_expression' => 22,
+			'shift_expression' => 25,
+			'logical_or_expression' => 26,
+			'additive_expression' => 27,
+			'postfix_expression' => 29,
+			'exclusive_or_expression' => 31,
+			'relational_expression' => 32,
+			'multiplicative_expression' => 35,
+			'logical_and_expression' => 34,
+			'cast_expression' => 38
 		}
 	},
 	{#State 266
 		ACTIONS => {
-			'INTEGER_LITERAL' => 274
+			"-" => 9,
+			'IDENTIFIER' => 68,
+			"+" => 10,
+			'INTEGER_LITERAL' => 12,
+			'LITERAL' => 13,
+			"!" => 16,
+			"(" => 33,
+			'STRING_LITERAL' => 37
+		},
+		GOTOS => {
+			'conditional_expression' => 11,
+			'and_expression' => 14,
+			'inclusive_or_expression' => 15,
+			'pow_expression' => 17,
+			'expression' => 274,
+			'unary_operator' => 19,
+			'unary_expression' => 20,
+			'equality_expression' => 22,
+			'shift_expression' => 25,
+			'logical_or_expression' => 26,
+			'additive_expression' => 27,
+			'postfix_expression' => 29,
+			'exclusive_or_expression' => 31,
+			'relational_expression' => 32,
+			'multiplicative_expression' => 35,
+			'logical_and_expression' => 34,
+			'cast_expression' => 38
 		}
 	},
 	{#State 267
@@ -2397,13 +2499,13 @@ sub new {
 		DEFAULT => -89
 	},
 	{#State 273
+		DEFAULT => -95
+	},
+	{#State 274
 		ACTIONS => {
 			":" => 279
 		},
 		DEFAULT => -92
-	},
-	{#State 274
-		DEFAULT => -95
 	},
 	{#State 275
 		ACTIONS => {
@@ -2450,7 +2552,33 @@ sub new {
 	},
 	{#State 279
 		ACTIONS => {
-			'INTEGER_LITERAL' => 281
+			"-" => 9,
+			'IDENTIFIER' => 68,
+			"+" => 10,
+			'INTEGER_LITERAL' => 12,
+			'LITERAL' => 13,
+			"!" => 16,
+			"(" => 33,
+			'STRING_LITERAL' => 37
+		},
+		GOTOS => {
+			'conditional_expression' => 11,
+			'and_expression' => 14,
+			'inclusive_or_expression' => 15,
+			'pow_expression' => 17,
+			'expression' => 281,
+			'unary_operator' => 19,
+			'unary_expression' => 20,
+			'equality_expression' => 22,
+			'shift_expression' => 25,
+			'logical_or_expression' => 26,
+			'additive_expression' => 27,
+			'postfix_expression' => 29,
+			'exclusive_or_expression' => 31,
+			'relational_expression' => 32,
+			'multiplicative_expression' => 35,
+			'logical_and_expression' => 34,
+			'cast_expression' => 38
 		}
 	},
 	{#State 280

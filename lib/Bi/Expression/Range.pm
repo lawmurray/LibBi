@@ -10,6 +10,10 @@ Bi::Expression::Range - dimension range in a variable reference.
 
 L<Bi::Expression>
 
+=head1 DESCRIPTION
+
+A range has a starting and ending expression, both of which must be constant.
+
 =head1 METHODS
 
 =over 4
@@ -145,7 +149,11 @@ sub get_size {
     my $self = shift;
     
     if ($self->has_start && $self->has_end) {
-        return $self->get_end - $self->get_start + 1;
+    	if ($self->get_start->equals($self->get_end)) {
+    		return new Bi::Expression::IntegerLiteral(1);
+    	} else {
+	        return $self->get_end - $self->get_start + 1;
+    	}
     } else {
         return [];
     }

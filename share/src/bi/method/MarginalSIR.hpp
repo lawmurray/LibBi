@@ -264,10 +264,6 @@ template<class B, class F, class A, class R>
 template<class S1>
 double bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
-#ifdef ENABLE_TIMING
-  synchronize();
-  TicToc clock;
-#endif
   int p, move, naccept = 0;
   for (p = 0; p < s.size(); ++p) {
     for (move = 0; move < Nmoves; ++move) {

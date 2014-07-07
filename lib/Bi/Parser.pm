@@ -551,21 +551,32 @@ sub dim_alias {
     my $name = shift;
     my $start = shift;
     my $end = shift;
+	my $alias;
 
-    if (defined $name) {
+    if (defined $name && !defined $start) {
+    	# have a name on its own, is it a dimension alias or identifier?
         if ($self->_is_var($name)) {
-            die("variable name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::VarIdentifier($self->_get_var($name));
+        	undef $name;
         } elsif ($self->_is_const($name)) {
-            die("constant name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::ConstIdentifier($self->_get_const($name));
+        	undef $name;
         } elsif ($self->_is_inline($name)) {
-            die("inline expression name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::InlineIdentifier($self->_get_inline($name));
+        	undef $name;
+        } else {
+        	# it's a dimension alias
         }
     }
+ 	if ((defined $start && !$start->is_common) || (defined $end && !$end->is_common)) {
+   		die("a dimension index on the left must be a common expression\n")
+   	}
+
     my $range = undef;
     if (defined $start && defined $end) {
-        $range = new Bi::Expression::Range(new Bi::Expression::IntegerLiteral($start), new Bi::Expression::IntegerLiteral($end));
+        $range = new Bi::Expression::Range($start, $end);
     } elsif (defined $start) {
-    	$range = new Bi::Expression::Index(new Bi::Expression::IntegerLiteral($start));
+    	$range = new Bi::Expression::Index($start);
     }
     
     return new Bi::Model::DimAlias($name, $range);

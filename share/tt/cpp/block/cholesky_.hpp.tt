@@ -47,20 +47,16 @@ public:
   const char uplo = '[% uplo.eval_const %]';
   
   [% IF A.is_common %]
-    BOOST_AUTO(A, reshape([% get_var(A) %], N, N));
-    [% IF S.is_common %]
-    BOOST_AUTO(S, reshape([% get_var(S) %], N, N));
-    bi::chol(A, S, uplo);
-    [% ELSE %]
-    typename bi::sim_temp_matrix<BOOST_TYPEOF(A)>::type S1(N, N);
-    bi::chol(A, S1, uplo);
-    set_rows([% get_var(S) %], vec(S1));
-    [% END %]
+  BOOST_AUTO(A, [% block_gets_var(A) %]);
+  BOOST_AUTO(S, [% block_gets_var(S) %]);
+  bi::chol(A, S, uplo);
   [% ELSE %]
-    BOOST_AUTO(A, reshape([% get_var(A) %], P*N, N));
-    BOOST_AUTO(S, reshape([% get_var(S) %], P*N, N));
-    bi::multi_chol(P, A, S, uplo);
+  BOOST_AUTO(A, [% block_gets_var(A) %]);
+  BOOST_AUTO(S, [% block_gets_var(S) %]);
+  bi::multi_chol(P, A, S, uplo);
   [% END %]
+  
+ [%# note if A.is_common and !S.is_common, then should have been unrolled %]
 }
 
 [% std_block_static_function('sample') %]

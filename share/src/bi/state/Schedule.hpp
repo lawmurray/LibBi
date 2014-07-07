@@ -21,27 +21,27 @@ namespace bi {
  * Functor to convert user time to scaled time.
  */
 template<class T>
-struct User2Scaled: public std::unary_function<T,T> {
-  T delta;
+struct User2Scaled: public std::unary_function<T, T> {
+	T delta;
 
-  User2Scaled(const T delta) :
-      delta(delta) {
-    //
-  }
+	User2Scaled(const T delta) :
+			delta(delta) {
+		//
+	}
 
-  T operator()(const T t) const {
-    T st = t / delta;
+	T operator()(const T t) const {
+		T st = t / delta;
 
-    /* if this is very close to a delta time, round it to this */
-    T dt = bi::round(st);
-    if (bi::abs(st - dt) < static_cast<T>(1.0e-4)) {
-      // ^ note that having already divided through by delta, this comparison
-      //   can be absolute not relative
-      st = dt;
-    }
+		/* if this is very close to a delta time, round it to this */
+		T dt = bi::round(st);
+		if (bi::abs(st - dt) < static_cast<T>(1.0e-4)) {
+			// ^ note that having already divided through by delta, this comparison
+			//   can be absolute not relative
+			st = dt;
+		}
 
-    return st;
-  }
+		return st;
+	}
 };
 
 /**
@@ -50,17 +50,17 @@ struct User2Scaled: public std::unary_function<T,T> {
  * Functor to convert scaled time to user time.
  */
 template<class T>
-struct Scaled2User: public std::unary_function<T,T> {
-  T delta;
+struct Scaled2User: public std::unary_function<T, T> {
+	T delta;
 
-  Scaled2User(const T delta) :
-      delta(delta) {
-    //
-  }
+	Scaled2User(const T delta) :
+			delta(delta) {
+		//
+	}
 
-  T operator()(const T st) const {
-    return st * delta;
-  }
+	T operator()(const T st) const {
+		return st * delta;
+	}
 };
 
 /**
@@ -108,6 +108,7 @@ struct Scaled2User: public std::unary_function<T,T> {
  */
 class Schedule {
 public:
+<<<<<<< HEAD
   /**
    * Constructor.
    *
@@ -125,85 +126,104 @@ public:
   template<class B, class IO1, class IO2>
   Schedule(B& m, const real t, const real T, const int K, const int M,
       IO1& in, IO2& obs);
+=======
+	/**
+	 * Constructor.
+	 *
+	 * @tparam B Model type.
+	 * @tparam IO1 Input type.
+	 * @tparam IO2 Input type.
+	 *
+	 * @param t Start time.
+	 * @param T End time.
+	 * @param K Number of dense output points.
+	 * @param M Number of dense bridge points.
+	 * @param in Input file.
+	 * @param obs Observation file.
+	 */
+	template<class B, class IO1, class IO2>
+	Schedule(B& m, const real t, const real T, const int K, const int M,
+			IO1* in, IO2* obs);
+>>>>>>> refs/heads/master
 
-  /**
-   * Shallow copy constructor.
-   */
-  Schedule(const Schedule& o);
+	/**
+	 * Shallow copy constructor.
+	 */
+	Schedule(const Schedule& o);
 
-  /**
-   * Deep assignment operator.
-   */
-  Schedule& operator=(const Schedule& o);
+	/**
+	 * Deep assignment operator.
+	 */
+	Schedule& operator=(const Schedule& o);
 
-  /**
-   * Number of unique times in the schedule.
-   */
-  int numTimes() const;
+	/**
+	 * Number of unique times in the schedule.
+	 */
+	int numTimes() const;
 
-  /**
-   * Number of discrete-time update events in the schedule.
-   */
-  int numDeltas() const;
+	/**
+	 * Number of discrete-time update events in the schedule.
+	 */
+	int numDeltas() const;
 
-  /**
-   * Number of input events in the schedule.
-   */
-  int numInputs() const;
+	/**
+	 * Number of input events in the schedule.
+	 */
+	int numInputs() const;
 
-  /**
-   * Number of output events in the schedule.
-   */
-  int numOutputs() const;
+	/**
+	 * Number of output events in the schedule.
+	 */
+	int numOutputs() const;
 
-  /**
-   * Number of bridge events in the schedule.
-   */
-  int numBridges() const;
+	/**
+	 * Number of bridge events in the schedule.
+	 */
+	int numBridges() const;
 
-  /**
-   * Number of observation events in the schedule.
-   */
-  int numObs() const;
+	/**
+	 * Number of observation events in the schedule.
+	 */
+	int numObs() const;
 
-  /**
-   * Iterator to the beginning of the schedule.
-   */
-  ScheduleIterator begin() const;
+	/**
+	 * Iterator to the beginning of the schedule.
+	 */
+	ScheduleIterator begin() const;
 
-  /**
-   * Iterator to the end of the schedule. Unlike most containers, this
-   * may be dereferenced to obtain a valid ScheduleElement object, usable to
-   * compute, for example, the number of observations in a range by taking
-   * the difference of ScheduleElement::indexObs() calls.
-   */
-  ScheduleIterator end() const;
+	/**
+	 * Iterator to the end of the schedule. Unlike most containers, this
+	 * may be dereferenced to obtain a valid ScheduleElement object, usable to
+	 * compute, for example, the number of observations in a range by taking
+	 * the difference of ScheduleElement::indexObs() calls.
+	 */
+	ScheduleIterator end() const;
 
 private:
-  /**
-   * Merges one sorted vector into another, eliminating duplicate elements and
-   * maintaining sorted order.
-   *
-   * @tparam T Type.
-   * @tparam InputIterator Iterator type.
-   *
-   * @param[in,out] x Vector.
-   * @param first Beginning of range to insert.
-   * @param last End of range to insert.
-   */
-  template<class T, class InputIterator>
-  static void merge_unique(std::vector<T>& x, const InputIterator first,
-      const InputIterator last);
+	/**
+	 * Merges one sorted vector into another, eliminating duplicate elements and
+	 * maintaining sorted order.
+	 *
+	 * @tparam T Type.
+	 * @tparam InputIterator Iterator type.
+	 *
+	 * @param[in,out] x Vector.
+	 * @param first Beginning of range to insert.
+	 * @param last End of range to insert.
+	 */
+	template<class T, class InputIterator>
+	static void merge_unique(std::vector<T>& x, const InputIterator first,
+			const InputIterator last);
 
-  /**
-   * Sequence of events.
-   */
-  std::vector<ScheduleElement> elems;
+	/**
+	 * Sequence of events.
+	 */
+	std::vector<ScheduleElement> elems;
 
-  /**
-   * Discrete-time step size.
-   */
-  real delta;
+	/**
+	 * Discrete-time step size.
+	 */
+	real delta;
 };
 }
 
@@ -213,44 +233,62 @@ private:
 
 template<class B, class IO1, class IO2>
 bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
+<<<<<<< HEAD
     const int M, IO1& in, IO2& obs) :
     delta(m.getDelta()) {
   /* pre-conditions */
   BI_ASSERT(T >= t);
   BI_ASSERT(K >= 0);
   BI_ASSERT(M >= 0);
+=======
+		const int M, IO1* in, IO2* obs) :
+		delta(m.getDelta()) {
+	/* pre-conditions */
+	BI_ASSERT(T >= t);
+	BI_ASSERT(K >= 0);
+	BI_ASSERT(M >= 0);
+>>>>>>> refs/heads/master
 
-  User2Scaled<real> user2scaled(delta);
-  Scaled2User<real> scaled2user(delta);
+	User2Scaled<real> user2scaled(delta);
+	Scaled2User<real> scaled2user(delta);
 
-  const real st = user2scaled(t), sT = user2scaled(T);
-  std::vector<real> ts, tDeltas, tInputs, tOutputs, tBridges, tObs;
-  ScheduleElement elem;
-  int i;
+	const real st = user2scaled(t), sT = user2scaled(T);
+	std::vector<real> ts, tDeltas, tInputs, tOutputs, tBridges, tObs;
+	ScheduleElement elem;
+	int i;
 
-  /* delta times */
-  i = static_cast<int>(bi::floor(st));
-  if (i < st) {
-    ++i;
-  }
-  BI_ASSERT(i >= st);
-  while (i <= sT) {
-    tDeltas.push_back(i);
-    ++i;
-  }
+	/* delta times */
+	i = static_cast<int>(bi::floor(st));
+	if (i < st) {
+		++i;
+	}
+	BI_ASSERT(i >= st);
+	while (i <= sT) {
+		tDeltas.push_back(i);
+		++i;
+	}
 
-  /* output times */
-  for (i = 0; i < K; ++i) {
-    tOutputs.push_back(st + (sT - st) * i / K);
-  }
-  tOutputs.push_back(sT);
+	/* output times */
+	for (i = 0; i < K; ++i) {
+		tOutputs.push_back(st + (sT - st) * i / K);
+	}
+	tOutputs.push_back(sT);
 
+<<<<<<< HEAD
   /* bridge times */
   for (i = 0; i < M; ++i) {
     tBridges.push_back(st + (sT - st) * i / M);
   }
   tBridges.push_back(sT);
+=======
+	/* bridge times */
+	for (i = 0; i < M; ++i) {
+		tBridges.push_back(st + (sT - st) * i / M);
+	}
+	tBridges.push_back(sT);
+>>>>>>> refs/heads/master
 
+<<<<<<< HEAD
   /* input times */
   in.readTimes(tInputs);
   std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
@@ -263,7 +301,24 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
       && tInputs[elem.kInput] >= st) {
     --elem.kInput;  // start time falls between input update times, so need previous
   }
+=======
+	/* input times */
+	if (in != NULL) {
+		tInputs = in->getTimes();
+		std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
+				user2scaled);
+		BOOST_AUTO(lower, std::lower_bound(tInputs.begin(), tInputs.end(), st));
+		BOOST_AUTO(upper, std::upper_bound(lower, tInputs.end(), sT));
+		elem.kInput = std::distance(tInputs.begin(), lower);
+		tInputs.resize(std::distance(tInputs.begin(), upper));
+		if (elem.kInput > 0 && elem.kInput < tInputs.size()
+				&& tInputs[elem.kInput] >= st) {
+			--elem.kInput; // start time falls between input update times, so need previous
+		}
+	}
+>>>>>>> refs/heads/master
 
+<<<<<<< HEAD
   /* observation times */
   obs.readTimes(tObs);
   std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
@@ -272,33 +327,54 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
   merge_unique(tOutputs, lowerObs, upperObs);  // output at each obs time
   elem.kObs = std::distance(tObs.begin(), lowerObs);
   tObs.resize(std::distance(tObs.begin(), upperObs));
+=======
+	/* observation times */
+	if (obs != NULL) {
+		tObs = obs->getTimes();
+		std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
+		BOOST_AUTO(lower, std::lower_bound(tObs.begin(), tObs.end(), st));
+		BOOST_AUTO(upper, std::upper_bound(lower, tObs.end(), sT));
+		merge_unique(tOutputs, lower, upper);  // output at each obs time
+		elem.kObs = std::distance(tObs.begin(), lower);
+		tObs.resize(std::distance(tObs.begin(), upper));
+	}
+>>>>>>> refs/heads/master
 
-  /* combination of all (unique) times */
-  merge_unique(ts, tDeltas.begin(), tDeltas.end());
-  merge_unique(ts, tInputs.begin() + elem.kInput, tInputs.end());
-  merge_unique(ts, tOutputs.begin(), tOutputs.end());
-  merge_unique(ts, tBridges.begin(), tBridges.end());
-  //merge_unique(ts, tObs.begin() + elem.kObs, tObs.end());
-  //^ tObs already merged into tOutputs above
+	/* combination of all (unique) times */
+	merge_unique(ts, tDeltas.begin(), tDeltas.end());
+	merge_unique(ts, tInputs.begin() + elem.kInput, tInputs.end());
+	merge_unique(ts, tOutputs.begin(), tOutputs.end());
+	merge_unique(ts, tBridges.begin(), tBridges.end());
+	//merge_unique(ts, tObs.begin() + elem.kObs, tObs.end());
+	//^ tObs already merged into tOutputs above
 
-  /* generate schedule */
-  for (elem.k = 0; elem.k < int(ts.size()); ++elem.k) {
-    elem.t1 = elem.t2;
-    elem.t2 = scaled2user(ts[elem.k]);
-    elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
-        && tDeltas[elem.kDelta] == ts[elem.k - 1];
+	/* generate schedule */
+	for (elem.k = 0; elem.k < int(ts.size()); ++elem.k) {
+		elem.t1 = elem.t2;
+		elem.t2 = scaled2user(ts[elem.k]);
+		elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
+				&& tDeltas[elem.kDelta] == ts[elem.k - 1];
 
+<<<<<<< HEAD
     /* inputs persist on half-open intervals (t, t+1], except for the first
      * input, which is on the closed interval [t, t+1] */
     elem.bInput = elem.kInput < int(tInputs.size())
         && ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1])
             || (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
+=======
+		/* inputs persist on half-open intervals (t, t+1], except for the first
+		 * input, which is on the closed interval [t, t+1] */
+		elem.bInput = elem.kInput < int(tInputs.size())
+				&& ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1])
+						|| (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
+>>>>>>> refs/heads/master
 
-    elem.bOutput = elem.kOutput < int(tOutputs.size())
-        && tOutputs[elem.kOutput] == ts[elem.k];
-    elem.bBridge = elem.kBridge < int(tBridges.size())
-        && tBridges[elem.kBridge] == ts[elem.k];
+		elem.bOutput = elem.kOutput < int(tOutputs.size())
+				&& tOutputs[elem.kOutput] == ts[elem.k];
+		elem.bBridge = elem.kBridge < int(tBridges.size())
+				&& tBridges[elem.kBridge] == ts[elem.k];
 
+<<<<<<< HEAD
     /* observations persist on half-open intervals (t-1, t], except for the
      * first input, which is on the closed interval [t-1, t] */
     elem.bObs = elem.kObs < int(tObs.size())
@@ -306,73 +382,83 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
             || elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
     elem.bObserved = elem.kObs < int(tObs.size())
         && tObs[elem.kObs] == ts[elem.k];
+=======
+		/* observations persist on half-open intervals (t-1, t], except for the
+		 * first input, which is on the closed interval [t-1, t] */
+		elem.bObs = elem.kObs < int(tObs.size())
+				&& ((elem.kObs == 0 && tObs.size() > 0)
+						|| (elem.kObs > 0
+								&& tObs[elem.kObs - 1] == ts[elem.k - 1]));
+		elem.bObserved = elem.kObs < int(tObs.size())
+				&& tObs[elem.kObs] == ts[elem.k];
+>>>>>>> refs/heads/master
 
-    elems.push_back(elem);
+		elems.push_back(elem);
 
-    if (elem.bDelta) {
-      ++elem.kDelta;
-    }
-    if (elem.bInput) {
-      ++elem.kInput;
-    }
-    if (elem.bOutput) {
-      ++elem.kOutput;
-    }
-    if (elem.bBridge) {
-      ++elem.kBridge;
-    }
-    if (elem.bObserved) {
-      ++elem.kObs;
-    }
-  }
-  elem.t1 = elem.t2;
-  elem.bDelta = false;
-  elem.bInput = false;
-  elem.bOutput = false;
-  elem.bBridge = false;
-  elem.bObs = false;
-  elems.push_back(elem);  // see end() semantics for why this extra
+		if (elem.bDelta) {
+			++elem.kDelta;
+		}
+		if (elem.bInput) {
+			++elem.kInput;
+		}
+		if (elem.bOutput) {
+			++elem.kOutput;
+		}
+		if (elem.bBridge) {
+			++elem.kBridge;
+		}
+		if (elem.bObserved) {
+			++elem.kObs;
+		}
+	}
+	elem.t1 = elem.t2;
+	elem.bDelta = false;
+	elem.bInput = false;
+	elem.bOutput = false;
+	elem.bBridge = false;
+	elem.bObs = false;
+	elems.push_back(elem);  // see end() semantics for why this extra
 }
 
 inline int bi::Schedule::numTimes() const {
-  return elems.back().indexTime() - elems.front().indexTime();
+	return elems.back().indexTime() - elems.front().indexTime();
 }
 
 inline int bi::Schedule::numDeltas() const {
-  return elems.back().indexDelta() - elems.front().indexDelta();
+	return elems.back().indexDelta() - elems.front().indexDelta();
 }
 
 inline int bi::Schedule::numInputs() const {
-  return elems.back().indexInput() - elems.front().indexInput();
+	return elems.back().indexInput() - elems.front().indexInput();
 }
 
 inline int bi::Schedule::numOutputs() const {
-  return elems.back().indexOutput() - elems.front().indexOutput();
+	return elems.back().indexOutput() - elems.front().indexOutput();
 }
 
 inline int bi::Schedule::numBridges() const {
-  return elems.back().indexBridge() - elems.front().indexBridge();
+	return elems.back().indexBridge() - elems.front().indexBridge();
 }
 
 inline int bi::Schedule::numObs() const {
-  return elems.back().indexObs() - elems.front().indexObs();
+	return elems.back().indexObs() - elems.front().indexObs();
 }
 
 inline bi::ScheduleIterator bi::Schedule::begin() const {
-  return elems.begin();
+	return elems.begin();
 }
 
 inline bi::ScheduleIterator bi::Schedule::end() const {
-  return elems.end() - 1;  // see method docs for why -1
+	return elems.end() - 1;  // see method docs for why -1
 }
 
 template<class T, class InputIterator>
 void bi::Schedule::merge_unique(std::vector<T>& x, const InputIterator first,
-    const InputIterator last) {
-  x.insert(x.end(), first, last);
-  std::inplace_merge(x.begin(), x.end() - std::distance(first, last),
-      x.end());
-  x.resize(std::distance(x.begin(), std::unique(x.begin(), x.end())));
+		const InputIterator last) {
+	x.insert(x.end(), first, last);
+	std::inplace_merge(x.begin(), x.end() - std::distance(first, last),
+			x.end());
+	x.resize(std::distance(x.begin(), std::unique(x.begin(), x.end())));
 }
 
 #endif

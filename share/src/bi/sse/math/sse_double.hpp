@@ -131,56 +131,56 @@ BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
 BI_FORCE_INLINE inline sse_double operator+(const double& o1,
     const sse_double& o2) {
   sse_double res;
-  res.packed = _mm_set1_pd(o1) + o2.packed;
+  res.packed = _mm_add_pd(_mm_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator-(const double& o1,
     const sse_double& o2) {
   sse_double res;
-  res.packed = _mm_set1_pd(o1) - o2.packed;
+  res.packed = _mm_sub_pd(_mm_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator*(const double& o1,
     const sse_double& o2) {
   sse_double res;
-  res.packed = _mm_set1_pd(o1) * o2.packed;
+  res.packed = _mm_mul_pd(_mm_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator/(const double& o1,
     const sse_double& o2) {
   sse_double res;
-  res.packed = _mm_set1_pd(o1) / o2.packed;
+  res.packed = _mm_div_pd(_mm_set1_pd(o1), o2.packed);
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator+(const sse_double& o1,
     const double& o2) {
   sse_double res;
-  res.packed = o1.packed + _mm_set1_pd(o2);
+  res.packed = _mm_add_pd(o1.packed, _mm_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator-(const sse_double& o1,
     const double& o2) {
   sse_double res;
-  res.packed = o1.packed - _mm_set1_pd(o2);
+  res.packed = _mm_sub_pd(o1.packed, _mm_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator*(const sse_double& o1,
     const double& o2) {
   sse_double res;
-  res.packed = o1.packed * _mm_set1_pd(o2);
+  res.packed = _mm_mul_pd(o1.packed, _mm_set1_pd(o2));
   return res;
 }
 
 BI_FORCE_INLINE inline sse_double operator/(const sse_double& o1,
     const double& o2) {
   sse_double res;
-  res.packed = o1.packed / _mm_set1_pd(o2);
+  res.packed = _mm_div_pd(o1.packed, _mm_set1_pd(o2));
   return res;
 }
 

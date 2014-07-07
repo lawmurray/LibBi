@@ -20,9 +20,6 @@ class [% class_name %] {
 public:
   [% std_action %]
 
-  [% declare_action_static_function('shape') %]
-  [% declare_action_static_function('scale') %]
-  
   [% declare_action_static_function('simulate') %]
   [% declare_action_static_function('sample') %]
   [% declare_action_static_function('logdensity') %]
@@ -31,53 +28,45 @@ public:
 
 #include "bi/pdf/functor.hpp"
 
-[% sig_action_static_function('shape') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(shape) %]
-  
-  x = [% shape.to_cpp %];
-}
-
-[% sig_action_static_function('scale') %] {
-  [% alias_dims(action) %]
-  [% fetch_parents(scale) %]
-  
-  x = [% scale.to_cpp %];
-}
-
 [% std_action_static_function('simulate') %]
 
 [% sig_action_static_function('sample') %] {
-  real sh, sc, u;
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real sh = [% shape.to_cpp %];
+  real sc = [% scale.to_cpp %];
+  real u = rng.gamma(sh, sc);
     
-  shape(s, p, cox, pax, sh);
-  scale(s, p, cox, pax, sc);
-  u = rng.gamma(sh, sc);
-    
-  x.template fetch<target_type>(s, p, cox.index()) = u;
+  [% put_output(action, 'u') %]
 }
 
 [% sig_action_static_function('logdensity') %] {
-  T1 sh, sc;
-    
-  shape(s, p, cox, pax, sh);
-  scale(s, p, cox, pax, sc);
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real sh = [% shape.to_cpp %];
+  real sc = [% scale.to_cpp %];
   
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
 
   bi::gamma_log_density_functor<T1> f(sh, sc);
   lp += f(xy);
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  T1 sh, sc;
-    
-  shape(s, p, cox, pax, sh);
-  scale(s, p, cox, pax, sc);
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
 
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
+  real sh = [% shape.to_cpp %];
+  real sc = [% scale.to_cpp %];
+
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
     
   [% IF shape.is_common && scale.is_common %]
   bi::gamma_log_density_functor<T1> f(sh, sc);
@@ -90,7 +79,7 @@ public:
   lp = BI_REAL(1.0/0.0);
   [% END %]
 
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
+  [% put_output(action, 'xy') %]
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

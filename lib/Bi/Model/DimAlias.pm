@@ -50,16 +50,13 @@ sub new {
     my $range = shift;
     
     assert (!defined $range || $range->isa('Bi::Expression::Range') || $range->isa('Bi::Expression::Index')) if DEBUG;
-
-    if (defined $range && !$range->is_const) {
-        die("a dimension range on the left must be a constant expression.\n");
-    }
         
     my $self = {
         _name => $name,
-        _range => $range
+        _range => undef
     };
     bless $self, $class;
+    $self->set_range($range);
 
     return $self;
 }
@@ -122,10 +119,15 @@ sub set_range {
 
     assert (!defined $range || $range->isa('Bi::Expression::Range') || $range->isa('Bi::Expression::Index')) if DEBUG;
     
-    if (!$range->is_const) {
-        die("a dimension range on the left must be a constant expression.\n");
+    if (defined $range) {
+    	if ($range->is_range && !($range->is_const || $range->get_start->equals($range->get_end))) {
+            die("a dimension range must be a constant expression.\n");
+    	} elsif ($range->is_index && !$range->is_scalar) {
+    		die("a dimension index on the left must be a scalar expression.\n");
+    	} elsif ($range->is_index && defined $self->get_name) {
+    		die("an alias on the left must be used with a range, not a single index.\n");
+    	}
     }
-    
     $self->{_range} = $range;
 }
 
@@ -148,7 +150,7 @@ sub get_size {
     my $self = shift;
 
     if ($self->has_range && $self->get_range->is_range) {
-      return $self->get_range->get_end->eval_const - $self->get_range->get_start->eval_const + 1;
+      return $self->get_range->get_size->eval_const;
     } else {
       return 1;
     }

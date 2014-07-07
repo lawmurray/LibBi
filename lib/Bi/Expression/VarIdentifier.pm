@@ -122,7 +122,11 @@ sub get_shape {
         my $shape = [];
         for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
             if ($self->get_indexes->[$i]->is_range) {
-                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
+            	if ($self->get_indexes->[$i]->get_size->is_const) {
+	                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
+            	} else {
+            		push(@$shape, 1);
+            	}
             }
         }
         return new Bi::Expression::Shape($shape);

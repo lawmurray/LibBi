@@ -32,8 +32,8 @@ public:
 #include "bi/primitive/matrix_primitive.hpp"
 
 [% sig_block_static_function('simulate') %] {
-  BOOST_AUTO(std, [% get_var(std) %]);
-  BOOST_AUTO(target, [% get_var(target) %]);
+  BOOST_AUTO(std, [% block_gets_var(std) %]);
+  BOOST_AUTO(target, [% block_gets_var(target) %]);
 
   target = std;
 }

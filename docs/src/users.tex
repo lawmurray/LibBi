@@ -1277,10 +1277,13 @@ The following configuration options are worth considering:
   memory is usually much more limited than main memory, and this may result in
   its exhaustion, the option is disabled by default.
 
-\item Experiment with the \bitt{--enable-sse} command-line
-  option to make use of CPU SSE instructions\index{SSE}\index{SIMD}. These can
-  provide up to a two-fold (double precision) or four-fold (single precision)
-  speed-up.
+\item Experiment with the \bitt{--enable-sse} and \bitt{--enable-avx}
+  command-line options to make use of CPU SSE\index{SSE} and AVX\index{AVX}
+  SIMD\index{SIMD} instructions. In single precision, these can provide up to
+  a four-fold (SSE) or eight-fold (AVX) speed-up, and in double precision a
+  two-fold (SSE) or four-fold (AVX) speed-up. These are only supported on x86
+  CPU architectures, however, and AVX in particular only on the most recent of
+  these.
 
 \item \index{multithreading}\index{OpenMP} Experiment with the
   \bitt{--nthreads} command-line option to set the number of CPU

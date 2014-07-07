@@ -113,20 +113,12 @@ public:
   /**
    * Offset into dimension.
    */
-  [% IF alias.get_range.is_range %]
-  static const int OFFSET[% loop.index %] = [% alias.get_range.get_start.eval_const %];
-  [% ELSE %]
-  static const int OFFSET[% loop.index %] = [% alias.get_range.get_expr.eval_const %];
-  [% END %]
+  static const int OFFSET[% loop.index %] = [% IF alias.get_range.get_start.is_const %][% alias.get_range.get_start.eval_const %][% ELSE %]0[% END %];
   
   /**
    * Length along dimension.
    */
-  [% IF alias.get_range.is_range %]
-  static const int LEN[% loop.index %] = [% alias.get_range.get_end.eval_const - alias.get_range.get_start.eval_const + 1 %];
-  [% ELSE %]
-  static const int LEN[% loop.index %] = 1;
-  [% END %]
+  static const int LEN[% loop.index %] = [% alias.get_range.get_size.eval_const %];
   [% END %]
 
   [% FOREACH dim IN action.get_left.get_var.get_dims %]

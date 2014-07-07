@@ -10,7 +10,10 @@
     [% IF function == 'sample' %]
     simulates(s);
     [% ELSIF function == 'simulate' %]
-    x.template fetch<target_type>(s, p, cox.index()) = pax.template fetch_alt<target_type>(s, p, cox.index());
+    [% alias_dims(action) %]
+    [% fetch_parents(action) %]
+    [% offset_coord(action) %]
+    x.template fetch<target_type>(s, p, cox_.index()) = pax.template fetch_alt<target_type>(s, p, cox_.index());
     [% ELSIF function == 'logdensity' %]
     simulates(s);
     [% ELSIF function == 'maxlogdensity' %]
@@ -22,19 +25,17 @@
 [% END-%]
 [%-MACRO std_action_dynamic_function(function) BLOCK %]
   [% sig_action_dynamic_function(function) %] {
-    if (onDelta) {
-      [% IF function == 'sample' %]
-      samples(rng, s);
-      [% ELSIF function == 'simulate' %]
-      simulates(s);
-      [% ELSIF function == 'logdensity' %]
-      logDensities(s, lp);
-      [% ELSIF function == 'maxlogdensity' %]
-      maxLogDensities(s, lp);
-      [% ELSE %]
-      [% THROW 'unknown function type' %]
-      [% END %]
-    }
+    [% IF function == 'sample' %]
+    samples(rng, s);
+    [% ELSIF function == 'simulate' %]
+    simulates(s);
+    [% ELSIF function == 'logdensity' %]
+    logDensities(s, lp);
+    [% ELSIF function == 'maxlogdensity' %]
+    maxLogDensities(s, lp);
+    [% ELSE %]
+    [% THROW 'unknown function type' %]
+    [% END %]
   }
 [% END-%]
 [%-MACRO std_action_sparse_static_function(function) BLOCK %]
@@ -42,7 +43,10 @@
     [% IF function == 'sample' %]
     simulates(s, mask);
     [% ELSIF function == 'simulate' %]
-    x.template fetch<target_type>(s, p, cox.index()) = pax.template fetch_alt<target_type>(s, p, cox.index());
+    [% alias_dims(action) %]
+    [% fetch_parents(action) %]
+    [% offset_coord(action) %]
+    x.template fetch<target_type>(s, p, cox_.index()) = pax.template fetch_alt<target_type>(s, p, cox_.index());
     [% ELSIF function == 'logdensity' %]
     simulates(s, mask);
     [% ELSIF function == 'maxlogdensity' %]
