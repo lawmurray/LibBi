@@ -72,7 +72,7 @@ public:
   real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
 
   [% IF alpha.is_common >= 1.0 && beta.is_common %]
-  if (a >= BI_REAL(1.0) && b >= BI_REAL(1.0)) {
+  if (a > BI_REAL(1.0) && b > BI_REAL(1.0)) {
     real mode = (a - BI_REAL(1.0))/(a + b - BI_REAL(2.0));
     logZ = bi::lgamma(a) + bi::lgamma(b) - bi::lgamma(a + b);
     lp += (a - BI_REAL(1.0))*bi::log(mode) +
