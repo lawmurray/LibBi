@@ -456,7 +456,9 @@ template<class B, bi::Location L>
 void bi::State<B,L>::swap(State<B,L>& o) {
   Xdn.swap(o.Xdn);
   Kdn.swap(o.Kdn);
-  std::swap(builtin, o.builtin);
+  for (int i = 0; i < NB; ++i) {
+    std::swap(builtin[i], o.builtin[i]);
+  }
 }
 
 template<class B, bi::Location L>
