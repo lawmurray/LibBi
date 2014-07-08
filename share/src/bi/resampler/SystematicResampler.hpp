@@ -153,9 +153,6 @@ protected:
 template<class V1, class V2, class O1>
 void bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
     throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == as.size());
-
   const int P = lws.size();
   typename sim_temp_vector<V2>::type Os(P);
 
@@ -330,15 +327,12 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
 template<class V1, class V2>
 void bi::SystematicResampler::ancestors(Random& rng, const V1 lws, V2 as)
     throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(as.size() == lws.size());
-
-  const int P = as.size();
+  const int P = lws.size();
 
   typename sim_temp_vector<V2>::type Os(P), ps(P);
   typename sim_temp_vector<V1>::type lws1(P), Ws(P);
 
-  cumulativeOffspring(rng, lws, Os, P, false, lws1, ps, Ws);
+  cumulativeOffspring(rng, lws, Os, as.size(), false, lws1, ps, Ws);
   cumulativeOffspringToAncestors(Os, as);
 }
 

@@ -147,9 +147,6 @@ struct resampler_needs_max<RejectionResampler> {
 
 template<class V1, class V2, class O1>
 void bi::RejectionResampler::resample(Random& rng, V1 lws, V2 as, O1 s) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == as.size());
-
   ancestorsPermute(rng, lws, as, maxLogWeight);
   copy(as, s);
   lws.clear();

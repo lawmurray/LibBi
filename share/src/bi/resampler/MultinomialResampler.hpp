@@ -148,9 +148,6 @@ struct precompute_type<MultinomialResampler,L> {
 template<class V1, class V2, class O1>
 void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
     throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(lws.size() == as.size());
-
   ancestors(rng, lws, as);
   permute(as);
   copy(as, s);

@@ -108,9 +108,9 @@ public:
   void flush();
 
 private:
-  typedef typename loc_temp_matrix<CL,real>::type matrix_type;
-  typedef typename loc_temp_vector<CL,real>::type vector_type;
-  typedef typename loc_temp_vector<CL,int>::type int_vector_type;
+  typedef typename loc_matrix<CL,real>::type matrix_type;
+  typedef typename loc_vector<CL,real>::type vector_type;
+  typedef typename loc_vector<CL,int>::type int_vector_type;
 
   /**
    * Caches for times while adapting.
@@ -230,7 +230,9 @@ void bi::AdaptivePFCache<CL,IO1>::writeState(const int k, const M1 X,
   assert(X.size1() == as.size());
 
   int j = k - base;
-  P += X.size1();
+  if (j == 0) {
+    P += X.size1();
+  }
 
   if (j >= particleCache.size()) {
     particleCache.resize(j + 1);

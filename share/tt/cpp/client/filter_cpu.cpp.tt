@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
   BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, BLOCK_PARTICLES)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, NPARTICLES, BLOCK_PARTICLES)));
   [% ELSE %]
   BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
   [% END %]
