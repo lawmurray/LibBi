@@ -43,9 +43,6 @@
  * @todo AVX support (should be very similar to SSE support, but with slightly
  * different intrinsics).
  *
- * @todo Replace BI_REAL(1.0/0.0) with BI_INF constant. Introduce named
- * literals such as true, false, pi, nan, inf into language.
- *
  * @todo Consider removing noise variables, or keep "noise" keyword for
  * semantics only, but treat as state variable internally.
  *

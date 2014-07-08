@@ -161,7 +161,7 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
   double ll, lu;
   int k;
 
-  if (stopper.stop(1.0 / 0.0)) {
+  if (stopper.stop(std::numeric_limits<real>::infinity())) {
     /* use adapted proposal */
     adapter.adapt(s.q);
     s.q.sample(rng, vec(s.get(PY_VAR)));
@@ -173,7 +173,7 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     s.logProposal = m.parameterLogDensity(s);
   }
   s.logPrior = m.parameterLogDensity(s);
-  s.logLikelihood = -1.0 / 0.0;
+  s.logLikelihood = -std::numeric_limits<real>::infinity();
 
   try {
     ScheduleIterator iter = first;
@@ -210,9 +210,9 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     }
 
     /* adaptation */
-    if (!stopper.stop(1.0 / 0.0)) {
+    if (!stopper.stop(std::numeric_limits<real>::infinity())) {
       adapter.add(vec(s.get(P_VAR)), s.logWeight);
-      stopper.add(s.logWeight, 1.0 / 0.0);
+      stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
     }
   } catch (CholeskyException e) {
     accept = false;

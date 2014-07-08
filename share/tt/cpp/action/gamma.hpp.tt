@@ -73,10 +73,10 @@ public:
   if (sh > BI_REAL(1.0)) {
     lp += f((sh - BI_REAL(1.0))*sc);
   } else {
-    lp = BI_REAL(1.0/0.0);
+    lp = std::numeric_limits<real>::infinity();
   }
   [% ELSE %]
-  lp = BI_REAL(1.0/0.0);
+  lp = std::numeric_limits<real>::infinity();
   [% END %]
 
   [% put_output(action, 'xy') %]

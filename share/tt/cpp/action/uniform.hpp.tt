@@ -56,7 +56,7 @@ public:
   if (xy >= mn && xy <= mx) {
     lp += -bi::log(mx - mn);
   } else {
-    lp = BI_REAL(-1.0)/BI_REAL(0.0);
+    lp = -std::numeric_limits<real>::infinity();
   }
   [% put_output(action, 'xy') %]
 }
@@ -72,7 +72,7 @@ public:
   real rn = [% range.to_cpp %];
   lp += -bi::log(rn);
   [% ELSE %]
-  lp = BI_REAL(1.0)/BI_REAL(0.0);
+  lp = std::numeric_limits<real>::infinity();
   [% END %]
 
   [% put_output(action, 'xy') %]

@@ -51,7 +51,7 @@ public:
   [% offset_coord(action) %]
   
   [% IF max_pdf.is_const && max_pdf.eval_const == 0.0 %]
-  lp = BI_REAL(1.0/0.0);
+  lp = std::numeric_limits<real>::infinity();
   [% ELSIF log %]
   lp += [% max_pdf.to_cpp %];
   [% ELSE %]
