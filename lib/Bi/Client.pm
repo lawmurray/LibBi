@@ -335,7 +335,8 @@ our @CLIENT_OPTIONS = (
     {
       name => 'with-output',
       type => 'bool',
-      deprecated => 1
+      deprecated => 1,
+      message => 'omit --output-file, or use --output-file "" to disable output instead'
     },
 );
 

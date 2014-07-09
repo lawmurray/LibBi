@@ -319,7 +319,7 @@ bool bi::BootstrapPF<B,S,R>::resample(Random& rng, const ScheduleElement now,
       if (now.hasOutput()) {
         resam.resample(rng, s.logWeights(), s.ancestors(), s.getDyn());
       } else {
-        typename S1::int_vector_type as1(s.ancestors().size());
+        typename S1::temp_int_vector_type as1(s.ancestors().size());
         resam.resample(rng, s.logWeights(), as1, s.getDyn());
         bi::gather(as1, s.ancestors(), s.ancestors());
       }

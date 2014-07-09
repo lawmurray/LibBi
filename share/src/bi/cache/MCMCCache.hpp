@@ -193,7 +193,8 @@ protected:
   /**
    * Maximum number of samples to store in cache.
    */
-  static const int NUM_SAMPLES = 16384 / sizeof(real);
+  static const int NUM_SAMPLES = ((CL == ON_HOST) ? 16384 : 4096)
+      / sizeof(real);
 
   /**
    * Serialize.

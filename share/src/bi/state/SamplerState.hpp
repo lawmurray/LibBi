@@ -32,7 +32,7 @@ public:
   /**
    * Matrix type.
    */
-  typedef typename loc_temp_matrix<L,real>::type matrix_type;
+  typedef typename loc_matrix<L,real>::type matrix_type;
 
   /**
    * Constructor.

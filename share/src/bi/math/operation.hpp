@@ -625,6 +625,8 @@ struct syevx_impl {
 #include "view.hpp"
 #include "sim_temp_vector.hpp"
 #include "sim_temp_matrix.hpp"
+#include "loc_temp_vector.hpp"
+#include "loc_temp_matrix.hpp"
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 #include "../typelist/equals.hpp"

@@ -136,9 +136,9 @@ template<class B, class S, class R, class S2>
 template<class S1, class IO1>
 double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
-  typedef typename loc_vector<S1::location,real>::type vector_type;
-  typedef typename loc_matrix<S1::location,real>::type matrix_type;
-  typedef typename loc_vector<S1::location,int>::type int_vector_type;
+  typedef typename loc_temp_vector<S1::location,real>::type vector_type;
+  typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
+  typedef typename loc_temp_vector<S1::location,int>::type int_vector_type;
 
   const int P = s.size();
   const int N = s.getDyn().size2();
@@ -179,7 +179,7 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
           this->resam.ancestors(rng, lws, s.ancestors()/*, pre*/);
           this->resam.copy(s.ancestors(), X, s.getDyn());
         } else {
-          typename S1::int_vector_type as1(blockP);
+          typename S1::temp_int_vector_type as1(blockP);
           this->resam.ancestors(rng, lws, as1/*, pre*/);
           this->resam.copy(as1, X, s.getDyn());
           bi::gather(as1, as, s.ancestors());

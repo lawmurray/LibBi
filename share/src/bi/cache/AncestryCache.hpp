@@ -37,7 +37,7 @@ public:
   /**
    * Integer vector type.
    */
-  typedef typename loc_temp_vector<CL,int>::type int_vector_type;
+  typedef typename loc_vector<CL,int>::type int_vector_type;
 
   /**
    * Constructor.
