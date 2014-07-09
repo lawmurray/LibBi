@@ -66,16 +66,14 @@ struct scatter_matrix_impl<ON_HOST> {
 
 template<class V1, class M1, class M2>
 void bi::gather_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X, M2 Y) {
-#pragma omp parallel for
-  for (int i = 0; i < map.size(); ++i) {
-    row(Y, i) = row(X, map(i));
+  for (int j = 0; j < X.size2(); ++j) {
+    bi::gather(map, column(X, j), column(Y, j));
   }
 }
 
 template<class V1, class M1, class M2>
 void bi::gather_columns_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
-#pragma omp parallel for
   for (int j = 0; j < map.size(); ++j) {
     column(Y, j) = column(X, map(j));
   }
@@ -84,7 +82,6 @@ void bi::gather_columns_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
 template<class V1, class V2, class M1, class M2>
 void bi::gather_matrix_impl<bi::ON_HOST>::func(const V1 map1, const V2 map2,
     const M1 X, M2 Y) {
-#pragma omp parallel for
   for (int j = 0; j < map2.size(); ++j) {
     for (int i = 0; i < map1.size(); ++i) {
       Y(i, j) = X(map1(i), map2(j));
@@ -95,16 +92,14 @@ void bi::gather_matrix_impl<bi::ON_HOST>::func(const V1 map1, const V2 map2,
 template<class V1, class M1, class M2>
 void bi::scatter_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
-#pragma omp parallel for
-  for (int i = 0; i < map.size(); ++i) {
-    row(Y, map(i)) = row(X, i);
+  for (int j = 0; j < X.size2(); ++j) {
+    bi::scatter(map, column(X, j), column(Y, j));
   }
 }
 
 template<class V1, class M1, class M2>
 void bi::scatter_columns_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
-#pragma omp parallel for
   for (int j = 0; j < map.size(); ++j) {
     column(Y, map(j)) = column(X, j);
   }
@@ -113,7 +108,6 @@ void bi::scatter_columns_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
 template<class V1, class V2, class M1, class M2>
 void bi::scatter_matrix_impl<bi::ON_HOST>::func(const V1 map1, const V2 map2,
     const M1 X, M2 Y) {
-#pragma omp parallel for
   for (int j = 0; j < map2.size(); ++j) {
     for (int i = 0; i < map1.size(); ++i) {
       Y(map1(i), map2(j)) = X(i, j);
