@@ -449,7 +449,7 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
     Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   for (int i = 0; i < NB; ++i) {
-    o.builtin[i] = builtin[i];
+    builtin[i] = o.builtin[i];
   }
 }
 
@@ -458,7 +458,7 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {
-    o.builtin[i] = builtin[i];
+    builtin[i] = o.builtin[i];
   }
   return *this;
 }
@@ -469,7 +469,7 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {
-    o.builtin[i] = builtin[i];
+    builtin[i] = o.builtin[i];
   }
   return *this;
 }
