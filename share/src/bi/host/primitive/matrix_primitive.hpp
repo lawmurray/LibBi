@@ -67,7 +67,12 @@ struct scatter_matrix_impl<ON_HOST> {
 template<class V1, class M1, class M2>
 void bi::gather_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X, M2 Y) {
   for (int j = 0; j < X.size2(); ++j) {
-    bi::gather(map, column(X, j), column(Y, j));
+    //bi::gather(map, column(X, j), column(Y, j));
+    //^ causes segfault with Intel compiler (?)
+    for (int i = 0; i < map.size(); ++i) {
+      Y(i, j) = X(map(i), j);
+    }
+
   }
 }
 
@@ -93,7 +98,11 @@ template<class V1, class M1, class M2>
 void bi::scatter_rows_impl<bi::ON_HOST>::func(const V1 map, const M1 X,
     M2 Y) {
   for (int j = 0; j < X.size2(); ++j) {
-    bi::scatter(map, column(X, j), column(Y, j));
+    //bi::scatter(map, column(X, j), column(Y, j));
+    //^ causes segfault with Intel compiler (?)
+    for (int i = 0; i < map.size(); ++i) {
+      Y(map(i), j) = X(i, j);
+    }
   }
 }
 
