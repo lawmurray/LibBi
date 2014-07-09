@@ -174,6 +174,20 @@ if test x$mpi = xtrue; then
 	fi
 fi
 
+# Thrust backend
+if test x$cuda = xtrue; then
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
+else
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
+fi
+if test x$openmp = xtrue; then
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
+else
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
+fi
+# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
+#   Thrust 1.7, so its OpenMP backend has been re-enabled.
+
 # libtool initialisation
 #LT_INIT
 
@@ -290,19 +304,6 @@ if test x$gperftools = xtrue; then
 fi
 
 # Defines
-if test x$cuda = xtrue; then
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
-else
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
-fi
-if test x$openmp = xtrue; then
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
-else
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
-fi
-# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
-#   Thrust 1.7, so its OpenMP backend has been re-enabled.
-
 AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
