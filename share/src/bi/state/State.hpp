@@ -448,15 +448,29 @@ bi::State<B,L>::State(const int P) :
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
     Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
-  std::copy(o.builtin, o.builtin + 3, builtin);
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  std::copy(o.builtin, o.builtin + 3, builtin);
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
+  return *this;
+}
 
+template<class B, bi::Location L>
+template<bi::Location L2>
+bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
+  rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
+  Kdn = o.Kdn;
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
   return *this;
 }
 
@@ -467,16 +481,6 @@ void bi::State<B,L>::swap(State<B,L>& o) {
   for (int i = 0; i < NB; ++i) {
     std::swap(builtin[i], o.builtin[i]);
   }
-}
-
-template<class B, bi::Location L>
-template<bi::Location L2>
-bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
-  rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
-  Kdn = o.Kdn;
-  std::copy(o.builtin, o.builtin + 3, builtin);
-
-  return *this;
 }
 
 template<class B, bi::Location L>
