@@ -161,6 +161,11 @@ protected:
   void flushPaths(const VarType type);
 
   /**
+   * Model.
+   */
+  B& m;
+
+  /**
    * Log-likelihoods cache.
    */
   Cache1D<real,CL> llCache;
@@ -220,8 +225,8 @@ template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const size_t P,
     const size_t T, const std::string& file, const FileMode mode,
     const SchemaMode schema) :
-    parent_type(m, P, T, file, mode, schema), llCache(NUM_SAMPLES), lpCache(
-        NUM_SAMPLES), parameterCache(NUM_SAMPLES, this->m.getNetSize(P_VAR)), first(
+    parent_type(m, P, T, file, mode, schema), m(m), llCache(NUM_SAMPLES), lpCache(
+        NUM_SAMPLES), parameterCache(NUM_SAMPLES, m.getNetSize(P_VAR)), first(
         0), len(0) {
   //
 }
@@ -362,7 +367,7 @@ void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   for (int t = 0; t < X.size2(); ++t) {
     if (pathCache[t] == NULL) {
       pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES,
-          this->m.getDynSize());
+          m.getDynSize());
     }
     pathCache[t]->set(p - first, column(X, t));
   }
@@ -440,10 +445,10 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
   Var* var;
   int id, i, k, start, size;
 
-  for (id = 0; id < this->m.getNumVars(type); ++id) {
-    var = this->m.getVar(type, id);
+  for (id = 0; id < m.getNumVars(type); ++id) {
+    var = m.getVar(type, id);
     start = var->getStart()
-        + ((type == D_VAR) ? this->m.getNetSize(R_VAR) : 0);
+        + ((type == D_VAR) ? m.getNetSize(R_VAR) : 0);
     size = var->getSize();
 
     for (k = 0; k < int(pathCache.size()); ++k) {
