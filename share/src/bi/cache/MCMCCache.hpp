@@ -234,7 +234,7 @@ bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const size_t P,
 
 template<bi::Location CL, class IO1>
 bi::MCMCCache<CL,IO1>::MCMCCache(const MCMCCache<CL,IO1>& o) :
-    parent_type(o), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
+    parent_type(o), m(o.m), llCache(o.llCache), lpCache(o.lpCache), parameterCache(
         o.parameterCache), first(o.first), len(o.len) {
   pathCache.resize(o.pathCache.size());
   for (int i = 0; i < pathCache.size(); ++i) {
