@@ -16,3 +16,11 @@ bi::SimulatorNullBuffer::SimulatorNullBuffer(const Model& m, const size_t P,
 void bi::SimulatorNullBuffer::writeTime(const size_t k, const real& t) {
   //
 }
+
+void bi::SimulatorNullBuffer::writeStart(const size_t k, const long& start) {
+  //
+}
+
+void bi::SimulatorNullBuffer::writeLen(const size_t k, const long& len) {
+  //
+}

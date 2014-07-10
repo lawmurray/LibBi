@@ -61,6 +61,30 @@ public:
    */
   template<class M1>
   void writeState(const size_t k, const size_t p, const M1 X);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeState()
+   */
+  template<class M1>
+  void writeState(const VarType type, const size_t k, const size_t p,
+      const M1 X);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeStateVar()
+   */
+  template<class M1>
+  void writeStateVar(const VarType type, const int id, const size_t k,
+      const size_t p, const M1 X);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeStart()
+   */
+  void writeStart(const size_t k, const long& start);
+
+  /**
+   * @copydoc SimulatorNetCDFBuffer::writeLen()
+   */
+  void writeLen(const size_t k, const long& len);
 };
 }
 
@@ -87,6 +111,18 @@ void bi::SimulatorNullBuffer::writeState(const size_t k, const M1 X) {
 template<class M1>
 void bi::SimulatorNullBuffer::writeState(const size_t k, const size_t p,
     const M1 X) {
+  //
+}
+
+template<class M1>
+void bi::SimulatorNullBuffer::writeState(const VarType type, const size_t k,
+    const size_t p, const M1 X) {
+  //
+}
+
+template<class M1>
+void bi::SimulatorNullBuffer::writeStateVar(const VarType type, const int id,
+    const size_t k, const size_t p, const M1 X) {
   //
 }
 

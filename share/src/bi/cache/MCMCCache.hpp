@@ -11,6 +11,7 @@
 #include "SimulatorCache.hpp"
 #include "Cache1D.hpp"
 #include "CacheCross.hpp"
+#include "../model/Model.hpp"
 #include "../null/MCMCNullBuffer.hpp"
 
 namespace bi {
@@ -163,7 +164,7 @@ protected:
   /**
    * Model.
    */
-  B& m;
+  const Model& m;
 
   /**
    * Log-likelihoods cache.

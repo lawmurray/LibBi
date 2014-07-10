@@ -117,7 +117,7 @@ public:
       const M1 X);
 
   /**
-   * Read state variable.
+   * Write state variable.
    *
    * @param type Variable type.
    * @param id Variable id.
