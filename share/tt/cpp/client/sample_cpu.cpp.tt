@@ -220,9 +220,7 @@ int main(int argc, char* argv[]) {
   [% ELSE %]
   SystematicResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
   [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  DistributedResampler<BOOST_TYPEOF(filterBase)> filterResam(&filterBase, ESS_REL, BRIDGE_ESS_REL);
-  [% ELSIF client.get_named_arg('with-kde') %]
+  [% IF client.get_named_arg('with-kde') %]
   real h;
   if (B_ABS > 0.0) {
     h = B_ABS;

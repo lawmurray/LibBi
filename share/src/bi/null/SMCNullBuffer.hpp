@@ -30,7 +30,7 @@ public:
    * @copydoc SMCNetCDFBuffer::writeLogWeights()
    */
   template<class V1>
-  void writeLogWeights(const V1 lws);
+  void writeLogWeights(const size_t p, const V1 lws);
 
   /**
    * @copydoc SMCNetCDFBuffer::writeLogEvidences()
@@ -41,7 +41,7 @@ public:
 }
 
 template<class V1>
-void bi::SMCNullBuffer::writeLogWeights(const V1 lws) {
+void bi::SMCNullBuffer::writeLogWeights(const size_t p, const V1 lws) {
   //
 }
 
