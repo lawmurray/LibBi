@@ -237,15 +237,14 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
     IO1& out, IO2& inInit) {
   /* initialise */
   sim.init(rng, now, s, inInit);
-  ident(s.F());
 
-  /* predicted mean */
+  /* mean and Cholesky factor of initial state */
   s.mu1 = row(s.getDyn(), 0);
-
-  /* Cholesky factor of predicted covariance */
   s.U1 = s.Q();
-  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F(), 0, NR, NR, ND);
-  trmm(1.0, subrange(s.U1, 0, NR, 0, NR), subrange(s.U1, 0, NR, NR, ND));
+
+  /* reset Jacobian, as it has now been multiplied in */
+  ident(s.F());
+  s.Q().clear();
 
   /* across-time covariance */
   s.C.clear();
@@ -260,21 +259,17 @@ void bi::ExtendedKF<B,S>::init(Random& rng, const ScheduleElement now, S1& s,
     IO1& out) {
   // this should be the same as init() above, but with a different call to
   // sim.init()
-  ident(s.F());
-  s.Q().clear();
-  s.G().clear();
-  s.R().clear();
 
   /* initialise */
   sim.init(rng, now, s);
 
-  /* predicted mean */
+  /* mean and Cholesky factor of initial state */
   s.mu1 = row(s.getDyn(), 0);
-
-  /* Cholesky factor of predicted covariance */
   s.U1 = s.Q();
-  subrange(s.U1, 0, NR, NR, ND) = subrange(s.F(), 0, NR, NR, ND);
-  trmm(1.0, subrange(s.U1, 0, NR, 0, NR), subrange(s.U1, 0, NR, NR, ND));
+
+  /* reset Jacobian, as it has now been multiplied in */
+  ident(s.F());
+  s.Q().clear();
 
   /* across-time covariance */
   s.C.clear();
@@ -381,7 +376,7 @@ double bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     gather_matrix(map, map, s.R(), R3);
     gather(map, row(s.get(O_VAR), 0), mu3);
     gather(map, row(s.get(OY_VAR), 0), y);
-
+    
     trmm(1.0, s.U1, C);
 
     Sigma3.clear();
@@ -409,7 +404,7 @@ double bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     s.G().clear();
     s.R().clear();
   }
-
+  
   return ll;
 }
 
