@@ -261,7 +261,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
   BOOST_AUTO(upperInputs, std::upper_bound(lowerInputs, tInputs.end(), sT));
   merge_unique(ts, lowerInputs, upperInputs);
   elem.kInput = std::distance(tInputs.begin(), lowerInputs);
-  tInputs.resize(std::distance(tInputs.begin(), upperInputs) + 1);
+  tInputs.resize(std::distance(tInputs.begin(), upperInputs));
   if (elem.kInput > 0 && elem.kInput < tInputs.size()
       && tInputs[elem.kInput] >= st) {
     --elem.kInput;  // start time falls between input update times, so need previous
@@ -278,7 +278,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
     merge_unique(ts, lowerObs, upperObs);
   }
   elem.kObs = std::distance(tObs.begin(), lowerObs);
-  tObs.resize(std::distance(tObs.begin(), upperObs) + 1);
+  tObs.resize(std::distance(tObs.begin(), upperObs));
 
   /* combination of all (unique) times */
   merge_unique(ts, tDeltas.begin(), tDeltas.end());
