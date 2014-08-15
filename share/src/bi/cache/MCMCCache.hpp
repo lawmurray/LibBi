@@ -229,7 +229,11 @@ bi::MCMCCache<CL,IO1>::MCMCCache(const Model& m, const size_t P,
     parent_type(m, P, T, file, mode, schema), m(m), llCache(NUM_SAMPLES), lpCache(
         NUM_SAMPLES), parameterCache(NUM_SAMPLES, m.getNetSize(P_VAR)), first(
         0), len(0) {
-  //
+  const int N = m.getNetSize(R_VAR) + m.getNetSize(D_VAR);
+  pathCache.resize(T);
+  for (int i = 0; i < pathCache.size(); ++i) {
+    pathCache[i] = new CacheCross<real,CL>(NUM_SAMPLES, N);
+  }
 }
 
 template<bi::Location CL, class IO1>
@@ -361,15 +365,7 @@ void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   if (p - first == len) {
     len = p - first + 1;
   }
-
-  if (int(pathCache.size()) < X.size2()) {
-    pathCache.resize(X.size2(), NULL);
-  }
   for (int t = 0; t < X.size2(); ++t) {
-    if (pathCache[t] == NULL) {
-      pathCache[t] = new CacheCross<real,CL>(NUM_SAMPLES,
-          m.getDynSize());
-    }
     pathCache[t]->set(p - first, column(X, t));
   }
 }
@@ -448,8 +444,7 @@ void bi::MCMCCache<CL,IO1>::flushPaths(const VarType type) {
 
   for (id = 0; id < m.getNumVars(type); ++id) {
     var = m.getVar(type, id);
-    start = var->getStart()
-        + ((type == D_VAR) ? m.getNetSize(R_VAR) : 0);
+    start = var->getStart() + ((type == D_VAR) ? m.getNetSize(R_VAR) : 0);
     size = var->getSize();
 
     for (k = 0; k < int(pathCache.size()); ++k) {
