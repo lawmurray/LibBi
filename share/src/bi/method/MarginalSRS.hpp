@@ -161,29 +161,37 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
   double ll, lu;
   int k;
 
-  if (stopper.stop(std::numeric_limits<real>::infinity())) {
-    /* use adapted proposal */
-    adapter.adapt(s.q);
-    s.q.sample(rng, vec(s.get(PY_VAR)));
-    s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
-  } else {
-    /* use a priori proposal */
-    m.parameterSample(rng, s);
-    s.get(PY_VAR) = s.get(P_VAR);
-    s.logProposal = m.parameterLogDensity(s);
-  }
-  s.logPrior = m.parameterLogDensity(s);
+  do {
+    if (stopper.stop(std::numeric_limits<real>::infinity())) {
+      /* use adapted proposal */
+      adapter.adapt(s.q);
+      s.q.sample(rng, vec(s.get(PY_VAR)));
+      s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
+    } else {
+      /* use a priori proposal */
+      m.parameterSample(rng, s);
+      s.get(PY_VAR) = s.get(P_VAR);
+      s.logProposal = m.parameterLogDensity(s);
+    }
+    s.logPrior = m.parameterLogDensity(s);
+  } while (!bi::is_finite(s.logPrior));
   s.logLikelihood = -std::numeric_limits<real>::infinity();
 
   try {
     ScheduleIterator iter = first;
     filter.init(rng, *iter, s, s.out);
+    s.logWeight = s.logPrior - s.logProposal;
+    //std::cerr.width(10);
+    //std::cerr << s.logWeight << '\t';
     filter.output0(s, s.out);
-    ll = filter.correct(rng, *iter, s);
-    filter.output(*iter, s, s.out);
-    s.logWeight = s.logPrior + ll - s.logProposal;
 
-    std::cerr << s.logWeight << '\t';
+    ll = filter.correct(rng, *iter, s);
+
+    s.logWeight += ll;
+    //std::cerr.width(10);
+    //std::cerr << s.logWeight << '\t';
+    filter.output(*iter, s, s.out);
+
     while (accept && iter + 1 != last) {
       k = iter->indexObs();
 
@@ -196,24 +204,28 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
       //}
       /* propagation and weighting */
       ll = filter.step(rng, iter, last, s, s.out);
-      s.logWeight += ll;
       s.logLikelihood += ll;
+      s.logWeight += ll;
+      //std::cerr.width(10);
+      //std::cerr << s.logWeight << '\t';
 
-      std::cerr.width(10);
-      std::cerr << s.logWeight << '\t';
+      if (k == 51 && !stopper.stop(std::numeric_limits<real>::infinity())) {
+        adapter.add(vec(s.get(P_VAR)), s.logWeight);
+        stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
+      }
     }
     filter.term();
-    std::cerr << std::endl;
+    //std::cerr << std::endl;
 
     if (accept) {
       filter.samplePath(rng, s.path, s.out);
     }
 
     /* adaptation */
-    if (!stopper.stop(std::numeric_limits<real>::infinity())) {
-      adapter.add(vec(s.get(P_VAR)), s.logWeight);
-      stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
-    }
+//    if (!stopper.stop(std::numeric_limits<real>::infinity())) {
+//      adapter.add(vec(s.get(P_VAR)), s.logWeight);
+//      stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
+//    }
   } catch (CholeskyException e) {
     accept = false;
   } catch (ParticleFilterDegeneratedException e) {
