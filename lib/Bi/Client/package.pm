@@ -438,6 +438,10 @@ sub webify {
     chomp $meta;
     chomp $readme;
     
+    # 'name' attribute in meta must become 'title' to avoid conflict with
+    # Jekyll built-in attribute
+    $meta =~ s/^name:/title:/m;
+    
     # remove first heading from README.md contents
     $readme =~ s/^(.*?)\n={3,}\n*//m;
     
