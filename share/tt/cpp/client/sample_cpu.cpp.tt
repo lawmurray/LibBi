@@ -306,7 +306,10 @@ int main(int argc, char* argv[]) {
   
   #ifdef ENABLE_TIMING
   /* output timing results */
-  std::cout << "total " << timer.toc() << " us" << std::endl;
+  timer.sync();
+  if (rank == 0) {
+    std::cout << "total " << timer.toc() << " us" << std::endl;
+  }
   #endif
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
