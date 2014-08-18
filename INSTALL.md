@@ -7,7 +7,7 @@ that will also need to be installed.
 
 This file contains the instructions for installing LibBi itself. This
 process is the same on all platforms. To install dependencies of the
-C++ code that LibBi generates, see the walkthroughts for each platform
+C++ code that LibBi generates, see the walkthroughs for each platform
 in `INSTALL_LINUX.md`, `INSTALL_MAC.md` and `INSTALL_WIN.md` for Linux
 (and possibly other Unix), Mac OS X and Windows, respectively. For
 other platforms, or for a custom install, see `INSTALL_GENERIC.md`.
