@@ -32,11 +32,11 @@ public:
   typedef SamplerState<B,L,S1,IO1> state_type;
 
   typedef real value_type;
-  typedef typename loc_vector<L,value_type>::type vector_type;
+  typedef host_vector<value_type> vector_type;
   typedef typename vector_type::vector_reference_type vector_reference_type;
 
   typedef int int_value_type;
-  typedef typename loc_vector<L,int_value_type>::type int_vector_type;
+  typedef host_vector<int_value_type> int_vector_type;
   typedef typename int_vector_type::vector_reference_type int_vector_reference_type;
 
   /**
