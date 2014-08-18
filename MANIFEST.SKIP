@@ -10,7 +10,6 @@
 ^MANIFEST\.bak$
 ^docs/dev
 ^docs/html
-^docs/pdf
 ^docs/tex
 ^eclipse
 ^LibBi.*
