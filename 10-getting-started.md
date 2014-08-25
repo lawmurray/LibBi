@@ -48,7 +48,6 @@ Contributions to LibBi can take many forms:
 * Adding new hardware support.
 * Better integrating LibBi with software such as R, MATLAB, GNU Octave and
   Julia.
-* Supporting Windows.
 
 If you are interested in getting involved in the development of LibBi, please
 contact <a href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. The
