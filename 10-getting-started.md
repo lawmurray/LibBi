@@ -17,13 +17,7 @@ same for all platforms.
 Install
 -------
 
-LibBi runs on Linux, and on Mac OS X with dependencies installed from the
-[MacPorts](http://www.macports.org) project. It has not been tried on Windows;
-[Cygwin](http://www.cygwin.com) would be a good bet, however, and if you do
-get it running there the contribution of installation instructions would be
-appreciated.
-
-Installation instructions are in the
+LibBi runs on Linux, Mac OS X and Windows. Installation instructions are in the
 [INSTALL.md](https://github.com/libbi/LibBi/blob/master/INSTALL.md) file of
 the distribution.
 

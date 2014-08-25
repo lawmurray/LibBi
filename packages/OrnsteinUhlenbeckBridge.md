@@ -1,6 +1,6 @@
 ---
 layout: package
-name: OrnsteinUhlenbeckBridge
+title: OrnsteinUhlenbeckBridge
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au
@@ -53,8 +53,11 @@ Description
 This package includes an Ornstein--Uhlenbeck model that is observed
 directly. The task is to simulate diffusion bridges between the observed
 values. The form of the model is as studied in Aït-Sahalia (1999):
-$$dx=(\theta_{1}-\theta_{2}x)\, dt+\theta_{3}\, dW,$$ with fixed parameters
-$\theta_{1}=0.0187$, $\theta_{2}=0.2610$ and $\theta_{3}=0.0224$.
+
+$$dx=(\theta_{1}-\theta_{2}x)\, dt+\theta_{3}\, dW,$$
+
+with fixed parameters $\theta_1 = 0.0187$, $\theta_2 = 0.2610$ and $\theta_3 =
+0.0224$.
 
 It was used as a test case in Del Moral & Murray (2014). The package may be
 used to reproduce the results in that paper.

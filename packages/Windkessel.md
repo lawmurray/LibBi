@@ -1,6 +1,6 @@
 ---
 layout: package
-name: Windkessel
+title: Windkessel
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au
@@ -28,11 +28,17 @@ Description
 -----------
 
 The three-element windkessel model (Frank 1899, Westerhof et al. 2009, Kind et
-al. 2010) can be given by the discrete-time transition model: $$P_{p}(t+\Delta
-t)=\exp\left(-\frac{\Delta
-t}{RC}\right)P_{p}(t)+R\left(1-\exp\left(-\frac{\Delta
-t}{RC}\right)\right)F(t)$$ and observation model: $$P_{a}(t)=P_{p}(t)+F(t)Z.$$
-where $P_{a}$ is aortal blood pressure, $P_{p}$ peripheral blood pressure, and
+al. 2010) can be given by the discrete-time transition model:
+
+$$P_p(t+\Delta t)=\exp\left(-\frac{\Delta
+t}{RC}\right)P_p(t)+R\left(1-\exp\left(-\frac{\Delta
+t}{RC}\right)\right)F(t)$$
+
+and observation model:
+
+$$P_a(t)=P_p(t)+F(t)Z.$$
+
+where $P_a$ is aortal blood pressure, $P_p$ peripheral blood pressure, and
 $F$ blood flow. $R$, $C$ and $Z$ are parameters.
 
 The windkessel model has linear-Gaussian transition and observation models,

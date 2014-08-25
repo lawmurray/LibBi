@@ -1,6 +1,6 @@
 ---
 layout: package
-name: FederalFundsRate
+title: FederalFundsRate
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au

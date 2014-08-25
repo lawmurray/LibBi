@@ -21,9 +21,7 @@ OctBi is a package for [GNU Octave](http://www.octave.org) with functions for
 plotting the outputs of LibBi. It is not a complete environment for calling
 LibBi from within Octave, however.
 
-It will not work with MATLAB out-of-the-box, as the NetCDF library for MATLAB
-differs from that for Octave. Contributions that get this package working with
-MATLAB are welcome.
+OctBi should also work with MATLAB, but has not been thoroughly tested with it as yet.
 
 RBi
 ---

@@ -1,6 +1,6 @@
 ---
 layout: package
-name: PeriodicDriftBridge
+title: PeriodicDriftBridge
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au
@@ -57,9 +57,13 @@ Description
 This package implements the periodic drift diffusion process introduced in
 Beskos et al. (2006) and further studied in Lin, Chen & Mykland (2010). The
 form of the process model is the Ito stochastic differential
-equation$$dx=\sin(x-\pi)\, dt+dW.$$ The task is to simulate diffusion bridges
-between the observed values. It was used as a test case in Del Moral & Murray
-(2014). The package may be used to reproduce the results in that paper.
+equation:
+
+$$dx=\sin(x-\pi)\, dt+dW.$$
+
+The task is to simulate diffusion bridges between the observed values. It was
+used as a test case in Del Moral & Murray (2014). The package may be used to
+reproduce the results in that paper.
 
 
 References

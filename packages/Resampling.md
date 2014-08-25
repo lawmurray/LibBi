@@ -1,6 +1,6 @@
 ---
 layout: package
-name: Resampling
+title: Resampling
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au

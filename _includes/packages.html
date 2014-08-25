@@ -3,7 +3,7 @@
   {% for page in sorted_pages %}
     {% if page.layout == 'package' %}
     <li>
-      <a href="{{ page.url }}">{{ page.name }}</a><br/>
+      <a href="{{ page.url }}">{{ page.title }}</a><br/>
       {{ page.description }}
     </li>
     {% endif %}

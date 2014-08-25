@@ -1,6 +1,6 @@
 ---
 layout: package
-name: Lorenz96
+title: Lorenz96
 version: 1.0.0
 author: Lawrence Murray
 email: lawrence.murray@csiro.au
@@ -21,25 +21,33 @@ plotting these results (GNU Octave and OctBi required). In particular, after
 `./run.sh`, the `plot_and_print` function will produce SVG figures in the
 `figs/` directory.
 
-A synthetic data set is provided, but a new one may be generated with
-`init.sh` (GNU Octave and OctBi required).
+    ./time.sh
 
-The `time.sh` script can be used to reproduce the timing results in Murray
-(2013).
+This can be used to reproduce the timing results in Murray (2013).
+
+A synthetic data set is provided, but a new one may be generated with
+`init.sh` (GNU Octave and OctBi required). A number of `qsub_*.sh` scripts are
+also provided that may assist with setting up the package to run on a cluster.
+
 
 Description
 -----------
 
 The original, deterministic Lorenz '96 model (Lorenz 2006) is given by
-$$\frac{dx_{n}}{dt}=x_{n-1}(x_{n+1}-x_{n-2})-x_{n}+F,$$ where $\mathbf{x}$ is
-the state vector, of length 8 in this package, with subscripts indexing its
-components in a circular fashion. $F$ is a forcing parameter. This form of the
-model is given in the `Lorenz96Deterministic.bi` file.
+
+$$\frac{dx_{n}}{dt}=x_{n-1}(x_{n+1}-x_{n-2})-x_{n}+F,$$
+
+where $\mathbf{x}$ is the state vector, of length 8 in this package, with
+subscripts indexing its components in a circular fashion. $F$ is a forcing
+parameter. This form of the model is given in the `Lorenz96Deterministic.bi`
+file.
 
 A stochastic extension of the model adds an additional $\sigma$ parameter and
 rewrites the above ordinary differential equation as a stochastic differential
 equation:
+
 $$dx_{n}=\left(x_{n-1}(x_{n+1}-x_{n-2})-x_{n}+F\right)\, dt+\sigma\, dW_{n}.$$
+
 This form is specified in `Lorenz96.bi` and used for inference in LibBi.
 
 The interest in the Lorenz '96 model is that its dimensionality can be scaled
