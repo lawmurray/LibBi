@@ -7,6 +7,9 @@
  */
 #include "mpi.hpp"
 
+#include "boost/mpi/communicator.hpp"
+
+#include <mpi.h>
 #include <sstream>
 
 std::string bi::append_rank(const std::string& name) {

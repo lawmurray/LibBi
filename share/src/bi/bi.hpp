@@ -55,6 +55,8 @@
  *   @defgroup state_gpu Device memory bindings
  *   @ingroup state
  *
+ * @defgroup server Servers
+ *
  * @defgroup io I/O
  *
  *   @defgroup io_buffer Generic buffers
