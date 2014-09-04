@@ -82,7 +82,8 @@ protected:
 };
 }
 
-inline bi::Stopper::Stopper(const double threshold, const int maxP, const int T) :
+inline bi::Stopper::Stopper(const double threshold, const int maxP,
+    const int T) :
     threshold(threshold), maxP(maxP), T(T), P(0) {
   //
 }

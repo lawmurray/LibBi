@@ -7,9 +7,11 @@
  */
 #include "mpi.hpp"
 
+#ifdef ENABLE_MPI
 #include "boost/mpi/communicator.hpp"
-
 #include <mpi.h>
+#endif
+
 #include <sstream>
 
 std::string bi::append_rank(const std::string& name) {

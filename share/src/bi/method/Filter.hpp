@@ -10,6 +10,7 @@
 
 #include "../random/Random.hpp"
 #include "../state/Schedule.hpp"
+#include "../misc/macro.hpp"
 
 namespace bi {
 /**
@@ -22,67 +23,7 @@ namespace bi {
 template<class F>
 class Filter: public F {
 public:
-  /**
-   * Pass-through constructor.
-   */
-  Filter() :
-      F() {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1>
-  Filter(T1& o1) :
-      F(o1) {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2>
-  Filter(T1& o1, T2& o2) :
-      F(o1, o2) {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3>
-  Filter(T1& o1, T2& o2, T3& o3) :
-      F(o1, o2, o3) {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4>
-  Filter(T1& o1, T2& o2, T3& o3, T4& o4) :
-      F(o1, o2, o3, o4) {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5>
-  Filter(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5) :
-      F(o1, o2, o3, o4, o5) {
-    //
-  }
-
-  /**
-   * Pass-through constructor.
-   */
-  template<class T1, class T2, class T3, class T4, class T5, class T6>
-  Filter(T1& o1, T2& o2, T3& o3, T4& o4, T5& o5, T6& o6) :
-      F(o1, o2, o3, o4, o5, o6) {
-    //
-  }
+  BI_PASSTHROUGH_CONSTRUCTORS(Filter, F)
 
   /**
    * %Filter forward.

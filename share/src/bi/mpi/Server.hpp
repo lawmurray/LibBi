@@ -17,10 +17,14 @@ namespace bi {
  * Server wrapper, buckles a common interface onto any server.
  *
  * @ingroup server
+ *
+ * @tparam T Server type.
  */
-template<class S>
-class Server: public S {
+template<class T>
+class Server: public T {
 public:
+  BI_PASSTHROUGH_CONSTRUCTORS(Server, T)
+
   /**
    * Open port.
    */
@@ -30,6 +34,11 @@ public:
    * Close port.
    */
   void close();
+
+  /**
+   * Get port name for client connections.
+   */
+  const char* getPortName() const;
 
   /**
    * Run the server.
@@ -50,17 +59,17 @@ private:
   void probe();
 
   /**
-   * Communicators, one for each connected client.
+   * Intercommunicators to clients.
    */
   std::set<MPI_Comm> comms;
 
   /**
-   * New communicators ready to be added.
+   * New intercommunicators ready to be added.
    */
   std::set<MPI_Comm> newcomms;
 
   /**
-   * Old communicators ready to be ejected.
+   * Old intercommunicators ready to be ejected.
    */
   std::set<MPI_Comm> oldcomms;
 
@@ -71,20 +80,25 @@ private:
 };
 }
 
-template<class S>
-void bi::Server<S>::open() {
+template<class T>
+void bi::Server<T>::open() {
   int err = MPI_Open_port(MPI_INFO_NULL, port_name);
   BI_ERROR(err == MPI_SUCCESS);
 }
 
-template<class S>
-void bi::Server<S>::close() {
+template<class T>
+void bi::Server<T>::close() {
   err = MPI_Close_port(port_name);
   BI_ERROR(err == MPI_SUCCESS);
 }
 
-template<class S>
-void bi::Server<S>::run() {
+template<class T>
+const char* bi::Server<T>::getPortName() const {
+  return port_name;
+}
+
+template<class T>
+void bi::Server<T>::run() {
   #ifndef ENABLE_OPENMP
   BI_ERROR_MSG(false, "A server requires OpenMP to run, use --enable-openmp.")
   #endif
@@ -102,35 +116,41 @@ void bi::Server<S>::run() {
   }
 }
 
-template<class S>
-void bi::Server<S>::accept() {
+template<class T>
+void bi::Server<T>::accept() {
   int err;
   MPI_Comm comm;
   do {
     err = MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
     if (err == MPI_SUCCESS) {
-      #pragma omp critical
-      newcomms.push_back(comm);
+      err = MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
+      if (err == MPI_SUCCESS) {
+        #pragma omp critical
+        newcomms.push_back(comm);
+      }
     }
   } while (true);
 }
 
-template<class S>
-void bi::Server<S>::probe() {
+template<class T>
+void bi::Server<T>::probe() {
   MPI_Status status;
   int flag, err;
   do {
     for (BOOST_AUTO(iter, comms.begin()); iter != comms.end(); ++iter) {
       err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
-
       if (err == MPI_SUCCESS) {
         if (flag) {
-          if (status.tag == TAG_DISCONNECT) {
+          if (status.tag == MPI_TAG_DISCONNECT) {
             /* graceful disconnect */
+            err = MPI_Recv(NULL, 0, MPI_INT, status.source, status.tag, *iter, &status);
+            BI_ASSERT(err == MPI_SUCCESS);
+
             err = MPI_Comm_disconnect(&comm);
             if (err != MPI_SUCCESS) {
               /* ungraceful disconnect */
-              MPI_Abort(comm, err); ///@todo Does this abort self?
+              err = MPI_Abort(comm, err); ///@todo Does this abort self?
+              BI_ASSERT(err == MPI_SUCCESS);
             }
             oldcomms.insert(comm);
           } else {
@@ -141,8 +161,11 @@ void bi::Server<S>::probe() {
         }
       } else if (err == MPI_ERR_COMM) {
         /* ungraceful disconnect */
-        MPI_Abort(comm, err); ///@todo Does this abort self?
+        err = MPI_Abort(comm, err); ///@todo Does this abort self?
+        BI_ASSERT(err == MPI_SUCCESS);
         oldcomms.insert(comm);
+      } else {
+        BI_ASSERT(err == MPI_SUCCESS);
       }
     }
 
