@@ -10,7 +10,7 @@
 
 #include "MarginalMH.hpp"
 #include "MarginalSIR.hpp"
-#include "MarginalSRS.hpp"
+#include "MarginalSIS.hpp"
 
 namespace bi {
 /**
@@ -37,7 +37,7 @@ public:
    * Create marginal sequential rejection sampler.
    */
   template<class B, class F, class A, class S>
-  static MarginalSRS<B,F,A,S>* createMarginalSRS(B& m, F& filter, A& adapter,
+  static MarginalSIS<B,F,A,S>* createMarginalSIS(B& m, F& filter, A& adapter,
       S& stopper);
 };
 }
@@ -54,9 +54,9 @@ bi::MarginalSIR<B,F,A,R>* bi::SamplerFactory::createMarginalSIR(B& m, F& mmh,
 }
 
 template<class B, class F, class A, class S>
-bi::MarginalSRS<B,F,A,S>* bi::SamplerFactory::createMarginalSRS(B& m,
+bi::MarginalSIS<B,F,A,S>* bi::SamplerFactory::createMarginalSIS(B& m,
     F& filter, A& adapter, S& stopper) {
-  return new MarginalSRS<B,F,A,S>(m, filter, adapter, stopper);
+  return new MarginalSIS<B,F,A,S>(m, filter, adapter, stopper);
 }
 
 #endif

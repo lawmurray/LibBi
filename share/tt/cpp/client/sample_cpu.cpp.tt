@@ -20,7 +20,7 @@
 #include "bi/state/State.hpp"
 #include "bi/state/MarginalMHState.hpp"
 #include "bi/state/MarginalSIRState.hpp"
-#include "bi/state/MarginalSRSState.hpp"
+#include "bi/state/MarginalSISState.hpp"
 
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
@@ -160,9 +160,9 @@ int main(int argc, char* argv[]) {
     [% END %]
     [% IF client.get_named_arg('sampler') == 'sir' %]
     MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
-    [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+    [% ELSIF client.get_named_arg('sampler') == 'sis' %]
     typedef GaussianPdf<> proposal_type;
-    MarginalSRSState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
+    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
     [% ELSE %]
     MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
     [% END %]
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
       typedef SMCNullBuffer buffer_type;
       [% END %]
       SMCBuffer<SMCCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
-    [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+    [% ELSIF client.get_named_arg('sampler') == 'sis' %]
       [% IF client.get_named_arg('output-file') != '' %]
       typedef SMCNetCDFBuffer buffer_type;
       [% ELSE %]
@@ -283,8 +283,8 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('sampler') == 'sir' %]
   BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
   BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, adapter, resam, NMOVES));
-  [% ELSIF client.get_named_arg('sampler') == 'srs' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSRS(m, *filter, adapter, stopper));
+  [% ELSIF client.get_named_arg('sampler') == 'sis' %]
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, adapter, stopper));
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MARGINALSRS_HPP
-#define BI_METHOD_MARGINALSRS_HPP
+#ifndef BI_METHOD_MARGINALSIS_HPP
+#define BI_METHOD_MARGINALSIS_HPP
 
 #include "../state/Schedule.hpp"
 #include "../cache/SMCCache.hpp"
@@ -23,7 +23,7 @@ namespace bi {
  * @tparam S Stopper type.
  */
 template<class B, class F, class A, class S>
-class MarginalSRS {
+class MarginalSIS {
 public:
   /**
    * Constructor.
@@ -33,7 +33,7 @@ public:
    * @param adapter Adapter.
    * @param stopper Stopper.
    */
-  MarginalSRS(B& m, F& filter, A& adapter, S& stopper);
+  MarginalSIS(B& m, F& filter, A& adapter, S& stopper);
 
   /**
    * @name High-level interface.
@@ -120,7 +120,7 @@ private:
 }
 
 template<class B, class F, class A, class S>
-bi::MarginalSRS<B,F,A,S>::MarginalSRS(B& m, F& filter, A& adapter, S& stopper) :
+bi::MarginalSIS<B,F,A,S>::MarginalSIS(B& m, F& filter, A& adapter, S& stopper) :
     m(m), filter(filter), adapter(adapter), stopper(stopper) {
   adapter.reset();
   stopper.reset();
@@ -128,7 +128,7 @@ bi::MarginalSRS<B,F,A,S>::MarginalSRS(B& m, F& filter, A& adapter, S& stopper) :
 
 template<class B, class F, class A, class S>
 template<class S1, class IO1, class IO2>
-void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
+void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
   std::cout << "Samples drawn: 0 of " << C;
@@ -149,13 +149,13 @@ void bi::MarginalSRS<B,F,A,S>::sample(Random& rng,
 }
 
 template<class B, class F, class A, class S>
-void bi::MarginalSRS<B,F,A,S>::init() {
+void bi::MarginalSIS<B,F,A,S>::init() {
 
 }
 
 template<class B, class F, class A, class S>
 template<class S1>
-bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
+bool bi::MarginalSIS<B,F,A,S>::propose(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
   bool accept = true;
   double ll, lu;
@@ -181,33 +181,20 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
     ScheduleIterator iter = first;
     filter.init(rng, *iter, s, s.out);
     s.logWeight = s.logPrior - s.logProposal;
-    //std::cerr.width(10);
-    //std::cerr << s.logWeight << '\t';
     filter.output0(s, s.out);
 
     ll = filter.correct(rng, *iter, s);
 
     s.logWeight += ll;
-    //std::cerr.width(10);
-    //std::cerr << s.logWeight << '\t';
     filter.output(*iter, s, s.out);
 
     while (accept && iter + 1 != last) {
       k = iter->indexObs();
 
-      /* rejection control */
-      //s.logWeight -= s.lomegas(k);
-      //lu = bi::log(rng.uniform(0.0, 1.0));
-      //accept = lu < s.logWeight;
-      //if (accept) {
-      //  s.logWeight = bi::max(lw, 0.0);
-      //}
       /* propagation and weighting */
       ll = filter.step(rng, iter, last, s, s.out);
       s.logLikelihood += ll;
       s.logWeight += ll;
-      //std::cerr.width(10);
-      //std::cerr << s.logWeight << '\t';
 
       if (k == 51 && !stopper.stop(std::numeric_limits<real>::infinity())) {
         adapter.add(vec(s.get(P_VAR)), s.logWeight);
@@ -215,17 +202,12 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
       }
     }
     filter.term();
-    //std::cerr << std::endl;
 
     if (accept) {
       filter.samplePath(rng, s.path, s.out);
     }
 
     /* adaptation */
-//    if (!stopper.stop(std::numeric_limits<real>::infinity())) {
-//      adapter.add(vec(s.get(P_VAR)), s.logWeight);
-//      stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
-//    }
   } catch (CholeskyException e) {
     accept = false;
   } catch (ParticleFilterDegeneratedException e) {
@@ -236,7 +218,7 @@ bool bi::MarginalSRS<B,F,A,S>::propose(Random& rng,
 
 template<class B, class F, class A, class S>
 template<class S1, class IO1>
-void bi::MarginalSRS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
+void bi::MarginalSIS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
   out.write(c, s);
   if (out.isFull()) {
     out.flush();
@@ -245,7 +227,7 @@ void bi::MarginalSRS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
 }
 
 template<class B, class F, class A, class S>
-void bi::MarginalSRS<B,F,A,S>::term() {
+void bi::MarginalSIS<B,F,A,S>::term() {
 
 }
 

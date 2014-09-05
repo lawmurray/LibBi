@@ -73,13 +73,9 @@ Marginal Metropolis-Hastings (MH).
 
 Marginal sequential importance resampling (SIR).
 
-=begin comment
+=item C<sis>
 
-=item C<srs>
-
-Marginal sequential rejection sampling (SRS).
-
-=end comment
+Marginal sequential importance sampling (SIS).
 
 =back
 
