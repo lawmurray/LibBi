@@ -62,7 +62,7 @@ public:
   void init();
 
   /**
-   * Propose new parameter.
+   * Draw single parameter sample.
    *
    * @tparam S1 State type.
    *
@@ -70,11 +70,9 @@ public:
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param[out] s State.
-   *
-   * @return Was proposal accepted?
    */
   template<class S1>
-  bool propose(Random& rng, const ScheduleIterator first,
+  void draw(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, S1& s);
 
   /**
@@ -131,20 +129,45 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  std::cout << "Samples drawn: 0 of " << C;
+  int c;
+  const int C1 = 256;
   init();
-  int c = 0;
-  bool accept;
-  while (c < C) {
-    accept = propose(rng, first, last, s);
-    if (accept) {
-      output(c, s, out);
+
+  /* adapt */
+  for (BOOST_AUTO(iter, first); iter + 1 != last; ++iter) {
+    adapter.reset();
+    c = 0;
+    std::cout << "Time " << iter->getTime() << ", sample " << c << " of " << C1;
+    std::cout.flush();
+    do {
+      draw(rng, first, iter + 1, s);
+      adapter.add(vec(s.get(P_VAR)), s.logWeight);
       ++c;
-      std::cout << "\rSamples drawn: " << c << " of " << C;
+      std::cout << "\rTime " << iter->getTime() << ", sample " << c << " of " << C1;
       std::cout.flush();
+    } while (c < C1/*!adapter.ready()*/);
+    try {
+      adapter.adapt(s.q);
+    } catch (CholeskyException e) {
+      // continue with previous proposal
     }
+    std::cout << std::endl;
   }
+
+  /* sample */
+  c = 0;
+  std::cout << "Final sample " << c << " of " << C;
+  std::cout.flush();
+  do {
+    draw(rng, first, last, s);
+    output(c, s, out);
+    stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
+    ++c;
+    std::cout << "\rFinal sample " << c << " of " << C;
+    std::cout.flush();
+  } while (!stopper.stop(std::numeric_limits<real>::infinity()));
   std::cout << std::endl;
+
   term();
 }
 
@@ -155,65 +178,46 @@ void bi::MarginalSIS<B,F,A,S>::init() {
 
 template<class B, class F, class A, class S>
 template<class S1>
-bool bi::MarginalSIS<B,F,A,S>::propose(Random& rng,
+void bi::MarginalSIS<B,F,A,S>::draw(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
-  bool accept = true;
   double ll, lu;
   int k;
 
   do {
-    if (stopper.stop(std::numeric_limits<real>::infinity())) {
-      /* use adapted proposal */
-      adapter.adapt(s.q);
-      s.q.sample(rng, vec(s.get(PY_VAR)));
-      s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
-    } else {
+    if (first + 1 == last) {
       /* use a priori proposal */
       m.parameterSample(rng, s);
       s.get(PY_VAR) = s.get(P_VAR);
       s.logProposal = m.parameterLogDensity(s);
+    } else {
+      /* use adapted proposal */
+      s.q.sample(rng, vec(s.get(PY_VAR)));
+      s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
     }
     s.logPrior = m.parameterLogDensity(s);
   } while (!bi::is_finite(s.logPrior));
   s.logLikelihood = -std::numeric_limits<real>::infinity();
 
-  try {
-    ScheduleIterator iter = first;
-    filter.init(rng, *iter, s, s.out);
-    s.logWeight = s.logPrior - s.logProposal;
-    filter.output0(s, s.out);
+  ScheduleIterator iter = first;
+  filter.init(rng, *iter, s, s.out);
+  s.logWeight = s.logPrior - s.logProposal;
+  filter.output0(s, s.out);
 
-    ll = filter.correct(rng, *iter, s);
+  ll = filter.correct(rng, *iter, s);
 
+  s.logWeight += ll;
+  filter.output(*iter, s, s.out);
+
+  while (iter + 1 != last) {
+    k = iter->indexObs();
+
+    /* propagation and weighting */
+    ll = filter.step(rng, iter, last, s, s.out);
+    s.logLikelihood += ll;
     s.logWeight += ll;
-    filter.output(*iter, s, s.out);
-
-    while (accept && iter + 1 != last) {
-      k = iter->indexObs();
-
-      /* propagation and weighting */
-      ll = filter.step(rng, iter, last, s, s.out);
-      s.logLikelihood += ll;
-      s.logWeight += ll;
-
-      if (k == 51 && !stopper.stop(std::numeric_limits<real>::infinity())) {
-        adapter.add(vec(s.get(P_VAR)), s.logWeight);
-        stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
-      }
-    }
-    filter.term();
-
-    if (accept) {
-      filter.samplePath(rng, s.path, s.out);
-    }
-
-    /* adaptation */
-  } catch (CholeskyException e) {
-    accept = false;
-  } catch (ParticleFilterDegeneratedException e) {
-    accept = false;
   }
-  return accept;
+  filter.term();
+  filter.samplePath(rng, s.path, s.out);
 }
 
 template<class B, class F, class A, class S>

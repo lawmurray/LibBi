@@ -279,12 +279,25 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, filterResam)));
   [% END %]
   
+  /* sample stopper */
+  [% IF client.get_named_arg('stopper') == 'deterministic' %]
+  Stopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+  SumOfWeightsStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+  MinimumESSStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+  StdDevStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'var' %]
+  VarStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
+  [% END %]
+  
   /* sampler */
   [% IF client.get_named_arg('sampler') == 'sir' %]
   BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
   BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, adapter, resam, NMOVES));
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, adapter, stopper));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, adapter, sampleStopper));
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]

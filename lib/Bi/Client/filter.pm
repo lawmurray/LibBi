@@ -219,7 +219,7 @@ C<'adaptive'>:
 
 =over 4
 
-=item C<--stopper> (default miness)
+=item C<--stopper> (default 'deterministic')
 
 The stopping criterion to use; one of:
 
@@ -349,7 +349,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'stopper',
       type => 'string',
-      default => 'miness'
+      default => 'deterministic'
     },
     {
       name => 'stopper-threshold',
