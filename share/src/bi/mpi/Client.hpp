@@ -9,21 +9,15 @@
 #define BI_MPI_CLIENT_HPP
 
 #include "mpi.hpp"
-#include "../misc/macro.hpp"
 
 namespace bi {
 /**
- * Client wrapper, buckles a common interface onto any client.
+ * Client.
  *
  * @ingroup server
- *
- * @tparam T Client type.
  */
-template<class T>
-class Client: public T {
+class Client {
 public:
-  BI_PASSTHROUGH_CONSTRUCTORS(Client, T)
-
   /**
    * Connect to server.
    *
@@ -43,27 +37,6 @@ private:
    */
   MPI_Comm comm;
 };
-}
-
-template<class T>
-void bi::Client<T>::connect(const char* port_name) {
-  err = MPI_Comm_connect(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
-  BI_ERROR(err == MPI_SUCCESS);
-}
-
-template<class T>
-void bi::Client<T>::disconnect() {
-  int err;
-  MPI_Request request;
-
-  err = MPI_Isend(NULL, 0, MPI_INT, 0, MPI_TAG_DISCONNECT, comm, &request);
-  if (err == MPI_SUCCESS) {
-    err = MPI_Comm_disconnect(&comm);
-    BI_ASSERT(err == MPI_SUCCESS);
-  } else if (err == MPI_COMM_ERR) {
-    err = MPI_Abort(comm, err);
-    BI_ASSERT(err == MPI_SUCCESS); ///@todo Does this abort self?
-  }
 }
 
 #endif

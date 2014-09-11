@@ -23,8 +23,9 @@ std::string append_rank(const std::string& name);
  */
 enum MPITag {
   /**
-   * Disconnection.
+   * Server tags.
    */
+  MPI_TAG_JOIN,
   MPI_TAG_DISCONNECT,
 
   /*
