@@ -21,9 +21,24 @@ namespace bi {
 class TreeNetworkNode {
 public:
   /**
+   * Constructor.
+   */
+  TreeNetworkNode();
+
+  /**
+   * Get parent.
+   */
+  const MPI_Comm& getParent() const;
+
+  /**
    * Set parent.
    */
   void setParent(MPI_Comm& comm);
+
+  /**
+   * Get children.
+   */
+  const std::set<MPI_Comm>& getChildren() const;
 
   /**
    * Add child.
@@ -57,11 +72,6 @@ public:
    */
   int updateChildren();
 
-  /**
-   * Get children.
-   */
-  std::set<MPI_Comm>& children() const;
-
 private:
   /**
    * Communicator to parent.
@@ -85,7 +95,11 @@ private:
 };
 }
 
-inline std::set<MPI_Comm>& TreeNetworkNode::children() const {
+inline const MPI_Comm& bi::TreeNetworkNode::getParent() const {
+  return parent;
+}
+
+inline const std::set<MPI_Comm>& bi::TreeNetworkNode::getChildren() const {
   return comms;
 }
 

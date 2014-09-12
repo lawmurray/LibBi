@@ -222,8 +222,8 @@ void bi::Server<H1,H2,H3>::serve() {
   int flag, err;
 
   while (network.updateChildren() > 0) {
-    for (BOOST_AUTO(iter, network.children().begin());
-        iter != network.children().end(); ++iter) {
+    for (BOOST_AUTO(iter, network.getChildren().begin());
+        iter != network.getChildren().end(); ++iter) {
       err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
       if (err == MPI_SUCCESS) {
         if (flag) {

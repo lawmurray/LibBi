@@ -7,6 +7,10 @@
  */
 #include "TreeNetworkNode.hpp"
 
+bi::TreeNetworkNode::TreeNetworkNode() : parent(MPI_COMM_NULL) {
+  //
+}
+
 void bi::TreeNetworkNode::setParent(MPI_Comm& comm) {
   parent = comm;
 }
