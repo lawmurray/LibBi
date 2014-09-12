@@ -8,6 +8,7 @@
 #ifndef BI_MPI_CLIENT_HPP
 #define BI_MPI_CLIENT_HPP
 
+#include "TreeNetworkNode.hpp"
 #include "mpi.hpp"
 
 namespace bi {
@@ -18,6 +19,13 @@ namespace bi {
  */
 class Client {
 public:
+  /**
+   * Constructor.
+   *
+   * @param network Network node.
+   */
+  Client(TreeNetworkNode& network);
+
   /**
    * Connect to server.
    *
@@ -33,9 +41,9 @@ public:
 
 private:
   /**
-   * Intercommunicator to server.
+   * Network node.
    */
-  MPI_Comm comm;
+  TreeNetworkNode& network;
 };
 }
 

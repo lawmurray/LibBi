@@ -137,15 +137,15 @@ void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
   for (BOOST_AUTO(iter, first); iter + 1 != last; ++iter) {
     adapter.reset();
     c = 0;
-    std::cout << "Time " << iter->getTime() << ", sample " << c << " of " << C1;
+    std::cout << "Time " << iter->getTime() << ", samples " << c;
     std::cout.flush();
-    do {
+    while (c < C1/*!adapter.ready()*/) {
       draw(rng, first, iter + 1, s);
       adapter.add(vec(s.get(P_VAR)), s.logWeight);
       ++c;
-      std::cout << "\rTime " << iter->getTime() << ", sample " << c << " of " << C1;
+      std::cout << "\rTime " << iter->getTime() << ", samples " << c;
       std::cout.flush();
-    } while (c < C1/*!adapter.ready()*/);
+    }
     try {
       adapter.adapt(s.q);
     } catch (CholeskyException e) {
@@ -156,16 +156,16 @@ void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
 
   /* sample */
   c = 0;
-  std::cout << "Final sample " << c << " of " << C;
+  std::cout << "Final samples " << c;
   std::cout.flush();
-  do {
+  while (!stopper.stop(std::numeric_limits<real>::infinity())) {
     draw(rng, first, last, s);
     output(c, s, out);
     stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
     ++c;
-    std::cout << "\rFinal sample " << c << " of " << C;
+    std::cout << "\rFinal samples " << c;
     std::cout.flush();
-  } while (!stopper.stop(std::numeric_limits<real>::infinity()));
+  }
   std::cout << std::endl;
 
   term();
@@ -183,19 +183,17 @@ void bi::MarginalSIS<B,F,A,S>::draw(Random& rng,
   double ll, lu;
   int k;
 
-  do {
-    if (first + 1 == last) {
-      /* use a priori proposal */
-      m.parameterSample(rng, s);
-      s.get(PY_VAR) = s.get(P_VAR);
-      s.logProposal = m.parameterLogDensity(s);
-    } else {
-      /* use adapted proposal */
-      s.q.sample(rng, vec(s.get(PY_VAR)));
-      s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
-    }
-    s.logPrior = m.parameterLogDensity(s);
-  } while (!bi::is_finite(s.logPrior));
+  if (first + 1 == last) {
+    /* use a priori proposal */
+    m.parameterSample(rng, s);
+    s.get(PY_VAR) = s.get(P_VAR);
+    s.logProposal = m.parameterLogDensity(s);
+  } else {
+    /* use adapted proposal */
+    s.q.sample(rng, vec(s.get(PY_VAR)));
+    s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
+  }
+  s.logPrior = m.parameterLogDensity(s);
   s.logLikelihood = -std::numeric_limits<real>::infinity();
 
   ScheduleIterator iter = first;

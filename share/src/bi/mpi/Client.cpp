@@ -7,6 +7,10 @@
  */
 #include "Client.hpp"
 
+bi::Client::Client(TreeNetworkNode& network) : network(network) {
+  //
+}
+
 void bi::Client::connect(const char* port_name) {
   err = MPI_Comm_connect(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
   BI_ERROR_MSG(err == MPI_SUCCESS, "Could not connect to server");

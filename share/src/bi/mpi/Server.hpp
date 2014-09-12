@@ -8,10 +8,9 @@
 #ifndef BI_MPI_SERVER_HPP
 #define BI_MPI_SERVER_HPP
 
+#include "TreeNetworkNode.hpp"
 #include "NullHandler.hpp"
 #include "mpi.hpp"
-
-#include <set>
 
 namespace bi {
 /**
@@ -24,7 +23,7 @@ namespace bi {
  * @tparam H3 Handler type.
  *
  * Set up the server by registering handlers with setHandler(), then call
- * open() to open a port, getPortName() to recover that port for client
+ * open() to open a port, getPortName() to recover that port for child
  * processes, and finally run() to run the server.
  */
 template<class H1 = NullHandler, class H2 = NullHandler,
@@ -33,11 +32,13 @@ class Server {
 public:
   /**
    * Constructor.
+   *
+   * @param network Network node.
    */
-  Server();
+  Server(TreeNetworkNode& network);
 
   /**
-   * Get port name for client connections.
+   * Get port name for child connections.
    */
   const char* getPortName() const;
 
@@ -67,27 +68,27 @@ public:
 
 private:
   /**
-   * Accept client connections.
+   * Accept child connections.
    */
   void accept();
 
   /**
-   * Serve client requests.
+   * Serve child requests.
    */
   void serve();
 
   /**
-   * Join client.
+   * Join child.
    *
-   * @param comm Intercommunicator with the client.
+   * @param comm Intercommunicator with the child.
    * @param status Status from probe that led to disconnect.
    */
   void join(MPI_Comm& comm, MPI_Status& status);
 
   /**
-   * Disconnect client.
+   * Disconnect child.
    *
-   * @param comm Intercommunicator with the client.
+   * @param comm Intercommunicator with the child.
    * @param status Status from probe that led to disconnect.
    *
    * Used for a bilateral disconnect.
@@ -95,54 +96,28 @@ private:
   void disconnect(MPI_Comm& comm, MPI_Status& status);
 
   /**
-   * abort client.
+   * Forcefully disconnect child.
    *
-   * @param comm Intercommunicator with the client.
+   * @param comm Intercommunicator with the child.
    *
    * Used for a unilateral disconnect. Typically called if the connection
-   * with the client fails, or if communication does not adhere to
+   * with the child fails, or if communication does not adhere to
    * protocol.
    */
   void abort(MPI_Comm& comm);
 
   /**
-   * Handle client message.
+   * Handle child message.
    *
-   * @param comm Intercommunicator with the client.
+   * @param comm Intercommunicator with the child.
    * @param status Status from probe that led to disconnect.
    */
   void handle(MPI_Comm& comm, MPI_Status& status);
 
   /**
-   * Add client.
-   *
-   * @param comm Communicator associated with the client.
-   *
-   * @return Number of clients before adding this new client.
-   *
-   * This queues the client to be added on the next call to updateClients().
-   * This method is thread safe.
+   * Port as written by MPI_Open_port.
    */
-  int addClient(MPI_Comm& comm);
-
-  /**
-   * Remove client.
-   *
-   * @param comm Communicator associated with the client.
-   *
-   * This queues the client to be removed on the next call to
-   * updateClients(). This method is thread-safe.
-   */
-  void removeClient(MPI_Comm& comm);
-
-  /**
-   * Update client list.
-   *
-   * @return Number of clients.
-   *
-   * This adds any This method is thread safe.
-   */
-  int updateClients();
+  char port_name[MPI_MAX_PORT_NAME];
 
   /*
    * Handlers.
@@ -152,30 +127,15 @@ private:
   H3* h3;
 
   /**
-   * Port as written by MPI_Open_port.
+   * Network node.
    */
-  char port_name[MPI_MAX_PORT_NAME];
-
-  /**
-   * Intercommunicators to clients.
-   */
-  std::set<MPI_Comm> comms;
-
-  /**
-   * New intercommunicators ready to be added.
-   */
-  std::set<MPI_Comm> newcomms;
-
-  /**
-   * Old intercommunicators ready to be aborted.
-   */
-  std::set<MPI_Comm> oldcomms;
+  TreeNetworkNode& network;
 };
 }
 
 template<class H1, class H2, class H3>
-bi::Server<H1,H2,H3>::Server() :
-    h1(NULL), h2(NULL), h3(NULL) {
+bi::Server<H1,H2,H3>::Server(TreeNetworkNode& network) :
+    h1(NULL), h2(NULL), h3(NULL), network(network) {
   //
 }
 
@@ -215,10 +175,10 @@ template<class H1, class H2, class H3>
 void bi::Server<H1,H2,H3>::run() {
   /*
    * The methods accept() and serve() are designed to run concurrently,
-   * accept() waiting for client connections, serve() servicing client
+   * accept() waiting for child connections, serve() servicing child
    * requests. Rather than starting both now, we start only accept(), which
-   * will itself start serve() in a new thread once the first client
-   * connects. This avoids a busy-wait in handle() before any clients have
+   * will itself start serve() in a new thread once the first child
+   * connects. This avoids a busy-wait in handle() before any children have
    * connected. It does not avoid a busy-wait in accept() if that is how the
    * particular MPI implementation implements MPI_Comm_accept(), but we can't
    * do anything about that.
@@ -243,10 +203,10 @@ void bi::Server<H1,H2,H3>::accept() {
             abort(comm);
           } else {
             join(comm);
-            n = queueClient(comm);
+            n = network.addChild(comm);
             if (n == 0) {
 #pragma omp task
-              serve();  // start serving clients
+              serve();  // start serving children
             }
           }
         }
@@ -261,20 +221,21 @@ void bi::Server<H1,H2,H3>::serve() {
   MPI_Status status;
   int flag, err;
 
-  while (updateClients() > 0) {
-    for (BOOST_AUTO(iter, comms.begin()); iter != comms.end(); ++iter) {
+  while (network.updateChildren() > 0) {
+    for (BOOST_AUTO(iter, network.children().begin());
+        iter != network.children().end(); ++iter) {
       err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
       if (err == MPI_SUCCESS) {
         if (flag) {
           if (status.tag == MPI_TAG_DISCONNECT) {
             disconnect(*iter, status);
-            removeClient (*iter);
+            network.removeChild(*iter);
           } else {
             handle(*iter, status);
           }
         } else if (err == MPI_ERR_COMM) {
           abort (*iter);
-          removeClient(*iter);
+          network.removeChild(*iter);
         } else {
           BI_ASSERT(err == MPI_SUCCESS);
         }
@@ -331,43 +292,6 @@ void bi::Server<H1,H2,H3>::handle(MPI_Comm& comm, MPI_Status& status) {
   } else {
     abort (*iter);
   }
-}
-
-template<class H1, class H2, class H3>
-int bi::Server<H1,H2,H3>::addClient(MPI_Comm& comm) {
-  int n = 0;
-#pragma omp critical
-  {
-    n = comms.size() + newcomms.size();
-    newcomms.insert(comm);
-  }
-  return n;
-}
-
-template<class H1, class H2, class H3>
-void bi::Server<H1,H2,H3>::removeClient(MPI_Comm& comm) {
-#pragma omp critical
-  {
-    oldcomms.insert(comm);
-  }
-}
-
-template<class H1, class H2, class H3>
-int bi::Server<H1,H2,H3>::updateClients() {
-  int n = 0;
-#pragma omp critical
-  {
-    comms.insert(newcomms.begin(), newcomms.end());
-    newcomms.clear();
-    comms.erase(oldcomms.begin(), oldcomms.end());
-    oldcomms.clear();
-    n = comms.size();
-
-    /* post-conditions */
-    BI_ASSERT(newcomms.size() == 0);
-    BI_ASSERT(oldcomms.size() == 0);
-  }
-  return n;
 }
 
 #endif
