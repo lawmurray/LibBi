@@ -24,14 +24,18 @@ void bi::Server::registerHandler(Handler* handler) {
   handlers.push_back(handler);
 }
 
-void bi::Server::open() {
+void bi::Server::open() throw (boost::mpi::exception) {
   int err = MPI_Open_port(MPI_INFO_NULL, port_name);
-  BI_ERROR(err == MPI_SUCCESS);
+  if (err != MPI_SUCCESS) {
+    boost::throw_exception(boost::mpi::exception("MPI_Open_port", err));
+  }
 }
 
-void bi::Server::close() {
+void bi::Server::close() throw (boost::mpi::exception) {
   int err = MPI_Close_port(port_name);
-  BI_ERROR(err == MPI_SUCCESS);
+  if (err != MPI_SUCCESS) {
+    boost::throw_exception(boost::mpi::exception("MPI_Close_port", err));
+  }
 }
 
 void bi::Server::run() {
@@ -65,20 +69,29 @@ void bi::Server::accept() {
 #pragma omp single
     {
       do {
-        err = MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF,
-            &comm);
-        if (err == MPI_SUCCESS) {
+        try {
+          err = MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF,
+              &comm);
+          if (err != MPI_SUCCESS) {
+            boost::throw_exception(
+                boost::mpi::exception("MPI_Comm_accept", err));
+          }
+
           err = MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
           if (err != MPI_SUCCESS) {
-            abort(comm);
-          } else {
-            join(comm);
-            n = network.addChild(comm);
-            if (n == 0) {
-#pragma omp task
-              serve();  // start serving children
-            }
+            boost::throw_exception(
+                boost::mpi::exception("MPI_Comm_set_errhandler", err));
           }
+
+          boost::mpi::communicator child(comm, boost::mpi::comm_attach);
+          join(child);
+          n = network.addChild(child);
+          if (n == 0) {
+#pragma omp task
+            serve();  // start serving children
+          }
+        } catch (boost::mpi::exception e) {
+          //
         }
       } while (!done());
     }
@@ -89,11 +102,16 @@ void bi::Server::serve() {
   MPI_Status status;
   int flag, err;
 
-  while (network.updateChildren() > 0) {
-    for (BOOST_AUTO(iter, network.getChildren().begin());
-        iter != network.getChildren().end(); ++iter) {
-      err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
-      if (err == MPI_SUCCESS) {
+  BOOST_AUTO(children, network.getChildren());
+  while (children.size() > 0) {
+    for (BOOST_AUTO(iter, children.begin()); iter != children.end(); ++iter) {
+      try {
+        err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
+        /* use MPI_Iprobe and not iter->iprobe, as latter can't distinguish
+         * between error and no message */
+        if (err != MPI_SUCCESS) {
+          boost::throw_exception(boost::mpi::exception("MPI_Iprobe", err));
+        }
         if (flag) {
           if (status.MPI_TAG == MPI_TAG_DISCONNECT) {
             disconnect(*iter, status);
@@ -101,52 +119,48 @@ void bi::Server::serve() {
           } else {
             handle(*iter, status);
           }
-        } else if (err == MPI_ERR_COMM) {
-          abort (*iter);
-          network.removeChild(*iter);
-        } else {
-          BI_ASSERT(err == MPI_SUCCESS);
         }
+      } catch (boost::mpi::exception e) {
+        network.removeChild(*iter);
       }
     }
+    children = network.getChildren();
   }
 }
 
-void bi::Server::join(MPI_Comm comm) {
+void bi::Server::join(boost::mpi::communicator child) {
   for (BOOST_AUTO(iter, handlers.begin()); iter != handlers.end(); ++iter) {
     BOOST_AUTO(handler, *iter);
-    handler->join(comm);
+    handler->join(child);
   }
 }
 
-void bi::Server::disconnect(MPI_Comm comm, MPI_Status status) {
-  int err = MPI_Recv(NULL, 0, MPI_INT, status.MPI_SOURCE, status.MPI_TAG,
-      comm, NULL);
-  if (err != MPI_SUCCESS) {
-    abort(comm);
-  } else {
-    err = MPI_Comm_disconnect(&comm);
+void bi::Server::disconnect(boost::mpi::communicator child,
+    boost::mpi::status status) {
+  try {
+    child.recv(status.source(), status.tag());
+    MPI_Comm comm(child);
+    int err = MPI_Comm_disconnect(&comm);
     if (err != MPI_SUCCESS) {
-      abort(comm);
+      boost::throw_exception(
+          boost::mpi::exception("MPI_Comm_disconnect", err));
     }
+  } catch (boost::mpi::exception e) {
+    //
   }
 }
 
-void bi::Server::abort(MPI_Comm comm) {
-  int err = MPI_Abort(comm, err);
-  BI_ASSERT(err == MPI_SUCCESS);
-}
-
-void bi::Server::handle(MPI_Comm comm, MPI_Status status) {
-  const unsigned tag = status.MPI_TAG;
+void bi::Server::handle(boost::mpi::communicator child,
+    boost::mpi::status status) {
+  const unsigned tag = status.tag();
   for (BOOST_AUTO(iter, handlers.begin()); iter != handlers.end(); ++iter) {
     BOOST_AUTO(handler, *iter);
     if (handler->canHandle(tag)) {
-      handler->handle(comm, status);
+      handler->handle(child, status);
       return;
     }
   }
 
-  /* client is misbehaving */
-  abort(comm);
+  /* child is misbehaving */
+  network.removeChild(child);
 }

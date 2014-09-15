@@ -9,44 +9,50 @@
 
 #include "../misc/assert.hpp"
 
-bi::TreeNetworkNode::TreeNetworkNode() : parent(MPI_COMM_NULL) {
+bi::TreeNetworkNode::TreeNetworkNode() :
+    parent(MPI_COMM_NULL, boost::mpi::comm_attach) {
   //
 }
 
-void bi::TreeNetworkNode::setParent(const MPI_Comm& comm) {
+inline boost::mpi::communicator bi::TreeNetworkNode::getParent() const {
+  boost::mpi::communicator tmp;
+
+#pragma omp critical(TreeNetworkNode)
+  tmp = parent;
+
+  return tmp;
+}
+
+void bi::TreeNetworkNode::setParent(boost::mpi::communicator comm) {
+#pragma omp critical(TreeNetworkNode)
   parent = comm;
 }
 
-int bi::TreeNetworkNode::addChild(const MPI_Comm& comm) {
+inline std::set<boost::mpi::communicator> bi::TreeNetworkNode::getChildren() {
+  std::set < boost::mpi::communicator > tmp;
+
+#pragma omp critical(TreeNetworkNode)
+  tmp = children;
+
+  return tmp;
+}
+
+int bi::TreeNetworkNode::addChild(boost::mpi::communicator comm) {
   int n = 0;
 #pragma omp critical(TreeNetworkNode)
   {
-    n = comms.size() + newcomms.size();
-    newcomms.insert(comm);
+    n = children.size();
+    children.insert(comm);
   }
   return n;
 }
 
-void bi::TreeNetworkNode::removeChild(const MPI_Comm& comm) {
-#pragma omp critical(TreeNetworkNode)
-  {
-    oldcomms.insert(comm);
-  }
-}
-
-int bi::TreeNetworkNode::updateChildren() {
+int bi::TreeNetworkNode::removeChild(boost::mpi::communicator comm) {
   int n = 0;
 #pragma omp critical(TreeNetworkNode)
   {
-    comms.insert(newcomms.begin(), newcomms.end());
-    newcomms.clear();
-    comms.erase(oldcomms.begin(), oldcomms.end());
-    oldcomms.clear();
-    n = comms.size();
-
-    /* post-conditions */
-    BI_ASSERT(newcomms.size() == 0);
-    BI_ASSERT(oldcomms.size() == 0);
+    children.erase(comm);
+    n = children.size();
   }
   return n;
 }

@@ -11,6 +11,8 @@
 #include "TreeNetworkNode.hpp"
 #include "mpi.hpp"
 
+#include "boost/mpi/communicator.hpp"
+
 namespace bi {
 /**
  * Client.
@@ -32,7 +34,7 @@ public:
    * @param port_name Port name of server, as returned by MPI_Open_port() on
    * that server.
    */
-  void connect(const char* port_name);
+  void connect(const char* port_name) throw (boost::mpi::exception);
 
   /**
    * Disconnect from server.

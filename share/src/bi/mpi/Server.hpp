@@ -12,6 +12,8 @@
 #include "Handler.hpp"
 #include "mpi.hpp"
 
+#include "boost/mpi/communicator.hpp"
+
 #include <list>
 
 namespace bi {
@@ -46,12 +48,12 @@ public:
   /**
    * Open port.
    */
-  void open();
+  void open() throw (boost::mpi::exception);
 
   /**
    * Close port.
    */
-  void close();
+  void close() throw (boost::mpi::exception);
 
   /**
    * Run the server.
@@ -79,38 +81,27 @@ private:
   /**
    * Join child.
    *
-   * @param comm Intercommunicator with the child.
+   * @param comm The child.
    */
-  void join(MPI_Comm comm);
+  void join(const boost::mpi::communicator child);
 
   /**
    * Disconnect child.
    *
-   * @param comm Intercommunicator with the child.
+   * @param child The child.
    * @param status Status from probe that led to disconnect.
    *
    * Used for a bilateral disconnect.
    */
-  void disconnect(MPI_Comm comm, MPI_Status status);
-
-  /**
-   * Forcefully disconnect child.
-   *
-   * @param comm Intercommunicator with the child.
-   *
-   * Used for a unilateral disconnect. Typically called if the connection
-   * with the child fails, or if communication does not adhere to
-   * protocol.
-   */
-  void abort(MPI_Comm comm);
+  void disconnect(boost::mpi::communicator child, boost::mpi::status status);
 
   /**
    * Handle child message.
    *
-   * @param comm Intercommunicator with the child.
+   * @param child The child.
    * @param status Status from probe that led to disconnect.
    */
-  void handle(MPI_Comm comm, MPI_Status status);
+  void handle(boost::mpi::communicator child, boost::mpi::status status);
 
   /**
    * Port as written by MPI_Open_port.

@@ -14,29 +14,41 @@ bi::Client::Client(TreeNetworkNode& network) :
   //
 }
 
-void bi::Client::connect(const char* port_name) {
-  int err;
+void bi::Client::connect(const char* port_name) throw (boost::mpi::exception) {
   MPI_Comm comm;
-  err = MPI_Comm_connect(const_cast<char*>(port_name), MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
+  int err = MPI_Comm_connect(const_cast<char*>(port_name), MPI_INFO_NULL, 0,
+      MPI_COMM_SELF, &comm);
   // ^ MPICH docs suggest first arg should be const char*, but OpenMP, at
   //   least version 1.5.4, uses char* only.
-  BI_ERROR_MSG(err == MPI_SUCCESS, "Could not connect to server");
-  network.setParent(comm);
+  if (err != MPI_SUCCESS) {
+    boost::throw_exception(boost::mpi::exception("MPI_Comm_connect", err));
+  }
+
+  err = MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
+  if (err != MPI_SUCCESS) {
+    boost::throw_exception(
+        boost::mpi::exception("MPI_Comm_set_errhandler", err));
+  }
+
+  boost::mpi::communicator parent(comm, boost::mpi::comm_attach);
+  network.setParent(parent);
 }
 
 void bi::Client::disconnect() {
-  int err;
-  MPI_Request request;
-  MPI_Comm comm = network.getParent();
+  try {
+    boost::mpi::communicator parent = network.getParent();
+    parent.isend(0, MPI_TAG_DISCONNECT);
 
-  err = MPI_Isend(NULL, 0, MPI_INT, 0, MPI_TAG_DISCONNECT, comm, &request);
-  if (err != MPI_SUCCESS) {
-    err = MPI_Abort(comm, err);
-  } else {
-    err = MPI_Comm_disconnect(&comm);
+    MPI_Comm comm(parent);
+    int err = MPI_Comm_disconnect(&comm);
     if (err != MPI_SUCCESS) {
-      err = MPI_Abort(comm, err);
+      boost::throw_exception(
+          boost::mpi::exception("MPI_Comm_disconnect", err));
     }
-    network.setParent(MPI_COMM_NULL);
+  } catch (boost::mpi::exception e) {
+    //
   }
+
+  boost::mpi::communicator parent(MPI_COMM_NULL, boost::mpi::comm_attach);
+  network.setParent(parent);
 }

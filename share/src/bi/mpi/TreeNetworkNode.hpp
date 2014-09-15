@@ -8,7 +8,7 @@
 #ifndef BI_MPI_TREENETWORKNODE_HPP
 #define BI_MPI_TREENETWORKNODE_HPP
 
-#include "mpi.hpp"
+#include "boost/mpi/communicator.hpp"
 
 #include <set>
 
@@ -28,17 +28,17 @@ public:
   /**
    * Get parent.
    */
-  const MPI_Comm& getParent() const;
+  boost::mpi::communicator getParent() const;
 
   /**
    * Set parent.
    */
-  void setParent(const MPI_Comm& comm);
+  void setParent(boost::mpi::communicator comm);
 
   /**
    * Get children.
    */
-  std::set<MPI_Comm>& getChildren();
+  std::set<boost::mpi::communicator> getChildren();
 
   /**
    * Add child.
@@ -46,61 +46,29 @@ public:
    * @param comm Communicator associated with the child.
    *
    * @return Number of children before adding this new child.
-   *
-   * Queue the child to be added on the next call to updateChildren().
-   * Thread safe.
    */
-  int addChild(const MPI_Comm& comm);
+  int addChild(boost::mpi::communicator comm);
 
   /**
    * Remove child.
    *
    * @param comm Communicator associated with the child.
    *
-   * Queue the child to be removed on the next call to updateChildren().
-   * Thread safe.
+   * @return Number of children after removing this child.
    */
-  void removeChild(const MPI_Comm& comm);
-
-  /**
-   * Update children list.
-   *
-   * @return Number of children after the update.
-   *
-   * Update the children list according to prior calls made to addChild() and
-   * removeChild(). Thread safe.
-   */
-  int updateChildren();
+  int removeChild(boost::mpi::communicator comm);
 
 private:
   /**
    * Communicator to parent.
    */
-  MPI_Comm parent;
+  boost::mpi::communicator parent;
 
   /**
    * Intercommunicators to children.
    */
-  std::set<MPI_Comm> comms;
-
-  /**
-   * New intercommunicators ready to be added.
-   */
-  std::set<MPI_Comm> newcomms;
-
-  /**
-   * Old intercommunicators ready to be aborted.
-   */
-  std::set<MPI_Comm> oldcomms;
+  std::set<boost::mpi::communicator> children;
 };
-}
-
-inline const MPI_Comm& bi::TreeNetworkNode::getParent() const {
-  return parent;
-}
-
-inline std::set<MPI_Comm>& bi::TreeNetworkNode::getChildren() {
-  return comms;
 }
 
 #endif
