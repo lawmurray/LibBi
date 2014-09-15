@@ -14,6 +14,12 @@
 
 #include <string>
 
+#ifdef ENABLE_SINGLE
+#define MPI_REAL MPI_FLOAT
+#else
+#define MPI_REAL MPI_DOUBLE
+#endif
+
 namespace bi {
 /**
  * Append rank to file name.
