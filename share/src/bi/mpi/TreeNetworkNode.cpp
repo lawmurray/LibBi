@@ -7,15 +7,17 @@
  */
 #include "TreeNetworkNode.hpp"
 
+#include "../misc/assert.hpp"
+
 bi::TreeNetworkNode::TreeNetworkNode() : parent(MPI_COMM_NULL) {
   //
 }
 
-void bi::TreeNetworkNode::setParent(MPI_Comm& comm) {
+void bi::TreeNetworkNode::setParent(const MPI_Comm& comm) {
   parent = comm;
 }
 
-int bi::TreeNetworkNode::addChild(MPI_Comm& comm) {
+int bi::TreeNetworkNode::addChild(const MPI_Comm& comm) {
   int n = 0;
 #pragma omp critical(TreeNetworkNode)
   {
@@ -25,7 +27,7 @@ int bi::TreeNetworkNode::addChild(MPI_Comm& comm) {
   return n;
 }
 
-void bi::TreeNetworkNode::removeChild(MPI_Comm& comm) {
+void bi::TreeNetworkNode::removeChild(const MPI_Comm& comm) {
 #pragma omp critical(TreeNetworkNode)
   {
     oldcomms.insert(comm);

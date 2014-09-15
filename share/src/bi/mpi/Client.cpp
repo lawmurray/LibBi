@@ -7,13 +7,19 @@
  */
 #include "Client.hpp"
 
-bi::Client::Client(TreeNetworkNode& network) : network(network) {
+#include "../misc/assert.hpp"
+
+bi::Client::Client(TreeNetworkNode& network) :
+    network(network) {
   //
 }
 
 void bi::Client::connect(const char* port_name) {
+  int err;
   MPI_Comm comm;
-  err = MPI_Comm_connect(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
+  err = MPI_Comm_connect(const_cast<char*>(port_name), MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
+  // ^ MPICH docs suggest first arg should be const char*, but OpenMP, at
+  //   least version 1.5.4, uses char* only.
   BI_ERROR_MSG(err == MPI_SUCCESS, "Could not connect to server");
   network.setParent(comm);
 }

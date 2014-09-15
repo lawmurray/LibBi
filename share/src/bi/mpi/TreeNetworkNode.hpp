@@ -33,12 +33,12 @@ public:
   /**
    * Set parent.
    */
-  void setParent(MPI_Comm& comm);
+  void setParent(const MPI_Comm& comm);
 
   /**
    * Get children.
    */
-  const std::set<MPI_Comm>& getChildren() const;
+  std::set<MPI_Comm>& getChildren();
 
   /**
    * Add child.
@@ -50,7 +50,7 @@ public:
    * Queue the child to be added on the next call to updateChildren().
    * Thread safe.
    */
-  int addChild(MPI_Comm& comm);
+  int addChild(const MPI_Comm& comm);
 
   /**
    * Remove child.
@@ -60,7 +60,7 @@ public:
    * Queue the child to be removed on the next call to updateChildren().
    * Thread safe.
    */
-  void removeChild(MPI_Comm& comm);
+  void removeChild(const MPI_Comm& comm);
 
   /**
    * Update children list.
@@ -99,7 +99,7 @@ inline const MPI_Comm& bi::TreeNetworkNode::getParent() const {
   return parent;
 }
 
-inline const std::set<MPI_Comm>& bi::TreeNetworkNode::getChildren() const {
+inline std::set<MPI_Comm>& bi::TreeNetworkNode::getChildren() {
   return comms;
 }
 

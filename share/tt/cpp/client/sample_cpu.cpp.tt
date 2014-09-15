@@ -76,8 +76,15 @@
 
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <string>
 #include <getopt.h>
+
+#ifdef ENABLE_MPI
+#include "bi/mpi/TreeNetworkNode.hpp"
+#include "bi/mpi/Server.hpp"
+#include "bi/mpi/Client.hpp"
+#endif
 
 #ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
@@ -108,6 +115,29 @@ int main(int argc, char* argv[]) {
     
   /* bi init */
   bi_init(NTHREADS);
+  
+  /* client/server */
+  #ifdef ENABLE_MPI
+  TreeNetworkNode network;
+  Client client(network);
+  Server server(network);
+  std::string port_name;
+  
+  if (ROLE.compare("server") == 0) {
+  	server.open();
+  	std::ofstream bufServer(SERVER_FILE.c_str());
+  	bufServer << server.getPortName();
+  	bufServer.close();
+  	server.run();
+  	server.close();
+  	exit(0);
+  } else {
+    std::ifstream bufServer(SERVER_FILE.c_str());
+    bufServer >> port_name;
+    bufServer.close();
+    //client.connect(port_name.c_str());
+  }
+  #endif
 
   /* random number generator */
   Random rng(SEED);
@@ -331,4 +361,8 @@ int main(int argc, char* argv[]) {
   delete sampler;
   delete filter;
   delete sim;
+  
+  #ifdef ENABLE_MPI
+  client.disconnect();
+  #endif
 }

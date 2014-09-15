@@ -58,9 +58,6 @@ libbi_a_SOURCES = \
   src/bi/host/random/RandomHost.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
-  src/bi/mpi/Client.cpp \
-  src/bi/mpi/DistributedClientServer.cpp \
-  src/bi/mpi/TreeNetworkNode.cpp \
   src/bi/random/Random.cpp \
   src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \
@@ -82,9 +79,13 @@ libbi_a_SOURCES += \
   src/bi/cuda/random/RandomKernel.cu
 endif
 
-#if ENABLE_MPI
-#libbi_a_SOURCES += 
-#endif
+if ENABLE_MPI
+libbi_a_SOURCES += \
+  src/bi/mpi/Client.cpp \
+  src/bi/mpi/Handler.cpp \
+  src/bi/mpi/Server.cpp \
+  src/bi/mpi/TreeNetworkNode.cpp
+endif
 
 # programs
 bin_PROGRAMS =[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]

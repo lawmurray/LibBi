@@ -8,6 +8,10 @@
 #ifndef BI_MPI_MPI_HPP
 #define BI_MPI_MPI_HPP
 
+#ifdef ENABLE_MPI
+#include <mpi.h>
+#endif
+
 #include <string>
 
 namespace bi {

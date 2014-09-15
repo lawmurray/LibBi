@@ -69,9 +69,9 @@ public:
 
 template<class S>
 bool bi::DistributedStopper<S>::stop(const double maxlw) const {
-  boost::optional<boost::mpi::status> status = comm.iprobe(0, MPI_TAG_STOPPER_STOP);
+//  boost::optional<boost::mpi::status> status = comm.iprobe(0, MPI_TAG_STOPPER_STOP);
   if (status) {
-    comm.recv(status->source(), status->tag());
+//    comm.recv(status->source(), status->tag());
     return true;
   }
   return false;
@@ -82,8 +82,8 @@ void bi::DistributedStopper<S>::add(const double lw, const double maxlw) {
   if (parent == NULL) {
     S::add(lw, maxlw);
   } else {
-    comm.isend(0, MPI_TAG_STOPPER_ADD_WEIGHT, lw);
-    comm.isend(0, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
+//    comm.isend(0, MPI_TAG_STOPPER_ADD_WEIGHT, lw);
+//    comm.isend(0, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
   }
 }
 
@@ -93,8 +93,8 @@ void bi::DistributedStopper<S>::add(const V1 lws, const double maxlw) {
   if (parent == NULL) {
     S::add(lws, maxlw);
   } else {
-    comm.isend(0, MPI_TAG_STOPPER_ADD_WEIGHTS, lws);
-    comm.isend(0, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
+//    comm.isend(0, MPI_TAG_STOPPER_ADD_WEIGHTS, lws);
+//    comm.isend(0, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
   }
 }
 
@@ -121,33 +121,33 @@ void bi::DistributedStopper<S>::join(MPI_Comm& comm) {
 template<class S>
 void bi::DistributedStopper<S>::handle(MPI_Comm& comm,
     MPI_Status& status) {
-  typedef typename host_temp_vector<real>::type vector_type;
-
-  boost::mpi::communicator comm1(comm, boost::mpi::comm_attach);
-  boost::mpi::status status1;
-  double maxlw;
-
-  switch (status.tag) {
-  case MPI_TAG_STOPPER_ADD_WEIGHTS:
-    vector_type lws;
-    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_ADD_WEIGHTS, lws);
-    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
-    add(lws, maxlw);
-    break;
-  case MPI_TAG_STOPPER_ADD_WEIGHT:
-    double lw;
-    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_ADD_WEIGHT, lw);
-    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
-    add(lw, maxlw);
-    break;
-  default:
-    BI_WARN_MSG(false,
-        "Unrecognised or out-of-sequence tag from client: " << status.tag);
-  }
-
-  if (parent == NULL && stop()) {
-    children.ibroadcast();
-  }
+//  typedef typename host_temp_vector<real>::type vector_type;
+//
+//  boost::mpi::communicator comm1(comm, boost::mpi::comm_attach);
+//  boost::mpi::status status1;
+//  double maxlw;
+//
+//  switch (status.tag) {
+//  case MPI_TAG_STOPPER_ADD_WEIGHTS:
+//    vector_type lws;
+//    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_ADD_WEIGHTS, lws);
+//    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
+//    add(lws, maxlw);
+//    break;
+//  case MPI_TAG_STOPPER_ADD_WEIGHT:
+//    double lw;
+//    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_ADD_WEIGHT, lw);
+//    status1 = comm1.recv(status.source, MPI_TAG_STOPPER_MAX_WEIGHT, maxlw);
+//    add(lw, maxlw);
+//    break;
+//  default:
+//    BI_WARN_MSG(false,
+//        "Unrecognised or out-of-sequence tag from client: " << status.tag);
+//  }
+//
+//  if (parent == NULL && stop()) {
+//    children.ibroadcast();
+//  }
 }
 
 #endif
