@@ -31,9 +31,9 @@ public:
   /**
    * Constructor.
    *
-   * @param network Network node.
+   * @param node Network node.
    */
-  Server(TreeNetworkNode& network);
+  Server(TreeNetworkNode& node);
 
   /**
    * Get port name for child connections.
@@ -111,7 +111,7 @@ private:
   /**
    * Network node.
    */
-  TreeNetworkNode& network;
+  TreeNetworkNode& node;
 
   /*
    * Handlers.

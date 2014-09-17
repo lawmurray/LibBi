@@ -10,64 +10,29 @@
 
 #include "boost/mpi/communicator.hpp"
 
-#include <set>
+#include <forward_list>
 
 namespace bi {
 /**
- * TreeNetworkNode.
+ * Node of a tree-structure network.
  *
  * @ingroup server
  */
-class TreeNetworkNode {
-public:
+struct TreeNetworkNode {
   /**
    * Constructor.
    */
   TreeNetworkNode();
 
   /**
-   * Get parent.
-   */
-  boost::mpi::communicator getParent() const;
-
-  /**
-   * Set parent.
-   */
-  void setParent(boost::mpi::communicator comm);
-
-  /**
-   * Get children.
-   */
-  std::set<boost::mpi::communicator> getChildren();
-
-  /**
-   * Add child.
-   *
-   * @param comm Communicator associated with the child.
-   *
-   * @return Number of children before adding this new child.
-   */
-  int addChild(boost::mpi::communicator comm);
-
-  /**
-   * Remove child.
-   *
-   * @param comm Communicator associated with the child.
-   *
-   * @return Number of children after removing this child.
-   */
-  int removeChild(boost::mpi::communicator comm);
-
-private:
-  /**
-   * Communicator to parent.
+   * Intercommunicator to parent.
    */
   boost::mpi::communicator parent;
 
   /**
    * Intercommunicators to children.
    */
-  std::set<boost::mpi::communicator> children;
+  std::forward_list<boost::mpi::communicator> children;
 };
 }
 

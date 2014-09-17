@@ -20,9 +20,12 @@ namespace bi {
  * @tparam S Stopper type.
  */
 template<class S>
-class DistributedStopper: public S, public Handler {
+class DistributedStopper: public Handler {
 public:
-  BI_PASSTHROUGH_CONSTRUCTORS(DistributedStopper, S)
+  /**
+   * Constructor.
+   */
+  DistributedStopper(S& base);
 
   /**
    * Destructor.
@@ -56,57 +59,84 @@ public:
   virtual bool done() const;
   virtual bool canHandle(const int tag) const;
   virtual void join(boost::mpi::communicator child);
-  virtual void handle(boost::mpi::communicator child, boost::mpi::status status);
+  virtual void handle(boost::mpi::communicator child,
+      boost::mpi::status status);
 
 private:
   /**
-   * Send current buffer up to parent.
+   * Send buffer up to parent.
    */
   void sendUp();
+
+  /**
+   * Send stop message down to children.
+   */
+  void sendDown();
+
+  /**
+   * Finish sends.
+   */
+  void finish();
+
+  /**
+   * Base (local) stopper.
+   */
+  S& base;
 
   /**
    * Request handle for sends to parent.
    */
   boost::mpi::request requestUp;
+
+  /**
+   * Stop?
+   */
+  bool stop;
 };
 }
 
 template<class S>
-bi::DistributedStopper<S>::~DistributedStopper() {
-  /* finish outstanding send */
-  request.wait();
+bi::DistributedStopper<S>::DistributedStopper(S& base) :
+    base(base), stop(false) {
+  //
+}
 
-  /* send any remaining */
-  sendUp();
-  request.wait();
+template<class S>
+bi::DistributedStopper<S>::~DistributedStopper() {
+  finish();
 }
 
 template<class S>
 bool bi::DistributedStopper<S>::stop(const double maxlw) const {
-  boost::optional < boost::mpi::status > status = network.getParent().iprobe(
-      0, MPI_TAG_STOPPER_STOP);
-  if (status) {
-    comm.recv(status->source(), status->tag());
+  if (!stop) {
+    boost::optional < boost::mpi::status > status = node.parent.iprobe(0,
+        MPI_TAG_STOPPER_STOP);
+    if (status) {
+      comm.recv(status->source(), status->tag());
+      stop = true;
+    }
   }
-  return status;
+  return stop;
 }
 
 template<class S>
 void bi::DistributedStopper<S>::add(const double lw, const double maxlw) {
-  S::add(lw, maxlw);
+  base.add(lw, maxlw);
   sendUp();
 }
 
 template<class S>
 template<class V1>
 void bi::DistributedStopper<S>::add(const V1 lws, const double maxlw) {
-  S::add(lws, maxlw);
+  base.add(lws, maxlw);
   sendUp();
 }
 
 template<class S>
 void bi::DistributedStopper<S>::reset() {
-  // should really be synchronous...
+  finish();
+  base.reset();
+  stop = false;
 }
 
 template<class S>
@@ -125,56 +155,68 @@ void bi::DistributedStopper<S>::join(boost::mpi::communicator child) {
 }
 
 template<class S>
-void bi::DistributedStopper<S>::handle(boost::mpi::communicator child, boost::mpi::status status) {
+void bi::DistributedStopper<S>::handle(boost::mpi::communicator child,
+    boost::mpi::status status) {
   /* pre-condition */
   BI_ASSERT(canHandle(status.tag()));
 
   typedef typename host_temp_vector<real>::type vector_type;
 
-  double maxlw = 0.0;
+  double maxlw = std::numeric_limits < real > ::infinity();
 
-  switch (status.tag) {
+  switch (status.tag()) {
   case MPI_TAG_STOPPER_ADD_WEIGHTS:
-    vector_type lws;
-    comm1.recv(status.source(), MPI_TAG_STOPPER_ADD_WEIGHTS, lws);
-    add(lws, maxlw);
+    boost::mpi::optional<int> n = status.template count<real>();
+    if (n) {
+      vector_type lws(*n);
+      child.recv(status.source(), status.tag(), lws.buf(), lws.size());
+      add(lws, maxlw);
+    }
     break;
   case MPI_TAG_STOPPER_ADD_WEIGHT:
-    double lw;
-    comm1.recv(status.source(), MPI_TAG_STOPPER_ADD_WEIGHT, lw);
+    real lw;
+    child.recv(status.source(), status.tag(), lw);
     add(lw, maxlw);
     break;
   default:
     BI_WARN_MSG(false,
-        "Unrecognised or out-of-sequence tag from client: " << status.tag);
+        "Misbehaving child, out-of-sequence tag " << status.tag());
   }
 
-  if (network.hasParent() && stop()) {
-    sendDown();
-  }
+  sendUp();
 }
 
 template<class S>
 void bi::DistributedStopper<S>::sendUp() {
-  bool flag = true;
-  if (full()) {
-    requestUp.wait();
-  } else {
-    flag = requestUp.test();
-  }
-  if (flag) {
-    requestUp = network.getParent().isend(X, 0, MPI_TAG_STOPPER_ADD_WEIGHT);
+  if (node.parent != MPI_COMM_NULL) {
+    bool flag = true;
+    if (full()) {
+      requestUp.wait();
+    } else {
+      flag = requestUp.test();
+    }
+    if (flag) {
+      requestUp = node.parent.isend(X, 0, MPI_TAG_STOPPER_ADD_WEIGHT);
+    }
   }
 }
 
 template<class S>
 void bi::DistributedStopper<S>::sendDown() {
-  BOOST_AUTO(children, network.getChildren());
-  for (BOOST_AUTO(iter, children.begin()); iter != children.end(); ++iter) {
+  BOOST_AUTO(iter, node.children.begin());
+  for (; iter != node.children.end(); ++iter) {
     iter->isend(0, MPI_TAG_STOPPER_STOP);
   }
-  // shouldn't be any buffers to keep etc in this case, so can proceed,
-  // ignoring returned request objects
+}
+
+template<class S>
+void bi::DistributedStopper<S>::finish() {
+  /* finish outstanding send */
+  requestUp.wait();
+
+  /* send any remaining */
+  sendUp();
+  requestUp.wait();
 }
 
 #endif

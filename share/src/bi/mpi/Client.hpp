@@ -24,9 +24,9 @@ public:
   /**
    * Constructor.
    *
-   * @param network Network node.
+   * @param node Network node.
    */
-  Client(TreeNetworkNode& network);
+  Client(TreeNetworkNode& node);
 
   /**
    * Connect to server.
@@ -45,7 +45,7 @@ private:
   /**
    * Network node.
    */
-  TreeNetworkNode& network;
+  TreeNetworkNode& node;
 };
 }
 

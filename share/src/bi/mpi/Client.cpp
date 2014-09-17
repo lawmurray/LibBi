@@ -9,8 +9,8 @@
 
 #include "../misc/assert.hpp"
 
-bi::Client::Client(TreeNetworkNode& network) :
-    network(network) {
+bi::Client::Client(TreeNetworkNode& node) :
+    node(node) {
   //
 }
 
@@ -31,15 +31,13 @@ void bi::Client::connect(const char* port_name) throw (boost::mpi::exception) {
   }
 
   boost::mpi::communicator parent(comm, boost::mpi::comm_attach);
-  network.setParent(parent);
+  node.parent = parent;
 }
 
 void bi::Client::disconnect() {
   try {
-    boost::mpi::communicator parent = network.getParent();
-    parent.isend(0, MPI_TAG_DISCONNECT);
-
-    MPI_Comm comm(parent);
+    node.parent.isend(0, MPI_TAG_DISCONNECT);
+    MPI_Comm comm(node.parent);
     int err = MPI_Comm_disconnect(&comm);
     if (err != MPI_SUCCESS) {
       boost::throw_exception(
@@ -50,5 +48,5 @@ void bi::Client::disconnect() {
   }
 
   boost::mpi::communicator parent(MPI_COMM_NULL, boost::mpi::comm_attach);
-  network.setParent(parent);
+  node.parent = parent;
 }

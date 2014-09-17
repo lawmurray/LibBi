@@ -11,8 +11,8 @@
 
 #include "boost/typeof/typeof.hpp"
 
-bi::Server::Server(TreeNetworkNode& network) :
-    network(network) {
+bi::Server::Server(TreeNetworkNode& node) :
+    node(node) {
   //
 }
 
@@ -85,7 +85,7 @@ void bi::Server::accept() {
 
           boost::mpi::communicator child(comm, boost::mpi::comm_attach);
           join(child);
-          n = network.addChild(child);
+          n = node.children.push_front(child);
           if (n == 0) {
 #pragma omp task
             serve();  // start serving children
@@ -102,9 +102,10 @@ void bi::Server::serve() {
   MPI_Status status;
   int flag, err;
 
-  BOOST_AUTO(children, network.getChildren());
-  while (children.size() > 0) {
-    for (BOOST_AUTO(iter, children.begin()); iter != children.end(); ++iter) {
+  while (!node.children.empty()) {
+    BOOST_AUTO(iter, node.children.begin());
+    BOOST_AUTO(prev, node.childre.before_begin());
+    for (; iter != node.children.end(); prev = iter++) {
       try {
         err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
         /* use MPI_Iprobe and not iter->iprobe, as latter can't distinguish
@@ -115,16 +116,15 @@ void bi::Server::serve() {
         if (flag) {
           if (status.MPI_TAG == MPI_TAG_DISCONNECT) {
             disconnect(*iter, status);
-            network.removeChild(*iter);
+            node.children.erase_after(prev);
           } else {
             handle(*iter, status);
           }
         }
       } catch (boost::mpi::exception e) {
-        network.removeChild(*iter);
+        node.erase_after(prev);
       }
     }
-    children = network.getChildren();
   }
 }
 
@@ -162,5 +162,5 @@ void bi::Server::handle(boost::mpi::communicator child,
   }
 
   /* child is misbehaving */
-  network.removeChild(child);
+  BI_WARN_MSG(false, "child misbehaving");
 }
