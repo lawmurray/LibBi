@@ -99,14 +99,12 @@ void bi::MarginalSISHandler<A,S>::handle(boost::mpi::communicator child,
     if (n) {
       vector_type lws(*n);
       child.recv(status.source(), status.tag(), lws.buf(), lws.size());
-      #pragma omp task
       stopper.add(lws, maxlw);
     }
     break;
   case MPI_TAG_STOPPER_ADD_WEIGHT:
     real lw;
     child.recv(status.source(), status.tag(), lw);
-    #pragma omp task
     stopper.add(lw, maxlw);
     break;
   default:
