@@ -10,6 +10,7 @@
 
 #include "../TreeNetworkNode.hpp"
 #include "../mpi.hpp"
+#include "../cache/Cache2D.hpp"
 
 namespace bi {
 /**
@@ -76,34 +77,19 @@ private:
   TreeNetworkNode& node;
 
   /**
-   * Request handle for sending samples to parent.
+   * Request handle for sends to parent.
    */
-  boost::mpi::request requestSamples;
-
-  /**
-   * Request handle for sending log-weights to parent.
-   */
-  boost::mpi::request requestLogWeights;
-
-  /**
-   * Cache of samples currently being sent.
-   */
-  Cache2D<real> cacheSendSamples;
+  boost::mpi::request request;
 
   /**
    * Cache of log-weights currently being sent.
    */
-  Cache2D<real> cacheSendLogWeights;
-
-  /**
-   * Cache of samples currently being accumulated.
-   */
-  Cache2D<real> cacheAccumSamples;
+  Cache2D<real> cacheSend;
 
   /**
    * Cache of log-weights currently being accumulated.
    */
-  Cache2D<real> cacheAccumLogWeights;
+  Cache2D<real> cacheAccum;
 
   /**
    * Index into send cache for next write.
@@ -136,8 +122,11 @@ bi::DistributedAdapter<A>::~DistributedAdapter() {
 template<class A>
 template<class V1, class V2>
 void bi::DistributedAdapter<A>::add(const V1 x, const V2 lws) {
-  cacheAccumSamples.set(pAccum, x);
-  cacheAccumLogWeights.set(pAccum, lws);
+  /* combine into one vector */
+  typename temp_host_vector<real>::type z(x.size() + lws.size());
+  subrange(z, 0, x.size()) = x;
+  subrange(z, x.size(), lws.size()) = lws;
+  cacheAccum.set(pAccum, z);
   ++pAccum;
   send();
 }
@@ -145,10 +134,8 @@ void bi::DistributedAdapter<A>::add(const V1 x, const V2 lws) {
 template<class A>
 void bi::DistributedAdapter<A>::reset() {
   finish();
-  cacheSendSamples.clear();
-  cacheSendLogWeights.clear();
-  cacheAccumSamples.clear();
-  cacheAccumLogWeights.clear();
+  cacheSend.clear();
+  cacheAccum.clear();
   pSend = 0;
   pAccum = 0;
 }
@@ -158,28 +145,21 @@ void bi::DistributedAdapter<A>::send() {
   if (node.parent != MPI_COMM_NULL) {
     bool flag = true;
     if (pAccum == MAX_ACCUM) {
-      requestSamples.wait();
-      requestLogWeights.wait();
+      request.wait();
     } else {
-      flag = requestSamples.test() && requestLogWeights.test();
+      flag = request.test();
     }
     if (flag) {
-      cacheSendSamples.swap(cacheAccumSamples);
-      cacheSendLogWeights.swap(cacheAccumLogWeights);
-      std::swap(pSend, pAccum);
+      cacheSend.swap(cacheAccum);
+      cacheAccum.clear();
+      pSend = pAccum;
+      pAccum = 0;
 
-      cacheAccumSamples.clear();
-      cacheAccumLogWeights.clear();
+      BOOST_AUTO(Z, cacheSend.get(0, pSend));
+      BI_ASSERT(Z.contiguous());
 
-      BOOST_AUTO(X, cacheSendSamples.get(0, pSend));
-      BOOST_AUTO(Lws, cacheSendLogWeights.get(0, pSend));
-      BI_ASSERT(X.contiguous());
-      BI_ASSERT(Lws.contiguous());
-
-      requestSamples = node.parent.isend(0, MPI_TAG_ADAPTER_SAMPLES, X.buf(),
+      request = node.parent.isend(0, MPI_TAG_ADAPTER_SAMPLES, X.buf(),
           X.size1() * X.size2());
-      requestLogWeights = node.parent.isend(0, MPI_TAG_ADAPTER_LOGWEIGHTS,
-          Lws.buf(), Lws.size1() * Lws.size2());
     }
   }
 }
@@ -187,13 +167,11 @@ void bi::DistributedAdapter<A>::send() {
 template<class A>
 void bi::DistributedAdapter<A>::finish() {
   /* finish outstanding send */
-  requestSamples.wait();
-  requestLogWeights.wait();
+  request.wait();
 
   /* send any remaining */
   send();
-  requestSamples.wait();
-  requestLogWeights.wait();
+  request.wait();
 }
 
 #endif

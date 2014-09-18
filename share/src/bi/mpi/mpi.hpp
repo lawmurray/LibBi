@@ -47,8 +47,8 @@ enum MPITag {
   /*
    * Adapter tags.
    */
+  MPI_TAG_ADAPTER_PROPOSAL,
   MPI_TAG_ADAPTER_SAMPLES,
-  MPI_TAG_ADAPTER_LOGWEIGHTS,
 
   /*
    * Base tag index when redistributing particles.

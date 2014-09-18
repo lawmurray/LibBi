@@ -10,6 +10,7 @@
 
 #include "../TreeNetworkNode.hpp"
 #include "../mpi.hpp"
+#include "../cache/Cache1D.hpp"
 
 namespace bi {
 /**
@@ -174,8 +175,10 @@ void bi::DistributedStopper<S>::send() {
     }
     if (flag) {
       cacheSend.swap(cacheAccum);
-      std::swap(pSend, pAccum);
       cacheAccum.clear();
+      pSend = pAccum;
+      pAccum = 0;
+
       request = node.parent.isend(0, MPI_TAG_STOPPER_LOGWEIGHTS,
           cacheSend.get(0, pSend).buf(), pSend);
     }
