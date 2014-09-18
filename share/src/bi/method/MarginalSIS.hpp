@@ -13,7 +13,7 @@
 
 namespace bi {
 /**
- * Marginal sequential rejection sampling.
+ * Marginal sequential importance sampling.
  *
  * @ingroup method_sampler
  *

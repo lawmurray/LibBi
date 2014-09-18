@@ -8,8 +8,8 @@
 #ifndef BI_MPI_STOPPER_DISTRIBUTEDSTOPPER_HPP
 #define BI_MPI_STOPPER_DISTRIBUTEDSTOPPER_HPP
 
-#include "Handler.hpp"
-#include "mpi.hpp"
+#include "../TreeNetworkNode.hpp"
+#include "../mpi.hpp"
 
 namespace bi {
 /**
@@ -20,17 +20,19 @@ namespace bi {
  * @tparam S Stopper type.
  */
 template<class S>
-class DistributedStopper: public Handler {
+class DistributedStopper {
 public:
   /**
    * Constructor.
+   *
+   * @param node Network node.
    */
-  DistributedStopper(S& base);
+  DistributedStopper(S& base, TreeNetworkNode& node);
 
   /**
    * Destructor.
    */
-  virtual ~DistributedStopper();
+  ~DistributedStopper();
 
   /**
    * @copydoc Stopper::stop()
@@ -53,25 +55,11 @@ public:
    */
   void reset();
 
-  /*
-   * Inherited from Handler.
-   */
-  virtual bool done() const;
-  virtual bool canHandle(const int tag) const;
-  virtual void join(boost::mpi::communicator child);
-  virtual void handle(boost::mpi::communicator child,
-      boost::mpi::status status);
-
 private:
   /**
    * Send buffer up to parent.
    */
-  void sendUp();
-
-  /**
-   * Send stop message down to children.
-   */
-  void sendDown();
+  void send();
 
   /**
    * Finish sends.
@@ -84,9 +72,14 @@ private:
   S& base;
 
   /**
+   * Network node.
+   */
+  TreeNetworkNode& node;
+
+  /**
    * Request handle for sends to parent.
    */
-  boost::mpi::request requestUp;
+  boost::mpi::request request;
 
   /**
    * Stop?
@@ -96,8 +89,8 @@ private:
 }
 
 template<class S>
-bi::DistributedStopper<S>::DistributedStopper(S& base) :
-    base(base), stop(false) {
+bi::DistributedStopper<S>::DistributedStopper(S& base, TreeNetworkNode& node) :
+    base(base), node(node), stop(false) {
   //
 }
 
@@ -122,14 +115,14 @@ bool bi::DistributedStopper<S>::stop(const double maxlw) const {
 template<class S>
 void bi::DistributedStopper<S>::add(const double lw, const double maxlw) {
   base.add(lw, maxlw);
-  sendUp();
+  send();
 }
 
 template<class S>
 template<class V1>
 void bi::DistributedStopper<S>::add(const V1 lws, const double maxlw) {
   base.add(lws, maxlw);
-  sendUp();
+  send();
 }
 
 template<class S>
@@ -145,78 +138,28 @@ bool bi::DistributedStopper<S>::done() const {
 }
 
 template<class S>
-bool bi::DistributedStopper<S>::canHandle(const int tag) const {
-  return MPI_TAG_STOPPER_STOP <= tag && tag <= MPI_TAG_STOPPER_MAX_WEIGHT;
-}
-
-template<class S>
-void bi::DistributedStopper<S>::join(boost::mpi::communicator child) {
-  //
-}
-
-template<class S>
-void bi::DistributedStopper<S>::handle(boost::mpi::communicator child,
-    boost::mpi::status status) {
-  /* pre-condition */
-  BI_ASSERT(canHandle(status.tag()));
-
-  typedef typename host_temp_vector<real>::type vector_type;
-
-  double maxlw = std::numeric_limits < real > ::infinity();
-
-  switch (status.tag()) {
-  case MPI_TAG_STOPPER_ADD_WEIGHTS:
-    boost::mpi::optional<int> n = status.template count<real>();
-    if (n) {
-      vector_type lws(*n);
-      child.recv(status.source(), status.tag(), lws.buf(), lws.size());
-      add(lws, maxlw);
-    }
-    break;
-  case MPI_TAG_STOPPER_ADD_WEIGHT:
-    real lw;
-    child.recv(status.source(), status.tag(), lw);
-    add(lw, maxlw);
-    break;
-  default:
-    BI_WARN_MSG(false,
-        "Misbehaving child, out-of-sequence tag " << status.tag());
-  }
-
-  sendUp();
-}
-
-template<class S>
-void bi::DistributedStopper<S>::sendUp() {
+void bi::DistributedStopper<S>::send() {
   if (node.parent != MPI_COMM_NULL) {
     bool flag = true;
     if (full()) {
-      requestUp.wait();
+      request.wait();
     } else {
-      flag = requestUp.test();
+      flag = request.test();
     }
     if (flag) {
-      requestUp = node.parent.isend(X, 0, MPI_TAG_STOPPER_ADD_WEIGHT);
+      request = node.parent.isend(X, 0, MPI_TAG_STOPPER_ADD_WEIGHT);
     }
-  }
-}
-
-template<class S>
-void bi::DistributedStopper<S>::sendDown() {
-  BOOST_AUTO(iter, node.children.begin());
-  for (; iter != node.children.end(); ++iter) {
-    iter->isend(0, MPI_TAG_STOPPER_STOP);
   }
 }
 
 template<class S>
 void bi::DistributedStopper<S>::finish() {
   /* finish outstanding send */
-  requestUp.wait();
+  request.wait();
 
   /* send any remaining */
-  sendUp();
-  requestUp.wait();
+  send();
+  request.wait();
 }
 
 #endif

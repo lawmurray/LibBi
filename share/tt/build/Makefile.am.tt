@@ -82,7 +82,6 @@ endif
 if ENABLE_MPI
 libbi_a_SOURCES += \
   src/bi/mpi/Client.cpp \
-  src/bi/mpi/Handler.cpp \
   src/bi/mpi/Server.cpp \
   src/bi/mpi/TreeNetworkNode.cpp
 endif
