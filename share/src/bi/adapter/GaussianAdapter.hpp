@@ -30,6 +30,13 @@ public:
    */
   template<class Q1>
   void adapt(Q1& q) const throw (CholeskyException);
+
+  /**
+   * @copydoc Adapter::add()
+   */
+  template<class V1, class V2>
+  void add(const V1 x, const V2 lws);
+
 };
 }
 

@@ -18,6 +18,13 @@ namespace bi {
  * @ingroup stopper
  *
  * @tparam S Stopper type.
+ *
+ * DistributedStopper is designed to work with a client-server architecture.
+ * The generic implementation merely passes weights added in a client process
+ * onto the server process. This generic approach works in all cases. There
+ * is scope to explicitly implement specialisations of the class template for
+ * particular stopper types in order to perform some share of aggregation on
+ * the client to reduce message sizes.
  */
 template<class S>
 class DistributedStopper {
@@ -25,6 +32,7 @@ public:
   /**
    * Constructor.
    *
+   * @param base Base stopper.
    * @param node Network node.
    */
   DistributedStopper(S& base, TreeNetworkNode& node);
@@ -67,11 +75,6 @@ private:
   void finish();
 
   /**
-   * Base (local) stopper.
-   */
-  S& base;
-
-  /**
    * Network node.
    */
   TreeNetworkNode& node;
@@ -82,15 +85,40 @@ private:
   boost::mpi::request request;
 
   /**
+   * Cache of log-weights currently being sent.
+   */
+  Cache1D<real> cacheSend;
+
+  /**
+   * Cache of log-weights currently being accumulated.
+   */
+  Cache1D<real> cacheAccum;
+
+  /**
+   * Index into cacheSend for next write.
+   */
+  int pSend;
+
+  /**
+   * Index into cacheAccum for next write.
+   */
+  int pAccum;
+
+  /**
    * Stop?
    */
   bool stop;
+
+  /**
+   * Maximum number of accumulated weights before blocking.
+   */
+  static const int MAX_ACCUM = 1024;
 };
 }
 
 template<class S>
 bi::DistributedStopper<S>::DistributedStopper(S& base, TreeNetworkNode& node) :
-    base(base), node(node), stop(false) {
+    node(node), pSend(0), pAccum(0), stop(false) {
   //
 }
 
@@ -114,40 +142,42 @@ bool bi::DistributedStopper<S>::stop(const double maxlw) const {
 
 template<class S>
 void bi::DistributedStopper<S>::add(const double lw, const double maxlw) {
-  base.add(lw, maxlw);
+  cacheAccum.set(pAccum++, lw);
   send();
 }
 
 template<class S>
 template<class V1>
 void bi::DistributedStopper<S>::add(const V1 lws, const double maxlw) {
-  base.add(lws, maxlw);
+  cacheAccum.set(pAccum++, lws.size(), lws);
   send();
 }
 
 template<class S>
 void bi::DistributedStopper<S>::reset() {
   finish();
-  base.reset();
+  cacheSend.clear();
+  cacheAccum.clear();
+  pSend = 0;
+  pAccum = 0;
   stop = false;
-}
-
-template<class S>
-bool bi::DistributedStopper<S>::done() const {
-  return stop();
 }
 
 template<class S>
 void bi::DistributedStopper<S>::send() {
   if (node.parent != MPI_COMM_NULL) {
     bool flag = true;
-    if (full()) {
+    if (pAccum == MAX_ACCUM) {
       request.wait();
     } else {
       flag = request.test();
     }
     if (flag) {
-      request = node.parent.isend(X, 0, MPI_TAG_STOPPER_ADD_WEIGHT);
+      cacheSend.swap(cacheAccum);
+      std::swap(pSend, pAccum);
+      cacheAccum.clear();
+      request = node.parent.isend(0, MPI_TAG_STOPPER_LOGWEIGHTS,
+          cacheSend.get(0, pSend).buf(), pSend);
     }
   }
 }

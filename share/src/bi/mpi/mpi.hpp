@@ -42,17 +42,13 @@ enum MPITag {
    * Stopper tags.
    */
   MPI_TAG_STOPPER_STOP,
-  MPI_TAG_STOPPER_ADD_WEIGHT,
-  MPI_TAG_STOPPER_ADD_WEIGHTS,
-  MPI_TAG_STOPPER_MAX_WEIGHT,
+  MPI_TAG_STOPPER_LOGWEIGHTS,
 
   /*
    * Adapter tags.
    */
-  MPI_TAG_ADAPTER_SAMPLE,
-  MPI_TAG_ADAPTER_WEIGHT,
   MPI_TAG_ADAPTER_SAMPLES,
-  MPI_TAG_ADAPTER_WEIGHTS,
+  MPI_TAG_ADAPTER_LOGWEIGHTS,
 
   /*
    * Base tag index when redistributing particles.
