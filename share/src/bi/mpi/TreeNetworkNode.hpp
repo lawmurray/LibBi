@@ -31,8 +31,17 @@ struct TreeNetworkNode {
 
   /**
    * Intercommunicators to children.
+   *
+   * @todo Thread-safe forward list implementation.
    */
   std::forward_list<boost::mpi::communicator> children;
+
+  /**
+   * Outstanding requests.
+   *
+   * @todo Thread-safe forward list implementation.
+   */
+  std::forward_list<boost::mpi::request> requests;
 };
 }
 

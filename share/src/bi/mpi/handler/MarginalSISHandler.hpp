@@ -108,11 +108,7 @@ bool bi::MarginalSISHandler<A,S>::done() const {
 
 template<class A, class S>
 void bi::MarginalSISHandler<A,S>::init(boost::mpi::communicator child) {
-  child.isend(0, MPI_TAG_ADAPTER_PROPOSAL, q);
-  /**
-   * @todo need to wait/test request objects to ensure progress... otherwise
-   * use only MPI data types to "send and forget".
-   */
+  node.requests.push_front(child.isend(0, MPI_TAG_ADAPTER_PROPOSAL, q));
 }
 
 template<class A, class S>
@@ -150,7 +146,7 @@ void bi::MarginalSISHandler<A,S>::handleStopperLogWeights(
   if (stopper.stop()) {
     BOOST_AUTO(iter, node.children.begin());
     for (; iter != node.children.end(); ++iter) {
-      iter->isend(0, MPI_TAG_STOPPER_STOP);
+      node.requests.push_front(iter->isend(0, MPI_TAG_STOPPER_STOP));
     }
   }
 }
@@ -178,14 +174,9 @@ void bi::MarginalSISHandler<A,S>::handleAdapterSamples(
     adapter.adapt(t, q);
     BOOST_AUTO(iter, node.children.begin());
     for (; iter != node.children.end(); ++iter) {
-      iter->isend(0, MPI_TAG_ADAPTER_PROPOSAL, q);
+      node.requests.push_front(iter->isend(0, MPI_TAG_ADAPTER_PROPOSAL, q));
     }
   }
-
-  /**
-   * @todo need to wait/test request objects to ensure progress... otherwise
-   * use only MPI data types to "send and forget".
-   */
 }
 
 #endif

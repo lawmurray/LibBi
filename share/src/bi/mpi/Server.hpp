@@ -175,14 +175,16 @@ void bi::Server::serve(H& handler) {
   MPI_Status status;
   int flag, err;
 
+  /* service messages */
   while (!node.children.empty()) {
-    BOOST_AUTO(iter, node.children.begin());
-    BOOST_AUTO(prev, node.childre.before_begin());
-    for (; iter != node.children.end(); prev = iter++) {
+
+    for (BOOST_AUTO(prev, node.children.before_begin()), BOOST_AUTO(iter,
+        node.children.begin()); iter != node.children.end(); prev = iter++) {
       try {
         err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
         /* use MPI_Iprobe and not iter->iprobe, as latter can't distinguish
          * between error and no message */
+        ///@todo Use MPI_Improbe for multithreaded handler
         if (err != MPI_SUCCESS) {
           boost::throw_exception(boost::mpi::exception("MPI_Iprobe", err));
         }
@@ -195,7 +197,19 @@ void bi::Server::serve(H& handler) {
           }
         }
       } catch (boost::mpi::exception e) {
-        node.erase_after(prev);
+        node.children.erase_after(prev);
+      }
+    }
+
+    /* clean up outstanding requests */
+    for (BOOST_AUTO(prev, node.requests.before_begin()), BOOST_AUTO(iter,
+        node.requests.begin()); iter != node.requests.end(); prev = iter++) {
+      try {
+        if (iter->test()) {
+          node.requests.erase_after(prev);
+        }
+      } catch (boost::mpi::exception e) {
+        node.requests.erase_after(prev);
       }
     }
   }
