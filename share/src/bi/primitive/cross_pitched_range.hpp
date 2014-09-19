@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_CROSS_PITCHED_RANGE_HPP
-#define BI_MISC_CROSS_PITCHED_RANGE_HPP
+#ifndef BI_PRIMITIVE_CROSSPITCHEDRANGE_HPP
+#define BI_PRIMITIVE_CROSSPITCHEDRANGE_HPP
 
 #include "cross_pitched_sequence.hpp"
 

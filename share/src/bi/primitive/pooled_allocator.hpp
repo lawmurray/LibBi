@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_POOLED_ALLOCATOR_HPP
-#define BI_MISC_POOLED_ALLOCATOR_HPP
+#ifndef BI_PRIMITIVE_POOLEDALLOCATOR_HPP
+#define BI_PRIMITIVE_POOLEDALLOCATOR_HPP
 
 #include "../misc/omp.hpp"
 #include "../misc/assert.hpp"

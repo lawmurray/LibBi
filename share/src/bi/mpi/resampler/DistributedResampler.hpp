@@ -30,7 +30,7 @@ public:
    * @param bridgeEssRel Minimum ESS, as proportion of total number of
    * particles, to trigger resampling after bridge weighting.
    */
-  DistributedResampler(R* base, const double essRel = 0.5,
+  DistributedResampler(R& base, const double essRel = 0.5,
       const double bridgeEssRel = 0.5);
 
   /**
@@ -114,7 +114,7 @@ private:
   /**
    * Base resampler.
    */
-  R* base;
+  R& base;
 };
 }
 
@@ -130,7 +130,7 @@ private:
 #include <list>
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(R* base,
+bi::DistributedResampler<R>::DistributedResampler(R& base,
     const double essRel, const double bridgeEssRel) :
     Resampler(essRel, bridgeEssRel), base(base) {
   //
@@ -169,7 +169,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 
   /* compute offspring on root and broadcast */
   if (rank == 0) {
-    base->offspring(rng, vec(Lws), vec(O), P * size);
+    base.offspring(rng, vec(Lws), vec(O), P * size);
   }
   boost::mpi::broadcast(world, O, 0);
 

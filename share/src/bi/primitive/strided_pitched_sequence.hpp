@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_STRIDEDPITCHEDSEQUENCE_HPP
-#define BI_MISC_STRIDEDPITCHEDSEQUENCE_HPP
+#ifndef BI_PRIMITIVE_STRIDEDPITCHEDSEQUENCE_HPP
+#define BI_PRIMITIVE_STRIDEDPITCHEDSEQUENCE_HPP
 
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 
 namespace bi {
 /**
- * @ingroup misc_iterator
+ * @ingroup PRIMITIVE_iterator
  *
  * Converts a linear index into a strided and pitched matrix index.
  */

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_DEVICE_ALLOCATOR_HPP
-#define BI_MISC_DEVICE_ALLOCATOR_HPP
+#ifndef BI_PRIMITIVE_DEVICEALLOCATOR_HPP
+#define BI_PRIMITIVE_DEVICEALLOCATOR_HPP
 
 #include "../cuda/cuda.hpp"
 

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_PINNED_ALLOCATOR_HPP
-#define BI_MISC_PINNED_ALLOCATOR_HPP
+#ifndef BI_PRIMITIVE_PINNEDALLOCATOR_HPP
+#define BI_PRIMITIVE_PINNEDALLOCATOR_HPP
 
 #include "../cuda/cuda.hpp"
 

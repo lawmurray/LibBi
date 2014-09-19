@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_STUTTERED_SEQUENCE_HPP
-#define BI_MISC_STUTTERED_SEQUENCE_HPP
+#ifndef BI_PRIMITIVE_STUTTEREDSEQUENCE_HPP
+#define BI_PRIMITIVE_STUTTEREDSEQUENCE_HPP
 
 #include "../primitive/functor.hpp"
 

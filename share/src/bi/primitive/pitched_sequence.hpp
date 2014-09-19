@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_PITCHED_SEQUENCE_HPP
-#define BI_MISC_PITCHED_SEQUENCE_HPP
+#ifndef BI_PRIMITIVE_PITCHEDSEQUENCE_HPP
+#define BI_PRIMITIVE_PITCHEDSEQUENCE_HPP
 
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 
 namespace bi {
 /**
- * @ingroup misc_iterator
+ * @ingroup PRIMITIVE_iterator
  *
  * Converts a linear index into an \f$\Re^{m \times n}\f$ matrix to a linear
  * index into an \f$\Re^{M \times n}\f$ (\f$M \geq m\f$) pitched matrix, where

@@ -32,9 +32,6 @@
 #include "bi/resampler/KernelResampler.hpp"
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
-#ifdef ENABLE_MPI
-#include "bi/mpi/resampler/DistributedResampler.hpp"
-#endif
 
 #include "bi/adapter/GaussianAdapter.hpp"
 
@@ -72,6 +69,15 @@
 #include "bi/method/FilterFactory.hpp"
 #include "bi/method/SamplerFactory.hpp"
 
+#ifdef ENABLE_MPI
+#include "bi/mpi/resampler/DistributedResampler.hpp"
+#include "bi/mpi/adapter/DistributedAdapter.hpp"
+#include "bi/mpi/stopper/DistributedStopper.hpp"
+#include "bi/mpi/TreeNetworkNode.hpp"
+#include "bi/mpi/Server.hpp"
+#include "bi/mpi/Client.hpp"
+#endif
+
 #include "boost/typeof/typeof.hpp"
 
 #include <iostream>
@@ -79,12 +85,6 @@
 #include <fstream>
 #include <string>
 #include <getopt.h>
-
-#ifdef ENABLE_MPI
-#include "bi/mpi/TreeNetworkNode.hpp"
-#include "bi/mpi/Server.hpp"
-#include "bi/mpi/Client.hpp"
-#endif
 
 #ifdef ENABLE_CUDA
 #define LOCATION ON_DEVICE
@@ -116,27 +116,9 @@ int main(int argc, char* argv[]) {
   /* bi init */
   bi_init(NTHREADS);
   
-  /* client/server */
+  /* MPI */
   #ifdef ENABLE_MPI
-  TreeNetworkNode network;
-  Client client(network);
-  Server server(network);
-  std::string port_name;
-  
-  if (ROLE.compare("server") == 0) {
-  	server.open();
-  	std::ofstream bufServer(SERVER_FILE.c_str());
-  	bufServer << server.getPortName();
-  	bufServer.close();
-  	server.run();
-  	server.close();
-  	exit(0);
-  } else {
-    std::ifstream bufServer(SERVER_FILE.c_str());
-    bufServer >> port_name;
-    bufServer.close();
-    //client.connect(port_name.c_str());
-  }
+  TreeNetworkNode node;
   #endif
 
   /* random number generator */
@@ -169,36 +151,10 @@ int main(int argc, char* argv[]) {
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs, WITH_OUTPUT_AT_OBS);
 
-  /* state */
+  /* numbers of particles */
   NPARTICLES = bi::roundup(NPARTICLES);
   MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
   BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
-  [% IF client.get_named_arg('target') == 'posterior' %]
-    [% IF client.get_named_arg('filter') == 'kalman' %]
-    NPARTICLES = 1;
-    typedef ExtendedKFState<model_type,LOCATION> state_type;
-    typedef KalmanFilterBuffer<ExtendedKFCache<LOCATION> > cache_type;
-    [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
-    typedef AuxiliaryPFState<model_type,LOCATION> state_type;
-    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
-    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-    typedef BootstrapPFState<model_type,LOCATION> state_type;
-    typedef ParticleFilterBuffer<AdaptivePFCache<LOCATION> > cache_type;
-    [% ELSE %]
-    typedef BootstrapPFState<model_type,LOCATION> state_type;
-    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
-    [% END %]
-    [% IF client.get_named_arg('sampler') == 'sir' %]
-    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
-    [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-    typedef GaussianPdf<> proposal_type;
-    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
-    [% ELSE %]
-    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
-    [% END %]
-  [% ELSE %]
-  State<model_type,LOCATION> s(NSAMPLES);
-  [% END %]
 
   /* output */
   [% IF client.get_named_arg('target') == 'posterior' %]
@@ -233,68 +189,131 @@ int main(int argc, char* argv[]) {
     SimulatorBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
   [% END %]
   
+  /* resampler for x-particles */
+  [% IF client.get_named_arg('resampler') == 'metropolis' %]
+  MetropolisResampler filterResam(C, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+  RejectionResampler filterResam;
+  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+  MultinomialResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
+  StratifiedResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  SystematicResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  
+  /* stopper for x-particles */
+  [% IF client.get_named_arg('stopper') == 'deterministic' %]
+  Stopper filterStopper(NPARTICLES, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+  SumOfWeightsStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+  MinimumESSStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+  StdDevStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'var' %]
+  VarStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% END %]
+ 
+  /* resampler for theta-particles */
+  [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
+  MetropolisResampler sampleResamBase(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
+  RejectionResampler sampleResamBase;
+  [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
+  MultinomialResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
+  StratifiedResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  SystematicResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedResampler<BOOST_TYPEOF(sampleResamBase)> sampleResam(sampleResamBase, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  BOOST_AUTO(sampleResam&, sampleResamBase);
+  [% END %]
+  
+  /* stopper for theta-particles */
+  [% IF client.get_named_arg('sample-stopper') == 'deterministic' %]
+  Stopper sampleStopperBase(NPARTICLES, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('sample-stopper') == 'sumofweights' %]
+  SumOfWeightsStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('sample-stopper') == 'miness' %]
+  MinimumESSStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('sample-stopper') == 'stddev' %]
+  StdDevStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% ELSIF client.get_named_arg('sample-stopper') == 'var' %]
+  VarStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  [% END %]
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedStopper<BOOST_TYPEOF(sampleStopperBase)> sampleStopper(sampleStopperBase, node);
+  [% ELSE %]
+  BOOST_AUTO(sampleStopper&, sampleStopperBase);
+  [% END %]
+  
+  /* adapter for theta-particles */ 
+  GaussianAdapter<model_type,LOCATION> sampleAdapterBase;
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);
+  [% ELSE %]
+  BOOST_AUTO(sampleAdapter&, sampleAdapterBase);
+  [% END %]
+  
+  /* client/server setup */
+  #ifdef ENABLE_MPI
+  Client client(node);
+  Server server(node);
+  MarginalSISHandler<model_type,BOOST_TYPEOF(sampleAdapter),BOOST_TYPEOF(sampleStopper)> handler(m, sched.numObs(), adapter, stopper, node);
+  std::string port_name;
+  
+  if (ROLE.compare("server") == 0) {
+  	server.open();
+  	std::ofstream bufServer(SERVER_FILE.c_str());
+  	bufServer << server.getPortName();
+  	bufServer.close();
+  	server.run(handler);
+  	server.close();
+  	exit(0);
+  } else {
+    std::ifstream bufServer(SERVER_FILE.c_str());
+    bufServer >> port_name;
+    bufServer.close();
+    //client.connect(port_name.c_str());
+  }
+  #endif
+  
+  /* state */
+  [% IF client.get_named_arg('target') == 'posterior' %]
+    [% IF client.get_named_arg('filter') == 'kalman' %]
+    NPARTICLES = 1;
+    typedef ExtendedKFState<model_type,LOCATION> state_type;
+    typedef KalmanFilterBuffer<ExtendedKFCache<LOCATION> > cache_type;
+    [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
+    typedef AuxiliaryPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
+    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+    typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<AdaptivePFCache<LOCATION> > cache_type;
+    [% ELSE %]
+    typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
+    [% END %]
+    [% IF client.get_named_arg('sampler') == 'sir' %]
+    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
+    [% ELSIF client.get_named_arg('sampler') == 'sis' %]
+    typedef GaussianPdf<> proposal_type;
+    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
+    [% ELSE %]
+    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
+    [% END %]
+  [% ELSE %]
+  State<model_type,LOCATION> s(NSAMPLES);
+  [% END %]
+
   /* simulator */
   BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
   BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
-
-  /* resampler for x-particles */
-  [% IF client.get_named_arg('resampler') == 'metropolis' %]
-  MetropolisResampler filterBase(C, ESS_REL, BRIDGE_ESS_REL);
-  [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-  RejectionResampler filterBase;
-  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-  [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-  [% ELSE %]
-  SystematicResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
-  [% END %]
-  [% IF client.get_named_arg('with-kde') %]
-  real h;
-  if (B_ABS > 0.0) {
-    h = B_ABS;
-  } else {
-    h = B_REL*hopt(m.getDynSize(), NPARTICLES);
-  }
-  KernelResampler<BOOST_TYPEOF(filterBase)> filterResam(&filterBase, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
-  [% ELSE %]
-  BOOST_AUTO(filterResam, filterBase);
-  [% END %]
-  
-  /* resampler for theta-particles */
-  [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
-  MetropolisResampler base(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
-  [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
-  RejectionResampler base;
-  [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
-  MultinomialResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
-  [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
-  StratifiedResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
-  [% ELSE %]
-  SystematicResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  DistributedResampler<BOOST_TYPEOF(base)> resam(&base, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
-  [% ELSE %]
-  BOOST_AUTO(resam, base);
-  [% END %]
-  
-  /* adapter */
-  GaussianAdapter<model_type,LOCATION> adapter;
-  
-  /* stopper */
-  [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  Stopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-  SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-  MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-  StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'var' %]
-  VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
-  [% END %]
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]

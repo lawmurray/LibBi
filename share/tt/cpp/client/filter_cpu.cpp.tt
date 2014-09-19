@@ -121,8 +121,8 @@ int main(int argc, char* argv[]) {
 
   /* state */
   NPARTICLES = bi::roundup(NPARTICLES);
-  MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
-  BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
+  STOPPER_MAX = bi::roundup(STOPPER_MAX);
+  STOPPER_BLOCK = bi::roundup(STOPPER_BLOCK);
   [% IF client.get_named_arg('filter') == 'kalman' %]
   NPARTICLES = 1;
   ExtendedKFState<model_type,LOCATION> s;
@@ -189,15 +189,15 @@ int main(int argc, char* argv[]) {
   
   /* stopper */
   [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  Stopper stopper(NPARTICLES, MAX_PARTICLES, sched.numObs());
+  Stopper stopper(NPARTICLES, STOPPER_MAX, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-  SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  SumOfWeightsStopper stopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-  MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  MinimumESSStopper stopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-  StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  StdDevStopper stopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
   [% ELSIF client.get_named_arg('stopper') == 'var' %]
-  VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  VarStopper stopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
   [% END %]
 
   /* filter */
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
   BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, NPARTICLES, BLOCK_PARTICLES)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, NPARTICLES, STOPPER_BLOCK)));
   [% ELSE %]
   BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
   [% END %]

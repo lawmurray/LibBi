@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_REPEATED_RANGE_HPP
-#define BI_MISC_REPEATED_RANGE_HPP
+#ifndef BI_PRIMITIVE_REPEATEDRANGE_HPP
+#define BI_PRIMITIVE_REPEATEDRANGE_HPP
 
 #include "repeated_sequence.hpp"
 

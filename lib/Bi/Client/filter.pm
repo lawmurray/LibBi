@@ -211,7 +211,6 @@ instead to minimise variance in marginal likelihood estimates.
 
 =back
 
-=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
@@ -219,7 +218,7 @@ C<'adaptive'>:
 
 =over 4
 
-=item C<--stopper> (default 'deterministic')
+=item C<--stopper> (default C<deterministic>)
 
 The stopping criterion to use; one of:
 
@@ -247,22 +246,20 @@ for a minimum variance.
 
 =back
 
-=item C<--stopper-threshold>
+=item C<--stopper-threshold> (default 128)
 
 Threshold value for stopping criterion.
 
-=item C<--max-particles>
+=item C<--stopper-max> (default 32768)
 
 Maximum number of particles at any time, regardless of the stopping
 criterion.
 
-=item C<--block-particles>
+=item C<--stopper-block> (default 128)
 
-Number of particles.
+Number of particles per block.
 
 =back
-
-=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
@@ -357,12 +354,12 @@ our @CLIENT_OPTIONS = (
       default => 128
     },
     {
-      name => 'block-particles',
+      name => 'stopper-block',
       type => 'int',
       default => 128
     },
     {
-      name => 'max-particles',
+      name => 'stopper-max',
       type => 'int',
       default => 32768
     },

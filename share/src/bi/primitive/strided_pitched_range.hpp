@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_STRIDEDPITCHEDRANGE_HPP
-#define BI_MISC_STRIDEDPITCHEDRANGE_HPP
+#ifndef BI_PRIMITIVE_STRIDEDPITCHEDRANGE_HPP
+#define BI_PRIMITIVE_STRIDEDPITCHEDRANGE_HPP
 
 #include "strided_pitched_sequence.hpp"
 

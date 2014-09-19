@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_PIPELINED_ALLOCATOR_HPP
-#define BI_MISC_PIPELINED_ALLOCATOR_HPP
+#ifndef BI_PRIMITIVE_PIPELINEDALLOCATOR_HPP
+#define BI_PRIMITIVE_PIPELINEDALLOCATOR_HPP
 
 #include <vector>
 #include <list>

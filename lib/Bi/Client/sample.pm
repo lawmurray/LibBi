@@ -116,6 +116,19 @@ particles will only be resampled if ESS is below this proportion of
 C<--nsamples>. To always resample, use C<--sample-ess-rel 1>. To never
 resample, use C<--sample-ess-rel 0>.
 
+=item C<--sample-stopper> (default C<deterministic>)
+
+The stopping criterion to use for parameter samples while adapting, see
+C<--stopper> for options.
+
+=item C<--sample-stopper-threshold>
+
+Threshold value for stopping criterion.
+
+=item C<--sample-stopper-max>
+
+Maximum number of samples at any time, regardless of the stopping criterion.
+
 =item C<--adapter> (default none)
 
 Adaptation strategy for rejuvenation proposals:
@@ -192,6 +205,21 @@ our @CLIENT_OPTIONS = (
       name => 'sample-ess-rel',
       type => 'float',
       default => 0.5
+    },
+    {
+      name => 'sample-stopper',
+      type => 'string',
+      default => 'deterministic'
+    },
+    {
+      name => 'sample-stopper-threshold',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'sample-stopper-max',
+      type => 'int',
+      default => 0
     },
     {
       name => 'adapter',
