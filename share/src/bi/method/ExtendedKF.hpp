@@ -45,8 +45,8 @@ public:
    * @copydoc BootstrapPF::step()
    */
   template<class S1, class IO1>
-  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      S1& s, IO1& out) throw (CholeskyException);
+  double step(Random& rng, ScheduleIterator& iter,
+      const ScheduleIterator last, S1& s, IO1& out) throw (CholeskyException);
 
   /**
    * @copydoc BootstrapPF::samplePath()
@@ -203,31 +203,34 @@ void bi::ExtendedKF<B,S>::samplePath(Random& rng, M1 X, IO1& out) {
   typedef typename sim_temp_vector<M1>::type vector_type;
   typedef typename sim_temp_matrix<M1>::type matrix_type;
 
-  matrix_type U1(M, M), U2(M, M), C(M, M);
-  vector_type mu1(M), mu2(M);
+  if (out.size() > 0) {
+    matrix_type U1(M, M), U2(M, M), C(M, M);
+    vector_type mu1(M), mu2(M);
 
-  int k = out.size();
-  try {
-    while (k > 0) {
-      out.readCorrectedMean(k - 1, mu1);
-      out.readCorrectedStd(k - 1, U1);
+    int k = out.size();
+    try {
+      while (k > 0) {
+        out.readCorrectedMean(k - 1, mu1);
+        out.readCorrectedStd(k - 1, U1);
 
-      if (k < out.size()) {
-        out.readPredictedMean(k, mu2);
-        out.readPredictedStd(k, U2);
-        out.readCross(k, C);
+        if (k < out.size()) {
+          out.readPredictedMean(k, mu2);
+          out.readPredictedStd(k, U2);
+          out.readCross(k, C);
 
-        condition(mu1, U1, mu2, U2, C, column(X, k));
+          condition(mu1, U1, mu2, U2, C, column(X, k));
+        }
+
+        rng.gaussians(column(X, k - 1));
+        trmv(U1, column(X, k - 1));
+        axpy(1.0, mu1, column(X, k - 1));
+
+        --k;
       }
-
-      rng.gaussians(column(X, k - 1));
-      trmv(U1, column(X, k - 1));
-      axpy(1.0, mu1, column(X, k - 1));
-
-      --k;
+    } catch (CholeskyException e) {
+      BI_WARN_MSG(false,
+          "Cholesky factorisation exception sampling trajectory");
     }
-  } catch (CholeskyException e) {
-    BI_WARN_MSG(false, "Cholesky factorisation exception sampling trajectory");
   }
 }
 
@@ -376,7 +379,7 @@ double bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     gather_matrix(map, map, s.R(), R3);
     gather(map, row(s.get(O_VAR), 0), mu3);
     gather(map, row(s.get(OY_VAR), 0), y);
-    
+
     trmm(1.0, s.U1, C);
 
     Sigma3.clear();
@@ -404,7 +407,7 @@ double bi::ExtendedKF<B,S>::correct(Random& rng, const ScheduleElement now,
     s.G().clear();
     s.R().clear();
   }
-  
+
   return ll;
 }
 

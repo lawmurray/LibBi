@@ -243,9 +243,10 @@ bi::BootstrapPF<B,S,R>::BootstrapPF(B& m, S& sim, R& resam) :
 template<class B, class S, class R>
 template<class M1, class IO1>
 void bi::BootstrapPF<B,S,R>::samplePath(Random& rng, M1 X, IO1& out) {
-  /* pre-condition */
-  int p = rng.multinomial(out.getLogWeights());
-  out.readPath(p, X);
+  if (out.size() > 0) {
+    int p = rng.multinomial(out.getLogWeights());
+    out.readPath(p, X);
+  }
 }
 
 template<class B, class S, class R>

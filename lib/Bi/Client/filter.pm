@@ -281,7 +281,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'with-output-at-obs',
       type => 'bool',
-      default => 0
+      default => 1
     },
     {
       name => 'filter',

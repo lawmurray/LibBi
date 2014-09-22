@@ -144,7 +144,7 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int T) :
-    thetas(Ptheta), theta2(m, Px, T), lws(Ptheta), les(T), as(Ptheta), ptheta(
+    thetas(Ptheta), theta2(m, Px, T), les(T), lws(Ptheta), as(Ptheta), ptheta(
         0), Ptheta(Ptheta) {
   for (int p = 0; p < thetas.size(); ++p) {
     thetas[p] = new state_type(m, Px, T);
@@ -154,8 +154,8 @@ bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    thetas(o.thetas.size()), theta2(o.theta2), lws(o.lws), les(o.les), as(o.as), ptheta(
-        o.ptheta), Ptheta(o.Ptheta) {
+    thetas(o.thetas.size()), theta2(o.theta2), les(o.les), lws(o.lws), as(
+        o.as), ptheta(o.ptheta), Ptheta(o.Ptheta) {
   for (int p = 0; p < thetas.size(); ++p) {
     thetas[p] = new state_type(*o.thetas[p]);
   }
@@ -171,8 +171,8 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
     *thetas[p] = *o.thetas[p];
   }
   theta2 = o.theta2;
-  lws = o.lws;
   les = o.les;
+  lws = o.lws;
   as = o.as;
   ptheta = o.ptheta;
   Ptheta = o.Ptheta;
@@ -213,8 +213,8 @@ template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, les);
+  save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
 
   for (int p = 0; p < thetas.size(); ++p) {
@@ -227,8 +227,8 @@ template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
-  load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, les);
+  load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);
 
   for (int p = 0; p < thetas.size(); ++p) {
