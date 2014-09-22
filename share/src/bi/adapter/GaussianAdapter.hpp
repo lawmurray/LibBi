@@ -34,8 +34,8 @@ public:
   /**
    * @copydoc Adapter::add()
    */
-  template<class V1, class V2>
-  void add(const V1 x, const V2 lws);
+  //template<class V1, class V2>
+  //void add(const V1 x, const V2 lws);
 
 };
 }

@@ -8,9 +8,9 @@
 #ifndef BI_MPI_ADAPTER_DISTRIBUTEDADAPTER_HPP
 #define BI_MPI_ADAPTER_DISTRIBUTEDADAPTER_HPP
 
-#include "../TreeNetworkNode.hpp"
 #include "../mpi.hpp"
-#include "../cache/Cache2D.hpp"
+#include "../TreeNetworkNode.hpp"
+#include "../../cache/Cache2D.hpp"
 
 namespace bi {
 /**
@@ -158,8 +158,8 @@ void bi::DistributedAdapter<A>::send() {
       BOOST_AUTO(Z, cacheSend.get(0, pSend));
       BI_ASSERT(Z.contiguous());
 
-      request = node.parent.isend(0, MPI_TAG_ADAPTER_SAMPLES, X.buf(),
-          X.size1() * X.size2());
+      request = node.parent.isend(0, MPI_TAG_ADAPTER_SAMPLES, Z.buf(),
+          Z.size1() * Z.size2());
     }
   }
 }

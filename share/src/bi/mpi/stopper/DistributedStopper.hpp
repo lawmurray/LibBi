@@ -8,9 +8,9 @@
 #ifndef BI_MPI_STOPPER_DISTRIBUTEDSTOPPER_HPP
 #define BI_MPI_STOPPER_DISTRIBUTEDSTOPPER_HPP
 
-#include "../TreeNetworkNode.hpp"
 #include "../mpi.hpp"
-#include "../cache/Cache1D.hpp"
+#include "../TreeNetworkNode.hpp"
+#include "../../cache/Cache1D.hpp"
 
 namespace bi {
 /**
@@ -108,7 +108,7 @@ private:
   /**
    * Stop?
    */
-  bool stop;
+  bool flagStop;
 
   /**
    * Maximum number of accumulated weights before blocking.
@@ -119,7 +119,7 @@ private:
 
 template<class S>
 bi::DistributedStopper<S>::DistributedStopper(S& base, TreeNetworkNode& node) :
-    node(node), pSend(0), pAccum(0), stop(false) {
+    node(node), pSend(0), pAccum(0), flagStop(false) {
   //
 }
 
@@ -130,15 +130,15 @@ bi::DistributedStopper<S>::~DistributedStopper() {
 
 template<class S>
 bool bi::DistributedStopper<S>::stop(const double maxlw) const {
-  if (!stop) {
+  if (!flagStop) {
     boost::optional < boost::mpi::status > status = node.parent.iprobe(0,
         MPI_TAG_STOPPER_STOP);
     if (status) {
-      comm.recv(status->source(), status->tag());
-      stop = true;
+      node.parent.recv(status->source(), status->tag());
+      flagStop = true;
     }
   }
-  return stop;
+  return flagStop;
 }
 
 template<class S>
@@ -161,7 +161,7 @@ void bi::DistributedStopper<S>::reset() {
   cacheAccum.clear();
   pSend = 0;
   pAccum = 0;
-  stop = false;
+  flagStop = false;
 }
 
 template<class S>

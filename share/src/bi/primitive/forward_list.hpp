@@ -9,6 +9,8 @@
 #define BI_PRIMITIVE_FORWARDLIST_HPP
 
 #include "forward_list_node.hpp"
+#include "forward_list_iterator.hpp"
+#include "forward_list_const_iterator.hpp"
 
 namespace bi {
 /**
@@ -20,16 +22,17 @@ namespace bi {
  */
 template<class T>
 class forward_list {
+public:
   typedef T value_type;
   typedef std::allocator<T> allocator_type;
   typedef std::size_t size_type;
   typedef std::ptrdiff_t difference_type;
-  typedef value_type& reference_type;
-  typedef const value_type const_reference_type;
-  typedef std::allocator_traits<Allocator>::pointer pointer;
-  typedef std::allocator_traits<Allocator>::const_pointer const_pointer;
+  typedef value_type& reference;
+  typedef const value_type const_reference;
+  typedef T* pointer;
+  typedef T* const const_pointer;
   typedef forward_list_iterator<T> iterator;
-  typedef forward_list_iterator<const T> const_iterator;
+  typedef forward_list_const_iterator<T> const_iterator;
 
   /**
    * Constructor.
@@ -71,12 +74,7 @@ private:
   /**
    * Iterator to before beginning.
    */
-  forward_list_iterator<T> iterBefore;
-
-  /**
-   * Iterator to end.
-   */
-  static const forward_list_iterator<T> iterEnd;
+  boost::shared_ptr<forward_list_node<T> > before;
 };
 }
 
@@ -92,90 +90,95 @@ bi::forward_list<T>::~forward_list() {
 
 template<class T>
 bi::forward_list<T>::forward_list(const forward_list<T>& o) {
-  //
+  ///@todo Deep copy.
 }
 
 template<class T>
-bi::forward_list<T>& bi::forward_list<T>::operator=(const forward_list<T>& o) {
-  //
+bi::forward_list<T>& bi::forward_list<T>::operator=(
+    const forward_list<T>& o) {
+  ///@todo Deep copy.
+  before.next = o.before.next;
 }
 
 template<class T>
-bi::forward_list<T>::reference bi::forward_list<T>::front() {
-
+typename bi::forward_list<T>::reference bi::forward_list<T>::front() {
+  return *before.next;
 }
 
 template<class T>
-bi::forward_list<T>::const_reference bi::forward_list<T>::front() const {
-
+typename bi::forward_list<T>::const_reference bi::forward_list<T>::front() const {
+  return *before.next;
 }
 
 template<class T>
-bi::forward_list<T>::iterator bi::forward_list<T>::before_begin() {
-  return iterBefore;
+typename bi::forward_list<T>::iterator bi::forward_list<T>::before_begin() {
+  return iterator(before);
 }
 
 template<class T>
-bi::forward_list<T>::const_iterator bi::forward_list<T>::before_begin() const {
-  return iterBefore;
+typename bi::forward_list<T>::const_iterator bi::forward_list<T>::before_begin() const {
+  return const_iterator(before);
 }
 
 template<class T>
-bi::forward_list<T>::iterator bi::forward_list<T>::begin() {
-  return iterBefore.next();
+typename bi::forward_list<T>::iterator bi::forward_list<T>::begin() {
+  return iterator(before.next);
 }
 
 template<class T>
-bi::forward_list<T>::const_iterator bi::forward_list<T>::begin() const {
-  return iterBefore.next();
+typename bi::forward_list<T>::const_iterator bi::forward_list<T>::begin() const {
+  return iterator(before.next);
 }
 
 template<class T>
-bi::forward_list<T>::iterator bi::forward_list<T>::end() {
-  return iterEnd;
+typename bi::forward_list<T>::iterator bi::forward_list<T>::end() {
+  return iterator();
 }
 
 template<class T>
-bi::forward_list<T>::const_iterator bi::forward_list<T>::end() const {
-  return iterEnd;
+typename bi::forward_list<T>::const_iterator bi::forward_list<T>::end() const {
+  return const_iterator();
 }
 
 template<class T>
 bool bi::forward_list<T>::empty() const {
-
+  return before.next == NULL;
 }
 
 template<class T>
 void bi::forward_list<T>::clear() {
-
+  before.next = NULL;
 }
 
 template<class T>
-bi::forward_list<T>::iterator bi::forward_list<T>::insert_after(const_iterator pos, const T& value) {
-
+typename bi::forward_list<T>::iterator bi::forward_list<T>::insert_after(
+    const_iterator pos, const T& value) {
+  boost::shared_ptr<forward_list_node<T> > node(new forward_list_node<T>(value));
+  node->next = pos.node;
+  pos.node = node;
+  return iterator(node);
 }
 
 template<class T>
-bi::forward_list<T>::iterator bi::forward_list<T>::erase_after(const_iterator pos) {
-  pos.next = pos.next.next;
+typename bi::forward_list<T>::iterator bi::forward_list<T>::erase_after(
+    const_iterator pos) {
+  pos.node = pos.node->next;
+  return iterator(pos.node);
 }
 
 template<class T>
 void bi::forward_list<T>::push_front(const T& value) {
-  boost::shared_ptr<forward_list_node<T> > node(new forward_list_node<T>(value));
-  node.next = iterBefore.next;
-  iterBefore.next = node;
+  insert_after(before_begin(), value);
 }
 
 template<class T>
 void bi::forward_list<T>::pop_front() {
-  iterBefore.next = iterBefore.next.next;
+  erase_after(before_begin());
 }
 
 template<class T>
 void bi::forward_list<T>::swap(forward_list<T>& o) {
-  std::swap(iterBefore.next, o.iterBefore.next);
+  std::swap(before.next, o.before.next);
 }
-
 
 #endif

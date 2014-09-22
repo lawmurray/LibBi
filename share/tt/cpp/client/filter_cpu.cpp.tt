@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
   }
   KernelResampler<BOOST_TYPEOF(base)> resam(&base, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
-  BOOST_AUTO(resam, base);
+  BOOST_AUTO(&resam, base);
   [% END %]
   
   /* stopper */

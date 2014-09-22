@@ -34,13 +34,6 @@ void bi::Server::close() throw (boost::mpi::exception) {
   }
 }
 
-void bi::Server::join(boost::mpi::communicator child) {
-  for (BOOST_AUTO(iter, handlers.begin()); iter != handlers.end(); ++iter) {
-    BOOST_AUTO(handler, *iter);
-    handler->join(child);
-  }
-}
-
 void bi::Server::disconnect(boost::mpi::communicator child,
     boost::mpi::status status) {
   try {

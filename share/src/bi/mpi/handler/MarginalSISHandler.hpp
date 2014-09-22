@@ -46,7 +46,7 @@ public:
    *
    * @param child Intercommunicator associated with the child.
    */
-  void init(boost::mpi::communicator child)
+  void init(boost::mpi::communicator child);
 
   /**
    * Handle message from a child.
@@ -92,27 +92,27 @@ private:
 };
 }
 
-template<class A, class S>
-bi::MarginalSISHandler<A,S>::MarginalSISHandler(B& m, const int T, A& adapter,
+template<class B, class A, class S>
+bi::MarginalSISHandler<B,A,S>::MarginalSISHandler(B& m, const int T, A& adapter,
     S& stopper, TreeNetworkNode& node) :
     m(m), T(T), adapter(adapter), stopper(stopper), node(node) {
   //
 }
 
-template<class A, class S>
-bool bi::MarginalSISHandler<A,S>::done() const {
+template<class B, class A, class S>
+bool bi::MarginalSISHandler<B,A,S>::done() const {
   /* stopping criterion reached, all children have return their outputs and
    * disconnected */
   return stopper.stop() && node.children.empty();
 }
 
-template<class A, class S>
-void bi::MarginalSISHandler<A,S>::init(boost::mpi::communicator child) {
+template<class B, class A, class S>
+void bi::MarginalSISHandler<B,A,S>::init(boost::mpi::communicator child) {
   node.requests.push_front(child.isend(0, MPI_TAG_ADAPTER_PROPOSAL, q));
 }
 
-template<class A, class S>
-void bi::MarginalSISHandler<A,S>::handle(boost::mpi::communicator child,
+template<class B, class A, class S>
+void bi::MarginalSISHandler<B,A,S>::handle(boost::mpi::communicator child,
     boost::mpi::status status) {
   switch (status.tag()) {
   case MPI_TAG_STOPPER_LOGWEIGHTS:
@@ -127,15 +127,15 @@ void bi::MarginalSISHandler<A,S>::handle(boost::mpi::communicator child,
   }
 }
 
-template<class A, class S>
-void bi::MarginalSISHandler<A,S>::handleStopperLogWeights(
+template<class B, class A, class S>
+void bi::MarginalSISHandler<B,A,S>::handleStopperLogWeights(
     boost::mpi::communicator child, boost::mpi::status status) {
-  typedef typename host_temp_vector<real>::type vector_type;
+  typedef typename temp_host_vector<real>::type vector_type;
 
   double maxlw = std::numeric_limits < real > ::infinity();
 
   /* add weights */
-  boost::mpi::optional<int> n = status.template count<real>();
+  boost::optional<int> n = status.template count<real>();
   if (n) {
     vector_type lws(*n);
     child.recv(status.source(), status.tag(), lws.buf(), *n);
@@ -151,15 +151,15 @@ void bi::MarginalSISHandler<A,S>::handleStopperLogWeights(
   }
 }
 
-template<class A, class S>
-void bi::MarginalSISHandler<A,S>::handleAdapterSamples(
+template<class B, class A, class S>
+void bi::MarginalSISHandler<B,A,S>::handleAdapterSamples(
     boost::mpi::communicator child, boost::mpi::status status) {
-  typedef typename host_temp_matrix<real>::type matrix_type;
+  typedef typename temp_host_matrix<real>::type matrix_type;
 
   static const int N = B::NP;
 
   /* add samples */
-  boost::mpi::optional<int> n = status.template count<real>();
+  boost::optional<int> n = status.template count<real>();
   if (n) {
     matrix_type Z(N + T, *n / (N + T));
     child.recv(status.source(), status.tag(), Z.buf(), *n);

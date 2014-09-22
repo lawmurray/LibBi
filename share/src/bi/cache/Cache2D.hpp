@@ -151,7 +151,7 @@ inline const typename bi::Cache2D<T1,CL>::matrix_type::vector_reference_type bi:
 }
 
 template<class T1, bi::Location CL>
-inline const typename bi::Cache2D<T1,CL>::matrix_type::vector_reference_type bi::Cache2D<
+inline const typename bi::Cache2D<T1,CL>::matrix_type::matrix_reference_type bi::Cache2D<
     T1,CL>::get(const int p, const int len) const {
   /* pre-condition */
   BI_ASSERT(isValid(p, len));

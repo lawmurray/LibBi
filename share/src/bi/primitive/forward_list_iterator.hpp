@@ -5,74 +5,53 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PRIMITIVE_FORWARDLISTITERATOR_HPP
-#define BI_PRIMITIVE_FORWARDLISTITERATOR_HPP
+#ifndef BI_PRIMITIVE_FORWARDLISTCONSTITERATOR_HPP
+#define BI_PRIMITIVE_FORWARDLISTCONSTITERATOR_HPP
 
-#include "forward_list_node.hpp"
+#include "forward_list_const_iterator.hpp"
 
 namespace bi {
+template<class T> class forward_list;
+template<class T> class forward_list_const_iterator;
+
 /**
- * Iterator for a forward_list.
+ * Iterator for forward_list.
  *
  * @tparam T Value type.
  */
 template<class T>
-class forward_list_iterator {
+class forward_list_iterator : public forward_list_const_iterator<T> {
+  friend class forward_list<T>;
+  friend class forward_list_const_iterator<T>;
+public:
   forward_list_iterator();
-  forward_list_iterator(boost::shared_ptr<forward_list_node<T> >& node);
+  explicit forward_list_iterator(boost::shared_ptr<forward_list_node<T> >& node);
   ~forward_list_iterator();
   T& operator*();
-  const T& operator*() const;
-  forward_list_iterator<T>& operator++();
-  forward_list_iterator<T> operator++(int);
-
-private:
-  /**
-   * Node.
-   */
-  boost::shared_ptr<forward_list_node<T> > node;
+  T* operator->();
 };
 }
 
 template<class T>
-bi::forward_list_iterator<T>::forward_list_iterator() :
-    node(NULL) {
+bi::forward_list_iterator<T>::forward_list_iterator() {
   //
 }
 
 template<class T>
 bi::forward_list_iterator<T>::forward_list_iterator(
     boost::shared_ptr<forward_list_node<T> >& node) :
-    node(node) {
+    forward_list_const_iterator<T>(node) {
   //
 }
 
 template<class T>
-inline T& operator*() {
-  return node->value;
+inline T& bi::forward_list_iterator<T>::operator*() {
+  return this->node->value;
 }
 
 template<class T>
-inline const T& operator*() const {
-  return node->value;
-}
-
-template<class T>
-inline const T& operator*() const {
-  return node->value;
-}
-
-template<class T>
-inline bi::forward_list_iterator<T>& operator++() {
-  node = node.next;
-  return *this;
-}
-
-template<class T>
-inline bi::forward_list_iterator<T> operator++() {
-  bi::forward_list_iterator<T> result(*this);
-  ++(*this);
-  return result;
+inline T* bi::forward_list_iterator<T>::operator->() {
+  return &this->node->value;
 }
 
 #endif

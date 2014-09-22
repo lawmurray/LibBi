@@ -8,13 +8,11 @@
 #ifndef BI_MPI_SERVER_HPP
 #define BI_MPI_SERVER_HPP
 
-#include "TreeNetworkNode.hpp"
-#include "Handler.hpp"
 #include "mpi.hpp"
+#include "TreeNetworkNode.hpp"
 
 #include "boost/mpi/communicator.hpp"
-
-#include <list>
+#include "boost/typeof/typeof.hpp"
 
 namespace bi {
 /**
@@ -22,9 +20,9 @@ namespace bi {
  *
  * @ingroup server
  *
- * Set up the server by registering handlers with registerHandler(), then call
- * open() to open a port, getPortName() to recover that port for child
- * processes, and finally run() to run the server.
+ * Call open() to open a port, getPortName() to recover that port for child
+ * processes, and finally run() to run the server, giving an appropriate
+ * handler for incoming messages.
  */
 class Server {
 public:
@@ -84,13 +82,6 @@ private:
   void serve(H& handler);
 
   /**
-   * Join child.
-   *
-   * @param comm The child.
-   */
-  void join(const boost::mpi::communicator child);
-
-  /**
    * Disconnect child.
    *
    * @param child The child.
@@ -109,11 +100,6 @@ private:
    * Network node.
    */
   TreeNetworkNode& node;
-
-  /*
-   * Handlers.
-   */
-  std::list<Handler*> handlers;
 };
 }
 
@@ -177,9 +163,9 @@ void bi::Server::serve(H& handler) {
 
   /* service messages */
   while (!node.children.empty()) {
-
-    for (BOOST_AUTO(prev, node.children.before_begin()), BOOST_AUTO(iter,
-        node.children.begin()); iter != node.children.end(); prev = iter++) {
+    BOOST_AUTO(prev, node.children.before_begin());
+    BOOST_AUTO(iter, node.children.begin());
+    for (; iter != node.children.end(); prev = iter++) {
       try {
         err = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, *iter, &flag, &status);
         /* use MPI_Iprobe and not iter->iprobe, as latter can't distinguish
@@ -202,14 +188,15 @@ void bi::Server::serve(H& handler) {
     }
 
     /* clean up outstanding requests */
-    for (BOOST_AUTO(prev, node.requests.before_begin()), BOOST_AUTO(iter,
-        node.requests.begin()); iter != node.requests.end(); prev = iter++) {
+    BOOST_AUTO(prevRequests, node.requests.before_begin());
+    BOOST_AUTO(iterRequests, node.requests.begin());
+    for (; iterRequests != node.requests.end(); prevRequests = iterRequests++) {
       try {
-        if (iter->test()) {
-          node.requests.erase_after(prev);
+        if (iterRequests->test()) {
+          node.requests.erase_after(prevRequests);
         }
       } catch (boost::mpi::exception e) {
-        node.requests.erase_after(prev);
+        node.requests.erase_after(prevRequests);
       }
     }
   }

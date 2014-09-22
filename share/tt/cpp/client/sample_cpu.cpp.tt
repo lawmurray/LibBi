@@ -73,6 +73,7 @@
 #include "bi/mpi/resampler/DistributedResampler.hpp"
 #include "bi/mpi/adapter/DistributedAdapter.hpp"
 #include "bi/mpi/stopper/DistributedStopper.hpp"
+#include "bi/mpi/handler/MarginalSISHandler.hpp"
 #include "bi/mpi/TreeNetworkNode.hpp"
 #include "bi/mpi/Server.hpp"
 #include "bi/mpi/Client.hpp"
@@ -153,8 +154,8 @@ int main(int argc, char* argv[]) {
 
   /* numbers of particles */
   NPARTICLES = bi::roundup(NPARTICLES);
-  MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
-  BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
+  STOPPER_MAX = bi::roundup(STOPPER_MAX);
+  STOPPER_BLOCK = bi::roundup(STOPPER_BLOCK);
 
   /* output */
   [% IF client.get_named_arg('target') == 'posterior' %]
@@ -230,7 +231,7 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('with-mpi') %]
   DistributedResampler<BOOST_TYPEOF(sampleResamBase)> sampleResam(sampleResamBase, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
   [% ELSE %]
-  BOOST_AUTO(sampleResam&, sampleResamBase);
+  BOOST_AUTO(&sampleResam, sampleResamBase);
   [% END %]
   
   /* stopper for theta-particles */
@@ -248,7 +249,7 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('with-mpi') %]
   DistributedStopper<BOOST_TYPEOF(sampleStopperBase)> sampleStopper(sampleStopperBase, node);
   [% ELSE %]
-  BOOST_AUTO(sampleStopper&, sampleStopperBase);
+  BOOST_AUTO(&sampleStopper, sampleStopperBase);
   [% END %]
   
   /* adapter for theta-particles */ 
@@ -256,14 +257,14 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('with-mpi') %]
   DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);
   [% ELSE %]
-  BOOST_AUTO(sampleAdapter&, sampleAdapterBase);
+  BOOST_AUTO(&sampleAdapter, sampleAdapterBase);
   [% END %]
   
   /* client/server setup */
   #ifdef ENABLE_MPI
   Client client(node);
   Server server(node);
-  MarginalSISHandler<model_type,BOOST_TYPEOF(sampleAdapter),BOOST_TYPEOF(sampleStopper)> handler(m, sched.numObs(), adapter, stopper, node);
+  MarginalSISHandler<model_type,(BOOST_TYPEOF(sampleAdapter)),(BOOST_TYPEOF(sampleStopper))> handler(m, sched.numObs(), adapter, stopper, node);
   std::string port_name;
   
   if (ROLE.compare("server") == 0) {
@@ -323,30 +324,17 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
   BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, filterResam, stopper, NPARTICLES, BLOCK_PARTICLES)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, filterResam, stopper, NPARTICLES, STOPPER_BLOCK)));
   [% ELSE %]
   BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, filterResam)));
-  [% END %]
-  
-  /* sample stopper */
-  [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  Stopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-  SumOfWeightsStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-  MinimumESSStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-  StdDevStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
-  [% ELSIF client.get_named_arg('stopper') == 'var' %]
-  VarStopper sampleStopper(STOPPER_THRESHOLD, NSAMPLES, sched.numObs());
   [% END %]
   
   /* sampler */
   [% IF client.get_named_arg('sampler') == 'sir' %]
   BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, adapter, resam, NMOVES));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, sampleAdapter, sampleResam, NMOVES));
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, adapter, sampleStopper));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, sampleAdapter, sampleStopper));
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]

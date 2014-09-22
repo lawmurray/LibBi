@@ -8,9 +8,9 @@
 #ifndef BI_MPI_TREENETWORKNODE_HPP
 #define BI_MPI_TREENETWORKNODE_HPP
 
-#include "boost/mpi/communicator.hpp"
+#include "../primitive/forward_list.hpp"
 
-#include <forward_list>
+#include "boost/mpi/communicator.hpp"
 
 namespace bi {
 /**
@@ -34,14 +34,14 @@ struct TreeNetworkNode {
    *
    * @todo Thread-safe forward list implementation.
    */
-  std::forward_list<boost::mpi::communicator> children;
+  forward_list<boost::mpi::communicator> children;
 
   /**
    * Outstanding requests.
    *
    * @todo Thread-safe forward list implementation.
    */
-  std::forward_list<boost::mpi::request> requests;
+  forward_list<boost::mpi::request> requests;
 };
 }
 
