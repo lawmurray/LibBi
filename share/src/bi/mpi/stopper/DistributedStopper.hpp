@@ -46,18 +46,18 @@ public:
   /**
    * @copydoc Stopper::stop()
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::add(const double, const double)
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::add(const V1, const double)
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::reset()
@@ -129,7 +129,7 @@ bi::DistributedStopper<S>::~DistributedStopper() {
 }
 
 template<class S>
-bool bi::DistributedStopper<S>::stop(const double maxlw) const {
+bool bi::DistributedStopper<S>::stop(const double maxlw) {
   if (!flagStop) {
     boost::optional < boost::mpi::status > status = node.parent.iprobe(0,
         MPI_TAG_STOPPER_STOP);

@@ -23,18 +23,18 @@ public:
   /**
    * @copydoc Stopper::stop(const double maxlw)
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::add(const double, const double)
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::add()
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * @copydoc Stopper::reset()
@@ -55,7 +55,7 @@ inline bi::SumOfWeightsStopper::SumOfWeightsStopper(const double threshold,
   //
 }
 
-inline bool bi::SumOfWeightsStopper::stop(const double maxlw) const {
+inline bool bi::SumOfWeightsStopper::stop(const double maxlw) {
   double minsumw = this->T * this->threshold * bi::exp(maxlw);
 
   return Stopper::stop(maxlw) || sumw >= minsumw;

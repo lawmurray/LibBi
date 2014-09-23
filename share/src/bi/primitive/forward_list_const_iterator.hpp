@@ -26,7 +26,6 @@ class forward_list_const_iterator {
 public:
   forward_list_const_iterator();
   explicit forward_list_const_iterator(boost::shared_ptr<forward_list_node<T> >& node);
-  ~forward_list_const_iterator();
   const T& operator*() const;
   const T* operator->() const;
   forward_list_const_iterator<T>& operator++();
@@ -43,8 +42,7 @@ private:
 }
 
 template<class T>
-bi::forward_list_const_iterator<T>::forward_list_const_iterator() :
-    node(NULL) {
+bi::forward_list_const_iterator<T>::forward_list_const_iterator() {
   //
 }
 
@@ -67,7 +65,7 @@ inline const T* bi::forward_list_const_iterator<T>::operator->() const {
 
 template<class T>
 inline bi::forward_list_const_iterator<T>& bi::forward_list_const_iterator<T>::operator++() {
-  node = node.next;
+  node = node->next;
   return *this;
 }
 

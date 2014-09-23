@@ -66,8 +66,8 @@ public:
   void clear();
   iterator insert_after(const_iterator pos, const T& value);
   iterator erase_after(const_iterator pos);
-  void push_front(const T& value);
-  void pop_front();
+  iterator push_front(const T& value);
+  iterator pop_front();
   void swap(forward_list<T>& o);
 
 private:
@@ -97,17 +97,17 @@ template<class T>
 bi::forward_list<T>& bi::forward_list<T>::operator=(
     const forward_list<T>& o) {
   ///@todo Deep copy.
-  before.next = o.before.next;
+  before->next = o.before->next;
 }
 
 template<class T>
 typename bi::forward_list<T>::reference bi::forward_list<T>::front() {
-  return *before.next;
+  return *before->next;
 }
 
 template<class T>
 typename bi::forward_list<T>::const_reference bi::forward_list<T>::front() const {
-  return *before.next;
+  return *before->next;
 }
 
 template<class T>
@@ -122,12 +122,12 @@ typename bi::forward_list<T>::const_iterator bi::forward_list<T>::before_begin()
 
 template<class T>
 typename bi::forward_list<T>::iterator bi::forward_list<T>::begin() {
-  return iterator(before.next);
+  return iterator(before->next);
 }
 
 template<class T>
 typename bi::forward_list<T>::const_iterator bi::forward_list<T>::begin() const {
-  return iterator(before.next);
+  return iterator(before->next);
 }
 
 template<class T>
@@ -142,18 +142,19 @@ typename bi::forward_list<T>::const_iterator bi::forward_list<T>::end() const {
 
 template<class T>
 bool bi::forward_list<T>::empty() const {
-  return before.next == NULL;
+  return before->next == NULL;
 }
 
 template<class T>
 void bi::forward_list<T>::clear() {
-  before.next = NULL;
+  before->next = NULL;
 }
 
 template<class T>
 typename bi::forward_list<T>::iterator bi::forward_list<T>::insert_after(
     const_iterator pos, const T& value) {
-  boost::shared_ptr<forward_list_node<T> > node(new forward_list_node<T>(value));
+  boost::shared_ptr<forward_list_node<T> > node(
+      new forward_list_node<T>(value));
   node->next = pos.node;
   pos.node = node;
   return iterator(node);
@@ -167,18 +168,19 @@ typename bi::forward_list<T>::iterator bi::forward_list<T>::erase_after(
 }
 
 template<class T>
-void bi::forward_list<T>::push_front(const T& value) {
-  insert_after(before_begin(), value);
+typename bi::forward_list<T>::iterator bi::forward_list<T>::push_front(
+    const T& value) {
+  return insert_after(before_begin(), value);
 }
 
 template<class T>
-void bi::forward_list<T>::pop_front() {
-  erase_after(before_begin());
+typename bi::forward_list<T>::iterator bi::forward_list<T>::pop_front() {
+  return erase_after(before_begin());
 }
 
 template<class T>
 void bi::forward_list<T>::swap(forward_list<T>& o) {
-  std::swap(before.next, o.before.next);
+  std::swap(before->next, o.before->next);
 }
 
 #endif

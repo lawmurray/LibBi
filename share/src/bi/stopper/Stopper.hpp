@@ -33,7 +33,7 @@ public:
   /**
    * Stop?
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * Add weight.
@@ -41,7 +41,7 @@ public:
    * @param lw New log-weight.
    * @param maxlw Maximum log-weight.
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * Add weights.
@@ -52,7 +52,7 @@ public:
    * @param maxlw Maximum log-weight.
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = std::numeric_limits<double>::infinity());
 
   /**
    * Reset for reuse.
@@ -88,7 +88,7 @@ inline bi::Stopper::Stopper(const double threshold, const int maxP,
   //
 }
 
-inline bool bi::Stopper::stop(const double maxlw) const {
+inline bool bi::Stopper::stop(const double maxlw) {
   return P >= maxP;
 }
 

@@ -50,14 +50,13 @@ private:
 }
 
 template<class T>
-inline bi::forward_list_node<T>::forward_list_node() :
-    next(NULL) {
+inline bi::forward_list_node<T>::forward_list_node() {
   //
 }
 
 template<class T>
 inline bi::forward_list_node<T>::forward_list_node(const T& value) :
-    value(value), next(NULL) {
+    value(value) {
   //
 }
 

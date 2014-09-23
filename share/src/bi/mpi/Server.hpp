@@ -143,8 +143,8 @@ void bi::Server::accept(H& handler) {
 
           boost::mpi::communicator child(comm, boost::mpi::comm_attach);
           handler.init(child);
-          n = node.children.push_front(child);
-          if (n == 0) {
+          BOOST_AUTO(iter, node.children.push_front(child));
+          if (++iter == node.children.end()) {
 #pragma omp task
             serve(handler);  // start serving children
           }

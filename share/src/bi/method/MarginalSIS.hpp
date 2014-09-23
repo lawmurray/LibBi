@@ -135,22 +135,17 @@ void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
 
   /* adapt */
   for (BOOST_AUTO(iter, first); iter + 1 != last; ++iter) {
-    adapter.reset();
     c = 0;
     std::cout << "Time " << iter->getTime() << ", samples " << c;
     std::cout.flush();
     while (c < C1/*!adapter.ready()*/) {
       draw(rng, first, iter + 1, s);
-      adapter.add(vec(s.get(P_VAR)), s.logWeight);
+      //adapter.add(vec(s.get(P_VAR)), s.logWeight);
       ++c;
       std::cout << "\rTime " << iter->getTime() << ", samples " << c;
       std::cout.flush();
     }
-    try {
-      adapter.adapt(s.q);
-    } catch (CholeskyException e) {
-      // continue with previous proposal
-    }
+    adapter.adapt(last->indexObs());
     std::cout << std::endl;
   }
 

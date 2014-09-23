@@ -30,6 +30,8 @@ namespace bi {
 template<class A>
 class DistributedAdapter {
 public:
+  typedef typename A::proposal_type proposal_type;
+
   /**
    * Constructor.
    *
@@ -44,16 +46,25 @@ public:
   ~DistributedAdapter();
 
   /**
-   * @copydoc Adapter::adapt()
-   */
-  template<class Q1>
-  void adapt(const int k, Q1& q);
-
-  /**
    * @copydoc Adapter::add()
    */
   template<class V1, class V2>
   void add(const V1 x, const V2 lws);
+
+  /**
+   * @copydoc Adapter::stop()
+   */
+  bool stop(const int k);
+
+  /**
+   * @copydoc Adapter::adapt()
+   */
+  void adapt(const int k);
+
+  /**
+   * @copydoc Adapter::get()
+   */
+  proposal_type& get(const int k);
 
   /**
    * @copydoc Adapter::reset()
@@ -70,6 +81,11 @@ private:
    * Finish sends.
    */
   void finish();
+
+  /**
+   * Base adapter.
+   */
+  A& base;
 
   /**
    * Network node.
@@ -110,7 +126,7 @@ private:
 
 template<class A>
 bi::DistributedAdapter<A>::DistributedAdapter(A& base, TreeNetworkNode& node) :
-    node(node), pSend(0), pAccum(0) {
+    base(base), node(node), pSend(0), pAccum(0) {
   //
 }
 
@@ -129,6 +145,22 @@ void bi::DistributedAdapter<A>::add(const V1 x, const V2 lws) {
   cacheAccum.set(pAccum, z);
   ++pAccum;
   send();
+}
+
+template<class A>
+bool bi::DistributedAdapter<A>::stop(const int k) {
+
+}
+
+template<class A>
+void bi::DistributedAdapter<A>::adapt(const int k) {
+  node.parent.recv(0, MPI_TAG_ADAPTER_PROPOSAL, base.q);
+}
+
+template<class A>
+typename bi::DistributedAdapter<A>::proposal_type& bi::DistributedAdapter<A>::get(
+    const int k) {
+  return base.get(k);
 }
 
 template<class A>

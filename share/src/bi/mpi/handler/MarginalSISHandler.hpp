@@ -71,6 +71,11 @@ private:
   B& m;
 
   /**
+   * Current observation.
+   */
+  int t;
+
+  /**
    * Number of observations.
    */
   const int T;
@@ -95,7 +100,7 @@ private:
 template<class B, class A, class S>
 bi::MarginalSISHandler<B,A,S>::MarginalSISHandler(B& m, const int T, A& adapter,
     S& stopper, TreeNetworkNode& node) :
-    m(m), T(T), adapter(adapter), stopper(stopper), node(node) {
+    m(m), t(0), T(T), adapter(adapter), stopper(stopper), node(node) {
   //
 }
 
@@ -103,11 +108,12 @@ template<class B, class A, class S>
 bool bi::MarginalSISHandler<B,A,S>::done() const {
   /* stopping criterion reached, all children have return their outputs and
    * disconnected */
-  return stopper.stop() && node.children.empty();
+  return t == T && stopper.stop() && node.children.empty();
 }
 
 template<class B, class A, class S>
 void bi::MarginalSISHandler<B,A,S>::init(boost::mpi::communicator child) {
+  BOOST_AUTO(q, adapter.get(t));
   node.requests.push_front(child.isend(0, MPI_TAG_ADAPTER_PROPOSAL, q));
 }
 
@@ -165,17 +171,20 @@ void bi::MarginalSISHandler<B,A,S>::handleAdapterSamples(
     child.recv(status.source(), status.tag(), Z.buf(), *n);
 
     for (int j = 0; j < Z.size2(); ++j) {
-      adapter.add(rows(Z, 0, N), rows(Z, N, T));
+      adapter.add(subrange(column(Z,j), 0, N), subrange(column(Z,j), N, T));
     }
   }
 
   /* send new proposal if necessary */
   if (adapter.stop(t)) {
-    adapter.adapt(t, q);
+    adapter.adapt(t);
+    BOOST_AUTO(q, adapter.get(t));
     BOOST_AUTO(iter, node.children.begin());
     for (; iter != node.children.end(); ++iter) {
       node.requests.push_front(iter->isend(0, MPI_TAG_ADAPTER_PROPOSAL, q));
     }
+    ///@todo Serialize q into archive just once, then send to all. This may
+    ///be how broadcast is already implemented in Boost.MPI.
   }
 }
 

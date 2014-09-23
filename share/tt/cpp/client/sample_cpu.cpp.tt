@@ -70,10 +70,10 @@
 #include "bi/method/SamplerFactory.hpp"
 
 #ifdef ENABLE_MPI
+#include "bi/mpi/handler/HandlerFactory.hpp"
 #include "bi/mpi/resampler/DistributedResampler.hpp"
 #include "bi/mpi/adapter/DistributedAdapter.hpp"
 #include "bi/mpi/stopper/DistributedStopper.hpp"
-#include "bi/mpi/handler/MarginalSISHandler.hpp"
 #include "bi/mpi/TreeNetworkNode.hpp"
 #include "bi/mpi/Server.hpp"
 #include "bi/mpi/Client.hpp"
@@ -109,6 +109,7 @@ int main(int argc, char* argv[]) {
   const int rank = world.rank();
   const int size = world.size();
   NPARTICLES /= size;
+  TreeNetworkNode node;
   #else
   const int rank = 0;
   const int size = 1;
@@ -116,11 +117,6 @@ int main(int argc, char* argv[]) {
     
   /* bi init */
   bi_init(NTHREADS);
-  
-  /* MPI */
-  #ifdef ENABLE_MPI
-  TreeNetworkNode node;
-  #endif
 
   /* random number generator */
   Random rng(SEED);
@@ -264,7 +260,6 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_MPI
   Client client(node);
   Server server(node);
-  MarginalSISHandler<model_type,(BOOST_TYPEOF(sampleAdapter)),(BOOST_TYPEOF(sampleStopper))> handler(m, sched.numObs(), adapter, stopper, node);
   std::string port_name;
   
   if (ROLE.compare("server") == 0) {
@@ -272,7 +267,9 @@ int main(int argc, char* argv[]) {
   	std::ofstream bufServer(SERVER_FILE.c_str());
   	bufServer << server.getPortName();
   	bufServer.close();
-  	server.run(handler);
+    BOOST_AUTO(handler, (HandlerFactory::createMarginalSISHandler(m, sched.numObs(), sampleAdapter, sampleStopper, node)));
+  	server.run(*handler);
+    delete handler;
   	server.close();
   	exit(0);
   } else {
