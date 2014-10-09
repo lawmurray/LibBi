@@ -74,10 +74,10 @@ public:
   if (sh > BI_REAL(0.0) && sc > BI_REAL(0.0)) {
 	lp += f(sc/(sh + BI_REAL(1.0)));
   } else {
-    lp = std::numeric_limits<real>::infinity();
+    lp = BI_INF;
   }
   [% ELSE %]
-  lp = std::numeric_limits<real>::infinity();
+  lp = BI_INF;
   [% END %]
 
   [% put_output(action, 'xy') %]

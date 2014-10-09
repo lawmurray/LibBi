@@ -8,7 +8,7 @@
 #ifndef BI_STATE_BOOTSTRAPPFSTATE_HPP
 #define BI_STATE_BOOTSTRAPPFSTATE_HPP
 
-#include "State.hpp"
+#include "FilterState.hpp"
 
 namespace bi {
 /**
@@ -17,14 +17,16 @@ namespace bi {
  * @ingroup state
  */
 template<class B, Location L>
-class BootstrapPFState: public State<B,L> {
+class BootstrapPFState: public FilterState<B,L> {
 public:
   /**
    * Constructor.
    *
    * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  BootstrapPFState(const int P = 0);
+  BootstrapPFState(const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -103,21 +105,21 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::BootstrapPFState<B,L>::BootstrapPFState(const int P) :
-    State<B,L>(P), lws(P), as(P) {
+bi::BootstrapPFState<B,L>::BootstrapPFState(const int P, const int Y, const int T) :
+    FilterState<B,L>(P, Y, T), lws(P), as(P) {
   //
 }
 
 template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>::BootstrapPFState(const BootstrapPFState<B,L>& o) :
-    State<B,L>(o), lws(o.lws), as(o.as) {
+    FilterState<B,L>(o), lws(o.lws), as(o.as) {
   //
 }
 
 template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
     const BootstrapPFState<B,L>& o) {
-  State<B,L>::operator=(o);
+  FilterState<B,L>::operator=(o);
   lws = o.lws;
   as = o.as;
 
@@ -126,7 +128,7 @@ bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
 
 template<class B, bi::Location L>
 void bi::BootstrapPFState<B,L>::swap(BootstrapPFState<B,L>& o) {
-  State<B,L>::swap(o);
+  FilterState<B,L>::swap(o);
   lws.swap(o.lws);
   as.swap(o.as);
 }
@@ -156,7 +158,7 @@ template<class B, bi::Location L>
 inline void bi::BootstrapPFState<B,L>::trim() {
   lws.trim(this->p, this->P);
   as.trim(this->p, this->P);
-  State<B,L>::trim();
+  FilterState<B,L>::trim();
 }
 
 template<class B, bi::Location L>
@@ -164,14 +166,14 @@ inline void bi::BootstrapPFState<B,L>::resizeMax(const int maxP,
     const bool preserve) {
   lws.resize(maxP, preserve);
   as.resize(maxP, preserve);
-  State<B,L>::resizeMax(maxP, preserve);
+  FilterState<B,L>::resizeMax(maxP, preserve);
 }
 
 template<class B, bi::Location L>
 template<class Archive>
 void bi::BootstrapPFState<B,L>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < State<B,L> > (*this);
+  ar & boost::serialization::base_object < FilterState<B,L> > (*this);
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
 }
@@ -179,7 +181,7 @@ void bi::BootstrapPFState<B,L>::save(Archive& ar,
 template<class B, bi::Location L>
 template<class Archive>
 void bi::BootstrapPFState<B,L>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < State<B,L> > (*this);
+  ar & boost::serialization::base_object < FilterState<B,L> > (*this);
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);
 }

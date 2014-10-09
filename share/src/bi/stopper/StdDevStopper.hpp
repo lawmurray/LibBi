@@ -23,18 +23,18 @@ public:
   /**
    * @copydoc Stopper::stop(const double maxlw)
    */
-  bool stop(const double maxlw = std::numeric_limits<double>::infinity());
+  bool stop(const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
    */
-  void add(const double lw, const double maxlw = std::numeric_limits<double>::infinity());
+  void add(const double lw, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const V1, const double)
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw = std::numeric_limits<double>::infinity());
+  void add(const V1 lws, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::reset()

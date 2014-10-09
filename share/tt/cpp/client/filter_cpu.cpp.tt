@@ -125,11 +125,11 @@ int main(int argc, char* argv[]) {
   STOPPER_BLOCK = bi::roundup(STOPPER_BLOCK);
   [% IF client.get_named_arg('filter') == 'kalman' %]
   NPARTICLES = 1;
-  ExtendedKFState<model_type,LOCATION> s;
+  ExtendedKFState<model_type,LOCATION> s(1, sched.numObs(), sched.numOutputs());
   [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
-  AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES);
+  AuxiliaryPFState<model_type,LOCATION> s(NPARTICLES, sched.numObs(), sched.numOutputs());
   [% ELSE %]
-  BootstrapPFState<model_type,LOCATION> s(NPARTICLES);
+  BootstrapPFState<model_type,LOCATION> s(NPARTICLES, sched.numObs(), sched.numOutputs());
   [% END %]
 
   /* output */

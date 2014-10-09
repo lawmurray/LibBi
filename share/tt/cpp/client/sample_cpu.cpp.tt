@@ -297,15 +297,15 @@ int main(int argc, char* argv[]) {
     typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
     [% END %]
     [% IF client.get_named_arg('sampler') == 'sir' %]
-    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
+    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSIF client.get_named_arg('sampler') == 'sis' %]
     typedef GaussianPdf<> proposal_type;
-    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
+    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSE %]
-    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
+    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% END %]
   [% ELSE %]
-  State<model_type,LOCATION> s(NSAMPLES);
+  State<model_type,LOCATION> s(NSAMPLES, sched.numObs(), sched.numOutputs());
   [% END %]
 
   /* simulator */

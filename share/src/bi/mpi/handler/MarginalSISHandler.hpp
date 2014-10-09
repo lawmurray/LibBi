@@ -138,7 +138,7 @@ void bi::MarginalSISHandler<B,A,S>::handleStopperLogWeights(
     boost::mpi::communicator child, boost::mpi::status status) {
   typedef typename temp_host_vector<real>::type vector_type;
 
-  double maxlw = std::numeric_limits < real > ::infinity();
+  double maxlw = BI_INF;
 
   /* add weights */
   boost::optional<int> n = status.template count<real>();

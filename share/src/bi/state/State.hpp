@@ -99,10 +99,12 @@ public:
   /**
    * Constructor.
    *
-   * @param P Number of trajectories to store.
+   * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
   CUDA_FUNC_BOTH
-  State(const int P = 1);
+  State(const int P = 1, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -435,7 +437,7 @@ private:
 #include "../math/view.hpp"
 
 template<class B, bi::Location L>
-bi::State<B,L>::State(const int P) :
+bi::State<B,L>::State(const int P, const int Y, const int T) :
     Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + 2 * NO),  // includes py- and oy-vars
     p(0), P(P) {

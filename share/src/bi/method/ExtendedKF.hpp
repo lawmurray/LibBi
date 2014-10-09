@@ -187,7 +187,7 @@ protected:
 #include "../math/view.hpp"
 #include "../math/operation.hpp"
 #include "../math/operation.hpp"
-#include "../math/pi.hpp"
+#include "../math/constant.hpp"
 #include "../math/loc_temp_vector.hpp"
 #include "../math/loc_temp_matrix.hpp"
 

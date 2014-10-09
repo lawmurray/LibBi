@@ -27,7 +27,7 @@ public:
   [% declare_action_static_function('maxlogdensity') %]
 };
 
-#include "bi/math/pi.hpp"
+#include "bi/math/constant.hpp"
 
 [% std_action_static_function('simulate') %]
 
@@ -56,7 +56,7 @@ public:
   if (xy >= mn && xy <= mx) {
     lp += -bi::log(mx - mn);
   } else {
-    lp = -std::numeric_limits<real>::infinity();
+    lp = -BI_INF;
   }
   [% put_output(action, 'xy') %]
 }
@@ -72,7 +72,7 @@ public:
   real rn = [% range.to_cpp %];
   lp += -bi::log(rn);
   [% ELSE %]
-  lp = std::numeric_limits<real>::infinity();
+  lp = BI_INF;
   [% END %]
 
   [% put_output(action, 'xy') %]

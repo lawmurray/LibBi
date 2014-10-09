@@ -62,7 +62,18 @@ public:
   void init();
 
   /**
-   * Draw single parameter sample.
+   * Propose a new parameter sample.
+   *
+   * @tparam S1 State type.
+   *
+   * @param rng Random number generator.
+   * @param[out] s State.
+   */
+  template<class S1>
+  void propose(Random& rng, S1& s);
+
+  /**
+   * Weight a parameter sample.
    *
    * @tparam S1 State type.
    *
@@ -72,7 +83,7 @@ public:
    * @param[out] s State.
    */
   template<class S1>
-  void draw(Random& rng, const ScheduleIterator first,
+  void weight(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, S1& s);
 
   /**
@@ -120,8 +131,7 @@ private:
 template<class B, class F, class A, class S>
 bi::MarginalSIS<B,F,A,S>::MarginalSIS(B& m, F& filter, A& adapter, S& stopper) :
     m(m), filter(filter), adapter(adapter), stopper(stopper) {
-  adapter.reset();
-  stopper.reset();
+  //
 }
 
 template<class B, class F, class A, class S>
@@ -129,39 +139,20 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  int c;
-  const int C1 = 256;
+  ScheduleIterator iter;
+
   init();
-
-  /* adapt */
-  for (BOOST_AUTO(iter, first); iter + 1 != last; ++iter) {
-    c = 0;
-    std::cout << "Time " << iter->getTime() << ", samples " << c;
-    std::cout.flush();
-    while (c < C1/*!adapter.ready()*/) {
-      draw(rng, first, iter + 1, s);
-      //adapter.add(vec(s.get(P_VAR)), s.logWeight);
-      ++c;
-      std::cout << "\rTime " << iter->getTime() << ", samples " << c;
-      std::cout.flush();
-    }
-    adapter.adapt(last->indexObs());
-    std::cout << std::endl;
+  while (!adapter.finished()) {
+    adapter.get(iter, s);
+    propose(rng, s);
+    weight(rng, first, iter + 1, s);
+    adapter.add(s);
   }
-
-  /* sample */
-  c = 0;
-  std::cout << "Final samples " << c;
-  std::cout.flush();
-  while (!stopper.stop(std::numeric_limits<real>::infinity())) {
+  while (!stopper.stop()) {
     draw(rng, first, last, s);
-    output(c, s, out);
-    stopper.add(s.logWeight, std::numeric_limits<real>::infinity());
-    ++c;
-    std::cout << "\rFinal samples " << c;
-    std::cout.flush();
+    output(s, out);
+    stopper.add(s.logWeight);
   }
-  std::cout << std::endl;
 
   term();
 }
@@ -173,23 +164,25 @@ void bi::MarginalSIS<B,F,A,S>::init() {
 
 template<class B, class F, class A, class S>
 template<class S1>
-void bi::MarginalSIS<B,F,A,S>::draw(Random& rng,
+void bi::MarginalSIS<B,F,A,S>::propose(Random& rng, S1& s) {
+  if (adapter.ready()) {
+    s.q.sample(rng, vec(s.get(PY_VAR)));
+    s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
+  } else {
+    m.proposalParameterSample(rng, s);
+    s.get(PY_VAR) = s.get(P_VAR);
+    s.logProposal = m.proposalParameterLogDensity(s);
+  }
+  s.logPrior = m.parameterLogDensity(s);
+  s.logLikelihood = -BI_INF;
+}
+
+template<class B, class F, class A, class S>
+template<class S1>
+void bi::MarginalSIS<B,F,A,S>::weight(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
   double ll, lu;
   int k;
-
-  if (first + 1 == last) {
-    /* use a priori proposal */
-    m.parameterSample(rng, s);
-    s.get(PY_VAR) = s.get(P_VAR);
-    s.logProposal = m.parameterLogDensity(s);
-  } else {
-    /* use adapted proposal */
-    s.q.sample(rng, vec(s.get(PY_VAR)));
-    s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
-  }
-  s.logPrior = m.parameterLogDensity(s);
-  s.logLikelihood = -std::numeric_limits<real>::infinity();
 
   ScheduleIterator iter = first;
   filter.init(rng, *iter, s, s.out);

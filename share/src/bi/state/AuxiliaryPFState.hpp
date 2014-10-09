@@ -23,8 +23,10 @@ public:
    * Constructor.
    *
    * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  AuxiliaryPFState(const int P = 0);
+  AuxiliaryPFState(const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -88,8 +90,8 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::AuxiliaryPFState<B,L>::AuxiliaryPFState(const int P) :
-    BootstrapPFState<B,L>(P), qlws(P) {
+bi::AuxiliaryPFState<B,L>::AuxiliaryPFState(const int P, const int Y, const int T) :
+    BootstrapPFState<B,L>(P, Y, T), qlws(P) {
   //
 }
 

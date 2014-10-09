@@ -94,7 +94,7 @@ public:
   if (inside) {
     lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
   } else {
-    lp = -std::numeric_limits<real>::infinity();
+    lp = -BI_INF;
   }
   
   [% put_output(action, 'xy') %]
@@ -147,7 +147,7 @@ public:
   lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
   [% END %]
   [% ELSE %]
-  lp = std::numeric_limits<real>::infinity();
+  lp = BI_INF;
   [% END %]
 
   [% put_output(action, 'xy') %]

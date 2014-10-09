@@ -256,7 +256,7 @@ void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
   theta2.logPrior = m.parameterLogDensity(theta2);
 
   /* log-likelihood */
-  theta2.logLikelihood = -std::numeric_limits<real>::infinity();
+  theta2.logLikelihood = -BI_INF;
   if (bi::is_finite(theta2.logPrior)) {
     try {
       theta2.logLikelihood = filter.filter(rng, first, last, theta2,

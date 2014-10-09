@@ -8,7 +8,7 @@
 #ifndef BI_STATE_EXTENDEDKFSTATE_HPP
 #define BI_STATE_EXTENDEDKFSTATE_HPP
 
-#include "State.hpp"
+#include "FilterState.hpp"
 
 namespace bi {
 /**
@@ -17,14 +17,16 @@ namespace bi {
  * @ingroup state
  */
 template<class B, Location L>
-class ExtendedKFState: public State<B,L> {
+class ExtendedKFState: public FilterState<B,L> {
 public:
   /**
    * Constructor.
    *
    * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  ExtendedKFState(const int P = 0);
+  ExtendedKFState(const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -87,21 +89,21 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::ExtendedKFState<B,L>::ExtendedKFState(const int P) :
-    mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M) {
+bi::ExtendedKFState<B,L>::ExtendedKFState(const int P, const int Y, const int T) :
+    FilterState<B,L>(P, Y, T), mu1(M), mu2(M), U1(M, M), U2(M, M), C(M, M) {
   //
 }
 
 template<class B, bi::Location L>
 bi::ExtendedKFState<B,L>::ExtendedKFState(const ExtendedKFState<B,L>& o) :
-    State<B,L>(o), mu1(o.mu1), mu2(o.mu2), U1(o.U1), U2(o.U2), C(o.C) {
+    FilterState<B,L>(o), mu1(o.mu1), mu2(o.mu2), U1(o.U1), U2(o.U2), C(o.C) {
   //
 }
 
 template<class B, bi::Location L>
 bi::ExtendedKFState<B,L>& bi::ExtendedKFState<B,L>::operator=(
     const ExtendedKFState<B,L>& o) {
-  State<B,L>::operator=(o);
+  FilterState<B,L>::operator=(o);
   mu1 = o.mu1;
   mu2 = o.mu2;
   U1 = o.U1;
@@ -113,7 +115,7 @@ bi::ExtendedKFState<B,L>& bi::ExtendedKFState<B,L>::operator=(
 
 template<class B, bi::Location L>
 void bi::ExtendedKFState<B,L>::swap(ExtendedKFState<B,L>& o) {
-  State<B,L>::swap(o);
+  FilterState<B,L>::swap(o);
   mu1.swap(o.mu1);
   mu2.swap(o.mu2);
   U1.swap(o.U1);
@@ -145,7 +147,7 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::ExtendedKFState<B,L>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < State<B,L> > (*this);
+  ar & boost::serialization::base_object < FilterState<B,L> > (*this);
   save_resizable_vector(ar, version, mu1);
   save_resizable_vector(ar, version, mu2);
   save_resizable_matrix(ar, version, U1);
@@ -156,7 +158,7 @@ void bi::ExtendedKFState<B,L>::save(Archive& ar,
 template<class B, bi::Location L>
 template<class Archive>
 void bi::ExtendedKFState<B,L>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object < State<B,L> > (*this);
+  ar & boost::serialization::base_object < FilterState<B,L> > (*this);
   load_resizable_vector(ar, version, mu1);
   load_resizable_vector(ar, version, mu2);
   load_resizable_matrix(ar, version, U1);

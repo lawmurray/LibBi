@@ -45,10 +45,11 @@ public:
    * @param m Model.
    * @param Ptheta Number of \f$\theta\f$-particles.
    * @param Px Number of \f$x\f$-particles.
-   * @param T Number of time points.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  MarginalSIRState(B& m, const int Ptheta = 0, const int Px = 0, const int T =
-      0);
+  MarginalSIRState(B& m, const int Ptheta = 0, const int Px = 0, const int Y =
+      0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -143,8 +144,8 @@ private:
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
-    const int Px, const int T) :
-    thetas(Ptheta), theta2(m, Px, T), les(T), lws(Ptheta), as(Ptheta), ptheta(
+    const int Px, const int Y, const int T) :
+    thetas(Ptheta), theta2(m, Px, Y, T), les(Y), lws(Ptheta), as(Ptheta), ptheta(
         0), Ptheta(Ptheta) {
   for (int p = 0; p < thetas.size(); ++p) {
     thetas[p] = new state_type(m, Px, T);

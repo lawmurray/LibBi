@@ -296,7 +296,7 @@ private:
 }
 
 #include "functor.hpp"
-#include "../math/pi.hpp"
+#include "../math/constant.hpp"
 #include "../math/view.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"

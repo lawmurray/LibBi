@@ -21,7 +21,7 @@ public:
   [% declare_action_dynamic_function('maxlogdensity') %]
 };
 
-#include "bi/math/pi.hpp"
+#include "bi/math/constant.hpp"
 
 [% std_action_dynamic_function('simulate') %]
 

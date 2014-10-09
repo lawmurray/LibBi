@@ -32,9 +32,10 @@ public:
    *
    * @param m Model.
    * @param P Number of particles.
-   * @param T Number of time points.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  MarginalSISState(B& m, const int P = 0, const int T = 0);
+  MarginalSISState(B& m, const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -79,8 +80,8 @@ private:
 
 template<class B, bi::Location L, class S1, class IO1, class Q1>
 bi::MarginalSISState<B,L,S1,IO1,Q1>::MarginalSISState(B& m, const int P,
-    const int T) :
-    parent_type(m, P, T), q(B::NP), logWeight(0.0) {
+    const int Y, const int T) :
+    parent_type(m, P, Y, T), q(B::NP), logWeight(0.0) {
   //
 }
 

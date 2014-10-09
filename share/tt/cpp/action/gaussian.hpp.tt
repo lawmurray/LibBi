@@ -27,7 +27,7 @@ public:
   [% declare_action_static_function('maxlogdensity') %]
 };
 
-#include "bi/math/pi.hpp"
+#include "bi/math/constant.hpp"
 
 [% std_action_static_function('simulate') %]
 
@@ -82,7 +82,7 @@ public:
   lp += -BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma);
   [% END %]
   [% ELSE %]
-  lp = std::numeric_limits<real>::infinity();
+  lp = BI_INF;
   [% END %]
   
   [% put_output(action, 'xy') %]

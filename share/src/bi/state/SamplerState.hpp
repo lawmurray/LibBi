@@ -39,9 +39,10 @@ public:
    *
    * @param m Model.
    * @param P Number of \f$x\f$-particles.
-   * @param T Number of time points.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  SamplerState(B& m, const int P = 0, const int T = 0);
+  SamplerState(B& m, const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -104,9 +105,10 @@ public:
 }
 
 template<class B, bi::Location L, class S1, class IO1>
-bi::SamplerState<B,L,S1,IO1>::SamplerState(B& m, const int P, const int T) :
-    S1(P), out(m, P, T), path(B::NR + B::ND, T), logLikelihood(-std::numeric_limits<real>::infinity()), logPrior(
-        -std::numeric_limits<real>::infinity()), logProposal(-std::numeric_limits<real>::infinity()) {
+bi::SamplerState<B,L,S1,IO1>::SamplerState(B& m, const int P, const int Y,
+    const int T) :
+    S1(P, Y, T), out(m, P, T), path(B::NR + B::ND, T), logLikelihood(-BI_INF), logPrior(
+        -BI_INF), logProposal(-BI_INF) {
   //
 }
 

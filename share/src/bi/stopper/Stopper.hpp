@@ -33,7 +33,7 @@ public:
   /**
    * Stop?
    */
-  bool stop(const double maxlw = std::numeric_limits<double>::infinity());
+  bool stop(const double maxlw = BI_INF);
 
   /**
    * Add weight.
@@ -41,7 +41,7 @@ public:
    * @param lw New log-weight.
    * @param maxlw Maximum log-weight.
    */
-  void add(const double lw, const double maxlw = std::numeric_limits<double>::infinity());
+  void add(const double lw, const double maxlw = BI_INF);
 
   /**
    * Add weights.
@@ -52,7 +52,7 @@ public:
    * @param maxlw Maximum log-weight.
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw = std::numeric_limits<double>::infinity());
+  void add(const V1 lws, const double maxlw = BI_INF);
 
   /**
    * Reset for reuse.
