@@ -66,27 +66,22 @@ public:
 };
 }
 
-#include <utility>
-
 template<class F>
 template<class S1, class IO1, class IO2>
 double bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
-  const int P = s.size();
-  double ll = 0.0;
-
   ScheduleIterator iter = first;
   this->init(rng, *iter, s, out, inInit);
   this->output0(s, out);
-  ll = this->correct(rng, *iter, s);
+  this->correct(rng, *iter, s);
   this->output(*iter, s, out);
   while (iter + 1 != last) {
-    ll += this->step(rng, iter, last, s, out);
+    this->step(rng, iter, last, s, out);
   }
-  this->term();
-  this->outputT(ll, out);
+  this->term(s);
+  this->outputT(s, out);
 
-  return ll;
+  return s.logLikelihood;
 }
 
 template<class F>
@@ -96,21 +91,18 @@ double bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
   // this implementation is (should be) the same as filter() above, but with
   // a different init() call
 
-  const int P = s.size();
-  double ll = 0.0;
-
   ScheduleIterator iter = first;
   this->init(rng, *iter, s, out);
   this->output0(s, out);
-  ll = this->correct(rng, *iter, s);
+  this->correct(rng, *iter, s);
   this->output(*iter, s, out);
   while (iter + 1 != last) {
-    ll += this->step(rng, iter, last, s, out);
+    this->step(rng, iter, last, s, out);
   }
-  this->term();
-  this->outputT(ll, out);
+  this->term(s);
+  this->outputT(s, out);
 
-  return ll;
+  return s.logLikelihood;
 }
 
 #endif

@@ -39,14 +39,19 @@ public:
   FilterState& operator=(const FilterState<B,L>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
    * Swap.
    */
   void swap(FilterState<B,L>& o);
 
-  /*
-   * Uncorrected and correct means.
+  /**
+   * Marginal log-likelihood of parameters.
    */
-  host_vector<double> logLikelihoods;
+  double logLikelihood;
 
 private:
   /**
@@ -71,13 +76,13 @@ private:
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const int P, const int Y, const int T) :
-    State<B,L>(P, Y, T), logLikelihoods(Y) {
+    State<B,L>(P, Y, T), logLikelihood(0.0) {
   //
 }
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const FilterState<B,L>& o) :
-    State<B,L>(o), logLikelihoods(o.logLikelihoods) {
+    State<B,L>(o), logLikelihood(o.logLikelihood) {
   //
 }
 
@@ -85,29 +90,35 @@ template<class B, bi::Location L>
 bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
     const FilterState<B,L>& o) {
   State<B,L>::operator=(o);
-  logLikelihoods = o.logLikelihoods;
+  logLikelihood = o.logLikelihood;
 
   return *this;
 }
 
 template<class B, bi::Location L>
+void bi::FilterState<B,L>::clear() {
+  State<B,L>::clear();
+  logLikelihood = 0.0;
+}
+
+template<class B, bi::Location L>
 void bi::FilterState<B,L>::swap(FilterState<B,L>& o) {
   State<B,L>::swap(o);
-  logLikelihoods.swap(o.logLikelihoods);
+  std::swap(logLikelihood, o.logLikelihood);
 }
 
 template<class B, bi::Location L>
 template<class Archive>
 void bi::FilterState<B,L>::save(Archive& ar, const unsigned version) const {
   ar & boost::serialization::base_object < State<B,L> > (*this);
-  save_resizable_vector(ar, version, logLikelihoods);
+  ar & logLikelihood;
 }
 
 template<class B, bi::Location L>
 template<class Archive>
 void bi::FilterState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < State<B,L> > (*this);
-  save_resizable_vector(ar, version, logLikelihoods);
+  ar & logLikelihood;
 }
 
 #endif

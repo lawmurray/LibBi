@@ -8,7 +8,7 @@
 #ifndef BI_METHOD_BRIDGEPF_HPP
 #define BI_METHOD_BRIDGEPF_HPP
 
-#include "LookaheadPF.hpp"
+#include "BootstrapPF.hpp"
 #include "../state/AuxiliaryPFState.hpp"
 
 namespace bi {
@@ -18,19 +18,20 @@ namespace bi {
  * @ingroup method_filter
  *
  * @tparam B Model type.
- * @tparam S Simulator type.
+ * @tparam F Forcer type.
+ * @tparam O Observer type.
  * @tparam R Resampler type.
  *
  * Implements the bridge particle filter as described in
  * @ref DelMoral2014 "Del Moral & Murray (2014)".
  */
-template<class B, class S, class R>
-class BridgePF: public LookaheadPF<B,S,R> {
+template<class B, class F, class O, class R>
+class BridgePF: public BootstrapPF<B,F,O,R> {
 public:
   /**
    * @copydoc BootstrapPF::BootstrapPF()
    */
-  BridgePF(B& m, S& sim, R& resam);
+  BridgePF(B& m, F& in, O& obs, R& resam);
 
   /**
    * @name High-level interface.
@@ -39,12 +40,12 @@ public:
    */
   //@{
   /**
-   * @copydoc LookaheadPF::step()
+   * @copydoc BridgePF::step()
    */
   template<class S1, class IO1>
-  double step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+  void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
       S1& s, IO1& out);
-//@}
+  //@}
 
   /**
    * @name Low-level interface.
@@ -61,60 +62,124 @@ public:
    * @param iter Current position in time schedule.
    * @param last End of time schedule.
    * @param[in,out] s State.
-   *
-   * @return Normalising constant contribution.
    */
   template<class S1>
-  double bridge(Random& rng, const ScheduleIterator iter,
+  void bridge(Random& rng, const ScheduleIterator iter,
       const ScheduleIterator last, S1& s);
-  //@}
+
+  /**
+   * @copydoc BootstrapPF::correct()
+   */
+  template<class S1>
+  void correct(Random& rng, const ScheduleElement now, S1& s);
+
+  /**
+   * @copydoc BootstrapPF::resample()
+   */
+  template<class S1>
+  void resample(Random& rng, const ScheduleElement now, S1& s);
+//@}
+
+protected:
+  /**
+   * Compute the maximum log-weight of a particle at the current time under
+   * the bridge density.
+   *
+   * @tparam S1 State type.
+   *
+   * @param s State.
+   *
+   * @return Maximum log-weight.
+   */
+  template<class S1>
+  double getMaxLogWeightBridge(const ScheduleElement now, S1& s);
 };
 }
 
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
-template<class B, class S, class R>
-bi::BridgePF<B,S,R>::BridgePF(B& m, S& sim, R& resam) :
-    LookaheadPF<B,S,R>(m, sim, resam) {
+template<class B, class F, class O, class R>
+bi::BridgePF<B,F,O,R>::BridgePF(B& m, F& in, O& obs, R& resam) :
+    BootstrapPF<B,F,O,R>(m, in, obs, resam) {
   //
 }
 
-template<class B, class S, class R>
+template<class B, class F, class O, class R>
 template<class S1, class IO1>
-double bi::BridgePF<B,S,R>::step(Random& rng, ScheduleIterator& iter,
+void bi::BridgePF<B,F,O,R>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
-  double ll = 0.0;
   do {
-    ll += this->bridge(rng, iter, last, s);
+    this->bridge(rng, iter, last, s);
     this->resample(rng, *iter, s);
     ++iter;
     this->predict(rng, *iter, s);
-    ll += this->correct(rng, *iter, s);
+    this->correct(rng, *iter, s);
     this->output(*iter, s, out);
   } while (iter + 1 != last && !iter->isObserved());
-
-  return ll;
 }
 
-template<class B, class S, class R>
+template<class B, class F, class O, class R>
 template<class S1>
-double bi::BridgePF<B,S,R>::bridge(Random& rng, const ScheduleIterator iter,
+void bi::BridgePF<B,F,O,R>::bridge(Random& rng, const ScheduleIterator iter,
     const ScheduleIterator last, S1& s) {
-  double ll = 0.0;
   if (iter->hasBridge() && !iter->isObserved()
       && last->indexObs() > iter->indexObs()) {
     axpy(-1.0, s.logAuxWeights(), s.logWeights());
     s.logAuxWeights().clear();
 
-    this->m.bridgeLogDensities(s,
-        this->sim.obs.getMask(iter->indexObs()), s.logAuxWeights());
+    this->m.bridgeLogDensities(s, this->obs.getMask(iter->indexObs()),
+        s.logAuxWeights());
 
     axpy(1.0, s.logAuxWeights(), s.logWeights());
-    ll = logsumexp_reduce(s.logWeights())
-        - bi::log(static_cast<double>(s.size()));
   }
-  return ll;
+}
+
+template<class B, class F, class O, class R>
+template<class S1>
+void bi::BridgePF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
+    S1& s) {
+  if (now.isObserved()) {
+    axpy(-1.0, s.logAuxWeights(), s.logWeights());
+    s.logAuxWeights().clear();
+    this->m.observationLogDensities(s, this->obs.getMask(now.indexObs()),
+        s.logWeights());
+  }
+}
+
+template<class B, class F, class O, class R>
+template<class S1>
+void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
+    S1& s) {
+  if ((now.isObserved() && this->resam.isTriggered(s.logWeights()))
+      || (now.hasBridge() && this->resam.isTriggeredBridge(s.logWeights()))) {
+    if (resampler_needs_max<R>::value && now.isObserved()) {
+      this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
+    }
+    if (resampler_needs_max<R>::value && now.hasBridge()) {
+      this->resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
+    }
+    if (now.hasOutput()) {
+      s.logLikelihood += this->resam.resample(rng, s.logWeights(),
+          s.ancestors(), s.getDyn());
+      bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
+    } else {
+      typename S1::temp_int_vector_type as1(s.ancestors().size());
+      s.logLikelihood += this->resam.resample(rng, s.logWeights(), as1,
+          s.getDyn());
+      bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
+      bi::gather(as1, s.ancestors(), s.ancestors());
+    }
+  } else if (now.hasOutput()) {
+    seq_elements(s.ancestors(), 0);
+  }
+}
+
+template<class B, class F, class O, class R>
+template<class S1>
+double bi::BridgePF<B,F,O,R>::getMaxLogWeightBridge(const ScheduleElement now,
+    S1& s) {
+  return this->m.bridgeMaxLogDensity(s, this->obs.getMask(now.indexObs()));
 }
 
 #endif

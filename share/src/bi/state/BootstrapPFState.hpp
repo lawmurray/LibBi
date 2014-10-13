@@ -39,6 +39,11 @@ public:
   BootstrapPFState& operator=(const BootstrapPFState<B,L>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
    * Swap.
    */
   void swap(BootstrapPFState<B,L>& o);
@@ -120,10 +125,17 @@ template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
     const BootstrapPFState<B,L>& o) {
   FilterState<B,L>::operator=(o);
-  lws = o.lws;
-  as = o.as;
+  logWeights() = o.logWeights();
+  ancestors() = o.ancestors();
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::BootstrapPFState<B,L>::clear() {
+  FilterState<B,L>::clear();
+  logWeights().clear();
+  seq_elements(ancestors(), 0);
 }
 
 template<class B, bi::Location L>
@@ -156,17 +168,17 @@ const typename bi::State<B,L>::int_vector_reference_type bi::BootstrapPFState<
 
 template<class B, bi::Location L>
 inline void bi::BootstrapPFState<B,L>::trim() {
+  FilterState<B,L>::trim();
   lws.trim(this->p, this->P);
   as.trim(this->p, this->P);
-  FilterState<B,L>::trim();
 }
 
 template<class B, bi::Location L>
 inline void bi::BootstrapPFState<B,L>::resizeMax(const int maxP,
     const bool preserve) {
+  FilterState<B,L>::resizeMax(maxP, preserve);
   lws.resize(maxP, preserve);
   as.resize(maxP, preserve);
-  FilterState<B,L>::resizeMax(maxP, preserve);
 }
 
 template<class B, bi::Location L>

@@ -70,11 +70,6 @@ public:
   matrix_type path;
 
   /**
-   * Marginal log-likelihood of parameters.
-   */
-  double logLikelihood;
-
-  /**
    * Log-prior density of parameters.
    */
   double logPrior;
@@ -107,14 +102,14 @@ public:
 template<class B, bi::Location L, class S1, class IO1>
 bi::SamplerState<B,L,S1,IO1>::SamplerState(B& m, const int P, const int Y,
     const int T) :
-    S1(P, Y, T), out(m, P, T), path(B::NR + B::ND, T), logLikelihood(-BI_INF), logPrior(
-        -BI_INF), logProposal(-BI_INF) {
+    S1(P, Y, T), out(m, P, T), path(B::NR + B::ND, T), logPrior(-BI_INF), logProposal(
+        -BI_INF) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::SamplerState<B,L,S1,IO1>::SamplerState(const SamplerState<B,L,S1,IO1>& o) :
-    S1(o), out(o.out), path(o.path), logLikelihood(o.logLikelihood), logPrior(
+    S1(o), out(o.out), path(o.path), logPrior(
         o.logPrior), logProposal(o.logProposal) {
   //
 }
@@ -125,7 +120,6 @@ bi::SamplerState<B,L,S1,IO1>& bi::SamplerState<B,L,S1,IO1>::operator=(
   S1::operator=(o);
   out = o.out;
   path = o.path;
-  logLikelihood = o.logLikelihood;
   logPrior = o.logPrior;
   logProposal = o.logProposal;
 
@@ -137,7 +131,6 @@ void bi::SamplerState<B,L,S1,IO1>::swap(SamplerState<B,L,S1,IO1>& o) {
   S1::swap(o);
   out.swap(o.out);
   path.swap(o.path);
-  std::swap(logLikelihood, o.logLikelihood);
   std::swap(logPrior, o.logPrior);
   std::swap(logProposal, o.logProposal);
 }
@@ -149,7 +142,6 @@ void bi::SamplerState<B,L,S1,IO1>::save(Archive& ar,
   ar & boost::serialization::base_object < S1 > (*this);
   ar & out;
   save_resizable_matrix(ar, version, path);
-  ar & logLikelihood;
   ar & logPrior;
   ar & logProposal;
 }
@@ -160,7 +152,6 @@ void bi::SamplerState<B,L,S1,IO1>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < S1 > (*this);
   ar & out;
   load_resizable_matrix(ar, version, path);
-  ar & logLikelihood;
   ar & logPrior;
   ar & logProposal;
 }

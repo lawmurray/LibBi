@@ -24,7 +24,6 @@
 
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/method/Simulator.hpp"
 
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
@@ -66,6 +65,7 @@
 #include "bi/null/MCMCNullBuffer.hpp"
 #include "bi/null/SMCNullBuffer.hpp"
 
+#include "bi/method/SimulatorFactory.hpp"
 #include "bi/method/FilterFactory.hpp"
 #include "bi/method/SamplerFactory.hpp"
 
@@ -311,22 +311,22 @@ int main(int argc, char* argv[]) {
   /* simulator */
   BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
-  BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
-  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *sim)));
+  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *in, *obs)));
   [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
-  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *in, *obs, filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *in, *obs, filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, filterResam, stopper, NPARTICLES, STOPPER_BLOCK)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *in, *obs, filterResam, stopper, NPARTICLES, STOPPER_BLOCK)));
   [% ELSE %]
-  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *in, *obs, filterResam)));
   [% END %]
   
   /* sampler */
+  [% IF client.get_named_arg('target') == 'posterior' %]
   [% IF client.get_named_arg('sampler') == 'sir' %]
   BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
   BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, sampleAdapter, sampleResam, NMOVES));
@@ -335,7 +335,10 @@ int main(int argc, char* argv[]) {
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]
-
+  [% ELSE %]
+  BOOST_AUTO(sampler, SimulatorFactory::create(m, *in, *obs));
+  [% END %]
+  
   /* sample */
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
@@ -347,7 +350,7 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('target') == 'posterior' %]
   sampler->sample(rng, sched.begin(), sched.end(), s, NSAMPLES, out, bufInit);
   [% ELSE %]
-  sim->simulate(rng, sched.begin(), sched.end(), s, out, bufInit);
+  sampler->sample(rng, sched.begin(), sched.end(), s, out, bufInit);
   [% END %]
   out.flush();
   
@@ -364,7 +367,8 @@ int main(int argc, char* argv[]) {
 
   delete sampler;
   delete filter;
-  delete sim;
+  delete obs;
+  delete in;
   
   #ifdef ENABLE_MPI
   client.disconnect();

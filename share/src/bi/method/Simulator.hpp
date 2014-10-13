@@ -14,7 +14,7 @@
 
 namespace bi {
 /**
- * %Simulator for state-space models.
+ * %Simulator.
  *
  * @ingroup method
  *
@@ -32,7 +32,7 @@ public:
    * @param in Forcer.
    * @param obs Observer.
    */
-  Simulator(B& m, F& in = NULL, O& obs = NULL);
+  Simulator(B& m, F& in, O& obs);
 
   /**
    * @name High-level interface
@@ -41,9 +41,9 @@ public:
    */
   //@{
   /**
-   * Simulate model forward.
+   * Simulate.
    *
-   * @tparam L Location.
+   * @tparam S1 State type..
    * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
@@ -54,9 +54,9 @@ public:
    * @param out Output buffer.
    * @param inInit Initialisation file.
    */
-  template<Location L, class IO1, class IO2>
-  void simulate(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO1& out, IO2& inInit);
+  template<class S1, class IO1, class IO2>
+  void sample(Random& rng, const ScheduleIterator first,
+      const ScheduleIterator last, S1& s, IO1& out, IO2& inInit);
   //@}
 
   /**
@@ -69,34 +69,36 @@ public:
   /**
    * Initialise for simulation.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
    * @param[out] s State.
+   * @param out Output file.
    * @param inInit Initialisation file.
    */
-  template<Location L, class IO2>
-  void init(Random& rng, const ScheduleElement now, State<B,L>& s,
+  template<class S1, class IO1, class IO2>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out,
       IO2& inInit);
 
   /**
    * Initialise for simulation, with fixed parameters.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
    * @param[out] s State.
+   * @param out Output file.
    */
-  template<Location L>
-  void init(Random& rng, const ScheduleElement now, State<B,L>& s);
+  template<class S1, class IO1>
+  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out);
 
   /**
    * Advance model forward to time of next output, and output.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
@@ -106,70 +108,83 @@ public:
    * @param[in,out] s State.
    * @param[out] out Output buffer.
    */
-  template<Location L, class IO1>
+  template<class S1, class IO1>
   void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      State<B,L>& s, IO1& out);
+      S1& s, IO1& out);
 
   /**
    * Advance model forward.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param next Next step in time schedule.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void advance(Random& rng, const ScheduleElement next, State<B,L>& s);
+  template<class S1>
+  void predict(Random& rng, const ScheduleElement next, S1& s);
 
   /**
    * Advance lookahead model forward.
    *
-   * @see advance()
+   * @see predict()
    */
-  template<Location L>
-  void lookahead(Random& rng, const ScheduleElement next, State<B,L>& s);
+  template<class S1>
+  void lookahead(Random& rng, const ScheduleElement next, S1& s);
 
   /**
    * Simulate the observation model.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    *
    * @param[in,out] rng Random number generator.
    * @param[in,out] s State.
    */
-  template<Location L>
-  void observe(Random& rng, State<B,L>& s);
+  template<class S1>
+  void observe(Random& rng, S1& s);
 
   /**
-   * Output static variables.
+   * Output before simulation.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param s State.
    * @param out Output buffer.
    */
-  template<Location L, class IO1>
-  void output0(const State<B,L>& s, IO1& out);
+  template<class S1, class IO1>
+  void output0(const S1& s, IO1& out);
 
   /**
-   * Output dynamic variables.
+   * Output during simulation.
    *
-   * @tparam L Location.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param now Current step in time schedule.
    * @param s State.
    * @param out Output buffer.
    */
-  template<Location L, class IO1>
-  void output(const ScheduleElement now, const State<B,L>& s, IO1& out);
+  template<class S1, class IO1>
+  void output(const ScheduleElement now, const S1& s, IO1& out);
 
   /**
-   * Clean up.
+   * Output after simulation.
+   *
+   * @tparam S1 State type.
+   * @tparam IO1 Output type.
+   *
+   * @param s State.
+   * @param out Output buffer.
    */
-  void term();
+  template<class S1, class IO1>
+  void outputT(const S1& s, IO1& out);
+
+  /**
+   * Finalise.
+   */
+  template<class S1>
+  void term(S1& s);
   //@}
 
   /**
@@ -187,27 +202,6 @@ public:
    */
   O& obs;
 };
-
-/**
- * Factory for creating Simulator objects.
- *
- * @ingroup method
- *
- * @see Simulator
- */
-struct SimulatorFactory {
-  /**
-   * Create Simulator.
-   *
-   * @return Simulator object. Caller has ownership.
-   *
-   * @see Simulator::Simulator()
-   */
-  template<class B, class F, class O>
-  static Simulator<B,F,O>* create(B& m, F& in, O& obs) {
-    return new Simulator<B,F,O>(m, in, obs);
-  }
-};
 }
 
 template<class B, class F, class O>
@@ -217,9 +211,9 @@ bi::Simulator<B,F,O>::Simulator(B& m, F& in, O& obs) :
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class IO1, class IO2>
-void bi::Simulator<B,F,O>::simulate(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, State<B,L>& s, IO1& out, IO2& inInit) {
+template<class S1, class IO1, class IO2>
+void bi::Simulator<B,F,O>::sample(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   ScheduleIterator iter = first;
   init(rng, *iter, s, inInit);
   output0(s, out);
@@ -227,17 +221,18 @@ void bi::Simulator<B,F,O>::simulate(Random& rng, const ScheduleIterator first,
   while (iter + 1 != last) {
     step(rng, iter, last, s, out);
   }
-  term();
+  term(s);
+  outputT(s, out);
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class IO2>
-void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
-    State<B,L>& s, IO2& inInit) {
+template<class S1, class IO1, class IO2>
+void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
+    IO1& out, IO2& inInit) {
   std::vector<real> ts;
 
-  s.setTime(now.getTime());
   s.clear();
+  s.setTime(now.getTime());
 
   /* static inputs */
   in.update0(s);
@@ -287,12 +282,14 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
   }
+
+  out.clear();
 }
 
 template<class B, class F, class O>
-template<bi::Location L>
-void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
-    State<B,L>& s) {
+template<class S1, class IO1>
+void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
+    IO1& out) {
   s.setTime(now.getTime());
 
   /* static inputs */
@@ -317,23 +314,25 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now,
   /* initial values */
   s.getDyn().clear();
   m.initialSamples(rng, s);
+
+  out.clear();
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class IO1>
+template<class S1, class IO1>
 void bi::Simulator<B,F,O>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, State<B,L>& s, IO1& out) {
+    const ScheduleIterator last, S1& s, IO1& out) {
   do {
     ++iter;
-    advance(rng, *iter, s);
-  } while (iter + 1 != last && !iter->hasOutput());
-  output(*iter, s, out);
+    predict(rng, *iter, s);
+    output(*iter, s, out);
+  } while (iter + 1 != last && !iter->isObserved());
 }
 
 template<class B, class F, class O>
-template<bi::Location L>
-void bi::Simulator<B,F,O>::advance(Random& rng, const ScheduleElement next,
-    State<B,L>& s) {
+template<class S1>
+void bi::Simulator<B,F,O>::predict(Random& rng, const ScheduleElement next,
+    S1& s) {
   if (next.hasInput()) {
     in.update(next.indexInput(), s);
   }
@@ -345,10 +344,10 @@ void bi::Simulator<B,F,O>::advance(Random& rng, const ScheduleElement next,
 }
 
 template<class B, class F, class O>
-template<bi::Location L>
+template<class S1>
 void bi::Simulator<B,F,O>::lookahead(Random& rng, const ScheduleElement next,
-    State<B,L>& s) {
-  // this implementation is (should be) the same as advance() above, but
+    S1& s) {
+  // this implementation is (should be) the same as predict() above, but
   // using m.lookaheadTransitionSamples() rather than m.transitionSamples()
   if (next.hasInput()) {
     in.update(next.indexInput(), s);
@@ -362,28 +361,35 @@ void bi::Simulator<B,F,O>::lookahead(Random& rng, const ScheduleElement next,
 }
 
 template<class B, class F, class O>
-template<bi::Location L>
-void bi::Simulator<B,F,O>::observe(Random& rng, State<B,L>& s) {
+template<class S1>
+void bi::Simulator<B,F,O>::observe(Random& rng, S1& s) {
   m.observationSample(rng, s);
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class IO1>
-void bi::Simulator<B,F,O>::output0(const State<B,L>& s, IO1& out) {
+template<class S1, class IO1>
+void bi::Simulator<B,F,O>::output0(const S1& s, IO1& out) {
   out.write0(s);
 }
 
 template<class B, class F, class O>
-template<bi::Location L, class IO1>
-void bi::Simulator<B,F,O>::output(const ScheduleElement now,
-    const State<B,L>& s, IO1& out) {
+template<class S1, class IO1>
+void bi::Simulator<B,F,O>::output(const ScheduleElement now, const S1& s,
+    IO1& out) {
   if (now.hasOutput()) {
     out.write(now.indexOutput(), now.getTime(), s);
   }
 }
 
 template<class B, class F, class O>
-void bi::Simulator<B,F,O>::term() {
+template<class S1, class IO1>
+void bi::Simulator<B,F,O>::outputT(const S1& s, IO1& out) {
+  out.writeT(s);
+}
+
+template<class B, class F, class O>
+template<class S1>
+void bi::Simulator<B,F,O>::term(S1& s) {
   //
 }
 

@@ -39,6 +39,11 @@ public:
   AuxiliaryPFState& operator=(const AuxiliaryPFState<B,L>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
    * Swap.
    */
   void swap(AuxiliaryPFState<B,L>& o);
@@ -105,9 +110,15 @@ template<class B, bi::Location L>
 bi::AuxiliaryPFState<B,L>& bi::AuxiliaryPFState<B,L>::operator=(
     const AuxiliaryPFState<B,L>& o) {
   BootstrapPFState<B,L>::operator=(o);
-  qlws = o.qlws;
+  logAuxWeights() = o.logAuxWeights();
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::AuxiliaryPFState<B,L>::clear() {
+  BootstrapPFState<B,L>::clear();
+  logAuxWeights().clear();
 }
 
 template<class B, bi::Location L>

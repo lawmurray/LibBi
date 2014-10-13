@@ -39,6 +39,11 @@ public:
   ExtendedKFState& operator=(const ExtendedKFState<B,L>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
    * Swap.
    */
   void swap(ExtendedKFState<B,L>& o);
@@ -111,6 +116,22 @@ bi::ExtendedKFState<B,L>& bi::ExtendedKFState<B,L>::operator=(
   C = o.C;
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::ExtendedKFState<B,L>::clear() {
+  FilterState<B,L>::clear();
+
+  /* mean and Cholesky factor of initial state */
+  mu1 = row(this->getDyn(), 0);
+  U1 = Q();
+
+  /* reset Jacobian, as it has now been multiplied in */
+  ident(F());
+  Q().clear();
+
+  /* across-time covariance */
+  C.clear();
 }
 
 template<class B, bi::Location L>

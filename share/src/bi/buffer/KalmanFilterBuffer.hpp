@@ -50,11 +50,14 @@ public:
   void write(const size_t k, const real t, const S1& s);
 
   /**
-   * Write marginal log-likelihood
+   * Write state.
    *
-   * @param ll Marginal log-likelihood.
+   * @tparam S1 State type.
+   *
+   * @param s State.
    */
-  void writeT(const real ll);
+  template<class S1>
+  void writeT(const S1& s);
 };
 }
 
@@ -80,8 +83,9 @@ void bi::KalmanFilterBuffer<IO1>::write(const size_t k, const real t,
 }
 
 template<class IO1>
-void bi::KalmanFilterBuffer<IO1>::writeT(const real ll) {
-  parent_type::writeLogLikelihood(ll);
+template<class S1>
+void bi::KalmanFilterBuffer<IO1>::writeT(const S1& s) {
+  parent_type::writeLogLikelihood(s.logLikelihood);
 }
 
 #endif

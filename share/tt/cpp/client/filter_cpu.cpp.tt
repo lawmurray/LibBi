@@ -18,7 +18,6 @@
 #include "bi/random/Random.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/method/Simulator.hpp"
 
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
@@ -159,7 +158,6 @@ int main(int argc, char* argv[]) {
   /* simulator */
   BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
-  BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
 
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
@@ -202,15 +200,15 @@ int main(int argc, char* argv[]) {
 
   /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
-  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *sim)));
+  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *in, *obs)));
   [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
-  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *in, *obs, resam)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *in, *obs, resam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, NPARTICLES, STOPPER_BLOCK)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *in, *obs, resam, stopper, NPARTICLES, STOPPER_BLOCK)));
   [% ELSE %]
-  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *in, *obs, resam)));
   [% END %]
 
   #ifdef ENABLE_GPERFTOOLS
@@ -237,7 +235,6 @@ int main(int argc, char* argv[]) {
   #endif
 
   delete filter;
-  delete sim;
   delete obs;
   delete in;
   

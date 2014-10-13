@@ -20,24 +20,26 @@ namespace bi {
  * @ingroup method_filter
  *
  * @tparam B Model type.
- * @tparam S Simulator type.
+ * @tparam F Forcer type.
+ * @tparam O Observer type.
  * @tparam R Resampler type.
  * @tparam S2 Stopper type.
  */
-template<class B, class S, class R, class S2>
-class AdaptivePF: public BootstrapPF<B,S,R> {
+template<class B, class F, class O, class R, class S2>
+class AdaptivePF: public BootstrapPF<B,F,O,R> {
 public:
   /**
    * Constructor.
    *
    * @param m Model.
-   * @param sim Simulator.
+   * @param in Forcer.
+   * @param obs Observer.
    * @param resam Resampler.
    * @param stopper Stopping criterion for adapting number of particles.
    * @param initialP Number of particles at first time.
    * @param blockP Number of particles per block.
    */
-  AdaptivePF(B& m, S& sim, R& resam, S2& stopper, const int initialP,
+  AdaptivePF(B& m, F& in, O& obs, R& resam, S2& stopper, const int initialP,
       const int blockP);
 
   /**
@@ -63,8 +65,8 @@ public:
    * @copydoc BootstrapPF::step()
    */
   template<class S1, class IO1>
-  double step(Random& rng, ScheduleIterator& iter,
-      const ScheduleIterator last, S1& s, IO1& out);
+  void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
+      S1& s, IO1& out);
   //@}
 
   /**
@@ -102,39 +104,39 @@ private:
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
-template<class B, class S, class R, class S2>
-bi::AdaptivePF<B,S,R,S2>::AdaptivePF(B& m, S& sim, R& resam, S2& stopper,
-    const int initialP, const int blockP) :
-    BootstrapPF<B,S,R>(m, sim, resam), stopper(stopper), initialP(initialP), blockP(
-        blockP) {
+template<class B, class F, class O, class R, class S2>
+bi::AdaptivePF<B,F,O,R,S2>::AdaptivePF(B& m, F& in, O& obs, R& resam,
+    S2& stopper, const int initialP, const int blockP) :
+    BootstrapPF<B,F,O,R>(m, in, obs, resam), stopper(stopper), initialP(
+        initialP), blockP(blockP) {
   //
 }
 
-template<class B, class S, class R, class S2>
+template<class B, class F, class O, class R, class S2>
 template<class S1, class IO1, class IO2>
-void bi::AdaptivePF<B,S,R,S2>::init(Random& rng, const ScheduleElement now,
+void bi::AdaptivePF<B,F,O,R,S2>::init(Random& rng, const ScheduleElement now,
     S1& s, IO1& out, IO2& inInit) {
   if (s.size() < initialP) {
     s.resizeMax(initialP);
   }
   s.setRange(0, initialP);
-  BootstrapPF<B,S,R>::init(rng, now, s, out, inInit);
+  BootstrapPF<B,F,O,R>::init(rng, now, s, out, inInit);
 }
 
-template<class B, class S, class R, class S2>
+template<class B, class F, class O, class R, class S2>
 template<class S1, class IO1>
-void bi::AdaptivePF<B,S,R,S2>::init(Random& rng, const ScheduleElement now,
+void bi::AdaptivePF<B,F,O,R,S2>::init(Random& rng, const ScheduleElement now,
     S1& s, IO1& out) {
   if (s.size() < initialP) {
     s.resizeMax(initialP);
   }
   s.setRange(0, initialP);
-  BootstrapPF<B,S,R>::init(rng, now, s, out);
+  BootstrapPF<B,F,O,R>::init(rng, now, s, out);
 }
 
-template<class B, class S, class R, class S2>
+template<class B, class F, class O, class R, class S2>
 template<class S1, class IO1>
-double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
+void bi::AdaptivePF<B,F,O,R,S2>::step(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s, IO1& out) {
   typedef typename loc_temp_vector<S1::location,real>::type vector_type;
   typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
@@ -157,11 +159,14 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   BOOST_AUTO(iter1, iter);
 
   /* prepare resampler */
-  //typename precompute_type<R,S1::location>::type pre;
-  //this->resam.precompute(lws, pre);
   if (iter->isObserved() && resampler_needs_max<R>::value) {
     this->resam.setMaxLogWeight(this->getMaxLogWeight(*iter, s));
   }
+  ///@todo Use precompute.
+  //typename precompute_type<R,S1::location>::type pre;
+  //ll = this->resam.precompute(lws, pre);
+  ll = logsumexp_reduce(s.logWeights())
+      - bi::log(static_cast<double>(s.size()));
 
   /* propagate block by block */
   this->stopper.reset();
@@ -209,18 +214,15 @@ double bi::AdaptivePF<B,S,R,S2>::step(Random& rng, ScheduleIterator& iter,
   s.setRange(0, length);
   //s.trim(); // optional, saves memory but means reallocation
   iter = iter1;  // caller expects iter to be advanced at end of step()
-  ll = logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(length));
-
-  return ll;
+  s.logLikelihood = ll;
 }
 
-template<class B, class S, class R, class S2>
+template<class B, class F, class O, class R, class S2>
 template<class S1, class IO1>
-void bi::AdaptivePF<B,S,R,S2>::output(const ScheduleElement now, const S1& s,
-    IO1& out) {
+void bi::AdaptivePF<B,F,O,R,S2>::output(const ScheduleElement now,
+    const S1& s, IO1& out) {
   if (now.hasOutput()) {
-    BootstrapPF<B,S,R>::output(now, s, out);
+    BootstrapPF<B,F,O,R>::output(now, s, out);
     if (now.indexOutput() == 0) {
       /* need to call push()---see AdaptivePFCache---other pushes handled in
        * step() */
