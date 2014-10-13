@@ -27,36 +27,6 @@ struct MultinomialPrecompute {
 };
 
 /**
- * MultinomialResampler implementation on host.
- */
-class MultinomialResamplerHost: public ResamplerHost {
-public:
-  /**
-   * Select ancestors, sorted in ascending order by construction. The basis
-   * of this implementation is the generation of sorted random variates
-   * using the method of @ref Bentley1979 "Bentley & Saxe (1979)".
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as,
-      MultinomialPrecompute<ON_HOST>& pre)
-          throw (ParticleFilterDegeneratedException);
-};
-
-/**
- * MultinomialResampler implementation on device.
- */
-class MultinomialResamplerGPU: public ResamplerGPU {
-public:
-  /**
-   * @copydoc MultinomialResampler::ancestors()
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as,
-      MultinomialPrecompute<ON_DEVICE>& pre)
-          throw (ParticleFilterDegeneratedException);
-};
-
-/**
  * Multinomial resampler for particle filter.
  *
  * @ingroup method_resampler
@@ -80,10 +50,10 @@ public:
    */
   //@{
   /**
-   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
+   * @copydoc Resampler::resample
    */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1 s)
+  template<class S1>
+  void resample(Random& rng, const ScheduleElement now, S1& s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -92,26 +62,26 @@ public:
    */
   //@{
   /**
+   * @copydoc Resampler::precompute
+   */
+  template<class V1, Location L>
+  void precompute(const V1 lws, MultinomialPrecompute<L>& pre);
+
+  /**
    * @copydoc Resampler::ancestors
    */
-  template<class V1, class V2>
-  void ancestors(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
   template<class V1, class V2, Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
       MultinomialPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
 
-  template<class V1, Location L>
-  void precompute(const V1 lws, MultinomialPrecompute<L>& pre);
-
   /**
    * @copydoc Resampler::offspring
    */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
+  template<class V1, class V2, Location L>
+  void offspring(Random& rng, const V1 lws, V2 os, const int P,
+      MultinomialPrecompute<L>& pre)
+          throw (ParticleFilterDegeneratedException);
   //@}
 
 protected:
@@ -139,69 +109,66 @@ struct precompute_type<MultinomialResampler,L> {
 #include "../math/temp_vector.hpp"
 #include "../math/sim_temp_vector.hpp"
 
-#include "thrust/sequence.h"
-#include "thrust/fill.h"
-#include "thrust/binary_search.h"
-#include "thrust/scan.h"
-#include "thrust/gather.h"
-
-template<class V1, class V2, class O1>
-void bi::MultinomialResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
-    throw (ParticleFilterDegeneratedException) {
-  ancestors(rng, lws, as);
-  permute(as);
-  copy(as, s);
-  lws.clear();
-}
-
-template<class V1, class V2>
-void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as)
-    throw (ParticleFilterDegeneratedException) {
-  MultinomialPrecompute<V1::location> pre;
-  precompute(lws, pre);
-  ancestors(rng, lws, as, pre);
-}
-
-template<class V1, class V2, bi::Location L>
-void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    MultinomialPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
-  typedef typename boost::mpl::if_c<L,MultinomialResamplerGPU,
-      MultinomialResamplerHost>::type impl;
-  impl::ancestors(rng, lws, as, pre);
+template<class S1>
+void bi::MultinomialResampler::resample(Random& rng,
+    const ScheduleElement now, S1& s)
+        throw (ParticleFilterDegeneratedException) {
+  double lW;
+  if (isTriggered(now, s, &lW)) {
+    MultinomialPrecompute<V1::location> pre;
+    precompute(s.logWeights(), pre);
+    ancestors(rng, s.logWeights(), s.ancestors(), pre);
+    permute(s.ancestors());
+    copy(s.ancestors(), s.getDyn());
+    s.logWeights().clear();
+    s.logLikelihood += lW;
+  }
 }
 
 template<class V1, bi::Location L>
 void bi::MultinomialResampler::precompute(const V1 lws,
     MultinomialPrecompute<L>& pre) {
   const int P = lws.size();
-  real lZ;
+  typename V1::value_type lZ;
 
   pre.Ws.resize(P, false);
   if (sort) {
     pre.lws1.resize(P, false);
     pre.ps.resize(P, false);
-
     pre.lws1 = lws;
     seq_elements(pre.ps, 0);
     bi::sort_by_key(pre.lws1, pre.ps);
     lZ = sumexpu_inclusive_scan(pre.lws1, pre.Ws);
-    pre.W = *(pre.Ws.end() - 1);  // log sum of weights
+    pre.W = *(pre.Ws.end() - 1);  // sum of weights
   } else {
     lZ = sumexpu_inclusive_scan(lws, pre.Ws);
-    pre.W = *(pre.Ws.end() - 1);  // log sum of weights
+    pre.W = *(pre.Ws.end() - 1);  // sum of weights
   }
   pre.sort = sort;
 }
 
-template<class V1, class V2>
+template<class V1, class V2, bi::Location L>
+void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    MultinomialPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+#ifdef ENABLE_CUDA
+  typedef typename boost::mpl::if_c<L,MultinomialResamplerGPU,
+  MultinomialResamplerHost>::type impl;
+#else
+  typedef MultinomialResamplerHost impl;
+#endif
+  impl::ancestors(rng, lws, as, pre);
+}
+
+template<class V1, class V2, bi::Location L>
 void bi::MultinomialResampler::offspring(Random& rng, const V1 lws, V2 os,
-    const int P) throw (ParticleFilterDegeneratedException) {
+    const int P, MultinomialPrecompute<L>& pre)
+        throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(P >= 0);
   BI_ASSERT(lws.size() == os.size());
 
   typename sim_temp_vector<V2>::type as(P);
-  ancestors(rng, lws, as);
+  ancestors(rng, lws, as, pre);
   ancestorsToOffspring(as, os);
 }
 

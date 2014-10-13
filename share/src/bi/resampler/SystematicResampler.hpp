@@ -141,15 +141,6 @@ protected:
 #include "../math/temp_vector.hpp"
 #include "../math/sim_temp_vector.hpp"
 
-#include "thrust/sequence.h"
-#include "thrust/fill.h"
-#include "thrust/extrema.h"
-#include "thrust/transform.h"
-#include "thrust/reduce.h"
-#include "thrust/scan.h"
-#include "thrust/transform_scan.h"
-#include "thrust/for_each.h"
-
 template<class V1, class V2, class O1>
 void bi::SystematicResampler::resample(Random& rng, V1 lws, V2 as, O1 s)
     throw (ParticleFilterDegeneratedException) {

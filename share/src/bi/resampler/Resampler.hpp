@@ -49,40 +49,17 @@ public:
   /**
    * Is ESS-based condition triggered?
    *
-   * @tparam V1 Vector type.
+   * @tparam S1 State type.
    *
-   * @param lws Log-weights.
+   * @param now Current step in time schedule.
+   * @param s State.
+   * @param[out] lW If given, the log of the sum of weights is written to this
+   * variable.
+   *
+   * @return True if resampling is triggered, false otherwise.
    */
-  template<class V1>
-  bool isTriggered(const V1 lws) const;
-
-  /**
-   * Is ESS-based condition for bridge resampling triggered?
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggeredBridge(const V1 lws) const;
-
-  /**
-   * Resample state.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   * @tparam O1 Compatible copy() type.
-   *
-   * @param rng Random number generator.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry.
-   * @param[in,out] s State.
-   *
-   * The weights @p lws are set to be uniform after the resampling.
-   */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1& lws, V2& as, O1 s)
-      throw (ParticleFilterDegeneratedException);
+  template<class S1>
+  bool isTriggered(const ScheduleElement now, const S1& s, double* lW) const;
   //@}
 
   /**
@@ -246,76 +223,6 @@ public:
    */
   template<class V1, class M1, class M2>
   static void copy(const V1 as, const M1 X1, M2 X2);
-
-  /**
-   * Normalise log-weights after resampling.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   *
-   * The normalisation is such that the sum of the weights (i.e. @c exp of
-   * the components of the vector) is equal to the number of particles.
-   */
-  template<class V1>
-  static void normalise(V1 lws);
-
-  /**
-   * Compute effective sample size (ESS) of log-weights.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @tparam lws Log-weights.
-   *
-   * @return ESS.
-   */
-  template<class V1>
-  static typename V1::value_type ess(const V1 lws);
-
-  /**
-   * Compute sum of squared errors of ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param lws Log-weights.
-   * @param os Offspring.
-   *
-   * @return Sum of squared errors.
-   *
-   * This computes the sum of squared errors in the resampling, as in
-   * @ref Kitagawa1996 "Kitagawa (1996)":
-   *
-   * \f[
-   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)^2\,,
-   * \f]
-   *
-   * where \f$W\f$ is the sum of weights.
-   */
-  template<class V1, class V2>
-  static typename V1::value_type sse(const V1 lws, const V2 os);
-
-  /**
-   * Compute sum of errors of ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param lws Log-weights.
-   * @param os Offspring.
-   *
-   * @return Sum of errors.
-   *
-   * This computes the sum of errors in the resampling:
-   *
-   * \f[
-   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)\,,
-   * \f]
-   *
-   * where \f$W\f$ is the sum of weights.
-   */
-  template<class V1, class V2>
-  static typename V1::value_type se(const V1 lws, const V2 os);
   //@}
 
 protected:
@@ -476,14 +383,13 @@ inline double bi::Resampler::getMaxLogWeight() const {
   return maxLogWeight;
 }
 
-template<class V1>
-inline bool bi::Resampler::isTriggered(const V1 lws) const {
-  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
-}
-
-template<class V1>
-inline bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
-  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
+template<class S1>
+bool bi::Resampler::isTriggered(const ScheduleElement now, const S1& s,
+    double* lW) const {
+  const int P = s.size();
+  double ess = ess_reduce(s.logWeights(), lW);
+  return (now.isObserved() && (essRel >= 1.0 || ess < essRel * P))
+      || (now.isBridge() && (bridgeEssRel >= 1.0 || ess < bridgeEssRel * P));
 }
 
 template<class V1, class V2>
@@ -547,24 +453,6 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
 template<class V1, class M1, class M2>
 void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
   gather_rows(as, X1, X2);
-}
-
-template<class V1>
-void bi::Resampler::normalise(V1 lws) {
-  typedef typename V1::value_type T1;
-  T1 lW = logsumexp_reduce(lws);
-  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW, lws);
-}
-
-template<class V1>
-typename V1::value_type bi::Resampler::ess(const V1 lws) {
-  typename V1::value_type result = ess_reduce(lws);
-
-  if (result > 0.0) {
-    return result;
-  } else {
-    return 0.0;  // may be nan
-  }
 }
 
 #endif

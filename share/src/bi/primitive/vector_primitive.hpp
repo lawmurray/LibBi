@@ -186,13 +186,15 @@ typename V1::value_type sumexpsq_reduce(const V1 x);
  * @ingroup primitive_vector
  *
  * @param lws \f$\log \mathbf{w}\f$; log-weights.
+ * @param[out] lW If given, the log of the sum of weights is written to this
+ * variable.
  *
  * @return Effective sample size computed from given weights.
  *
  * \f[ESS = \frac{\left(\sum_i w_i\right)^2}{\sum_i w_i^2}\f]
  */
-template<class V1>
-typename V1::value_type ess_reduce(const V1 lws);
+template<class V1, class T1>
+typename V1::value_type ess_reduce(const V1 lws, double* lW = NULL);
 
 /**
  * Compute conditional acceptance rate as in
@@ -958,7 +960,7 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
 }
 
 template<class V1>
-typename V1::value_type bi::ess_reduce(const V1 lws) {
+typename V1::value_type bi::ess_reduce(const V1 lws, double* lW = NULL) {
   /* pre-condition */
   BI_ASSERT(lws.size() > 0);
 
@@ -975,6 +977,9 @@ typename V1::value_type bi::ess_reduce(const V1 lws) {
   std::pair<T1,T1> sum(0, 0);
   sum = op_reduce(lws, nan_minus_and_exp_ess_functor<T1>(mx), sum,
       ess_functor<T1>());
+  if (lW != NULL) {
+    *lW = mx + bi::log(sum.first);
+  }
   return sum.first * sum.first / sum.second;
 }
 

@@ -8,6 +8,22 @@
 #ifndef BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 #define BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 
+namespace bi {
+/**
+ * MultinomialResampler implementation on device.
+ */
+class MultinomialResamplerGPU: public ResamplerGPU {
+public:
+  /**
+   * @copydoc MultinomialResampler::ancestors()
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      MultinomialPrecompute<ON_DEVICE>& pre)
+          throw (ParticleFilterDegeneratedException);
+};
+}
+
 template<class V1, class V2>
 void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
     MultinomialPrecompute<ON_DEVICE>& pre)

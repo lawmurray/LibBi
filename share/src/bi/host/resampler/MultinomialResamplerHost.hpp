@@ -8,6 +8,24 @@
 #ifndef BI_HOST_RESAMPLER_MULTINOMIALRESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_MULTINOMIALRESAMPLERHOST_HPP
 
+namespace bi {
+/**
+ * MultinomialResampler implementation on host.
+ */
+class MultinomialResamplerHost: public ResamplerHost {
+public:
+  /**
+   * Select ancestors, sorted in ascending order by construction. The basis
+   * of this implementation is the generation of sorted random variates
+   * using the method of @ref Bentley1979 "Bentley & Saxe (1979)".
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      MultinomialPrecompute<ON_HOST>& pre)
+          throw (ParticleFilterDegeneratedException);
+};
+}
+
 template<class V1, class V2>
 void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
     MultinomialPrecompute<ON_HOST>& pre)
