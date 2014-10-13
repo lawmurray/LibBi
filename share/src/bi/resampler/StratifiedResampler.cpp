@@ -7,8 +7,8 @@
  */
 #include "StratifiedResampler.hpp"
 
-bi::StratifiedResampler::StratifiedResampler(const bool sort,
+bi::StratifiedResampler::StratifiedResampler(
     const double essRel, const double bridgeEssRel) :
-    Resampler(essRel, bridgeEssRel), sort(sort) {
+    ScanResamplerBase(essRel, bridgeEssRel) {
   //
 }

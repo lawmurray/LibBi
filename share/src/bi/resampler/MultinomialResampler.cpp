@@ -7,8 +7,8 @@
  */
 #include "MultinomialResampler.hpp"
 
-bi::MultinomialResampler::MultinomialResampler(const bool sort,
-    const double essRel, const double bridgeEssRel) :
-    Resampler(essRel, bridgeEssRel), sort(sort) {
+bi::MultinomialResampler::MultinomialResampler(const double essRel,
+    const double bridgeEssRel) :
+    ScanResamplerBase(essRel, bridgeEssRel) {
   //
 }

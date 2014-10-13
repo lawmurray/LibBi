@@ -35,11 +35,8 @@ void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
   const int P = as.size();
   const int lwsSize = lws.size();
 
-  T1 lW;
-
-  /* weights */
   if (pre.W > 0) {
-    lW = bi::log(pre.W);
+    const T1 lW = bi::log(pre.W);
 
     #pragma omp parallel
     {
@@ -58,11 +55,7 @@ void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
         while (j > 0 && lu < bi::log(pre.Ws(j - 1))) {
           --j;
         }
-        if (pre.sort) {
-          as(start + i - 1) = pre.ps(j);
-        } else {
-          as(start + i - 1) = j;
-        }
+        as(start + i - 1) = j;
       }
     }
   } else {

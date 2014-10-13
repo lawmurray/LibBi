@@ -130,11 +130,11 @@ int main(int argc, char* argv[]) {
     [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
     RejectionResampler resam;
     [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-    MultinomialResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+    MultinomialResampler resam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
     [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-    SystematicResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+    SystematicResampler resam( ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
     [% ELSE %]
-    StratifiedResampler resam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+    StratifiedResampler resam(SS_REL, BRIDGE_ESS_REL, WITH_SORT);
     [% END %]
         
     /* particle filter */

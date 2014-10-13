@@ -165,11 +165,11 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
   RejectionResampler base;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  MultinomialResampler base(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  StratifiedResampler base(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSE %]
-  SystematicResampler base(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  SystematicResampler base(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
   DistributedResampler<BOOST_TYPEOF(base)> resam(&base, ESS_REL, BRIDGE_ESS_REL);

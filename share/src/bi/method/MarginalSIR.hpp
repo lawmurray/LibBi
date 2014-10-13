@@ -50,7 +50,7 @@ public:
   MarginalSIR(B& m, F& mmh, A& adapter, R& resam, const int Nmoves = 1);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    */
   //@{
   /**
@@ -62,7 +62,7 @@ public:
   //@}
 
   /**
-   * @name Low-level interface.
+   * @name Low-level interface
    */
   //@{
   /**

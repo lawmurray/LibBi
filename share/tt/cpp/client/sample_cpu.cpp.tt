@@ -192,11 +192,11 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
   RejectionResampler filterResam;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  MultinomialResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  StratifiedResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSE %]
-  SystematicResampler filterResam(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  SystematicResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% END %]
   
   /* stopper for x-particles */
@@ -218,11 +218,11 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
   RejectionResampler sampleResamBase;
   [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
-  MultinomialResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  MultinomialResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
-  StratifiedResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  StratifiedResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% ELSE %]
-  SystematicResampler sampleResamBase(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  SystematicResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
   DistributedResampler<BOOST_TYPEOF(sampleResamBase)> sampleResam(sampleResamBase, SAMPLE_ESS_REL, BRIDGE_ESS_REL);

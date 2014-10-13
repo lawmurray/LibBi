@@ -5,8 +5,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP
-#define BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP
+#ifndef BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
+#define BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
+
+#include "../../resampler/ResamplerBase.hpp"
 
 #include <vector>
 
@@ -19,7 +21,7 @@ namespace bi {
  * @tparam R Resampler type.
  */
 template<class R>
-class DistributedResampler: public Resampler {
+class DistributedResampler: public ResamplerBase {
 public:
   /**
    * Constructor.
@@ -132,7 +134,7 @@ private:
 template<class R>
 bi::DistributedResampler<R>::DistributedResampler(R& base,
     const double essRel, const double bridgeEssRel) :
-    Resampler(essRel, bridgeEssRel), base(base) {
+    ResamplerBase(essRel, bridgeEssRel), base(base) {
   //
 }
 

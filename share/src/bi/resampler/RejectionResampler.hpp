@@ -17,7 +17,7 @@ namespace bi {
 /**
  * RejectionResampler implementation on host.
  */
-class RejectionResamplerHost: public ResamplerHost {
+class RejectionResamplerHost: public ResamplerBaseHost {
 public:
   /**
    * @copydoc RejectionResampler::ancestors()
@@ -37,17 +37,17 @@ public:
 /**
  * RejectionResampler implementation on device.
  */
-class RejectionResamplerGPU: public ResamplerGPU {
+class RejectionResamplerGPU: public ResamplerBaseGPU {
 public:
   /**
-   * @copydoc RejectionResampler::ancestors()
+   * @copydoc MultinomialResampler::ancestors
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
       const typename V1::value_type maxLogWeight);
 
   /**
-   * @copydoc RejectionResampler::ancestorsPermute()
+   * @copydoc MultinomialResampler::ancestorsPermute
    */
   template<class V1, class V2>
   static void ancestorsPermute(Random& rng, const V1 lws, V2 as,
@@ -75,23 +75,12 @@ public:
  * motivation of the rejection resampler (and, indeed, the Metropolis
  * resampler), which is precisely to avoid these.
  */
-class RejectionResampler: public Resampler {
+class RejectionResampler: public ResamplerBase {
 public:
   /**
    * Constructor.
    */
   RejectionResampler();
-
-  /**
-   * @name High-level interface
-   */
-  //@{
-  /**
-   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1 s);
-  //@}
 
   /**
    * @name Low-level interface
@@ -120,16 +109,16 @@ public:
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
       const typename V1::value_type maxLogWeight)
           throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::offspring
-   */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
   //@}
 };
 
+/**
+ * @internal
+ */
+template<Location L>
+struct precompute_type<RejectionResampler,L> {
+  typedef ResamplerBasePrecompute<L> type;
+};
 /**
  * @internal
  */
@@ -144,13 +133,6 @@ struct resampler_needs_max<RejectionResampler> {
 #ifdef __CUDACC__
 #include "../cuda/resampler/RejectionResamplerGPU.cuh"
 #endif
-
-template<class V1, class V2, class O1>
-void bi::RejectionResampler::resample(Random& rng, V1 lws, V2 as, O1 s) {
-  ancestorsPermute(rng, lws, as, maxLogWeight);
-  copy(as, s);
-  lws.clear();
-}
 
 template<class V1, class V2>
 void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as,
@@ -168,18 +150,6 @@ void bi::RejectionResampler::ancestorsPermute(Random& rng, const V1 lws,
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
       RejectionResamplerHost>::type impl;
   impl::ancestorsPermute(rng, lws, as, maxLogWeight);
-}
-
-template<class V1, class V2>
-void bi::RejectionResampler::offspring(Random& rng, const V1 lws, V2 os,
-    const int P) throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(P >= 0);
-  BI_ASSERT(lws.size() == os.size());
-
-  typename sim_temp_vector<V2>::type as(P);
-  ancestors(rng, lws, as);
-  ancestorsToOffspring(as, os);
 }
 
 #endif

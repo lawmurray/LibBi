@@ -16,11 +16,19 @@
 
 namespace bi {
 /**
+ * Precomputed results for ResamplerBase.
+ */
+template<Location L>
+struct ResamplerBasePrecompute {
+  //
+};
+
+/**
  * %Resampler for particle filter.
  *
  * @ingroup method_resampler
  */
-class Resampler {
+class ResamplerBase {
 public:
   /**
    * Constructor.
@@ -30,10 +38,10 @@ public:
    * @param bridgeEssRel Minimum ESS, as proportion of total number of
    * particles, to trigger resampling after bridge weighting.
    */
-  Resampler(const double essRel = 0.5, const double essRelBridge = 0.5);
+  ResamplerBase(const double essRel = 0.5, const double essRelBridge = 0.5);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    */
   //@{
   /**
@@ -63,52 +71,20 @@ public:
   //@}
 
   /**
-   * @name Low-level interface.
+   * @name Low-level interface
    */
   //@{
   /**
-   * Select ancestors.
+   * Perform precomputations.
    *
    * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
+   * @tparam pre Precompute type.
    *
-   * @param[in,out] rng Random number generator.
    * @param lws Log-weights.
-   * @param[out] as Ancestors.
+   * @param pre Precompute object.
    */
-  template<class V1, class V2>
-  void ancestors(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * Select offspring.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] os Offspring.
-   * @param P Total number of offspring to select.
-   */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * Select cumulative offspring.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] Os Cimulative offspring.
-   * @param P Total number of offspring to select.
-   */
-  template<class V1, class V2>
-  void cumulativeOffspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
+  template<class V1, Location L>
+  void precompute(const V1 lws, ResamplerBasePrecompute<L>& pre);
 
   /**
    * Compute offspring vector from ancestors vector.
@@ -379,63 +355,71 @@ public:
 
 #include "boost/mpl/if.hpp"
 
-inline double bi::Resampler::getMaxLogWeight() const {
+inline double bi::ResamplerBase::getMaxLogWeight() const {
   return maxLogWeight;
 }
 
 template<class S1>
-bool bi::Resampler::isTriggered(const ScheduleElement now, const S1& s,
+bool bi::ResamplerBase::isTriggered(const ScheduleElement now, const S1& s,
     double* lW) const {
+  ///@todo Don't need to compute ESS if essRel >= 1.0, but do need to compute
+  ///normalising constant.
   const int P = s.size();
   double ess = ess_reduce(s.logWeights(), lW);
   return (now.isObserved() && (essRel >= 1.0 || ess < essRel * P))
       || (now.isBridge() && (bridgeEssRel >= 1.0 || ess < bridgeEssRel * P));
 }
 
+template<class V1, bi::Location L>
+void bi::ResamplerBase::precompute(const V1 lws,
+    ResamplerBasePrecompute<L>& pre) {
+  //
+}
+
 template<class V1, class V2>
-void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
+void bi::ResamplerBase::ancestorsToOffspring(const V1 as, V2 os) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::ancestorsToOffspring(as, os);
 }
 
 template<class V1, class V2>
-void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
+void bi::ResamplerBase::offspringToAncestors(const V1 os, V2 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::offspringToAncestors(os, as);
 }
 
 template<class V1, class V2>
-void bi::Resampler::offspringToAncestorsPermute(const V1 os, V2 as) {
+void bi::ResamplerBase::offspringToAncestorsPermute(const V1 os, V2 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::offspringToAncestorsPermute(os, as);
 }
 
 template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
+void bi::ResamplerBase::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::cumulativeOffspringToAncestors(Os, as);
 }
 
 template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestorsPermute(const V1 Os,
+void bi::ResamplerBase::cumulativeOffspringToAncestorsPermute(const V1 Os,
     V2 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::cumulativeOffspringToAncestorsPermute(Os, as);
 }
 
 template<class V1>
-void bi::Resampler::permute(const V1 as) {
+void bi::ResamplerBase::permute(const V1 as) {
   typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
   impl::permute(as);
 }
 
 template<class V1, class M1>
-void bi::Resampler::copy(const V1 as, M1 s) {
+void bi::ResamplerBase::copy(const V1 as, M1 s) {
   gather_rows(as, s, s);
 }
 
 template<class V1, class T1>
-void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
+void bi::ResamplerBase::copy(const V1 as, std::vector<T1*>& v) {
   /* pre-condition */
   BI_ASSERT(!V1::on_device);
 
@@ -451,7 +435,7 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
 }
 
 template<class V1, class M1, class M2>
-void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
+void bi::ResamplerBase::copy(const V1 as, const M1 X1, M2 X2) {
   gather_rows(as, X1, X2);
 }
 

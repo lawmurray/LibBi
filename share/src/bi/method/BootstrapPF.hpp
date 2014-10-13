@@ -38,7 +38,7 @@ public:
   BootstrapPF(B& m, F& in, O& obs, R& resam);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    *
    * An easier interface for common usage.
    */
@@ -80,7 +80,7 @@ public:
   //@}
 
   /**
-   * @name Low-level interface.
+   * @name Low-level interface
    *
    * Largely used by other features of the library or for finer control over
    * performance and behaviour.
@@ -183,19 +183,23 @@ template<class B, class F, class O, class R>
 template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
-  if (now.isObserved() && resam.isTriggered(s.logWeights())) {
-    if (resampler_needs_max<R>::value) {
+  double lW;
+  if (isTriggered(now, s, &lW)) {
+    if (resampler_needs_max<R>::value && now.isObserved()) {
       resam.setMaxLogWeight(getMaxLogWeight(now, s));
     }
+    precompute_type<R,S1::location>::type pre;
+    this->precompute(s.logWeights(), pre);
     if (now.hasOutput()) {
-      s.logLikelihood += resam.resample(rng, s.logWeights(), s.ancestors(),
-          s.getDyn());
+      this->ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
+      this->copy(s.ancestors(), s.getDyn());
     } else {
-      /* preserve ancestors from last output time */
       typename S1::temp_int_vector_type as1(s.ancestors().size());
-      s.logLikelihood += resam.resample(rng, s.logWeights(), as1, s.getDyn());
+      this->ancestorsPermute(rng, s.logWeights(), as1, pre);
       bi::gather(as1, s.ancestors(), s.ancestors());
     }
+    s.logWeights().clear();
+    s.logLikelihood += lW;
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
   }

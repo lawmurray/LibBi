@@ -139,41 +139,6 @@ for a rejection resampler (Murray, Lee & Jacob 2013), or
 
 =back
 
-=head2 Stratified and multinomial resampler-specific options
-
-=over 4
-
-=item C<--with-sort> (default off)
-
-Sort weights prior to resampling.
-
-=item C<--with-kde> (default off)
-
-Resample from a kernel density estimate of the filter density (in the style
-of Liu & West 2001).
-
-=back
-
-=head2 Kernel density estimate options
-
-The following additional options are available when C<--with-kde> is set.
-
-=over 4
-
-=item C<--b-abs> or C<--b-rel> (default 0)
-
-Bandwidth. If C<--b-rel> is used, particles are standardised to zero mean and
-unit covariance for the construction of the kernel density estimate. If
-C<--b-abs> is used they are not. A value of zero in either case will result
-in a rule-of-thumb bandwidth.
-
-=item C<--with-shrink> (default on)
-
-True to shrink the kernel density estimate to preserve covariance
-(Liu & West 2001).
-
-=back
-
 =head2 Metropolis resampler-specific options
 
 The following additional options are available when C<--resampler> is set to
@@ -304,31 +269,6 @@ our @CLIENT_OPTIONS = (
       default => 'systematic'
     },
     {
-      name => 'with-sort',
-      type => 'bool',
-      default => 0
-    },
-    {
-      name => 'with-kde',
-      type => 'bool',
-      default => 0
-    },
-    {
-      name => 'b-abs',
-      type => 'float',
-      default => 0.0
-    },
-    {
-      name => 'b-rel',
-      type => 'float',
-      default => 1.0
-    },
-    {
-      name => 'with-shrink',
-      type => 'bool',
-      default => 1
-    },
-    {
       name => 'C',
       type => 'int',
       default => 0
@@ -365,6 +305,33 @@ our @CLIENT_OPTIONS = (
     },
     
     # deprecations
+    {
+      name => 'with-kde',
+      type => 'bool',
+      deprecated => 1,
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'b-abs',
+      type => 'float',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'b-rel',
+      type => 'float',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'with-shrink',
+      type => 'bool',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'with-sort',
+      type => 'bool',
+      deprecated => 1,
+      message => 'presorting weights when resampling is no longer supported'
+    },
     {
       name => 'P',
       type => 'int',

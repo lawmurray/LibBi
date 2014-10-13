@@ -17,7 +17,7 @@ namespace bi {
 /**
  * MetropolisResampler implementation on host.
  */
-class MetropolisResamplerHost: public ResamplerHost {
+class MetropolisResamplerHost: public ResamplerBaseHost {
 public:
   /**
    * @copydoc MetropolisResampler::ancestors()
@@ -35,7 +35,7 @@ public:
 /**
  * MetropolisResampler implementation on device.
  */
-class MetropolisResamplerGPU: public ResamplerGPU {
+class MetropolisResamplerGPU: public ResamplerBaseGPU {
 public:
   /**
    * @copydoc MetropolisResampler::ancestors()
@@ -58,7 +58,7 @@ public:
  * Implements the Metropolis resampler as described in @ref Murray2011a
  * "Murray (2011)" and @ref Murray2014 "Murray, Lee & Jacob (2014)".
  */
-class MetropolisResampler: public Resampler {
+class MetropolisResampler: public ResamplerBase {
 public:
   /**
    * Constructor.
@@ -78,40 +78,24 @@ public:
   void setSteps(const int B);
 
   /**
-   * @name High-level interface
-   */
-  //@{
-  /**
-   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1 s);
-  //@}
-
-  /**
    * @name Low-level interface
    */
   //@{
   /**
-   * @copydoc Resampler::ancestors()
+   * @copydoc MultinomialResampler::ancestors
    */
   template<class V1, class V2>
-  void ancestors(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
+  void ancestors(Random& rng, const V1 lws, V2 as,
+      ResamplerBasePrecompute<L>& pre)
+          throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc Resampler::ancestors()
+   * @copydoc MultinomialResampler::ancestorsPermute
    */
   template<class V1, class V2>
-  void ancestorsPermute(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::offspring()
-   */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
+  void ancestorsPermute(Random& rng, const V1 lws, V2 as,
+      ResamplerBasePrecompute<L>& pre)
+          throw (ParticleFilterDegeneratedException);
   //@}
 
 private:
@@ -120,6 +104,14 @@ private:
    */
   int B;
 };
+
+/**
+ * @internal
+ */
+template<Location L>
+struct precompute_type<MetropolisResampler,L> {
+  typedef ResamplerBasePrecompute<L> type;
+};
 }
 
 #include "../host/resampler/MetropolisResamplerHost.hpp"
@@ -127,39 +119,22 @@ private:
 #include "../cuda/resampler/MetropolisResamplerGPU.cuh"
 #endif
 
-template<class V1, class V2, class O1>
-void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1 s) {
-  ancestorsPermute(rng, lws, as);
-  copy(as, s);
-  lws.clear();
-}
-
-template<class V1, class V2>
-void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
-    throw (ParticleFilterDegeneratedException) {
+template<class V1, class V2, bi::Location L>
+void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    ResamplerBasePrecompute<L>& pre)
+        throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
       MetropolisResamplerHost>::type impl;
   impl::ancestors(rng, lws, as, B);
 }
 
-template<class V1, class V2>
+template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as) throw (ParticleFilterDegeneratedException) {
+    V2 as, ResamplerBasePrecompute<L>& pre)
+        throw (ParticleFilterDegeneratedException) {
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
       MetropolisResamplerHost>::type impl;
   impl::ancestorsPermute(rng, lws, as, B);
-}
-
-template<class V1, class V2>
-void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, V2 os,
-    const int P) throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(P >= 0);
-  BI_ASSERT(lws.size() == os.size());
-
-  typename sim_temp_vector<V2>::type as(P);
-  ancestors(rng, lws, as);
-  ancestorsToOffspring(as, os);
 }
 
 #endif

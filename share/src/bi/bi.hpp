@@ -115,8 +115,6 @@
  *   @defgroup primitive_allocators Allocators
  *   @ingroup primitive
  *
- * @defgroup kd kd trees
- *
  * @defgroup typelist Type lists
  *
  * @defgroup concept Concepts

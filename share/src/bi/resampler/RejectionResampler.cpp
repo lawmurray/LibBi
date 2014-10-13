@@ -9,5 +9,6 @@
 
 bi::RejectionResampler::RejectionResampler() :
     Resampler(1.0, 1.0) {
-  // ^ the arguments (0.0, 0.0) force resampling at all times.
+  // ^ the arguments (1.0, 1.0) force resampling at all times, as upper
+  //   bounds on weights are known for single times only.
 }

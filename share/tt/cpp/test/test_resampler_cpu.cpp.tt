@@ -92,11 +92,11 @@ int main(int argc, char* argv[]) {
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
   RejectionResampler resam;
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler resam(WITH_SORT);
+  MultinomialResampler resam(1.0, 1.0, WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-  SystematicResampler resam(WITH_SORT);
+  SystematicResampler resam(1.0, 1.0, WITH_SORT);
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler resam(WITH_SORT);
+  StratifiedResampler resam(1.0, 1.0, WITH_SORT);
   [% END %]
 
   /* result storage */  

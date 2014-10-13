@@ -31,7 +31,7 @@ public:
   LookaheadPF(B& m, F& in, O& obs, R& resam);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    *
    * An easier interface for common usage.
    */
@@ -45,7 +45,7 @@ public:
   //@}
 
   /**
-   * @name Low-level interface.
+   * @name Low-level interface
    *
    * Largely used by other features of the library or for finer control over
    * performance and behaviour.

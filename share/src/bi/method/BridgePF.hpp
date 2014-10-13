@@ -34,7 +34,7 @@ public:
   BridgePF(B& m, F& in, O& obs, R& resam);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    *
    * An easier interface for common usage.
    */
@@ -48,7 +48,7 @@ public:
   //@}
 
   /**
-   * @name Low-level interface.
+   * @name Low-level interface
    *
    * Largely used by other features of the library or for finer control over
    * performance and behaviour.
@@ -151,25 +151,28 @@ template<class B, class F, class O, class R>
 template<class S1>
 void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
     S1& s) {
-  if ((now.isObserved() && this->resam.isTriggered(s.logWeights()))
-      || (now.hasBridge() && this->resam.isTriggeredBridge(s.logWeights()))) {
-    if (resampler_needs_max<R>::value && now.isObserved()) {
-      this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
+  double lW;
+  if (isTriggered(now, s, &lW)) {
+    if (resampler_needs_max<R>::value) {
+      if (now.isObserved()) {
+        resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
+      } else if (now.hasBridge()) {
+        resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
+      }
     }
-    if (resampler_needs_max<R>::value && now.hasBridge()) {
-      this->resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
-    }
+    precompute_type<R,S1::location>::type pre;
+    this->precompute(s.logWeights(), pre);
     if (now.hasOutput()) {
-      s.logLikelihood += this->resam.resample(rng, s.logWeights(),
-          s.ancestors(), s.getDyn());
-      bi::gather(s.ancestors(), s.logAuxWeights(), s.logAuxWeights());
+      this->ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
+      this->copy(s.ancestors(), s.getDyn());
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
-      s.logLikelihood += this->resam.resample(rng, s.logWeights(), as1,
-          s.getDyn());
-      bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
+      this->ancestorsPermute(rng, s.logWeights(), as1, pre);
       bi::gather(as1, s.ancestors(), s.ancestors());
+      bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
     }
+    s.logWeights().clear();
+    s.logLikelihood += lW;
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
   }
