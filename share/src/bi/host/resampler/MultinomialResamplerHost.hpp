@@ -8,6 +8,8 @@
 #ifndef BI_HOST_RESAMPLER_MULTINOMIALRESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_MULTINOMIALRESAMPLERHOST_HPP
 
+#include "ResamplerHost.hpp"
+
 namespace bi {
 /**
  * MultinomialResampler implementation on host.
@@ -21,14 +23,14 @@ public:
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
-      MultinomialPrecompute<ON_HOST>& pre)
+      ScanResamplerPrecompute<ON_HOST>& pre)
           throw (ParticleFilterDegeneratedException);
 };
 }
 
 template<class V1, class V2>
 void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
-    MultinomialPrecompute<ON_HOST>& pre)
+    ScanResamplerPrecompute<ON_HOST>& pre)
     throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 

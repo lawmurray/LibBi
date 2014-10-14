@@ -7,7 +7,8 @@
 #ifndef BI_STOPPER_STOPPER_HPP
 #define BI_STOPPER_STOPPER_HPP
 
-#include "../math/scalar.hpp"
+#include "../math/constant.hpp"
+#include "../math/function.hpp"
 
 namespace bi {
 /**

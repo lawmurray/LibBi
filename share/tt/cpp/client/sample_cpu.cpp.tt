@@ -22,23 +22,7 @@
 #include "bi/state/MarginalSIRState.hpp"
 #include "bi/state/MarginalSISState.hpp"
 
-#include "bi/method/Forcer.hpp"
-#include "bi/method/Observer.hpp"
-
-#include "bi/resampler/MultinomialResampler.hpp"
-#include "bi/resampler/MetropolisResampler.hpp"
-#include "bi/resampler/RejectionResampler.hpp"
-#include "bi/resampler/KernelResampler.hpp"
-#include "bi/resampler/StratifiedResampler.hpp"
-#include "bi/resampler/SystematicResampler.hpp"
-
 #include "bi/adapter/GaussianAdapter.hpp"
-
-#include "bi/stopper/Stopper.hpp"
-#include "bi/stopper/SumOfWeightsStopper.hpp"
-#include "bi/stopper/MinimumESSStopper.hpp"
-#include "bi/stopper/StdDevStopper.hpp"
-#include "bi/stopper/VarStopper.hpp"
 
 #include "bi/buffer/SimulatorBuffer.hpp"
 #include "bi/buffer/ParticleFilterBuffer.hpp"
@@ -65,13 +49,16 @@
 #include "bi/null/MCMCNullBuffer.hpp"
 #include "bi/null/SMCNullBuffer.hpp"
 
-#include "bi/method/SimulatorFactory.hpp"
-#include "bi/method/FilterFactory.hpp"
-#include "bi/method/SamplerFactory.hpp"
+#include "bi/simulator/ForcerFactory.hpp"
+#include "bi/simulator/ObserverFactory.hpp"
+#include "bi/simulator/SimulatorFactory.hpp"
+#include "bi/filter/FilterFactory.hpp"
+#include "bi/sampler/SamplerFactory.hpp"
+#include "bi/resampler/ResamplerFactory.hpp"
+#include "bi/stopper/StopperFactory.hpp"
 
 #ifdef ENABLE_MPI
 #include "bi/mpi/handler/HandlerFactory.hpp"
-#include "bi/mpi/resampler/DistributedResampler.hpp"
 #include "bi/mpi/adapter/DistributedAdapter.hpp"
 #include "bi/mpi/stopper/DistributedStopper.hpp"
 #include "bi/mpi/TreeNetworkNode.hpp"
@@ -188,66 +175,66 @@ int main(int argc, char* argv[]) {
   
   /* resampler for x-particles */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
-  MetropolisResampler filterResam(C, ESS_REL, BRIDGE_ESS_REL);
+  BOOST_AUTO(filterResam, (ResamplerFactory::createMetropolisResampler(C, ESS_REL)));
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-  RejectionResampler filterResam;
+  BOOST_AUTO(filterResam, ResamplerFactory::createRejectionResampler());
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  MultinomialResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(filterResam, ResamplerFactory::createMultinomialResampler(ESS_REL));
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  StratifiedResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(filterResam, ResamplerFactory::createStratifiedResampler(ESS_REL));
   [% ELSE %]
-  SystematicResampler filterResam(ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(filterResam, ResamplerFactory::createSystematicResampler(ESS_REL));
   [% END %]
-  
+    
   /* stopper for x-particles */
   [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  Stopper filterStopper(NPARTICLES, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(filterStopper, (StopperFactory::createStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-  SumOfWeightsStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(filterStopper, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-  MinimumESSStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(filterStopper, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-  StdDevStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(filterStopper, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'var' %]
-  VarStopper filterStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(filterStopper, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% END %]
  
   /* resampler for theta-particles */
   [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
-  MetropolisResampler sampleResamBase(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  BOOST_AUTO(sampleResamBase, (ResamplerFactory::createMetropolisResampler(C, SAMPLE_ESS_REL)));
   [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
-  RejectionResampler sampleResamBase;
+  BOOST_AUTO(sampleResamBase, ResamplerFactory::createRejectionResampler());
   [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
-  MultinomialResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(sampleResamBase, ResamplerFactory::createMultinomialResampler(SAMPLE_ESS_REL));
   [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
-  StratifiedResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(sampleResamBase, ResamplerFactory::createStratifiedResampler(SAMPLE_ESS_REL));
   [% ELSE %]
-  SystematicResampler sampleResamBase(SAMPLE_ESS_REL, BRIDGE_ESS_REL, WITH_SORT);
+  BOOST_AUTO(sampleResamBase, ResamplerFactory::createSystematicResampler(SAMPLE_ESS_REL));
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
-  DistributedResampler<BOOST_TYPEOF(sampleResamBase)> sampleResam(sampleResamBase, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  BOOST_AUTO(sampleResam, (ResamplerFactory::createDistributedResampler(sampleResamBase, SAMPLE_ESS_REL)));
   [% ELSE %]
-  BOOST_AUTO(&sampleResam, sampleResamBase);
+  BOOST_AUTO(sampleResam, sampleResamBase);
   [% END %]
-  
+    
   /* stopper for theta-particles */
   [% IF client.get_named_arg('sample-stopper') == 'deterministic' %]
-  Stopper sampleStopperBase(NPARTICLES, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(sampleStopperBase, (StopperFactory::createStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'sumofweights' %]
-  SumOfWeightsStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(sampleStopperBase, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'miness' %]
-  MinimumESSStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(sampleStopperBase, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'stddev' %]
-  StdDevStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(sampleStopperBase, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'var' %]
-  VarStopper sampleStopperBase(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs());
+  BOOST_AUTO(sampleStopperBase, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
-  DistributedStopper<BOOST_TYPEOF(sampleStopperBase)> sampleStopper(sampleStopperBase, node);
+  BOOST_AUTO(sampleStopper, (StopperFactory::createDistributedStopper(sampleStopperBase)));
   [% ELSE %]
-  BOOST_AUTO(&sampleStopper, sampleStopperBase);
+  BOOST_AUTO(sampleStopper, sampleStopperBase);
   [% END %]
-  
+    
   /* adapter for theta-particles */ 
   GaussianAdapter<model_type,LOCATION> sampleAdapterBase;
   [% IF client.get_named_arg('with-mpi') %]
@@ -316,22 +303,22 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('filter') == 'kalman' %]
   BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *in, *obs)));
   [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
-  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *in, *obs, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *in, *obs, *filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'bridge' %]
-  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *in, *obs, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *in, *obs, *filterResam)));
   [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
-  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *in, *obs, filterResam, stopper, NPARTICLES, STOPPER_BLOCK)));
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *in, *obs, *filterResam, *stopper, NPARTICLES, STOPPER_BLOCK)));
   [% ELSE %]
-  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *in, *obs, filterResam)));
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *in, *obs, *filterResam)));
   [% END %]
   
   /* sampler */
   [% IF client.get_named_arg('target') == 'posterior' %]
   [% IF client.get_named_arg('sampler') == 'sir' %]
   BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, sampleAdapter, sampleResam, NMOVES));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, sampleAdapter, *sampleResam, NMOVES));
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, sampleAdapter, sampleStopper));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, sampleAdapter, *sampleStopper));
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]
@@ -364,11 +351,6 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
-
-  delete sampler;
-  delete filter;
-  delete obs;
-  delete in;
   
   #ifdef ENABLE_MPI
   client.disconnect();

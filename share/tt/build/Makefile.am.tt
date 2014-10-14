@@ -9,7 +9,7 @@
 [%
 # client programs
 CLIENTS = [
-    'nm',
+    'optimise',
     'filter',
     'sample',
     'test',
@@ -62,10 +62,12 @@ libbi_a_SOURCES = \
   src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \
   src/bi/resampler/RejectionResampler.cpp \
-  src/bi/resampler/ResamplerBase.cpp \
-  src/bi/resampler/ScanResamplerBase.cpp \
+  src/bi/resampler/Resampler.cpp \
+  src/bi/resampler/ResamplerFactory.cpp \
+  src/bi/resampler/ScanResampler.cpp \
   src/bi/resampler/StratifiedResampler.cpp \
-  src/bi/resampler/SystematicResampler.cpp
+  src/bi/resampler/SystematicResampler.cpp \
+  src/bi/stopper/StopperFactory.cpp
 
 if ENABLE_SSE
 libbi_a_SOURCES += 

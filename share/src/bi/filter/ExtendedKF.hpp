@@ -5,11 +5,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_EXTENDEDKF_HPP
-#define BI_METHOD_EXTENDEDKF_HPP
+#ifndef BI_FILTER_EXTENDEDKF_HPP
+#define BI_FILTER_EXTENDEDKF_HPP
 
-#include "Simulator.hpp"
-#include "misc.hpp"
+#include "../simulator/Simulator.hpp"
 #include "../state/ExtendedKFState.hpp"
 #include "../misc/location.hpp"
 #include "../misc/exception.hpp"

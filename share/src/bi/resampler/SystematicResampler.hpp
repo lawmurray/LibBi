@@ -8,7 +8,7 @@
 #ifndef BI_RESAMPLER_SYSTEMATICRESAMPLER_HPP
 #define BI_RESAMPLER_SYSTEMATICRESAMPLER_HPP
 
-#include "ScanResamplerBase.hpp"
+#include "ScanResampler.hpp"
 #include "../random/Random.hpp"
 #include "../cuda/cuda.hpp"
 #include "../misc/exception.hpp"
@@ -60,18 +60,15 @@ struct resample_cumulative_offspring: public std::unary_function<T,int> {
  * Systematic (determistic stratified) resampler based on the scheme of
  * @ref Kitagawa1996 "Kitagawa (1996)".
  */
-class SystematicResampler: public ScanResamplerBase {
+class SystematicResampler: public ScanResampler {
 public:
   /**
    * Constructor.
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
-   * @param bridgeEssRel Minimum ESS, as proportion of total number of
-   * particles, to trigger resampling after bridge weighting.
    */
-  SystematicResampler(const double essRel = 0.5, const double bridgeEssRel =
-      0.5);
+  SystematicResampler(const double essRel = 0.5);
 
   /**
    * @name Low-level interface
@@ -82,7 +79,15 @@ public:
    */
   template<class V1, class V2, Location L>
   void cumulativeOffspring(Random& rng, const V1 lws, V2 Os, const int P,
-      ScanResamplerBasePrecompute<L>& pre)
+      ScanResamplerPrecompute<L>& pre)
+          throw (ParticleFilterDegeneratedException);
+
+  /**
+   * @copydoc MultinomialResampler::ancestors
+   */
+  template<class V1, class V2, Location L>
+  void ancestors(Random& rng, const V1 lws, V2 as,
+      ScanResamplerPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
 
   /**
@@ -90,7 +95,7 @@ public:
    */
   template<class V1, class V2, Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      ScanResamplerBasePrecompute<L>& pre)
+      ScanResamplerPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
 //@}
 };
@@ -100,7 +105,7 @@ public:
  */
 template<Location L>
 struct precompute_type<SystematicResampler,L> {
-  typedef ScanResamplerBasePrecompute<L> type;
+  typedef ScanResamplerPrecompute<L> type;
 };
 }
 
@@ -110,7 +115,7 @@ struct precompute_type<SystematicResampler,L> {
 
 template<class V1, class V2, bi::Location L>
 void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
-    V2 Os, const int n, ScanResamplerBasePrecompute<L>& pre)
+    V2 Os, const int n, ScanResamplerPrecompute<L>& pre)
         throw (ParticleFilterDegeneratedException) {
   /* pre-condition */
   BI_ASSERT(lws.size() == Os.size());
@@ -132,8 +137,18 @@ void bi::SystematicResampler::cumulativeOffspring(Random& rng, const V1 lws,
 }
 
 template<class V1, class V2, bi::Location L>
+void bi::SystematicResampler::ancestors(Random& rng, const V1 lws,
+    V2 as, ScanResamplerPrecompute<L>& pre)
+        throw (ParticleFilterDegeneratedException) {
+  typename sim_temp_vector<V2>::type Os(lws.size());
+
+  cumulativeOffspring(rng, lws, Os, as.size(), pre);
+  cumulativeOffspringToAncestors(Os, as);
+}
+
+template<class V1, class V2, bi::Location L>
 void bi::SystematicResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, ScanResamplerBasePrecompute<L>& pre)
+    V2 as, ScanResamplerPrecompute<L>& pre)
         throw (ParticleFilterDegeneratedException) {
   typename sim_temp_vector<V2>::type Os(lws.size());
 

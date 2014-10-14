@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_VARSTOPPER_HPP
 #define BI_STOPPER_VARSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on variance criterion.

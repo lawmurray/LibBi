@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
 #define BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on sum of weights criterion.

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_FILTER_HPP
-#define BI_METHOD_FILTER_HPP
+#ifndef BI_FILTER_FILTER_HPP
+#define BI_FILTER_FILTER_HPP
 
 #include "../random/Random.hpp"
 #include "../state/Schedule.hpp"

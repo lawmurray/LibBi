@@ -8,6 +8,22 @@
 #ifndef BI_CUDA_RESAMPLER_STRATIFIEDRESAMPLERGPU_CUH
 #define BI_CUDA_RESAMPLER_STRATIFIEDRESAMPLERGPU_CUH
 
+#include "ResamplerGPU.cuh"
+
+namespace bi {
+/**
+ * StratifiedResampler implementation on device.
+ */
+class StratifiedResamplerGPU: public ResamplerGPU {
+public:
+  /**
+   * @copydoc StratifiedResampler::op
+   */
+  template<class V1, class V2>
+  static void op(Random& rng, const V1 Ws, V2 Os, const int n);
+};
+}
+
 #include "StratifiedResamplerKernel.cuh"
 #include "../device.hpp"
 

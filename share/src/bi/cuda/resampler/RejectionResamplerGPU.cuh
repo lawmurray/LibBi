@@ -8,6 +8,30 @@
 #ifndef BI_CUDA_RESAMPLER_REJECTIONRESAMPLERGPU_CUH
 #define BI_CUDA_RESAMPLER_REJECTIONRESAMPLERGPU_CUH
 
+#include "ResamplerGPU.cuh"
+
+namespace bi {
+/**
+ * RejectionResampler implementation on device.
+ */
+class RejectionResamplerGPU: public ResamplerGPU {
+public:
+  /**
+   * @copydoc MultinomialResampler::ancestors
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
+
+  /**
+   * @copydoc MultinomialResampler::ancestorsPermute
+   */
+  template<class V1, class V2>
+  static void ancestorsPermute(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
+};
+}
+
 #include "RejectionResamplerKernel.cuh"
 #include "../device.hpp"
 

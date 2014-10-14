@@ -5,11 +5,11 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_BOOTSTRAPPF_HPP
-#define BI_METHOD_BOOTSTRAPPF_HPP
+#ifndef BI_FILTER_BOOTSTRAPPF_HPP
+#define BI_FILTER_BOOTSTRAPPF_HPP
 
 #include "Filter.hpp"
-#include "Simulator.hpp"
+#include "../simulator/Simulator.hpp"
 #include "../state/BootstrapPFState.hpp"
 #include "../cache/BootstrapPFCache.hpp"
 
@@ -184,18 +184,18 @@ template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
   double lW;
-  if (isTriggered(now, s, &lW)) {
+  if (resam.isTriggered(now, s, &lW)) {
     if (resampler_needs_max<R>::value && now.isObserved()) {
       resam.setMaxLogWeight(getMaxLogWeight(now, s));
     }
-    precompute_type<R,S1::location>::type pre;
-    this->precompute(s.logWeights(), pre);
+    typename precompute_type<R,S1::location>::type pre;
+    resam.precompute(s.logWeights(), pre);
     if (now.hasOutput()) {
-      this->ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      this->copy(s.ancestors(), s.getDyn());
+      resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
+      resam.copy(s.ancestors(), s.getDyn());
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
-      this->ancestorsPermute(rng, s.logWeights(), as1, pre);
+      resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
       bi::gather(as1, s.ancestors(), s.ancestors());
     }
     s.logWeights().clear();

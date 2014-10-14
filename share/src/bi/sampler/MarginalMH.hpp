@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MARGINALMH_HPP
-#define BI_METHOD_MARGINALMH_HPP
+#ifndef BI_SAMPLER_MARGINALMH_HPP
+#define BI_SAMPLER_MARGINALMH_HPP
 
 #include "../state/Schedule.hpp"
 #include "../misc/exception.hpp"

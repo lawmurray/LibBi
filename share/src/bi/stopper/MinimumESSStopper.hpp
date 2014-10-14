@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_MINIMUMESSSTOPPER_HPP
 #define BI_STOPPER_MINIMUMESSSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on ESS criterion.

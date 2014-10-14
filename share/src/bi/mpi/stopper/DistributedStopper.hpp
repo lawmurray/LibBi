@@ -12,6 +12,8 @@
 #include "../TreeNetworkNode.hpp"
 #include "../../cache/Cache1D.hpp"
 
+#include "boost/shared_ptr.hpp"
+
 namespace bi {
 /**
  * Distributed stopper.
@@ -36,7 +38,7 @@ public:
    * @param base Base stopper.
    * @param node Network node.
    */
-  DistributedStopper(S& base, TreeNetworkNode& node);
+  DistributedStopper(boost::shared_ptr<S> base, TreeNetworkNode& node);
 
   /**
    * Destructor.
@@ -74,6 +76,11 @@ private:
    * Finish sends.
    */
   void finish();
+
+  /**
+   * Base stopper.
+   */
+  boost::shared_ptr<S> base;
 
   /**
    * Network node.
@@ -118,8 +125,9 @@ private:
 }
 
 template<class S>
-bi::DistributedStopper<S>::DistributedStopper(S& base, TreeNetworkNode& node) :
-    node(node), pSend(0), pAccum(0), flagStop(false) {
+bi::DistributedStopper<S>::DistributedStopper(boost::shared_ptr<S> base,
+    TreeNetworkNode& node) :
+    base(base), node(node), pSend(0), pAccum(0), flagStop(false) {
   //
 }
 

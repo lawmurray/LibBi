@@ -6,8 +6,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MARGINALSIR_HPP
-#define BI_METHOD_MARGINALSIR_HPP
+#ifndef BI_SAMPLER_MARGINALSIR_HPP
+#define BI_SAMPLER_MARGINALSIR_HPP
 
 #include "misc.hpp"
 #include "../state/Schedule.hpp"

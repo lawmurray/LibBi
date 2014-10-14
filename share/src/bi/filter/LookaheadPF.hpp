@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_LOOKAHEADPF_HPP
-#define BI_METHOD_LOOKAHEADPF_HPP
+#ifndef BI_FILTER_LOOKAHEADPF_HPP
+#define BI_FILTER_LOOKAHEADPF_HPP
 
 #include "BridgePF.hpp"
 #include "../state/AuxiliaryPFState.hpp"

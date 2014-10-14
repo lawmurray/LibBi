@@ -193,7 +193,7 @@ typename V1::value_type sumexpsq_reduce(const V1 x);
  *
  * \f[ESS = \frac{\left(\sum_i w_i\right)^2}{\sum_i w_i^2}\f]
  */
-template<class V1, class T1>
+template<class V1>
 typename V1::value_type ess_reduce(const V1 lws, double* lW = NULL);
 
 /**

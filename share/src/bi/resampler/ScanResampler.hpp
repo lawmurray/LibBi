@@ -5,17 +5,17 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_RESAMPLER_SCANRESAMPLERBASE_HPP
-#define BI_RESAMPLER_SCANRESAMPLERBASE_HPP
+#ifndef BI_RESAMPLER_SCANRESAMPLER_HPP
+#define BI_RESAMPLER_SCANRESAMPLER_HPP
 
-#include "ResamplerBase.hpp"
+#include "Resampler.hpp"
 
 namespace bi {
 /**
- * Precomputed results for ScanResamplerBase.
+ * Precomputed results for ScanResampler.
  */
 template<Location L>
-struct ScanResamplerBasePrecompute {
+struct ScanResamplerPrecompute {
   typename loc_temp_vector<L,real>::type Ws;
   real W;
 };
@@ -25,30 +25,29 @@ struct ScanResamplerBasePrecompute {
  *
  * @ingroup method_resampler
  */
-class ScanResamplerBase: public ResamplerBase {
+class ScanResampler: public Resampler {
 public:
   /**
-   * @copydoc ResamplerBase::ResamplerBase
+   * @copydoc Resampler::Resampler
    */
-  ScanResamplerBase(const double essRel = 0.5,
-      const double essRelBridge = 0.5);
+  ScanResampler(const double essRel = 0.5);
 
   /**
    * @name Low-level interface
    */
   //@{
   /**
-   * @copydoc ResamplerBase::precompute
+   * @copydoc Resampler::precompute
    */
   template<class V1, Location L>
-  void precompute(const V1 lws, ScanResamplerBasePrecompute<L>& pre);
+  void precompute(const V1 lws, ScanResamplerPrecompute<L>& pre);
   //@}
 };
 }
 
 template<class V1, bi::Location L>
-void bi::ScanResamplerBase::precompute(const V1 lws,
-    ScanResamplerBasePrecompute<L>& pre) {
+void bi::ScanResampler::precompute(const V1 lws,
+    ScanResamplerPrecompute<L>& pre) {
   pre.Ws.resize(lws.size(), false);
   sumexpu_inclusive_scan(lws, pre.Ws);
   pre.W = *(pre.Ws.end() - 1);  // sum of weights

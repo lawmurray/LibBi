@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MARGINALSIS_HPP
-#define BI_METHOD_MARGINALSIS_HPP
+#ifndef BI_SAMPLER_MARGINALSIS_HPP
+#define BI_SAMPLER_MARGINALSIS_HPP
 
 #include "../state/Schedule.hpp"
 #include "../cache/SMCCache.hpp"

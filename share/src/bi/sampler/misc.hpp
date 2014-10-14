@@ -5,25 +5,10 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_MISC_HPP
-#define BI_METHOD_MISC_HPP
+#ifndef BI_SAMPLER_MISC_HPP
+#define BI_SAMPLER_MISC_HPP
 
 namespace bi {
-/**
- * Optimisation modes.
- */
-enum OptimiserMode {
-  /**
-   * Maximum likelihood estimation.
-   */
-  MAXIMUM_LIKELIHOOD,
-
-  /**
-   * Maximum a posteriori.
-   */
-  MAXIMUM_A_POSTERIORI
-};
-
 /**
  * MarginalSIR adaptation strategies.
  */
@@ -43,7 +28,6 @@ enum MarginalSIRAdapter {
    */
   GLOBAL_ADAPTER
 };
-
 }
 
 #endif

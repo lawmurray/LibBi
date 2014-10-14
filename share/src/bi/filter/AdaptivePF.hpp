@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_ADAPTIVEPF_HPP
-#define BI_METHOD_ADAPTIVEPF_HPP
+#ifndef BI_FILTER_ADAPTIVEPF_HPP
+#define BI_FILTER_ADAPTIVEPF_HPP
 
 #include "BootstrapPF.hpp"
 #include "../resampler/Resampler.hpp"

@@ -164,15 +164,7 @@ C<bridge>:
 Number of dense bridge times. This argument gives the number of equispaced
 times at which to assign bridge weights, and potentially resample. With
 C<--end-time T> and C<--nbridges K>, then for each C<k> in C<0,...,K-1>,
-brdige weighting will occur at time C<T*k/K>.
-
-=item C<--bridge-ess-rel> (default 0.5)
-
-Threshold for effective sample size (ESS) resampling trigger after
-intermediate bridge weighting steps. See C<--ess-rel> for further
-details. When sampling bridges between fully-observed states,
-C<--ess-rel> should be set to 1 and C<--bridge-ess-rel> tuned
-instead to minimise variance in marginal likelihood estimates.
+bridge weighting will occur at time C<T*k/K>.
 
 =back
 
@@ -279,11 +271,6 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
-      name => 'bridge-ess-rel',
-      type => 'float',
-      default => 0.5
-    },
-    {
       name => 'stopper',
       type => 'string',
       default => 'deterministic'
@@ -305,6 +292,12 @@ our @CLIENT_OPTIONS = (
     },
     
     # deprecations
+    {
+      name => 'bridge-ess-rel',
+      type => 'float',
+      deprecated => 1,
+      message => '--ess-rel is now used to trigger bridge resampling as well'
+    },
     {
       name => 'with-kde',
       type => 'bool',

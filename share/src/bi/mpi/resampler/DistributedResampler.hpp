@@ -8,7 +8,9 @@
 #ifndef BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
 #define BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
 
-#include "../../resampler/ResamplerBase.hpp"
+#include "../../resampler/Resampler.hpp"
+
+#include "boost/shared_ptr.hpp"
 
 #include <vector>
 
@@ -21,7 +23,7 @@ namespace bi {
  * @tparam R Resampler type.
  */
 template<class R>
-class DistributedResampler: public ResamplerBase {
+class DistributedResampler: public Resampler {
 public:
   /**
    * Constructor.
@@ -29,11 +31,8 @@ public:
    * @param base Base resampler.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
-   * @param bridgeEssRel Minimum ESS, as proportion of total number of
-   * particles, to trigger resampling after bridge weighting.
    */
-  DistributedResampler(R& base, const double essRel = 0.5,
-      const double bridgeEssRel = 0.5);
+  DistributedResampler(boost::shared_ptr<R> base, const double essRel = 0.5);
 
   /**
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
@@ -116,7 +115,7 @@ private:
   /**
    * Base resampler.
    */
-  R& base;
+  boost::shared_ptr<R> base;
 };
 }
 
@@ -132,9 +131,9 @@ private:
 #include <list>
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(R& base,
-    const double essRel, const double bridgeEssRel) :
-    ResamplerBase(essRel, bridgeEssRel), base(base) {
+bi::DistributedResampler<R>::DistributedResampler(boost::shared_ptr<R> base,
+    const double essRel) :
+    Resampler(essRel), base(base) {
   //
 }
 

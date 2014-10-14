@@ -8,6 +8,8 @@
 #ifndef BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 #define BI_CUDA_RESAMPLER_MULTINOMIALRESAMPLERGPU_HPP
 
+#include "ResamplerGPU.cuh"
+
 namespace bi {
 /**
  * MultinomialResampler implementation on device.
@@ -19,14 +21,14 @@ public:
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
-      MultinomialPrecompute<ON_DEVICE>& pre)
+      ScanResamplerPrecompute<ON_DEVICE>& pre)
           throw (ParticleFilterDegeneratedException);
 };
 }
 
 template<class V1, class V2>
 void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
-    MultinomialPrecompute<ON_DEVICE>& pre)
+    ScanResamplerPrecompute<ON_DEVICE>& pre)
         throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 
@@ -37,16 +39,8 @@ void bi::MultinomialResamplerGPU::ancestors(Random& rng, const V1 lws, V2 as,
   typename sim_temp_vector<V2>::type as1(P);
 
   if (pre.W > 0) {
-    /* random numbers */
     rng.uniforms(alphas, 0.0, pre.W);
-
-    /* sample */
-    if (pre.sort) {
-      bi::lower_bound(pre.Ws, alphas, as1);
-      bi::gather(as1, pre.ps, as);
-    } else {
-      bi::lower_bound(pre.Ws, alphas, as);
-    }
+    bi::lower_bound(pre.Ws, alphas, as);
   } else {
     throw ParticleFilterDegeneratedException();
   }

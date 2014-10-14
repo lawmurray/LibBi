@@ -88,28 +88,6 @@ private:
    */
   CacheObject<Mask<CL> > maskCache;
 };
-
-/**
- * Factory for creating Observer objects.
- *
- * @ingroup method
- *
- * @see Observer
- */
-template<Location CL = ON_HOST>
-struct ObserverFactory {
-  /**
-   * Create observer.
-   *
-   * @return Observer object. Caller has ownership.
-   *
-   * @see Observer::Observer()
-   */
-  template<class IO1>
-  static Observer<IO1,CL>* create(IO1& in) {
-    return new Observer<IO1,CL>(in);
-  }
-};
 }
 
 template<class IO1, bi::Location CL>

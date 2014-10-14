@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_STDDEVSTOPPER_HPP
 #define BI_STOPPER_STDDEVSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on standard deviation criterion.

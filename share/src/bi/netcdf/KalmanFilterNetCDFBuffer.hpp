@@ -9,7 +9,6 @@
 #define BI_NETCDF_KalmanFilterNetCDFBuffer_HPP
 
 #include "SimulatorNetCDFBuffer.hpp"
-#include "../method/misc.hpp"
 
 namespace bi {
 /**

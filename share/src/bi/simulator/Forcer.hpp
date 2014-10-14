@@ -15,7 +15,7 @@ namespace bi {
 /**
  * Updater for inputs.
  *
- * @ingroup method
+ * @ingroup method_simulator
  *
  * @tparam B Model type.
  * @tparam IO Input type.
@@ -82,28 +82,6 @@ private:
    * Cache of static inputs.
    */
   Cache2D<real,CL> cache0;
-};
-
-/**
- * Factory for creating Forcer objects.
- *
- * @ingroup method
- *
- * @see Forcer
- */
-template<Location CL = ON_HOST>
-struct ForcerFactory {
-  /**
-   * Create Forcer.
-   *
-   * @return Forcer object. Caller has ownership.
-   *
-   * @see Forcer::Forcer()
-   */
-  template<class IO1>
-  static Forcer<IO1,CL>* create(IO1& in) {
-    return new Forcer<IO1,CL>(in);
-  }
 };
 }
 

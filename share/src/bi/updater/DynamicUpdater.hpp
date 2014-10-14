@@ -83,7 +83,6 @@ public:
 #ifdef __CUDACC__
 #include "../cuda/updater/DynamicUpdaterGPU.cuh"
 #endif
-#include "../method/misc.hpp"
 
 template<class B, class S>
 template<class T1>

@@ -8,6 +8,30 @@
 #ifndef BI_HOST_RESAMPLER_REJECTIONRESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_REJECTIONRESAMPLERHOST_HPP
 
+#include "ResamplerHost.hpp"
+
+namespace bi {
+/**
+ * RejectionResampler implementation on host.
+ */
+class RejectionResamplerHost: public ResamplerHost {
+public:
+  /**
+   * @copydoc RejectionResampler::ancestors()
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
+
+  /**
+   * @copydoc RejectionResampler::ancestorsPermute()
+   */
+  template<class V1, class V2>
+  static void ancestorsPermute(Random& rng, const V1 lws, V2 as,
+      const typename V1::value_type maxLogWeight);
+};
+}
+
 template<class V1, class V2>
 void bi::RejectionResamplerHost::ancestors(Random& rng, const V1 lws,
     V2 as, const typename V1::value_type maxLogWeight) {

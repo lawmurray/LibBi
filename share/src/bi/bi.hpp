@@ -23,13 +23,21 @@
  * @defgroup method Methods
  * Inference methods.
  *
- *   @defgroup method_sampler Samplers
+ *   @defgroup method_simulator Simulators
  *   @ingroup method
- *   Samplers for parameters.
+ *   Simulators.
  *
  *   @defgroup method_filter Filters
  *   @ingroup method
  *   Kalman and particle filters.
+ *
+ *   @defgroup method_optimiser Optimisers
+ *   @ingroup method
+ *   Optimisers for parameters.
+ *
+ *   @defgroup method_sampler Samplers
+ *   @ingroup method
+ *   Samplers for parameters.
  *
  *   @defgroup method_resampler Resamplers
  *   @ingroup method

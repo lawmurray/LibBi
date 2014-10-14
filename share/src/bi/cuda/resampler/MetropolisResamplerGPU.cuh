@@ -8,6 +8,28 @@
 #ifndef BI_CUDA_RESAMPLER_METROPOLISRESAMPLERGPU_CUH
 #define BI_CUDA_RESAMPLER_METROPOLISRESAMPLERGPU_CUH
 
+#include "ResamplerGPU.cuh"
+
+namespace bi {
+/**
+ * MetropolisResampler implementation on device.
+ */
+class MetropolisResamplerGPU: public ResamplerGPU {
+public:
+  /**
+   * @copydoc MetropolisResampler::ancestors()
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as, int B);
+
+  /**
+   * @copydoc MetropolisResampler::ancestorsPermute()
+   */
+  template<class V1, class V2>
+  static void ancestorsPermute(Random& rng, const V1 lws, V2 as, int B);
+};
+}
+
 #include "MetropolisResamplerKernel.cuh"
 #include "../device.hpp"
 

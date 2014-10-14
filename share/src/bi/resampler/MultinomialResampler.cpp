@@ -7,8 +7,7 @@
  */
 #include "MultinomialResampler.hpp"
 
-bi::MultinomialResampler::MultinomialResampler(const double essRel,
-    const double bridgeEssRel) :
-    ScanResamplerBase(essRel, bridgeEssRel) {
+bi::MultinomialResampler::MultinomialResampler(const double essRel) :
+    ScanResampler(essRel) {
   //
 }

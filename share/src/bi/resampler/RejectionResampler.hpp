@@ -15,46 +15,6 @@
 
 namespace bi {
 /**
- * RejectionResampler implementation on host.
- */
-class RejectionResamplerHost: public ResamplerBaseHost {
-public:
-  /**
-   * @copydoc RejectionResampler::ancestors()
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight);
-
-  /**
-   * @copydoc RejectionResampler::ancestorsPermute()
-   */
-  template<class V1, class V2>
-  static void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight);
-};
-
-/**
- * RejectionResampler implementation on device.
- */
-class RejectionResamplerGPU: public ResamplerBaseGPU {
-public:
-  /**
-   * @copydoc MultinomialResampler::ancestors
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight);
-
-  /**
-   * @copydoc MultinomialResampler::ancestorsPermute
-   */
-  template<class V1, class V2>
-  static void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight);
-};
-
-/**
  * Rejection resampler for particle filter.
  *
  * @ingroup method_resampler
@@ -75,7 +35,7 @@ public:
  * motivation of the rejection resampler (and, indeed, the Metropolis
  * resampler), which is precisely to avoid these.
  */
-class RejectionResampler: public ResamplerBase {
+class RejectionResampler: public Resampler {
 public:
   /**
    * Constructor.
@@ -87,28 +47,18 @@ public:
    */
   //@{
   /**
-   * Select ancestors.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] as Ancestors.
-   * @param maxLogWeight Maximum log-weight.
+   * @copydoc Multinomial::ancestors()
    */
-  template<class V1, class V2>
+  template<class V1, class V2, bi::Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight)
-          throw (ParticleFilterDegeneratedException);
+      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
 
   /**
-   * @copydoc ancestors()
+   * @copydoc Multinomial::ancestorsPermute()
    */
-  template<class V1, class V2>
+  template<class V1, class V2, bi::Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      const typename V1::value_type maxLogWeight)
-          throw (ParticleFilterDegeneratedException);
+      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
   //@}
 };
 
@@ -117,7 +67,7 @@ public:
  */
 template<Location L>
 struct precompute_type<RejectionResampler,L> {
-  typedef ResamplerBasePrecompute<L> type;
+  typedef ResamplerPrecompute<L> type;
 };
 /**
  * @internal
@@ -134,22 +84,29 @@ struct resampler_needs_max<RejectionResampler> {
 #include "../cuda/resampler/RejectionResamplerGPU.cuh"
 #endif
 
-template<class V1, class V2>
+template<class V1, class V2, bi::Location L>
 void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    const typename V1::value_type maxLogWeight)
-        throw (ParticleFilterDegeneratedException) {
+    ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+#ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
-      RejectionResamplerHost>::type impl;
-  impl::ancestors(rng, lws, as, maxLogWeight);
+  RejectionResamplerHost>::type impl;
+#else
+  typedef RejectionResamplerHost impl;
+#endif
+  impl::ancestors(rng, lws, as, this->maxLogWeight);
 }
 
-template<class V1, class V2>
+template<class V1, class V2, bi::Location L>
 void bi::RejectionResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, const typename V1::value_type maxLogWeight)
+    V2 as, ResamplerPrecompute<L>& pre)
         throw (ParticleFilterDegeneratedException) {
+#ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
-      RejectionResamplerHost>::type impl;
-  impl::ancestorsPermute(rng, lws, as, maxLogWeight);
+  RejectionResamplerHost>::type impl;
+#else
+  typedef RejectionResamplerHost impl;
+#endif
+  impl::ancestorsPermute(rng, lws, as, this->maxLogWeight);
 }
 
 #endif

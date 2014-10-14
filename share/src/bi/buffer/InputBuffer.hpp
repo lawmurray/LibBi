@@ -9,6 +9,7 @@
 #define BI_BUFFER_INPUTBUFFER_HPP
 
 #include "buffer.hpp"
+#include "../model/Model.hpp"
 #include "../state/Mask.hpp"
 
 #include <vector>

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_BRIDGEPF_HPP
-#define BI_METHOD_BRIDGEPF_HPP
+#ifndef BI_FILTER_BRIDGEPF_HPP
+#define BI_FILTER_BRIDGEPF_HPP
 
 #include "BootstrapPF.hpp"
 #include "../state/AuxiliaryPFState.hpp"
@@ -152,22 +152,22 @@ template<class S1>
 void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
     S1& s) {
   double lW;
-  if (isTriggered(now, s, &lW)) {
+  if (this->resam.isTriggered(now, s, &lW)) {
     if (resampler_needs_max<R>::value) {
       if (now.isObserved()) {
-        resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
+        this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
       } else if (now.hasBridge()) {
-        resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
+        this->resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
       }
     }
-    precompute_type<R,S1::location>::type pre;
-    this->precompute(s.logWeights(), pre);
+    typename precompute_type<R,S1::location>::type pre;
+    this->resam.precompute(s.logWeights(), pre);
     if (now.hasOutput()) {
-      this->ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      this->copy(s.ancestors(), s.getDyn());
+      this->resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
+      this->resam.copy(s.ancestors(), s.getDyn());
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
-      this->ancestorsPermute(rng, s.logWeights(), as1, pre);
+      this->resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
       bi::gather(as1, s.ancestors(), s.ancestors());
       bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
     }

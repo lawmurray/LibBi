@@ -625,7 +625,12 @@ sub process_args {
     # check deprecated arguments
     foreach $param (@{$self->get_params}) {
         if ($param->{deprecated} && $self->is_named_arg($param->{name})) {
-            warn("--" . $param->{name} . " is deprecated, " . $param->{message} . "\n");
+        	my $msg = "--" . $param->{name} . " is deprecated";
+        	if (defined $param->{message}) {
+        		$msg .= ", " . $param->{message};
+        	}
+        	$msg .= "\n";
+        	warn($msg);
             $self->delete_named_arg($param->{name});
         }
     }

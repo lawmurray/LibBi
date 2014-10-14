@@ -9,8 +9,8 @@
 #define BI_NETCDF_SIMULATORNETCDFBUFFER_HPP
 
 #include "NetCDFBuffer.hpp"
+#include "../model/Model.hpp"
 #include "../state/ScheduleElement.hpp"
-#include "../method/misc.hpp"
 
 #include <vector>
 

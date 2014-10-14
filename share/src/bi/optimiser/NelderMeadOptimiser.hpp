@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_METHOD_NELDERMEADOPTIMISER_HPP
-#define BI_METHOD_NELDERMEADOPTIMISER_HPP
+#ifndef BI_OPTIMISER_NELDERMEADOPTIMISER_HPP
+#define BI_OPTIMISER_NELDERMEADOPTIMISER_HPP
 
 #include "../state/Schedule.hpp"
 #include "../state/State.hpp"
@@ -84,7 +84,7 @@ struct NelderMeadOptimiserParams {
 /**
  * Nelder-Mead simplex optimisation.
  *
- * @ingroup method
+ * @ingroup method_optimiser
  *
  * @tparam B Model type
  * @tparam F #concept::Filter type.
