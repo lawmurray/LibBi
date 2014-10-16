@@ -8,8 +8,6 @@
 #ifndef BI_STATE_MARGINALMHSTATE_HPP
 #define BI_STATE_MARGINALMHSTATE_HPP
 
-#include "../state/SamplerState.hpp"
-
 namespace bi {
 /**
  * State for MarginalMH.
@@ -24,11 +22,6 @@ namespace bi {
 template<class B, Location L, class S1, class IO1>
 class MarginalMHState {
 public:
-  /**
-   * State type.
-   */
-  typedef SamplerState<B,L,S1,IO1> state_type;
-
   /**
    * Constructor.
    *
@@ -50,14 +43,29 @@ public:
   MarginalMHState& operator=(const MarginalMHState<B,L,S1,IO1>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
+   * Swap.
+   */
+  void swap(MarginalMHState<B,L,S1,IO1>& o);
+
+  /**
    * Current state.
    */
-  state_type theta1;
+  S1 s1;
 
   /**
    * Proposed state.
    */
-  state_type theta2;
+  S1 s2;
+
+  /**
+   * Filter output.
+   */
+  IO1 out;
 
 private:
   /**
@@ -83,40 +91,57 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(B& m, const int P, const int Y,
     const int T) :
-    theta1(m, P, Y, T), theta2(m, P, Y, T) {
+    s1(P, Y, T), s2(P, Y, T), out(m, P, T) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalMHState<B,L,S1,IO1>::MarginalMHState(
     const MarginalMHState<B,L,S1,IO1>& o) :
-    theta1(o.theta1), theta2(o.theta2) {
+    s1(o.s1), s2(o.s2), out(o.out) {
   //
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalMHState<B,L,S1,IO1>& bi::MarginalMHState<B,L,S1,IO1>::operator=(
     const MarginalMHState<B,L,S1,IO1>& o) {
-  theta1 = o.theta1;
-  theta2 = o.theta2;
+  s1 = o.s1;
+  s2 = o.s2;
+  out = o.out;
 
   return *this;
+}
+
+template<class B, bi::Location L, class S1, class IO1>
+void bi::MarginalMHState<B,L,S1,IO1>::clear() {
+  s1.clear();
+  s2.clear();
+  out.clear();
+}
+
+template<class B, bi::Location L, class S1, class IO1>
+void bi::MarginalMHState<B,L,S1,IO1>::swap(MarginalMHState<B,L,S1,IO1>& o) {
+  s1.swap(o.s1);
+  s2.swap(o.s2);
+  out.swap(o.out);
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalMHState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & theta1;
-  ar & theta2;
+  ar & s1;
+  ar & s2;
+  ar & out;
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalMHState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
-  ar & theta1;
-  ar & theta2;
+  ar & s1;
+  ar & s2;
+  ar & out;
 }
 
 #endif

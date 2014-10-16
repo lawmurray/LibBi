@@ -38,14 +38,14 @@ public:
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s)
+  void resample(Random& rng, V1 lws, V2 as, O1& s) const
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc Resampler::isTriggered
    */
-  template<class V1>
-  bool isTriggered(const V1 lws) const
+  template<class S1, class V1>
+  bool isTriggered(const ScheduleElement now, const V1 lws, double* lW) const
       throw (ParticleFilterDegeneratedException);
 
   /**

@@ -202,8 +202,8 @@ void bi::MarginalSIS<B,F,A,S>::weight(Random& rng,
     s.logLikelihood += ll;
     s.logWeight += ll;
   }
-  filter.term();
-  filter.samplePath(rng, s.path, s.out);
+  filter.term(s);
+  filter.samplePath(rng, s, s.out);
 }
 
 template<class B, class F, class A, class S>

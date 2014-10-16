@@ -28,10 +28,6 @@
  *
  * @todo Exponential pdf, poisson pdf.
  *
- * @todo Get OctBi working with MATLAB.
- *
- * @todo Review RBi.
- *
  * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
  *
  * @todo Tidy up output file variable names, perhaps precede internal
@@ -40,9 +36,6 @@
  *
  * @todo bi smooth
  *
- * @todo AVX support (should be very similar to SSE support, but with slightly
- * different intrinsics).
- *
  * @todo Consider removing noise variables, or keep "noise" keyword for
  * semantics only, but treat as state variable internally.
  *
@@ -50,9 +43,4 @@
  *
  * @todo Replace gpu_vector and host_vector with one vector class that
  * determines location based on allocator. Similar for matrix classes.
- *
- * @todo If high-level filter() method is now the same for all filters,
- * should they be wrapped in a Filter<F> type class that calls their
- * lower-level functions, save the repetition? Should use curiously recurring
- * to inherit from type F, so that it can call the lower-level interface.
  */

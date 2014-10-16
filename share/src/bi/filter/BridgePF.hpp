@@ -152,7 +152,7 @@ template<class S1>
 void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
     S1& s) {
   double lW;
-  if (this->resam.isTriggered(now, s, &lW)) {
+  if (this->resam.isTriggered(now, s.logWeights(), &lW)) {
     if (resampler_needs_max<R>::value) {
       if (now.isObserved()) {
         this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));

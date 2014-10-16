@@ -51,8 +51,8 @@ public:
   /**
    * @copydoc BootstrapPF::samplePath()
    */
-  template<class M1, class IO1>
-  void samplePath(Random& rng, M1 X, IO1& out);
+  template<class S1, class IO1>
+  void samplePath(Random& rng, S1& s, IO1& out);
   //@}
 
   /**
@@ -116,12 +116,14 @@ bi::ExtendedKF<B,F,O>::ExtendedKF(B& m, F& in, O& obs) :
 }
 
 template<class B, class F, class O>
-template<class M1, class IO1>
-void bi::ExtendedKF<B,F,O>::samplePath(Random& rng, M1 X, IO1& out) {
-  typedef typename sim_temp_vector<M1>::type vector_type;
-  typedef typename sim_temp_matrix<M1>::type matrix_type;
+template<class S1, class IO1>
+void bi::ExtendedKF<B,F,O>::samplePath(Random& rng, S1& s, IO1& out) {
+  typedef typename loc_temp_vector<S1::location,real>::type vector_type;
+  typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
 
   if (out.size() > 0) {
+    subrange(s.times, 0, out.len) = out.timeCache.get(0, out.len);
+
     matrix_type U1(M, M), U2(M, M), C(M, M);
     vector_type mu1(M), mu2(M);
 
@@ -136,12 +138,12 @@ void bi::ExtendedKF<B,F,O>::samplePath(Random& rng, M1 X, IO1& out) {
           out.readPredictedStd(k, U2);
           out.readCross(k, C);
 
-          condition(mu1, U1, mu2, U2, C, column(X, k));
+          condition(mu1, U1, mu2, U2, C, column(s.path, k));
         }
 
-        rng.gaussians(column(X, k - 1));
-        trmv(U1, column(X, k - 1));
-        axpy(1.0, mu1, column(X, k - 1));
+        rng.gaussians(column(s.path, k - 1));
+        trmv(U1, column(s.path, k - 1));
+        axpy(1.0, mu1, column(s.path, k - 1));
 
         --k;
       }

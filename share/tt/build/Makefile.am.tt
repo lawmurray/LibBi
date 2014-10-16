@@ -13,8 +13,7 @@ CLIENTS = [
     'filter',
     'sample',
     'test',
-    'test_resampler',
-    'test_filter'
+    'test_resampler'
 ];
 %]
 

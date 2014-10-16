@@ -201,6 +201,7 @@ int main(int argc, char* argv[]) {
   timer.tic();
   #endif
   
+  filter->init(rng, *sched.begin(), s, out, bufInit);
   filter->filter(rng, sched.begin(), sched.end(), s, out, bufInit);
   out.flush();
   

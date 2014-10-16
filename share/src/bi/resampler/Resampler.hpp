@@ -54,19 +54,21 @@ public:
   void setMaxLogWeight(const double maxLogWeight);
 
   /**
-   * Is ESS-based condition triggered?
+   * Is resampling criterion triggered?
    *
-   * @tparam S1 State type.
+   * @tparam V1 Vector type.
    *
    * @param now Current step in time schedule.
-   * @param s State.
+   * @param lws Log-weights.
    * @param[out] lW If given, the log of the sum of weights is written to this
    * variable.
+   * @param[out] ess If given, the ESS of weihts is written to this variable.
    *
    * @return True if resampling is triggered, false otherwise.
    */
-  template<class S1>
-  bool isTriggered(const ScheduleElement now, const S1& s, double* lW) const;
+  template<class V1>
+  bool isTriggered(const ScheduleElement now, const V1 lws, double* lW = NULL,
+      double* ess = NULL) const throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -227,15 +229,29 @@ inline double bi::Resampler::getMaxLogWeight() const {
   return maxLogWeight;
 }
 
-template<class S1>
-bool bi::Resampler::isTriggered(const ScheduleElement now, const S1& s,
-    double* lW) const {
-  ///@todo Don't need to compute ESS if essRel >= 1.0, but do need to compute
-  ///normalising constant.
-  const int P = s.size();
-  double ess = ess_reduce(s.logWeights(), lW);
-  return ((now.isObserved() || now.hasBridge())
-      && (essRel >= 1.0 || ess < essRel * P));
+template<class V1>
+bool bi::Resampler::isTriggered(const ScheduleElement now, const V1 lws,
+    double* lW, double* ess) const throw (ParticleFilterDegeneratedException) {
+  double P = lws.size();
+  bool r = false;
+
+  if (now.isObserved() || now.hasBridge()) {
+    if (essRel >= 1.0) {
+      r = true;
+      if (ess != NULL) {
+        *ess = ess_reduce(lws, lW);  // computes lW as well if not NULL
+      } else if (lW != NULL) {
+        *lW = logsumexp_reduce(lws) - bi::log(P);  // computes lW only
+      }
+    } else {
+      double ess1 = ess_reduce(lws, lW);  // computes lW as well if not NULL
+      r = ess1 < essRel * P;
+      if (ess != NULL) {
+        *ess = ess1;
+      }
+    }
+  }
+  return r;
 }
 
 template<class V1, bi::Location L>

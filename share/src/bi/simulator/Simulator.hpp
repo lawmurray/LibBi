@@ -83,17 +83,21 @@ public:
       IO2& inInit);
 
   /**
-   * Initialise for simulation, with fixed parameters.
+   * Propose new state from existing state.
    *
    * @tparam S1 State type.
+   * @tparam S2 State type.
+   * @tparam IO1, Output type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param[out] s State.
+   * @param[in,out] s1 Existing state.
+   * @param[in,out] s2 New state.
    * @param out Output file.
    */
-  template<class S1, class IO1>
-  void init(Random& rng, const ScheduleElement now, S1& s, IO1& out);
+  template<class S1, class S2, class IO1>
+  void propose(Random& rng, const ScheduleElement now, S1& s1, S2& s2,
+      IO1& out);
 
   /**
    * Advance model forward to time of next output, and output.
@@ -255,6 +259,10 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
     m.parameterSimulate(s);
   }
 
+  /* prior log-density */
+  s.get(PY_VAR) = s.get(P_VAR);
+  s.logPrior = m.parameterLogDensity(s);
+
   /* dynamic inputs */
   if (now.hasInput()) {
     in.update(now.indexInput(), s);
@@ -269,7 +277,7 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
   m.initialSamples(rng, s);
   if (!equals<IO2,InputBuffer>::value) {  // if there's actually a buffer...
     inInit.read0(D_VAR, s.get(D_VAR));
-    inInit.read0(R_VAR, s.get(D_VAR));
+    inInit.read0(R_VAR, s.get(R_VAR));
 
     BOOST_AUTO(iter, std::find(ts.begin(), ts.end(), now.getTime()));
     if (iter != ts.end()) {
@@ -287,33 +295,45 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
 }
 
 template<class B, class F, class O>
-template<class S1, class IO1>
-void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
-    IO1& out) {
-  s.setTime(now.getTime());
+template<class S1, class S2, class IO1>
+void bi::Simulator<B,F,O>::propose(Random& rng, const ScheduleElement now,
+    S1& s1, S2& s2, IO1& out) {
+  s2.clear();
+  s2.setTime(now.getTime());
 
   /* static inputs */
-  in.update0(s);
+  in.update0(s2);
+
+  /* proposal */
+  s2.get(P_VAR) = s1.get(P_VAR);
+  m.proposalParameterSample(rng, s2);
+
+  /* reverse proposal log-density */
+  s1.get(PY_VAR) = s1.get(P_VAR);
+  s1.get(P_VAR) = s2.get(P_VAR);
+  s1.logProposal = m.proposalParameterLogDensity(s1);
+
+  /* proposal log-density */
+  s2.get(PY_VAR) = s2.get(P_VAR);
+  s2.get(P_VAR) = s1.get(P_VAR);
+  s2.logProposal = m.proposalParameterLogDensity(s2);
+
+  /* prior log-density */
+  s2.get(PY_VAR) = s2.get(P_VAR);
+  s2.logPrior = m.parameterLogDensity(s2);
 
   /* dynamic inputs */
-  s.get(F_VAR).clear();
   if (now.hasInput()) {
-    in.update(now.indexInput(), s);
+    in.update(now.indexInput(), s2);
   }
 
   /* observations */
-  s.get(OY_VAR).clear();
   if (now.hasObs()) {
-    obs.update(now.indexObs(), s);
+    obs.update(now.indexObs(), s2);
   }
 
-  /* parameters */
-  s.get(PY_VAR) = s.get(P_VAR);
-  m.parameterSimulate(s);
-
   /* initial values */
-  s.getDyn().clear();
-  m.initialSamples(rng, s);
+  m.initialSamples(rng, s2);
 
   out.clear();
 }

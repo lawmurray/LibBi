@@ -234,8 +234,8 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
     S1& s, IO1& out, IO2& inInit) {
   for (int p = 0; p < s.size(); ++p) {
-    mmh.init(rng, first, first + 1, *s.thetas[p], inInit);
-    s.logWeights()(p) = s.thetas[p]->logLikelihood;
+    mmh.init(rng, first, first + 1, *s.s1s[p], *s.out1s[p], inInit);
+    s.logWeights()(p) = s.s1s[p]->logLikelihood;
     s.ancestors()(p) = p;
   }
   out.clear();
@@ -260,7 +260,7 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ++iter;
     for (p = 0; p < s.size(); ++p) {
       iter1 = iter;
-      s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.thetas[p]);
+      s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.s1s[p], *s.out1s[p]);
     }
     iter = iter1;
     output(*iter, s, out);
@@ -273,7 +273,7 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
   double lW;
   lastResample = false;
-  if (resam.isTriggered(now, s, &lW, &lastEss)) {
+  if (resam.isTriggered(now, s.logWeights(), &lW, &lastEss)) {
     lastResample = true;
     if (resampler_needs_max < R > ::value && now.isObserved()) {
       resam.setMaxLogWeight(getMaxLogWeight(now, s));
@@ -282,11 +282,11 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     resam.precompute(s.logWeights(), pre);
     if (now.hasOutput()) {
       resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      resam.copy(s.ancestors(), s.thetas);
+      resam.copy(s.ancestors(), s.s1s);
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
       resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
-      resam.copy(as1, s.thetas);
+      resam.copy(as1, s.s1s);
       bi::gather(as1, s.ancestors(), s.ancestors());
     }
     s.logWeights().clear();
@@ -303,8 +303,8 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   int p, move, naccept = 0;
   for (p = 0; p < s.size(); ++p) {
     for (move = 0; move < Nmoves; ++move) {
-      mmh.propose(rng, first, last, *s.thetas[p], s.theta2);
-      if (mmh.acceptReject(rng, *s.thetas[p], s.theta2)) {
+      mmh.propose(rng, first, last, *s.s1s[p], s.s2, s.out2);
+      if (mmh.acceptReject(rng, *s.s1s[p], s.s2)) {
         ++naccept;
       }
     }

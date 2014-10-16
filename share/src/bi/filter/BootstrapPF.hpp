@@ -61,22 +61,19 @@ public:
       S1& s, IO1& out);
 
   /**
-   * Sample single particle trajectory.
+   * Sample single path from filter output.
    *
-   * @tparam M1 Matrix type.
+   * @tparam S1 State type.
    * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
-   * @param[out] X Trajectory.
+   * @param[out] s State.
    * @param out Output buffer.
    *
-   * Sample a single particle trajectory from the smooth distribution.
-   *
-   * On output, @p X is arranged such that rows index variables and columns
-   * index times.
+   * Sample a single path from the smooth distribution.
    */
-  template<class M1, class IO1>
-  void samplePath(Random& rng, M1 X, IO1& out);
+  template<class S1, class IO1>
+  void samplePath(Random& rng, S1& s, IO1& out);
   //@}
 
   /**
@@ -108,7 +105,8 @@ public:
    * @param[in,out] s State.
    */
   template<class S1>
-  void resample(Random& rng, const ScheduleElement now, S1& s);
+  void resample(Random& rng, const ScheduleElement now, S1& s)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Finalise.
@@ -148,11 +146,12 @@ bi::BootstrapPF<B,F,O,R>::BootstrapPF(B& m, F& in, O& obs, R& resam) :
 }
 
 template<class B, class F, class O, class R>
-template<class M1, class IO1>
-void bi::BootstrapPF<B,F,O,R>::samplePath(Random& rng, M1 X, IO1& out) {
+template<class S1, class IO1>
+void bi::BootstrapPF<B,F,O,R>::samplePath(Random& rng, S1& s, IO1& out) {
   if (out.size() > 0) {
     int p = rng.multinomial(out.getLogWeights());
-    out.readPath(p, X);
+    out.readPath(p, s.path);
+    subrange(s.times, 0, out.len) = out.timeCache.get(0, out.len);
   }
 }
 
@@ -182,9 +181,10 @@ void bi::BootstrapPF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
 template<class B, class F, class O, class R>
 template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
-    const ScheduleElement now, S1& s) {
+    const ScheduleElement now, S1& s)
+        throw (ParticleFilterDegeneratedException) {
   double lW;
-  if (resam.isTriggered(now, s, &lW)) {
+  if (resam.isTriggered(now, s.logWeights(), &lW)) {
     if (resampler_needs_max<R>::value && now.isObserved()) {
       resam.setMaxLogWeight(getMaxLogWeight(now, s));
     }
@@ -210,7 +210,7 @@ template<class B, class F, class O, class R>
 template<class S1>
 void bi::BootstrapPF<B,F,O,R>::term(S1& s) {
   s.logLikelihood += logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(s.size()));
+      - bi::log(double(s.size()));
   Simulator<B,F,O>::term(s);
 }
 

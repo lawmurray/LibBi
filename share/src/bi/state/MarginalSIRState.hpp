@@ -8,8 +8,6 @@
 #ifndef BI_STATE_MARGINALSIRSTATE_HPP
 #define BI_STATE_MARGINALSIRSTATE_HPP
 
-#include "SamplerState.hpp"
-
 #include <vector>
 
 namespace bi {
@@ -28,8 +26,6 @@ class MarginalSIRState {
 public:
   static const Location location = L;
   static const bool on_device = (L == ON_DEVICE);
-
-  typedef SamplerState<B,L,S1,IO1> state_type;
 
   typedef real value_type;
   typedef host_vector<value_type> vector_type;
@@ -62,6 +58,16 @@ public:
   MarginalSIRState& operator=(const MarginalSIRState<B,L,S1,IO1>& o);
 
   /**
+   * Clear.
+   */
+  void clear();
+
+  /**
+   * Swap.
+   */
+  void swap(MarginalSIRState<B,L,S1,IO1>& o);
+
+  /**
    * Number of \f$\theta\f$-particles.
    */
   int size() const;
@@ -89,12 +95,22 @@ public:
   /**
    * \f$\theta\f$-particles.
    */
-  std::vector<state_type*> thetas;
+  std::vector<S1*> s1s;
+
+  /**
+   * Output buffers.
+   */
+  std::vector<IO1*> out1s;
 
   /**
    * Proposed state.
    */
-  state_type theta2;
+  S1 s2;
+
+  /**
+   * Proposed output.
+   */
+  IO1 out2;
 
   /**
    * Log-evidence.
@@ -145,20 +161,23 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int Y, const int T) :
-    thetas(Ptheta), theta2(m, Px, Y, T), logEvidence(0.0), lws(Ptheta), as(Ptheta), ptheta(
-        0), Ptheta(Ptheta) {
-  for (int p = 0; p < thetas.size(); ++p) {
-    thetas[p] = new state_type(m, Px, T);
+    s1s(Ptheta), out1s(Ptheta), s2(m, Px, Y, T), out2(m, Px, T), logEvidence(
+        0.0), lws(Ptheta), as(Ptheta), ptheta(0), Ptheta(Ptheta) {
+  for (int p = 0; p < size(); ++p) {
+    s1s[p] = new S1(m, Px, Y, T);
+    out1s[p] = new IO1(m, Px, T);
   }
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    thetas(o.thetas.size()), theta2(o.theta2), logEvidence(o.logEvidence), lws(o.lws), as(
-        o.as), ptheta(o.ptheta), Ptheta(o.Ptheta) {
-  for (int p = 0; p < thetas.size(); ++p) {
-    thetas[p] = new state_type(*o.thetas[p]);
+    s1s(o.s1s.size()), out1s(o.out1s.size()), s2(o.s2), out2(o.out2), logEvidence(
+        o.logEvidence), lws(o.lws), as(o.as), ptheta(o.ptheta), Ptheta(
+        o.Ptheta) {
+  for (int p = 0; p < size(); ++p) {
+    s1s[p] = new S1(*o.s1s[p]);
+    out1s[p] = new IO1(*o.out1s[p]);
   }
 }
 
@@ -168,10 +187,12 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   /* pre-condition */
   BI_ASSERT(o.size() == size());
 
-  for (int p = 0; p < thetas.size(); ++p) {
-    *thetas[p] = *o.thetas[p];
+  for (int p = 0; p < size(); ++p) {
+    *s1s[p] = *o.s1s[p];
+    *out1s[p] = *o.out1s[p];
   }
-  theta2 = o.theta2;
+  s2 = o.s2;
+  out2 = o.out2;
   logEvidence = o.logEvidence;
   lws = o.lws;
   as = o.as;
@@ -179,6 +200,30 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   Ptheta = o.Ptheta;
 
   return *this;
+}
+
+template<class B, bi::Location L, class S1, class IO1>
+void bi::MarginalSIRState<B,L,S1,IO1>::clear() {
+  for (int p = 0; p < size(); ++p) {
+    s1s[p]->clear();
+    out1s[p]->clear();
+  }
+  s2.clear();
+  out2.clear();
+  logEvidence = 0.0;
+  logWeights().clear();
+  seq_elements(ancestors(), 0);
+}
+
+template<class B, bi::Location L, class S1, class IO1>
+void bi::MarginalSIRState<B,L,S1,IO1>::swap(MarginalSIRState<B,L,S1,IO1>& o) {
+  std::swap(s1s, o.s1s);
+  std::swap(out1s, o.out1s);
+  s2.swap(o.s2);
+  out2.swap(o.out2);
+  std::swap(logEvidence, o.logEvidence);
+  lws.swap(o.lws);
+  as.swap(o.as);
 }
 
 template<class B, bi::Location L, class S1, class IO1>
@@ -214,28 +259,34 @@ template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  save_resizable_vector(ar, version, logEvidence);
+  for (int p = 0; p < size(); ++p) {
+    ar & *s1s[p];
+    ar & *out1s[p];
+  }
+  ar & s2;
+  ar & out2;
+  ar & logEvidence;
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
-
-  for (int p = 0; p < thetas.size(); ++p) {
-    ar & *thetas[p];
-  }
-  ar & ptheta & Ptheta;
+  ar & ptheta;
+  ar & Ptheta;
 }
 
 template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
-  load_resizable_vector(ar, version, logEvidence);
+  for (int p = 0; p < size(); ++p) {
+    ar & *s1s[p];
+    ar & *out1s[p];
+  }
+  ar & s2;
+  ar & out2;
+  ar & logEvidence;
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);
-
-  for (int p = 0; p < thetas.size(); ++p) {
-    ar & *thetas[p];
-  }
-  ar & ptheta & Ptheta;
+  ar & ptheta;
+  ar & Ptheta;
 }
 
 #endif

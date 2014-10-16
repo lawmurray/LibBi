@@ -79,58 +79,60 @@ public:
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
-   * @param[out] theta1 State.
+   * @param[out] s1 State.
    * @param inInit Initialisation file.
    */
   template<class S1, class IO2>
   void init(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S1& theta1, IO2& inInit);
+      const ScheduleIterator last, S1& s1, IO2& inInit);
 
   /**
    * Propose new state.
    *
    * @tparam S1 State type.
+   * @tparam S2 State type.
+   * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
-   * @param theta1 Current state.
-   * @param[out] theta2 Proposed state.
+   * @param[in,out] s1 Current state.
+   * @param[out] s2 Proposed state.
+   * @param[in,out] out Output buffer.
    */
-  template<class S1>
+  template<class S1, class S2, class IO1>
   void propose(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S1& theta1, S1& theta2);
+      const ScheduleIterator last, S1& s1, S2& s2, IO1& out);
 
   /**
    * Accept or reject proposed state.
    *
    * @tparam S1 State type.
+   * @tparam S2 State type.
    *
    * @param[in,out] rng Random number generator.
-   * @param theta1 Current state.
-   * @param theta2 Proposed state.
-   *
-   * @return Was the proposal accepted?
+   * @param s1 Current state.
+   * @param s2 Proposed state.
    */
-  template<class S1>
-  bool acceptReject(Random& rng, S1& theta1, S1& theta2);
+  template<class S1, class S2, class IO1>
+  void acceptReject(Random& rng, S1& s1, S2& s2, IO1& out);
 
   /**
    * Extend log-likelihood to next observation.
    *
-   * @tparam S1 State type.
+   * @tparam S2 State type.
+   * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
    * @param[in,out] iter Current position in time schedule. Advanced on
    * return.
    * @param last End of time schedule.
-   * @param[in,out] theta2 State.
-   *
-   * @return Estimate of the incremental log-likelihood.
+   * @param[in,out] s2 Proposed state.
+   * @param[in,out] out Output buffer.
    */
-  template<class S1>
-  double extend(Random& rng, ScheduleIterator& iter,
-      const ScheduleIterator last, S1& theta2);
+  template<class S2, class IO1>
+  void extend(Random& rng, ScheduleIterator& iter,
+      const ScheduleIterator last, S2& s2, IO1& out);
 
   /**
    * Output.
@@ -203,11 +205,11 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
   /* pre-condition */
   BI_ERROR(C > 0);
 
-  init(rng, first, last, s.theta1, inInit);
+  init(rng, first, last, s, inInit);
   output(0, s, out);
   for (int c = 1; c < C; ++c) {
-    propose(rng, first, last, s.theta1, s.theta2);
-    acceptReject(rng, s.theta1, s.theta2);
+    propose(rng, first, last, s.s1, s.s2, s.out);
+    acceptReject(rng, s.s1, s.s2, s.out);
     report(c, s);
     output(c, s, out);
   }
@@ -217,72 +219,43 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
 template<class B, class F>
 template<class S1, class IO2>
 void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S1& theta1, IO2& inInit) {
-  /* log-likelihood */
-  theta1.logLikelihood = filter.filter(rng, first, last, theta1, theta1.out,
-      inInit);
-
-  /* prior log-density */
-  theta1.get(PY_VAR) = theta1.get(P_VAR);
-  theta1.logPrior = m.parameterLogDensity(theta1);
-
-  /* path */
-  filter.samplePath(rng, theta1.path, theta1.out);
+    const ScheduleIterator last, S1& s, IO2& inInit) {
+  filter.init(rng, *first, s.s1, s.out, inInit);
+  filter.filter(rng, first, last, s.s1, s.out);
+  filter.samplePath(rng, s.s1, s.out);
   lastAccepted = true;
   accepted = 1;
   total = 1;
 }
 
 template<class B, class F>
-template<class S1>
+template<class S1, class S2, class IO1>
 void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S1& theta1, S1& theta2) {
-  /* proposal */
-  theta2.get(P_VAR) = theta1.get(P_VAR);
-  m.proposalParameterSample(rng, theta2);
-
-  /* reverse proposal log-density */
-  theta1.get(PY_VAR) = theta1.get(P_VAR);
-  theta1.get(P_VAR) = theta2.get(P_VAR);
-  theta1.logProposal = m.proposalParameterLogDensity(theta1);
-
-  /* proposal log-density */
-  theta2.get(PY_VAR) = theta2.get(P_VAR);
-  theta2.get(P_VAR) = theta1.get(P_VAR);
-  theta2.logProposal = m.proposalParameterLogDensity(theta2);
-
-  /* prior log-density */
-  theta2.get(PY_VAR) = theta2.get(P_VAR);
-  theta2.logPrior = m.parameterLogDensity(theta2);
-
-  /* log-likelihood */
-  theta2.logLikelihood = -BI_INF;
-  if (bi::is_finite(theta2.logPrior)) {
-    try {
-      theta2.logLikelihood = filter.filter(rng, first, last, theta2,
-          theta2.out);
-    } catch (CholeskyException e) {
-      //
-    } catch (ParticleFilterDegeneratedException e) {
-      //
-    }
+    const ScheduleIterator last, S1& s1, S2& s2, IO1& out) {
+  try {
+    filter.propose(rng, *first, s1, s2, out);
+    filter.filter(rng, first, last, s2, out);
+  } catch (CholeskyException e) {
+    s2.logLikelihood = -BI_INF;
+  } catch (ParticleFilterDegeneratedException e) {
+    s2.logLikelihood = -BI_INF;
   }
 }
 
 template<class B, class F>
-template<class S1>
-bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& theta1, S1& theta2) {
-  if (!bi::is_finite(theta2.logLikelihood)) {
+template<class S1, class S2, class IO1>
+void bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
+  if (!bi::is_finite(s2.logLikelihood)) {
     lastAccepted = false;
-  } else if (!bi::is_finite(theta1.logLikelihood)) {
+  } else if (!bi::is_finite(s1.logLikelihood)) {
     lastAccepted = true;
   } else {
-    double loglr = theta2.logLikelihood - theta1.logLikelihood;
-    double logpr = theta2.logPrior - theta1.logPrior;
-    double logqr = theta1.logProposal - theta2.logProposal;
+    double loglr = s2.logLikelihood - s1.logLikelihood;
+    double logpr = s2.logPrior - s1.logPrior;
+    double logqr = s1.logProposal - s2.logProposal;
 
-    if (!bi::is_finite(theta1.logProposal)
-        && !bi::is_finite(theta2.logProposal)) {
+    if (!bi::is_finite(s1.logProposal)
+        && !bi::is_finite(s2.logProposal)) {
       logqr = 0.0;
     }
     double logratio = loglr + logpr + logqr;
@@ -292,31 +265,27 @@ bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& theta1, S1& theta2) {
   }
 
   if (lastAccepted) {
-    filter.samplePath(rng, theta2.path, theta2.out);
-    theta2.swap(theta1);
+    filter.samplePath(rng, s2, out);
+    s2.swap(s1);
     ++accepted;
   }
   ++total;
-
-  return lastAccepted;
 }
 
 template<class B, class F>
-template<class S1>
-double bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, S1& theta2) {
-  double ll = filter.step(rng, iter, last, theta2, theta2.out);
-  theta2.logLikelihood += ll;
+template<class S1, class IO1>
+void bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
+    const ScheduleIterator last, S1& s2, IO1& out) {
+  filter.step(rng, iter, last, s2, out);
   if (iter + 1 == last) {
-    filter.samplePath(rng, theta2.path, theta2.out);
+    filter.samplePath(rng, s2, out);
   }
-  return ll;
 }
 
 template<class B, class F>
 template<class S1, class IO1>
 void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
-  out.write(c, s.theta1);
+  out.write(c, s.s1);
   if (out.isFull()) {
     out.flush();
     out.clear();
@@ -328,22 +297,22 @@ template<class S1>
 void bi::MarginalMH<B,F>::report(const int c, S1& s) {
   std::cerr << c << ":\t";
   std::cerr.width(10);
-  std::cerr << s.theta1.logLikelihood;
+  std::cerr << s.s1.logLikelihood;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.theta1.logPrior;
+  std::cerr << s.s1.logPrior;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.theta1.logProposal;
+  std::cerr << s.s1.logProposal;
   std::cerr << "\tbeats\t";
   std::cerr.width(10);
-  std::cerr << s.theta2.logLikelihood;
+  std::cerr << s.s2.logLikelihood;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.theta2.logPrior;
+  std::cerr << s.s2.logPrior;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.theta2.logProposal;
+  std::cerr << s.s2.logProposal;
   std::cerr << '\t';
   if (lastAccepted) {
     std::cerr << "accept";
