@@ -168,6 +168,7 @@ void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
       this->resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
+      this->resam.copy(as1, s.getDyn());
       bi::gather(as1, s.ancestors(), s.ancestors());
       bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
     }

@@ -69,22 +69,24 @@ public:
    * Initialise.
    *
    * @tparam S1 State type.
+   * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param s State.
-   * @param inInit Initialisation file.
-   *
-   * @return Log-evidence.
+   * @param out Output buffer.
+   * @param inInit Init buffer.
    */
-  template<class S1, class IO2>
-  double init(Random& rng, const ScheduleIterator first, S1& s, IO2& inInit);
+  template<class S1, class IO1, class IO2>
+  void init(Random& rng, const ScheduleIterator first, S1& s, IO1& out,
+      IO2& inInit);
 
   /**
    * Step \f$x\f$-particles forward.
    *
    * @tparam S1 State type.
+   * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
@@ -92,12 +94,11 @@ public:
    * return.
    * @param last End of time schedule.
    * @param[out] s State.
-   *
-   * @return Log-evidence.
+   * @param out Output buffer.
    */
-  template<class S1>
-  double step(Random& rng, const ScheduleIterator first,
-      ScheduleIterator& iter, const ScheduleIterator last, S1& s);
+  template<class S1, class IO1>
+  void step(Random& rng, const ScheduleIterator first, ScheduleIterator& iter,
+      const ScheduleIterator last, S1& s, IO1& out);
 
   /**
    * Resample \f$\theta\f$-particles.
@@ -120,24 +121,28 @@ public:
    * @param first Start of time schedule.
    * @param now Current position in time schedule.
    * @param[in,out] s State.
-   *
-   * @return Acceptance rate.
    */
   template<class S1>
-  double rejuvenate(Random& rng, const ScheduleIterator first,
+  void rejuvenate(Random& rng, const ScheduleIterator first,
       const ScheduleIterator now, S1& s);
 
   /**
-   * Output.
-   *
-   * @tparam S1 State type.
-   * @tparam IO1 Output type.
-   *
-   * @param s State.
-   * @param out Output buffer.
+   * @copydoc Simulator::output0()
    */
   template<class S1, class IO1>
-  void output(const S1& s, IO1& out);
+  void output0(const S1& s, IO1& out);
+
+  /**
+   * @copydoc Simulator::output()
+   */
+  template<class S1, class IO1>
+  void output(const ScheduleElement now, const S1& s, IO1& out);
+
+  /**
+   * @copydoc Simulator::outputT()
+   */
+  template<class S1, class IO1>
+  void outputT(const S1& s, IO1& out);
 
   /**
    * Report progress on stderr.
@@ -147,8 +152,7 @@ public:
    * @param r Was resampling performed?
    * @param acceptRate Acceptance rate of rejuvenation step (if any).
    */
-  void report(const ScheduleElement now, const double ess, const bool r,
-      const double acceptRate);
+  void report(const ScheduleElement now);
 
   /**
    * Terminate.
@@ -181,13 +185,29 @@ private:
    * Number of PMMH steps when rejuvenating.
    */
   int Nmoves;
+
+  /**
+   * Was a resample performed on the last step?
+   */
+  bool lastResample;
+
+  /**
+   * Last ESS when testing to resample.
+   */
+  double lastEss;
+
+  /**
+   * Last acceptance rate when rejuvenating.
+   */
+  double lastAcceptRate;
 };
 }
 
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
     const int Nmoves) :
-    m(m), mmh(mmh), adapter(adapter), resam(resam), Nmoves(Nmoves) {
+    m(m), mmh(mmh), adapter(adapter), resam(resam), Nmoves(Nmoves), lastResample(
+        false), lastEss(0.0), lastAcceptRate(0.0) {
   //
 }
 
@@ -196,73 +216,89 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
+  // should be very similar to Filter::filter()
   ScheduleIterator iter = first;
-  s.les(iter->indexOutput()) = init(rng, iter, s, inInit);
+  init(rng, *iter, s, out, inInit);
+  output0(s, out);
+  correct(rng, *iter, s);
+  output(*iter, s, out);
   while (iter + 1 != last) {
-    s.les(iter->indexOutput()) = step(rng, first, iter, last, s);
+    step(rng, first, iter, last, s, out);
   }
-  output(s, out);
-  term();
+  term(s);
+  output0(s, out);
 }
 
 template<class B, class F, class A, class R>
-template<class S1, class IO2>
-double bi::MarginalSIR<B,F,A,R>::init(Random& rng,
-    const ScheduleIterator first, S1& s, IO2& inInit) {
+template<class S1, class IO1, class IO2>
+void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
+    S1& s, IO1& out, IO2& inInit) {
   for (int p = 0; p < s.size(); ++p) {
     mmh.init(rng, first, first + 1, *s.thetas[p], inInit);
     s.logWeights()(p) = s.thetas[p]->logLikelihood;
     s.ancestors()(p) = p;
   }
-  double le = logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(s.size()));
+  out.clear();
 
-  return le;
+  lastResample = false;
+  lastEss = 0.0;
+  lastAcceptRate = 0.0;
 }
 
 template<class B, class F, class A, class R>
-template<class S1>
-double bi::MarginalSIR<B,F,A,R>::step(Random& rng,
-    const ScheduleIterator first, ScheduleIterator& iter,
-    const ScheduleIterator last, S1& s) {
-  int p, r;
-  double acceptRate = 0.0, ess = 0.0;
-
-  ess = resam.ess(s.logWeights());
-  r = iter->isObserved() && resam.isTriggered(s.logWeights());
-  if (r) {
-    resample(rng, *iter, s);
-    acceptRate = rejuvenate(rng, first, iter + 1, s);
-  } else {
-    Resampler::normalise(s.logWeights());
-  }
-  report(*iter, ess, r, acceptRate);
-
+template<class S1, class IO1>
+void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
+    ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
   ScheduleIterator iter1;
-  for (p = 0; p < s.size(); ++p) {
-    iter1 = iter;
-    s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.thetas[p]);
-  }
-  iter = iter1;
+  int p;
 
-  double le = logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(s.size()));
+  do {
+    resample(rng, *iter, s);
+    rejuvenate(rng, first, iter + 1, s);
+    report(*iter);
 
-  return le;
+    ++iter;
+    for (p = 0; p < s.size(); ++p) {
+      iter1 = iter;
+      s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.thetas[p]);
+    }
+    iter = iter1;
+    output(*iter, s, out);
+  } while (iter + 1 != last && !iter->isObserved());
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
-  if (now.isObserved()) {
-    resam.resample(rng, s.logWeights(), s.ancestors(), s.thetas);
+  double lW;
+  lastResample = false;
+  if (resam.isTriggered(now, s, &lW, &lastEss)) {
+    lastResample = true;
+    if (resampler_needs_max < R > ::value && now.isObserved()) {
+      resam.setMaxLogWeight(getMaxLogWeight(now, s));
+    }
+    typename precompute_type<R,S1::location>::type pre;
+    resam.precompute(s.logWeights(), pre);
+    if (now.hasOutput()) {
+      resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
+      resam.copy(s.ancestors(), s.thetas);
+    } else {
+      typename S1::temp_int_vector_type as1(s.ancestors().size());
+      resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
+      resam.copy(as1, s.thetas);
+      bi::gather(as1, s.ancestors(), s.ancestors());
+    }
+    s.logWeights().clear();
+    s.logLikelihood += lW;
+  } else if (now.hasOutput()) {
+    seq_elements(s.ancestors(), 0);
   }
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
-double bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
+void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
   int p, move, naccept = 0;
   for (p = 0; p < s.size(); ++p) {
@@ -281,19 +317,30 @@ double bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   boost::mpi::all_reduce(world, &totalMoves, 1, &totalMoves, std::plus<int>());
   boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
-
-  return static_cast<double>(naccept) / totalMoves;
+  lastAcceptRate = static_cast<double>(naccept) / totalMoves;
 }
 
 template<class B, class F, class A, class R>
 template<class S1, class IO1>
-void bi::MarginalSIR<B,F,A,R>::output(const S1& s, IO1& out) {
+void bi::MarginalSIR<B,F,A,R>::output0(const S1& s, IO1& out) {
+  //
+}
+
+template<class B, class F, class A, class R>
+template<class S1, class IO1>
+void bi::MarginalSIR<B,F,A,R>::output(const ScheduleElement now, const S1& s,
+    IO1& out) {
+  //
+}
+
+template<class B, class F, class A, class R>
+template<class S1, class IO1>
+void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
   out.write(s);
 }
 
 template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now,
-    const double ess, const bool r, const double acceptRate) {
+void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -303,9 +350,9 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now,
 
   if (rank == 0) {
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
-        << ess;
-    if (r) {
-      std::cerr << "\tresample-move with acceptance rate " << acceptRate;
+        << lastEss;
+    if (lastResample) {
+      std::cerr << "\tresample-move with acceptance rate " << lastAcceptRate;
     }
     std::cerr << std::endl;
   }

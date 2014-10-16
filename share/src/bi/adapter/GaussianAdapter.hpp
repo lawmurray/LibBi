@@ -8,6 +8,9 @@
 #ifndef BI_ADAPTER_GAUSSIANADAPTER_HPP
 #define BI_ADAPTER_GAUSSIANADAPTER_HPP
 
+#include "../pdf/GaussianPdf.hpp"
+#include "../misc/exception.hpp"
+
 namespace bi {
 /**
  * Adapter for Gaussian proposal.

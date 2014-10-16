@@ -196,6 +196,7 @@ void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
     } else {
       typename S1::temp_int_vector_type as1(s.ancestors().size());
       resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
+      resam.copy(as1, s.getDyn());
       bi::gather(as1, s.ancestors(), s.ancestors());
     }
     s.logWeights().clear();

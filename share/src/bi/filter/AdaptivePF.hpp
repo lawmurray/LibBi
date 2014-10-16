@@ -162,10 +162,10 @@ void bi::AdaptivePF<B,F,O,R,S2>::step(Random& rng, ScheduleIterator& iter,
   if (iter->isObserved() && resampler_needs_max<R>::value) {
     this->resam.setMaxLogWeight(this->getMaxLogWeight(*iter, s));
   }
-  ///@todo Use precompute.
-  //typename precompute_type<R,S1::location>::type pre;
-  //ll = this->resam.precompute(lws, pre);
-  ll = logsumexp_reduce(s.logWeights())
+
+  typename precompute_type<R,S1::location>::type pre;
+  this->resam.precompute(lws, pre);
+  s.logLikelihood += logsumexp_reduce(s.logWeights())
       - bi::log(static_cast<double>(s.size()));
 
   /* propagate block by block */
@@ -181,11 +181,11 @@ void bi::AdaptivePF<B,F,O,R,S2>::step(Random& rng, ScheduleIterator& iter,
       /* resample */
       if (iter1->isObserved() || iter1->indexTime() == 0) {
         if (iter1->hasOutput()) {
-          this->resam.ancestors(rng, lws, s.ancestors()/*, pre*/);
+          this->resam.ancestors(rng, lws, s.ancestors(), pre);
           this->resam.copy(s.ancestors(), X, s.getDyn());
         } else {
           typename S1::temp_int_vector_type as1(blockP);
-          this->resam.ancestors(rng, lws, as1/*, pre*/);
+          this->resam.ancestors(rng, lws, as1, pre);
           this->resam.copy(as1, X, s.getDyn());
           bi::gather(as1, as, s.ancestors());
         }
