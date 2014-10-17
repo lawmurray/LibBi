@@ -186,8 +186,7 @@ typename V1::value_type sumexpsq_reduce(const V1 x);
  * @ingroup primitive_vector
  *
  * @param lws \f$\log \mathbf{w}\f$; log-weights.
- * @param[out] lW If given, the log of the sum of weights is written to this
- * variable.
+ * @param[out] lW If given, contains the log of the sum of weights on exit.
  *
  * @return Effective sample size computed from given weights.
  *

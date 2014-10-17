@@ -232,23 +232,22 @@ inline double bi::Resampler::getMaxLogWeight() const {
 template<class V1>
 bool bi::Resampler::isTriggered(const ScheduleElement now, const V1 lws,
     double* lW, double* ess) const throw (ParticleFilterDegeneratedException) {
-  double P = lws.size();
   bool r = false;
+  double lW1 = 0.0, ess1 = 0.0, P = lws.size();
 
   if (now.isObserved() || now.hasBridge()) {
-    if (essRel >= 1.0) {
-      r = true;
-      if (ess != NULL) {
-        *ess = ess_reduce(lws, lW);  // computes lW as well if not NULL
-      } else if (lW != NULL) {
-        *lW = logsumexp_reduce(lws) - bi::log(P);  // computes lW only
-      }
-    } else {
-      double ess1 = ess_reduce(lws, lW);  // computes lW as well if not NULL
-      r = ess1 < essRel * P;
-      if (ess != NULL) {
-        *ess = ess1;
-      }
+    if (ess != NULL || (essRel > 0.0 && essRel < 1.0)) {
+      ess1 = ess_reduce(lws, &lW1);  // computes lW as well if not NULL
+    } else if (essRel >= 1.0) {
+      lW1 = logsumexp_reduce(lws);
+    }
+    r = essRel >= 1.0 || (essRel > 0.0 && ess1 < essRel * P);
+
+    if (r && lW != NULL) {
+      *lW += lW1 - bi::log(P);
+    }
+    if (ess != NULL) {
+      *ess = ess1;
     }
   }
   return r;

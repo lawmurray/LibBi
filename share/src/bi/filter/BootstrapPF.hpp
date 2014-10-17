@@ -183,8 +183,7 @@ template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
     const ScheduleElement now, S1& s)
         throw (ParticleFilterDegeneratedException) {
-  double lW;
-  if (resam.isTriggered(now, s.logWeights(), &lW)) {
+  if (resam.isTriggered(now, s.logWeights(), &s.logLikelihood)) {
     if (resampler_needs_max<R>::value && now.isObserved()) {
       resam.setMaxLogWeight(getMaxLogWeight(now, s));
     }
@@ -200,7 +199,6 @@ void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
       bi::gather(as1, s.ancestors(), s.ancestors());
     }
     s.logWeights().clear();
-    s.logLikelihood += lW;
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
   }

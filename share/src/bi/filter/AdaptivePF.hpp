@@ -158,15 +158,16 @@ void bi::AdaptivePF<B,F,O,R,S2>::step(Random& rng, ScheduleIterator& iter,
   double maxlw, ll = 0.0;
   BOOST_AUTO(iter1, iter);
 
+  /* marginal log-likelihood increment */
+  s.logLikelihood += logsumexp_reduce(s.logWeights())
+      - bi::log(static_cast<double>(s.size()));
+
   /* prepare resampler */
   if (iter->isObserved() && resampler_needs_max<R>::value) {
     this->resam.setMaxLogWeight(this->getMaxLogWeight(*iter, s));
   }
-
   typename precompute_type<R,S1::location>::type pre;
-  this->resam.precompute(lws, pre);
-  s.logLikelihood += logsumexp_reduce(s.logWeights())
-      - bi::log(static_cast<double>(s.size()));
+  this->resam.precompute(s.logWeights(), pre);
 
   /* propagate block by block */
   this->stopper.reset();
@@ -214,7 +215,6 @@ void bi::AdaptivePF<B,F,O,R,S2>::step(Random& rng, ScheduleIterator& iter,
   s.setRange(0, length);
   //s.trim(); // optional, saves memory but means reallocation
   iter = iter1;  // caller expects iter to be advanced at end of step()
-  s.logLikelihood = ll;
 }
 
 template<class B, class F, class O, class R, class S2>

@@ -151,8 +151,7 @@ template<class B, class F, class O, class R>
 template<class S1>
 void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
     S1& s) {
-  double lW;
-  if (this->resam.isTriggered(now, s.logWeights(), &lW)) {
+  if (this->resam.isTriggered(now, s.logWeights(), &s.logLikelihood)) {
     if (resampler_needs_max<R>::value) {
       if (now.isObserved()) {
         this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
@@ -173,7 +172,6 @@ void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
       bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
     }
     s.logWeights().clear();
-    s.logLikelihood += lW;
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
   }
