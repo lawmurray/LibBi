@@ -13,13 +13,25 @@ void yyerror(const char *s);
 %}
 
 %union {
-    bool bval;
-	int ival;
-	double rval;
-	char *sval;
+    bool valBool;
+    int valInt;
+    real valReal;
+    std::string valString;
+    
+	bi::Const* valConst;
+	bi::Dim* valDim;
+	bi::Var* valVar;
+	bi::Model* valModel;
+	bi::Method* valMethod;
+	bi::Function* valFunction;
+	bi::Tuple* valTuple;
+	bi::Index* valIndex;
+	bi::OperatorReference* valOperatorReference;
+	bi::Expression* expression;
 }
 
 %token MODEL
+%token TYPE
 %token FUNCTION
 %token METHOD
 %token BUILTIN
@@ -30,10 +42,10 @@ void yyerror(const char *s);
 %token INPUT
 %token STATE
 %token OBS
-%token <bval> BOOLEAN_LITERAL
-%token <ival> INTEGER_LITERAL
-%token <rval> REAL_LITERAL
-%token <sval> STRING_LITERAL
+%token <valBool> BOOLEAN_LITERAL
+%token <valInt> INTEGER_LITERAL
+%token <valReal> REAL_LITERAL
+%token <valString> STRING_LITERAL
 %token RIGHT_ARROW
 %token LEFT_ARROW
 %token RIGHT_DOUBLE_ARROW
@@ -56,9 +68,20 @@ void yyerror(const char *s);
 %token COMMENT_START
 %token COMMENT_END
 %token OP
-%token IDENTIFIER
+%token <sval> IDENTIFIER
 %token ENDL
 %token OTHER
+
+%type <valConst> const_declaration
+%type <valDim> dim_declaration
+%type <valVar> var_declaration
+%type <valModel> model
+%type <valMethod> method
+%type <valFunction> function
+%type <valTuple> tuple
+%type <valIndex> index
+%type <valOperatorReference> traversal_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator
+%type <valExpression> boolean_literal integer_literal real_literal string_literal symbol reference dim_arg traversal postfix_expression defaulted_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression logical_and_expression logical_or_expression conditional_expression assignment_expression expression 
 
 %%
 
@@ -67,161 +90,158 @@ void yyerror(const char *s);
  ***************************************************************************/
 
 type
-    : IDENTIFIER  { type($1); }
-    ;
-
-real_literal
-    : REAL_LITERAL  { real_literal($1); }
-    ;
-    
-integer_literal
-    : INTEGER_LITERAL  { integer_literal($1); }
+    : IDENTIFIER  { return new bi::Type($1); }
     ;
 
 boolean_literal
-    : BOOLEAN_LITERAL  { boolean_literal($1); }
+    : BOOLEAN_LITERAL  { return new bi::BooleanLiteral($1); }
+    ;
+
+integer_literal
+    : INTEGER_LITERAL  { return new bi::IntegerLiteral($1); }
+    ;
+
+real_literal
+    : REAL_LITERAL  { return new bi::RealLiteral($1); }
     ;
 
 string_literal
-    : STRING_LITERAL  { string_literal($1); }
-    ;
-    
-body
-    : '{' statements ';' '}'  { body($2); }
-    | '{' statements '}'      { body($2); }
-    | '{' '}'                 { body(); }
+    : STRING_LITERAL  { return new bi::StringLiteral($1); }
     ;
 
 symbol
-    : IDENTIFIER ':' type  { symbol($1, $3); }
-    | IDENTIFIER           { symbol($1); }
+    : IDENTIFIER ':' type  { return new bi::Symbol($1, $3); }
+    | IDENTIFIER           { return new bi::Symbol($1); }
     ;
     
 reference
-    : symbol tuple body    { reference($1, undef, $2, $3); }
-    | symbol body          { reference($1, undef, undef, $2); }
-    | symbol tuple         { reference($1, undef, $2); }
-    | symbol square_tuple  { reference($1, $2); }
-    | symbol               { reference($1); }
+    : symbol tuple '{' statements '}'  { return new bi::Reference($1, NULL, $2, $4); }
+    | symbol '{' statements '}'        { return new bi::Reference($1, NULL, NULL, $3); }
+    | symbol tuple                     { return new bi::Reference($1, NULL, $2); }
+    | symbol square_tuple              { return new bi::Reference($1, $2); }
+    | symbol                           { return new bi::Reference($1); }
     ;
 
+traversal_operator
+    : '.'  {  return new bi::OperatorReference($1); }
+    ;
+    
 traversal
-    : reference
-    | traversal '.' reference  { binary_expression($1, '.', $3); }
+    : traversal traversal_operator reference  { return new BinaryOperator($1, $2, $3); }
+    | reference                               { return $1; }
     ;
     
 postfix_expression
-    : real_literal
+    : boolean_literal
     | integer_literal
-    | boolean_literal
+    | real_literal
     | string_literal
     | traversal
     | tuple
-    | body
     ;
 
 defaulted_expression
     : postfix_expression
-    | postfix_expression RIGHT_DOUBLE_ARROW defaulted_expression  { defaulted_expression($1, $3); }
+    | postfix_expression RIGHT_DOUBLE_ARROW defaulted_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 unary_operator
-    : '+'
-    | '-'
-    | '!'
+    : '+'  { return new bi::OperatorReference($1); }
+    | '-'  { return new bi::OperatorReference($1); }
+    | '!'  { return new bi::OperatorReference($1); }
     ;
     
 unary_expression
     : defaulted_expression
-    | unary_operator unary_expression  { unary_expression($1, $2); }
+    | unary_operator unary_expression  { return new bi::UnaryOperator($1, $2); }
     ;
 
 pow_operator
-    : POW_OP
-    | ELEM_POW_OP
+    : POW_OP       { return new bi::OperatorReference($1); }
+    | ELEM_POW_OP  { return new bi::OperatorReference($1); }
     ;
 
 pow_expression
     : unary_expression
-    | pow_expression pow_operator unary_expression  { binary_expression($1, $2, $3); }
+    | pow_expression pow_operator unary_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 multiplicative_operator
-    : '*'
-    | ELEM_MUL_OP
-    | '/'
-    | ELEM_DIV_OP
+    : '*'          { return new bi::OperatorReference($1); }
+    | ELEM_MUL_OP  { return new bi::OperatorReference($1); }
+    | '/'          { return new bi::OperatorReference($1); }
+    | ELEM_DIV_OP  { return new bi::OperatorReference($1); }
     | '%'
     ;
 
 multiplicative_expression
     : pow_expression
-    | multiplicative_expression multiplicative_operator pow_expression  { binary_expression($1, $2, $3); }
+    | multiplicative_expression multiplicative_operator pow_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 additive_operator
-    : '+'
-    | ELEM_ADD_OP
-    | '-'
-    | ELEM_SUB_OP
+    : '+'          { return new bi::OperatorReference($1); }
+    | ELEM_ADD_OP  { return new bi::OperatorReference($1); }
+    | '-'          { return new bi::OperatorReference($1); }
+    | ELEM_SUB_OP  { return new bi::OperatorReference($1); }
     ;
 
 additive_expression
     : multiplicative_expression
-    | additive_expression additive_operator multiplicative_expression  { binary_expression($1, $2, $3); }
+    | additive_expression additive_operator multiplicative_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 shift_operator
-    : LEFT_OP
-    | RIGHT_OP
+    : LEFT_OP   { return new bi::OperatorReference($1); }
+    | RIGHT_OP  { return new bi::OperatorReference($1); }
     ;
 
 shift_expression
     : additive_expression
-    | shift_expression shift_operator additive_expression  { binary_expression($1, $2, $3); }
+    | shift_expression shift_operator additive_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 relational_operator
-    : '<'
-    | '>'
-    | LE_OP
-    | GE_OP
+    : '<'    { return new bi::OperatorReference($1); }
+    | '>'    { return new bi::OperatorReference($1); }
+    | LE_OP  { return new bi::OperatorReference($1); }
+    | GE_OP  { return new bi::OperatorReference($1); }
     ;
     
 relational_expression
     : shift_expression
-    | relational_expression relational_operator shift_expression  { binary_expression($1, $2, $3); }
+    | relational_expression relational_operator shift_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 equality_operator
-    : '='
-    | NE_OP
-    | '~'
+    : '='    { return new bi::OperatorReference($1); }
+    | NE_OP  { return new bi::OperatorReference($1); }
+    | '~'    { return new bi::OperatorReference($1); }
     ;
 
 equality_expression
     : relational_expression
-    | equality_expression equality_operator relational_expression  { binary_expression($1, $2, $3); }
+    | equality_expression equality_operator relational_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 logical_and_expression
     : equality_expression
-    | logical_and_expression AND_OP equality_expression  { binary_expression($1, $2, $3); }
+    | logical_and_expression AND_OP equality_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 logical_or_expression
     : logical_and_expression
-    | logical_or_expression OR_OP logical_and_expression  { binary_expression($1, $2, $3); }
+    | logical_or_expression OR_OP logical_and_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
 
 conditional_expression
     : logical_or_expression
-    /*| logical_or_expression '?' conditional_expression ':' logical_or_expression  { ternary_expression($1, $2, $3, $4, $5); }*/
+    /*| logical_or_expression '?' conditional_expression ':' logical_or_expression  { return new bi::TernaryOperator($1, $2, $3, $4, $5); }*/
     ;
 
 assignment_expression
     : conditional_expression
-    | conditional_expression LEFT_ARROW assignment_expression  { binary_expression($1, $2, $3); }
+    | conditional_expression LEFT_ARROW assignment_expression  { return new bi::BinaryOperator($1, $2, $3); }
     ;
     
 expression
@@ -233,27 +253,27 @@ expression
  ***************************************************************************/
  
 const_declaration
-    : CONST IDENTIFIER '=' expression  { const_declaration($2, $4); }
+    : CONST IDENTIFIER '=' expression  { return new bi::Const($2, $4); }
     ;
 
 dim_declaration
-    : DIM IDENTIFIER tuple  { dim_declaration($2, $3); }
+    : DIM IDENTIFIER tuple  { return new bi::Dim($2, $3); }
     ;
 
 dim_arg
-    : IDENTIFIER  { reference($1); }
+    : IDENTIFIER  { return new bi::Reference($1); }
     ;
 
 dim_args
-    : dim_args ',' dim_arg  { append($1, $3); }
-    | dim_arg               { append($1); }
+    : dim_args ',' dim_arg  { return new bi::BinaryOperator($1, $2, $3); }
+    | dim_arg               { return $1; }
     ;
  
 var_declaration
-    : var_type IDENTIFIER '[' dim_args ']' tuple  { var_declaration($2, $4, $6); }
-    | var_type IDENTIFIER '[' dim_args ']'        { var_declaration($2, $4); }
-    | var_type IDENTIFIER tuple                   { var_declaration($2, undef, $3); }
-    | var_type IDENTIFIER                         { var_declaration($2); }
+    : var_type symbol '[' dim_args ']' tuple  { return new bi::Var($2, $4, $6); }
+    | var_type symbol '[' dim_args ']'        { return new bi::Var($2, $4); }
+    | var_type symbol tuple                   { return new bi::Var($2, NULL, $3); }
+    | var_type symbol                         { return new bi::Var($2); }
     ;
 
 var_type
@@ -276,9 +296,8 @@ statement
     ;
     
 statements
-    : statements ';' statement  { append($1, $3); }
-    | statements reference      { append($1, $2); }
-    | statement                 { append($1); }
+    : statements ';' statement  { return new bi::BinaryOperator($1, $2, $3); }
+    | statement ';'             { return $1; }
     ;
 
 /***************************************************************************
@@ -290,27 +309,28 @@ element
     ;
     
 elements
-    : elements ',' element  { append($1, $3); }
-    | element               { append($1); }
+    : elements ',' element  { return new bi::BinaryOperator($1, $2, $3); }
+    | element               { return $1; }
     ;
     
 tuple
-    : '(' elements ')'  { tuple($2); }
-    | '(' ')'           { tuple(); }
+    : '(' elements ')'  { return new bi::Tuple($2); }
+    | '(' ')'           { return new bi::Tuple(NULL); }
     ;    
 
 index
-    : postfix_expression                                { index($1); }
-    | postfix_expression DOUBLE_DOT postfix_expression  { index($1, $3); }
+    : postfix_expression                                { return new bi::Index($1); }
+    | postfix_expression DOUBLE_DOT postfix_expression  { return new bi::Index($1, $3); }
     ;
 
 indexes
-    : indexes ',' index  { append($1, $3); }
-    | index              { append($1); }
+    : indexes ',' index  { return new bi::BinaryOperator($1, $3); }
+    | index              { return $1; }
     ;
 
 square_tuple
-    : '[' indexes ']'  { tuple($2); }
+    : '[' indexes ']'  { return new bi::Tuple($2); }
+    | '[' ']'          { return new bi::Tuple(NULL); }
     ;      
     
 /***************************************************************************
@@ -318,18 +338,16 @@ square_tuple
  ***************************************************************************/
 
 model
-    : MODEL IDENTIFIER tuple body  { model($2, $3, $4); }
-    | MODEL IDENTIFIER tuple ';'   { model($2, $3); }
-    | MODEL IDENTIFIER body        { model($2, undef, $3); }
-    | MODEL IDENTIFIER ';'         { model($2); }
+    : MODEL IDENTIFIER tuple '{' statements '}'  { return new bi::Model($2, $3, $5); }
+    | MODEL IDENTIFIER '{' statements '}'        { return new bi::Model($2, NULL, $4); }
     ;
     
 method
-    : METHOD IDENTIFIER tuple body  { method($2, $3, $4); }
+    : METHOD IDENTIFIER tuple '{' statements '}'  { return new bi::Method($2, $3, $5); }
     ;
 
 function
-    : FUNCTION IDENTIFIER tuple RIGHT_ARROW tuple body  { function($2, $3, $5, $6); }
+    : FUNCTION IDENTIFIER tuple RIGHT_ARROW tuple '{' statements '}'  { return new bi::Function($2, $3, $5, $7); }
     ;
 
 top

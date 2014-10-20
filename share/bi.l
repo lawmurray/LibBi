@@ -22,6 +22,7 @@ IS                                 (u|U|l|L)*
 <COMMENT_INLINE>"\n"                { lininc(); }
 <COMMENT_EOL,COMMENT_INLINE>.       { colinc(); }
 "model"                             { colinc(); return MODEL; }
+"type"                              { colinc(); return TYPE; }
 "function"                          { colinc(); return FUNCTION; }
 "method"                            { colinc(); return METHOD; }
 "builtin"                           { colinc(); return BUILTIN; }
