@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "bi.tab.h"
+#include "parser.hpp"
 
 extern "C" int yylex();
 extern "C" int yyparse();

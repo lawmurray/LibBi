@@ -144,6 +144,8 @@ NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_CXXCPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_PROG_LEX
+AC_PROG_YACC
 
 # Compiler characteristics
 if test x$CXX = xg++-4.2; then

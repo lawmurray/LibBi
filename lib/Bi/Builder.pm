@@ -234,6 +234,8 @@ sub new {
     $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile.am'));
     $self->_stamp(File::Spec->catfile($self->{_builddir}, 'configure'));
     $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.lpp'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.ypp'));
     
     return $self;
 }

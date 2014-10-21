@@ -13,6 +13,7 @@ CLIENTS = [
     'filter',
     'sample',
     'test',
+    #'test_parser', # handled separately
     'test_resampler'
 ];
 %]
@@ -28,6 +29,9 @@ AM_LDFLAGS = $(OPENMP_LDFLAGS)
 NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE
 NVCXXFLAGS = -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
 LINK = $(CXXLINK) # force C++ linker for CUDA files
+
+# Flex/Bison setup
+AM_YFLAGS = -d
 
 # libraries
 lib_LIBRARIES = libbi.a
@@ -89,7 +93,10 @@ libbi_a_SOURCES += \
 endif
 
 # programs
-bin_PROGRAMS =[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
+bin_PROGRAMS = test_parser_cpu[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
+
+test_parser_cpu_LDADD = $(DEPS_LIBS) libbi.a
+test_parser_cpu_SOURCES = lexer.lpp parser.ypp parser.hpp
 
 [% FOREACH client IN CLIENTS %]
 [% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.a

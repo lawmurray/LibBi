@@ -1,5 +1,5 @@
 %{
-#include "bi.tab.h"
+#include "parser.hpp"
 
 #define YY_DCL extern "C" int yylex()
 %}
