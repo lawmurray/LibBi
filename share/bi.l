@@ -1,4 +1,6 @@
 %{
+#include "bi.tab.h"
+
 #define YY_DCL extern "C" int yylex()
 %}
 
@@ -22,9 +24,8 @@ IS                                 (u|U|l|L)*
 <COMMENT_EOL,COMMENT_INLINE>.       { count(); }
 
 "model"                             { count(); return MODEL; }
-"function"                          { count(); return FUNCTION; }
 "method"                            { count(); return METHOD; }
-"builtin"                           { count(); return BUILTIN; }
+"function"                          { count(); return FUNCTION; }
 "const"                             { count(); return CONST; }
 "dim"                               { count(); return DIM; }
 "input"                             { count(); return INPUT; }
@@ -32,6 +33,8 @@ IS                                 (u|U|l|L)*
 "param"                             { count(); return PARAM; }
 "state"                             { count(); return STATE; }
 "obs"                               { count(); return OBS; }
+"if"                                { count(); return IF; }
+"while"                             { count(); return WHILE; }
 "true"                              { count(); return BOOLEAN_LITERAL; }
 "false"                             { count(); return BOOLEAN_LITERAL; }
 
@@ -86,7 +89,6 @@ L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
 ">"                                 { count(); return '>'; }
 "^"                                 { count(); return '^'; }
 "|"                                 { count(); return '|'; }
-"?"                                 { count(); return '?'; }
 "\n"                                { count(); return ENDL; }
 
 %%
