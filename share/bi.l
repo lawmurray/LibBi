@@ -32,11 +32,11 @@ IS                                 (u|U|l|L)*
 "param"                             { count(); return PARAM; }
 "state"                             { count(); return STATE; }
 "obs"                               { count(); return OBS; }
+"true"                              { count(); return BOOLEAN_LITERAL; }
+"false"                             { count(); return BOOLEAN_LITERAL; }
 
 {L}({L}|{D})*                       { count(); return IDENTIFIER; }                   
 
-"true"                              { count(); return BOOLEAN_LITERAL; }
-"false"                             { count(); return BOOLEAN_LITERAL; }
 0[xX]{H}+{IS}?                      { count(); return INTEGER_LITERAL; }
 0{D}+{IS}?                          { count(); return INTEGER_LITERAL; }
 {D}+{IS}?                           { count(); return INTEGER_LITERAL; }
