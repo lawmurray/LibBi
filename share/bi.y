@@ -183,7 +183,6 @@ relational_expression
 equality_operator
     : EQ_OP  { return new bi::OperatorReference($1); }
     | NE_OP  { return new bi::OperatorReference($1); }
-    | '~'    { return new bi::OperatorReference('~'); }
     ;
 
 equality_expression
