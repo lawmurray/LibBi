@@ -23,17 +23,18 @@
 #include "bi/program/Symbol.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
+
+#include <cstdio>
+#include <iostream>
 }
 
 %{
-#include <cstdio>
-#include <iostream>
 
 #include "parser.hpp"
 
-extern "C" int yylex();
-extern "C" int yyparse();
-extern "C" FILE *yyin;
+extern int yylex();
+extern int yyparse();
+extern FILE *yyin;
 
 extern int col;
 extern int line;
