@@ -10,24 +10,35 @@
 
 #include "Literal.hpp"
 
+#include <string>
+
 namespace biprog {
 /**
  * String literal.
  *
  * @ingroup program
  */
-class StringLiteral: public Literal {
+class StringLiteral: public Literal<std::string> {
 public:
   /**
    * Constructor.
    */
-  StringLiteral();
+  StringLiteral(const char* value);
 
   /**
    * Destructor.
    */
   virtual ~StringLiteral();
 };
+}
+
+inline biprog::StringLiteral::StringLiteral(const char* value) :
+    Literal<std::string>(value) {
+  //
+}
+
+inline biprog::StringLiteral::~StringLiteral() {
+  //
 }
 
 #endif

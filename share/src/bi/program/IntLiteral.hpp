@@ -16,18 +16,27 @@ namespace biprog {
  *
  * @ingroup program
  */
-class IntLiteral: public Literal {
+class IntLiteral: public Literal<int> {
 public:
   /**
    * Constructor.
    */
-  IntLiteral();
+  IntLiteral(const int value);
 
   /**
    * Destructor.
    */
   virtual ~IntLiteral();
 };
+}
+
+inline biprog::IntLiteral::IntLiteral(const int value) :
+    Literal<int>(value) {
+  //
+}
+
+inline biprog::IntLiteral::~IntLiteral() {
+  //
 }
 
 #endif

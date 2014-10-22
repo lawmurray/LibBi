@@ -108,6 +108,7 @@ L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
 ">"                                 { count(); return '>'; }
 "^"                                 { count(); return '^'; }
 "|"                                 { count(); return '|'; }
+"?"                                 { count(); return '?'; }
 "\n"                                { count(); return ENDL; }
 
 %%

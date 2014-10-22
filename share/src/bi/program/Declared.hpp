@@ -26,9 +26,8 @@ public:
   /**
    * Destructor.
    */
-  virtual ~Declared();
+  virtual ~Declared() = 0;
 };
 }
 
 #endif
-

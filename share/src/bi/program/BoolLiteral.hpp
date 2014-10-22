@@ -16,18 +16,27 @@ namespace biprog {
  *
  * @ingroup program
  */
-class BoolLiteral: public Literal {
+class BoolLiteral: public Literal<bool> {
 public:
   /**
    * Constructor.
    */
-  BoolLiteral();
+  BoolLiteral(const bool value);
 
   /**
    * Destructor.
    */
   virtual ~BoolLiteral();
 };
+}
+
+inline biprog::BoolLiteral::BoolLiteral(const bool value) :
+    Literal<bool>(value) {
+  //
+}
+
+inline biprog::BoolLiteral::~BoolLiteral() {
+  //
 }
 
 #endif

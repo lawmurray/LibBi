@@ -9,6 +9,9 @@
 #define BI_PROGRAM_BINARYEXPRESSION_HPP
 
 #include "Expression.hpp"
+#include "Operator.hpp"
+
+#include "boost/shared_ptr.hpp"
 
 namespace biprog {
 /**
@@ -21,14 +24,39 @@ public:
   /**
    * Constructor.
    */
-  BinaryExpression();
+  BinaryExpression(const Expression* left, const Operator* op,
+      const Expression* right);
 
   /**
    * Destructor.
    */
   virtual ~BinaryExpression();
+
+  /**
+   * Left operand.
+   */
+  boost::shared_ptr<Expression> left;
+
+  /**
+   * Operator.
+   */
+  boost::shared_ptr<Operator> op;
+
+  /**
+   * Right operand.
+   */
+  boost::shared_ptr<Expression> right;
 };
 }
 
-#endif
+inline biprog::BinaryExpression::BinaryExpression(const Expression* left,
+    const Operator* op, const Expression* right) :
+    left(left), op(op), right(right) {
+  //
+}
 
+inline biprog::BinaryExpression::~BinaryExpression() {
+  //
+}
+
+#endif
