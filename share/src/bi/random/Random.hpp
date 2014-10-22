@@ -14,7 +14,7 @@
 #include "../cuda/cuda.hpp"
 
 #ifdef ENABLE_CUDA
-#include "curand_kernel.h"
+#include "../cuda/random/curandStateSA.hpp"
 #endif
 
 namespace bi {
@@ -255,7 +255,7 @@ public:
    *
    * @param p Thread number.
    */
-  CUDA_FUNC_DEVICE curandState& getDevRng(const int p);
+  //CUDA_FUNC_DEVICE curandState& getDevRng(const int p);
 #endif
   //@}
 
@@ -269,7 +269,7 @@ public:
   /**
    * Random number generators on device.
    */
-  curandState* devRngs;
+  curandStateSA devRngs;
 #endif
 
   /**
@@ -374,9 +374,9 @@ inline bi::RngHost& bi::Random::getHostRng() {
 }
 
 #ifdef ENABLE_CUDA
-inline curandState& bi::Random::getDevRng(const int p) {
-  return devRngs[p];
-}
+//inline curandState& bi::Random::getDevRng(const int p) {
+//  return devRngs[p];
+//}
 #endif
 
 #endif

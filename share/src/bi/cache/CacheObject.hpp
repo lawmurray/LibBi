@@ -19,7 +19,7 @@ namespace bi {
  * @tparam T1 Type.
  */
 template<class T1>
-class CacheObject : public Cache {
+class CacheObject: public Cache {
 public:
   /**
    * Default constructor.
@@ -112,7 +112,8 @@ bi::CacheObject<T1>::CacheObject() {
 }
 
 template<class T1>
-bi::CacheObject<T1>::CacheObject(const CacheObject<T1>& o) : Cache(o) {
+bi::CacheObject<T1>::CacheObject(const CacheObject<T1>& o) :
+    Cache(o) {
   operator=(o);
 }
 
@@ -122,7 +123,8 @@ bi::CacheObject<T1>::~CacheObject() {
 }
 
 template<class T1>
-bi::CacheObject<T1>& bi::CacheObject<T1>::operator=(const CacheObject<T1>& o) {
+bi::CacheObject<T1>& bi::CacheObject<T1>::operator=(
+    const CacheObject<T1>& o) {
   resize(o.size());
   for (int i = 0; i < o.size(); ++i) {
     if (o.pages[i] != NULL) {
@@ -152,7 +154,7 @@ template<class T1>
 template<class T2>
 void bi::CacheObject<T1>::set(const int p, const T2& x) {
   if (size() <= p) {
-    resize(bi::max(p + 1, 2*size()));
+    resize(bi::max(p + 1, 2 * size()));
   }
   *pages[p] = x;
   setValid(p);
@@ -202,14 +204,14 @@ void bi::CacheObject<T1>::empty() {
 template<class T1>
 template<class Archive>
 void bi::CacheObject<T1>::save(Archive& ar, const unsigned version) const {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   ar & pages;
 }
 
 template<class T1>
 template<class Archive>
 void bi::CacheObject<T1>::load(Archive& ar, const unsigned version) {
-  ar & boost::serialization::base_object<Cache>(*this);
+  ar & boost::serialization::base_object < Cache > (*this);
   ar & pages;
 }
 

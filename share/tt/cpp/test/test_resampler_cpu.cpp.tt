@@ -20,22 +20,35 @@
 #include "bi/math/loc_vector.hpp"
 #include "bi/math/loc_matrix.hpp"
 #include "bi/misc/TicToc.hpp"
+#include "bi/buffer/netcdf.hpp"
+#include "bi/math/io.hpp"
+#include "bi/primitive/pinned_allocator.hpp"
 
 #include <iostream>
 #include <string>
 #include <unistd.h>
 #include <getopt.h>
 
-#include "netcdfcpp.h"
-
-#ifndef ENABLE_CUDA
-#define LOCATION ON_HOST
-#else
+[% IF client.get_named_arg('with-cuda') %]
 #define LOCATION ON_DEVICE
-#endif
+#define OTHER_LOCATION ON_HOST
+[% ELSE %]
+#define LOCATION ON_HOST
+#define OTHER_LOCATION ON_DEVICE
+[% END %]
 
 int main(int argc, char* argv[]) {
   using namespace bi;
+  
+  typedef typename loc_temp_vector<LOCATION,real>::type vector_type;
+  typedef typename loc_temp_matrix<LOCATION,real>::type matrix_type;
+  typedef typename loc_temp_vector<LOCATION,int>::type int_vector_type;
+  typedef typename loc_temp_matrix<LOCATION,int>::type int_matrix_type;
+
+  typedef typename loc_temp_vector<OTHER_LOCATION,real>::type vector_alt_type;
+  typedef typename loc_temp_matrix<OTHER_LOCATION,real>::type matrix_alt_type;
+  typedef typename loc_temp_vector<OTHER_LOCATION,int>::type int_vector_alt_type;
+  typedef typename loc_temp_matrix<OTHER_LOCATION,int>::type int_matrix_alt_type;
 
   /* command line arguments */
   [% read_argv(client) %]
@@ -45,26 +58,33 @@ int main(int argc, char* argv[]) {
   boost::mpi::environment env(argc, argv);
   #endif
   
-  /* NetCDF init */
-  NcError ncErr(NcError::verbose_fatal);
-  
   /* bi init */
   bi_init(NTHREADS);
 
   /* random number generator */
   Random rng(SEED);
+  
+  /* output file */
+  int ncid = bi::nc_create(OUTPUT_FILE, NC_NETCDF4);
 
-  /* set up output file */
-  NcFile* out = new NcFile(OUTPUT_FILE.c_str(), NcFile::Replace);
-	
-  NcDim* zDim = out->add_dim("z", ZS);
-  NcDim* PDim = out->add_dim("P", PS);
-  NcDim* repDim = out->add_dim("rep", REPS);
-	  
-  NcVar* sqerrVar = out->add_var("sqerr", ncDouble, zDim, PDim, repDim);
-  NcVar* timeVar = out->add_var("time", ncInt, zDim, PDim, repDim);
-  NcVar* PVar = out->add_var("P", ncInt, PDim);
-  NcVar* zVar = out->add_var("z", ncDouble, zDim);
+  int ZDim = bi::nc_def_dim(ncid, "Z", ZS);
+  int PDim = bi::nc_def_dim(ncid, "P", PS);
+  int repDim = bi::nc_def_dim(ncid, "rep", REPS);
+
+  std::vector<int> dimids3(3);
+  dimids3[0] = ZDim;
+  dimids3[1] = PDim;
+  dimids3[2] = repDim;
+
+  std::vector<int> dimids2(2);
+  dimids2[0] = ZDim;
+  dimids2[1] = PDim;
+
+  int PVar = bi::nc_def_var(ncid, "P", NC_INT, PDim);
+  int ZVar = bi::nc_def_var(ncid, "Z", NC_DOUBLE, ZDim);
+  int timeVar = bi::nc_def_var(ncid, "time", NC_INT64, dimids3);
+  int bias2Var = bi::nc_def_var(ncid, "bias2", NC_DOUBLE, dimids2);
+  int tr_varVar = bi::nc_def_var(ncid, "tr_var", NC_DOUBLE, dimids2);  
   
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
@@ -79,75 +99,88 @@ int main(int argc, char* argv[]) {
   StratifiedResampler resam(WITH_SORT);
   [% END %]
 
-  /* buffers for weight-sets and results */
-  typedef typename loc_vector<LOCATION,real>::type vector_type;
-  typedef typename loc_matrix<LOCATION,real>::type matrix_type;
-  typedef typename loc_vector<LOCATION,int>::type int_vector_type;
-  typedef typename loc_matrix<LOCATION,int>::type int_matrix_type;
-  
-  /* generate particles (all on host so weight sets match on host and device) */
-  int maxP = std::pow(2, PS + 4);
-  int actualP = 0;
-  
-  host_matrix<real,-1,-1,-1,1> x(maxP*REPS, 1);  // particles
-  host_matrix<real,-1,-1,-1,1> lW(maxP, REPS); // log-weights
-  host_matrix<int,-1,-1,-1,1> times(REPS, PS);
-  host_matrix<real,-1,-1,-1,1> sqerrs(REPS, PS);
-  host_vector<int,-1,1> actualPs(PS);
-  host_vector<real,-1,1> zs(ZS);
-  
-  GaussianPdf<> f(1), g(1);
-  f.samples(rng, x);
+  /* result storage */  
+  host_matrix<long> times(REPS, PS);
+  host_vector<real> bias2(PS), tr_var(PS);
+  host_vector<int> Ps(PS);
+  host_vector<real> Zs(ZS);
   
   /* test */
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
   TicToc timer;
-  int z, p, rep, time;
-  real sqerr;
-  for (z = 0; z < ZS; ++z) {
-    /* generate log-weights */
-    if (z > 0) {
-      addscal_elements(vec(x), 0.5, vec(x));
-    }
-    g.logDensities(x, vec(lW), true);
-    zs(z) = 0.5*z;
-    std::cerr << "z=" << zs(z) << ":";
+  int P, z, p, rep;
+  real Z;
+
+  /* particles, generated upfront so all runs use same set for same seed */
+  const int maxP = static_cast<int>(std::pow(2, PS - 1 + 4));
+  host_vector<real> x(maxP), lp(maxP);
+  rng.gaussians(x);
   
-    /* test on weight sets */
+  for (z = 0; z < ZS; ++z) {
+    Z = 0.5*z;
+    std::cerr << "Z=" << Z << ":";
+    Zs(z) = Z;
+
+    /* generate log-weights */
+    gaussian_log_densities(vector_as_column_matrix(x), BI_HALF_LOG_TWO_PI, lp, true);
+    addscal_elements(x, 0.5, x);
+  
     for (p = 0; p < PS; ++p) {
-      actualP = std::pow(2, p + 4);
-      std::cerr << " " << actualP;
-      actualPs(p) = actualP;
+      P = std::pow(2, p + 4);
+      std::cerr << " " << P;
+      Ps(p) = P;
+
+      /* configure */
+      vector_type lws(P);
+      int_vector_type as(P), os(P), Os(P);
+
+      vector_alt_type lws_alt(P);
+      int_vector_alt_type as_alt(P);
+
+      /* temporaries for transfer from device */
+      [% IF client.get_named_arg('with-cuda') %]
+      host_matrix<int,-1,-1,-1,1,bi::pinned_allocator<int> > O_tmp(REPS, P);
+      host_vector<real,-1,-1,bi::pinned_allocator<real> > lws_tmp(P);
+      [% END %]
       
-      vector_type lws(actualP);
-      int_vector_type as(actualP);
-      int_vector_type os(actualP);
-      int_vector_type Os(actualP);
-      seq_elements(as, 0); // needed for sort and ess    
+      /* for standardised computation of metrics */
+      host_matrix<double> O(REPS, P);
+      host_vector<double> mu(P), sigma2(P), eps(P), ws(P);
+      
+      seq_elements(as, 0); // needed for sort and ess
 
       [% IF client.get_named_arg('resampler') == 'metropolis' %]
-      real W = actualP*bi::exp(-0.25*zs(z)*zs(z))/(2.0*bi::sqrt(BI_PI));
-      real wmax = (1.0/BI_SQRT_TWO_PI)/W;
-      real beta = 1.0/actualP;
-      real alpha = (1.0 - wmax)/(actualP*wmax);
-      real epsilon = 1.0e-2*wmax;
-      real lambda = 1.0 - alpha - beta;
-      int B = (int)bi::ceil(bi::log(epsilon*(alpha + beta)/bi::max(alpha, beta))/bi::log(lambda));
-      resam.setSteps(B);
+      real EW = bi::exp(-0.25*Z*Z)/(2.0*bi::sqrt(BI_PI));
+      real wmax = 1.0/bi::sqrt(BI_PI);
+      real beta = EW/wmax;
+      real epsilon = 1.0e-2;
+      int B = (int)bi::ceil(bi::log(epsilon)/bi::log(1.0 - beta));
+      resam.setSteps(B/C);
       [% END %]
-    
+
+      /* test */      
       for (rep = 0; rep < REPS; ++rep) {
-        lws = subrange(column(lW, rep), 0, actualP);
-        synchronize();
-        timer.tic();
+        if (WITH_COPY) {
+          lws_alt = subrange(lp, 0, P);
+          synchronize();
+          timer.tic();
+          lws = lws_alt;
+          if (LOCATION == ON_HOST) {
+            synchronize();
+          }
+        } else {
+          lws = subrange(lp, 0, P);
+          synchronize();
+          timer.tic();
+        }
         
         [% IF client.get_named_arg('resampler') == 'stratified' %]
-        resam.cumulativeOffspring(rng, lws, Os, actualP);
+        resam.cumulativeOffspring(rng, lws, Os, P);
         resam.cumulativeOffspringToAncestorsPermute(Os, as);
         [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
-        resam.cumulativeOffspring(rng, lws, Os, actualP);
+        resam.cumulativeOffspring(rng, lws, Os, P);
         resam.cumulativeOffspringToAncestorsPermute(Os, as);
         [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
         real maxLogWeight = -BI_HALF_LOG_TWO_PI;
@@ -163,45 +196,79 @@ int main(int argc, char* argv[]) {
         real ess = bi::ess_reduce(lws);
         [% END %]
 
-        /* time */                
+        /* time */
+        [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
+        if (WITH_COPY) {
+          as_alt = as;
+        }
+        [% END %]
         synchronize();
-        time = timer.toc();
-
-        /* error */
+        times(rep, p) = timer.toc();
+        
         [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
         resam.ancestorsToOffspring(as, os);
-        synchronize();
-        sqerr = bi::sqrt(resam.error(lws, os));
+        [% IF client.get_named_arg('with-cuda') %]
+        row(O_tmp, rep) = os;
         [% ELSE %]
-        sqerr = 0.0;
+        row(O, rep) = os;
         [% END %]
-        
-        sqerrs(rep, p) = sqerr;
-        times(rep, p) = time;
+        [% END %]
       }
+      
+      [% IF client.get_named_arg('resampler') != 'sort' && client.get_named_arg('resampler') != 'ess' %]
+      [% IF client.get_named_arg('with-cuda') %]
+      lws_tmp = lws;
+      synchronize();
+      O = O_tmp; // move into double storage
+      ws = lws_tmp;
+      [% ELSE %]
+      ws = lws;
+      [% END %]
+      expu_elements(ws, ws);
+      mulscal_elements(ws, P/sum_reduce(ws), ws);
+      
+      mean(O, mu);
+      var(O, mu, sigma2);
+      sub_elements(mu, ws, eps);
+            
+      bias2(p) = sumsq_reduce(eps);
+      tr_var(p) = sum_reduce(sigma2);
+      [% ELSE %]
+      bias2(p) = 0.0;
+      tr_var(p) = 0.0;
+      [% END %]
     }
-    
+
     /* output */
-    if (out != NULL) {
-      sqerrVar->set_cur(z, 0, 0);
-      sqerrVar->put(sqerrs.buf(), 1, PS, REPS);
-      timeVar->set_cur(z, 0, 0);
-      timeVar->put(times.buf(), 1, PS, REPS);
-    }
+    std::vector<size_t> start3(3), count3(3);
+    start3[0] = z;
+    start3[1] = 0;
+    start3[2] = 0;
+    count3[0] = 1;
+    count3[1] = PS;
+    count3[2] = REPS;
+    
+    std::vector<size_t> start2(2), count2(2);
+    start2[0] = z;
+    start2[1] = 0;
+    count2[0] = 1;
+    count2[1] = PS;
+    
+    bi::nc_put_vara(ncid, timeVar, start3, count3, times.buf());
+    bi::nc_put_vara(ncid, bias2Var, start2, count2, bias2.buf());
+    bi::nc_put_vara(ncid, tr_varVar, start2, count2, tr_var.buf());
+
     std::cerr << std::endl;
   }
   
-  PVar->put(actualPs.buf(), PS);
-  zVar->put(zs.buf(), ZS);
+  /* final output */
+  bi::nc_put_var(ncid, PVar, Ps.buf());
+  bi::nc_put_var(ncid, ZVar, Zs.buf());
+  bi::nc_close(ncid);
 
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
   
-  /* clean up */
-  out->sync();
-  delete out;
-
   return 0;
 }
-

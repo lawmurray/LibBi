@@ -32,7 +32,7 @@ namespace bi {
  * @seealso Resampler::prePermute()
  */
 template<class V1, class V2, class V3, class PrePermute>
-CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors(curandState* rng,
+CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors(curandStateSA rng,
     const V1 lws, V2 as, V3 is, const typename V1::value_type maxLogWeight,
     const PrePermute doPrePermute);
 
@@ -59,7 +59,7 @@ CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors(curandState* rng,
  * @seealso Resampler::prePermute()
  */
 template<class V1, class V2, class V3, class PrePermute>
-CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors2(curandState* rng,
+CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors2(curandStateSA rng,
     const V1 lws, V2 as, V3 is, const typename V1::value_type maxLogWeight,
     const PrePermute doPrePermute);
 
@@ -69,7 +69,7 @@ CUDA_FUNC_GLOBAL void kernelRejectionResamplerAncestors2(curandState* rng,
 
 template<class V1, class V2, class V3, class PrePermute>
 CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(
-    curandState* rng, const V1 lws, V2 as, V3 is,
+    curandStateSA rng, const V1 lws, V2 as, V3 is,
     const typename V1::value_type maxLogWeight,
     const PrePermute doPrePermute) {
   typedef typename V1::value_type T1;
@@ -84,7 +84,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(
   bool accept;
 
   RngGPU rng1;
-  rng1.r = rng[q];
+  rng.load(q, rng1.r);
 
   for (p = q; p < P2; p += Q) {
     /* first proposal */
@@ -108,12 +108,12 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors(
     }
   }
 
-  rng[q] = rng1.r;
+  rng.store(q, rng1.r);
 }
 
 template<class V1, class V2, class V3, class PrePermute>
 CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
-    curandState* rng, const V1 lws, V2 as, V3 is,
+    curandStateSA rng, const V1 lws, V2 as, V3 is,
     const typename V1::value_type maxLogWeight,
     const PrePermute doPrePermute) {
   typedef typename V1::value_type T1;
@@ -130,7 +130,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
   bool accept;
 
   RngGPU rng1;
-  rng1.r = rng[q];
+  rng.load(q, rng1.r);
 
   for (p = q; p < P2; p += bufSize*Q) {
     /* rejection sample to fill buffer */
@@ -161,7 +161,7 @@ CUDA_FUNC_GLOBAL void bi::kernelRejectionResamplerAncestors2(
     }
   }
 
-  rng[q] = rng1.r;
+  rng.store(q, rng1.r);
 }
 
 #endif

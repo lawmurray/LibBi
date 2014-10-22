@@ -49,7 +49,9 @@ sub validate {
 
     my $x = $self->get_named_arg('x');
     $self->set_shape($x->get_shape);
-
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
     $self->set_parent('matrix_');
     $self->set_is_matrix(1);
     $self->set_can_nest(1);

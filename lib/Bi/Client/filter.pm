@@ -40,6 +40,10 @@ gives the number of additional, equispaced times at which to output. With
 C<--end-time T> and C<--noutputs K>, then for each C<k> in C<0,...,K-1>,
 the state will be output at time C<T*k/K>.
 
+=item C<--with-output-at-obs> (default 1)
+
+Output at observation times in addition to dense output times.
+
 =item C<--filter> (default C<bootstrap>)
 
 The type of filter to use; one of:
@@ -61,13 +65,18 @@ be used instead.
 
 =item C<bridge>
 
-Particle filter with bridging potential. Bridging weights are assigned
-according to the L<bridge> top-level block.
+Particle filter with intermediate bridging weights, as described in
+Del Moral & Murray (2014). Bridging weights are assigned according to the
+L<bridge> top-level block.
+
+=begin comment
 
 =item C<adaptive>
 
 Bootstrap particle filter with adaptive number of particles at each time
 step.
+
+=end comment
 
 =item C<kalman>
 
@@ -100,7 +109,6 @@ Threshold for effective sample size (ESS) resampling trigger. Particles will
 only be resampled if ESS is below this proportion of C<--nparticles>. To
 always resample, use C<--ess-rel 1>. To never resample, use C<--ess-rel 0>.
 
-
 =item C<--resampler> (default C<systematic>)
 
 The type of resampler to use; one of:
@@ -127,10 +135,6 @@ for a Metropolis resampler (Murray 2011),
 
 for a rejection resampler (Murray, Lee & Jacob 2013), or
 
-=item C<kernel>
-
-for a kernel density resampler (Liu & West 2001).
-
 =back
 
 =back
@@ -143,9 +147,16 @@ for a kernel density resampler (Liu & West 2001).
 
 Sort weights prior to resampling.
 
+=item C<--with-kde> (default off)
+
+Resample from a kernel density estimate of the filter density (in the style
+of Liu & West 2001).
+
 =back
 
-=head2 Kernel resampler-specific options
+=head2 Kernel density estimate options
+
+The following additional options are available when C<--with-kde> is set.
 
 =over 4
 
@@ -165,6 +176,9 @@ True to shrink the kernel density estimate to preserve covariance
 
 =head2 Metropolis resampler-specific options
 
+The following additional options are available when C<--resampler> is set to
+C<metropolis>.
+
 =over 4
 
 =item C<-C> (default 0)
@@ -173,6 +187,31 @@ Number of steps to take.
 
 =back
 
+=head2 Bridge particle filter-specific options
+
+The following additional options are available when C<--filter> is set to
+C<bridge>:
+
+=over 4
+
+=item C<--nbridges> (default 0)
+
+Number of dense bridge times. This argument gives the number of equispaced
+times at which to assign bridge weights, and potentially resample. With
+C<--end-time T> and C<--nbridges K>, then for each C<k> in C<0,...,K-1>,
+brdige weighting will occur at time C<T*k/K>.
+
+=item C<--bridge-ess-rel> (default 0.5)
+
+Threshold for effective sample size (ESS) resampling trigger after
+intermediate bridge weighting steps. See C<--ess-rel> for further
+details. When sampling bridges between fully-observed states,
+C<--ess-rel> should be set to 1 and C<--bridge-ess-rel> tuned
+instead to minimise variance in marginal likelihood estimates.
+
+=back
+
+=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
@@ -219,9 +258,11 @@ criterion.
 
 =item C<--block-particles>
 
-Number of particles .
+Number of particles.
 
 =back
+
+=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
@@ -241,9 +282,14 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
+      name => 'with-output-at-obs',
+      type => 'bool',
+      default => 1
+    },
+    {
       name => 'filter',
       type => 'string',
-      default => 'pf'
+      default => 'bootstrap'
     },
     {
       name => 'nparticles',
@@ -266,6 +312,11 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
+      name => 'with-kde',
+      type => 'bool',
+      default => 0
+    },
+    {
       name => 'b-abs',
       type => 'float',
       default => 0.0
@@ -284,6 +335,16 @@ our @CLIENT_OPTIONS = (
       name => 'C',
       type => 'int',
       default => 0
+    },
+    {
+      name => 'nbridges',
+      type => 'int',
+      default => 0
+    },
+    {
+      name => 'bridge-ess-rel',
+      type => 'float',
+      default => 0.5
     },
     {
       name => 'stopper',
@@ -338,14 +399,10 @@ sub process_args {
 
     $self->Bi::Client::process_args(@_);
     my $filter = $self->get_named_arg('filter');
-    my $binary;
     if ($filter eq 'kalman') {
         $self->set_named_arg('with-transform-extended', 1);
-        $binary = 'ekf';
-    } else {
-        $binary = 'pf';
     }
-    $self->{_binary} = $binary;
+    $self->{_binary} = 'filter';
 }
 
 1;

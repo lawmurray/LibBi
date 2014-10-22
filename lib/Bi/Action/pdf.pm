@@ -6,6 +6,7 @@ pdf - arbitrary probability density function.
 
     x ~ I<expression>
     x ~ pdf(pdf = I<expression>, max_pdf = I<expression>)
+    x ~ pdf(pdf = I<log_expression>, log = 1)
 
 =head1 DESCRIPTION
 
@@ -68,6 +69,11 @@ sub validate {
     $self->ensure_scalar('max_pdf');
     $self->ensure_scalar('log');
     $self->ensure_const('log');
+
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
+
     $self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);

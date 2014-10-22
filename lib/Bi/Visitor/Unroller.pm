@@ -66,16 +66,15 @@ sub visit_after {
             if ($node->is_element) {
                 die("cannot unroll action '" . $node->get_name . "' with element expressions\n");
             }
-
             my $action = $self->_unroll_expr($model, $node);
             $node = $action->get_left->clone;
-            push(@$actions, $action);
+            push(@$actions, $action->accept($self, $model, $actions));
         }
         push(@results, $node);
     } elsif ($node->isa('Bi::Action')) {
         if ($node->unroll_args) {
             # write arguments to intermediate variables first
-            for (my $i = 0; $i > $node->num_args; ++$i) {
+            for (my $i = 0; $i < $node->num_args; ++$i) {
                 my $arg = $node->get_args->[$i];
                 if (!$arg->is_const && !$arg->is_basic) {
                     my $action = $self->_unroll_expr($model, $arg);
@@ -83,7 +82,7 @@ sub visit_after {
                     push(@$actions, $action);
                 }
             }
-            foreach my $name (keys %{$node->get_named_args}) {
+            foreach my $name (sort keys %{$node->get_named_args}) {
                 my $arg = $node->get_named_args->{$name};
                 if (!$arg->is_const && !$arg->is_basic) {
                     my $action = $self->_unroll_expr($model, $arg);
@@ -113,40 +112,23 @@ sub _unroll_expr {
     my $expr = shift;
 
     # temporary variable to hold expression result
-    my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';
-    my $var;
-    # TODO: These are action-specific hacks at this stage, need to improve
-    if ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'gemv_') {
-        $var = new Bi::Model::Var($type, undef, $expr->get_arg(1)->get_var->get_dims, [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } elsif ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'gemm_') {
-        $var = new Bi::Model::Var($type, undef, [ $expr->get_arg(0)->get_var->get_dims->[0], $expr->get_arg(1)->get_var->get_dims->[1] ], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } elsif ($expr->isa('Bi::Expression::Function') && $expr->get_name eq 'transpose') {
-        $var = new Bi::Model::Var($type, undef, [ $expr->get_arg(0)->get_var->get_dims->[1], $expr->get_arg(0)->get_var->get_dims->[0] ], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    } else {
-        $var = new Bi::Model::Var($type, undef, [], [], {
-            'has_input' => new Bi::Expression::IntegerLiteral(0),
-            'has_output' => new Bi::Expression::IntegerLiteral(0)
-        });
-    }
+    my $type = ($expr->is_common) ? 'param_aux_' : 'state_aux_';    
+    my $dims = [ map { $model->lookup_dim($_) } @{$expr->get_shape->get_sizes} ];
+    
+  	my $var = new Bi::Model::Var($type, undef, $dims, [], {
+        'has_input' => new Bi::Expression::IntegerLiteral(0),
+        'has_output' => new Bi::Expression::IntegerLiteral(0)
+    });
     $model->push_var($var);
 
     # action to evaluate expression
-    my $left = new Bi::Expression::VarIdentifier($var);
-    my $right = $expr->clone; 
+    my $left = new Bi::Expression::VarIdentifier($var, $var->gen_ranges);
     
     my $action = new Bi::Action;
+    $action->set_aliases($var->gen_aliases);
     $action->set_left($left);
     $action->set_op('<-');
-    $action->set_right($right);
+    $action->set_right($expr);
     $action->validate;
     
     if (!$action->can_nest) {

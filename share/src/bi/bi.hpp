@@ -23,6 +23,14 @@
  * @defgroup method Methods
  * Inference methods.
  *
+ *   @defgroup method_sampler Samplers
+ *   @ingroup method
+ *   Samplers for parameters.
+ *
+ *   @defgroup method_filter Filters
+ *   @ingroup method
+ *   Kalman and particle filters.
+ *
  *   @defgroup method_resampler Resamplers
  *   @ingroup method
  *   Resamplers for particle filters.
@@ -30,6 +38,10 @@
  *   @defgroup method_stopper Stoppers
  *   @ingroup method
  *   Stoppers for adaptive particle filters.
+ *
+ *   @defgroup method_adapter Adapters
+ *   @ingroup method
+ *   Adapters for proposal distributions.
  *
  *   @defgroup method_updater Updaters
  *   @ingroup method
@@ -45,10 +57,16 @@
  *
  * @defgroup io I/O
  *
- *   @defgroup io_buffer Buffers
+ *   @defgroup io_buffer Generic buffers
  *   @ingroup io
  *
- *   @defgroup io_cache Caches
+ *   @defgroup io_cache Memory buffers (caches)
+ *   @ingroup io
+ *
+ *   @defgroup io_null Null buffers
+ *   @ingroup io
+ *
+ *   @defgroup io_netcdf NetCDF buffers
  *   @ingroup io
  *
  * @defgroup math Math

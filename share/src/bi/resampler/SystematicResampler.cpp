@@ -8,7 +8,7 @@
 #include "SystematicResampler.hpp"
 
 bi::SystematicResampler::SystematicResampler(const bool sort,
-    const double essRel) :
-    Resampler(essRel), sort(sort) {
+    const double essRel, const double bridgeEssRel) :
+    Resampler(essRel, bridgeEssRel), sort(sort) {
   //
 }

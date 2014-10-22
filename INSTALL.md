@@ -1,203 +1,83 @@
-LibBi INSTALL
-=============
+# LibBi Installation
 
-LibBi runs on Linux, and on Mac OS X with dependencies installed from the
-[MacPorts](http://www.macports.org) project. It has not been tried on Windows;
-[Cygwin](http://www.cygwin.com) would be a good bet, however, and if you do
-get it running there the contribution of installation instructions would be
-appreciated.
+LibBi runs on Linux, Mac OS X, and Windows under Cygwin. Installation
+of LibBi itself is straighforward, but LibBi works by generating,
+compiling and running C++ code; this code has a number of dependencies
+that will also need to be installed.
 
-LibBi itself simply installs as a Perl module. The trick, however, is that the
-C++ code that it generates to run your models has a number of dependencies. If
-these are not installed you will get errors much like this the first time you
-run LibBi:
+This file contains the instructions for installing LibBi itself. This
+process is the same on all platforms. To install dependencies of the
+C++ code that LibBi generates, see the walkthroughs for each platform
+in `INSTALL_LINUX.md`, `INSTALL_MAC.md` and `INSTALL_WIN.md` for Linux
+(and possibly other Unix), Mac OS X and Windows, respectively. For
+other platforms, or for a custom install, see `INSTALL_GENERIC.md`.
 
-    Error: ./configure failed with return code 1, see
-    .Model/build_assert/configure.log and .Model/build_assert/config.log for
-    details
+You should install all dependencies before following the instructions
+below, as the last step performs some basic tests on them.
 
-If this occurs you should bring up the `configure.log` file mentioned. This is
-the output of the usual `configure` script run when building software with a
-GNU Autotools build system. You will be able to determine the missing
-dependency from there.
+## The Quick Way
 
+LibBi itself is just a Perl module. The quickest way to install it is
+with the `cpan` utility. This will also install some extra Perl
+modules on which LibBi depends. From within the LibBi directory, run:
 
-Requirements
-------------
+    sudo cpan .
 
-The following non-standard Perl modules are required:
+If this is the first time that you have run `cpan`, it will ask a few
+questions to configure itself.
 
-* `Template`
-* `Graph`
-* `Math::Symbolic`
-* `Carp::Assert`
-* `Parse::Yapp`
-* `Parse::Lex`
-* `File::Slurp`
-* `File::ShareDir`
-* `Getopt::ArgvFile`
+If you do not have root privileges, you can instead run just `cpan .`
+to install LibBi in your home directory. If this is the first time you
+have run `cpan` in this way, it may ask you to restart your shell
+after it has configured itself---keep an eye out for this.
 
-These can be installed using the `cpan` program available on most systems.
-After running `cpan`, simply type:
+## The More Involved Way
 
-    install Template Graph Math::Symbolic ... etc
+LibBi's dependencies can be installed by running `sudo cpan` and then
+entering:
 
-The following packages are required:
+    install Template Graph Math::Symbolic Carp::Assert Parse::Yapp \
+        Parse::Lex File::Slurp File::ShareDir Getopt::ArgvFile
 
-  * a C++ compiler,
-  * [GNU Autotools](http://www.gnu.org/software/): autoconf and automake,
-  * [Thrust](http://thrust.github.com) 1.6 or later,
-  * [NetCDF](http://www.unidata.ucar.edu/software/netcdf/) 4.2 or later,
-  * [QRUpdate](http://qrupdate.sourceforge.net),
-  * [GNU Scientific Library](http://www.gnu.org/software/gsl/),
-  * [Boost](http://www.boost.org) 1.43 or later, specifically Boost.Random and
-    Boost.TypeOf,
-  * a [BLAS](http://www.netlib.org/blas/) implementation,
-  * a [LAPACK](www.netlib.org/lapack/) implementation.
-
-Note that you should install, where applicable, both the compiled libraries
-and headers of these libraries; on some Linux distributions the headers are
-contained in separate packages of the same name with `-devel` appended.
-
-For GPU support, the following additional packages are required:
-
-  * [CUDA](http://www.nvidia.com/cuda) 5.0 or later (including CUBLAS and
-    CURAND),
-  * [MAGMA](icl.cs.utk.edu/magma/) 1.2.1 or later.
-
-For MPI support, the following additional packages are required:
-
-  * An MPI implementation,
-  * Boost.MPI and Boost.Serialization.
-
-The following packages are optional for building documentation and visualising
-models:
-
-  * [Doxygen](http://www.doxygen.org),
-  * dot,
-  * graphviz,
-  * pod2latex,
-  * latex2html,
-  * pdflatex.
-
-
-Generic installation instructions
----------------------------------
-
-Once requirements are installed, LibBi is simply installed as a Perl
-module. Use the following sequence:
+Exit `cpan` by typing `quit`. LibBi can then be installed (or
+upgraded) by issuing the following sequence of commands from within
+the LibBi directory:
 
     perl Makefile.PL
     make
     make test
-    make install
+    sudo make install
 
-This will install LibBi for system-wide usage.
+## The Development Way
 
-Alternatively, keep LibBi in a local directory, or clone the Git repository,
-and run it directly from that location with:
+If you are developing LibBi, or otherwise have a need to use the
+latest development version, the following set up is recommended so
+that you can pull down updates without having to reinstall.
 
-    /path/to/libbi/script/libbi ...
+Firstly, clone the GitHub repository:
 
-You can also add `/path/to/libbi/script` to your `PATH` so that you can just
-use the following from any directory:
+    git clone https://github.com/libbi/LibBi.git
 
-    libbi ...
+You can use the full path to the `LibBi/script/libbi` program when
+running LibBi to ensure that this version is used, e.g.
 
-Setting up in a local directory like this might be preferred if you are using
-the development version of LibBi.
+    ~/LibBi/script/libbi sample @config.conf @posterior.conf
+    
+or, as this rapidly gets cumbersome, you can add the full path of the
+`LibBi/script` directory to your `PATH` environment variable. How to
+do this will depend on which shell you are using. For `bash` it
+usually means editing your `~/.bashrc` or `~/.bash_profile` file. On
+Mac OS X it will mean editing your `~/.profile` file.
 
+After changing your `PATH` environment variable, restart your shell
+and type `which libbi` to confirm that the correct version of LibBi is
+associated with the command `libbi`. Henceforth you can then just type
+`libbi` to run.
 
-Specific installation instructions for Ubuntu Linux
----------------------------------------------------
+Updates to the development version can be pulled down from the GitHub
+repository at any time with:
 
-Install required packages:
+    git pull origin master
 
-    sudo apt-get install liblapack-dev libblas-dev libgsl0-dev gsl-bin \
-        octave-gsl octave-statistics libqrupdate-dev libboost-all-dev \
-        libnetcdf-dev ncview netcdf-bin octave-octcdf doxygen graphviz dot2tex \
-        latex2html libtool libgsl0-dbg
-
-Download Thrust from thrust.github.com, unzip and move the thrust/ directory
-to /usr/local/include/thrust.
-
-Install Perl modules:
-
-    sudo cpan
-
-then within cpan:
-
-    install Template Graph Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
-        File::Slurp File::ShareDir Getopt::ArgvFile
-
-Finally, install LibBi as in the generic instructions above.
-
-
-Specific installation instructions for Mac OS X
------------------------------------------------
-
-First ensure that you have Xcode installed. Launch it and use its *Xcode >
-Preferences* menu item to install the *Command Line Tools* package. This will
-give you some of the basics required by LibBi.
-
-The remaining requirements can be satisfied from the MacPorts Project
-<macports.org/>. The following step seems necessary on Mac OS X 10.8 (Mountain
-Lion) or some MacPorts packages do not install:
-
-    sudo xcodebuild -license
-
-Now install required packages from MacPorts:
-
-    sudo port install autoconf automake netcdf netcdf-cxx qrupdate atlas \
-        boost gsl
-
-This can take over an hour!
-
-To ensure that LibBi can find the gfortran libraries, symlink them into the
-/opt/local/lib directory as follows:
-
-    sudo ln -s /opt/local/lib/gcc45/libgfortran.a /opt/local/lib/.
-    sudo ln -s /opt/local/lib/gcc45/libgfortran.dylib /opt/local/lib/.
-
-Download Thrust <thrust.github.com/>, unzip and move the thrust/ directory
-to /opt/local/include/:
-
-    sudo mv thrust /opt/local/include/.
-
-Now install the required Perl modules:
-
-    sudo cpan
-
-then within cpan:
-
-    install Template Graph Math::Symbolic Carp::Assert Parse::Yapp Parse::Lex \
-        File::Slurp File::ShareDir Getopt::ArgvFile
-
-It is important that you do this *after* installing the MacPorts dependencies
-above, otherwise the modules will be installed to the system default perl, not
-MacPorts' perl.
-
-Now, set up the environment for LibBi to compile its client programs. Firstly,
-add the following to ~/.profile
-
-    export LDFLAGS='-L/opt/local/lib'
-    export CPPFLAGS='-I/opt/local/include'
-    export LD_LIBRARY_PATH=/opt/local/lib
-    export LD_INCLUDE_PATH=/opt/local/include
-
-LibBi needs to use the MacPorts `g++` compiler in `/opt/local/bin`, not the
-system default `g++` in `/usr/bin`. To do this, set the following environment
-variable:
-
-    export CXX=/opt/local/bin/g++-mp-*
-
-You can put this in `~/.profile` too, although keep in mind that all configure
-scripts that you run will then use this `g++`, not just LibBi. This may not be
-a problem. If it is, just enter the above line each time you open a Terminal
-window.
-
-Quit Terminal then start it again, to ensure that these environment variables
-are set.
-
-Finally, install LibBi as per the generic instructions above. To modify your
-`PATH` variable, edit your `~/.profile` file.
+They will take effect the next time that you run `libbi`, with no
+installation required.

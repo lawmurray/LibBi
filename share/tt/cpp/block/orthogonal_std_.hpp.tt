@@ -34,11 +34,12 @@ public:
 #include "bi/primitive/matrix_primitive.hpp"
 
 [% sig_block_static_function('simulate') %] {
-  BOOST_AUTO(std, [% get_var(std) %]);
-  BOOST_AUTO(target, [% get_var(target) %]);
+  BOOST_AUTO(std, [% block_gets_var(std) %]);
+  BOOST_AUTO(target, [% block_gets_var(target) %]);
+  BOOST_AUTO(target1, bi::reshape(target, s.size(), target.size1()*target.size2()/s.size());
   
-  int cols = [% Math.sqrt(target.get_var.get_size) %];
-  columns(target, 0, cols, cols + 1) = std;
+  int cols = target1.size2();
+  columns(target1, 0, cols, cols + 1) = std;
 }
 
 [% std_block_static_function('sample') %]

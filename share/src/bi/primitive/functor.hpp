@@ -427,6 +427,42 @@ struct greater_constant_functor : public std::unary_function<T,bool> {
 /**
  * @ingroup primitive_functor
  *
+ * \f$\min(x, k)\f$; constant minimum.
+ */
+template<typename T>
+struct min_constant_functor : public std::unary_function<T,bool> {
+  T k;
+
+  min_constant_functor(const T k) : k(k) {
+    //
+  }
+
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return (x < k) ? x : k;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * \f$\max(x, k)\f$; constant maximum.
+ */
+template<typename T>
+struct max_constant_functor : public std::unary_function<T,bool> {
+  T k;
+
+  max_constant_functor(const T k) : k(k) {
+    //
+  }
+
+  CUDA_FUNC_BOTH bool operator()(const T& x) const {
+    return (x > k) ? x : k;
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
  * \f$\exp(2x)\f$; exponentiate and square unary functor. NaN given zero.
  */
 template<class T>
@@ -585,6 +621,38 @@ struct lower_triangle_functor : public std::binary_function<T1,T2,T3> {
     T2 j = k / rows;
 
     return static_cast<T3>(i >= j ? x : 0);
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * \f$\exp(x-y)\f$; minus constant and exponentiate unary functor, return
+ * pair with both answer and squared answer. NaN give zero.
+ */
+template<class T>
+struct nan_minus_and_exp_ess_functor : public std::unary_function<T, std::pair<T,T> > {
+  T y;
+
+  CUDA_FUNC_HOST nan_minus_and_exp_ess_functor(const T y) : y(y) {
+    //
+  }
+
+  CUDA_FUNC_BOTH std::pair<T,T> operator()(const T& x) const {
+    T z = bi::nanexp(x - y);
+    return std::pair<T,T>(z, z*z);
+  }
+};
+
+/**
+ * @ingroup primitive_functor
+ *
+ * Computes both sum and sum of squares in one functor.
+ */
+template<typename T>
+struct ess_functor : public std::binary_function<std::pair<T,T>,std::pair<T,T>,std::pair<T,T> > {
+  CUDA_FUNC_BOTH std::pair<T,T> operator()(const std::pair<T,T>& x, const std::pair<T,T>& y) const {
+    return std::pair<T,T>(x.first + y.first, x.second + y.second);
   }
 };
 

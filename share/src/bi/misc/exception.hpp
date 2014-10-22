@@ -27,19 +27,28 @@ namespace bi {
   };
 
   /**
+   * Eigendecomposition failed.
+   */
+  struct EigenException {
+    /**
+     * Constructor.
+     */
+    EigenException(const int info) : info(info) {
+      //
+    }
+
+    /**
+     * Info return by potrf().
+     */
+    int info;
+  };
+
+  /**
    * Particle filter degenerated.
    */
   struct ParticleFilterDegeneratedException {
     //
   };
-
-  /**
-   * Conditional particle filter failed.
-   */
-  struct ConditionalParticleFilterException {
-    //
-  };
-
 }
 
 #endif

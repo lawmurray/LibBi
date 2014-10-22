@@ -907,7 +907,7 @@ void bi::var(const M1 X, const V1 mu, V2 sigma) {
   BI_ASSERT(sigma.size() == mu.size());
 
   const int N = X.size1();
-  typename sim_temp_matrix<M1>::type Z(X.size2(), X.size1());
+  typename sim_temp_matrix<M1>::type Z(X.size1(), X.size2());
   Z = X;
   sub_rows(Z, mu);
   dot_columns(Z, sigma);

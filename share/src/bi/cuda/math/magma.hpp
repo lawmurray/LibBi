@@ -11,16 +11,9 @@
 #define BI_CUDA_MATH_MAGMA_HPP
 
 #include "cublas.hpp"
-
-/*
- * Need to quarantine the inclusion of cublas.h (CUBLAS v1 API) in magma.h,
- * as its declarations clash with those in the inclusion of cublas_v2.h
- * (CUBLAS v2 API) in cublas.hpp, so include/declare just what we need from
- * MAGMA.
- */
-typedef int magma_int_t;
-#include "magma_s.h"
-#include "magma_d.h"
+#ifdef HAVE_MAGMA_H
+#include "magma.h"
+#endif
 
 #include "boost/typeof/typeof.hpp"
 
@@ -45,8 +38,11 @@ namespace bi { \
   }; \
 }
 
+#ifdef HAVE_MAGMA_H
 MAGMA_FUNC(potrf, dpotrf_gpu, spotrf_gpu)
 MAGMA_FUNC(potrs, dpotrs_gpu, spotrs_gpu)
 MAGMA_FUNC(get_potrf_nb, get_dpotrf_nb, get_spotrf_nb)
+//MAGMA_FUNC(syevx, dsyevx_gpu, ssyevx_gpu)
+#endif
 
 #endif

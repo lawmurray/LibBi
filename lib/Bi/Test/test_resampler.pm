@@ -56,15 +56,26 @@ Number of weight vector sizes to use.
 
 =item C<--reps> (default 100)
 
-Number of trials on each combination of parameters and sizes.
+Number of trials on each combination of parameterisations and sizes.
 
 =item C<--with-sort> (default on)
 
 Sort weights prior to resampling.
 
-=item C<-C> (default 0)
+=item C<--with-copy> (default off)
 
-Number of steps to take for Metropolis resampler.
+Copy weights to host/device and ancestors back to host/device as part of
+test and timing.
+
+=item C<--with-cuda> (default off)
+
+Use this to actually run CUDA code, C<--enable-cuda> will not achieve this
+automatically for C<test_resampler>, as the intention may be to time
+resampling on CPU when copying weight vectors from GPU.
+
+=item C<-C> (default 1)
+
+Divisor under the default number of steps in the Metropolis resampler.
 
 =back
 
@@ -96,9 +107,19 @@ our @CLIENT_OPTIONS = (
       default => 1
     },
     {
+      name => 'with-copy',
+      type => 'bool',
+      default => 0
+    },
+    {
+      name => 'with-cuda',
+      type => 'bool',
+      default => 0
+    },
+    {
       name => 'C',
       type => 'int',
-      default => 0
+      default => 1
     }
 );
 

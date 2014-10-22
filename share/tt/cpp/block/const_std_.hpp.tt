@@ -34,7 +34,7 @@ public:
 #include "bi/primitive/matrix_primitive.hpp"
 
 [% sig_block_static_function('simulate') %] {
-  BOOST_AUTO(target, [% get_var(target) %]);
+  BOOST_AUTO(target, [% get_output_var(target) %]);
   int cols = [% Math.sqrt(target.get_var.get_size) %];
   matrix_set_elements(columns(target, 0, cols, cols + 1), [% std.eval_const %]);
 }

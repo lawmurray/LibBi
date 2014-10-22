@@ -19,6 +19,8 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
+
 use Bi::Model::Dim;
 
 =head1 PARAMETERS
@@ -331,10 +333,12 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
-    $self = $visitor->visit_before($self, @args);
-    Bi::ArgHandler::accept($self, $visitor);
-    
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+        Bi::ArgHandler::accept($self, $visitor, @args);
+        $new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

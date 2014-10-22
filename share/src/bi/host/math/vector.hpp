@@ -33,7 +33,7 @@ namespace bi {
  * Dynamic buffer.
  */
 template<class T>
-class CUDA_ALIGN(sizeof(T)) host_storage_buf {
+class host_storage_buf {
 public:
   /**
    * Pointer to underlying data.
@@ -61,7 +61,7 @@ protected:
    * Pointer to underlying data.
    */
   T* ptr;
-} BI_ALIGN(sizeof(T));
+};
 
 /**
  * Static size.
@@ -81,7 +81,8 @@ protected:
    * Set size.
    */
   static void setSize(const int size1) {
-    BI_ASSERT_MSG(host_storage_size<size_value>::size1 == size1, "Cannot set static size");
+    BI_ASSERT_MSG(host_storage_size<size_value>::size1 == size1,
+        "Cannot set static size");
   }
 
   /**
@@ -135,7 +136,8 @@ protected:
    * Set increment.
    */
   static void setInc(const int inc1) {
-    BI_ASSERT_MSG(host_storage_inc<inc_value>::inc1 == inc1, "Cannot set static increment");
+    BI_ASSERT_MSG(host_storage_inc<inc_value>::inc1 == inc1,
+        "Cannot set static increment");
   }
 
   /**
@@ -181,8 +183,9 @@ protected:
  * @tparam inc_value Static increment, -1 for dynamic.
  */
 template<class T = real, int size_value = -1, int inc_value = -1>
-class host_vector_handle : public host_storage_buf<T>, public host_storage_size<
-    size_value>, public host_storage_inc<inc_value> {
+class host_vector_handle: public host_storage_buf<T>,
+    public host_storage_size<size_value>,
+    public host_storage_inc<inc_value> {
 public:
   typedef T value_type;
   typedef int size_type;
@@ -544,12 +547,16 @@ inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_refere
   /* pre-condition */
   BI_ASSERT(this->size() == o.size());
 
+  typedef typename V1::value_type T1;
+
   if (V1::on_device) {
     if (this->inc() == 1) {
-      if (o.inc() == 1) {
+      if (o.inc() == 1 && equals<T,T1>::value) {
         /* asynchronous linear copy */
         CUDA_CHECKED_CALL(cudaMemcpyAsync(this->buf(), o.buf(),
                 this->size()*sizeof(T), cudaMemcpyDeviceToHost, 0));
+      } else if (o.inc() == 1) {
+        thrust::copy(o.fast_begin(), o.fast_end(), this->fast_begin());
       } else {
         thrust::copy(o.begin(), o.end(), this->fast_begin());
       }
@@ -560,8 +567,10 @@ inline bi::host_vector_reference<T,size_value,inc_value>& bi::host_vector_refere
     }
   } else if (!this->same(o)) {
     if (this->inc() == 1) {
-      if (o.inc() == 1) {
+      if (o.inc() == 1 && equals<T,T1>::value) {
         memcpy(this->buf(), o.buf(), this->size() * sizeof(T));
+      } else if (o.inc() == 1) {
+        thrust::copy(o.fast_begin(), o.fast_end(), this->fast_begin());
       } else {
         thrust::copy(o.begin(), o.end(), this->fast_begin());
       }
@@ -591,7 +600,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
     T,size_value,inc_value>::begin() {
   strided_range<pointer> range(pointer(this->buf()),
-      pointer(this->buf() + this->inc()*this->size()), this->inc());
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
@@ -600,7 +609,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
     T,size_value,inc_value>::begin() const {
   strided_range<const_pointer> range(const_pointer(this->buf()),
-      const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.begin();
 }
@@ -609,7 +618,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::iterator bi::host_vector_reference<
     T,size_value,inc_value>::end() {
   strided_range<pointer> range(pointer(this->buf()),
-      pointer(this->buf() + this->inc()*this->size()), this->inc());
+      pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
@@ -618,7 +627,7 @@ template<class T, int size_value, int inc_value>
 inline typename bi::host_vector_reference<T,size_value,inc_value>::const_iterator bi::host_vector_reference<
     T,size_value,inc_value>::end() const {
   strided_range<const_pointer> range(const_pointer(this->buf()),
-      const_pointer(this->buf() + this->inc()*this->size()), this->inc());
+      const_pointer(this->buf() + this->inc() * this->size()), this->inc());
 
   return range.end();
 }
@@ -673,8 +682,8 @@ template<class Archive>
 void bi::host_vector_reference<T,size_value,inc_value>::serialize(Archive& ar,
     const unsigned version) {
   ar
-      & boost::serialization::base_object<
-          host_vector_handle<T,size_value,inc_value> >(*this);
+      & boost::serialization::base_object
+          < host_vector_handle<T,size_value,inc_value> > (*this);
 }
 
 namespace bi {
@@ -762,10 +771,29 @@ public:
    * Resize vector.
    *
    * @param size New size.
-   * @param preserve True to preserve existing contents of vector, false
-   * otherwise.
+   * @param preserve Preserve existing contents of vector?
+   *
+   * In general, this invalidates any host_vector_reference objects
+   * constructed from the host_matrix.
    */
   void resize(const size_type size, const bool preserve = false);
+
+  /**
+   * Trim vector.
+   *
+   * @param i Starting index.
+   * @param size New size.
+   * @param preserve Preserve existing contents of vector?
+   *
+   * The existing contents of the vector are preserved. The range
+   * <tt>[i,i + size - 1]</tt> from the old vector becomes the range
+   * <tt>[0, size - 1]</tt> in the new vector.
+   *
+   * In general, this invalidates any host_vector_reference objects
+   * constructed from the host_matrix.
+   */
+  void trim(const size_type i, const size_type size, const bool preserve =
+      true);
 
   /**
    * Swap data between two vectors.
@@ -868,34 +896,23 @@ bi::host_vector<T,size_value,inc_value,A>& bi::host_vector<T,size_value,
 template<class T, int size_value, int inc_value, class A>
 void bi::host_vector<T,size_value,inc_value,A>::resize(const size_type size,
     const bool preserve) {
+  trim(0, size, preserve);
+}
+
+template<class T, int size_value, int inc_value, class A>
+void bi::host_vector<T,size_value,inc_value,A>::trim(const size_type i,
+    const size_type size, const bool preserve) {
+  /* pre-conditions */
+  BI_ERROR_MSG(own,
+      "Cannot resize host_vector constructed as view of other vector");
+
   if (size != this->size()) {
-    /* pre-condition */
-    BI_ERROR_MSG(own,
-        "Cannot resize host_vector constructed as view of other vector");
-
-    /* allocate new buffer */
-    T* ptr = (size > 0) ? alloc.allocate(size) : NULL;
-
-    /* copy across contents */
-    if (preserve && ptr != NULL) {
-      if (this->inc() == 1) {
-        thrust::copy(this->fast_begin(),
-            this->fast_begin() + bi::min(this->size(), size), ptr);
-      } else {
-        thrust::copy(this->begin(),
-            this->begin() + bi::min(this->size(), size), ptr);
-      }
+    host_vector<T,size_value,inc_value,A> x(size);
+    if (preserve && i < this->size()) {
+      const size_t n = std::min(size, this->size() - i);
+      subrange(x, 0, n) = subrange(*this, i, n);
     }
-
-    /* free old buffer */
-    if (this->buf() != NULL) {
-      alloc.deallocate(this->buf(), this->size());
-    }
-
-    /* assign new buffer */
-    this->setBuf(ptr);
-    this->setSize(size);
-    this->setInc(1);
+    this->swap(x);
   }
 }
 
@@ -911,8 +928,8 @@ template<class Archive>
 void bi::host_vector<T,size_value,inc_value,A>::serialize(Archive& ar,
     const unsigned version) {
   ar
-      & boost::serialization::base_object<
-          host_vector_reference<T,size_value,inc_value> >(*this);
+      & boost::serialization::base_object
+          < host_vector_reference<T,size_value,inc_value> > (*this);
 }
 
 #endif

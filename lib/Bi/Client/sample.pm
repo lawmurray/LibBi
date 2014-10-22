@@ -59,23 +59,31 @@ result is a posterior prediction.
 
 =back
 
-=item C<--sampler> (default C<pmmh>)
+=item C<--sampler> (default C<mh>)
 
 The type of sampler to use for C<--target posterior>; one of:
 
 =over 8
 
-=item C<pmmh>
+=item C<mh> or (deprecated) C<pmmh>
 
-Particle marginal Metropolis-Hastings (PMMH).
+Marginal Metropolis-Hastings (MH).
 
-=item C<smc2>
+=item C<sir> or (deprecated) C<smc2>
 
-Sequential Monte Carlo Squared (SMC^2).
+Marginal sequential importance resampling (SIR).
+
+=begin comment
+
+=item C<srs>
+
+Marginal sequential rejection sampling (SRS).
+
+=end comment
 
 =back
 
-For PMMH, the proposal works according to the L<proposal_parameter> top-level
+For MH, the proposal works according to the L<proposal_parameter> top-level
 block in the model. If this is not defined, independent draws are taken from
 the L<parameter> top-level block instead. If
 C<--with-transform-initial-to-param> is used, the L<proposal_initial>
@@ -83,7 +91,7 @@ top-level block is used to make Metropolis-Hastings proposals over initial
 conditions also. If this is not defined, independent draws are taken from the
 L<initial> top-level block instead.
 
-For SMC^2, the same blocks are used as proposals for rejuvenation steps,
+For SIR, the same blocks are used as proposals for rejuvenation steps,
 unless one of the adaptation strategies below is enabled.
 
 =item C<--nsamples> (default 1)
@@ -92,13 +100,18 @@ Number of samples to draw.
 
 =back
 
-=head2 SMC2-specific options
+=head2 SIR-specific options
 
 =over 4
 
 =item C<--nmoves> (default 1)
 
-Number of PMMH steps to perform after resampling.
+Number of MH steps to perform after each resample.
+
+=item C<--sample-resampler> (default C<systematic>)
+
+The type of resampler to use on parameter particles, see C<--resampler> for
+options.
 
 =item C<--sample-ess-rel> (default 0.5)
 
@@ -152,7 +165,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'sampler',
       type => 'string',
-      default => 'pmmh'
+      default => 'mh'
     },
     {
       name => 'nsamples',
@@ -173,6 +186,11 @@ our @CLIENT_OPTIONS = (
       name => 'nmoves',
       type => 'int',
       default => '1'
+    },
+    {
+      name => 'sample-resampler',
+      type => 'string',
+      default => 'systematic'
     },
     {
       name => 'sample-ess-rel',
@@ -207,32 +225,29 @@ sub process_args {
     my $self = shift;
 
     $self->Bi::Client::filter::process_args(@_);
-    
-    # work out client program
+
     my $target = $self->get_named_arg('target');
     my $sampler = $self->get_named_arg('sampler');
     my $filter = $self->get_named_arg('filter');
-    my $binary;
     
     if ($target eq 'prior' || $target eq 'prediction') {
-        $binary = 'simulate';
         if (!$self->is_named_arg('with-transform-param-to-state')) {
 	        $self->set_named_arg('with-transform-param-to-state', 1);
         }
     } elsif ($target eq 'joint') {
-        $binary = 'simulate';
         if (!$self->is_named_arg('with-transform-param-to-state')) {
 	        $self->set_named_arg('with-transform-param-to-state', 1);
         }
         if (!$self->is_named_arg('with-transform-obs-to-state')) {
             $self->set_named_arg('with-transform-obs-to-state', 1);
         }
-    } elsif ($sampler eq 'smc2') {
-        $binary = 'smc2';
     } else {
-        $binary = 'pmmh';
+    	if ($sampler eq 'sir' || $sampler eq 'smc2') {
+	    	$self->set_named_arg('sampler', 'sir'); # standardise name
+    	}
     }
-    $self->{_binary} = $binary;
+    
+    $self->{_binary} = 'sample';
 }
 
 1;

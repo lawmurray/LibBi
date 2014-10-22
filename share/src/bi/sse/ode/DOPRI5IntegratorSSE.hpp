@@ -23,8 +23,6 @@ public:
 }
 
 #include "../sse_host.hpp"
-#include "../math/function.hpp"
-#include "../math/control.hpp"
 #include "../../host/ode/DOPRI5VisitorHost.hpp"
 #include "../../host/ode/IntegratorConstants.hpp"
 #include "../../state/Pa.hpp"
@@ -37,9 +35,9 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   /* pre-condition */
   BI_ASSERT(t1 < t2);
 
-  typedef typename temp_host_vector<sse_real>::type vector_type;
+  typedef typename temp_host_vector<simd_real>::type vector_type;
   typedef Pa<ON_HOST,B,host,host,sse_host,sse_host> PX;
-  typedef DOPRI5VisitorHost<B,S,S,real,PX,sse_real> Visitor;
+  typedef DOPRI5VisitorHost<B,S,S,real,PX,simd_real> Visitor;
   static const int N = block_size<S>::value;
   const int P = s.size();
 
@@ -47,14 +45,14 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
   {
     vector_type x0(N), x1(N), x2(N), x3(N), x4(N), x5(N), x6(N), err(N), k1(
         N), k7(N);
-    sse_real e, e2;
+    simd_real e, e2;
     real t, h, logfacold, logfac11, fac, e2max;
     int n, id, p;
     bool k1in;
     PX pax;
 
     #pragma omp for
-    for (p = 0; p < P; p += BI_SSE_SIZE) {
+    for (p = 0; p < P; p += BI_SIMD_SIZE) {
       t = t1;
       h = h_h0;
       logfacold = bi::log(BI_REAL(1.0e-4));
@@ -103,13 +101,8 @@ void bi::DOPRI5IntegratorSSE<B,S,T1>::update(const T1 t1, const T1 t2,
           e = err[id]*h/(bi::max(bi::abs(x0(id)), bi::abs(x6(id)))*h_rtoler + h_atoler);
           e2 += e*e;
         }
-        #ifdef ENABLE_SINGLE
-        e2max = bi::max(bi::max(e2.unpacked.a, e2.unpacked.b), bi::max(e2.unpacked.c, e2.unpacked.d));
-        #else
-        e2max = bi::max(e2.unpacked.a, e2.unpacked.b);
-        #endif
-        e2max /= N;
 
+        e2max = bi::max_reduce(e2)/N;
         if (e2max <= BI_REAL(1.0)) {
           /* accept */
           t += h;

@@ -168,13 +168,13 @@ sub set_left {
     my $left = shift;
     
     assert ($left->isa('Bi::Expression::VarIdentifier')) if DEBUG;
-    
-    $self->{_left} = $left;
-    
-    # set default aliases if they haven't been set already
+        
+    # set default aliases and ranges if they haven't been set already
     if (@{$self->get_aliases} == 0) {
     	$self->set_aliases($left->get_var->gen_aliases);
+    	$left->set_indexes($left->get_var->gen_ranges);
     }
+    $self->{_left} = $left;
 }
 
 =item B<get_op>
@@ -564,16 +564,8 @@ sub validate {
     my $self = shift;
 
     my $name = $self->get_name;
-
-    # check aliases
     my $num_aliases = @{$self->get_aliases};
-    my $num_dims = @{$self->get_left->get_var->get_dims}; 
-    if ($num_aliases != $num_dims) {
-        my $plural1 = ($num_aliases == 1) ? '' : 'es';
-        my $plural2 = ($num_dims == 1) ? '' : 's';
-        die("action '$name' has $num_aliases alias$plural1 but $num_dims dimension$plural2.\n");
-    }
-
+    
     # explicitly set alias ranges
     for (my $i = 0; $i < $num_aliases; ++$i) {
         my $alias = $self->get_aliases->[$i];
@@ -599,8 +591,9 @@ sub accept {
     $self = $visitor->visit_before($self, @args);
     Bi::ArgHandler::accept($self, $visitor, @args);
     $self->{_left} = $self->get_left->accept($visitor, @args);
-    @{$self->{_aliases}} = map { $_->accept($visitor, @args) } @{$self->get_aliases};
-
+    for (my $i = 0; $i < @{$self->get_aliases}; ++$i) {
+    	$self->get_aliases->[$i] = $self->get_aliases->[$i]->accept($visitor, @args);
+    }
     return $visitor->visit_after($self, @args);
 }
 
@@ -625,7 +618,7 @@ sub _get_item {
     my $name = shift;
     
     foreach my $item (@$list) {
-        if ($item->get_name eq $name) {
+        if (defined $item->get_name && $item->get_name eq $name) {
             return $item;
         }
     }

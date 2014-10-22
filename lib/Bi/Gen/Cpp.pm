@@ -47,7 +47,9 @@ sub new {
 
     my $ttdir = share_dir(File::Spec->catdir('tt', 'cpp'));
     my $self = Bi::Gen->new($ttdir, $outdir);
+    $self->get_tt->context->define_vmethod('list', 'to_cpp', \&to_cpp);
     $self->get_tt->context->define_vmethod('hash', 'to_cpp', \&to_cpp);
+    $self->get_tt->context->define_vmethod('list', 'to_ascii', \&to_ascii);
     $self->get_tt->context->define_vmethod('hash', 'to_ascii', \&to_ascii);
     $self->get_tt->context->define_vmethod('array', 'to_typetree', \&to_typetree);
     $self->get_tt->context->define_filter('to_camel_case', \&to_camel_case);
@@ -297,7 +299,11 @@ C++ expression filter.
 =cut
 sub to_cpp {
     my $expr = shift;
-    return Bi::Visitor::ToCpp->evaluate($expr);
+    if (ref($expr) eq 'ARRAY') {
+    	return join('', @$expr);
+    } else {
+	    return Bi::Visitor::ToCpp->evaluate($expr);
+    }
 }
 
 =item B<to_ascii>(I<expr>)
@@ -306,8 +312,12 @@ ASCII expression filter.
 
 =cut
 sub to_ascii {
-    my $expr = shift;    
-    return Bi::Visitor::ToAscii->evaluate($expr);
+    my $expr = shift;
+    if (ref($expr) eq 'ARRAY') {
+    	return join('', @$expr);
+    } else {
+        return Bi::Visitor::ToAscii->evaluate($expr);
+    }
 }
 
 =item B<to_camel_case>(I<name>)

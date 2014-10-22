@@ -14,8 +14,5 @@
 #ifdef ENABLE_CUDA
 #include "../cuda/math/io.hpp"
 #endif
-#ifdef ENABLE_SSE
-#include "../sse/math/io.hpp"
-#endif
 
 #endif

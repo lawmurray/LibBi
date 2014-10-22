@@ -18,7 +18,7 @@ BI_THREAD cudaStream_t bi_omp_cuda_stream;
 #endif
 
 void bi_omp_init(const int threads) {
-  #ifdef ENABLE_OPENMP
+  #if defined(ENABLE_OPENMP) and defined(HAVE_OMP_H)
   /* explicitly turn off dynamic threads, required for threadprivate
    * guarantees */
   omp_set_dynamic(0);

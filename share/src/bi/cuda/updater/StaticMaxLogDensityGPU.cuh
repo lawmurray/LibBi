@@ -44,7 +44,7 @@ void bi::StaticMaxLogDensityGPU<B,S>::maxLogDensities(State<B,ON_DEVICE>& s,
 
   Db.y = N;
   Dg.y = 1;
-  Db.x = bi::min(deviceIdealThreadsPerBlock()/N, P);
+  Db.x = bi::max(1, bi::min(deviceIdealThreadsPerBlock()/N, P));
   Dg.x = (P + Db.x - 1)/Db.x;
 
   if (N > 0) {

@@ -5,3 +5,7 @@
 /MYMETA.yml
 /Makefile.old
 /.LibBi
+/.Test
+/blib
+/pm_to_blib
+/test.nc

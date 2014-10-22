@@ -126,14 +126,8 @@ sub init {
 sub process_args {
     my $self = shift;
 
-    $self->Bi::Client::filter::process_args(@_);
-    my $binary = $self->get_named_arg('optimiser');
-    if ($self->is_named_arg('optimizer') && $self->is_named_arg('optimizer') ne '') {
-        # alternate spelling used
-        $binary = $self->get_named_arg('optimizer');
-    }
-    
-    $self->{_binary} = $binary;
+    $self->Bi::Client::filter::process_args(@_);   
+    $self->{_binary} = 'optimise';
 }
 
 1;

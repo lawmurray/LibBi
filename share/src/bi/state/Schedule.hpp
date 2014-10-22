@@ -118,11 +118,14 @@ public:
    * @param t Start time.
    * @param T End time.
    * @param K Number of dense output points.
+   * @param M Number of dense bridge points.
    * @param in Input file.
    * @param obs Observation file.
+   * @param outputAtObs Output at all observation times as well as at regular intervals?
    */
   template<class B, class IO1, class IO2>
-  Schedule(B& m, const real t, const real T, const int K, IO1* in, IO2* obs);
+  Schedule(B& m, const real t, const real T, const int K, const int M,
+      IO1& in, IO2& obs, const bool outputAtObs = true);
 
   /**
    * Shallow copy constructor.
@@ -153,6 +156,11 @@ public:
    * Number of output events in the schedule.
    */
   int numOutputs() const;
+
+  /**
+   * Number of bridge events in the schedule.
+   */
+  int numBridges() const;
 
   /**
    * Number of observation events in the schedule.
@@ -205,18 +213,19 @@ private:
 #include <algorithm>
 
 template<class B, class IO1, class IO2>
-bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
-    IO2* obs) :
+bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
+    const int M, IO1& in, IO2& obs, const bool outputAtObs) :
     delta(m.getDelta()) {
   /* pre-conditions */
   BI_ASSERT(T >= t);
   BI_ASSERT(K >= 0);
+  BI_ASSERT(M >= 0);
 
   User2Scaled<real> user2scaled(delta);
   Scaled2User<real> scaled2user(delta);
 
   const real st = user2scaled(t), sT = user2scaled(T);
-  std::vector<real> ts, tDeltas, tInputs, tOutputs, tObs;
+  std::vector<real> ts, tDeltas, tInputs, tOutputs, tBridges, tObs;
   ScheduleElement elem;
   int i;
 
@@ -237,37 +246,45 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
   }
   tOutputs.push_back(sT);
 
+  /* bridge times */
+  for (i = 0; i < M; ++i) {
+    tBridges.push_back(st + (sT - st) * i / M);
+  }
+  tBridges.push_back(sT);
+
   /* input times */
-  if (in != NULL) {
-    tInputs = in->getTimes();
-    std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
-        user2scaled);
-    BOOST_AUTO(lower, std::lower_bound(tInputs.begin(), tInputs.end(), st));
-    BOOST_AUTO(upper, std::upper_bound(lower, tInputs.end(), sT));
-    elem.kInput = std::distance(tInputs.begin(), lower);
-    tInputs.resize(std::distance(tInputs.begin(), upper));
-    if (elem.kInput > 0 && elem.kInput < tInputs.size() && tInputs[elem.kInput] >= st) {
-      --elem.kInput; // start time falls between input update times, so need previous
-    }
+  in.readTimes(tInputs);
+  std::transform(tInputs.begin(), tInputs.end(), tInputs.begin(),
+      user2scaled);
+  BOOST_AUTO(lowerInputs,
+      std::lower_bound(tInputs.begin(), tInputs.end(), st));
+  BOOST_AUTO(upperInputs, std::upper_bound(lowerInputs, tInputs.end(), sT));
+  merge_unique(ts, lowerInputs, upperInputs);
+  elem.kInput = std::distance(tInputs.begin(), lowerInputs);
+  tInputs.resize(std::distance(tInputs.begin(), upperInputs));
+  if (elem.kInput > 0 && elem.kInput < tInputs.size()
+      && tInputs[elem.kInput] >= st) {
+    --elem.kInput;  // start time falls between input update times, so need previous
   }
 
   /* observation times */
-  if (obs != NULL) {
-    tObs = obs->getTimes();
-    std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
-    BOOST_AUTO(lower, std::lower_bound(tObs.begin(), tObs.end(), st));
-    BOOST_AUTO(upper, std::upper_bound(lower, tObs.end(), sT));
-    merge_unique(tOutputs, lower, upper);  // output at each obs time
-    elem.kObs = std::distance(tObs.begin(), lower);
-    tObs.resize(std::distance(tObs.begin(), upper));
+  obs.readTimes(tObs);
+  std::transform(tObs.begin(), tObs.end(), tObs.begin(), user2scaled);
+  BOOST_AUTO(lowerObs, std::lower_bound(tObs.begin(), tObs.end(), st));
+  BOOST_AUTO(upperObs, std::upper_bound(lowerObs, tObs.end(), sT));
+  if (outputAtObs) {
+    merge_unique(tOutputs, lowerObs, upperObs);  // output at each obs time
+  } else {
+    merge_unique(ts, lowerObs, upperObs);
   }
+  elem.kObs = std::distance(tObs.begin(), lowerObs);
+  tObs.resize(std::distance(tObs.begin(), upperObs));
 
   /* combination of all (unique) times */
   merge_unique(ts, tDeltas.begin(), tDeltas.end());
-  merge_unique(ts, tInputs.begin() + elem.kInput, tInputs.end());
   merge_unique(ts, tOutputs.begin(), tOutputs.end());
-  //merge_unique(ts, tObs.begin() + elem.kObs, tObs.end());
-  //^ tObs already merged into tOutputs above
+  merge_unique(ts, tBridges.begin(), tBridges.end());
+  // tObs and tInputs already handled above
 
   /* generate schedule */
   for (elem.k = 0; elem.k < int(ts.size()); ++elem.k) {
@@ -276,21 +293,24 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
         && tDeltas[elem.kDelta] == ts[elem.k - 1];
 
-    /* inputs persist on half-open intervals (t, t+1], except for the first
-     * input, which is on the closed interval [t, t+1] */
-    elem.bInput = elem.kInput < int(tInputs.size()) &&
-        ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1]) ||
-        (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
+    /* inputs persist on half-open intervals (t, t+1], except for the first,
+     * which is on the closed interval [t, t+1] */
+    elem.bInput = elem.kInput < int(tInputs.size())
+        && ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1])
+            || (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
         && tOutputs[elem.kOutput] == ts[elem.k];
+    elem.bBridge = elem.kBridge < int(tBridges.size())
+        && tBridges[elem.kBridge] == ts[elem.k];
 
     /* observations persist on half-open intervals (t-1, t], except for the
-     * first input, which is on the closed interval [t-1, t] */
-    elem.bObs = elem.kObs < int(tObs.size()) &&
-        ((elem.kObs == 0 && tObs.size() > 0) ||
-          elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
-    elem.bObserved = elem.kObs < int(tObs.size()) && tObs[elem.kObs] == ts[elem.k];
+     * first, which is on the closed interval [t-1, t] */
+    elem.bObs = elem.kObs < int(tObs.size())
+        && ((elem.k == 0 && tObs.size() > 0)
+            || elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
+    elem.bObserved = elem.kObs < int(tObs.size())
+        && tObs[elem.kObs] == ts[elem.k];
 
     elems.push_back(elem);
 
@@ -303,6 +323,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
     if (elem.bOutput) {
       ++elem.kOutput;
     }
+    if (elem.bBridge) {
+      ++elem.kBridge;
+    }
     if (elem.bObserved) {
       ++elem.kObs;
     }
@@ -311,6 +334,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K, IO1* in,
   elem.bDelta = false;
   elem.bInput = false;
   elem.bOutput = false;
+  elem.bBridge = false;
   elem.bObs = false;
   elems.push_back(elem);  // see end() semantics for why this extra
 }
@@ -329,6 +353,10 @@ inline int bi::Schedule::numInputs() const {
 
 inline int bi::Schedule::numOutputs() const {
   return elems.back().indexOutput() - elems.front().indexOutput();
+}
+
+inline int bi::Schedule::numBridges() const {
+  return elems.back().indexBridge() - elems.front().indexBridge();
 }
 
 inline int bi::Schedule::numObs() const {

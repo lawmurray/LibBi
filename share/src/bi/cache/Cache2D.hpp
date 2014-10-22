@@ -151,7 +151,7 @@ void bi::Cache2D<T1,CL>::set(const int p, const V1 x) {
     pages.resize(x.size(), pages.size2());
   }
   if (p >= size()) {
-    resize(pages.size1(), bi::max(p + 1, 2*size()));
+    resize(pages.size1(), bi::max(p + 1, 2 * size()));
   }
   setDirty(p);
   setValid(p);

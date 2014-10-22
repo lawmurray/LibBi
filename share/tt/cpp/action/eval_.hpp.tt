@@ -25,14 +25,16 @@ struct [% class_name %] {
 
 [% sig_action_static_function('simulate') %] {
   [% alias_dims(action) %]
-  [% fetch_parents(expr) %]
-  [% put_output(expr) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+  [% put_output(action, expr) %]
 }
 
 [% sig_action_dynamic_function('simulate') %] {  
   [% alias_dims(action) %]
-  [% fetch_parents(expr) %]
-  [% put_output(expr) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+  [% put_output(action, expr) %]
 }
 
 [%-PROCESS action/misc/footer.hpp.tt-%]

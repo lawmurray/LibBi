@@ -10,21 +10,6 @@
 
 namespace bi {
 /**
- * Particle filtering modes.
- */
-enum FilterMode {
-  /**
-   * Unconditioned filter.
-   */
-  UNCONDITIONED,
-
-  /**
-   * Filter conditioned on current state trajectory.
-   */
-  CONDITIONED
-};
-
-/**
  * Optimisation modes.
  */
 enum OptimiserMode {
@@ -40,9 +25,9 @@ enum OptimiserMode {
 };
 
 /**
- * SMC2 adaptation strategies.
+ * MarginalSIR adaptation strategies.
  */
-enum SMC2Adapter {
+enum MarginalSIRAdapter {
   /**
    * No adaptation.
    */

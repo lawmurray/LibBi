@@ -57,24 +57,29 @@ sub evaluate {
     # insert actions
     my $lefts = [];
     my $rights = [];
-    my $action = new Bi::Action;
-    $action->set_op('<-');
     
     foreach my $extract (@$extracts) {
-        my $var = new Bi::Model::Var('param_aux_');
+    	my $dims = [ map { $model->lookup_dim($_) } @{$extract->get_shape->get_sizes} ];
+    	my $var = new Bi::Model::Var('param_aux_', undef, $dims, [], {
+            'has_input' => new Bi::Expression::IntegerLiteral(0),
+            'has_output' => new Bi::Expression::IntegerLiteral(0)
+        });
         $model->push_var($var);
         
-        my $left = new Bi::Expression::VarIdentifier($var);
+        my $left = new Bi::Expression::VarIdentifier($var, $var->gen_ranges);
         my $right = $extract;
         
         push(@$lefts, $left);
         push(@$rights, $right);
-        
+
+        my $action = new Bi::Action;
+        $action->set_aliases($var->gen_aliases);
         $action->set_left($left);
+        $action->set_op('<-');
         $action->set_right($right);
         $action->validate;
 
-        $model->get_block('parameter')->push_child($action->clone);        
+        $model->get_block('parameter')->push_child($action);
     }
     
     return ($lefts, $rights);
@@ -149,10 +154,10 @@ sub visit_after {
     push(@$statics, $is_static);
     if ($is_static) {
         if ($num_statics > 0) {
-            splice(@$extracts, -$num_statics, $num_statics, $node);
+            splice(@$extracts, -$num_statics, $num_statics, $node->clone);
         } else {
         	assert($node->is_static) if DEBUG;
-            push(@$extracts, $node);
+            push(@$extracts, $node->clone);
         }
     }
     

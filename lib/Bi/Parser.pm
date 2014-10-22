@@ -477,7 +477,7 @@ sub target {
         die("variable '$name' has $num_dims dimension$plural, but $num_aliases aliased\n");
     }
     
-    my @indexes = map { new Bi::Expression::Index(new Bi::Expression::DimAliasIdentifier($_)) } @$aliases;
+    my @indexes = map { $_->has_name ? $_->gen_index : $_->gen_range } @$aliases;
     my $left = new Bi::Expression::VarIdentifier($var, \@indexes);
     
     my $action = new Bi::Action;
@@ -551,21 +551,32 @@ sub dim_alias {
     my $name = shift;
     my $start = shift;
     my $end = shift;
+	my $alias;
 
-    if (defined $name) {
+    if (defined $name && !defined $start) {
+    	# have a name on its own, is it a dimension alias or identifier?
         if ($self->_is_var($name)) {
-            die("variable name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::VarIdentifier($self->_get_var($name));
+        	undef $name;
         } elsif ($self->_is_const($name)) {
-            die("constant name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::ConstIdentifier($self->_get_const($name));
+        	undef $name;
         } elsif ($self->_is_inline($name)) {
-            die("inline expression name '$name' cannot be used as dimension alias\n");
+        	$start = new Bi::Expression::InlineIdentifier($self->_get_inline($name));
+        	undef $name;
+        } else {
+        	# it's a dimension alias
         }
     }
+ 	if ((defined $start && !$start->is_common) || (defined $end && !$end->is_common)) {
+   		die("a dimension index on the left must be a common expression\n")
+   	}
+
     my $range = undef;
     if (defined $start && defined $end) {
-        $range = new Bi::Expression::Range(new Bi::Expression::IntegerLiteral($start), new Bi::Expression::IntegerLiteral($end));
+        $range = new Bi::Expression::Range($start, $end);
     } elsif (defined $start) {
-    	$range = new Bi::Expression::Range(new Bi::Expression::IntegerLiteral($start));
+    	$range = new Bi::Expression::Index($start);
     }
     
     return new Bi::Model::DimAlias($name, $range);
@@ -630,36 +641,32 @@ sub identifier {
     my $self = shift;
     my $name = shift;
     my $indexes = shift;
-    my $ranges = shift;
     
     if ($self->_is_const($name)) {
-        if (defined($indexes) || defined($ranges)) {
+        if (defined($indexes)) {
             die("constant '$name' is scalar\n");
         }
         return new Bi::Expression::ConstIdentifier($self->_get_const($name));
     } elsif ($self->_is_inline($name)) {
-        if (defined($indexes) || defined($ranges)) {
+        if (defined($indexes)) {
             die("inline expression '$name' is scalar\n");
         }
         return new Bi::Expression::InlineIdentifier($self->_get_inline($name));
     } elsif ($self->_is_var($name)) {
         my $var = $self->_get_var($name);
-        if (defined($indexes) && @$indexes > 0 && @$indexes != @{$var->get_dims}) {
-            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
-            my $plural2 = (@$indexes == 1) ? '' : 's'; 
-            die("variable '" . $name . "' extends along " .
-                scalar(@{$var->get_dims}) . " dimension$plural1, but " . scalar(@$indexes) .
-                " index$plural2 given\n");
+        if (defined($indexes) && @$indexes > 0) {
+        	if (@$indexes != @{$var->get_dims}) {
+	            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
+    	        my $plural2 = (@$indexes == 1) ? '' : 'es'; 
+        	    die("variable '" . $name . "' extends along " .
+            	    scalar(@{$var->get_dims}) . " dimension$plural1, but " . scalar(@$indexes) .
+                	" index$plural2 given\n");
+        	}
+        } elsif (@{$var->get_dims}) {
+        	$indexes = $var->gen_ranges;
         }
-        if (defined($ranges) && @$ranges > 0 && @$ranges != @{$var->get_dims}) {
-            my $plural1 = (@{$var->get_dims} == 1) ? '' : 's';
-            my $plural2 = (@$ranges == 1) ? '' : 's'; 
-            die("variable '" . $name . "' extends along " .
-                @{$var->get_dims} . " dimension$plural1, but " . scalar(@$ranges) .
-                " range$plural2 given\n");
-        }
-        return new Bi::Expression::VarIdentifier($var, $indexes, $ranges);
-    } elsif (defined($indexes) || defined($ranges)) {
+        return new Bi::Expression::VarIdentifier($var, $indexes);
+    } elsif (defined($indexes)) {
         die("no variable, constant or inline expression named '$name'\n");
     } elsif (defined $self->get_action) {
     	my $alias = $self->get_action->get_alias($name);

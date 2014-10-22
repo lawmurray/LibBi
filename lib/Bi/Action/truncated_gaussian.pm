@@ -85,6 +85,11 @@ sub validate {
     $self->ensure_scalar('std');
     $self->ensure_scalar('lower');
     $self->ensure_scalar('upper');
+
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
+
     $self->set_parent('pdf_');
     $self->set_can_combine(1);
     $self->set_unroll_args(0);

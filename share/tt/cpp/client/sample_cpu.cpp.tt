@@ -1,0 +1,321 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/ode/IntegratorConstants.hpp"
+#include "bi/misc/TicToc.hpp"
+#include "bi/kd/kde.hpp"
+
+#include "bi/random/Random.hpp"
+
+#include "bi/state/State.hpp"
+#include "bi/state/MarginalMHState.hpp"
+#include "bi/state/MarginalSIRState.hpp"
+#include "bi/state/MarginalSRSState.hpp"
+
+#include "bi/method/Forcer.hpp"
+#include "bi/method/Observer.hpp"
+#include "bi/method/Simulator.hpp"
+
+#include "bi/resampler/MultinomialResampler.hpp"
+#include "bi/resampler/MetropolisResampler.hpp"
+#include "bi/resampler/RejectionResampler.hpp"
+#include "bi/resampler/KernelResampler.hpp"
+#include "bi/resampler/StratifiedResampler.hpp"
+#include "bi/resampler/SystematicResampler.hpp"
+#ifdef ENABLE_MPI
+#include "bi/mpi/resampler/DistributedResampler.hpp"
+#endif
+
+#include "bi/adapter/GaussianAdapter.hpp"
+
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
+
+#include "bi/buffer/SimulatorBuffer.hpp"
+#include "bi/buffer/ParticleFilterBuffer.hpp"
+#include "bi/buffer/KalmanFilterBuffer.hpp"
+#include "bi/buffer/MCMCBuffer.hpp"
+#include "bi/buffer/SMCBuffer.hpp"
+#include "bi/buffer/SRSBuffer.hpp"
+
+#include "bi/cache/SimulatorCache.hpp"
+#include "bi/cache/AdaptivePFCache.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/cache/ExtendedKFCache.hpp"
+#include "bi/cache/MCMCCache.hpp"
+#include "bi/cache/SMCCache.hpp"
+#include "bi/cache/SRSCache.hpp"
+
+#include "bi/netcdf/InputNetCDFBuffer.hpp"
+#include "bi/netcdf/SimulatorNetCDFBuffer.hpp"
+#include "bi/netcdf/MCMCNetCDFBuffer.hpp"
+#include "bi/netcdf/SMCNetCDFBuffer.hpp"
+
+#include "bi/null/InputNullBuffer.hpp"
+#include "bi/null/SimulatorNullBuffer.hpp"
+#include "bi/null/MCMCNullBuffer.hpp"
+#include "bi/null/SMCNullBuffer.hpp"
+
+#include "bi/method/FilterFactory.hpp"
+#include "bi/method/SamplerFactory.hpp"
+
+#include "boost/typeof/typeof.hpp"
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <getopt.h>
+
+#ifdef ENABLE_CUDA
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+int main(int argc, char* argv[]) {
+  using namespace bi;
+
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+  
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+  NPARTICLES /= size;
+  #else
+  const int rank = 0;
+  const int size = 1;
+  #endif
+    
+  /* bi init */
+  bi_init(NTHREADS);
+
+  /* random number generator */
+  Random rng(SEED);
+
+  /* model */
+  model_type m;
+
+  /* input file */
+  [% IF client.get_named_arg('input-file') != '' %]
+  InputNetCDFBuffer bufInput(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+  [% ELSE %]
+  InputNullBuffer bufInput(m);
+  [% END %]
+  
+  /* init file */
+  [% IF client.get_named_arg('init-file') != '' %]
+  InputNetCDFBuffer bufInit(m, INIT_FILE, INIT_NS, INIT_NP);
+  [% ELSE %]
+  InputNullBuffer bufInit(m);
+  [% END %]
+
+  /* obs file */
+  [% IF client.get_named_arg('obs-file') != '' %]
+  InputNetCDFBuffer bufObs(m, OBS_FILE, OBS_NS, OBS_NP);
+  [% ELSE %]
+  InputNullBuffer bufObs(m);
+  [% END %]
+
+  /* schedule */
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs, WITH_OUTPUT_AT_OBS);
+
+  /* state */
+  NPARTICLES = bi::roundup(NPARTICLES);
+  MAX_PARTICLES = bi::roundup(MAX_PARTICLES);
+  BLOCK_PARTICLES = bi::roundup(BLOCK_PARTICLES);
+  [% IF client.get_named_arg('target') == 'posterior' %]
+    [% IF client.get_named_arg('filter') == 'kalman' %]
+    NPARTICLES = 1;
+    typedef ExtendedKFState<model_type,LOCATION> state_type;
+    typedef KalmanFilterBuffer<ExtendedKFCache<LOCATION> > cache_type;
+    [% ELSIF client.get_named_arg('filter') == 'lookahead' || client.get_named_arg('filter') == 'bridge' %]
+    typedef AuxiliaryPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
+    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+    typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<AdaptivePFCache<LOCATION> > cache_type;
+    [% ELSE %]
+    typedef BootstrapPFState<model_type,LOCATION> state_type;
+    typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
+    [% END %]
+    [% IF client.get_named_arg('sampler') == 'sir' %]
+    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numOutputs());
+    [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+    typedef GaussianPdf<> proposal_type;
+    MarginalSRSState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numOutputs());
+    [% ELSE %]
+    MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numOutputs());
+    [% END %]
+  [% ELSE %]
+  State<model_type,LOCATION> s(NSAMPLES);
+  [% END %]
+
+  /* output */
+  [% IF client.get_named_arg('target') == 'posterior' %]
+    [% IF client.get_named_arg('sampler') == 'sir' %]
+      [% IF client.get_named_arg('output-file') != '' %]
+      typedef SMCNetCDFBuffer buffer_type;
+      [% ELSE %]
+      typedef SMCNullBuffer buffer_type;
+      [% END %]
+      SMCBuffer<SMCCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
+    [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+      [% IF client.get_named_arg('output-file') != '' %]
+      typedef SMCNetCDFBuffer buffer_type;
+      [% ELSE %]
+      typedef SMCNullBuffer buffer_type;
+      [% END %]
+      SRSBuffer<SRSCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
+    [% ELSE %]
+      [% IF client.get_named_arg('output-file') != '' %]
+      typedef MCMCNetCDFBuffer buffer_type;
+      [% ELSE %]
+      typedef MCMCNullBuffer buffer_type;
+      [% END %]
+      MCMCBuffer<MCMCCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
+    [% END %]
+  [% ELSE %]
+    [% IF client.get_named_arg('output-file') != '' %]
+    typedef SimulatorNetCDFBuffer buffer_type;
+    [% ELSE %]
+    typedef SimulatorNullBuffer buffer_type;
+    [% END %]
+    SimulatorBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, NSAMPLES, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
+  [% END %]
+  
+  /* simulator */
+  BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
+  BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
+
+  /* resampler for x-particles */
+  [% IF client.get_named_arg('resampler') == 'metropolis' %]
+  MetropolisResampler filterBase(C, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+  RejectionResampler filterBase;
+  [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+  MultinomialResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
+  StratifiedResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  SystematicResampler filterBase(WITH_SORT, ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  [% IF client.get_named_arg('with-kde') %]
+  real h;
+  if (B_ABS > 0.0) {
+    h = B_ABS;
+  } else {
+    h = B_REL*hopt(m.getDynSize(), NPARTICLES);
+  }
+  KernelResampler<BOOST_TYPEOF(filterBase)> filterResam(&filterBase, h, WITH_SHRINK, ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  BOOST_AUTO(filterResam, filterBase);
+  [% END %]
+  
+  /* resampler for theta-particles */
+  [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
+  MetropolisResampler base(C, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
+  RejectionResampler base;
+  [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
+  MultinomialResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
+  StratifiedResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  SystematicResampler base(WITH_SORT, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% END %]
+  [% IF client.get_named_arg('with-mpi') %]
+  DistributedResampler<BOOST_TYPEOF(base)> resam(&base, SAMPLE_ESS_REL, BRIDGE_ESS_REL);
+  [% ELSE %]
+  BOOST_AUTO(resam, base);
+  [% END %]
+  
+  /* adapter */
+  GaussianAdapter<model_type,LOCATION> adapter;
+  
+  /* stopper */
+  [% IF client.get_named_arg('stopper') == 'deterministic' %]
+  Stopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+  SumOfWeightsStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+  MinimumESSStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+  StdDevStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% ELSIF client.get_named_arg('stopper') == 'var' %]
+  VarStopper stopper(STOPPER_THRESHOLD, MAX_PARTICLES, sched.numObs());
+  [% END %]
+
+  /* filter */
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  BOOST_AUTO(filter, (FilterFactory::createExtendedKF(m, *sim)));
+  [% ELSIF client.get_named_arg('filter') == 'lookahead' %]
+  BOOST_AUTO(filter, (FilterFactory::createLookaheadPF(m, *sim, filterResam)));
+  [% ELSIF client.get_named_arg('filter') == 'bridge' %]
+  BOOST_AUTO(filter, (FilterFactory::createBridgePF(m, *sim, filterResam)));
+  [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+  BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, filterResam, stopper, NPARTICLES, BLOCK_PARTICLES)));
+  [% ELSE %]
+  BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, filterResam)));
+  [% END %]
+  
+  /* sampler */
+  [% IF client.get_named_arg('sampler') == 'sir' %]
+  BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, adapter, resam, NMOVES));
+  [% ELSIF client.get_named_arg('sampler') == 'srs' %]
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSRS(m, *filter, adapter, stopper));
+  [% ELSE %]
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
+  [% END %]
+
+  /* sample */
+  #ifdef ENABLE_GPERFTOOLS
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  #endif
+  #ifdef ENABLE_TIMING
+  TicToc timer;
+  #endif
+
+  [% IF client.get_named_arg('target') == 'posterior' %]
+  sampler->sample(rng, sched.begin(), sched.end(), s, NSAMPLES, out, bufInit);
+  [% ELSE %]
+  sim->simulate(rng, sched.begin(), sched.end(), s, out, bufInit);
+  [% END %]
+  out.flush();
+  
+  #ifdef ENABLE_TIMING
+  /* output timing results */
+  timer.sync();
+  if (rank == 0) {
+    std::cout << "total " << timer.toc() << " us" << std::endl;
+  }
+  #endif
+  #ifdef ENABLE_GPERFTOOLS
+  ProfilerStop();
+  #endif
+
+  delete sampler;
+  delete filter;
+  delete sim;
+}

@@ -226,11 +226,11 @@ dim_aliases
     ;
 
 dim_alias
-    : IDENTIFIER                                          { $_[0]->dim_alias($_[1]) }
-    | IDENTIFIER '=' INTEGER_LITERAL                      { $_[0]->dim_alias($_[1], $_[3]) }
-    | IDENTIFIER '=' INTEGER_LITERAL ':' INTEGER_LITERAL  { $_[0]->dim_alias($_[1], $_[3], $_[5]) }
-    | INTEGER_LITERAL                                     { $_[0]->dim_alias(undef, $_[1]) }
-    | INTEGER_LITERAL ':' INTEGER_LITERAL                 { $_[0]->dim_alias(undef, $_[1], $_[3]) }
+    : IDENTIFIER                                                      { $_[0]->dim_alias($_[1]) }
+    | IDENTIFIER '=' logical_or_expression                            { $_[0]->dim_alias($_[1], $_[3]) }
+    | IDENTIFIER '=' logical_or_expression ':' logical_or_expression  { $_[0]->dim_alias($_[1], $_[3], $_[5]) }
+    | logical_or_expression                                           { $_[0]->dim_alias(undef, $_[1]) }
+    | logical_or_expression ':' logical_or_expression                 { $_[0]->dim_alias(undef, $_[1], $_[3]) }
     ;
 
 index_args

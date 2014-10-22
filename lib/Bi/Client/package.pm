@@ -391,7 +391,7 @@ sub validate {
     }
     
     # check for things that might be missing from manifest
-    my @maybe = (<*.bi>, <*.conf>);
+    my @maybe = (<*.bi>, <*.conf>, <*.sh>, <data/*.nc>, <oct/*.m>);
     foreach $file (@maybe) {
         if (!exists $manifest{$file}) {
             warn("Is $file missing from MANIFEST?\n");
@@ -437,6 +437,10 @@ sub webify {
     my $readme = read_file('README.md');
     chomp $meta;
     chomp $readme;
+    
+    # 'name' attribute in meta must become 'title' to avoid conflict with
+    # Jekyll built-in attribute
+    $meta =~ s/^name:/title:/m;
     
     # remove first heading from README.md contents
     $readme =~ s/^(.*?)\n={3,}\n*//m;

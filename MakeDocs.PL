@@ -9,7 +9,7 @@ use File::Temp qw(tempdir);
 
 my $SRC_DIR = File::Spec->catdir('docs', 'src');
 my $PDF_DIR = File::Spec->catdir('docs', 'pdf');
-my $HTML_DIR = File::Spec->catdir('docs', 'html');
+my $TEX_DIR = File::Spec->catdir('docs', 'tex');
 
 my $ACTION_DIR = File::Spec->catdir('lib', 'Bi', 'Action');
 my $BLOCK_DIR = File::Spec->catdir('lib', 'Bi', 'Block');
@@ -21,22 +21,22 @@ my $ACTION_TMPDIR = tempdir(CLEANUP => 1);
 my $BLOCK_TMPDIR = tempdir(CLEANUP => 1);
 my $CLIENT_TMPDIR = tempdir(CLEANUP => 1);
 
-my $ACTION_OUT = File::Spec->catfile($PDF_DIR, 'actions.tex');
-my $BLOCK_OUT = File::Spec->catfile($PDF_DIR, 'blocks.tex');
-my $CLIENT_OUT = File::Spec->catfile($PDF_DIR, 'clients.tex');
-my $BUILD_OUT = File::Spec->catfile($PDF_DIR, 'build.tex');
-my $RUN_OUT = File::Spec->catfile($PDF_DIR, 'run.tex');
-my $COMMON_OUT = File::Spec->catfile($PDF_DIR, 'common.tex'); 
+my $ACTION_OUT = File::Spec->catfile($TEX_DIR, 'actions.tex');
+my $BLOCK_OUT = File::Spec->catfile($TEX_DIR, 'blocks.tex');
+my $CLIENT_OUT = File::Spec->catfile($TEX_DIR, 'clients.tex');
+my $BUILD_OUT = File::Spec->catfile($TEX_DIR, 'build.tex');
+my $RUN_OUT = File::Spec->catfile($TEX_DIR, 'run.tex');
+my $COMMON_OUT = File::Spec->catfile($TEX_DIR, 'common.tex'); 
 
 # make directories
-system("mkdir -p $HTML_DIR");
+system("mkdir -p $TEX_DIR");
 system("mkdir -p $PDF_DIR");
 
 # copy fixed tex files
-`cp $SRC_DIR/*.tex $PDF_DIR/.`;
+`cp $SRC_DIR/*.tex $TEX_DIR/.`;
 
 # copy bib files
-`cp $SRC_DIR/*.bib $PDF_DIR/.`;
+`cp $SRC_DIR/*.bib $TEX_DIR/.`;
 
 # copy pods to temporary directory
 `cp $ACTION_DIR/*.pm $ACTION_TMPDIR`;
@@ -71,10 +71,11 @@ foreach my $file ($BUILD_OUT, $RUN_OUT, $COMMON_OUT, $ACTION_OUT, $BLOCK_OUT, $C
 
 # convert tex to html
 # (broken)
-#system("cd $PDF_DIR; latex2html -antialias -antialias_text -show_section_numbers -local_icons -toc_depth 4 -split 5 -dir ../html index.tex");
+#system("cd $HTML_DIR; latex2html -antialias -antialias_text -show_section_numbers -local_icons -toc_depth 4 -split 5 -dir ../html index.tex");
 
-# compile tex
-system("cd $PDF_DIR; pdflatex index.tex; bibtex index; makeindex index; pdflatex index.tex; pdflatex index.tex");
+# compile tex to PDF
+system("cd $TEX_DIR; pdflatex index.tex; bibtex index; makeindex index; pdflatex index.tex; pdflatex index.tex");
+`cp $TEX_DIR/index.pdf $PDF_DIR/manual.pdf`;
 
 sub process_tex {
     my $contents = shift;

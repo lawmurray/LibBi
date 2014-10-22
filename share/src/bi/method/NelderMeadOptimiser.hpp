@@ -108,9 +108,9 @@ public:
    * @param out Output.
    * @param mode Mode of operation.
    *
-   * @see ParticleFilter
+   * @see BootstrapPF
    */
-  NelderMeadOptimiser(B& m, F* filter = NULL, IO1* out = NULL,
+  NelderMeadOptimiser(B& m, F* filter = NULL, IO1& out = NULL,
       const OptimiserMode mode = MAXIMUM_LIKELIHOOD);
 
   /**
@@ -138,14 +138,14 @@ public:
    *
    * @return Output.
    */
-  IO1* getOutput();
+  IO1& getOutput();
 
   /**
    * Set output.
    *
    * @param out Output buffer.
    */
-  void setOutput(IO1* out);
+  void setOutput(IO1& out);
 
   /**
    * Optimise.
@@ -166,7 +166,7 @@ public:
    */
   template<Location L, class IO2>
   void optimise(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit = NULL,
+      const ScheduleIterator last, State<B,L>& s, IO2& inInit = NULL,
       const real simplexSizeRel = 0.1, const int stopSteps = 100,
       const real stopSize = 1.0e-4);
   //@}
@@ -193,7 +193,7 @@ public:
    */
   template<Location L, class IO2>
   void init(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, State<B,L>& s, IO2* inInit,
+      const ScheduleIterator last, State<B,L>& s, IO2& inInit,
       const real simplexSizeRel = 0.1);
 
   /**
@@ -246,7 +246,7 @@ private:
   /**
    * Output.
    */
-  IO1* out;
+  IO1& out;
 
   /**
    * Optimisation mode.
@@ -291,13 +291,12 @@ struct NelderMeadOptimiserFactory {
    */
   template<class B, class F, class IO1>
   static NelderMeadOptimiser<B,F,IO1>* create(B& m, F* filter = NULL,
-      IO1* out = NULL, const OptimiserMode mode = MAXIMUM_LIKELIHOOD) {
+      IO1& out = NULL, const OptimiserMode mode = MAXIMUM_LIKELIHOOD) {
     return new NelderMeadOptimiser<B,F,IO1>(m, filter, out, mode);
   }
 };
 }
 
-#include "../resampler/Resampler.hpp"
 #include "../math/misc.hpp"
 #include "../math/view.hpp"
 #include "../math/temp_vector.hpp"
@@ -305,7 +304,7 @@ struct NelderMeadOptimiserFactory {
 
 template<class B, class F, class IO1>
 bi::NelderMeadOptimiser<B,F,IO1>::NelderMeadOptimiser(B& m, F* filter,
-    IO1* out, const OptimiserMode mode) :
+    IO1& out, const OptimiserMode mode) :
     m(m), filter(filter), out(out), mode(mode), state(B::NP) {
   //
 }
@@ -321,12 +320,12 @@ void bi::NelderMeadOptimiser<B,F,IO1>::setFilter(F* filter) {
 }
 
 template<class B, class F, class IO1>
-IO1* bi::NelderMeadOptimiser<B,F,IO1>::getOutput() {
+IO1& bi::NelderMeadOptimiser<B,F,IO1>::getOutput() {
   return out;
 }
 
 template<class B, class F, class IO1>
-void bi::NelderMeadOptimiser<B,F,IO1>::setOutput(IO1* out) {
+void bi::NelderMeadOptimiser<B,F,IO1>::setOutput(IO1& out) {
   this->out = out;
 }
 
@@ -334,7 +333,7 @@ template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
 void bi::NelderMeadOptimiser<B,F,IO1>::optimise(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit, const real simplexSizeRel, const int stopSteps,
+    IO2& inInit, const real simplexSizeRel, const int stopSteps,
     const real stopSize) {
   int k = 0;
   init(rng, first, last, s, inInit, simplexSizeRel);
@@ -351,7 +350,7 @@ template<class B, class F, class IO1>
 template<bi::Location L, class IO2>
 void bi::NelderMeadOptimiser<B,F,IO1>::init(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, State<B,L>& s,
-    IO2* inInit, const real simplexSizeRel) {
+    IO2& inInit, const real simplexSizeRel) {
   /* first run of filter to get everything initialised properly */
   filter->filter(rng, first, last, s, inInit);
 
@@ -401,11 +400,9 @@ template<class B, class F, class IO1>
 template<bi::Location L>
 void bi::NelderMeadOptimiser<B,F,IO1>::output(const int k,
     const State<B,L>& s) {
-  if (out != NULL) {
-    out->writeState(P_VAR, 0, k, s.get(P_VAR));
-    out->writeValue(k, -state.minimizer->fval);
-    out->writeSize(k, state.size);
-  }
+  out.writeState(P_VAR, 0, k, s.get(P_VAR));
+  out.writeValue(k, -state.minimizer->fval);
+  out.writeSize(k, state.size);
 }
 
 template<class B, class F, class IO1>

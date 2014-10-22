@@ -13,11 +13,11 @@
 namespace bi {
 /**
  * Allocator for aligned memory. Useful to align buffers for ready loading
- * of SSE 128-bit values.
+ * of SIMD vectors.
  *
  * @ingroup primitive_allocators
  */
-template <class T, unsigned X = 16>
+template <class T, unsigned X = 32>
 class aligned_allocator {
 public:
   typedef size_t size_type;
@@ -57,7 +57,7 @@ public:
   pointer allocate(size_type num, const_pointer *hint = 0) {
     pointer ptr;
     int err = posix_memalign((void**)&ptr, X, num*sizeof(T));
-    BI_ASSERT_MSG(err == 0, "Aligned memory allocation failed");
+    BI_ERROR_MSG(err == 0, "Aligned memory allocation failed");
     return ptr;
   }
 

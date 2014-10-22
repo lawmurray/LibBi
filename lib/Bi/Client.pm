@@ -29,10 +29,6 @@ Pseudorandom number generator seed.
 Run with C<N> threads. If zero, the number of threads used is the
 default for OpenMP on the platform.
 
-=item C<--with-output> (default on)
-
-Enable output.
-
 =item C<--with-gdb> (default off)
 
 Run within the C<gdb> debugger.
@@ -163,7 +159,7 @@ use Carp::Assert;
 use Cwd qw(abs_path);
 use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Spec;
-use File::Path;
+use File::Path qw(mkpath);
 
 # options specific to execution
 our @EXEC_OPTIONS = (
@@ -193,19 +189,23 @@ our @EXEC_OPTIONS = (
 our @CLIENT_OPTIONS = (
     {
       name => 'init-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'input-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'obs-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'output-file',
-      type => 'string'
+      type => 'string',
+      default => ''
     },
     {
       name => 'init-ns',
@@ -246,11 +246,6 @@ our @CLIENT_OPTIONS = (
       name => 'nthreads',
       type => 'int',
       default => 0
-    },
-    {
-      name => 'with-output',
-      type => 'bool',
-      default => 1
     },
     {
       name => 'gperftools-file',
@@ -336,6 +331,12 @@ our @CLIENT_OPTIONS = (
       type => 'int',
       deprecated => 1,
       message => 'use --nthreads instead'
+    },
+    {
+      name => 'with-output',
+      type => 'bool',
+      deprecated => 1,
+      message => 'omit --output-file, or use --output-file "" to disable output instead'
     },
 );
 
@@ -627,10 +628,12 @@ sub exec {
     my $self = shift;
 
     my $builddir = $self->{_builddir};
+    my $exeext = ($^O eq 'cygwin' || $^O eq 'MSWin32') ? '.exe' : '';
+    my $binary = File::Spec->catfile($builddir, $self->get_binary . $exeext);
     my @argv;
     
     my $key;
-    foreach $key (keys %{$self->{_args}}) {
+    foreach $key (sort keys %{$self->{_args}}) {
         if (defined $self->{_args}->{$key}) {
             if (length($key) == 1) {
                 push(@argv, "-$key");
@@ -642,15 +645,15 @@ sub exec {
     }
 
     if ($self->get_named_exec_arg('with-cuda-gdb')) {
-        unshift(@argv, "libtool --mode=execute cuda-gdb -q -ex run --args $builddir/" . $self->{_binary});        
+        unshift(@argv, "cuda-gdb -q -ex run --args \"$binary\"");        
     } elsif ($self->get_named_exec_arg('with-cuda-memcheck')) {
-        unshift(@argv, "libtool --mode=execute cuda-memcheck $builddir/" . $self->{_binary});        
+        unshift(@argv, "cuda-memcheck \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-gdb')) {
-        unshift(@argv, "libtool --mode=execute gdb -q -ex run --args $builddir/" . $self->{_binary});
+        unshift(@argv, "gdb -q -ex run --args \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
-        unshift(@argv, "libtool --mode=execute valgrind --leak-check=full $builddir/" . $self->{_binary});
+        unshift(@argv, "valgrind --leak-check=full \"$binary\"");
     } else {
-        unshift(@argv, "$builddir/" . $self->{_binary});
+        unshift(@argv, "\"$binary\"");
     }
     if ($self->get_named_arg('with-mpi')) {
         my $np = '';

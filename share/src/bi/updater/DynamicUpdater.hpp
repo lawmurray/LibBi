@@ -90,7 +90,7 @@ template<class T1>
 void bi::DynamicUpdater<B,S>::update(const T1 t1, const T1 t2,
     State<B,ON_HOST>& s) {
   #ifdef ENABLE_SSE
-  if (s.size() % BI_SSE_SIZE == 0) {
+  if (s.size() % BI_SIMD_SIZE == 0) {
     DynamicUpdaterSSE<B,S>::update(t1, t2, s);
   } else {
     DynamicUpdaterHost<B,S>::update(t1, t2, s);

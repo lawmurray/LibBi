@@ -77,6 +77,10 @@ available this may give some performance improvement.
 
 Enable SSE code.
 
+=item C<--enable-avx> (default off)
+
+Enable AVX code.
+
 =item C<--enable-mpi> (default off)
 
 Enable MPI code.
@@ -108,7 +112,6 @@ use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Spec;
 use File::Slurp;
 use File::Path;
-use Fcntl qw(:flock);
 
 =item B<new>(I<name>, I<verbose>)
 
@@ -140,6 +143,7 @@ sub new {
         _cuda => 0,
         _gpu_cache => 0,
         _sse => 0,
+        _avx => 0,
         _mpi => 0,
         _vampir => 0,
         _single => 0,
@@ -148,7 +152,6 @@ sub new {
         _diagnostics => 0,
         _gperftools => 0,
         _tstamps => {},
-        _lockfh => undef,
     };
     bless $self, $class;
     
@@ -167,6 +170,8 @@ sub new {
         'disable-gpu-cache' => sub { $self->{_gpu_cache} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
         'disable-sse' => sub { $self->{_sse} = 0 },
+        'enable-avx' => sub { $self->{_avx} = 1 },
+        'disable-avx' => sub { $self->{_avx} = 0 },
         'enable-mpi' => sub { $self->{_mpi} = 1 },
         'disable-mpi' => sub { $self->{_mpi} = 0 },
         'enable-vampir' => sub { $self->{_vampir} = 1 },
@@ -184,10 +189,19 @@ sub new {
     );
     GetOptions(@args) || die("could not read command line arguments\n");
     
-    # can't support SSE when CUDA enabled at this stage
+    # can't support AVX or SSE when CUDA enabled at this stage
+    if ($self->{_cuda} && $self->{_avx}) {
+    	warn("AVX has been disabled, unsupported when CUDA also enabled\n");
+    	$self->{_avx} = 0;
+    }
     if ($self->{_cuda} && $self->{_sse}) {
     	warn("SSE has been disabled, unsupported when CUDA also enabled\n");
     	$self->{_sse} = 0;
+    }
+    
+    # some AVX instructions defer to SSE, so enable SSE too
+    if ($self->{_avx}) {
+    	$self->{_sse} = 1;
     }
     
     # enable mpirun automatically when --enable-mpi used
@@ -202,6 +216,7 @@ sub new {
     push(@builddir, 'cuda') if $self->{_cuda};
     push(@builddir, 'gpucache') if $self->{_gpu_cache};
     push(@builddir, 'sse') if $self->{_sse};
+    push(@builddir, 'avx') if $self->{_avx};
     push(@builddir, 'mpi') if $self->{_mpi};
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
@@ -241,11 +256,9 @@ sub build {
     my $self = shift;
     my $client = shift;
     
-    $self->_lock;
     $self->_autogen;
     $self->_configure;
     $self->_make($client);
-    $self->_unlock;
 }
 
 =item B<get_dir>
@@ -289,9 +302,9 @@ sub _autogen {
         if ($? == -1) {
             die("./autogen.sh failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./autogen.sh died with signal %d, see $builddir/autogen.log for details\n", $? & 127));
+            die(sprintf("./autogen.sh died with signal %d. See $builddir/autogen.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./autogen.sh failed with return code %d, see $builddir/autogen.log for details\n", $ret >> 8));
+            die(sprintf("./autogen.sh failed with return code %d. Make sure autoconf and automake are installed. See $builddir/autogen.log for details\n", $ret >> 8));
         }
         chdir($cwd) || warn("could not change back to working directory '$cwd'\n");
     }
@@ -314,15 +327,16 @@ sub _configure {
     my $linkflags = '';
     my $options = '';
 
-    if (!$self->{_force}) {
-        $options .= ' --config-cache';
-    }
+    #if (!$self->{_force}) {
+    #    $options .= ' --config-cache';
+    #}
 
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
     $options .= $self->{_gpu_cache} ? ' --enable-gpucache' : ' --disable-gpucache';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
+    $options .= $self->{_avx} ? ' --enable-avx' : ' --disable-avx';
     $options .= $self->{_mpi} ? ' --enable-mpi' : ' --disable-mpi';
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
@@ -358,9 +372,9 @@ sub _configure {
         if ($? == -1) {
             die("./configure failed to execute ($!)\n");
         } elsif ($? & 127) {
-            die(sprintf("./configure died with signal %d, see $builddir/configure.log and $builddir/config.log for details\n", $? & 127));
+            die(sprintf("./configure died with signal %d. See $builddir/configure.log and $builddir/config.log for details\n", $? & 127));
         } elsif ($ret != 0) {
-            die(sprintf("./configure failed with return code %d, see $builddir/configure.log and $builddir/config.log for details\n", $ret >> 8));
+            die(sprintf("./configure failed with return code %d." . _configure_whats_missing('configure.log') . " See $builddir/configure.log and $builddir/config.log for details\n", $ret >> 8));
         }        
         chdir($cwd);
     }
@@ -372,8 +386,9 @@ Run C<make> to compile the given client program.
 
 =over 4
 
-=item I<client> The name of the client program ('simulate', 'pf', 'pmmh',
-etc).
+=item I<client>
+
+The name of the client program.
 
 =back
 
@@ -384,7 +399,9 @@ sub _make {
     my $self = shift;
     my $client = shift;
     
-    my $target = $client . "_" . ($self->{_cuda} ? 'gpu' : 'cpu');
+    my $exeext = ($^O eq 'cygwin' || $^O eq 'MSWin32') ? '.exe' : '';
+    my $target = $client . "_" . ($self->{_cuda} ? 'gpu' : 'cpu') . $exeext;
+    my $link = $client . $exeext;
     my $options = '';
     if ($self->{_force}) {
         $options .= ' --always-make';
@@ -410,37 +427,8 @@ sub _make {
     } elsif ($ret != 0) {
         die(sprintf("make failed with return code %d, see $builddir/make.log for details\n", $ret >> 8));
     }
-    symlink($target, $client);
+    symlink($target, $link);
     chdir($cwd);
-}
-
-=item B<_lock>()
-
-Lock the build directory.
-
-=cut
-sub _lock {
-    my $self = shift;
-
-    my $fh;
-    my $file = File::Spec->catfile($self->get_dir, 'lock');
-    open($fh, ">", $file) || die("could not open lock file\n");
-    flock($fh, LOCK_EX) || die("could not lock build directory\n");
-    $self->{_lockfh} = $fh;
-}
-
-=item B<_unlock>()
-
-Unlock the build directory.
-
-=cut
-sub _unlock {
-    my $self = shift;
-
-    my $fh = $self->{_lockfh};
-    flock($fh, LOCK_UN);
-    close $fh;
-    $self->{_lockfh} = $fh;
 }
 
 =item B<_stamp>(I<filename>)
@@ -506,6 +494,23 @@ sub _last_modified {
     } else {
         return time;
     }
+}
+
+=item B<_configure_whats_missing>(I<configure_log>)
+
+Try to work out what might be missing when configure fails. Return an
+appropriate message.
+
+=cut
+sub _configure_whats_missing {
+    my $configure_log = shift;
+    
+    my @lines = read_file($configure_log);
+    my $helpful = '';
+    if ($lines[$#lines] =~ /^configure: error: (.*?)$/) {
+    	$helpful = " $1.";
+    }
+    return $helpful;
 }
 
 1;

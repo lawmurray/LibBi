@@ -25,38 +25,30 @@ the following additional options:
 
 =over 4
 
-=item C<--nruns> (default 1)
+=item C<--Ps> (default 1)
 
-Number of samples to draw.
+Number of sizes to use. The first size is set to the value of C<--nparticles>,
+each subsequent size multiples this by two.
 
-=item C<--ninit> (default 1)
+=item C<--reps> (default 100)
 
-Number of initialisation sets, starting from C<--init-np> in C<--init-file>,
-on which to test.
+Number of trials on each size.
 
-=item C<--nobs> (default 1)
 
-Number of observation sets, starting from C<--obs-np> in C<--obs-file>, on
-which to test.
 
 =back
 
 =cut
 our @CLIENT_OPTIONS = (
     {
-      name => 'nruns',
+      name => 'Ps',
       type => 'int',
       default => 1
     },
     {
-      name => 'ninit',
+      name => 'reps',
       type => 'int',
-      default => 1
-    },
-    {
-      name => 'nobs',
-      type => 'int',
-      default => 1
+      default => 100
     }
 );
 
@@ -75,9 +67,8 @@ sub process_args {
     my $binary;
     if ($filter eq 'kalman') {
         $self->set_named_arg('with-transform-extended', 1);
-    } else {
-        $binary = 'test_filter';
     }
+    $binary = 'test_filter';
     $self->{_binary} = $binary;
 }
 

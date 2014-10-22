@@ -12,11 +12,51 @@
 #include "../traits/var_traits.hpp"
 #include "../math/loc_vector.hpp"
 #include "../math/loc_matrix.hpp"
+#include "../math/loc_temp_vector.hpp"
+#include "../math/loc_temp_matrix.hpp"
+
+#include "boost/serialization/split_member.hpp"
+
+namespace bi {
+/**
+ * Round up number of trajectories as required by implementation.
+ *
+ * @param P Minimum number of trajectories.
+ *
+ * @return Number of trajectories.
+ *
+ * The following rules are applied:
+ *
+ * @li for @p L on device, @p P must be either less than 32, or a
+ * multiple of 32, and
+ * @li for @p L on host with SSE enabled, @p P must be zero, one or a
+ * multiple of four (single precision) or two (double precision).
+ */
+int roundup(const int P);
+}
+
 #ifdef ENABLE_SSE
 #include "../sse/math/scalar.hpp"
 #endif
 
-#include "boost/serialization/split_member.hpp"
+inline int bi::roundup(const int P) {
+  int P1 = P;
+
+  #if defined(ENABLE_CUDA)
+  /* either < 32 or a multiple of 32 number of trajectories required */
+  if (P1 > 32) {
+    P1 = ((P1 + 31) / 32) * 32;
+  }
+  #elif defined(ENABLE_SSE)
+  /* zero, one or a multiple of 4 (single precision) or 2 (double
+   * precision) required */
+  if (P1 > 1) {
+    P1 = ((P1 + BI_SIMD_SIZE - 1)/BI_SIMD_SIZE)*BI_SIMD_SIZE;
+  }
+  #endif
+
+  return P1;
+}
 
 namespace bi {
 /**
@@ -35,11 +75,26 @@ namespace bi {
 template<class B, Location L>
 class State {
 public:
+  static const Location location = L;
+  static const bool on_device = (L == ON_DEVICE);
+
   typedef real value_type;
-  typedef typename loc_matrix<L,value_type,-1,-1,-1,1>::type matrix_type;
+  typedef typename loc_vector<L,value_type>::type vector_type;
+  typedef typename loc_matrix<L,value_type>::type matrix_type;
+  typedef typename vector_type::vector_reference_type vector_reference_type;
   typedef typename matrix_type::matrix_reference_type matrix_reference_type;
 
-  static const bool on_device = (L == ON_DEVICE);
+  typedef typename loc_temp_vector<L,value_type>::type temp_vector_type;
+  typedef typename loc_temp_matrix<L,value_type>::type temp_matrix_type;
+
+  typedef int int_value_type;
+  typedef typename loc_vector<L,int_value_type>::type int_vector_type;
+  typedef typename loc_matrix<L,int_value_type>::type int_matrix_type;
+  typedef typename int_vector_type::vector_reference_type int_vector_reference_type;
+  typedef typename int_matrix_type::matrix_reference_type int_matrix_reference_type;
+
+  typedef typename loc_temp_vector<L,int_value_type>::type temp_int_vector_type;
+  typedef typename loc_temp_matrix<L,int_value_type>::type temp_int_matrix_type;
 
   /**
    * Constructor.
@@ -47,7 +102,7 @@ public:
    * @param P Number of trajectories to store.
    */
   CUDA_FUNC_BOTH
-  State(const int P = 0);
+  State(const int P = 1);
 
   /**
    * Shallow copy constructor.
@@ -65,6 +120,11 @@ public:
    */
   template<Location L2>
   State<B,L>& operator=(const State<B,L2>& o);
+
+  /**
+   * Swap.
+   */
+  void swap(State<B,L>& o);
 
   /**
    * Set the active range of trajectories in the state.
@@ -92,17 +152,9 @@ public:
   int size() const;
 
   /**
-   * Resize buffers.
-   *
-   * @param P Number of trajectories to store.
-   * @param preserve True to preserve existing values, false otherwise.
-   *
-   * Resizes the state to store at least @p P number of trajectories.
-   * Storage for additional trajectories may be added in some contexts,
-   * see #roundup. The active range will be set to the full buffer, with
-   * previously active trajectories optionally preserved.
+   * Trim buffers down to the active range.
    */
-  void resize(const int P, const bool preserve = true);
+  void trim();
 
   /**
    * Maximum number of trajectories that can be presently stored in the
@@ -118,10 +170,8 @@ public:
    * @param preserve True to preserve existing values, false otherwise.
    *
    * Resizes the state to store at least @p maxP number of trajectories.
-   * Storage for additional trajectories may be added in some contexts,
-   * see #roundup. This affects the maximum size (see #maxSize), but not
-   * the number of trajectories currently active (see #size and #setRange).
-   * The active range of trajectories will be shrunk if necessary.
+   * This affects the maximum size (see #sizeMax), and if this size is
+   * reduced, may truncate the active range.
    */
   void resizeMax(const int maxP, const bool preserve = true);
 
@@ -324,23 +374,7 @@ public:
   CUDA_FUNC_BOTH
   const matrix_reference_type getDyn() const;
 
-  /**
-   * Round up number of trajectories as required by implementation.
-   *
-   * @param P Minimum number of trajectories.
-   *
-   * @return Number of trajectories.
-   *
-   * The following rules are applied:
-   *
-   * @li for @p L on device, @p P must be either less than 32, or a
-   * multiple of 32, and
-   * @li for @p L on host with SSE enabled, @p P must be zero, one or a
-   * multiple of four (single precision) or two (double precision).
-   */
-  static CUDA_FUNC_BOTH int roundup(const int P);
-
-private:
+protected:
   /* net sizes, for convenience */
   static const int NR = B::NR;
   static const int ND = B::ND;
@@ -376,6 +410,7 @@ private:
    */
   int P;
 
+private:
   /**
    * Serialize.
    */
@@ -399,28 +434,32 @@ private:
 
 #include "../math/view.hpp"
 
-#include "boost/typeof/typeof.hpp"
-
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P) :
-    Xdn(roundup(P), NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
-    Kdn(1, NP + NPX + NF + NP + 2*NO),  // includes py- and oy-vars
-    p(0), P(roundup(P)) {
+    Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
+    Kdn(1, NP + NPX + NF + NP + 2 * NO),  // includes py- and oy-vars
+    p(0), P(P) {
+  /* pre-condition */
+  BI_ASSERT(P == roundup(P));
+
   clear();
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
     Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
-  std::copy(o.builtin, o.builtin + 3, builtin);
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
 }
 
 template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  std::copy(o.builtin, o.builtin + 3, builtin);
-
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
   return *this;
 }
 
@@ -429,9 +468,19 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
-  std::copy(o.builtin, o.builtin + 3, builtin);
-
+  for (int i = 0; i < NB; ++i) {
+    builtin[i] = o.builtin[i];
+  }
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::State<B,L>::swap(State<B,L>& o) {
+  Xdn.swap(o.Xdn);
+  Kdn.swap(o.Kdn);
+  for (int i = 0; i < NB; ++i) {
+    std::swap(builtin[i], o.builtin[i]);
+  }
 }
 
 template<class B, bi::Location L>
@@ -439,10 +488,7 @@ inline void bi::State<B,L>::setRange(const int p, const int P) {
   /* pre-condition */
   BI_ASSERT(p >= 0 && p == roundup(p));
   BI_ASSERT(P >= 0 && P == roundup(P));
-
-  if (p + P > sizeMax()) {
-    resizeMax(p + P, true);
-  }
+  BI_ASSERT(p + P <= sizeMax());
 
   this->p = p;
   this->P = P;
@@ -459,23 +505,9 @@ inline int bi::State<B,L>::size() const {
 }
 
 template<class B, bi::Location L>
-inline void bi::State<B,L>::resize(const int P, const bool preserve) {
-  const int P1 = roundup(P);
-
-  if (preserve && p != 0) {
-    /* move active range to start of buffer, being careful of overlap */
-    int n = 0, N = bi::min(this->P, P1);
-    while (p < N - n) {
-      /* be careful of overlap */
-      rows(Xdn, n, p) = rows(Xdn, p + n, p);
-      n += p;
-    }
-    rows(Xdn, n, N - n) = rows(Xdn, p + n, N - n);
-  }
-
-  Xdn.resize(P1, Xdn.size2(), preserve);
+inline void bi::State<B,L>::trim() {
+  Xdn.trim(p, P, 0, Xdn.size2());
   p = 0;
-  this->P = P1;
 }
 
 template<class B, bi::Location L>
@@ -485,20 +517,21 @@ inline int bi::State<B,L>::sizeMax() const {
 
 template<class B, bi::Location L>
 inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
-  const int maxP1 = roundup(maxP);
+  /* pre-condition */
+  BI_ASSERT(maxP == roundup(maxP));
 
-  Xdn.resize(maxP1, Xdn.size2(), preserve);
-  if (p > sizeMax()) {
-    p = sizeMax();
+  Xdn.resize(maxP, Xdn.size2(), preserve);
+  if (p > maxP) {
+    p = maxP;
   }
-  if (p + P > sizeMax()) {
-    P = sizeMax() - p;
+  if (p + P > maxP) {
+    P = maxP - p;
   }
 }
 
 template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
-  rows(Xdn, 0, P).clear();
+  rows(Xdn, p, P).clear();
   Kdn.clear();
 }
 
@@ -815,27 +848,6 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
 template<class B, bi::Location L>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() const {
   return subrange(Xdn.ref(), p, P, 0, NR + ND);
-}
-
-template<class B, bi::Location L>
-int bi::State<B,L>::roundup(const int P) {
-  int P1 = P;
-  if (L == ON_DEVICE) {
-    /* either < 32 or a multiple of 32 number of trajectories required */
-    if (P1 > 32) {
-      P1 = ((P1 + 31) / 32) * 32;
-    }
-  } else {
-#ifdef ENABLE_SSE
-    /* zero, one or a multiple of 4 (single precision) or 2 (double
-     * precision) required */
-    if (P1 > 1) {
-      P1 = ((P1 + BI_SSE_SIZE - 1)/BI_SSE_SIZE)*BI_SSE_SIZE;
-    }
-#endif
-  }
-
-  return P1;
 }
 
 template<class B, bi::Location L>

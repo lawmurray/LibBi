@@ -93,7 +93,7 @@ sub visit_after {
     my $node = shift;
     my $types = shift;
     my $nodes = shift;
-    
+        
     # recurse through inlines too
     if ($node->isa('Bi::Expression::InlineIdentifier')) {
         $node->get_inline->get_expr->accept($self, $types, $nodes);

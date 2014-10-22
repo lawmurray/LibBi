@@ -24,6 +24,11 @@ enum CholeskyStrategy {
   ADJUST_DIAGONAL,
 
   /**
+   * Use eigendecomposition and eliminate negatives.
+   */
+  ZERO_NEGATIVE_EIGENVALUES,
+
+  /**
    * Do nothing, fail.
    */
   FAIL
@@ -65,9 +70,8 @@ void transpose(const M1 A, M2 B);
  * @ingroup math_op
  */
 template<class M1, class M2>
-void chol(const M1 A, M2 U, char uplo = 'U',
-    const CholeskyStrategy strat = ADJUST_DIAGONAL)
-    throw (CholeskyException);
+void chol(const M1 A, M2 U, char uplo = 'U', const CholeskyStrategy strat =
+    ADJUST_DIAGONAL) throw (CholeskyException);
 
 /**
  * Scalar multiply and matrix add.
@@ -129,8 +133,7 @@ void condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2, const M3 C,
  * @param[out] p3 \f$\int_{-\infty}^{\infty} p(X_2|\mathbf{x}_1)
  * p(\mathbf{x}_1) \,d\mathbf{x}_1\f$.
  */
-template<class V1, class M1, class V2, class M2, class M3, class V4,
-    class M4>
+template<class V1, class M1, class V2, class M2, class M3, class V4, class M4>
 void marginalise(V1 mu1, M1 U1, const V2 mu2, const M2 U2, const M3 C,
     const V4 mu3, const M4 U3);
 
@@ -320,7 +323,7 @@ void symv(const typename M1::value_type alpha, const M1 A, const V1 x,
 template<Location L, class T1>
 struct symv_impl {
   template<class M1, class V1, class V2>
-  static void func(const  T1 alpha, const M1 A, const V1 x, const T1 beta,
+  static void func(const T1 alpha, const M1 A, const V1 x, const T1 beta,
       V2 y, const char uplo);
 };
 
@@ -518,8 +521,8 @@ struct syrk_impl {
  * @ingroup math_op
  */
 template<class M1, class V1>
-void trsv(const M1 A, V1 x, const char uplo = 'U',
-    const char trans = 'N', const char diag = 'N');
+void trsv(const M1 A, V1 x, const char uplo = 'U', const char trans = 'N',
+    const char diag = 'N');
 
 /**
  * @internal
@@ -591,12 +594,39 @@ struct potrs_impl {
   template<class M1, class M2>
   static void func(const M1 U, M2 X, char uplo) throw (CholeskyException);
 };
+
+/**
+ * Eigenvalues and eigenvectors.
+ *
+ * @ingroup math_op
+ */
+template<class M1, class V1, class M2, class V2, class V3, class V4, class V5>
+void syevx(char jobz, char range, char uplo, M1 A, typename M1::value_type vl,
+    typename M1::value_type vu, int il, int iu,
+    typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work, V3 rwork,
+    V4 iwork, V5 ifail) throw (EigenException);
+
+/**
+ * @internal
+ */
+template<Location L, class T1>
+struct syevx_impl {
+  template<class M1, class V1, class M2, class V2, class V3, class V4,
+      class V5>
+  static void func(const char jobz, const char range, const char uplo, M1 A,
+      const typename M1::value_type vl, const typename M1::value_type vu,
+      const int il, const int iu, const typename M1::value_type abstol,
+      int* m, V1 w, M2 Z, V2 work, V3 rwork, V4 iwork, V5 ifail)
+          throw (EigenException);
+};
 //@}
 }
 
 #include "view.hpp"
 #include "sim_temp_vector.hpp"
 #include "sim_temp_matrix.hpp"
+#include "loc_temp_vector.hpp"
+#include "loc_temp_matrix.hpp"
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 #include "../typelist/equals.hpp"
@@ -619,15 +649,19 @@ inline void bi::transpose(const M1 A, M2 B) {
 
   int i;
   for (i = 0; i < A.size1(); ++i) {
-    column(B.ref(),i) = row(A.ref(),i);
+    column(B.ref(), i) = row(A.ref(), i);
   }
 }
 
 template<class M1, class M2>
 void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
     throw (CholeskyException) {
+  static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
+  typedef typename loc_temp_vector<L,T1>::type temp_vector_type;
+  typedef typename loc_temp_vector<L,int>::type temp_int_vector_type;
+  typedef typename loc_temp_matrix<L,T1>::type temp_matrix_type;
 
   /* pre-conditions */
   BI_ASSERT(uplo == 'U' || uplo == 'L');
@@ -635,6 +669,8 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
   BI_ASSERT(A.size2() == U.size2());
   BI_ASSERT(U.size1() == U.size2());
   BI_ASSERT(U.inc() == 1);
+
+  const int N = A.size1();
 
   if (uplo == 'U') {
     set_upper_triangle(U, A);
@@ -644,17 +680,19 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
   try {
     potrf(U, uplo);
   } catch (CholeskyException e) {
-    if (strat == ADJUST_DIAGONAL) {
-      BOOST_AUTO(d, diagonal(U));
+    BOOST_AUTO(d, diagonal(U));
+    T1 largest = amax_reduce(d);
 
+    if (largest <= 0.0) {
+      U.clear();
+    } else if (strat == ADJUST_DIAGONAL) {
       bool success = false;
       T1 smallest = amin_reduce(d);
-      T1 largest = amax_reduce(d);
       T1 factor;
-      if (1.0e-6*smallest > 0.0) {
-        factor = 1.0e-6*smallest;
+      if (1.0e-9 * smallest > 0.0) {
+        factor = 1.0e-9 * smallest;
       } else {
-        factor = 1.0e-6;
+        factor = 1.0e-9;
       }
 
       while (!success) {
@@ -674,6 +712,19 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
           }
         }
       }
+    } else if (strat == ZERO_NEGATIVE_EIGENVALUES) {
+      temp_vector_type w(N), work(8 * N), rwork(8 * N);  ///@todo Query for optimal size of work, see LAPACK docs
+      temp_int_vector_type iwork(5 * N), ifail(N);
+      temp_matrix_type Z(N, N), Sigma(N, N);
+      int m;
+
+      syevx('V', 'A', uplo, A, 0.0, 0.0, 0, 0, 0.0, &m, w, Z, work, rwork,
+          iwork, ifail);
+      maxscal_elements(w, 0.0, w);
+      sqrt_elements(w, w);
+      gdmm(1.0, w, Z, 0.0, U);
+      syrk(1.0, U, 0.0, Sigma, 'U', 'T');
+      chol(Sigma, U, 'U', FAIL);
     } else {
       throw e;
     }
@@ -693,7 +744,7 @@ void bi::matrix_axpy(const typename M1::value_type a, const M1 X, M2 Y,
     /* do column-by-column */
     int j;
     for (j = 0; j < X.size2(); ++j) {
-      axpy(a, column(X,j), column(Y,j), clear);
+      axpy(a, column(X, j), column(Y, j), clear);
     }
   }
 }
@@ -707,14 +758,14 @@ inline void bi::matrix_scal(const typename M1::value_type alpha, M1 X) {
     /* do column-by-column */
     int j;
     for (j = 0; j < X.size2(); ++j) {
-      scal(alpha, column(X,j));
+      scal(alpha, column(X, j));
     }
   }
 }
 
 template<class V1, class M1, class V2, class M2, class M3, class V3>
-void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
-    const M3 C, const V3 x2) {
+void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2, const M3 C,
+    const V3 x2) {
   /* pre-condition */
   BI_ASSERT(U1.size1() == U1.size2());
   BI_ASSERT(U2.size1() == U2.size2());
@@ -749,19 +800,27 @@ void bi::condition(V1 mu1, M1 U1, const V2 mu2, const M2 U2,
    * \mathbf{K}\mathbf{K}^T.\f]
    */
   if (K.size2() < U1.size2()) {
-    chkdn(U1, K, b);
+    try {
+      chkdn(U1, K, b);
+    } catch (CholeskyException e) {
+      typename sim_temp_matrix<M1>::type Sigma1(U1.size1(), U1.size2());
+      Sigma1.clear();
+      syrk(1.0, U1, 0.0, Sigma1, 'U', 'T');
+      syrk(-1.0, K, 1.0, Sigma1, 'U', 'N');
+
+      chol(Sigma1, U1, 'U');
+    }
   } else {
     typename sim_temp_matrix<M1>::type Sigma1(U1.size1(), U1.size2());
     Sigma1.clear();
     syrk(1.0, U1, 0.0, Sigma1, 'U', 'T');
     syrk(-1.0, K, 1.0, Sigma1, 'U', 'N');
 
-    chol(Sigma1, U1);
+    chol(Sigma1, U1, 'U');
   }
 }
 
-template<class V1, class M1, class V2, class M2, class M3, class V4,
-    class M4>
+template<class V1, class M1, class V2, class M2, class M3, class V4, class M4>
 void bi::marginalise(V1 mu1, M1 U1, const V2 mu2, const M2 U2, const M3 C,
     const V4 mu3, const M4 U3) {
   /* pre-conditions */
@@ -811,7 +870,7 @@ template<class M1, class M2, class V2>
 void bi::chkup(M1 U, M2 A, V2 b) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
-    ch1up(U, column(A,j), b);
+    ch1up(U, column(A, j), b);
   }
 }
 
@@ -837,7 +896,7 @@ template<class M1, class M2, class V2>
 void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyException) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
-    ch1dn(U, column(A,j), b);
+    ch1dn(U, column(A, j), b);
   }
 }
 
@@ -864,7 +923,7 @@ inline void bi::scal(typename V1::value_type alpha, V1 x) {
   static const Location L = V1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
 
-	scal_impl<L,T1>::func(alpha, x);
+  scal_impl<L,T1>::func(alpha, x);
 }
 
 template<class V1, class V2>
@@ -896,7 +955,8 @@ inline typename V1::size_type bi::iamax(const V1 x) {
 }
 
 template<class V1, class V2>
-inline void bi::axpy(const typename V1::value_type a, const V1 x, V2 y, const bool clear) {
+inline void bi::axpy(const typename V1::value_type a, const V1 x, V2 y,
+    const bool clear) {
   static const Location L = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -910,7 +970,8 @@ inline void bi::axpy(const typename V1::value_type a, const V1 x, V2 y, const bo
 }
 
 template<class M1, class V1, class V2>
-void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x, const typename V2::value_type beta, V2 y, const char transA) {
+void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char transA) {
   static const Location L = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
@@ -920,8 +981,10 @@ void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x, const
 
   /* pre-conditions */
   BI_ASSERT(transA == 'N' || transA == 'T');
-  BI_ASSERT(transA != 'N' || (A.size2() == x.size() && A.size1() == y.size()));
-  BI_ASSERT(transA != 'T' || (A.size1() == x.size() && A.size2() == y.size()));
+  BI_ASSERT(
+      transA != 'N' || (A.size2() == x.size() && A.size1() == y.size()));
+  BI_ASSERT(
+      transA != 'T' || (A.size1() == x.size() && A.size2() == y.size()));
   BI_ASSERT(A.inc() == 1);
   BI_ASSERT((equals<T1,T2>::value));
   BI_ASSERT((equals<T2,T3>::value));
@@ -930,7 +993,8 @@ void bi::gemv(const typename M1::value_type alpha, const M1 A, const V1 x, const
 }
 
 template<class M1, class V1, class V2>
-void bi::symv(const typename M1::value_type alpha, const M1 A, const V1 x, const typename V2::value_type beta, V2 y, const char uplo = 'N') {
+void bi::symv(const typename M1::value_type alpha, const M1 A, const V1 x,
+    const typename V2::value_type beta, V2 y, const char uplo) {
   static const Location L = V2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
@@ -967,7 +1031,8 @@ void bi::trmv(const M1 A, V1 x, const char uplo, const char transA) {
 }
 
 template<class V1, class V2, class V3>
-void bi::gdmv(const typename V1::value_type alpha, const V1 A, const V2 x, const typename V3::value_type beta, V3 y) {
+void bi::gdmv(const typename V1::value_type alpha, const V1 A, const V2 x,
+    const typename V3::value_type beta, V3 y) {
   static const Location L = V3::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -985,7 +1050,9 @@ void bi::gdmv(const typename V1::value_type alpha, const V1 A, const V2 x, const
 }
 
 template<class M1, class M2, class M3>
-void bi::gemm(const typename M1::value_type alpha, const M1 A, const M2 X, const typename M3::value_type beta, M3 Y, const char transA, const char transX) {
+void bi::gemm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char transA,
+    const char transX) {
   static const Location L = M3::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -994,14 +1061,22 @@ void bi::gemm(const typename M1::value_type alpha, const M1 A, const M2 X, const
   /* pre-conditions */
   BI_ASSERT(transA == 'N' || transA == 'T');
   BI_ASSERT(transX == 'N' || transX == 'T');
-  BI_ASSERT(!(transA == 'N' && transX == 'N') ||
-      (A.size2() == X.size1() && A.size1() == Y.size1() && X.size2() == Y.size2()));
-  BI_ASSERT(!(transA == 'T' && transX == 'T') ||
-      (A.size1() == X.size2() && A.size2() == Y.size1() && X.size1() == Y.size2()));
-  BI_ASSERT(!(transA == 'N' && transX == 'T') ||
-      (A.size2() == X.size2() && A.size1() == Y.size1() && X.size1() == Y.size2()));
-  BI_ASSERT(!(transA == 'T' && transX == 'N') ||
-      (A.size1() == X.size1() && A.size2() == Y.size1() && X.size2() == Y.size2()));
+  BI_ASSERT(
+      !(transA == 'N' && transX == 'N')
+          || (A.size2() == X.size1() && A.size1() == Y.size1()
+              && X.size2() == Y.size2()));
+  BI_ASSERT(
+      !(transA == 'T' && transX == 'T')
+          || (A.size1() == X.size2() && A.size2() == Y.size1()
+              && X.size1() == Y.size2()));
+  BI_ASSERT(
+      !(transA == 'N' && transX == 'T')
+          || (A.size2() == X.size2() && A.size1() == Y.size1()
+              && X.size1() == Y.size2()));
+  BI_ASSERT(
+      !(transA == 'T' && transX == 'N')
+          || (A.size1() == X.size1() && A.size2() == Y.size1()
+              && X.size2() == Y.size2()));
   BI_ASSERT(A.inc() == 1);
   BI_ASSERT(X.inc() == 1);
   BI_ASSERT(Y.inc() == 1);
@@ -1014,7 +1089,9 @@ void bi::gemm(const typename M1::value_type alpha, const M1 A, const M2 X, const
 }
 
 template<class M1, class M2, class M3>
-void bi::symm(const typename M1::value_type alpha, const M1 A, const M2 X, const typename M3::value_type beta, M3 Y, const char side, const char uplo) {
+void bi::symm(const typename M1::value_type alpha, const M1 A, const M2 X,
+    const typename M3::value_type beta, M3 Y, const char side,
+    const char uplo) {
   static const Location L = M3::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -1023,10 +1100,14 @@ void bi::symm(const typename M1::value_type alpha, const M1 A, const M2 X, const
   /* pre-conditions */
   BI_ASSERT(side == 'L' || side == 'R');
   BI_ASSERT(uplo == 'U' || uplo == 'L');
-  BI_ASSERT(!(side == 'L') ||
-      (A.size2() == X.size1() && A.size1() == Y.size1() && X.size2() == Y.size2()));
-  BI_ASSERT(!(side == 'R') ||
-      (X.size2() == A.size1() && X.size1() == Y.size1() && A.size2() == Y.size2()));
+  BI_ASSERT(
+      !(side == 'L')
+          || (A.size2() == X.size1() && A.size1() == Y.size1()
+              && X.size2() == Y.size2()));
+  BI_ASSERT(
+      !(side == 'R')
+          || (X.size2() == A.size1() && X.size1() == Y.size1()
+              && A.size2() == Y.size2()));
   BI_ASSERT(A.inc() == 1);
   BI_ASSERT(X.inc() == 1);
   BI_ASSERT(Y.inc() == 1);
@@ -1039,7 +1120,8 @@ void bi::symm(const typename M1::value_type alpha, const M1 A, const M2 X, const
 }
 
 template<class M1, class M2>
-void bi::trmm(const typename M1::value_type alpha, const M1 A, M2 B, const char side, const char uplo, const char transA) {
+void bi::trmm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side, const char uplo, const char transA) {
   static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -1065,27 +1147,32 @@ void bi::gdmm(const typename V1::value_type alpha, const V1 A, const M1 X,
     const typename M2::value_type beta, M2 Y, const char side) {
   /* pre-conditions */
   BI_ASSERT(side == 'L' || side == 'R');
-  BI_ASSERT(side != 'L' || (A.size() == Y.size1() && Y.size1() == A.size() &&
-      Y.size2() == X.size2()));
-  BI_ASSERT(side != 'R' || (X.size2() == A.size() && Y.size1() == X.size1() &&
-      Y.size2() == A.size()));
+  BI_ASSERT(
+      side != 'L'
+          || (A.size() == Y.size1() && Y.size1() == A.size()
+              && Y.size2() == X.size2()));
+  BI_ASSERT(
+      side != 'R'
+          || (X.size2() == A.size() && Y.size1() == X.size1()
+              && Y.size2() == A.size()));
 
   if (side == 'L') {
     /* gdmv on each column */
     for (int j = 0; j < X.size2(); ++j) {
-      gdmv(alpha, A, column(X,j), beta, column(Y,j));
+      gdmv(alpha, A, column(X, j), beta, column(Y, j));
     }
   } else {
     /* gdmv on each row */
     ///@todo Improve cache use
     for (int i = 0; i < X.size1(); ++i) {
-      gdmv(alpha, A, row(X,i), beta, row(Y,i));
+      gdmv(alpha, A, row(X, i), beta, row(Y, i));
     }
   }
 }
 
 template<class V1, class V2, class M1>
-void bi::ger(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A, const bool clear) {
+void bi::ger(const typename V1::value_type alpha, const V1 x, const V2 y,
+    M1 A, const bool clear) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -1104,7 +1191,8 @@ void bi::ger(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A, 
 }
 
 template<class V1, class M1>
-void bi::syr(const typename V1::value_type alpha, const V1 x, M1 A, const char uplo, const bool clear) {
+void bi::syr(const typename V1::value_type alpha, const V1 x, M1 A,
+    const char uplo, const bool clear) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename M1::value_type T2;
@@ -1121,7 +1209,8 @@ void bi::syr(const typename V1::value_type alpha, const V1 x, M1 A, const char u
 }
 
 template<class V1, class V2, class M1>
-void bi::syr2(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A, const char uplo, const bool clear) {
+void bi::syr2(const typename V1::value_type alpha, const V1 x, const V2 y,
+    M1 A, const char uplo, const bool clear) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename V1::value_type T1;
   typedef typename V2::value_type T2;
@@ -1139,7 +1228,9 @@ void bi::syr2(const typename V1::value_type alpha, const V1 x, const V2 y, M1 A,
 }
 
 template<class M1, class M2>
-void bi::syrk(const typename M1::value_type alpha, const M1 A, const typename M2::value_type beta, M2 C, const char uplo, const char trans) {
+void bi::syrk(const typename M1::value_type alpha, const M1 A,
+    const typename M2::value_type beta, M2 C, const char uplo,
+    const char trans) {
   static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -1156,6 +1247,50 @@ void bi::syrk(const typename M1::value_type alpha, const M1 A, const typename M2
   BI_ASSERT((equals<T1,T2>::value));
 
   syrk_impl<L,T2>::func(alpha, A, beta, C, uplo, trans);
+}
+
+template<class M1, class V1>
+void bi::trsv(const M1 A, V1 x, const char uplo, const char trans, const
+char diag) {
+  static const Location L = V1::on_device ? ON_DEVICE : ON_HOST;
+  typedef typename M1::value_type T1;
+  typedef typename V1::value_type T2;
+
+  /* pre-conditions */
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(trans == 'N' || trans == 'T');
+  BI_ASSERT(diag == 'U' || diag == 'N');
+  BI_ASSERT(!(trans == 'T') || A.size1() == x.size());
+  BI_ASSERT(!(trans == 'N') || A.size2() == x.size());
+  BI_ASSERT(A.inc() == 1);
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == V1::on_device);
+
+  trsv_impl<L,T2>::func(A, x, uplo, trans, diag);
+}
+
+template<class M1, class M2>
+void bi::trsm(const typename M1::value_type alpha, const M1 A, M2 B,
+    const char side, const char uplo, const char trans, const char diag) {
+  static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
+  typedef typename M1::value_type T1;
+  typedef typename M2::value_type T2;
+
+  /* pre-conditions */
+  BI_ASSERT(side == 'L' || side == 'R');
+  BI_ASSERT(uplo == 'U' || uplo == 'L');
+  BI_ASSERT(trans == 'N' || trans == 'T');
+  BI_ASSERT(diag == 'U' || diag == 'N');
+  BI_ASSERT(!(trans == 'T' && side == 'L') || A.size1() == B.size1());
+  BI_ASSERT(!(trans == 'N' && side == 'L') || A.size2() == B.size1());
+  BI_ASSERT(!(trans == 'T' && side == 'R') || B.size2() == A.size2());
+  BI_ASSERT(!(trans == 'N' && side == 'R') || B.size2() == A.size1());
+  BI_ASSERT(A.inc() == 1);
+  BI_ASSERT(B.inc() == 1);
+  BI_ASSERT((equals<T1,T2>::value));
+  BI_ASSERT(M1::on_device == M2::on_device);
+
+  trsm_impl<L,T2>::func(alpha, A, B, side, uplo, trans, diag);
 }
 
 template<class M1>
@@ -1188,47 +1323,21 @@ void bi::potrs(const M1 U, M2 X, char uplo) throw (CholeskyException) {
   potrs_impl<L,T2>::func(U, X, uplo);
 }
 
-template<class M1, class V1>
-void bi::trsv(const M1 A, V1 x, const char uplo, const char trans, const
-    char diag) {
-  static const Location L = V1::on_device ? ON_DEVICE : ON_HOST;
+template<class M1, class V1, class M2, class V2, class V3, class V4, class V5>
+void bi::syevx(char jobz, char range, char uplo, M1 A,
+    typename M1::value_type vl, typename M1::value_type vu, int il, int iu,
+    typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work, V3 rwork,
+    V4 iwork, V5 ifail) throw (EigenException) {
+  static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
-  typedef typename V1::value_type T2;
 
   /* pre-conditions */
+  BI_ASSERT(jobz == 'N' || jobz == 'V');
+  BI_ASSERT(range == 'A' || range == 'V' || range == 'I');
   BI_ASSERT(uplo == 'U' || uplo == 'L');
-  BI_ASSERT(trans == 'N' || trans == 'T');
-  BI_ASSERT(diag == 'U' || diag == 'N');
-  BI_ASSERT(!(trans == 'T')  || A.size1() == x.size());
-  BI_ASSERT(!(trans == 'N')  || A.size2() == x.size());
-  BI_ASSERT(A.inc() == 1);
-  BI_ASSERT((equals<T1,T2>::value));
-  BI_ASSERT(M1::on_device == V1::on_device);
 
-  trsv_impl<L,T2>::func(A, x, uplo, trans, diag);
-}
-
-template<class M1, class M2>
-void bi::trsm(const typename M1::value_type alpha, const M1 A, M2 B, const char side, const char uplo, const char trans, const char diag) {
-  static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
-  typedef typename M1::value_type T1;
-  typedef typename M2::value_type T2;
-
-  /* pre-conditions */
-  BI_ASSERT(side == 'L' || side == 'R');
-  BI_ASSERT(uplo == 'U' || uplo == 'L');
-  BI_ASSERT(trans == 'N' || trans == 'T');
-  BI_ASSERT(diag == 'U' || diag == 'N');
-  BI_ASSERT(!(trans == 'T' && side == 'L')  || A.size1() == B.size1());
-  BI_ASSERT(!(trans == 'N' && side == 'L')  || A.size2() == B.size1());
-  BI_ASSERT(!(trans == 'T' && side == 'R')  || B.size2() == A.size2());
-  BI_ASSERT(!(trans == 'N' && side == 'R')  || B.size2() == A.size1());
-  BI_ASSERT(A.inc() == 1);
-  BI_ASSERT(B.inc() == 1);
-  BI_ASSERT((equals<T1,T2>::value));
-  BI_ASSERT(M1::on_device == M2::on_device);
-
-  trsm_impl<L,T2>::func(alpha, A, B, side, uplo, trans, diag);
+  syevx_impl<L,T1>::func(jobz, range, uplo, A, vl, vu, il, iu, abstol, m, w,
+      Z, work, rwork, iwork, ifail);
 }
 
 #endif

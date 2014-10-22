@@ -533,6 +533,9 @@ Set all children.
 sub set_children {
     my $self = shift;
     my $children = shift;
+    
+    map { assert ($_->isa('Bi::Action') || $_->isa('Bi::Block')) } @$children if DEBUG;
+        
     $self->{_children} = $children;
 }
 
@@ -689,14 +692,28 @@ sub accept {
     $self = $visitor->visit_before($self, @args);
     Bi::ArgHandler::accept($self, $visitor, @args);
 
-    @{$self->{_consts}} = map { $_->accept($visitor, @args) } @{$self->get_consts};
-    @{$self->{_inlines}} = map { $_->accept($visitor, @args) } @{$self->get_inlines};
-    @{$self->{_dims}} = map { $_->accept($visitor, @args) } @{$self->get_dims};
-    @{$self->{_vars}} = map { $_->accept($visitor, @args) } @{$self->get_vars};
-    @{$self->{_var_groups}} = map { $_->accept($visitor, @args) } @{$self->get_var_groups};
+    my $i;
+    for ($i = 0; $i < @{$self->get_consts}; ++$i) {
+    	$self->get_consts->[$i] = $self->get_consts->[$i]->accept($visitor, @args);
+    }
+    for ($i = 0; $i < @{$self->get_inlines}; ++$i) {
+        $self->get_inlines->[$i] = $self->get_inlines->[$i]->accept($visitor, @args);
+    }
+    for ($i = 0; $i < @{$self->get_dims}; ++$i) {
+        $self->get_dims->[$i] = $self->get_dims->[$i]->accept($visitor, @args);
+    }
+    for ($i = 0; $i < @{$self->get_vars}; ++$i) {
+        $self->get_vars->[$i] = $self->get_vars->[$i]->accept($visitor, @args);
+    }
+    for ($i = 0; $i < @{$self->get_var_groups}; ++$i) {
+        $self->get_var_groups->[$i] = $self->get_var_groups->[$i]->accept($visitor, @args);
+    }
     
-    # visiting each child may return zero or more children, map works here
-    @{$self->{_children}} = map { $_->accept($visitor, @args) } @{$self->get_children};
+    my @children;
+    for ($i = 0; $i < @{$self->get_children}; ++$i) {
+        push(@children, $self->get_children->[$i]->accept($visitor, @args));
+    }
+    $self->{_children} = \@children;
 
     return $visitor->visit_after($self, @args);
 }

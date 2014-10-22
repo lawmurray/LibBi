@@ -23,6 +23,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<expr1>, I<op>, I<expr2>)
 
@@ -139,7 +140,11 @@ sub get_shape {
         unless ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) {
             die("incompatible sizes in element-wise operation\n");
         }
-        return $self->get_expr1->get_shape;
+        if (!$self->get_expr1->is_scalar) {
+	        return $self->get_expr1->get_shape;
+        } else {
+        	return $self->get_expr2->get_shape;
+        }
     }
 }
 
@@ -153,11 +158,13 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self = $visitor->visit_before($self, @args);
-    $self->{_expr1} = $self->get_expr1->accept($visitor, @args);
-    $self->{_expr2} = $self->get_expr2->accept($visitor, @args);
-    
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    $self->{_expr1} = $self->get_expr1->accept($visitor, @args);
+	    $self->{_expr2} = $self->get_expr2->accept($visitor, @args);
+		$new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

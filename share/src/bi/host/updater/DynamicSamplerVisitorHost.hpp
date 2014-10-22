@@ -38,7 +38,7 @@ public:
 
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
-#include "../../traits/target_traits.hpp"
+#include "../../traits/action_traits.hpp"
 
 template<class B, class S, class R1, class PX, class OX>
 template<class T1>

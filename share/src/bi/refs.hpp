@@ -15,12 +15,21 @@
  *
  * @anchor Andrieu2010
  * Andrieu, C.; Doucet, A. & Holenstein, R. Particle Markov chain Monte Carlo
- * methods. <i>Journal of the Royal Statistical Society Series B</i>,
+ * methods. <i>Journal of the Royal Statistical Society B</i>,
  * <b>2010</b>, 72, 269-302.
  *
  * @anchor Bentley1979
  * Bentley, J. L. & Saxe, J. B. Generating sorted lists of random numbers.
  * <i>Carnegie Mellon University</i>, <b>1979</b>.
+ *
+ * @anchor Chopin2013
+ * Chopin, N.; Jacob, P. & Papaspiliopoulos, O. SMC\f$^2\f$: An Efficient
+ * Algorithm for Sequential Analysis of State Space Models. <i>Journal of the
+ * Royal Statistical Society B</b>, <b>2013</b>, 75, 397-426.
+ *
+ * @anchor DelMoral2014
+ * Del Moral, P. & Murray L. M. Sequential Monte Carlo with highly informative
+ * observations. <b>2014</b>. http://arxiv.org/abs/1405.4081.
  *
  * @anchor Gray2001
  * Gray, A. G. & Moore, A. W. `N-Body' Problems in Statistical
@@ -74,6 +83,10 @@
  * Murray, L. M.; Jones, E. M. & Parslow, J. On Disturbance State-Space Models
  * and the Particle Marginal Metropolis-Hastings Sampler. <i>SIAM/ASA Journal
  * of Uncertainty Quantification</i>, <b>2013</b>, 1, 494-521.
+ *
+ * @anchor Murray2014
+ * Murray, L. M.; Lee, A & Jacob P. E. Parallel resampling in the particle
+ * filter. <b>2014</b>. http://arxiv.org/abs/1301.4019.
  *
  * @anchor Pitt1999
  * Pitt, M. & Shephard, N. Filtering Via Simulation: Auxiliary Particle

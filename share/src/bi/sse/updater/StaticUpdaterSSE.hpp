@@ -49,7 +49,7 @@ void bi::StaticUpdaterSSE<B,S>::update(State<B,ON_HOST>& s) {
     OX x;
 
 #pragma omp for
-    for (p = 0; p < s.size(); p += BI_SSE_SIZE) {
+    for (p = 0; p < s.size(); p += BI_SIMD_SIZE) {
       Visitor::accept(s, p, pax, x);
     }
   }

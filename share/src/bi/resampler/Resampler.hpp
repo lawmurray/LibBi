@@ -16,50 +16,6 @@
 
 namespace bi {
 /**
- * @internal
- *
- * Determine error in particular resampling.
- */
-template<class T>
-struct resample_error: public std::binary_function<T,int,T> {
-  const T lW;
-  const T P;
-  // ^ oddly, casting o or P in operator()() causes a hang with CUDA 3.1 on
-  //   Fermi, so we set the type of P to T instead of int
-
-  /**
-   * Constructor.
-   */
-  CUDA_FUNC_HOST
-  resample_error(const T lW, const int P) :
-      lW(lW), P(P) {
-    //
-  }
-
-  /**
-   * Apply functor.
-   *
-   * @param lw Log-weight for this index.
-   * @param o Number of offspring for this index.
-   *
-   * @return Contribution to error for this index.
-   */
-  CUDA_FUNC_BOTH
-  T operator()(const T& lw, const int& o) {
-    T eps;
-
-    if (bi::is_finite(lw)) {
-      eps = bi::exp(lw - lW) - o / P;  // P of type T, not int, see note above
-      eps *= eps;
-    } else {
-      eps = 0.0;
-    }
-
-    return eps;
-  }
-};
-
-/**
  * %Resampler for particle filter.
  *
  * @ingroup method_resampler
@@ -71,19 +27,15 @@ public:
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param bridgeEssRel Minimum ESS, as proportion of total number of
+   * particles, to trigger resampling after bridge weighting.
    */
-  Resampler(const double essRel = 0.5);
+  Resampler(const double essRel = 0.5, const double essRelBridge = 0.5);
 
   /**
-   * Get relative ESS threshold.
+   * @name High-level interface.
    */
-  double getEssRel() const;
-
-  /**
-   * Set relative ESS threshold.
-   */
-  void setEssRel(const double essRel = 0.5);
-
+  //@{
   /**
    * Get maximum log-weight.
    */
@@ -93,6 +45,93 @@ public:
    * Set maximum log-weight.
    */
   void setMaxLogWeight(const double maxLogWeight);
+
+  /**
+   * Is ESS-based condition triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggered(const V1 lws) const;
+
+  /**
+   * Is ESS-based condition for bridge resampling triggered?
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param lws Log-weights.
+   */
+  template<class V1>
+  bool isTriggeredBridge(const V1 lws) const;
+
+  /**
+   * Resample state.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integral vector type.
+   * @tparam O1 Compatible copy() type.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] lws Log-weights.
+   * @param[out] as Ancestry.
+   * @param[in,out] s State.
+   *
+   * The weights @p lws are set to be uniform after the resampling.
+   */
+  template<class V1, class V2, class O1>
+  void resample(Random& rng, V1& lws, V2& as, O1 s)
+      throw (ParticleFilterDegeneratedException);
+  //@}
+
+  /**
+   * @name Low-level interface.
+   */
+  //@{
+  /**
+   * Select ancestors.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] as Ancestors.
+   */
+  template<class V1, class V2>
+  void ancestors(Random& rng, const V1 lws, V2 as)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select offspring.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] os Offspring.
+   * @param P Total number of offspring to select.
+   */
+  template<class V1, class V2>
+  void offspring(Random& rng, const V1 lws, V2 os, const int P)
+      throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select cumulative offspring.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param[out] Os Cimulative offspring.
+   * @param P Total number of offspring to select.
+   */
+  template<class V1, class V2>
+  void cumulativeOffspring(Random& rng, const V1 lws, V2 os, const int P)
+      throw (ParticleFilterDegeneratedException);
 
   /**
    * Compute offspring vector from ancestors vector.
@@ -166,25 +205,6 @@ public:
   static void permute(V1 as);
 
   /**
-   * Correct weights after resampling with proposal.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Vector type.
-   * @tparam V2 Vector type.
-   *
-   * @param as Ancestry.
-   * @param qlws Proposal log-weights.
-   * @param[in,out] lws Log-weights.
-   *
-   * Assuming that a resample has been performed using the weights @p qlws,
-   * The weights @p lws are set as importance weights, such that if
-   * \f$a^i = p\f$, \f$w^i = w^p/w^{*p}\f$, where \f$w^{*p}\f$ are the
-   * proposal weights (@p qlws) and \f$w^p\f$ the particle weights (@p lws).
-   */
-  template<class V1, class V2, class V3>
-  static void correct(const V1 as, const V2 qlws, V3 lws);
-
-  /**
    * In-place copy based on ancestry.
    *
    * @tparam V1 Vector type.
@@ -196,24 +216,10 @@ public:
    * The copy is performed in-place. For each particle @c i that is to be
    * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
    * @c i. This ensures that all particles are either read or (over)written,
-   * but not both. Use permute() to ensure that an ancestry satisfies this
    * constraint.
    */
   template<class V1, class M1>
   static void copy(const V1 as, M1 X);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam B Model type.
-   * @tparam L Location.
-   *
-   * @param as Ancestry.
-   * @param[in,out] s State.
-   */
-  template<class V1, class B, Location L>
-  static void copy(const V1 as, State<B,L>& s);
 
   /**
    * In-place copy based on ancestry.
@@ -255,16 +261,6 @@ public:
   static void normalise(V1 lws);
 
   /**
-   * Is ESS-based condition triggered?
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggered(const V1 lws) const;
-
-  /**
    * Compute effective sample size (ESS) of log-weights.
    *
    * @tparam V1 Vector type.
@@ -285,9 +281,9 @@ public:
    * @param lws Log-weights.
    * @param os Offspring.
    *
-   * @return Squared error.
+   * @return Sum of squared errors.
    *
-   * This computes the sum of squared error in the resampling, as in
+   * This computes the sum of squared errors in the resampling, as in
    * @ref Kitagawa1996 "Kitagawa (1996)":
    *
    * \f[
@@ -297,13 +293,41 @@ public:
    * where \f$W\f$ is the sum of weights.
    */
   template<class V1, class V2>
-  static typename V1::value_type error(const V1 lws, const V2 os);
+  static typename V1::value_type sse(const V1 lws, const V2 os);
+
+  /**
+   * Compute sum of errors of ancestry.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integral vector type.
+   *
+   * @param lws Log-weights.
+   * @param os Offspring.
+   *
+   * @return Sum of errors.
+   *
+   * This computes the sum of errors in the resampling:
+   *
+   * \f[
+   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)\,,
+   * \f]
+   *
+   * where \f$W\f$ is the sum of weights.
+   */
+  template<class V1, class V2>
+  static typename V1::value_type se(const V1 lws, const V2 os);
+  //@}
 
 protected:
   /**
    * Relative ESS threshold.
    */
   double essRel;
+
+  /**
+   * Realtive ESS threshold for bridge sampling.
+   */
+  double bridgeEssRel;
 
   /**
    * Maximum log-weight.
@@ -446,16 +470,20 @@ public:
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
-#include "thrust/inner_product.h"
-
 #include "boost/mpl/if.hpp"
-
-inline double bi::Resampler::getEssRel() const {
-  return essRel;
-}
 
 inline double bi::Resampler::getMaxLogWeight() const {
   return maxLogWeight;
+}
+
+template<class V1>
+inline bool bi::Resampler::isTriggered(const V1 lws) const {
+  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
+}
+
+template<class V1>
+inline bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
+  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
 }
 
 template<class V1, class V2>
@@ -495,38 +523,9 @@ void bi::Resampler::permute(const V1 as) {
   impl::permute(as);
 }
 
-template<class V1, class V2, class V3>
-void bi::Resampler::correct(const V1 as, const V2 qlws, V3 lws) {
-  /* pre-condition */
-  BI_ASSERT(qlws.size() == lws.size());
-
-  typedef typename sim_temp_vector<V3>::type vector_type;
-  typedef typename V3::value_type T3;
-
-  const int P = as.size();
-
-  vector_type lws1(lws.size());
-  lws1 = lws;
-  lws.resize(P);
-
-  BOOST_AUTO(iter1,
-      thrust::make_permutation_iterator(lws1.begin(), as.begin()));
-  BOOST_AUTO(iter2,
-      thrust::make_permutation_iterator(qlws.begin(), as.begin()));
-  thrust::transform(iter1, iter1 + P, iter2, lws.begin(),
-      thrust::minus<T3>());
-}
-
 template<class V1, class M1>
 void bi::Resampler::copy(const V1 as, M1 s) {
   gather_rows(as, s, s);
-}
-
-template<class V1, class B, bi::Location L>
-void bi::Resampler::copy(const V1 as, State<B,L>& s) {
-  s.setRange(s.start(), bi::max(s.size(), as.size()));
-  copy(as, s.getDyn());
-  s.setRange(s.start(), as.size());
 }
 
 template<class V1, class T1>
@@ -540,7 +539,6 @@ void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
   for (int i = 0; i < as.size(); ++i) {
     int a = as(i);
     if (i != a) {
-      v[i]->resize(v[a]->size(), false);
       *v[i] = *v[a];
     }
   }
@@ -559,28 +557,14 @@ void bi::Resampler::normalise(V1 lws) {
 }
 
 template<class V1>
-bool bi::Resampler::isTriggered(const V1 lws) const {
-  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
-}
-
-template<class V1>
 typename V1::value_type bi::Resampler::ess(const V1 lws) {
   typename V1::value_type result = ess_reduce(lws);
 
   if (result > 0.0) {
     return result;
   } else {
-    return 0.0; // may be nan
+    return 0.0;  // may be nan
   }
 }
-
-template<class V1, class V2>
-typename V1::value_type bi::Resampler::error(const V1 lws, const V2 os) {
-  real lW = logsumexp_reduce(lws);
-
-  return thrust::inner_product(lws.begin(), lws.end(), os.begin(),
-      BI_REAL(0.0),
-      thrust::plus<real>(), resample_error<real>(lW, lws.size()));
-    }
 
 #endif

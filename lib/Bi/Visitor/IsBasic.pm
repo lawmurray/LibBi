@@ -38,7 +38,7 @@ Evaluate.
 
 =back
 
-Returns true if I<expr> evaluates to an element, false otherwise.
+Returns true if I<expr> evaluates to an identifier.
 
 =cut
 sub evaluate {
@@ -48,8 +48,12 @@ sub evaluate {
     my $self = new Bi::Visitor; 
     bless $self, $class;
     
-    my $arg = 1;
-    $expr->accept($self, \$arg);
+    while ($expr->isa('Bi::Expression::InlineIdentifier')) {
+    	$expr = $expr->get_inline->get_expr;
+    }
+    my $arg = $expr->isa('Bi::Expression::VarIdentifier');
+    
+    #$expr->accept($self, \$arg);
     
     return $arg;
 }

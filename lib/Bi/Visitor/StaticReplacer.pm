@@ -57,7 +57,7 @@ sub evaluate {
     my $self = new Bi::Visitor; 
     bless $self, $class;
 
-    foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation') {
+    foreach my $name ('transition', 'lookahead_transition', 'observation', 'lookahead_observation', 'bridge') {
         my $block = $model->get_block($name);
         if (defined $block) {
     	    $block->accept($self, $model, $lefts, $rights);
@@ -65,12 +65,12 @@ sub evaluate {
     }
 }
 
-=item B<visit_after>(I<node>, I<actions>)
+=item B<visit_after>(I<node>, I<model>, I<lefts>, I<rights>, I<actions>)
 
 Visit node.
 
 =cut
-sub visit_after {
+sub visit_before {
     my $self = shift;
     my $node = shift;
     my $model = shift;

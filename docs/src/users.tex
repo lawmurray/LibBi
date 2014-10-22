@@ -340,33 +340,48 @@ probability distributions (e.g.  \actionref{gaussian}, \actionref{gamma} and
 is assumed to be a probability density function.
 
 The second form, with the \bitt{<-} operator, indicates that the
-(deterministic) variable \bitt{x} should be assigned the result of the action
-given on the right. Such actions might be simple scalar\index{scalar},
-vector\index{vector} or matrix\index{matrix} expressions.
+(conditionally deterministic) variable \bitt{x} should be assigned the result
+of the action given on the right. Such actions might be simple
+scalar\index{scalar}, vector\index{vector} or matrix\index{matrix}
+expressions.
 
 The third form, with the \bitt{=} operator, is for expressing ordinary
 differential equations\index{ordinary\,differential\,equations}.
 
 Individual elements of a vector, matrix or higher-dimensional variable may be
-targeted using square brackets. Consider the following action giving the
-ordinary differential equation\index{ordinary\,differential\,equations} for a
-Lorenz '96\index{Lorenz\,'96} model:
+targeted using square brackets. Consider the following action
+giving the ordinary differential
+equation\index{ordinary\,differential\,equations} for a Lorenz
+'96\index{Lorenz\,'96} model:
 \begin{bicode}
 dx[i]/dt = x[i - 1]*(x[i + 1] - x[i - 2]) - x[i] + F
 \end{bicode}
 If \bitt{x} is a vector of size $N$, the action should be interpreted as ``for
-each $i \in (0,\ldots,N-1)$, use the following ordinary differential
-equation''. The name \bitt{i} is an \emph{index}, considered declared on the
-left with local scope to the action, so that it may be used on the right. The
-name \bitt{i} is arbitrary, but must not match the name of a constant, inline
-or variable. It may match the name of a dimension, and indeed matching the
-name of the dimension with which the index is associated can be sensible.
+each $i \in \{0,\ldots,N-1\}$, use the following ordinary differential
+equation''. The name \bitt{i} is an \emph{index}\index{index}, considered
+declared on the left with local scope to the action, so that it may be used on
+the right. The name \bitt{i} is arbitrary, but must not match the name of a
+constant, inline or variable. It may match the name of a dimension, and indeed
+matching the name of the dimension with which the index is associated can be
+sensible.
 
 Elements of higher-dimensional variables may be targeted using multiple
-indices. For example, consider computing a Euclidean distance matrix \bitt{D}:
+indices separated by commas. For example, consider computing a Euclidean
+distance matrix \bitt{D}:
 \begin{bicode}
 D[i,j] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
 \end{bicode}
+If \bitt{D} is a matrix of size $M \times N$, the action should be interpreted
+as ``for each $i \in \{0,\ldots,M-1\}$ and each $j \in
+\{0,\ldots,N-1\}\ldots$''.
+
+Indices may be restricted with a \emph{range}\index{range}:
+\begin{bicode}
+D[i=0:3,j=2:3] <- sqrt(pow(x[i] - x[j], 2) - pow(y[i] - y[j], 2))
+\end{bicode}
+Now action should be interpreted as ``for each $i \in \{0,\ldots,3\}$ and
+each $j\in\{2,3\}\ldots$''.
+
 Indexed actions such as this are useful for more complicated transformations
 that either cannot be expressed in matrix\index{matrix} form, or that are
 contrived when expressed as such.
@@ -479,9 +494,12 @@ Special classes of expression are:
 Note from these definitions that a constant expression is a static expression,
 and a static expression is a common expression.
 
-%\subsection{Operators\label{Operators}}\index{operators}
+Individual elements of multidimensional variables may be indexed\index{index}
+with e.g. \bitt{x[i]} or \bitt{A[i,j]}. Ranges\index{range} may also be
+referenced by giving the first and last indices of the range, separated by a
+colon, e.g. \bitt{x[0:3]} or \bitt{A[0:3,2:3]}.
 
-The following operators are supported in expressions:
+The following operators are supported in expressions\index{operators}:
 
 \noindent
 \begin{tabular}{lr}
@@ -495,9 +513,7 @@ Ternary operators: & \bitt{?:} \\
 \hline
 \end{tabular}\index{scalar}\index{vector}\index{matrix}\index{arithmetic}\index{operators}
 
-%\subsubsection{Functions\label{Functions}}\index{functions}
-
-The following functions are supported in expressions:
+The following functions are supported in expressions\index{functions}:
 
 \noindent
 \begin{tabular}{p{\textwidth}}
@@ -1261,13 +1277,16 @@ The following configuration options are worth considering:
   memory is usually much more limited than main memory, and this may result in
   its exhaustion, the option is disabled by default.
 
-\item Experiment with the \bitt{--enable-sse} command-line
-  option to make use of CPU SSE instructions\index{SSE}\index{SIMD}. These can
-  provide up to a two-fold (double precision) or four-fold (single precision)
-  speed-up.
+\item Experiment with the \bitt{--enable-sse} and \bitt{--enable-avx}
+  command-line options to make use of CPU SSE\index{SSE} and AVX\index{AVX}
+  SIMD\index{SIMD} instructions. In single precision, these can provide up to
+  a four-fold (SSE) or eight-fold (AVX) speed-up, and in double precision a
+  two-fold (SSE) or four-fold (AVX) speed-up. These are only supported on x86
+  CPU architectures, however, and AVX in particular only on the most recent of
+  these.
 
 \item \index{multithreading}\index{OpenMP} Experiment with the
-  \bitt{--threads} command-line option to set the number of CPU
+  \bitt{--nthreads} command-line option to set the number of CPU
   threads. Typically there are depreciating gains as the number of threads is
   increased, and beyond the number of physical CPU cores performance will
   degrade significantly. For CPUs with hyperthreading enabled, it is

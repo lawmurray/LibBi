@@ -13,19 +13,28 @@ namespace bi {
  *
  * @ingroup method_stopper
  */
-class VarStopper : public Stopper {
+class VarStopper: public Stopper {
 public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  VarStopper(const real threshold, const int maxP, const int blockP,
-      const int T);
+  VarStopper(const double threshold, const int maxP, const int T);
 
   /**
-   * @copydoc Stopper::stop()
+   * @copydoc Stopper::stop(const double maxlw)
+   */
+  bool stop(const double maxlw) const;
+
+  /**
+   * @copydoc Stopper::add(const double, const double)
+   */
+  void add(const double lw, const double maxlw);
+
+  /**
+   * @copydoc Stopper::add()
    */
   template<class V1>
-  bool stop(const V1 lws, const real maxlw);
+  void add(const V1 lws, const double maxlw);
 
   /**
    * @copydoc Stopper::reset()
@@ -36,30 +45,47 @@ private:
   /**
    * Cumulative sum.
    */
-  real sum;
+  double sum;
 };
 }
 
-inline bi::VarStopper::VarStopper(const real threshold, const int maxP,
-    const int blockP, const int T) :
-    Stopper(threshold, maxP, blockP, T), sum(0.0) {
+inline bi::VarStopper::VarStopper(const double threshold, const int maxP,
+    const int T) :
+    Stopper(threshold, maxP, T), sum(0.0) {
   //
 }
 
+inline bool bi::VarStopper::stop(const double maxlw) const {
+  double minsum = this->T * this->threshold;
+
+  return Stopper::stop(maxlw) || sum >= minsum;
+}
+
+inline void bi::VarStopper::add(const double lw, const double maxlw) {
+  /* pre-condition */
+  BI_ASSERT(lw <= maxlw);
+
+  Stopper::add(lw, maxlw);
+
+  double mu = bi::exp(lw);
+  double s2 = bi::exp(2.0 * lw);
+  double val = s2 - mu * mu;
+
+  sum += mu / val;
+}
+
 template<class V1>
-bool bi::VarStopper::stop(const V1 lws, const real maxlw) {
+void bi::VarStopper::add(const V1 lws, const double maxlw) {
   /* pre-condition */
   BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  real mu = sumexp_reduce(lws) / this->blockP;
-  real s2 = sumexpsq_reduce(lws) / this->blockP;
-  real val = s2 - mu * mu;
+  Stopper::add(lws, maxlw);
 
-  sum += this->blockP * mu / val;
+  double mu = sumexp_reduce(lws) / lws.size();
+  double s2 = sumexpsq_reduce(lws) / lws.size();
+  double val = s2 - mu * mu;
 
-  real minsum = this->T * this->threshold;
-
-  return P >= this->maxP || sum >= minsum;
+  sum += lws.size() * mu / val;
 }
 
 inline void bi::VarStopper::reset() {

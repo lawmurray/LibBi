@@ -22,9 +22,10 @@ use parent 'Bi::Expression';
 use warnings;
 use strict;
 
-use Bi::Visitor::ToSymbolic;
-
 use Carp::Assert;
+use Scalar::Util 'refaddr';
+
+use Bi::Visitor::ToSymbolic;
 
 =item B<new>(I<expr1>, I<op1>, I<expr2>, I<op2>, I<expr3>)
 
@@ -230,12 +231,14 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self = $visitor->visit_before($self, @args);
-    $self->{_expr1} = $self->get_expr1->accept($visitor, @args);
-    $self->{_expr2} = $self->get_expr2->accept($visitor, @args);
-    $self->{_expr3} = $self->get_expr3->accept($visitor, @args);
-
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    $self->{_expr1} = $self->get_expr1->accept($visitor, @args);
+    	$self->{_expr2} = $self->get_expr2->accept($visitor, @args);
+    	$self->{_expr3} = $self->get_expr3->accept($visitor, @args);
+	    $new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

@@ -71,9 +71,7 @@ struct action_start<empty_typelist,A> {
  */
 template<class S, class A>
 struct action_end {
-  typedef typename front<S>::type front;
-
-  static const int value = action_start<S,A>::value + action_size<front>::value;
+  static const int value = action_start<S,A>::value + action_size<A>::value;
 };
 }
 

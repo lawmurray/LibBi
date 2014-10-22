@@ -5,19 +5,21 @@
 ## $Rev$
 ## $Date$
 -%]
-[%-MACRO fetch_parents(expr) BLOCK %]
-  [%-IF expr.get_all_const_refs.size > 0 %]
+[%-MACRO fetch_parents(action) BLOCK %]
+  [%-IF action.get_all_const_refs.size > 0 %]
   /* constants */
-  [% FOREACH ref IN expr.get_all_const_refs %]
+  [% FOREACH ref IN action.get_all_const_refs %]
   const BOOST_AUTO([% ref.to_cpp %], [% ref.get_const.get_expr.to_cpp %]);
   [%-END-%]
   [%-END %]
   
-  [%-IF expr.get_all_var_refs.size > 0 %]
   /* variables */
-  [% FOREACH ref IN expr.get_all_var_refs %]
+  [% FOREACH ref IN action.get_all_var_refs %]
   [% IF action.is_matrix %]
-  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_expr.get_name %]>(s, p));
+  [% IF ref.get_indexes.size == 0 %]
+  [%# matrix actions handle their own parents, but may need some scalars for ranges %]
+  const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, 0));
+  [% END %]
   [% ELSIF ref.get_indexes.size > 0 %]
   const VarCoord[% ref.get_var.get_id %] cox[% loop.index %](
   [%-un = 0-%]
@@ -37,13 +39,9 @@
   const BOOST_AUTO([% ref.to_cpp %], pax.template fetch<Var[% ref.get_var.get_id %]>(s, p, 0));
   [%-END-%]
   [%-END-%]
-  [%-END %]
 
-  [%-IF expr.get_all_inline_refs.size > 0 %]
   /* inlines */
-  [% FOREACH ref IN expr.get_all_inline_refs %]
+  [% FOREACH ref IN action.get_all_inline_refs %]
   const BOOST_AUTO([% ref.to_cpp %], [% ref.get_inline.get_expr.to_cpp %]);
   [%-END-%]
-  [%-END %]
 [%-END %]
-

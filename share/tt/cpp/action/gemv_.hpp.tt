@@ -6,7 +6,8 @@
 
 [%-
 A = action.get_named_arg('A');
-x = action.get_named_arg('x');
+b = action.get_named_arg('x');
+c = action.get_left;
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
@@ -25,9 +26,11 @@ public:
 #include "bi/math/view.hpp"
 
 [% sig_action_static_matrix_function('simulate') %] {
-  BOOST_AUTO(A, bi::reshape(bi::vector_as_column_matrix(pax.template fetch<Var[% A.get_var.get_id %]>(s, p)), [% A.get_var.get_shape.get_size1 %], [% A.get_var.get_shape.get_size2 %]));
-  BOOST_AUTO(b, pax.template fetch<Var[% x.get_var.get_id %]>(s, p));
-  BOOST_AUTO(c, x.template fetch<target_type>(s, p));
+  [% fetch_parents(action) %]
+
+  BOOST_AUTO(A, [% get_var(A) %]);
+  BOOST_AUTO(b, [% get_var(b) %]);
+  BOOST_AUTO(c, [% get_output_var(c) %]);
     
   bi::gemv(A, b, c);
 }

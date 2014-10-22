@@ -58,6 +58,11 @@ enum VarType {
   PX_VAR,
 
   /**
+   * Built-in variable.
+   */
+  B_VAR,
+
+  /**
    * Alternative noise variable.
    */
   RY_VAR,
@@ -75,18 +80,14 @@ enum VarType {
   /**
    * Alternative observation.
    */
-  OY_VAR,
-
-  /**
-   * Built-in variable.
-   */
-  B_VAR,
-
-  /**
-   * Number of variable types.
-   */
-  NUM_VAR_TYPES
+  OY_VAR
 };
+
+
+/**
+ * Number of regular and built-in (not alternative) variable types.
+ */
+static const int NUM_VAR_TYPES = 8;
 
 /**
  * Alternative type map.

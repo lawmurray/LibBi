@@ -57,6 +57,7 @@ public:
 
 #include "../../typelist/front.hpp"
 #include "../../typelist/pop_front.hpp"
+#include "../../traits/action_traits.hpp"
 
 template<class B, class S, class T1, class PX, class OX>
 template<class T2>

@@ -10,6 +10,10 @@ Bi::Expression::Range - dimension range in a variable reference.
 
 L<Bi::Expression>
 
+=head1 DESCRIPTION
+
+A range has a starting and ending expression, both of which must be constant.
+
 =head1 METHODS
 
 =over 4
@@ -23,6 +27,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<start>, I<end>)
 
@@ -49,7 +54,7 @@ sub new {
     my $end = shift;
     
     assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
-    assert(!defined $end || $end->isa('Bi::Expression')) if DEBUG;
+    assert(defined $end && $end->isa('Bi::Expression')) if DEBUG;
     
     my $self = {
         _start => $start,
@@ -87,8 +92,8 @@ sub clone {
     my $self = shift;
     
     my $clone = {
-    	_start => $self->get_start->clone,
-    	_end => $self->get_end->clone
+    	_start => $self->has_start ? $self->get_start->clone : undef,
+    	_end => $self->has_end ? $self->get_end->clone : undef
     };
     bless $clone, ref($self);
     
@@ -144,7 +149,11 @@ sub get_size {
     my $self = shift;
     
     if ($self->has_start && $self->has_end) {
-        return $self->get_end - $self->get_start + 1;
+    	if ($self->get_start->equals($self->get_end)) {
+    		return new Bi::Expression::IntegerLiteral(1);
+    	} else {
+	        return $self->get_end - $self->get_start + 1;
+    	}
     } else {
         return [];
     }
@@ -160,15 +169,17 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self = $visitor->visit_before($self, @args);
-    if ($self->has_start) {
-        $self->{_start} = $self->get_start->accept($visitor, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    if ($self->has_start) {
+    	    $self->{_start} = $self->get_start->accept($visitor, @args);
+    	}
+    	if ($self->has_end) {
+        	$self->{_end} = $self->get_end->accept($visitor, @args);
+    	}
+    	$new = $visitor->visit_after($self, @args);
     }
-    if ($self->has_end) {
-        $self->{_end} = $self->get_end->accept($visitor, @args);
-    }
-    
-    return $visitor->visit_after($self, @args);
+    return $new;
 }
 
 =item B<equals>(I<obj>)
@@ -182,8 +193,10 @@ sub equals {
     
     return (
         ref($obj) eq ref($self) &&
-        $self->get_start->equals($obj->get_start) &&
-        $self->get_end->equals($obj->get_end));
+        $self->has_start == $obj->has_start &&
+        (!$self->has_start || $self->get_start->equals($obj->get_start)) &&
+        $self->has_end == $obj->has_end &&
+        (!$self->has_end || $self->get_end->equals($obj->get_end)));
 }
 
 1;

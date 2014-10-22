@@ -1,0 +1,26 @@
+[%-
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+-%]
+[%-MACRO offset_coord(action) BLOCK-%]
+[%-dynamic = 0-%]
+[%-FOREACH alias IN action.get_aliases-%]
+[%-IF !alias.get_range.get_start.is_const-%]
+[%-dynamic = 1-%]
+[%-END-%]
+[%-END-%]
+
+[%-IF !dynamic-%]
+const CX& cox_ = cox;
+[%-ELSE-%]
+CX cox_ = cox;
+[% FOREACH alias IN action.get_aliases %]
+[% IF !alias.get_range.get_start.is_const %]
+cox_.i[% loop.index %] = [% alias.get_range.get_start.to_cpp %];
+[% END %]
+[%-END %]
+[%-END-%]
+[%-END-%]

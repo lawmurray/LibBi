@@ -73,19 +73,19 @@ void bi::RandomHost::uniforms(Random& rng, V1 x,
   typedef typename V1::value_type T1;
   typedef boost::uniform_real<T1> dist_type;
 
-  #pragma omp parallel
-  {
+  //#pragma omp parallel
+  //{
     RngHost& rng1 = rng.getHostRng();
     int j;
 
     dist_type dist(lower, upper);
     boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
 
-    #pragma omp for
+    //#pragma omp for
     for (j = 0; j < x.size(); ++j) {
       x(j) = gen();
     }
-  }
+    //}
 }
 
 template<class V1>
@@ -97,19 +97,19 @@ void bi::RandomHost::gaussians(Random& rng, V1 x,
   typedef typename V1::value_type T1;
   typedef boost::normal_distribution<T1> dist_type;
 
-  #pragma omp parallel
-  {
+  //#pragma omp parallel
+  //{
     RngHost& rng1 = rng.getHostRng();
     int j;
 
     dist_type dist(mu, sigma);
     boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
 
-    #pragma omp for schedule(static)
+    //#pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
       x(j) = gen();
     }
-  }
+  //}
 }
 
 template<class V1>
@@ -121,19 +121,19 @@ void bi::RandomHost::gammas(Random& rng, V1 x,
   typedef typename V1::value_type T1;
   typedef boost::gamma_distribution<T1> dist_type;
 
-  #pragma omp parallel
-  {
+  //#pragma omp parallel
+  //{
     RngHost& rng1 = rng.getHostRng();
     int j;
 
     dist_type dist(alpha);
     boost::variate_generator<RngHost::rng_type&, dist_type> gen(rng1.rng, dist);
 
-    #pragma omp for schedule(static)
+    //#pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
       x(j) = beta*gen();
     }
-  }
+    //}
 }
 
 template<class V1>
@@ -145,8 +145,8 @@ void bi::RandomHost::betas(Random& rng, V1 x,
   typedef typename V1::value_type T1;
   typedef boost::gamma_distribution<T1> dist_type;
 
-  #pragma omp parallel
-  {
+  //#pragma omp parallel
+  //{
     RngHost& rng1 = rng.getHostRng();
     int j;
 
@@ -154,14 +154,14 @@ void bi::RandomHost::betas(Random& rng, V1 x,
     boost::variate_generator<RngHost::rng_type&, dist_type> gen1(rng1.rng, dist1), gen2(rng1.rng, dist2);
     T1 y1, y2;
 
-    #pragma omp for schedule(static)
+    //#pragma omp for schedule(static)
     for (j = 0; j < x.size(); ++j) {
       y1 = gen1();
       y2 = gen2();
 
       x(j) = y1/(y1 + y2);
     }
-  }
+    //}
 }
 
 template<class V1, class V2>

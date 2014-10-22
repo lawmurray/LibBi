@@ -67,6 +67,9 @@ sub validate {
     } else {
         $self->set_shape(new Bi::Expression::Shape([ $A->get_shape->get_sizes->[0], $X->get_shape->get_sizes->[1] ]));
     }
+    unless ($self->get_left->get_shape->compat($self->get_shape)) {
+    	die("incompatible sizes on left and right sides of action.\n");
+    }
 
     $self->set_parent('matrix_');
     $self->set_can_combine(1);

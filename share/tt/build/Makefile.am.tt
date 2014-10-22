@@ -9,12 +9,9 @@
 [%
 # client programs
 CLIENTS = [
-    'ekf',
     'nm',
-    'pf',
-    'pmmh',
-    'simulate',
-    'smc2',
+    'filter',
+    'sample',
     'test',
     'test_resampler',
     'test_filter'
@@ -24,47 +21,35 @@ CLIENTS = [
 AUTOMAKE_OPTIONS = subdir-objects
 
 # compile and link flags
-AM_CPPFLAGS = -Isrc $(OPENMP_CPPFLAGS) $(CUDA_CPPFLAGS)
+AM_CPPFLAGS = -Isrc $(OPENMP_CPPFLAGS)
 AM_CXXFLAGS = $(OPENMP_CXXFLAGS)
-AM_LDFLAGS = $(OPENMP_LDFLAGS) $(CUDA_LDFLAGS)
+AM_LDFLAGS = $(OPENMP_LDFLAGS)
 
 # CUDA files setup
-if ENABLE_MPI
-if ENABLE_VAMPIR
-NVCC = mpicxx-vt --vt:cxx "perl nvcc_wrapper.pl nvcc" --vt:inst manual --vt:mpi
-else
-NVCC = perl nvcc_wrapper.pl nvcc `mpicxx -showme:compile`
-endif
-else
-NVCC = perl nvcc_wrapper.pl nvcc
-endif
-
-NVCC_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS)
-NVCC_CXXFLAGS = $(CUDA_CXXFLAGS) -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE
+NVCXXFLAGS = -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
 LINK = $(CXXLINK) # force C++ linker for CUDA files
-
-# too slow for some compiles
-#if ENABLE_ASSERT
-#  NVCC_CXXFLAGS += -G
-#endif
-
-if ENABLE_INTEL
-  NVCC_CXXFLAGS += -ccbin icc -Xcompiler=-gcc
-endif
 
 # libraries
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
-  src/bi/buffer/KalmanFilterNetCDFBuffer.cpp \
-  src/bi/buffer/netcdf.cpp \
-  src/bi/buffer/NetCDFBuffer.cpp \
-  src/bi/buffer/OptimiserNetCDFBuffer.cpp \
-  src/bi/buffer/ParticleFilterNetCDFBuffer.cpp \
-  src/bi/buffer/ParticleMCMCNetCDFBuffer.cpp \
-  src/bi/buffer/SMC2NetCDFBuffer.cpp \
-  src/bi/buffer/SimulatorNetCDFBuffer.cpp \
-  src/bi/buffer/SparseInputNetCDFBuffer.cpp \
+  src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
+  src/bi/netcdf/netcdf.cpp \
+  src/bi/netcdf/NetCDFBuffer.cpp \
+  src/bi/netcdf/OptimiserNetCDFBuffer.cpp \
+  src/bi/netcdf/ParticleFilterNetCDFBuffer.cpp \
+  src/bi/netcdf/MCMCNetCDFBuffer.cpp \
+  src/bi/netcdf/SMCNetCDFBuffer.cpp \
+  src/bi/netcdf/SimulatorNetCDFBuffer.cpp \
+  src/bi/netcdf/InputNetCDFBuffer.cpp \
+  src/bi/null/InputNullBuffer.cpp \
+  src/bi/null/KalmanFilterNullBuffer.cpp \
+  src/bi/null/MCMCNullBuffer.cpp \
+  src/bi/null/OptimiserNullBuffer.cpp \
+  src/bi/null/ParticleFilterNullBuffer.cpp \
+  src/bi/null/SimulatorNullBuffer.cpp \
+  src/bi/null/SMCNullBuffer.cpp \
   src/bi/cache/Cache.cpp \
   src/bi/host/math/cblas.cpp \
   src/bi/host/math/lapack.cpp \
@@ -128,6 +113,11 @@ if ENABLE_GPU_CACHE
 CPPFLAGS += -DENABLE_GPU_CACHE
 endif
 
+if ENABLE_AVX
+CPPFLAGS += -DENABLE_AVX
+CXXFLAGS += -mavx
+endif
+
 if ENABLE_SSE
 CPPFLAGS += -DENABLE_SSE
 CXXFLAGS += -msse3
@@ -161,15 +151,15 @@ endif
 .cu.o:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.o$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	perl nvcc_wrapper.pl $(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	perl nvcc_wrapper.pl $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Po && \
 	rm -f $$depbase.Tpo
 
 .cu.lo:
 	depbase=`echo $@ | sed 's|[^/]*$$|.deps/&|;s|\.lo$$||'` && \
 	srcbase=`echo $@ | sed 's|/[^/]*$$||'` && \
-	$(NVCC) -M $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
-	$(LIBTOOL) --tag=CC --mode=compile $(NVCC) -c $(NVCC_CXXFLAGS) $(NVCC_CPPFLAGS) -o $@ $< && \
+	perl nvcc_wrapper.pl $(NVCC) -M $(NVCXXFLAGS) $(NVCPPFLAGS) -odir $$srcbase -o $$depbase.Tpo $< && \
+	$(LIBTOOL) --tag=CC --mode=compile perl nvcc_wrapper.pl $(NVCC) -c $(NVCXXFLAGS) $(NVCPPFLAGS) -o $@ $< && \
 	cat $$depbase.Tpo > $$depbase.Plo && \
 	rm -f $$depbase.Tpo

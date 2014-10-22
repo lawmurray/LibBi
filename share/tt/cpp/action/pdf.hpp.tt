@@ -34,12 +34,9 @@ public:
 }
 
 [% sig_action_static_function('logdensity') %] {
-  /* write x <- x' first, as then x = x' for pdf */
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
-
   [% alias_dims(action) %]
-  [% fetch_parents(pdf) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
   
   [% IF log %]
   lp += [% pdf.to_cpp %];
@@ -49,15 +46,12 @@ public:
 }
 
 [% sig_action_static_function('maxlogdensity') %] {
-  /* write x <- x' first, as then x = x' for pdf */
-  BOOST_AUTO(xy, pax.template fetch_alt<target_type>(s, p, cox.index()));
-  x.template fetch<target_type>(s, p, cox.index()) = xy;
-
   [% alias_dims(action) %]
-  [% fetch_parents(max_pdf) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
   
   [% IF max_pdf.is_const && max_pdf.eval_const == 0.0 %]
-  lp = BI_REAL(1.0/0.0);
+  lp = std::numeric_limits<real>::infinity();
   [% ELSIF log %]
   lp += [% max_pdf.to_cpp %];
   [% ELSE %]

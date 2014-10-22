@@ -1,0 +1,223 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+[%-PROCESS client/misc/header.cpp.tt-%]
+[%-PROCESS macro.hpp.tt-%]
+
+#include "model/[% class_name %].hpp"
+
+#include "bi/random/Random.hpp"
+#include "bi/method/NelderMeadOptimiser.hpp"
+
+[% IF client.get_named_arg('filter') == 'kalman' %]
+#include "bi/method/ExtendedKF.hpp"
+#include "bi/buffer/KalmanFilterNetCDFBuffer.hpp"
+[% ELSE %]
+[% IF client.get_named_arg('filter') == 'lookahead' %]
+#include "bi/method/LookaheadPF.hpp"
+[% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+#include "bi/method/AdaptivePF.hpp"
+#include "bi/stopper/Stopper.hpp"
+#include "bi/stopper/SumOfWeightsStopper.hpp"
+#include "bi/stopper/MinimumESSStopper.hpp"
+#include "bi/stopper/StdDevStopper.hpp"
+#include "bi/stopper/VarStopper.hpp"
+[% ELSE %]
+#include "bi/method/BootstrapPF.hpp"
+[% END %]
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/resampler/MultinomialResampler.hpp"
+#include "bi/resampler/MetropolisResampler.hpp"
+#include "bi/resampler/RejectionResampler.hpp"
+#include "bi/resampler/KernelResampler.hpp"
+#include "bi/resampler/StratifiedResampler.hpp"
+#include "bi/resampler/SystematicResampler.hpp"
+[% END %]
+
+#include "bi/method/Simulator.hpp"
+#include "bi/method/Forcer.hpp"
+#include "bi/method/Observer.hpp"
+#include "bi/buffer/InputNetCDFBuffer.hpp"
+#include "bi/buffer/OptimiserNetCDFBuffer.hpp"
+#include "bi/misc/TicToc.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+#include <sys/time.h>
+#include <getopt.h>
+
+#ifdef ENABLE_CUDA
+#define LOCATION ON_DEVICE
+#else
+#define LOCATION ON_HOST
+#endif
+
+int main(int argc, char* argv[]) {
+  using namespace bi;
+
+  /* model type */
+  typedef [% class_name %] model_type;
+  
+  /* command line arguments */
+  [% read_argv(client) %]
+
+  /* MPI init */
+  #ifdef ENABLE_MPI
+  boost::mpi::environment env(argc, argv);
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+  NPARTICLES /= size;
+  #else
+  const int rank = 0;
+  const int size = 1;
+  #endif
+    
+  /* bi init */
+  bi_init(NTHREADS);
+
+  /* model */
+  model_type m;
+  
+  /* random number generator */
+  Random rng(SEED);
+
+  /* state and intermediate results */
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  NPARTICLES = 1;
+  [% END %]
+  State<model_type,LOCATION> s(NPARTICLES);
+  NPARTICLES = s.size(); // may change according to implementation
+
+  /* inputs */
+  InputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
+  if (!INPUT_FILE.empty()) {
+    bufInput = new InputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+  }
+  if (!INIT_FILE.empty()) {
+    bufInit = new InputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
+  }
+  if (!OBS_FILE.empty()) {
+    bufObs = new InputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
+  }
+
+  /* schedule */
+  Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs, WITH_OUTPUT_AT_OBS);
+
+  /* output */
+  OptimiserNetCDFBuffer* bufOutput = NULL;
+  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
+    bufOutput = new OptimiserNetCDFBuffer(m, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
+  }
+  
+  /* simulator */
+  BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
+  BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs));
+  
+    /* filter */
+  [% IF client.get_named_arg('filter') == 'kalman' %]
+  	KalmanFilterNetCDFBuffer* outFilter = NULL;
+    BOOST_AUTO(filter, (ExtendedKFFactory::create(m, sim, outFilter)));
+  [% ELSE %]
+    BOOST_AUTO(outFilter, bi::BootstrapPFCacheFactory<LOCATION>::create());
+
+    /* resampler */
+    [% IF client.get_named_arg('resampler') == 'kernel' %]
+    real h;
+    if (B_ABS > 0.0) {
+      h = B_ABS;
+    } else {
+      h = B_REL*hopt(N, P);
+    }
+    MultinomialResampler base(WITH_SORT);
+    KernelResampler<StratifiedResampler> resam(&base, h, WITH_SHRINK);
+    [% ELSIF client.get_named_arg('resampler') == 'metropolis' %]
+    MetropolisResampler resam(C);
+    [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
+    RejectionResampler resam;
+    [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
+    MultinomialResampler resam(WITH_SORT);
+    [% ELSIF client.get_named_arg('resampler') == 'systematic' %]
+    SystematicResampler resam(WITH_SORT);
+    [% ELSE %]
+    StratifiedResampler resam(WITH_SORT);
+    [% END %]
+        
+    /* particle filter */
+    [% IF client.get_named_arg('filter') == 'lookahead' %]
+      BOOST_AUTO(filter, (LookaheadPFFactory::create(m, sim, &resam, outFilter)));
+    [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
+      /* stopper */
+      [% IF client.get_named_arg('stopper') == 'deterministic' %]
+      Stopper stopper(P);
+      [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+      SumOfWeightsStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'miness' %]
+      MinimumESSStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
+      StdDevStopper stopper(REL_THRESHOLD, MAX_P);
+      [% ELSIF client.get_named_arg('stopper') == 'var' %]
+      VarStopper stopper(REL_THRESHOLD, MAX_P);
+      [% END %]
+      BOOST_AUTO(filter, (AdaptivePFFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
+    [% ELSE %]
+      BOOST_AUTO(filter, (BootstrapPFFactory::create(m, sim, &resam, outFilter)));
+    [% END %]
+  [% END %]
+  
+  /* optimiser */
+  OptimiserMode mode;
+  if (TARGET.compare("posterior") == 0) {
+    mode = MAXIMUM_A_POSTERIORI;
+  } else {
+    mode = MAXIMUM_LIKELIHOOD;
+  }    
+  BOOST_AUTO(optimiser, (NelderMeadOptimiserFactory<LOCATION>::create(m, filter, bufOutput, mode)));
+
+  /* optimise */
+  #ifdef ENABLE_GPERFTOOLS
+  ProfilerStart(GPERFTOOLS_FILE.c_str());
+  #endif
+  #ifdef ENABLE_TIMING
+  TicToc timer;
+  timer.sync();
+  timer.tic();
+  #endif
+  
+  optimiser->optimise(rng, sched.begin(), sched.end(), s, bufInit, SIMPLEX_SIZE_REL, STOP_STEPS, STOP_SIZE);
+  out.flush();
+
+  #ifdef ENABLE_TIMING
+  /* output timing results */
+  timer.sync();
+  if (rank == 0) {
+    std::cout << "total " << timer.toc() << " us" << std::endl;
+  }
+  #endif
+  #ifdef ENABLE_GPERFTOOLS
+  ProfilerStop();
+  #endif
+
+  delete optimiser;
+  //delete out;
+  delete filter;
+  delete outFilter;
+  delete sim;
+  delete obs;
+  delete in;
+  delete bufOutput;
+  delete bufObs;
+  delete bufInit;
+  delete bufInput;
+
+  return 0;
+}

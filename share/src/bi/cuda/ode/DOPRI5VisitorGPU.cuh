@@ -90,14 +90,13 @@ public:
 private:
   typedef typename front<S2>::type front;
   typedef typename pop_front<S2>::type pop_front;
-  typedef typename front::target_type target_type;
   typedef typename front::coord_type coord_type;
 
   typedef DOPRI5Stage<front,T1,B,ON_DEVICE,coord_type,PX,T2> stage;
   typedef DOPRI5VisitorGPU<B,S1,pop_front,T1,PX,T2> visitor;
 
-  static const int start = target_start<S1,target_type>::value;
-  static const int end = target_end<S1,target_type>::value;
+  static const int start = action_start<S1,front>::value;
+  static const int end = action_end<S1,front>::value;
 };
 
 /**

@@ -66,6 +66,7 @@ use Carp::Assert;
 use Getopt::Long qw(:config pass_through no_auto_abbrev no_ignore_case);
 use File::Path;
 use IO::File;
+use Fcntl qw(:flock);
 
 =item B<new>
 
@@ -83,7 +84,8 @@ sub new {
         _dry_run => 0,
         _dry_build => 0,
         _cmd => undef,
-        _model_file => undef
+        _model_file => undef,
+        _lockfh => undef,
     };
     bless $self, $class;
     
@@ -172,6 +174,7 @@ sub client {
     my $builder = new Bi::Builder($dirname, $self->{_verbose});
     my $cpp = new Bi::Gen::Cpp($builder->get_dir);
     my $build = new Bi::Gen::Build($builder->get_dir);
+    my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);
     my $client = new Bi::Client($cmd, $builder->get_dir, $self->{_verbose});    
 
     # model presence check
@@ -196,6 +199,10 @@ sub client {
         }
         if ($client->get_named_arg('with-transform-extended')) {
             Bi::Visitor::ExtendedTransformer->evaluate($model);
+        } else {
+        	# needs to add some variable groups anyway so that ExtendedKF
+        	# C++ class doesn't cause compile errors
+            Bi::Visitor::ExtendedTransformer->dont_evaluate($model);
         }
         if ($client->get_named_arg('with-transform-iterated-filtering')) {
             Bi::Visitor::IteratedFilteringTransformer->evaluate($model);
@@ -209,25 +216,26 @@ sub client {
             my $optimiser = new Bi::Optimiser($model);
             $optimiser->optimise;
         }
-    
-        # doxygen
-        my $doxyfile = new Bi::Gen::Doxyfile($builder->get_dir);
-        $doxyfile->gen($model);
     }
 
     # generate code and build
     if ($client->is_cpp) {
-        if (defined $model && !$self->{_dry_gen}) {
-            $self->_report("Generating code...");
+        $self->_lock($builder->get_dir);
+        if (!$self->{_dry_gen}) {
+            $self->_report("Generating Doxyfile...");
+   	        $doxyfile->gen($model);
+        		
+            $self->_report("Generating C++ code...");
             $cpp->gen($model, $client);
             
-            $self->_report("Generating build system...");
+            $self->_report("Generating GNU autotools build system...");
             $build->gen($model);
         }
         if (!$self->{_dry_build}) {
             $self->_report("Building...");
             $builder->build($client->get_binary);
         }
+        $self->_unlock;
     }
         
     if (!$self->{_dry_run}) {
@@ -248,6 +256,36 @@ sub _report {
     if ($self->{_verbose}) {
         print STDERR "$msg\n";
     }
+}
+
+=item B<_lock>(I<builddir>)
+
+Lock the build directory.
+
+=cut
+sub _lock {
+    my $self = shift;
+    my $builddir = shift;
+
+    my $fh;
+    my $file = File::Spec->catfile($builddir, 'lock');
+    open($fh, ">", $file) || die("could not open lock file $file\n");
+    flock($fh, LOCK_EX) || die("could not lock file $file\n");
+    $self->{_lockfh} = $fh;
+}
+
+=item B<_unlock>()
+
+Unlock the build directory.
+
+=cut
+sub _unlock {
+    my $self = shift;
+
+    my $fh = $self->{_lockfh};
+    flock($fh, LOCK_UN);
+    close $fh;
+    $self->{_lockfh} = $fh;
 }
 
 =back

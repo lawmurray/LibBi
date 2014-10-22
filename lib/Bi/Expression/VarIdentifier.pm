@@ -24,6 +24,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<var>, I<indexes>)
 
@@ -121,9 +122,13 @@ sub get_shape {
         my $shape = [];
         for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
             if ($self->get_indexes->[$i]->is_range) {
-                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
+            	if ($self->get_indexes->[$i]->get_size->is_const) {
+	                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
+            	} else {
+            		push(@$shape, 1);
+            	}
             }
-        }        
+        }
         return new Bi::Expression::Shape($shape);
     } else {
         return $self->get_var->get_shape;
@@ -186,10 +191,14 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
 
-    $self = $visitor->visit_before($self, @args);
-    @{$self->{_indexes}} = map { $_->accept($visitor, @args) } @{$self->get_indexes};
-
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
+    	    $self->get_indexes->[$i] = $self->get_indexes->[$i]->accept($visitor, @args);
+    	}
+    	$new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

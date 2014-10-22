@@ -10,6 +10,12 @@ Bi::Expression::Index - dimension index in a variable reference.
 
 L<Bi::Expression>
 
+=head1 DESCRIPTION
+
+An index is a single scalar expression. It is handled internally as a range
+with starting expression 0, ending expression 0, size 1, with a dynamic
+offset of the index expression.
+
 =head1 METHODS
 
 =over 4
@@ -22,7 +28,10 @@ use parent 'Bi::Expression';
 use warnings;
 use strict;
 
+use Bi::Expression::IntegerLiteral;
+
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<expr>)
 
@@ -43,7 +52,7 @@ sub new {
     my $class = shift;
     my $expr = shift;
     
-    assert(defined $expr) if DEBUG;
+    assert(defined $expr && $expr->isa('Bi::Expression')) if DEBUG;
     
     my $self = {
         _expr => $expr
@@ -69,10 +78,30 @@ sub clone {
 
 =item B<get_expr>
 
-Get the index expression.
+Get the index expression. This is used to dynamically offset output.
 
 =cut
 sub get_expr {
+    my $self = shift;
+    return $self->{_expr};
+}
+
+=item B<get_start>
+
+Always 0.
+
+=cut
+sub get_start {
+    my $self = shift;
+    return $self->{_expr};
+}
+
+=item B<get_end>
+
+Always 0.
+
+=cut
+sub get_end {
     my $self = shift;
     return $self->{_expr};
 }
@@ -97,11 +126,11 @@ sub is_range {
 
 =item B<get_size>
 
-Size of the range.
+Always 1.
 
 =cut
 sub get_size {
-    return 1;
+    return new Bi::Expression::IntegerLiteral(1);
 }
 
 =item B<accept>(I<visitor>, ...)
@@ -114,10 +143,12 @@ sub accept {
     my $visitor = shift;
     my @args = @_;
     
-    $self = $visitor->visit_before($self, @args);
-    $self->{_expr} = $self->get_expr->accept($visitor, @args);
-    
-    return $visitor->visit_after($self, @args);
+    my $new = $visitor->visit_before($self, @args);
+    if (refaddr($new) == refaddr($self)) {
+	    $self->{_expr} = $self->get_expr->accept($visitor, @args);
+        $new = $visitor->visit_after($self, @args);
+    }
+    return $new;
 }
 
 =item B<equals>(I<obj>)

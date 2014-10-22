@@ -23,6 +23,7 @@ use warnings;
 use strict;
 
 use Carp::Assert;
+use Scalar::Util 'refaddr';
 
 =item B<new>(I<sizes>)
 
@@ -77,7 +78,7 @@ sub clone {
 
 =item B<get_sizes>
 
-Get the starting index.
+Get the sizes.
 
 =cut
 sub get_sizes {
@@ -121,6 +122,19 @@ sub get_size2 {
     } else {
         return 1;
     }
+}
+
+=item B<compat>(I<obj>)
+
+Is an expression of this shape, if it appears on the left of an action,
+compatible with an expression of shape I<obj>, that appears on the right.
+
+=cut
+sub compat {
+    my $self = shift;
+    my $obj = shift;
+    
+    return $obj->get_count == 0 || $self->equals($obj);
 }
 
 =item B<equals>(I<obj>)

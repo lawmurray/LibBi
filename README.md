@@ -1,5 +1,5 @@
-LibBi README
-============
+LibBi README.md
+===============
 
 [LibBi](http://www.libbi.org) is used for state-space modelling and Bayesian
 inference on modern computer hardware, including multi-core CPUs, many-core
