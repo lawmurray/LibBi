@@ -2,7 +2,28 @@
 #include "parser.hpp"
 
 #define YY_DCL extern "C" int yylex()
+
+int line = 0, col = 0;
+
+void count() {
+  int i;
+
+  for (i = 0; yytext[i] != '\0'; ++i) {
+    if (yytext[i] == '\n') {
+      ++line;
+      col = 0;
+    } else if (yytext[i] == '\t') {
+      col += 8 - (col % 8);
+    } else {
+      ++col;
+    }
+  }
+}
 %}
+
+%option noyywrap
+
+%x COMMENT_EOL COMMENT_INLINE
 
 D                                  [0-9]
 L                                  [a-zA-Z_]
@@ -10,8 +31,6 @@ H                                  [a-fA-F0-9]
 E                                  [Ee][+-]?{D}+
 FS                                 (f|F|l|L)
 IS                                 (u|U|l|L)*
-
-%x COMMENT_EOL COMMENT_INLINE
 
 %%
 
@@ -35,18 +54,18 @@ IS                                 (u|U|l|L)*
 "obs"                               { count(); return OBS; }
 "if"                                { count(); return IF; }
 "while"                             { count(); return WHILE; }
-"true"                              { count(); return BOOLEAN_LITERAL; }
-"false"                             { count(); return BOOLEAN_LITERAL; }
+"true"                              { count(); return BOOL_LITERAL; }
+"false"                             { count(); return BOOL_LITERAL; }
 
 {L}({L}|{D})*                       { count(); return IDENTIFIER; }                   
 
-0[xX]{H}+{IS}?                      { count(); return INTEGER_LITERAL; }
-0{D}+{IS}?                          { count(); return INTEGER_LITERAL; }
-{D}+{IS}?                           { count(); return INTEGER_LITERAL; }
-L?\'(\.|[^\'])+\'                   { count(); return INTEGER_LITERAL; }
-{D}+{E}{FS}?                        { count(); return REAL_LITERAL; }
-{D}*\.{D}+({E})?{FS}?               { count(); return REAL_LITERAL; }
-{D}+\.{D}*({E})?{FS}?               { count(); return REAL_LITERAL; }
+0[xX]{H}+{IS}?                      { count(); return INT_LITERAL; }
+0{D}+{IS}?                          { count(); return INT_LITERAL; }
+{D}+{IS}?                           { count(); return INT_LITERAL; }
+L?\'(\.|[^\'])+\'                   { count(); return INT_LITERAL; }
+{D}+{E}{FS}?                        { count(); return DOUBLE_LITERAL; }
+{D}*\.{D}+({E})?{FS}?               { count(); return DOUBLE_LITERAL; }
+{D}+\.{D}*({E})?{FS}?               { count(); return DOUBLE_LITERAL; }
 L?\"(\.|[^\"])*\"                   { count(); return STRING_LITERAL; }
 L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
 
@@ -92,25 +111,3 @@ L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
 "\n"                                { count(); return ENDL; }
 
 %%
-
-int line = 0, col = 0;
-
-yywrap() {
-  return(1);
-}
-
-void count() {
-  int i;
-
-  for (i = 0; yytext[i] != '\0'; ++i) {
-    if (yytext[i] == '\n') {
-      ++line;
-      col = 0;
-    } else if (yytext[i] == '\t') {
-      col += 8 - (col % 8);
-    } else {
-      ++col;
-    }
-  }
-  ECHO;
-}

@@ -1,3 +1,30 @@
+%code requires
+{
+#include "bi/program/BinaryExpression.hpp"
+#include "bi/program/BoolLiteral.hpp"
+#include "bi/program/Conditional.hpp"
+#include "bi/program/Const.hpp"
+#include "bi/program/Dim.hpp"
+#include "bi/program/DoubleLiteral.hpp"
+#include "bi/program/Function.hpp"
+#include "bi/program/Hyper.hpp"
+#include "bi/program/Input.hpp"
+#include "bi/program/IntLiteral.hpp"
+#include "bi/program/LinearExpression.hpp"
+#include "bi/program/Loop.hpp"
+#include "bi/program/Method.hpp"
+#include "bi/program/Model.hpp"
+#include "bi/program/Obs.hpp"
+#include "bi/program/Operator.hpp"
+#include "bi/program/Param.hpp"
+#include "bi/program/Reference.hpp"
+#include "bi/program/State.hpp"
+#include "bi/program/StringLiteral.hpp"
+#include "bi/program/Symbol.hpp"
+#include "bi/program/Type.hpp"
+#include "bi/program/UnaryExpression.hpp"
+}
+
 %{
 #include <cstdio>
 #include <iostream>
@@ -8,31 +35,28 @@ extern "C" int yylex();
 extern "C" int yyparse();
 extern "C" FILE *yyin;
 
-extern int colno;
-extern int linno;
+extern int col;
+extern int line;
 
 void yyerror(const char *s);
+
 %}
 
 %union {
     bool valBool;
     int valInt;
-    real valReal;
+    double valDouble;
     char* valString;
     
-    bi::OperatorReference* valOperatorReference;
-    bi::Statement* valStatement;
-    bi::Model* valModel;
-    bi::Method* valMethod;
-    bi::Function* valFunction;
+    biprog::Operator* valOperator;
+    biprog::Statement* valStatement;
 }
 
-%token COMMENT_EOL COMMENT_START COMMENT_END
 %token MODEL FUNCTION METHOD BUILTIN CONST DIM HYPER PARAM INPUT STATE OBS IF WHILE
 %token <valString> IDENTIFIER
-%token <valBool> BOOLEAN_LITERAL
-%token <valInt> INTEGER_LITERAL
-%token <valReal> REAL_LITERAL
+%token <valBool> BOOL_LITERAL
+%token <valInt> INT_LITERAL
+%token <valDouble> DOUBLE_LITERAL
 %token <valString> STRING_LITERAL
 %token <valString> RIGHT_ARROW LEFT_ARROW RIGHT_DOUBLE_ARROW DOUBLE_DOT
 %token <valString> RIGHT_OP LEFT_OP AND_OP OR_OP LE_OP GE_OP EQ_OP NE_OP
@@ -40,13 +64,10 @@ void yyerror(const char *s);
 %token ENDL
 %token OTHER
 
-%type <valOperatorReference> traversal_operator type_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
-%type <valStatement> type boolean_literal integer_literal real_literal string_literal symbol reference traversal_expression type_expression postfix_expression defaulted_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression assignment_expression tuple_expression expression const_declaration dim_declaration var_declaration declaration if_statement while_statement statement
-%type <valModel> model
-%type <valMethod> method
-%type <valFunction> function
+%type <valOperator> traversal_operator type_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
+%type <valStatement> type bool_literal int_literal double_literal string_literal symbol reference traversal_expression type_expression postfix_expression defaulted_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression assignment_expression tuple_expression expression model method function if while const dim var statement statements
 
-%start file
+%start statements
 %%
 
 /***************************************************************************
@@ -54,205 +75,205 @@ void yyerror(const char *s);
  ***************************************************************************/
 
 type
-    : IDENTIFIER  { $$ = new bi::Type($1); }
+    : IDENTIFIER  { $$ = new biprog::Type($1); }
     ;
 
-boolean_literal
-    : BOOLEAN_LITERAL  { $$ = new bi::BooleanLiteral($1); }
+bool_literal
+    : BOOL_LITERAL  { $$ = new biprog::BoolLiteral($1); }
     ;
 
-integer_literal
-    : INTEGER_LITERAL  { $$ = new bi::IntegerLiteral($1); }
+int_literal
+    : INT_LITERAL  { $$ = new biprog::IntLiteral($1); }
     ;
 
-real_literal
-    : REAL_LITERAL  { $$ = new bi::RealLiteral($1); }
+double_literal
+    : DOUBLE_LITERAL  { $$ = new biprog::DoubleLiteral($1); }
     ;
 
 string_literal
-    : STRING_LITERAL  { $$ = new bi::StringLiteral($1); }
+    : STRING_LITERAL  { $$ = new biprog::StringLiteral($1); }
     ;
 
 symbol
-    : IDENTIFIER  { $$ = new bi::Symbol($1); }
+    : IDENTIFIER  { $$ = new biprog::Symbol($1); }
     ;
     
 reference
-    : symbol '[' statement ']'                     { $$ = new bi::Reference($1, $3); }
-    | symbol '(' statement ')'                     { $$ = new bi::Reference($1, NULL, $3); }
-    | symbol '(' statement ')' '{' statement '}'   { $$ = new bi::Reference($1, NULL, $3, $6); }
-    | symbol '{' statement '}'                     { $$ = new bi::Reference($1, NULL, NULL, $3); }
-    | symbol                                       { $$ = new bi::Reference($1); }
+    : symbol '[' statements ']'                     { $$ = new biprog::Reference($1, $3); }
+    | symbol '(' statements ')'                     { $$ = new biprog::Reference($1, NULL, $3); }
+    | symbol '(' statements ')' '{' statements '}'  { $$ = new biprog::Reference($1, NULL, $3, $6); }
+    | symbol '{' statements '}'                     { $$ = new biprog::Reference($1, NULL, NULL, $3); }
+    | symbol                                        { $$ = new biprog::Reference($1); }
     ;
 
 traversal_operator
-    : '.'  { $$ = new bi::OperatorReference('.'); }
+    : '.'  { $$ = new biprog::Operator('.'); }
     ;
     
 traversal_expression
     : reference
-    | traversal_expression traversal_operator reference  { $$ = new BinaryOperator($1, $2, $3); }
+    | traversal_expression traversal_operator reference  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
     
 type_operator
-    : ':'  { $$ = new bi::OperatorReference(':'); }
+    : ':'  { $$ = new biprog::Operator(':'); }
     ;
     
 type_expression
     : traversal_expression
-    | traversal_expression type_operator type  { $$ = new BinaryOperator($1, $2, $3); }
+    | traversal_expression type_operator type  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
     
 postfix_expression
     : type_expression
-    | boolean_literal
-    | integer_literal
-    | real_literal
+    | bool_literal
+    | int_literal
+    | double_literal
     | string_literal
     ;
 
 defaulted_expression
     : postfix_expression
-    | postfix_expression RIGHT_DOUBLE_ARROW defaulted_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | postfix_expression RIGHT_DOUBLE_ARROW defaulted_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 unary_operator
-    : '+'  { $$ = new bi::OperatorReference('+'); }
-    | '-'  { $$ = new bi::OperatorReference('-'); }
-    | '!'  { $$ = new bi::OperatorReference('!'); }
+    : '+'  { $$ = new biprog::Operator('+'); }
+    | '-'  { $$ = new biprog::Operator('-'); }
+    | '!'  { $$ = new biprog::Operator('!'); }
     ;
     
 unary_expression
     : defaulted_expression
-    | unary_operator unary_expression  { $$ = new bi::UnaryOperator($1, $2); }
+    | unary_operator unary_expression  { $$ = new biprog::UnaryExpression($1, $2); }
     ;
 
 pow_operator
-    : POW_OP       { $$ = new bi::OperatorReference($1); }
-    | ELEM_POW_OP  { $$ = new bi::OperatorReference($1); }
+    : POW_OP       { $$ = new biprog::Operator($1); }
+    | ELEM_POW_OP  { $$ = new biprog::Operator($1); }
     ;
 
 pow_expression
     : unary_expression
-    | pow_expression pow_operator unary_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | pow_expression pow_operator unary_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 multiplicative_operator
-    : '*'          { $$ = new bi::OperatorReference('*'); }
-    | ELEM_MUL_OP  { $$ = new bi::OperatorReference($1); }
-    | '/'          { $$ = new bi::OperatorReference('/'); }
-    | ELEM_DIV_OP  { $$ = new bi::OperatorReference($1); }
-    | '%'          { $$ = new bi::OperatorReference('%'); }
+    : '*'          { $$ = new biprog::Operator('*'); }
+    | ELEM_MUL_OP  { $$ = new biprog::Operator($1); }
+    | '/'          { $$ = new biprog::Operator('/'); }
+    | ELEM_DIV_OP  { $$ = new biprog::Operator($1); }
+    | '%'          { $$ = new biprog::Operator('%'); }
     ;
 
 multiplicative_expression
     : pow_expression
-    | multiplicative_expression multiplicative_operator pow_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | multiplicative_expression multiplicative_operator pow_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 additive_operator
-    : '+'          { $$ = new bi::OperatorReference('+'); }
-    | '-'          { $$ = new bi::OperatorReference('-'); }
+    : '+'          { $$ = new biprog::Operator('+'); }
+    | '-'          { $$ = new biprog::Operator('-'); }
     ;
 
 additive_expression
     : multiplicative_expression
-    | additive_expression additive_operator multiplicative_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | additive_expression additive_operator multiplicative_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 shift_operator
-    : LEFT_OP   { $$ = new bi::OperatorReference($1); }
-    | RIGHT_OP  { $$ = new bi::OperatorReference($1); }
+    : LEFT_OP   { $$ = new biprog::Operator($1); }
+    | RIGHT_OP  { $$ = new biprog::Operator($1); }
     ;
 
 shift_expression
     : additive_expression
-    | shift_expression shift_operator additive_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | shift_expression shift_operator additive_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 relational_operator
-    : '<'    { $$ = new bi::OperatorReference('<'); }
-    | '>'    { $$ = new bi::OperatorReference('>'); }
-    | LE_OP  { $$ = new bi::OperatorReference($1); }
-    | GE_OP  { $$ = new bi::OperatorReference($1); }
+    : '<'    { $$ = new biprog::Operator('<'); }
+    | '>'    { $$ = new biprog::Operator('>'); }
+    | LE_OP  { $$ = new biprog::Operator($1); }
+    | GE_OP  { $$ = new biprog::Operator($1); }
     ;
     
 relational_expression
     : shift_expression
-    | relational_expression relational_operator shift_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | relational_expression relational_operator shift_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 equality_operator
-    : EQ_OP  { $$ = new bi::OperatorReference($1); }
-    | NE_OP  { $$ = new bi::OperatorReference($1); }
+    : EQ_OP  { $$ = new biprog::Operator($1); }
+    | NE_OP  { $$ = new biprog::Operator($1); }
     ;
 
 equality_expression
     : relational_expression
-    | equality_expression equality_operator relational_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | equality_expression equality_operator relational_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 and_operator
-    : '&'  { $$ = new bi::OperatorReference('&'); }
+    : '&'  { $$ = new biprog::Operator('&'); }
     ;
     
 and_expression
 	: equality_expression
-	| and_expression and_operator equality_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+	| and_expression and_operator equality_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
 	;
 
 exclusive_or_operator
-    : '^'  { $$ = new bi::OperatorReference('^'); }
+    : '^'  { $$ = new biprog::Operator('^'); }
     ;
 
 exclusive_or_expression
 	: and_expression
-	| exclusive_or_expression exclusive_or_operator and_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+	| exclusive_or_expression exclusive_or_operator and_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
 	;
 
 inclusive_or_operator
-    : '|'  { $$ = new bi::OperatorReference('|'); }
+    : '|'  { $$ = new biprog::Operator('|'); }
     ;
 
 inclusive_or_expression
 	: exclusive_or_expression
-	| inclusive_or_expression inclusive_or_operator exclusive_or_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+	| inclusive_or_expression inclusive_or_operator exclusive_or_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
 
 logical_and_operator
-    : AND_OP  { $$ = new bi::OperatorReference($1); }
+    : AND_OP  { $$ = new biprog::Operator($1); }
     ;
 
 logical_and_expression
     : inclusive_or_expression
-    | logical_and_expression logical_and_operator equality_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | logical_and_expression logical_and_operator equality_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 logical_or_operator
-    : OR_OP  { $$ = new bi::OperatorReference($1); }
+    : OR_OP  { $$ = new biprog::Operator($1); }
     ;
 
 logical_or_expression
     : logical_and_expression
-    | logical_or_expression logical_or_operator logical_and_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | logical_or_expression logical_or_operator logical_and_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 assignment_operator
-    : LEFT_ARROW  { $$ = new bi::OperatorReference($1); }
-    | '~'         { $$ = new bi::OperatorReference('~'); }
+    : LEFT_ARROW  { $$ = new biprog::Operator($1); }
+    | '~'         { $$ = new biprog::Operator('~'); }
     ;
 
 assignment_expression
     : logical_or_expression
-    | logical_or_expression assignment_operator assignment_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | logical_or_expression assignment_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 tuple_operator
-    : ','  { $$ = new bi::OperatorReference(','); }
+    : ','  { $$ = new biprog::Operator(','); }
     ;
     
 tuple_expression
     : assignment_expression
-    | tuple_expression tuple_operator assignment_expression  { $$ = new bi::BinaryOperator($1, $2, $3); }
+    | tuple_expression tuple_operator assignment_expression  { $$ = new biprog::LinearExpression($1, $2, $3); }
     ;
 
 expression
@@ -261,87 +282,65 @@ expression
 
 
 /***************************************************************************
- * Declarations                                                            *
- ***************************************************************************/
- 
-const_declaration
-    : CONST reference  { $$ = new bi::Const($2); }
-    ;
-
-dim_declaration
-    : DIM reference  { $$ = new bi::Dim($2); }
-    ;
-
-var_declaration
-    : INPUT reference  { $$ = new bi::Input($2); }
-    | HYPER reference  { $$ = new bi::Hyper($2); }
-    | PARAM reference  { $$ = new bi::Param($2); }
-    | STATE reference  { $$ = new bi::State($2); }
-    | OBS reference  { $$ = new bi::Obs($2); }
-    ;
-
-declaration
-    : const_declaration
-    | dim_declaration
-    | var_declaration
-    ;
-
-
-/***************************************************************************
  * Statements                                                              *
  ***************************************************************************/
-
-if_statement
-    : IF '(' statement ')' '{' statement '}'  { $$ = new bi::Conditional($3, $6); }
-    ;
-
-while_statement
-    : WHILE '(' statement ')' '{' statement '}'  { $$ = new bi::Loop($3, $6); }
-    ;
-
-statement_operator
-    : ';'  { $$ = new bi::OperatorReference(';'); }
-    ;
-
-statement
-    : expression statement_operator
-    | declaration statement_operator
-    | if_statement statement_operator
-    | while_statement statement_operator
-    | expression statement_operator statement       { $$ = new bi::BinaryOperator($1, $2, $3); }
-    | declaration statement_operator statement      { $$ = new bi::BinaryOperator($1, $2, $3); }
-    | if_statement statement_operator statement     { $$ = new bi::BinaryOperator($1, $2, $3); }
-    | while_statement statement_operator statement  { $$ = new bi::BinaryOperator($1, $2, $3); }
-    ;
-
-    
-/***************************************************************************
- * Files                                                                   *
- ***************************************************************************/
-
+ 
 model
-    : MODEL reference  { $$ = new bi::Model($2); }
+    : MODEL reference  { $$ = new biprog::Model($2); }
     ;
     
 method
-    : METHOD reference  { $$ = new bi::Method($2); }
+    : METHOD reference  { $$ = new biprog::Method($2); }
     ;
 
 function
-    : FUNCTION symbol '(' statement ')' RIGHT_ARROW '(' statement ')' '{' statement '}'  { $$ = new bi::Function($2, $4, $8, $11); }
-    | FUNCTION symbol '(' statement ')' RIGHT_ARROW '(' statement ')' '{' '}'            { $$ = new bi::Function($2, $4, $8); }
+    : FUNCTION symbol '(' statements ')' RIGHT_ARROW '(' statements ')' '{' statements '}'  { $$ = new biprog::Function($2, $4, $8, $11); }
+    | FUNCTION symbol '(' statements ')' RIGHT_ARROW '(' statements ')' '{' '}'             { $$ = new biprog::Function($2, $4, $8); }
     ;
 
-top
+if
+    : IF '(' statements ')' '{' statements '}'  { $$ = new biprog::Conditional($3, $6); }
+    ;
+
+while
+    : WHILE '(' statements ')' '{' statements '}'  { $$ = new biprog::Loop($3, $6); }
+    ;
+
+const
+    : CONST reference  { $$ = new biprog::Const($2); }
+    ;
+
+dim
+    : DIM reference  { $$ = new biprog::Dim($2); }
+    ;
+
+var
+    : INPUT reference  { $$ = new biprog::Input($2); }
+    | HYPER reference  { $$ = new biprog::Hyper($2); }
+    | PARAM reference  { $$ = new biprog::Param($2); }
+    | STATE reference  { $$ = new biprog::State($2); }
+    | OBS reference    { $$ = new biprog::Obs($2); }
+    ;
+
+statement_operator
+    : ';'  { $$ = new biprog::Operator(';'); }
+    ;
+
+statement
     : model
     | method
     | function
+    | if
+    | while
+    | const
+    | dim
+    | var
+    | expression
     ;
-
-file
-    : file top
-    | top
-    ;
+    
+statements
+    : statement statement_operator
+    | statement statement_operator statements  { $$ = new biprog::LinearExpression($1, $2, $3); }
 
 %%
 
@@ -354,6 +353,6 @@ int main() {
 }
 
 void yyerror(const char *msg) {
-  std::cerr << "Error (line " << linno << " col " << colno << "): " << msg << std::endl;
+  std::cerr << "Error (line " << line << " col " << col << "): " << msg << std::endl;
   exit(-1);
 }

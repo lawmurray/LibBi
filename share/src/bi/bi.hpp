@@ -63,6 +63,9 @@
  *   @defgroup state_gpu Device memory bindings
  *   @ingroup state
  *
+ * @defgroup program Programs
+ * Representation of programs written in the LibBi language.
+ *
  * @defgroup server Servers
  *
  * @defgroup io I/O

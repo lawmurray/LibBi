@@ -96,7 +96,7 @@ endif
 bin_PROGRAMS = test_parser_cpu[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
 
 test_parser_cpu_LDADD = $(DEPS_LIBS) libbi.a
-test_parser_cpu_SOURCES = lexer.lpp parser.ypp parser.hpp
+test_parser_cpu_SOURCES = parser.ypp lexer.lpp parser.hpp
 
 [% FOREACH client IN CLIENTS %]
 [% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.a
