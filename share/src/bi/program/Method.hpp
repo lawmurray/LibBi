@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Method(const char* name, Statement* in, Statement* body);
+  Method(const char* name, Statement* in = NULL, Statement* body = NULL);
 
   /**
    * Destructor.

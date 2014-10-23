@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Model(const char* name, Statement* in, Statement* body);
+  Model(const char* name, Statement* in = NULL, Statement* body = NULL);
 
   /**
    * Destructor.

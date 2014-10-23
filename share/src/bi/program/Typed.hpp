@@ -37,7 +37,8 @@ public:
 };
 }
 
-inline biprog::Typed::Typed(Type* type) : type(type) {
+inline biprog::Typed::Typed(Type* type) :
+    type(type) {
   //
 }
 

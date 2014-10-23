@@ -22,7 +22,7 @@ public:
   /**
    * Constructor.
    */
-  Loop(Expression* cond, Statement* body);
+  Loop(Expression* cond, Statement* body = NULL);
 
   /**
    * Destructor.

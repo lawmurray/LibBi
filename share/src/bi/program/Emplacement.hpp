@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Emplacement(Type* type, Statement* in, Statement* body);
+  Emplacement(Type* type, Statement* in = NULL, Statement* body = NULL);
 
   /**
    * Destructor.

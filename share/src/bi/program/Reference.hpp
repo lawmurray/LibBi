@@ -8,9 +8,10 @@
 #ifndef BI_PROGRAM_REFERENCE_HPP
 #define BI_PROGRAM_REFERENCE_HPP
 
+#include "Expression.hpp"
 #include "Named.hpp"
 #include "Bracketed.hpp"
-#include "Expression.hpp"
+#include "Parenthesised.hpp"
 
 #include "boost/shared_ptr.hpp"
 
@@ -20,44 +21,30 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public Named, public Bracketed, public Expression {
+class Reference: public Expression,
+    public Named,
+    public Bracketed,
+    public Parenthesised {
 public:
   /**
    * Constructor.
    *
    * @param name Name.
-   * @param in Statement in parentheses.
    * @param index Statement in square brackets.
-   * @param body Statement in curly brackets.
+   * @param in Statement in parentheses.
    */
-  Reference(const char* name, Statement* in = NULL, Statement* index = NULL,
-      Statement* body = NULL);
+  Reference(const char* name, Statement* index = NULL, Statement* in = NULL);
 
   /**
    * Destructor.
    */
   virtual ~Reference();
-
-  /**
-   * First statement in intheses.
-   */
-  boost::shared_ptr<Statement> in;
-
-  /**
-   * First statement in index brackets.
-   */
-  boost::shared_ptr<Statement> index;
-
-  /**
-   * First statement in body brackets.
-   */
-  boost::shared_ptr<Statement> body;
 };
 }
 
-inline biprog::Reference::Reference(const char* name, Statement* in,
-    Statement* index, Statement* body) :
-    Named(name), in(in), index(index), body(body) {
+inline biprog::Reference::Reference(const char* name, Statement* index,
+    Statement* in) :
+    Named(name), Bracketed(index), Parenthesised(in) {
   //
 }
 

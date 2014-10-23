@@ -22,7 +22,7 @@ public:
   /**
    * Constructor.
    */
-  Conditional(Expression* cond, Statement* body);
+  Conditional(Expression* cond, Statement* body = NULL);
 
   /**
    * Destructor.

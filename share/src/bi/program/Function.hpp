@@ -32,7 +32,8 @@ public:
    * @param out Output statement.
    * @param body Body.
    */
-  Function(const char* name, Statement* in, Statement* out, Statement* body);
+  Function(const char* name, Statement* in = NULL, Statement* out = NULL,
+      Statement* body = NULL);
 
   /**
    * Destructor.
