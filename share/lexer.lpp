@@ -45,7 +45,6 @@ IS                                 (u|U|l|L)*
 "model"                             { count(); return MODEL; }
 "method"                            { count(); return METHOD; }
 "function"                          { count(); return FUNCTION; }
-"const"                             { count(); return CONST; }
 "dim"                               { count(); return DIM; }
 "var"                               { count(); return VAR; }
 "if"                                { count(); return IF; }

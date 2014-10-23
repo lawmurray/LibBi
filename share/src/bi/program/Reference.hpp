@@ -9,6 +9,7 @@
 #define BI_PROGRAM_REFERENCE_HPP
 
 #include "Named.hpp"
+#include "Bracketed.hpp"
 #include "Expression.hpp"
 
 #include "boost/shared_ptr.hpp"
@@ -19,7 +20,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public Named, public Expression {
+class Reference: public Named, public Bracketed, public Expression {
 public:
   /**
    * Constructor.

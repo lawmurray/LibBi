@@ -9,6 +9,7 @@
 #define BI_PROGRAM_DIM_HPP
 
 #include "Declaration.hpp"
+#include "Bracketed.hpp"
 
 namespace biprog {
 /**
@@ -16,12 +17,12 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public Declaration {
+class Dim: public Declaration, public Named, public Bracketed {
 public:
   /**
    * Constructor.
    */
-  Dim(Reference* ref);
+  Dim(const char* name, Statement* index);
 
   /**
    * Destructor.
@@ -30,7 +31,8 @@ public:
 };
 }
 
-inline biprog::Dim::Dim(Reference* ref) : Declaration(ref) {
+inline biprog::Dim::Dim(const char* name, Statement* index) :
+    Named(name), Bracketed(index) {
   //
 }
 

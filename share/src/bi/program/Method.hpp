@@ -9,6 +9,9 @@
 #define BI_PROGRAM_METHOD_HPP
 
 #include "Declaration.hpp"
+#include "Named.hpp"
+#include "Parenthesised.hpp"
+#include "Bodied.hpp"
 
 namespace biprog {
 /**
@@ -16,12 +19,15 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Method: public Declaration {
+class Method: public Declaration,
+    public Named,
+    public Parenthesised,
+    public Bodied {
 public:
   /**
    * Constructor.
    */
-  Method(Reference* ref);
+  Method(const char* name, Statement* in, Statement* body);
 
   /**
    * Destructor.
@@ -30,7 +36,9 @@ public:
 };
 }
 
-inline biprog::Method::Method(Reference* ref) : Declaration(ref) {
+inline biprog::Method::Method(const char* name, Statement* in,
+    Statement* body) :
+    Named(name), Parenthesised(in), Bodied(body) {
   //
 }
 

@@ -22,11 +22,6 @@ namespace biprog {
 class Declaration: public Statement {
 public:
   /**
-   * Constructor.
-   */
-  Declaration(Reference* ref);
-
-  /**
    * Destructor.
    */
   virtual ~Declaration() = 0;
@@ -36,10 +31,6 @@ public:
    */
   boost::shared_ptr<Reference> ref;
 };
-}
-
-inline biprog::Declaration::Declaration(Reference* ref) : ref(ref) {
-  //
 }
 
 inline biprog::Declaration::~Declaration() {

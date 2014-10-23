@@ -9,6 +9,9 @@
 #define BI_PROGRAM_MODEL_HPP
 
 #include "Declaration.hpp"
+#include "Named.hpp"
+#include "Parenthesised.hpp"
+#include "Bodied.hpp"
 
 namespace biprog {
 /**
@@ -16,12 +19,15 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Model: public Declaration {
+class Model: public Declaration,
+    public Named,
+    public Parenthesised,
+    public Bodied {
 public:
   /**
    * Constructor.
    */
-  Model(Reference* ref);
+  Model(const char* name, Statement* in, Statement* body);
 
   /**
    * Destructor.
@@ -30,7 +36,8 @@ public:
 };
 }
 
-inline biprog::Model::Model(Reference* ref) : Declaration(ref) {
+inline biprog::Model::Model(const char* name, Statement* in, Statement* body) :
+    Named(name), Parenthesised(in), Bodied(body) {
   //
 }
 

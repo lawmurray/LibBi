@@ -3,9 +3,9 @@
 #include "bi/program/BinaryExpression.hpp"
 #include "bi/program/BoolLiteral.hpp"
 #include "bi/program/Conditional.hpp"
-#include "bi/program/Const.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/DoubleLiteral.hpp"
+#include "bi/program/Emplacement.hpp"
 #include "bi/program/Function.hpp"
 #include "bi/program/IntLiteral.hpp"
 #include "bi/program/Loop.hpp"
@@ -52,7 +52,7 @@ void yyerror(const char *s);
     biprog::Statement* valStatement;
 }
 
-%token MODEL FUNCTION METHOD BUILTIN CONST DIM VAR IF WHILE
+%token MODEL FUNCTION METHOD BUILTIN DIM VAR IF WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
 %token <valInt> INT_LITERAL
@@ -68,8 +68,8 @@ void yyerror(const char *s);
 %type <valOperator> traversal_operator type_operator default_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
 %type <valReference> reference
 %type <valExpression> bool_literal int_literal double_literal string_literal traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
-%type <valDeclaration> model method function const dim var declaration
-%type <valStatement> if while statement statements
+%type <valDeclaration> model method function dim var declaration
+%type <valStatement> parens brackets body if while emplace statement statements
 
 %start statements
 %%
@@ -102,8 +102,6 @@ reference
     : IDENTIFIER                                        { $$ = new biprog::Reference($1); }
     | IDENTIFIER '(' statements ')'                     { $$ = new biprog::Reference($1, $3); }
     | IDENTIFIER '[' statements ']'                     { $$ = new biprog::Reference($1, NULL, $3); }
-    | IDENTIFIER '{' statements '}'                     { $$ = new biprog::Reference($1, NULL, NULL, $3); }
-    | IDENTIFIER '(' statements ')' '{' statements '}'  { $$ = new biprog::Reference($1, $3, NULL, $6); }
     ;
 
 traversal_operator
@@ -295,35 +293,32 @@ expression
  ***************************************************************************/
 
 model
-    : MODEL reference  { $$ = new biprog::Model($2); }
+    : MODEL IDENTIFIER parens body  { $$ = new biprog::Model($2, $3, $4); }
+    | MODEL IDENTIFIER body         { $$ = new biprog::Model($2, NULL, $3); }
     ;
     
 method
-    : METHOD reference  { $$ = new biprog::Method($2); }
+    : METHOD IDENTIFIER parens body  { $$ = new biprog::Method($2, $3, $4); }
+    | METHOD IDENTIFIER body         { $$ = new biprog::Method($2, NULL, $3); }
     ;
 
 function
-    : FUNCTION IDENTIFIER '(' statements ')' RIGHT_ARROW '(' statements ')' '{' statements '}'  { $$ = new biprog::Function($2, $4, $8, $11); }
-    | FUNCTION IDENTIFIER '(' statements ')' RIGHT_ARROW '(' statements ')' '{' '}'             { $$ = new biprog::Function($2, $4, $8); }
-    ;
-
-const
-    : CONST reference  { $$ = new biprog::Const($2); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens body  { $$ = new biprog::Function($2, $3, $5, $6); }
     ;
 
 dim
-    : DIM reference  { $$ = new biprog::Dim($2); }
+    : DIM IDENTIFIER brackets  { $$ = new biprog::Dim($2, $3); }
     ;
 
 var
-    : VAR reference  { $$ = new biprog::Var($2); }
+    : VAR IDENTIFIER ':' type           { $$ = new biprog::Var($2, $4); }
+    | VAR IDENTIFIER ':' type brackets  { $$ = new biprog::Var($2, $4, $5); }
     ;
 
 declaration
     : model
     | method
     | function
-    | const
     | dim
     | var
     ;
@@ -333,12 +328,31 @@ declaration
  * Statements                                                              *
  ***************************************************************************/
 
+parens
+    : '(' statements ')'  { $$ = $2; }
+    | '(' ')'             { $$ = NULL; }
+    ;
+    
+brackets
+    : '[' statements ']'  { $$ = $2; }
+    ;
+
+body
+    : '{' statements '}'  { $$ = $2; }
+    | '{' '}'  { $$ = NULL; }
+    ;
+
 if
     : IF '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Conditional($3, $6); }
     ;
 
 while
     : WHILE '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Loop($3, $6); }
+    ;
+
+emplace
+    : type '{' statements '}'                     { $$ = new biprog::Emplacement($1, NULL, $3); }
+    | type '(' statements ')' '{' statements '}'  { $$ = new biprog::Emplacement($1, $3, $6); }
     ;
 
 statement_operator
@@ -349,13 +363,15 @@ statement
     : declaration statement_operator
     | if
     | while
+    | emplace
     | expression statement_operator
     ;
     
 statements
     : statement
     | statement statements  { $$ = new biprog::Sequence($1, $2); }
-
+    ;
+    
 %%
 
 int main() {

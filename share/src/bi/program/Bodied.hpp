@@ -1,0 +1,50 @@
+/**
+ * @file
+ *
+ * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * $Rev$
+ * $Date$
+ */
+#ifndef BI_PROGRAM_BODIED_HPP
+#define BI_PROGRAM_BODIED_HPP
+
+#include "boost/shared_ptr.hpp"
+
+namespace biprog {
+/**
+ * Bodied expression.
+ *
+ * @ingroup program
+ */
+class Bodied {
+public:
+  /**
+   * Constructor.
+   *
+   * @param in Statement in curly brackets.
+   */
+  Bodied(Statement* body = NULL);
+
+  /**
+   * Destructor.
+   */
+  virtual ~Bodied() = 0;
+
+  /**
+   * First statement in in brackets.
+   */
+  boost::shared_ptr<Statement> body;
+};
+}
+
+inline biprog::Bodied::Bodied(Statement* body) :
+    body(body) {
+  //
+}
+
+inline biprog::Bodied::~Bodied() {
+  //
+}
+
+#endif
+
