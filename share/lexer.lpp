@@ -34,7 +34,7 @@ IS                                 (u|U|l|L)*
 
 %%
 
-[ \t]                               { count(); }
+[ \t\n]                             { count(); }
 "//"                                { BEGIN(COMMENT_EOL); }
 <COMMENT_EOL>"\n"                   { count(); BEGIN(INITIAL); }
 "/*"                                { BEGIN(COMMENT_INLINE); }
@@ -104,6 +104,5 @@ L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
 "^"                                 { count(); return '^'; }
 "|"                                 { count(); return '|'; }
 "?"                                 { count(); return '?'; }
-"\n"                                { count(); return ENDL; }
 
 %%
