@@ -9,6 +9,7 @@
 #define BI_PROGRAM_LOOP_HPP
 
 #include "Statement.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -21,13 +22,32 @@ public:
   /**
    * Constructor.
    */
-  Loop();
+  Loop(Expression* cond, Statement* body);
 
   /**
    * Destructor.
    */
   virtual ~Loop();
+
+  /**
+   * Condition.
+   */
+  Expression* cond;
+
+  /**
+   * Body.
+   */
+  Statement* body;
 };
+}
+
+inline biprog::Loop::Loop(Expression* cond, Statement* body) :
+    cond(cond), body(body) {
+  //
+}
+
+inline biprog::Loop::~Loop() {
+  //
 }
 
 #endif

@@ -21,13 +21,21 @@ public:
   /**
    * Constructor.
    */
-  Var();
+  Var(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Var();
 };
+}
+
+inline biprog::Var::Var(Reference* ref) : Declaration(ref) {
+  //
+}
+
+inline biprog::Var::~Var() {
+  //
 }
 
 #endif

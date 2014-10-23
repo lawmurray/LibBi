@@ -24,8 +24,7 @@ public:
   /**
    * Constructor.
    */
-  BinaryExpression(const Expression* left, const Operator* op,
-      const Expression* right);
+  BinaryExpression(Expression* left, Operator* op, Expression* right);
 
   /**
    * Destructor.
@@ -49,8 +48,8 @@ public:
 };
 }
 
-inline biprog::BinaryExpression::BinaryExpression(const Expression* left,
-    const Operator* op, const Expression* right) :
+inline biprog::BinaryExpression::BinaryExpression(Expression* left,
+    Operator* op, Expression* right) :
     left(left), op(op), right(right) {
   //
 }

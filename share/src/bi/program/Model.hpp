@@ -21,13 +21,21 @@ public:
   /**
    * Constructor.
    */
-  Model();
+  Model(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Model();
 };
+}
+
+inline biprog::Model::Model(Reference* ref) : Declaration(ref) {
+  //
+}
+
+inline biprog::Model::~Model() {
+  //
 }
 
 #endif

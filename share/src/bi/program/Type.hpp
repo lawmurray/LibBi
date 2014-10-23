@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Type : public Named {
+class Type : public Named, public Expression {
 public:
   /**
    * Constructor.

@@ -20,14 +20,36 @@ class Function: public Declaration {
 public:
   /**
    * Constructor.
+   *
+   * @param name Name.
+   * @param in Input statement.
+   * @param out Output statement.
+   * @param body Body.
+   *
    */
-  Function();
+  Function(const char* name, Statement* in = NULL, Statement* out = NULL,
+      Statement* body = NULL);
 
   /**
    * Destructor.
    */
   virtual ~Function();
+
+  /**
+   * Output statement.
+   */
+  boost::shared_ptr<Statement> out;
 };
+}
+
+inline biprog::Function::Function(const char* name, Statement* in,
+    Statement* out, Statement* body) :
+    Declaration(new Reference(name, in, NULL, body)), out(out) {
+  //
+}
+
+inline biprog::Function::~Function() {
+  //
 }
 
 #endif

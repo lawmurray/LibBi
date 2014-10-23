@@ -17,15 +17,14 @@ namespace biprog {
 class Statement {
 public:
   /**
-   * Constructor.
-   */
-  Statement();
-
-  /**
    * Destructor.
    */
-  virtual ~Statement();
+  virtual ~Statement() = 0;
 };
+}
+
+inline biprog::Statement::~Statement() {
+  //
 }
 
 #endif

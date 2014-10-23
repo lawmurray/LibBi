@@ -25,7 +25,7 @@ public:
    * @param op Operator.
    * @param right Right operand.
    */
-  UnaryExpression(const Operator* op, const Expression* right);
+  UnaryExpression(Operator* op, Expression* right);
 
   /**
    * Destructor.
@@ -44,8 +44,8 @@ public:
 };
 }
 
-inline biprog::UnaryExpression::UnaryExpression(const Operator* op,
-    const Expression* right) :
+inline biprog::UnaryExpression::UnaryExpression(Operator* op,
+    Expression* right) :
     op(op), right(right) {
   //
 }

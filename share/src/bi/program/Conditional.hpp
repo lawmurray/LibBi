@@ -9,6 +9,7 @@
 #define BI_PROGRAM_CONDITIONAL_HPP
 
 #include "Statement.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -21,13 +22,32 @@ public:
   /**
    * Constructor.
    */
-  Conditional();
+  Conditional(Expression* cond, Statement* body);
 
   /**
    * Destructor.
    */
   virtual ~Conditional();
+
+  /**
+   * Condition.
+   */
+  Expression* cond;
+
+  /**
+   * Body.
+   */
+  Statement* body;
 };
+}
+
+inline biprog::Conditional::Conditional(Expression* cond, Statement* body) :
+    cond(cond), body(body) {
+  //
+}
+
+inline biprog::Conditional::~Conditional() {
+  //
 }
 
 #endif

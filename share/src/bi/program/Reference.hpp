@@ -25,12 +25,12 @@ public:
    * Constructor.
    *
    * @param name Name.
-   * @param paren First statement in parentheses.
-   * @param square First statement in square brackets.
-   * @param curly First statement in curly brackets.
+   * @param in Statement in parentheses.
+   * @param index Statement in square brackets.
+   * @param body Statement in curly brackets.
    */
-  Reference(const char* name, const Statement* paren = NULL,
-      const Statement* square = NULL, const Statement* curly = NULL);
+  Reference(const char* name, Statement* in = NULL, Statement* index = NULL,
+      Statement* body = NULL);
 
   /**
    * Destructor.
@@ -38,25 +38,25 @@ public:
   virtual ~Reference();
 
   /**
-   * First statement in parentheses.
+   * First statement in intheses.
    */
-  boost::shared_ptr<Statement> paren;
+  boost::shared_ptr<Statement> in;
 
   /**
-   * First statement in square brackets.
+   * First statement in index brackets.
    */
-  boost::shared_ptr<Statement> square;
+  boost::shared_ptr<Statement> index;
 
   /**
-   * First statement in curly brackets.
+   * First statement in body brackets.
    */
-  boost::shared_ptr<Statement> curly;
+  boost::shared_ptr<Statement> body;
 };
 }
 
-inline biprog::Reference::Reference(const char* name, const Statement* paren,
-    const Statement* square, const Statement* curly) :
-    Named(name), paren(paren), square(square), curly(curly) {
+inline biprog::Reference::Reference(const char* name, Statement* in,
+    Statement* index, Statement* body) :
+    Named(name), in(in), index(index), body(body) {
   //
 }
 

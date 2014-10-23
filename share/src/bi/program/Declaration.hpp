@@ -9,6 +9,9 @@
 #define BI_PROGRAM_DECLARATION_HPP
 
 #include "Statement.hpp"
+#include "Reference.hpp"
+
+#include "boost/shared_ptr.hpp"
 
 namespace biprog {
 /**
@@ -21,13 +24,26 @@ public:
   /**
    * Constructor.
    */
-  Declaration();
+  Declaration(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Declaration() = 0;
+
+  /**
+   * Reference.
+   */
+  boost::shared_ptr<Reference> ref;
 };
+}
+
+inline biprog::Declaration::Declaration(Reference* ref) : ref(ref) {
+  //
+}
+
+inline biprog::Declaration::~Declaration() {
+  //
 }
 
 #endif

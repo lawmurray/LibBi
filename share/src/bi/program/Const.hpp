@@ -21,13 +21,22 @@ public:
   /**
    * Constructor.
    */
-  Const();
+  Const(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Const();
 };
+}
+
+inline biprog::Const::Const(Reference* ref) :
+    Declaration(ref) {
+  //
+}
+
+inline biprog::Const::~Const() {
+  //
 }
 
 #endif

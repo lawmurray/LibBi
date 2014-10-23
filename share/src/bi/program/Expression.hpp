@@ -19,15 +19,14 @@ namespace biprog {
 class Expression: public Statement {
 public:
   /**
-   * Constructor.
-   */
-  Expression();
-
-  /**
    * Destructor.
    */
-  virtual ~Expression();
+  virtual ~Expression() = 0;
 };
+}
+
+inline biprog::Expression::~Expression() {
+  //
 }
 
 #endif

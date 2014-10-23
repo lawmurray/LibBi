@@ -21,13 +21,21 @@ public:
   /**
    * Constructor.
    */
-  Method();
+  Method(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Method();
 };
+}
+
+inline biprog::Method::Method(Reference* ref) : Declaration(ref) {
+  //
+}
+
+inline biprog::Method::~Method() {
+  //
 }
 
 #endif

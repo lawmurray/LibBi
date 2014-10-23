@@ -7,21 +7,17 @@
 #include "bi/program/Dim.hpp"
 #include "bi/program/DoubleLiteral.hpp"
 #include "bi/program/Function.hpp"
-#include "bi/program/Hyper.hpp"
-#include "bi/program/Input.hpp"
 #include "bi/program/IntLiteral.hpp"
-#include "bi/program/LinearExpression.hpp"
 #include "bi/program/Loop.hpp"
 #include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
-#include "bi/program/Obs.hpp"
 #include "bi/program/Operator.hpp"
-#include "bi/program/Param.hpp"
 #include "bi/program/Reference.hpp"
-#include "bi/program/State.hpp"
+#include "bi/program/Sequence.hpp"
 #include "bi/program/StringLiteral.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
+#include "bi/program/Var.hpp"
 
 #include <cstdio>
 #include <iostream>
@@ -50,6 +46,7 @@ void yyerror(const char *s);
     
     biprog::Type* valType;
     biprog::Operator* valOperator;
+    biprog::Reference* valReference;
     biprog::Expression* valExpression;
     biprog::Declaration* valDeclaration;
     biprog::Statement* valStatement;
@@ -69,7 +66,8 @@ void yyerror(const char *s);
 
 %type <valType> type
 %type <valOperator> traversal_operator type_operator default_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
-%type <valExpression> bool_literal int_literal double_literal string_literal reference traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
+%type <valReference> reference
+%type <valExpression> bool_literal int_literal double_literal string_literal traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
 %type <valDeclaration> model method function const dim var declaration
 %type <valStatement> if while statement statements
 
@@ -141,7 +139,7 @@ primary_expression
     | int_literal
     | double_literal
     | string_literal
-    | '(' expression ')'  { $$ = expression; }
+    | '(' expression ')'  { $$ = $2; }
     ;
 
 unary_operator
@@ -284,7 +282,7 @@ tuple_operator
     
 tuple_expression
     : assignment_expression
-    | tuple_expression tuple_operator assignment_expression  { $$ = new biprog::LinearExpression($1, $2, $3); }
+    | tuple_expression tuple_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 expression
@@ -356,7 +354,7 @@ statement
     
 statements
     : statement
-    | statement statements  { $$ = new biprog::LinearExpression($1, $2); }
+    | statement statements  { $$ = new biprog::Sequence($1, $2); }
 
 %%
 

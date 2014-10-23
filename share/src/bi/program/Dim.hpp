@@ -21,13 +21,21 @@ public:
   /**
    * Constructor.
    */
-  Dim();
+  Dim(Reference* ref);
 
   /**
    * Destructor.
    */
   virtual ~Dim();
 };
+}
+
+inline biprog::Dim::Dim(Reference* ref) : Declaration(ref) {
+  //
+}
+
+inline biprog::Dim::~Dim() {
+  //
 }
 
 #endif
