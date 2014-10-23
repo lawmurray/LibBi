@@ -46,9 +46,7 @@ void yyerror(const char *s);
     
     biprog::Type* valType;
     biprog::Operator* valOperator;
-    biprog::Reference* valReference;
     biprog::Expression* valExpression;
-    biprog::Declaration* valDeclaration;
     biprog::Statement* valStatement;
 }
 
@@ -66,17 +64,29 @@ void yyerror(const char *s);
 
 %type <valType> type
 %type <valOperator> traversal_operator type_operator default_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
-%type <valReference> reference
-%type <valExpression> bool_literal int_literal double_literal string_literal traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
-%type <valDeclaration> model method function dim var declaration
-%type <valStatement> parens brackets body if while emplace statement statements
+%type <valExpression> bool_literal int_literal double_literal string_literal reference traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
+%type <valStatement> parens brackets braces model method function dim var if while emplace statement statements
 
-%start statements
+%start file
 %%
 
 /***************************************************************************
  * Expressions                                                             *
  ***************************************************************************/
+
+parens
+    : '(' statements ')'  { $$ = $2; }
+    | '(' ')'             { $$ = NULL; }
+    ;
+    
+brackets
+    : '[' expression ']'  { $$ = $2; }
+    ;
+
+braces
+    : '{' statements '}'  { $$ = $2; }
+    | '{' '}'  { $$ = NULL; }
+    ;
 
 type
     : IDENTIFIER  { $$ = new biprog::Type($1); }
@@ -99,9 +109,9 @@ string_literal
     ;
     
 reference
-    : IDENTIFIER                                        { $$ = new biprog::Reference($1); }
-    | IDENTIFIER '(' statements ')'                     { $$ = new biprog::Reference($1, $3); }
-    | IDENTIFIER '[' statements ']'                     { $$ = new biprog::Reference($1, NULL, $3); }
+    : IDENTIFIER           { $$ = new biprog::Reference($1); }
+    | IDENTIFIER parens    { $$ = new biprog::Reference($1, $2); }
+    | IDENTIFIER brackets  { $$ = new biprog::Reference($1, NULL, $2); }
     ;
 
 traversal_operator
@@ -121,23 +131,23 @@ type_expression
     : traversal_expression
     | traversal_expression type_operator type  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
-
-default_operator
-    : '?'  { $$ = new biprog::Operator('?'); }
-    ;
-    
-default_expression
-    : type_expression
-    | type_expression default_operator default_expression { $$ = new biprog::BinaryExpression($1, $2, $3); }
-    ;
     
 primary_expression
-    : default_expression
+    : type_expression
     | bool_literal
     | int_literal
     | double_literal
     | string_literal
     | '(' expression ')'  { $$ = $2; }
+    ;
+
+default_operator
+    : '?'  { $$ = new biprog::Operator('?'); }
+    ;
+
+default_expression
+    : primary_expression
+    | primary_expression default_operator default_expression { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 unary_operator
@@ -147,7 +157,7 @@ unary_operator
     ;
     
 unary_expression
-    : primary_expression
+    : default_expression
     | unary_operator unary_expression  { $$ = new biprog::UnaryExpression($1, $2); }
     ;
 
@@ -271,7 +281,7 @@ assignment_operator
 
 assignment_expression
     : logical_or_expression
-    | unary_expression assignment_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | logical_or_expression assignment_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
 
 tuple_operator
@@ -287,80 +297,56 @@ expression
     : tuple_expression
     ;
 
-
-/***************************************************************************
- * Declarations                                                            *
- ***************************************************************************/
-
-model
-    : MODEL IDENTIFIER parens body  { $$ = new biprog::Model($2, $3, $4); }
-    | MODEL IDENTIFIER body         { $$ = new biprog::Model($2, NULL, $3); }
-    ;
-    
-method
-    : METHOD IDENTIFIER parens body  { $$ = new biprog::Method($2, $3, $4); }
-    | METHOD IDENTIFIER body         { $$ = new biprog::Method($2, NULL, $3); }
-    ;
-
-function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens body  { $$ = new biprog::Function($2, $3, $5, $6); }
-    ;
-
-dim
-    : DIM IDENTIFIER brackets  { $$ = new biprog::Dim($2, $3); }
-    ;
-
-var
-    : VAR IDENTIFIER ':' type           { $$ = new biprog::Var($2, $4); }
-    | VAR IDENTIFIER ':' type brackets  { $$ = new biprog::Var($2, $4, $5); }
-    ;
-
-declaration
-    : model
-    | method
-    | function
-    | dim
-    | var
-    ;
-
-
 /***************************************************************************
  * Statements                                                              *
  ***************************************************************************/
-
-parens
-    : '(' statements ')'  { $$ = $2; }
-    | '(' ')'             { $$ = NULL; }
-    ;
-    
-brackets
-    : '[' statements ']'  { $$ = $2; }
-    ;
-
-body
-    : '{' statements '}'  { $$ = $2; }
-    | '{' '}'  { $$ = NULL; }
-    ;
-
-if
-    : IF '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Conditional($3, $6); }
-    ;
-
-while
-    : WHILE '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Loop($3, $6); }
-    ;
-
-emplace
-    : type '{' statements '}'                     { $$ = new biprog::Emplacement($1, NULL, $3); }
-    | type '(' statements ')' '{' statements '}'  { $$ = new biprog::Emplacement($1, $3, $6); }
-    ;
 
 statement_operator
     : ';'  { $$ = new biprog::Operator(';'); }
     ;
 
+model
+    : MODEL IDENTIFIER parens braces  { $$ = new biprog::Model($2, $3, $4); }
+    | MODEL IDENTIFIER braces         { $$ = new biprog::Model($2, NULL, $3); }
+    ;
+    
+method
+    : METHOD IDENTIFIER parens braces  { $$ = new biprog::Method($2, $3, $4); }
+    | METHOD IDENTIFIER braces         { $$ = new biprog::Method($2, NULL, $3); }
+    ;
+
+function
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces  { $$ = new biprog::Function($2, $3, $5, $6); }
+    ;
+
+dim
+    : DIM IDENTIFIER brackets statement_operator  { $$ = new biprog::Dim($2, $3); }
+    ;
+
+var
+    : VAR IDENTIFIER ':' type statement_operator           { $$ = new biprog::Var($2, NULL, $4); }
+    | VAR IDENTIFIER brackets ':' type statement_operator  { $$ = new biprog::Var($2, $3, $5); }
+    ;
+
+if
+    : IF '(' logical_expression ')' braces  { $$ = new biprog::Conditional($3, $5); }
+    ;
+
+while
+    : WHILE '(' logical_expression ')' braces  { $$ = new biprog::Loop($3, $5); }
+    ;
+
+emplace
+    : type braces         { $$ = new biprog::Emplacement($1, NULL, $2); }
+    | type parens braces  { $$ = new biprog::Emplacement($1, $2, $3); }
+    ;
+
 statement
-    : declaration statement_operator
+    : model
+    | method
+    | function
+    | dim
+    | var
     | if
     | while
     | emplace
@@ -369,7 +355,18 @@ statement
     
 statements
     : statement
+    | expression
     | statement statements  { $$ = new biprog::Sequence($1, $2); }
+    ;
+
+
+/***************************************************************************
+ * File                                                                    *
+ ***************************************************************************/
+
+file
+    : statements
+    |
     ;
     
 %%

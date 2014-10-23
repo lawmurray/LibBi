@@ -3,7 +3,7 @@
 
 #define YY_DCL extern "C" int yylex()
 
-int line = 0, col = 0;
+int line = 1, col = 0;
 
 void count() {
   int i;
@@ -49,20 +49,20 @@ IS                                 (u|U|l|L)*
 "var"                               { count(); return VAR; }
 "if"                                { count(); return IF; }
 "while"                             { count(); return WHILE; }
-"true"                              { count(); return BOOL_LITERAL; }
-"false"                             { count(); return BOOL_LITERAL; }
+"true"                              { count(); yylval.valBool = true; return BOOL_LITERAL; }
+"false"                             { count(); yylval.valBool = false; return BOOL_LITERAL; }
 
-{L}({L}|{D})*                       { count(); return IDENTIFIER; }                   
+{L}({L}|{D})*                       { count(); yylval.valString = strdup(yytext); return IDENTIFIER; }                   
 
-0[xX]{H}+{IS}?                      { count(); return INT_LITERAL; }
-0{D}+{IS}?                          { count(); return INT_LITERAL; }
-{D}+{IS}?                           { count(); return INT_LITERAL; }
-L?\'(\.|[^\'])+\'                   { count(); return INT_LITERAL; }
-{D}+{E}{FS}?                        { count(); return DOUBLE_LITERAL; }
-{D}*\.{D}+({E})?{FS}?               { count(); return DOUBLE_LITERAL; }
-{D}+\.{D}*({E})?{FS}?               { count(); return DOUBLE_LITERAL; }
-L?\"(\.|[^\"])*\"                   { count(); return STRING_LITERAL; }
-L?\'(\.|[^\'])*\'                   { count(); return STRING_LITERAL; }
+0[xX]{H}+{IS}?                      { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
+0{D}+{IS}?                          { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
+{D}+{IS}?                           { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
+L?\'(\.|[^\'])+\'                   { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
+{D}+{E}{FS}?                        { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
+{D}*\.{D}+({E})?{FS}?               { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
+{D}+\.{D}*({E})?{FS}?               { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
+L?\"(\.|[^\"])*\"                   { count(); yylval.valString = strdup(yytext); return STRING_LITERAL; }
+L?\'(\.|[^\'])*\'                   { count(); yylval.valString = strdup(yytext); return STRING_LITERAL; }
 
 "->"                                { count(); return RIGHT_ARROW; }
 "<-"                                { count(); return LEFT_ARROW; } 

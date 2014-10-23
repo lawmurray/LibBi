@@ -10,8 +10,8 @@
 
 #include "Declaration.hpp"
 #include "Named.hpp"
-#include "Typed.hpp"
 #include "Bracketed.hpp"
+#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -19,12 +19,12 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Var: public Declaration, public Named, public Typed, public Bracketed {
+class Var: public Declaration, public Named, public Bracketed, public Typed {
 public:
   /**
    * Constructor.
    */
-  Var(const char* name, Type* type, Statement* index = NULL);
+  Var(const char* name, Statement* index, Type* type);
 
   /**
    * Destructor.
@@ -33,8 +33,8 @@ public:
 };
 }
 
-inline biprog::Var::Var(const char* name, Type* type, Statement* index) :
-    Named(name), Typed(type), Bracketed(index) {
+inline biprog::Var::Var(const char* name, Statement* index, Type* type) :
+    Named(name), Bracketed(index), Typed(type) {
   //
 }
 
