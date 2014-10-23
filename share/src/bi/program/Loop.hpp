@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_LOOP_HPP
 #define BI_PROGRAM_LOOP_HPP
 
-#include "Declared.hpp"
+#include "Statement.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public Declared {
+class Loop: public Statement {
 public:
   /**
    * Constructor.

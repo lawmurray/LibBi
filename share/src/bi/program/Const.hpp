@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_CONST_HPP
 #define BI_PROGRAM_CONST_HPP
 
-#include "Declared.hpp"
+#include "Declaration.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Const: public Declared {
+class Const: public Declaration {
 public:
   /**
    * Constructor.

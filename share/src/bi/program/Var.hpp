@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_VAR_HPP
 #define BI_PROGRAM_VAR_HPP
 
-#include "Declared.hpp"
+#include "Declaration.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Var: public Declared {
+class Var: public Declaration {
 public:
   /**
    * Constructor.

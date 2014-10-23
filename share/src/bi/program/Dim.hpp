@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_DIM_HPP
 #define BI_PROGRAM_DIM_HPP
 
-#include "Declared.hpp"
+#include "Declaration.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public Declared {
+class Dim: public Declaration {
 public:
   /**
    * Constructor.

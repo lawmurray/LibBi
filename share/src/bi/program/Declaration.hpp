@@ -5,28 +5,28 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_DECLARED_HPP
-#define BI_PROGRAM_DECLARED_HPP
+#ifndef BI_PROGRAM_DECLARATION_HPP
+#define BI_PROGRAM_DECLARATION_HPP
 
 #include "Statement.hpp"
 
 namespace biprog {
 /**
- * Declared.
+ * Declaration.
  *
  * @ingroup program
  */
-class Declared: public Statement {
+class Declaration: public Statement {
 public:
   /**
    * Constructor.
    */
-  Declared();
+  Declaration();
 
   /**
    * Destructor.
    */
-  virtual ~Declared() = 0;
+  virtual ~Declaration() = 0;
 };
 }
 

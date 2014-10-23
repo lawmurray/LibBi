@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_FUNCTION_HPP
 #define BI_PROGRAM_FUNCTION_HPP
 
-#include "Declared.hpp"
+#include "Declaration.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Function: public Declared {
+class Function: public Declaration {
 public:
   /**
    * Constructor.

@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_CONDITIONAL_HPP
 #define BI_PROGRAM_CONDITIONAL_HPP
 
-#include "Declared.hpp"
+#include "Statement.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditional: public Declared {
+class Conditional: public Statement {
 public:
   /**
    * Constructor.

@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_METHOD_HPP
 #define BI_PROGRAM_METHOD_HPP
 
-#include "Declared.hpp"
+#include "Declaration.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Method: public Declared {
+class Method: public Declaration {
 public:
   /**
    * Constructor.

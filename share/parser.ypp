@@ -50,10 +50,12 @@ void yyerror(const char *s);
     
     biprog::Type* valType;
     biprog::Operator* valOperator;
+    biprog::Expression* valExpression;
+    biprog::Declaration* valDeclaration;
     biprog::Statement* valStatement;
 }
 
-%token MODEL FUNCTION METHOD BUILTIN CONST DIM HYPER PARAM INPUT STATE OBS IF WHILE
+%token MODEL FUNCTION METHOD BUILTIN CONST DIM VAR IF WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
 %token <valInt> INT_LITERAL
@@ -67,7 +69,9 @@ void yyerror(const char *s);
 
 %type <valType> type
 %type <valOperator> traversal_operator type_operator default_operator unary_operator pow_operator multiplicative_operator additive_operator shift_operator relational_operator equality_operator and_operator exclusive_or_operator inclusive_or_operator logical_and_operator logical_or_operator assignment_operator tuple_operator statement_operator
-%type <valStatement> bool_literal int_literal double_literal string_literal reference traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression model method function if while const dim var statement statements
+%type <valExpression> bool_literal int_literal double_literal string_literal reference traversal_expression type_expression primary_expression default_expression unary_expression pow_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression logical_expression assignment_expression tuple_expression expression
+%type <valDeclaration> model method function const dim var declaration
+%type <valStatement> if while statement statements
 
 %start statements
 %%
@@ -97,11 +101,11 @@ string_literal
     ;
     
 reference
-    : IDENTIFIER '[' statements ']'                     { $$ = new biprog::Reference($1, $3); }
-    | IDENTIFIER '(' statements ')'                     { $$ = new biprog::Reference($1, NULL, $3); }
-    | IDENTIFIER '(' statements ')' '{' statements '}'  { $$ = new biprog::Reference($1, NULL, $3, $6); }
+    : IDENTIFIER                                        { $$ = new biprog::Reference($1); }
+    | IDENTIFIER '(' statements ')'                     { $$ = new biprog::Reference($1, $3); }
+    | IDENTIFIER '[' statements ']'                     { $$ = new biprog::Reference($1, NULL, $3); }
     | IDENTIFIER '{' statements '}'                     { $$ = new biprog::Reference($1, NULL, NULL, $3); }
-    | IDENTIFIER                                        { $$ = new biprog::Reference($1); }
+    | IDENTIFIER '(' statements ')' '{' statements '}'  { $$ = new biprog::Reference($1, $3, NULL, $6); }
     ;
 
 traversal_operator
@@ -289,9 +293,9 @@ expression
 
 
 /***************************************************************************
- * Statements                                                              *
+ * Declarations                                                            *
  ***************************************************************************/
- 
+
 model
     : MODEL reference  { $$ = new biprog::Model($2); }
     ;
@@ -305,14 +309,6 @@ function
     | FUNCTION IDENTIFIER '(' statements ')' RIGHT_ARROW '(' statements ')' '{' '}'             { $$ = new biprog::Function($2, $4, $8); }
     ;
 
-if
-    : IF '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Conditional($3, $6); }
-    ;
-
-while
-    : WHILE '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Loop($3, $6); }
-    ;
-
 const
     : CONST reference  { $$ = new biprog::Const($2); }
     ;
@@ -322,11 +318,29 @@ dim
     ;
 
 var
-    : INPUT reference  { $$ = new biprog::Input($2); }
-    | HYPER reference  { $$ = new biprog::Hyper($2); }
-    | PARAM reference  { $$ = new biprog::Param($2); }
-    | STATE reference  { $$ = new biprog::State($2); }
-    | OBS reference    { $$ = new biprog::Obs($2); }
+    : VAR reference  { $$ = new biprog::Var($2); }
+    ;
+
+declaration
+    : model
+    | method
+    | function
+    | const
+    | dim
+    | var
+    ;
+
+
+/***************************************************************************
+ * Statements                                                              *
+ ***************************************************************************/
+
+if
+    : IF '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Conditional($3, $6); }
+    ;
+
+while
+    : WHILE '(' logical_expression ')' '{' statements '}'  { $$ = new biprog::Loop($3, $6); }
     ;
 
 statement_operator
@@ -334,20 +348,15 @@ statement_operator
     ;
 
 statement
-    : model
-    | method
-    | function
+    : declaration statement_operator
     | if
     | while
-    | const
-    | dim
-    | var
-    | expression
+    | expression statement_operator
     ;
     
 statements
-    : statement statement_operator
-    | statement statement_operator statements  { $$ = new biprog::LinearExpression($1, $2, $3); }
+    : statement
+    | statement statements  { $$ = new biprog::LinearExpression($1, $2); }
 
 %%
 
