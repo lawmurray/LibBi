@@ -11,7 +11,7 @@
 #include "Statement.hpp"
 #include "Expression.hpp"
 
-#include "boost/shared_ptr.hpp"
+#include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
@@ -34,12 +34,12 @@ public:
   /**
    * Condition.
    */
-  boost::shared_ptr<Expression> cond;
+  boost::scoped_ptr<Expression> cond;
 
   /**
    * Body.
    */
-  boost::shared_ptr<Expression> body;
+  boost::scoped_ptr<Expression> body;
 };
 }
 

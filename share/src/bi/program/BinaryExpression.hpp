@@ -11,7 +11,7 @@
 #include "Expression.hpp"
 #include "Operator.hpp"
 
-#include "boost/shared_ptr.hpp"
+#include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
@@ -34,17 +34,17 @@ public:
   /**
    * Left operand.
    */
-  boost::shared_ptr<Expression> left;
+  boost::scoped_ptr<Expression> left;
 
   /**
    * Operator.
    */
-  boost::shared_ptr<Operator> op;
+  boost::scoped_ptr<Operator> op;
 
   /**
    * Right operand.
    */
-  boost::shared_ptr<Expression> right;
+  boost::scoped_ptr<Expression> right;
 };
 }
 

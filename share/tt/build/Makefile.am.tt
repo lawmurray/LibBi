@@ -108,6 +108,7 @@ bin_PROGRAMS = test_parser_cpu[% FOREACH client IN CLIENTS %] [% client %]_cpu [
 
 test_parser_cpu_LDADD = $(DEPS_LIBS) libbi.a
 test_parser_cpu_SOURCES = parser.ypp lexer.lpp
+#test_parser_cpu_CXXFLAGS = $(CXXFLAGS) -std=c++11
 
 [% FOREACH client IN CLIENTS %]
 [% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.a

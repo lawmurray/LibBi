@@ -11,7 +11,7 @@
 #include "Statement.hpp"
 #include "Reference.hpp"
 
-#include "boost/shared_ptr.hpp"
+#include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
@@ -29,7 +29,7 @@ public:
   /**
    * Reference.
    */
-  boost::shared_ptr<Reference> ref;
+  boost::scoped_ptr<Reference> ref;
 };
 }
 

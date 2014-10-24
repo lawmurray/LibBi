@@ -35,12 +35,12 @@ public:
   /**
    * Operator.
    */
-  boost::shared_ptr<Operator> op;
+  boost::scoped_ptr<Operator> op;
 
   /**
    * Right operand.
    */
-  boost::shared_ptr<Expression> right;
+  boost::scoped_ptr<Expression> right;
 };
 }
 

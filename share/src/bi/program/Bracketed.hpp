@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_BRACKETED_HPP
 #define BI_PROGRAM_BRACKETED_HPP
 
-#include "boost/shared_ptr.hpp"
+#include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
@@ -33,7 +33,7 @@ public:
   /**
    * First statement in index brackets.
    */
-  boost::shared_ptr<Expression> index;
+  boost::scoped_ptr<Expression> index;
 };
 }
 

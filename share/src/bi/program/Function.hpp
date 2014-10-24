@@ -43,7 +43,7 @@ public:
   /**
    * Output statement.
    */
-  boost::shared_ptr<Expression> out;
+  boost::scoped_ptr<Expression> out;
 };
 }
 

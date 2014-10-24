@@ -10,7 +10,7 @@
 
 #include "Statement.hpp"
 
-#include "boost/shared_ptr.hpp"
+#include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
@@ -33,12 +33,12 @@ public:
   /**
    * First statement.
    */
-  boost::shared_ptr<Expression> head;
+  boost::scoped_ptr<Expression> head;
 
   /**
    * Remaining statements.
    */
-  boost::shared_ptr<Expression> tail;
+  boost::scoped_ptr<Expression> tail;
 };
 }
 

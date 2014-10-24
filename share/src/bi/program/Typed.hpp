@@ -33,7 +33,7 @@ public:
   /**
    * Type.
    */
-  boost::shared_ptr<Type> type;
+  boost::scoped_ptr<Type> type;
 };
 }
 
