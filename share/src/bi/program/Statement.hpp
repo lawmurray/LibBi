@@ -8,13 +8,15 @@
 #ifndef BI_PROGRAM_STATEMENT_HPP
 #define BI_PROGRAM_STATEMENT_HPP
 
+#include "Expression.hpp"
+
 namespace biprog {
 /**
  * Statement.
  *
  * @ingroup program
  */
-class Statement {
+class Statement : public Expression {
 public:
   /**
    * Destructor.

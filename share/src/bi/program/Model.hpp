@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Model(const char* name, Statement* in = NULL, Statement* body = NULL);
+  Model(const char* name, Expression* in = NULL, Expression* body = NULL);
 
   /**
    * Destructor.
@@ -36,7 +36,7 @@ public:
 };
 }
 
-inline biprog::Model::Model(const char* name, Statement* in, Statement* body) :
+inline biprog::Model::Model(const char* name, Expression* in, Expression* body) :
     Named(name), Parenthesised(in), Bodied(body) {
   //
 }

@@ -32,8 +32,8 @@ public:
    * @param out Output statement.
    * @param body Body.
    */
-  Function(const char* name, Statement* in = NULL, Statement* out = NULL,
-      Statement* body = NULL);
+  Function(const char* name, Expression* in = NULL, Expression* out = NULL,
+      Expression* body = NULL);
 
   /**
    * Destructor.
@@ -43,12 +43,12 @@ public:
   /**
    * Output statement.
    */
-  boost::shared_ptr<Statement> out;
+  boost::shared_ptr<Expression> out;
 };
 }
 
-inline biprog::Function::Function(const char* name, Statement* in,
-    Statement* out, Statement* body) :
+inline biprog::Function::Function(const char* name, Expression* in,
+    Expression* out, Expression* body) :
     Named(name), Parenthesised(in), Bodied(body), out(out) {
   //
 }

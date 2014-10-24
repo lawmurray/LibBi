@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Method(const char* name, Statement* in = NULL, Statement* body = NULL);
+  Method(const char* name, Expression* in = NULL, Expression* body = NULL);
 
   /**
    * Destructor.
@@ -36,8 +36,8 @@ public:
 };
 }
 
-inline biprog::Method::Method(const char* name, Statement* in,
-    Statement* body) :
+inline biprog::Method::Method(const char* name, Expression* in,
+    Expression* body) :
     Named(name), Parenthesised(in), Bodied(body) {
   //
 }

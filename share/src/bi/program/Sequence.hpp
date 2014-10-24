@@ -23,7 +23,7 @@ public:
   /**
    * Constructor.
    */
-  Sequence(Statement* head, Statement* tail = NULL);
+  Sequence(Expression* head, Expression* tail = NULL);
 
   /**
    * Destructor.
@@ -33,16 +33,16 @@ public:
   /**
    * First statement.
    */
-  boost::shared_ptr<Statement> head;
+  boost::shared_ptr<Expression> head;
 
   /**
    * Remaining statements.
    */
-  boost::shared_ptr<Statement> tail;
+  boost::shared_ptr<Expression> tail;
 };
 }
 
-inline biprog::Sequence::Sequence(Statement* head, Statement* tail) :
+inline biprog::Sequence::Sequence(Expression* head, Expression* tail) :
     head(head), tail(tail) {
   //
 }

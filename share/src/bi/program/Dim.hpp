@@ -22,7 +22,7 @@ public:
   /**
    * Constructor.
    */
-  Dim(const char* name, Statement* index);
+  Dim(const char* name, Expression* index);
 
   /**
    * Destructor.
@@ -31,7 +31,7 @@ public:
 };
 }
 
-inline biprog::Dim::Dim(const char* name, Statement* index) :
+inline biprog::Dim::Dim(const char* name, Expression* index) :
     Named(name), Bracketed(index) {
   //
 }

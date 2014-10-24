@@ -24,7 +24,7 @@ public:
   /**
    * Constructor.
    */
-  Var(const char* name, Statement* index, Type* type);
+  Var(const char* name, Expression* index, Type* type);
 
   /**
    * Destructor.
@@ -33,7 +33,7 @@ public:
 };
 }
 
-inline biprog::Var::Var(const char* name, Statement* index, Type* type) :
+inline biprog::Var::Var(const char* name, Expression* index, Type* type) :
     Named(name), Bracketed(index), Typed(type) {
   //
 }

@@ -12,6 +12,7 @@
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
+#include "Bodied.hpp"
 
 #include "boost/shared_ptr.hpp"
 
@@ -24,16 +25,19 @@ namespace biprog {
 class Reference: public Expression,
     public Named,
     public Bracketed,
-    public Parenthesised {
+    public Parenthesised,
+    public Bodied {
 public:
   /**
    * Constructor.
    *
    * @param name Name.
-   * @param index Statement in square brackets.
-   * @param in Statement in parentheses.
+   * @param index Expression in square brackets.
+   * @param in Expression in parentheses.
+   * @param body Expression in braces.
    */
-  Reference(const char* name, Statement* index = NULL, Statement* in = NULL);
+  Reference(const char* name, Expression* index = NULL, Expression* in = NULL,
+      Expression* body = NULL);
 
   /**
    * Destructor.
@@ -42,9 +46,9 @@ public:
 };
 }
 
-inline biprog::Reference::Reference(const char* name, Statement* index,
-    Statement* in) :
-    Named(name), Bracketed(index), Parenthesised(in) {
+inline biprog::Reference::Reference(const char* name, Expression* index,
+    Expression* in, Expression* body) :
+    Named(name), Bracketed(index), Parenthesised(in), Bodied(body) {
   //
 }
 

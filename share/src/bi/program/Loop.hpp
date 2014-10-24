@@ -11,6 +11,8 @@
 #include "Statement.hpp"
 #include "Expression.hpp"
 
+#include "boost/shared_ptr.hpp"
+
 namespace biprog {
 /**
  * Loop.
@@ -22,7 +24,7 @@ public:
   /**
    * Constructor.
    */
-  Loop(Expression* cond, Statement* body = NULL);
+  Loop(Expression* cond, Expression* body = NULL);
 
   /**
    * Destructor.
@@ -32,16 +34,16 @@ public:
   /**
    * Condition.
    */
-  Expression* cond;
+  boost::shared_ptr<Expression> cond;
 
   /**
    * Body.
    */
-  Statement* body;
+  boost::shared_ptr<Expression> body;
 };
 }
 
-inline biprog::Loop::Loop(Expression* cond, Statement* body) :
+inline biprog::Loop::Loop(Expression* cond, Expression* body) :
     cond(cond), body(body) {
   //
 }

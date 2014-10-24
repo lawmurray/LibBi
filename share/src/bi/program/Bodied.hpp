@@ -23,7 +23,7 @@ public:
    *
    * @param in Statement in curly brackets.
    */
-  Bodied(Statement* body = NULL);
+  Bodied(Expression* body = NULL);
 
   /**
    * Destructor.
@@ -33,11 +33,11 @@ public:
   /**
    * First statement in in brackets.
    */
-  boost::shared_ptr<Statement> body;
+  boost::shared_ptr<Expression> body;
 };
 }
 
-inline biprog::Bodied::Bodied(Statement* body) :
+inline biprog::Bodied::Bodied(Expression* body) :
     body(body) {
   //
 }

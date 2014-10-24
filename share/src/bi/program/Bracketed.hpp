@@ -21,9 +21,9 @@ public:
   /**
    * Constructor.
    *
-   * @param index Statement in square brackets.
+   * @param index Expression in square brackets.
    */
-  Bracketed(Statement* index = NULL);
+  Bracketed(Expression* index = NULL);
 
   /**
    * Destructor.
@@ -33,11 +33,11 @@ public:
   /**
    * First statement in index brackets.
    */
-  boost::shared_ptr<Statement> index;
+  boost::shared_ptr<Expression> index;
 };
 }
 
-inline biprog::Bracketed::Bracketed(Statement* index) :
+inline biprog::Bracketed::Bracketed(Expression* index) :
     index(index) {
   //
 }
