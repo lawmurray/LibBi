@@ -17,6 +17,8 @@
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
 
+#include "boost/typeof/typeof.hpp"
+
 #include <cstdio>
 #include <iostream>
 #include <deque>
@@ -51,6 +53,28 @@ void pop_scope() {
 biprog::Declaration* add(biprog::Declaration* decl) {
   scopes.front().insert(std::make_pair(decl->name, decl));
   return decl;
+}
+
+biprog::Reference* match(const char* name, biprog::Expression* index = NULL,
+    biprog::Expression* in = NULL, biprog::Expression* body = NULL) {
+  biprog::Reference* ref;
+  bool found = false;
+  
+  BOOST_AUTO(scope, scopes.begin());
+  while (!found && scope != scopes.end()) {
+    BOOST_AUTO(decls, scope->equal_range(name));
+    found = decls.first != decls.second;
+
+    BOOST_AUTO(decl, decls.first);
+    while (decl != decls.second) {
+      decl->match(name, index, in, body);
+      ++decl;
+    }
+    ++scope;
+  }
+  
+  ref = new biprog::Reference(name, index, in, body);
+  return ref;
 }
 
 void yyerror(const char *msg) {
@@ -119,11 +143,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = new biprog::Reference($1); }
-    | IDENTIFIER brackets       { $$ = new biprog::Reference($1, $2); }
-    | IDENTIFIER parens         { $$ = new biprog::Reference($1, NULL, $2); }
-    | IDENTIFIER braces         { $$ = new biprog::Reference($1, NULL, NULL, $2); }
-    | IDENTIFIER parens braces  { $$ = new biprog::Reference($1, NULL, $2, $3); }
+    : IDENTIFIER                { $$ = match($1); }
+    | IDENTIFIER brackets       { $$ = match($1, $2); }
+    | IDENTIFIER parens         { $$ = match($1, NULL, $2); }
+    | IDENTIFIER braces         { $$ = match($1, NULL, NULL, $2); }
+    | IDENTIFIER parens braces  { $$ = match($1, NULL, $2, $3); }
     ;
 
 parens
