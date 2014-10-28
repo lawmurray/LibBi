@@ -5,6 +5,7 @@
 #include "bi/program/Function.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
+#include "bi/program/Match.hpp"
 #include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
 #include "bi/program/Operator.hpp"
@@ -21,6 +22,7 @@
 #include <deque>
 #include <map> //#include <unordered_map>
 #include <string>
+#include <algorithm>
 
 }
 
@@ -52,25 +54,32 @@ biprog::Declaration* add(biprog::Declaration* decl) {
   return decl;
 }
 
-biprog::Reference* match(const char* name, biprog::Expression* index = NULL,
-    biprog::Expression* in = NULL, biprog::Expression* body = NULL) {
-  biprog::Reference* ref;
-  bool found = false;
+biprog::Reference* match(biprog::Reference* ref) {
+  std::deque<biprog::Match> matches;
+  biprog::Match match;
   
   BOOST_AUTO(scope, scopes.begin());
+  bool found = false;
   while (!found && scope != scopes.end()) {
-    BOOST_AUTO(decls, scope->equal_range(name));
+    BOOST_AUTO(decls, scope->equal_range(ref->name));
     found = decls.first != decls.second;
 
     BOOST_AUTO(decl, decls.first);
     while (decl != decls.second) {
-      //decl->match(name, index, in, body);
+      if (decl->second->match(ref, match)) {
+        matches.push_back(match);
+        match.clear();
+      }
       ++decl;
     }
     ++scope;
   }
   
-  ref = new biprog::Reference(name, index, in, body);
+  if (matches.size() > 0) {
+    std::sort(matches.begin(), matches.end());
+         
+  }
+
   return ref;
 }
 
@@ -140,11 +149,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = match($1); }
-    | IDENTIFIER brackets       { $$ = match($1, $2); }
-    | IDENTIFIER parens         { $$ = match($1, NULL, $2); }
-    | IDENTIFIER braces         { $$ = match($1, NULL, NULL, $2); }
-    | IDENTIFIER parens braces  { $$ = match($1, NULL, $2, $3); }
+    : IDENTIFIER                { $$ = new biprog::Reference($1); }
+    | IDENTIFIER brackets       { $$ = new biprog::Reference($1, $2); }
+    | IDENTIFIER parens         { $$ = new biprog::Reference($1, NULL, $2); }
+    | IDENTIFIER braces         { $$ = new biprog::Reference($1, NULL, NULL, $2); }
+    | IDENTIFIER parens braces  { $$ = new biprog::Reference($1, NULL, $2, $3); }
     ;
 
 parens
