@@ -9,6 +9,8 @@
 #define BI_PROGRAM_LOOP_HPP
 
 #include "Statement.hpp"
+#include "Conditioned.hpp"
+#include "Bodied.hpp"
 #include "Expression.hpp"
 
 #include "boost/scoped_ptr.hpp"
@@ -19,7 +21,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public Statement {
+class Loop: public Statement, public Conditioned, public Bodied {
 public:
   /**
    * Constructor.
@@ -30,21 +32,11 @@ public:
    * Destructor.
    */
   virtual ~Loop();
-
-  /**
-   * Condition.
-   */
-  boost::scoped_ptr<Expression> cond;
-
-  /**
-   * Body.
-   */
-  boost::scoped_ptr<Expression> body;
 };
 }
 
 inline biprog::Loop::Loop(Expression* cond, Expression* body) :
-    cond(cond), body(body) {
+    Conditioned(cond), Bodied(body) {
   //
 }
 

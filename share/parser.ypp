@@ -1,18 +1,15 @@
 %code requires {
 #include "bi/program/BinaryExpression.hpp"
-#include "bi/program/BoolLiteral.hpp"
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Dim.hpp"
-#include "bi/program/DoubleLiteral.hpp"
 #include "bi/program/Function.hpp"
-#include "bi/program/IntLiteral.hpp"
+#include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
 #include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
 #include "bi/program/Sequence.hpp"
-#include "bi/program/StringLiteral.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
@@ -67,7 +64,7 @@ biprog::Reference* match(const char* name, biprog::Expression* index = NULL,
 
     BOOST_AUTO(decl, decls.first);
     while (decl != decls.second) {
-      decl->match(name, index, in, body);
+      //decl->match(name, index, in, body);
       ++decl;
     }
     ++scope;
@@ -165,19 +162,19 @@ braces
     ;
 
 bool_literal
-    : BOOL_LITERAL  { $$ = new biprog::BoolLiteral($1); }
+    : BOOL_LITERAL  { $$ = new biprog::Literal<bool>($1); }
     ;
 
 int_literal
-    : INT_LITERAL  { $$ = new biprog::IntLiteral($1); }
+    : INT_LITERAL  { $$ = new biprog::Literal<int>($1); }
     ;
 
 double_literal
-    : DOUBLE_LITERAL  { $$ = new biprog::DoubleLiteral($1); }
+    : DOUBLE_LITERAL  { $$ = new biprog::Literal<double>($1); }
     ;
 
 string_literal
-    : STRING_LITERAL  { $$ = new biprog::StringLiteral($1); }
+    : STRING_LITERAL  { $$ = new biprog::Literal<std::string>($1); }
     ;
     
 traversal_operator
