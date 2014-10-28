@@ -11,7 +11,6 @@
 #include "bi/program/Model.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
-#include "bi/program/Scope.hpp"
 #include "bi/program/Sequence.hpp"
 #include "bi/program/StringLiteral.hpp"
 #include "bi/program/Type.hpp"
@@ -36,56 +35,22 @@ extern FILE *yyin;
 extern int col;
 extern int line;
 
-struct Scope {
-  std::multimap<std::string,biprog::Model*> models;
-  std::multimap<std::string,biprog::Method*> methods;
-  std::multimap<std::string,biprog::Function*> functions;
-  std::multimap<std::string,biprog::Dim*> dims;
-  std::multimap<std::string,biprog::Var*> vars;
-  
-  /**
-   * @todo unordered_multimap to be preferred after transition to C++11.
-   */
-  //std::unordered_multimap<std::string,Model*> models;
-  //std::unordered_multimap<std::string,Method*> methods;
-  //std::unordered_multimap<std::string,Function*> functions;
-  //std::unordered_multimap<std::string,Function*> functions;
-  //std::unordered_multimap<std::string,Var*> vars;
-};
+typedef std::multimap<std::string,biprog::Declaration*> scope_type;
+///@todo std::unordered_multimap preferable after C++11 transition
 
-std::deque<Scope> scopes;
+std::deque<scope_type> scopes;
 
 void push_scope() {
-  scopes.push_front(Scope());
+  scopes.push_front(scope_type());
 }
 
 void pop_scope() {
   scopes.pop_front();
 }
 
-biprog::Model* add(biprog::Model* model) {
-  scopes.front().models.insert(std::make_pair(model->name, model));
-  return model;
-}
-
-biprog::Method* add(biprog::Method* method) {
-  scopes.front().methods.insert(std::make_pair(method->name, method));
-  return method;
-}
-
-biprog::Function* add(biprog::Function* function) {
-  scopes.front().functions.insert(std::make_pair(function->name, function));
-  return function;
-}
-
-biprog::Dim* add(biprog::Dim* dim) {
-  scopes.front().dims.insert(std::make_pair(dim->name, dim));
-  return dim;
-}
-
-biprog::Var* add(biprog::Var* var) {
-  scopes.front().vars.insert(std::make_pair(var->name, var));
-  return var;
+biprog::Declaration* add(biprog::Declaration* decl) {
+  scopes.front().insert(std::make_pair(decl->name, decl));
+  return decl;
 }
 
 void yyerror(const char *msg) {

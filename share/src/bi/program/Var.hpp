@@ -9,7 +9,6 @@
 #define BI_PROGRAM_VAR_HPP
 
 #include "Declaration.hpp"
-#include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Typed.hpp"
 
@@ -19,7 +18,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Var: public Declaration, public Named, public Bracketed, public Typed {
+class Var: public Declaration, public Bracketed, public Typed {
 public:
   /**
    * Constructor.
@@ -34,7 +33,7 @@ public:
 }
 
 inline biprog::Var::Var(const char* name, Expression* index, Type* type) :
-    Named(name), Bracketed(index), Typed(type) {
+    Declaration(name), Bracketed(index), Typed(type) {
   //
 }
 

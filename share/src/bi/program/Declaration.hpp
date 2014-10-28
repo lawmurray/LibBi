@@ -9,9 +9,7 @@
 #define BI_PROGRAM_DECLARATION_HPP
 
 #include "Statement.hpp"
-#include "Reference.hpp"
-
-#include "boost/scoped_ptr.hpp"
+#include "Named.hpp"
 
 namespace biprog {
 /**
@@ -19,18 +17,22 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Declaration: public Statement {
+class Declaration: public Statement, public Named {
 public:
+  /**
+   * Constructor.
+   */
+  Declaration(const char* name);
+
   /**
    * Destructor.
    */
   virtual ~Declaration() = 0;
-
-  /**
-   * Reference.
-   */
-  boost::scoped_ptr<Reference> ref;
 };
+}
+
+inline biprog::Declaration::Declaration(const char* name) : Named(name) {
+  //
 }
 
 inline biprog::Declaration::~Declaration() {

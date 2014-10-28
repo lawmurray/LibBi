@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public Declaration, public Named, public Bracketed {
+class Dim: public Declaration, public Bracketed {
 public:
   /**
    * Constructor.
@@ -32,7 +32,7 @@ public:
 }
 
 inline biprog::Dim::Dim(const char* name, Expression* index) :
-    Named(name), Bracketed(index) {
+    Declaration(name), Bracketed(index) {
   //
 }
 

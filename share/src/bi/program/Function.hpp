@@ -9,7 +9,6 @@
 #define BI_PROGRAM_FUNCTION_HPP
 
 #include "Declaration.hpp"
-#include "Named.hpp"
 #include "Parenthesised.hpp"
 #include "Bodied.hpp"
 
@@ -19,10 +18,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Function: public Declaration,
-    public Named,
-    public Parenthesised,
-    public Bodied {
+class Function: public Declaration, public Parenthesised, public Bodied {
 public:
   /**
    * Constructor.
@@ -49,7 +45,7 @@ public:
 
 inline biprog::Function::Function(const char* name, Expression* in,
     Expression* out, Expression* body) :
-    Named(name), Parenthesised(in), Bodied(body), out(out) {
+    Declaration(name), Parenthesised(in), Bodied(body), out(out) {
   //
 }
 
