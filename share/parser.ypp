@@ -41,6 +41,15 @@ typedef std::multimap<std::string,biprog::Declaration*> scope_type;
 
 std::deque<scope_type> scopes;
 
+void yyerror(const char *msg) {
+  std::cerr << "Error (line " << line << " col " << col << "): " << msg << std::endl;
+  exit(-1);
+}
+
+void yywarn(const char *msg) {
+  std::cerr << "Warning (line " << line << " col " << col << "): " << msg << std::endl;
+}
+
 void push_scope() {
   scopes.push_front(scope_type());
 }
@@ -77,15 +86,11 @@ biprog::Reference* match(biprog::Reference* ref) {
   
   if (matches.size() > 0) {
     std::sort(matches.begin(), matches.end());
-         
+  } else {
+    yywarn("no match for symbol");
   }
 
   return ref;
-}
-
-void yyerror(const char *msg) {
-  std::cerr << "Error (line " << line << " col " << col << "): " << msg << std::endl;
-  exit(-1);
 }
 
 %}
@@ -97,7 +102,7 @@ void yyerror(const char *msg) {
     char* valString;
     
     biprog::Type* valType;
-    biprog::Operator* valOperator;
+    biprog::Operator valOperator;
     biprog::Expression* valExpression;
 }
 
@@ -149,11 +154,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = new biprog::Reference($1); }
-    | IDENTIFIER brackets       { $$ = new biprog::Reference($1, $2); }
-    | IDENTIFIER parens         { $$ = new biprog::Reference($1, NULL, $2); }
-    | IDENTIFIER braces         { $$ = new biprog::Reference($1, NULL, NULL, $2); }
-    | IDENTIFIER parens braces  { $$ = new biprog::Reference($1, NULL, $2, $3); }
+    : IDENTIFIER                { $$ = match(new biprog::Reference($1)); }
+    | IDENTIFIER brackets       { $$ = match(new biprog::Reference($1, $2)); }
+    | IDENTIFIER parens         { $$ = match(new biprog::Reference($1, NULL, $2)); }
+    | IDENTIFIER braces         { $$ = match(new biprog::Reference($1, NULL, NULL, $2)); }
+    | IDENTIFIER parens braces  { $$ = match(new biprog::Reference($1, NULL, $2, $3)); }
     ;
 
 parens
@@ -187,7 +192,7 @@ string_literal
     ;
     
 traversal_operator
-    : '.'  { $$ = new biprog::Operator('.'); }
+    : '.'  { $$ = biprog::OP_TRAVERSE; }
     ;
     
 traversal_expression
@@ -196,7 +201,7 @@ traversal_expression
     ;
     
 type_operator
-    : ':'  { $$ = new biprog::Operator(':'); }
+    : ':'  { $$ = biprog::OP_TYPE; }
     ;
     
 type_expression
@@ -215,7 +220,7 @@ primary_expression
     ;
 
 default_operator
-    : '?'  { $$ = new biprog::Operator('?'); }
+    : '?'  { $$ = biprog::OP_DEFAULT; }
     ;
 
 default_expression
@@ -224,9 +229,9 @@ default_expression
     ;
 
 unary_operator
-    : '+'  { $$ = new biprog::Operator('+'); }
-    | '-'  { $$ = new biprog::Operator('-'); }
-    | '!'  { $$ = new biprog::Operator('!'); }
+    : '+'  { $$ = biprog::OP_POS; }
+    | '-'  { $$ = biprog::OP_NEG; }
+    | '!'  { $$ = biprog::OP_NOT; }
     ;
     
 unary_expression
@@ -235,8 +240,8 @@ unary_expression
     ;
 
 pow_operator
-    : POW_OP       { $$ = new biprog::Operator($1); }
-    | ELEM_POW_OP  { $$ = new biprog::Operator($1); }
+    : POW_OP       { $$ = biprog::OP_POW; }
+    | ELEM_POW_OP  { $$ = biprog::OP_ELEM_POW; }
     ;
 
 pow_expression
@@ -245,11 +250,11 @@ pow_expression
     ;
 
 multiplicative_operator
-    : '*'          { $$ = new biprog::Operator('*'); }
-    | ELEM_MUL_OP  { $$ = new biprog::Operator($1); }
-    | '/'          { $$ = new biprog::Operator('/'); }
-    | ELEM_DIV_OP  { $$ = new biprog::Operator($1); }
-    | '%'          { $$ = new biprog::Operator('%'); }
+    : '*'          { $$ = biprog::OP_MUL; }
+    | ELEM_MUL_OP  { $$ = biprog::OP_ELEM_MUL; }
+    | '/'          { $$ = biprog::OP_DIV; }
+    | ELEM_DIV_OP  { $$ = biprog::OP_ELEM_DIV; }
+    | '%'          { $$ = biprog::OP_MOD; }
     ;
 
 multiplicative_expression
@@ -258,8 +263,8 @@ multiplicative_expression
     ;
 
 additive_operator
-    : '+'          { $$ = new biprog::Operator('+'); }
-    | '-'          { $$ = new biprog::Operator('-'); }
+    : '+'          { $$ = biprog::OP_ADD; }
+    | '-'          { $$ = biprog::OP_SUB; }
     ;
 
 additive_expression
@@ -268,8 +273,8 @@ additive_expression
     ;
 
 shift_operator
-    : LEFT_OP   { $$ = new biprog::Operator($1); }
-    | RIGHT_OP  { $$ = new biprog::Operator($1); }
+    : LEFT_OP   { $$ = biprog::OP_LEFT; }
+    | RIGHT_OP  { $$ = biprog::OP_RIGHT; }
     ;
 
 shift_expression
@@ -278,10 +283,10 @@ shift_expression
     ;
 
 relational_operator
-    : '<'    { $$ = new biprog::Operator('<'); }
-    | '>'    { $$ = new biprog::Operator('>'); }
-    | LE_OP  { $$ = new biprog::Operator($1); }
-    | GE_OP  { $$ = new biprog::Operator($1); }
+    : '<'    { $$ = biprog::OP_LT; }
+    | '>'    { $$ = biprog::OP_GT; }
+    | LE_OP  { $$ = biprog::OP_LE; }
+    | GE_OP  { $$ = biprog::OP_GE; }
     ;
     
 relational_expression
@@ -290,8 +295,8 @@ relational_expression
     ;
 
 equality_operator
-    : EQ_OP  { $$ = new biprog::Operator($1); }
-    | NE_OP  { $$ = new biprog::Operator($1); }
+    : EQ_OP  { $$ = biprog::OP_EQ; }
+    | NE_OP  { $$ = biprog::OP_NE; }
     ;
 
 equality_expression
@@ -300,7 +305,7 @@ equality_expression
     ;
 
 and_operator
-    : '&'  { $$ = new biprog::Operator('&'); }
+    : '&'  { $$ = biprog::OP_BIT_AND; }
     ;
     
 and_expression
@@ -309,7 +314,7 @@ and_expression
 	;
 
 exclusive_or_operator
-    : '^'  { $$ = new biprog::Operator('^'); }
+    : '^'  { $$ = biprog::OP_BIT_XOR; }
     ;
 
 exclusive_or_expression
@@ -318,7 +323,7 @@ exclusive_or_expression
 	;
 
 inclusive_or_operator
-    : '|'  { $$ = new biprog::Operator('|'); }
+    : '|'  { $$ = biprog::OP_BIT_OR; }
     ;
 
 inclusive_or_expression
@@ -326,7 +331,7 @@ inclusive_or_expression
 	| inclusive_or_expression inclusive_or_operator exclusive_or_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
 
 logical_and_operator
-    : AND_OP  { $$ = new biprog::Operator($1); }
+    : AND_OP  { $$ = biprog::OP_AND; }
     ;
 
 logical_and_expression
@@ -335,7 +340,7 @@ logical_and_expression
     ;
 
 logical_or_operator
-    : OR_OP  { $$ = new biprog::Operator($1); }
+    : OR_OP  { $$ = biprog::OP_OR; }
     ;
 
 logical_or_expression
@@ -344,8 +349,8 @@ logical_or_expression
     ;
 
 constraint_operator
-    : '='  { $$ = new biprog::Operator('='); }
-    | '~'  { $$ = new biprog::Operator('~'); }
+    : '='  { $$ = biprog::OP_EQUALS; }
+    | '~'  { $$ = biprog::OP_SIMTO; }
     ;
 
 constraint_expression
@@ -354,7 +359,7 @@ constraint_expression
     ;
 
 assignment_operator
-    : LEFT_ARROW  { $$ = new biprog::Operator($1); }
+    : LEFT_ARROW  { $$ = biprog::OP_LEFT_ARROW; }
     ;
 
 assignment_expression
@@ -363,7 +368,7 @@ assignment_expression
     ;
 
 tuple_operator
-    : ','  { $$ = new biprog::Operator(','); }
+    : ','  { $$ = biprog::OP_COMMA; }
     ;
     
 tuple_expression
@@ -381,7 +386,7 @@ expression
  ***************************************************************************/
 
 statement_operator
-    : ';'  { $$ = new biprog::Operator(';'); }
+    : ';'  { $$ = biprog::OP_SEMICOLON; }
     ;
 
 model

@@ -15,47 +15,42 @@ namespace biprog {
  * Operator.
  *
  * @ingroup program
- *
- * @todo Flyweight this or use enum.
  */
-class Operator {
-public:
-  /**
-   * Constructor.
-   *
-   * @param op Single-character operator.
-   */
-  Operator(const char op);
-
-  /**
-   * Constructor.
-   *
-   * @param op Multiple-character operator.
-   */
-  Operator(const char* op);
-
-  /**
-   * Destructor.
-   */
-  virtual ~Operator();
-
-  /**
-   * Operator.
-   */
-  std::string op;
+enum Operator {
+  OP_TRAVERSE,
+  OP_TYPE,
+  OP_DEFAULT,
+  OP_POS,
+  OP_NEG,
+  OP_NOT,
+  OP_POW,
+  OP_ELEM_POW,
+  OP_MUL,
+  OP_ELEM_MUL,
+  OP_DIV,
+  OP_ELEM_DIV,
+  OP_MOD,
+  OP_ADD,
+  OP_SUB,
+  OP_LEFT,
+  OP_RIGHT,
+  OP_LT,
+  OP_GT,
+  OP_LE,
+  OP_GE,
+  OP_EQ,        /// ==
+  OP_NE,
+  OP_BIT_AND,   /// bitwise and
+  OP_BIT_XOR,   /// bitwise exclusive or
+  OP_BIT_OR,    /// bitwise inclusive or
+  OP_AND,       /// logical and
+  OP_OR,        /// logical or
+  OP_EQUALS,    /// =
+  OP_SIMTO,     /// ~
+  OP_LEFT_ARROW,
+  OP_COMMA,
+  OP_SEMICOLON
 };
-}
-
-inline biprog::Operator::Operator(const char op) : op(1, op) {
-  //
-}
-
-inline biprog::Operator::Operator(const char* op) : op(op) {
-  //
-}
-
-inline biprog::Operator::~Operator() {
-  //
 }
 
 #endif

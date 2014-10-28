@@ -42,6 +42,7 @@ inline biprog::Expression::~Expression() {
 
 inline bool biprog::Expression::match(Expression* o, Match& match) {
   match.push(o, this, Match::SCORE_EXPRESSION);
+  return true;
 }
 
 #endif

@@ -24,12 +24,14 @@ public:
   /**
    * Constructor.
    */
-  BinaryExpression(Expression* left, Operator* op, Expression* right);
+  BinaryExpression(Expression* left, Operator op, Expression* right);
 
   /**
    * Destructor.
    */
   virtual ~BinaryExpression();
+
+  virtual bool match(BinaryExpression* o, Match& match);
 
   /**
    * Left operand.
@@ -39,7 +41,7 @@ public:
   /**
    * Operator.
    */
-  boost::scoped_ptr<Operator> op;
+  Operator op;
 
   /**
    * Right operand.
@@ -49,13 +51,19 @@ public:
 }
 
 inline biprog::BinaryExpression::BinaryExpression(Expression* left,
-    Operator* op, Expression* right) :
+    Operator op, Expression* right) :
     left(left), op(op), right(right) {
   //
 }
 
 inline biprog::BinaryExpression::~BinaryExpression() {
   //
+}
+
+inline bool biprog::BinaryExpression::match(BinaryExpression* o, Match& match) {
+  if (this->op)
+  match.push(o, this, Match::SCORE_EXPRESSION);
+  return true;
 }
 
 #endif
