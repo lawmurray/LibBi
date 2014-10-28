@@ -12,7 +12,7 @@
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
-#include "Bodied.hpp"
+#include "Braced.hpp"
 
 #include "boost/scoped_ptr.hpp"
 
@@ -26,18 +26,18 @@ class Reference: public Expression,
     public Named,
     public Bracketed,
     public Parenthesised,
-    public Bodied {
+    public Braced {
 public:
   /**
    * Constructor.
    *
    * @param name Name.
-   * @param index Expression in square brackets.
-   * @param in Expression in parentheses.
-   * @param body Expression in braces.
+   * @param brackets Expression in square brackets.
+   * @param parens Expression in parentheses.
+   * @param braces Expression in braces.
    */
-  Reference(const char* name, Expression* index = NULL, Expression* in = NULL,
-      Expression* body = NULL);
+  Reference(const char* name, Expression* brackets = NULL,
+      Expression* parens = NULL, Expression* braces = NULL);
 
   /**
    * Destructor.
@@ -46,9 +46,9 @@ public:
 };
 }
 
-inline biprog::Reference::Reference(const char* name, Expression* index,
-    Expression* in, Expression* body) :
-    Named(name), Bracketed(index), Parenthesised(in), Bodied(body) {
+inline biprog::Reference::Reference(const char* name, Expression* brackets,
+    Expression* parens, Expression* braces) :
+    Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces) {
   //
 }
 

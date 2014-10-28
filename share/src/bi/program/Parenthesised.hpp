@@ -21,9 +21,9 @@ public:
   /**
    * Constructor.
    *
-   * @param in Expression in parentheses.
+   * @param parens Expression in parentheses.
    */
-  Parenthesised(Expression* in = NULL);
+  Parenthesised(Expression* parens = NULL);
 
   /**
    * Destructor.
@@ -33,12 +33,12 @@ public:
   /**
    * First statement in in brackets.
    */
-  boost::scoped_ptr<Expression> in;
+  boost::scoped_ptr<Expression> parens;
 };
 }
 
-inline biprog::Parenthesised::Parenthesised(Expression* in) :
-    in(in) {
+inline biprog::Parenthesised::Parenthesised(Expression* parens) :
+    parens(parens) {
   //
 }
 

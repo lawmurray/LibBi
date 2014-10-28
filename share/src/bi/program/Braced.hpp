@@ -5,44 +5,44 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_BODIED_HPP
-#define BI_PROGRAM_BODIED_HPP
+#ifndef BI_PROGRAM_BRACED_HPP
+#define BI_PROGRAM_BRACED_HPP
 
 #include "boost/scoped_ptr.hpp"
 
 namespace biprog {
 /**
- * Bodied expression.
+ * Braced expression.
  *
  * @ingroup program
  */
-class Bodied {
+class Braced {
 public:
   /**
    * Constructor.
    *
    * @param in Statement in curly brackets.
    */
-  Bodied(Expression* body = NULL);
+  Braced(Expression* braces = NULL);
 
   /**
    * Destructor.
    */
-  virtual ~Bodied() = 0;
+  virtual ~Braced() = 0;
 
   /**
    * First statement in in brackets.
    */
-  boost::scoped_ptr<Expression> body;
+  boost::scoped_ptr<Expression> braces;
 };
 }
 
-inline biprog::Bodied::Bodied(Expression* body) :
-    body(body) {
+inline biprog::Braced::Braced(Expression* braces) :
+    braces(braces) {
   //
 }
 
-inline biprog::Bodied::~Bodied() {
+inline biprog::Braced::~Braced() {
   //
 }
 

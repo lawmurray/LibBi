@@ -8,6 +8,8 @@
 #ifndef BI_PROGRAM_BRACKETED_HPP
 #define BI_PROGRAM_BRACKETED_HPP
 
+#include "Expression.hpp"
+
 #include "boost/scoped_ptr.hpp"
 
 namespace biprog {
@@ -21,9 +23,9 @@ public:
   /**
    * Constructor.
    *
-   * @param index Expression in square brackets.
+   * @param brackets Expression in square brackets.
    */
-  Bracketed(Expression* index = NULL);
+  Bracketed(Expression* brackets = NULL);
 
   /**
    * Destructor.
@@ -33,12 +35,12 @@ public:
   /**
    * First statement in index brackets.
    */
-  boost::scoped_ptr<Expression> index;
+  boost::scoped_ptr<Expression> brackets;
 };
 }
 
-inline biprog::Bracketed::Bracketed(Expression* index) :
-    index(index) {
+inline biprog::Bracketed::Bracketed(Expression* brackets) :
+    brackets(brackets) {
   //
 }
 

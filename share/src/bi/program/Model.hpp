@@ -10,7 +10,7 @@
 
 #include "Declaration.hpp"
 #include "Parenthesised.hpp"
-#include "Bodied.hpp"
+#include "Braced.hpp"
 
 namespace biprog {
 /**
@@ -18,12 +18,13 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Model: public Declaration, public Parenthesised, public Bodied {
+class Model: public Declaration, public Parenthesised, public Braced {
 public:
   /**
    * Constructor.
    */
-  Model(const char* name, Expression* in = NULL, Expression* body = NULL);
+  Model(const char* name, Expression* parens = NULL,
+      Expression* braces = NULL);
 
   /**
    * Destructor.
@@ -32,9 +33,9 @@ public:
 };
 }
 
-inline biprog::Model::Model(const char* name, Expression* in,
-    Expression* body) :
-    Declaration(name), Parenthesised(in), Bodied(body) {
+inline biprog::Model::Model(const char* name, Expression* parens,
+    Expression* braces) :
+    Declaration(name), Parenthesised(parens), Braced(braces) {
   //
 }
 

@@ -10,7 +10,7 @@
 
 #include "Statement.hpp"
 #include "Conditioned.hpp"
-#include "Bodied.hpp"
+#include "Braced.hpp"
 #include "Expression.hpp"
 
 #include "boost/scoped_ptr.hpp"
@@ -21,12 +21,12 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public Statement, public Conditioned, public Bodied {
+class Loop: public Statement, public Conditioned, public Braced {
 public:
   /**
    * Constructor.
    */
-  Loop(Expression* cond, Expression* body = NULL);
+  Loop(Expression* cond, Expression* braces = NULL);
 
   /**
    * Destructor.
@@ -35,8 +35,8 @@ public:
 };
 }
 
-inline biprog::Loop::Loop(Expression* cond, Expression* body) :
-    Conditioned(cond), Bodied(body) {
+inline biprog::Loop::Loop(Expression* cond, Expression* braces) :
+    Conditioned(cond), Braced(braces) {
   //
 }
 
