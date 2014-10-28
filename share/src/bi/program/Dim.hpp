@@ -17,7 +17,9 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public Declaration, public Bracketed {
+class Dim: public Declaration,
+    public Bracketed,
+    public boost::enable_shared_from_this<Dim> {
 public:
   /**
    * Constructor.

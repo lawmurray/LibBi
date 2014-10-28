@@ -18,7 +18,10 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Var: public Declaration, public Bracketed, public Typed {
+class Var: public Declaration,
+    public Bracketed,
+    public Typed,
+    public boost::enable_shared_from_this<Var> {
 public:
   /**
    * Constructor.

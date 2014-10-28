@@ -19,7 +19,8 @@ namespace biprog {
  * @todo Flyweight this.
  */
 template<class T1>
-class Literal: public Expression {
+class Literal: public Expression, public boost::enable_shared_from_this<
+    Literal<T1> > {
 public:
   /**
    * Constructor.
@@ -39,7 +40,8 @@ public:
 }
 
 template<class T1>
-inline biprog::Literal<T1>::Literal(const T1& value) : value(value) {
+inline biprog::Literal<T1>::Literal(const T1& value) :
+    value(value) {
   //
 }
 

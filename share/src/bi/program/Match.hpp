@@ -10,6 +10,8 @@
 
 #include <vector>
 
+#include "boost/shared_ptr.hpp"
+
 namespace biprog {
 class Expression;
 
@@ -57,7 +59,8 @@ public:
    * @param param The formal parameter.
    * @param score The score.
    */
-  void push(Expression* arg, Expression* param, const Score score);
+  void push(boost::shared_ptr<Expression> arg,
+      boost::shared_ptr<Expression> param, const Score score);
 
   /**
    * Clear for reuse.
@@ -68,12 +71,12 @@ private:
   /**
    * Arguments.
    */
-  std::vector<Expression*> args;
+  std::vector<boost::shared_ptr<Expression> > args;
 
   /**
    * Parameters.
    */
-  std::vector<Expression*> params;
+  std::vector<boost::shared_ptr<Expression> > params;
 
   /**
    * Scores.
@@ -101,8 +104,8 @@ inline bool biprog::Match::operator<(const Match& o) const {
   return result;
 }
 
-inline void biprog::Match::push(Expression* arg, Expression* param,
-    const Score score) {
+inline void biprog::Match::push(boost::shared_ptr<Expression> arg,
+    boost::shared_ptr<Expression> param, const Score score) {
   args.push_back(arg);
   params.push_back(param);
   scores.push_back(score);

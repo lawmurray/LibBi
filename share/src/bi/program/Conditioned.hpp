@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_CONDITIONED_HPP
 #define BI_PROGRAM_CONDITIONED_HPP
 
-#include "boost/scoped_ptr.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -33,7 +33,7 @@ public:
   /**
    * First statement in in brackets.
    */
-  boost::scoped_ptr<Expression> cond;
+  boost::shared_ptr<Expression> cond;
 };
 }
 

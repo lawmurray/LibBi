@@ -18,7 +18,10 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Model: public Declaration, public Parenthesised, public Braced {
+class Model: public Declaration,
+    public Parenthesised,
+    public Braced,
+    public boost::enable_shared_from_this<Model> {
 public:
   /**
    * Constructor.

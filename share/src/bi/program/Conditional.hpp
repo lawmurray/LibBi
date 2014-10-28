@@ -13,15 +13,16 @@
 #include "Braced.hpp"
 #include "Expression.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Conditional.
  *
  * @ingroup program
  */
-class Conditional: public Statement, public Conditioned, public Braced {
+class Conditional: public Statement,
+    public Conditioned,
+    public Braced,
+    public boost::enable_shared_from_this<Conditional> {
 public:
   /**
    * Constructor.

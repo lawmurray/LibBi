@@ -14,8 +14,6 @@
 #include "Parenthesised.hpp"
 #include "Braced.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Binary expression.
@@ -26,7 +24,8 @@ class Reference: public Expression,
     public Named,
     public Bracketed,
     public Parenthesised,
-    public Braced {
+    public Braced,
+    public boost::enable_shared_from_this<Reference> {
 public:
   /**
    * Constructor.

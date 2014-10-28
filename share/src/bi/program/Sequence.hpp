@@ -10,15 +10,14 @@
 
 #include "Statement.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Sequence of statements.
  *
  * @ingroup program
  */
-class Sequence: public Statement {
+class Sequence: public Statement, public boost::enable_shared_from_this<
+    Sequence> {
 public:
   /**
    * Constructor.
@@ -33,12 +32,12 @@ public:
   /**
    * First statement.
    */
-  boost::scoped_ptr<Expression> head;
+  boost::shared_ptr<Expression> head;
 
   /**
    * Remaining statements.
    */
-  boost::scoped_ptr<Expression> tail;
+  boost::shared_ptr<Expression> tail;
 };
 }
 

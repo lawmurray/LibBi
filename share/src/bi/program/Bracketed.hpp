@@ -10,8 +10,6 @@
 
 #include "Expression.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Bracketed expression.
@@ -35,7 +33,7 @@ public:
   /**
    * First statement in index brackets.
    */
-  boost::scoped_ptr<Expression> brackets;
+  boost::shared_ptr<Expression> brackets;
 };
 }
 

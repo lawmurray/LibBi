@@ -31,7 +31,8 @@ public:
 };
 }
 
-inline biprog::Declaration::Declaration(const char* name) : Named(name) {
+inline biprog::Declaration::Declaration(const char* name) :
+    Named(name) {
   //
 }
 

@@ -17,7 +17,9 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Type : public Named, public Expression {
+class Type: public Named,
+    public Expression,
+    public boost::enable_shared_from_this<Type> {
 public:
   /**
    * Constructor.
@@ -33,7 +35,8 @@ public:
 };
 }
 
-inline biprog::Type::Type(const char* name) : Named(name) {
+inline biprog::Type::Type(const char* name) :
+    Named(name) {
   //
 }
 

@@ -13,15 +13,16 @@
 #include "Braced.hpp"
 #include "Expression.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Loop.
  *
  * @ingroup program
  */
-class Loop: public Statement, public Conditioned, public Braced {
+class Loop: public Statement,
+    public Conditioned,
+    public Braced,
+    public boost::enable_shared_from_this<Loop> {
 public:
   /**
    * Constructor.

@@ -18,7 +18,10 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Function: public Declaration, public Parenthesised, public Braced {
+class Function: public Declaration,
+    public Parenthesised,
+    public Braced,
+    public boost::enable_shared_from_this<Function> {
 public:
   /**
    * Constructor.
@@ -39,7 +42,7 @@ public:
   /**
    * Output statement.
    */
-  boost::scoped_ptr<Expression> out;
+  boost::shared_ptr<Expression> out;
 };
 }
 

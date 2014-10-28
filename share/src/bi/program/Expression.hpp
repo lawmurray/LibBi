@@ -10,13 +10,16 @@
 
 #include "Match.hpp"
 
+#include "boost/shared_ptr.hpp"
+#include "boost/enable_shared_from_this.hpp"
+
 namespace biprog {
 /**
  * Expression.
  *
  * @ingroup program
  */
-class Expression {
+class Expression : public boost::enable_shared_from_this<Expression> {
 public:
 
   /**
@@ -32,7 +35,7 @@ public:
    *
    * @return Does #o match?
    */
-  virtual bool match(Expression* o, Match& match);
+  virtual bool match(boost::shared_ptr<Expression> o, Match& match);
 };
 }
 
@@ -40,8 +43,9 @@ inline biprog::Expression::~Expression() {
   //
 }
 
-inline bool biprog::Expression::match(Expression* o, Match& match) {
-  match.push(o, this, Match::SCORE_EXPRESSION);
+inline bool biprog::Expression::match(boost::shared_ptr<Expression> o,
+    Match& match) {
+  match.push(o, shared_from_this(), Match::SCORE_EXPRESSION);
   return true;
 }
 

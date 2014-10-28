@@ -11,15 +11,14 @@
 #include "Expression.hpp"
 #include "Operator.hpp"
 
-#include "boost/scoped_ptr.hpp"
-
 namespace biprog {
 /**
  * Binary expression.
  *
  * @ingroup program
  */
-class BinaryExpression: public Expression {
+class BinaryExpression: public Expression,
+    public boost::enable_shared_from_this<BinaryExpression> {
 public:
   /**
    * Constructor.
@@ -31,12 +30,12 @@ public:
    */
   virtual ~BinaryExpression();
 
-  virtual bool match(BinaryExpression* o, Match& match);
+  virtual bool match(boost::shared_ptr<BinaryExpression> o, Match& match);
 
   /**
    * Left operand.
    */
-  boost::scoped_ptr<Expression> left;
+  boost::shared_ptr<Expression> left;
 
   /**
    * Operator.
@@ -46,7 +45,7 @@ public:
   /**
    * Right operand.
    */
-  boost::scoped_ptr<Expression> right;
+  boost::shared_ptr<Expression> right;
 };
 }
 
@@ -60,10 +59,10 @@ inline biprog::BinaryExpression::~BinaryExpression() {
   //
 }
 
-inline bool biprog::BinaryExpression::match(BinaryExpression* o, Match& match) {
-  if (this->op)
-  match.push(o, this, Match::SCORE_EXPRESSION);
-  return true;
+inline bool biprog::BinaryExpression::match(
+    boost::shared_ptr<BinaryExpression> o, Match& match) {
+  return op == o->op && left->match(o->left, match)
+      && right->match(o->right, match);
 }
 
 #endif
