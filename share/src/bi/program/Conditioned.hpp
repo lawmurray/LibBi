@@ -23,7 +23,7 @@ public:
    *
    * @param cond Conditional expression.
    */
-  Conditioned(Expression* cond = NULL);
+  Conditioned(boost::shared_ptr<Expression> cond);
 
   /**
    * Destructor.
@@ -37,7 +37,7 @@ public:
 };
 }
 
-inline biprog::Conditioned::Conditioned(Expression* cond) :
+inline biprog::Conditioned::Conditioned(boost::shared_ptr<Expression> cond) :
     cond(cond) {
   //
 }

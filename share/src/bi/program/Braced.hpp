@@ -23,7 +23,7 @@ public:
    *
    * @param in Statement in curly brackets.
    */
-  Braced(Expression* braces = NULL);
+  Braced(boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -37,7 +37,7 @@ public:
 };
 }
 
-inline biprog::Braced::Braced(Expression* braces) :
+inline biprog::Braced::Braced(boost::shared_ptr<Expression> braces) :
     braces(braces) {
   //
 }

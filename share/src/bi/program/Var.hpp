@@ -9,7 +9,6 @@
 #define BI_PROGRAM_VAR_HPP
 
 #include "Declaration.hpp"
-#include "Bracketed.hpp"
 #include "Typed.hpp"
 
 namespace biprog {
@@ -19,14 +18,15 @@ namespace biprog {
  * @ingroup program
  */
 class Var: public Declaration,
-    public Bracketed,
     public Typed,
     public boost::enable_shared_from_this<Var> {
 public:
   /**
    * Constructor.
    */
-  Var(const char* name, Expression* brackets, Type* type);
+  Var(const char* name, boost::shared_ptr<Expression> brackets,
+      boost::shared_ptr<Expression> parens,
+      boost::shared_ptr<Expression> braces, Type* type);
 
   /**
    * Destructor.
@@ -35,8 +35,11 @@ public:
 };
 }
 
-inline biprog::Var::Var(const char* name, Expression* brackets, Type* type) :
-    Declaration(name), Bracketed(brackets), Typed(type) {
+inline biprog::Var::Var(const char* name,
+    boost::shared_ptr<Expression> brackets,
+    boost::shared_ptr<Expression> parens,
+    boost::shared_ptr<Expression> braces, Type* type) :
+    Declaration(name, brackets, parens, braces), Typed(type) {
   //
 }
 

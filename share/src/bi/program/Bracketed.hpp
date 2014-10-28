@@ -23,7 +23,7 @@ public:
    *
    * @param brackets Expression in square brackets.
    */
-  Bracketed(Expression* brackets = NULL);
+  Bracketed(boost::shared_ptr<Expression> brackets);
 
   /**
    * Destructor.
@@ -37,7 +37,7 @@ public:
 };
 }
 
-inline biprog::Bracketed::Bracketed(Expression* brackets) :
+inline biprog::Bracketed::Bracketed(boost::shared_ptr<Expression> brackets) :
     brackets(brackets) {
   //
 }

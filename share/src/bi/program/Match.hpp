@@ -58,8 +58,10 @@ public:
    * @param arg The argument.
    * @param param The formal parameter.
    * @param score The score.
+   *
+   * @return True.
    */
-  void push(boost::shared_ptr<Expression> arg,
+  bool push(boost::shared_ptr<Expression> arg,
       boost::shared_ptr<Expression> param, const Score score);
 
   /**
@@ -104,11 +106,13 @@ inline bool biprog::Match::operator<(const Match& o) const {
   return result;
 }
 
-inline void biprog::Match::push(boost::shared_ptr<Expression> arg,
+inline bool biprog::Match::push(boost::shared_ptr<Expression> arg,
     boost::shared_ptr<Expression> param, const Score score) {
   args.push_back(arg);
   params.push_back(param);
   scores.push_back(score);
+
+  return true;
 }
 
 inline void biprog::Match::clear() {

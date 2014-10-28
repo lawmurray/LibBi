@@ -35,8 +35,8 @@ public:
    * @param parens Expression in parentheses.
    * @param braces Expression in braces.
    */
-  Reference(const char* name, Expression* brackets = NULL,
-      Expression* parens = NULL, Expression* braces = NULL);
+  Reference(const char* name, boost::shared_ptr<Expression> brackets,
+      boost::shared_ptr<Expression> parens, boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -45,8 +45,8 @@ public:
 };
 }
 
-inline biprog::Reference::Reference(const char* name, Expression* brackets,
-    Expression* parens, Expression* braces) :
+inline biprog::Reference::Reference(const char* name, boost::shared_ptr<Expression> brackets,
+    boost::shared_ptr<Expression> parens, boost::shared_ptr<Expression> braces) :
     Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces) {
   //
 }

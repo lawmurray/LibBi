@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Conditional(Expression* cond, Expression* braces = NULL);
+  Conditional(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -36,7 +36,7 @@ public:
 };
 }
 
-inline biprog::Conditional::Conditional(Expression* cond, Expression* braces) :
+inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

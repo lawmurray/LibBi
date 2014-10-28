@@ -26,7 +26,7 @@ public:
    * @param op Operator.
    * @param right Right operand.
    */
-  UnaryExpression(Operator op, Expression* right);
+  UnaryExpression(Operator op, boost::shared_ptr<Expression> right);
 
   /**
    * Destructor.
@@ -48,7 +48,7 @@ public:
 }
 
 inline biprog::UnaryExpression::UnaryExpression(Operator op,
-    Expression* right) :
+    boost::shared_ptr<Expression> right) :
     op(op), right(right) {
   //
 }

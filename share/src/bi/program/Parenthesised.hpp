@@ -23,7 +23,7 @@ public:
    *
    * @param parens Expression in parentheses.
    */
-  Parenthesised(Expression* parens = NULL);
+  Parenthesised(boost::shared_ptr<Expression> parens);
 
   /**
    * Destructor.
@@ -37,7 +37,7 @@ public:
 };
 }
 
-inline biprog::Parenthesised::Parenthesised(Expression* parens) :
+inline biprog::Parenthesised::Parenthesised(boost::shared_ptr<Expression> parens) :
     parens(parens) {
   //
 }

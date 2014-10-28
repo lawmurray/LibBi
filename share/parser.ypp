@@ -16,6 +16,7 @@
 #include "bi/program/Var.hpp"
 
 #include "boost/typeof/typeof.hpp"
+#include "boost/shared_ptr.hpp"
 
 #include <cstdio>
 #include <iostream>
@@ -28,6 +29,9 @@
 
 %{
 #include "parser.hpp"
+
+#define BI_SP(x) boost::shared_ptr<biprog::Expression>(x)
+#define BI_SP_NULL boost::shared_ptr<biprog::Expression>()
 
 extern int yylex();
 extern int yyparse();
@@ -63,19 +67,22 @@ biprog::Declaration* add(biprog::Declaration* decl) {
   return decl;
 }
 
-biprog::Reference* match(biprog::Reference* ref) {
+biprog::Reference* match(const char* name,
+    boost::shared_ptr<biprog::Expression> brackets,
+    boost::shared_ptr<biprog::Expression> parens,
+    boost::shared_ptr<biprog::Expression> braces) {
   std::deque<biprog::Match> matches;
   biprog::Match match;
   
   BOOST_AUTO(scope, scopes.begin());
   bool found = false;
   while (!found && scope != scopes.end()) {
-    BOOST_AUTO(decls, scope->equal_range(ref->name));
+    BOOST_AUTO(decls, scope->equal_range(name));
     found = decls.first != decls.second;
 
     BOOST_AUTO(decl, decls.first);
     while (decl != decls.second) {
-      if (decl->second->match(ref, match)) {
+      if (decl->second->match(brackets, parens, braces, match)) {
         matches.push_back(match);
         match.clear();
       }
@@ -90,7 +97,7 @@ biprog::Reference* match(biprog::Reference* ref) {
     yywarn("no match for symbol");
   }
 
-  return ref;
+  return new biprog::Reference(name, brackets, parens, braces);
 }
 
 %}
@@ -154,11 +161,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = match(new biprog::Reference($1)); }
-    | IDENTIFIER brackets       { $$ = match(new biprog::Reference($1, $2)); }
-    | IDENTIFIER parens         { $$ = match(new biprog::Reference($1, NULL, $2)); }
-    | IDENTIFIER braces         { $$ = match(new biprog::Reference($1, NULL, NULL, $2)); }
-    | IDENTIFIER parens braces  { $$ = match(new biprog::Reference($1, NULL, $2, $3)); }
+    : IDENTIFIER                { $$ = match($1, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL); }
+    | IDENTIFIER brackets       { $$ = match($1, BI_SP($2), BI_SP_NULL, BI_SP_NULL); }
+    | IDENTIFIER parens         { $$ = match($1, BI_SP_NULL, BI_SP($2), BI_SP_NULL); }
+    | IDENTIFIER braces         { $$ = match($1, BI_SP_NULL, BI_SP_NULL, BI_SP($2)); }
+    | IDENTIFIER parens braces  { $$ = match($1, BI_SP_NULL, BI_SP($2), BI_SP($3)); }
     ;
 
 parens
@@ -197,7 +204,7 @@ traversal_operator
     
 traversal_expression
     : reference
-    | traversal_expression traversal_operator reference  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | traversal_expression traversal_operator reference  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
     
 type_operator
@@ -206,7 +213,7 @@ type_operator
     
 type_expression
     : traversal_expression
-    | traversal_expression type_operator type  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | traversal_expression type_operator type  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
     
 primary_expression
@@ -225,7 +232,7 @@ default_operator
 
 default_expression
     : primary_expression
-    | primary_expression default_operator default_expression { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | primary_expression default_operator default_expression { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 unary_operator
@@ -236,7 +243,7 @@ unary_operator
     
 unary_expression
     : default_expression
-    | unary_operator unary_expression  { $$ = new biprog::UnaryExpression($1, $2); }
+    | unary_operator unary_expression  { $$ = new biprog::UnaryExpression($1, BI_SP($2)); }
     ;
 
 pow_operator
@@ -246,7 +253,7 @@ pow_operator
 
 pow_expression
     : unary_expression
-    | pow_expression pow_operator unary_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | pow_expression pow_operator unary_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 multiplicative_operator
@@ -259,7 +266,7 @@ multiplicative_operator
 
 multiplicative_expression
     : pow_expression
-    | multiplicative_expression multiplicative_operator pow_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | multiplicative_expression multiplicative_operator pow_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 additive_operator
@@ -269,7 +276,7 @@ additive_operator
 
 additive_expression
     : multiplicative_expression
-    | additive_expression additive_operator multiplicative_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | additive_expression additive_operator multiplicative_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 shift_operator
@@ -279,7 +286,7 @@ shift_operator
 
 shift_expression
     : additive_expression
-    | shift_expression shift_operator additive_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | shift_expression shift_operator additive_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 relational_operator
@@ -291,7 +298,7 @@ relational_operator
     
 relational_expression
     : shift_expression
-    | relational_expression relational_operator shift_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | relational_expression relational_operator shift_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 equality_operator
@@ -301,7 +308,7 @@ equality_operator
 
 equality_expression
     : relational_expression
-    | equality_expression equality_operator relational_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | equality_expression equality_operator relational_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 and_operator
@@ -310,7 +317,7 @@ and_operator
     
 and_expression
 	: equality_expression
-	| and_expression and_operator equality_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+	| and_expression and_operator equality_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
 	;
 
 exclusive_or_operator
@@ -319,7 +326,7 @@ exclusive_or_operator
 
 exclusive_or_expression
 	: and_expression
-	| exclusive_or_expression exclusive_or_operator and_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+	| exclusive_or_expression exclusive_or_operator and_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
 	;
 
 inclusive_or_operator
@@ -328,7 +335,7 @@ inclusive_or_operator
 
 inclusive_or_expression
 	: exclusive_or_expression
-	| inclusive_or_expression inclusive_or_operator exclusive_or_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+	| inclusive_or_expression inclusive_or_operator exclusive_or_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
 
 logical_and_operator
     : AND_OP  { $$ = biprog::OP_AND; }
@@ -336,7 +343,7 @@ logical_and_operator
 
 logical_and_expression
     : inclusive_or_expression
-    | logical_and_expression logical_and_operator equality_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | logical_and_expression logical_and_operator equality_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 logical_or_operator
@@ -345,7 +352,7 @@ logical_or_operator
 
 logical_or_expression
     : logical_and_expression
-    | logical_or_expression logical_or_operator logical_and_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | logical_or_expression logical_or_operator logical_and_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 constraint_operator
@@ -355,7 +362,7 @@ constraint_operator
 
 constraint_expression
     : logical_or_expression
-    | logical_or_expression constraint_operator constraint_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | logical_or_expression constraint_operator constraint_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 assignment_operator
@@ -364,7 +371,7 @@ assignment_operator
 
 assignment_expression
     : constraint_expression
-    | constraint_expression assignment_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | constraint_expression assignment_operator assignment_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 tuple_operator
@@ -373,7 +380,7 @@ tuple_operator
     
 tuple_expression
     : assignment_expression
-    | tuple_expression tuple_operator assignment_expression  { $$ = new biprog::BinaryExpression($1, $2, $3); }
+    | tuple_expression tuple_operator assignment_expression  { $$ = new biprog::BinaryExpression(BI_SP($1), $2, BI_SP($3)); }
     ;
 
 expression
@@ -390,39 +397,39 @@ statement_operator
     ;
 
 model
-    : MODEL IDENTIFIER parens braces              { $$ = add(new biprog::Model($2, $3, $4)); }
-    | MODEL IDENTIFIER braces                     { $$ = add(new biprog::Model($2, NULL, $3)); }
-    | MODEL IDENTIFIER parens statement_operator  { $$ = add(new biprog::Model($2, $3)); }
-    | MODEL IDENTIFIER statement_operator         { $$ = add(new biprog::Model($2)); }
+    : MODEL IDENTIFIER parens braces              { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
+    | MODEL IDENTIFIER braces                     { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
+    | MODEL IDENTIFIER parens statement_operator  { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    | MODEL IDENTIFIER statement_operator         { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = add(new biprog::Method($2, $3, $4)); }
-    | METHOD IDENTIFIER braces                     { $$ = add(new biprog::Method($2, NULL, $3)); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = add(new biprog::Method($2, $3)); }
-    | METHOD IDENTIFIER statement_operator         { $$ = add(new biprog::Method($2)); }
+    : METHOD IDENTIFIER parens braces              { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
+    | METHOD IDENTIFIER braces                     { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    | METHOD IDENTIFIER statement_operator         { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = add(new biprog::Function($2, $3, $5, $6)); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = add(new biprog::Function($2, $3, $5)); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP($5))); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets statement_operator  { $$ = add(new biprog::Dim($2, $3)); }
+    : DIM IDENTIFIER brackets statement_operator  { $$ = add(new biprog::Dim($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 var
-    : VAR IDENTIFIER type_operator type statement_operator           { $$ = add(new biprog::Var($2, NULL, $4)); }
-    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = add(new biprog::Var($2, $3, $5)); }
+    : VAR IDENTIFIER type_operator type statement_operator           { $$ = add(new biprog::Var($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL, $4)); }
+    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = add(new biprog::Var($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL, $5)); }
     ;
 
 if
-    : IF parens braces  { $$ = new biprog::Conditional($2, $3); }
+    : IF parens braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3)); }
     ;
 
 while
-    : WHILE parens braces  { $$ = new biprog::Loop($2, $3); }
+    : WHILE parens braces  { $$ = new biprog::Loop(BI_SP($2), BI_SP($3)); }
     ;
 
 statement
@@ -439,7 +446,7 @@ statement
 statements
     : statement
     | expression
-    | statement statements  { $$ = new biprog::Sequence($1, $2); }
+    | statement statements  { $$ = new biprog::Sequence(BI_SP($1), BI_SP($2)); }
     ;
 
 

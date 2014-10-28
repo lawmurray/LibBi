@@ -23,7 +23,8 @@ public:
   /**
    * Constructor.
    */
-  BinaryExpression(Expression* left, Operator op, Expression* right);
+  BinaryExpression(boost::shared_ptr<Expression> left, Operator op,
+      boost::shared_ptr<Expression> right);
 
   /**
    * Destructor.
@@ -49,8 +50,9 @@ public:
 };
 }
 
-inline biprog::BinaryExpression::BinaryExpression(Expression* left,
-    Operator op, Expression* right) :
+inline biprog::BinaryExpression::BinaryExpression(
+    boost::shared_ptr<Expression> left, Operator op,
+    boost::shared_ptr<Expression> right) :
     left(left), op(op), right(right) {
   //
 }

@@ -19,7 +19,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Expression : public boost::enable_shared_from_this<Expression> {
+class Expression: public boost::enable_shared_from_this<Expression> {
 public:
 
   /**
@@ -45,8 +45,7 @@ inline biprog::Expression::~Expression() {
 
 inline bool biprog::Expression::match(boost::shared_ptr<Expression> o,
     Match& match) {
-  match.push(o, shared_from_this(), Match::SCORE_EXPRESSION);
-  return true;
+  return o && match.push(o, shared_from_this(), Match::SCORE_EXPRESSION);
 }
 
 #endif

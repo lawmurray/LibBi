@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Loop(Expression* cond, Expression* braces = NULL);
+  Loop(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -36,7 +36,7 @@ public:
 };
 }
 
-inline biprog::Loop::Loop(Expression* cond, Expression* braces) :
+inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces) :
     Conditioned(cond), Braced(braces) {
   //
 }
