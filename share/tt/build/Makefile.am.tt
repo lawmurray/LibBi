@@ -72,6 +72,7 @@ libbi_a_SOURCES = \
   src/bi/host/random/RandomHost.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
+  src/bi/program/Program.cpp \
   src/bi/random/Random.cpp \
   src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \

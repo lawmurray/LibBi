@@ -8,6 +8,7 @@
 #include "bi/program/Match.hpp"
 #include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
+#include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
 #include "bi/program/Sequence.hpp"
@@ -20,11 +21,7 @@
 
 #include <cstdio>
 #include <iostream>
-#include <deque>
-#include <map> //#include <unordered_map>
 #include <string>
-#include <algorithm>
-
 }
 
 %{
@@ -33,17 +30,14 @@
 #define BI_SP(x) boost::shared_ptr<biprog::Expression>(x)
 #define BI_SP_NULL boost::shared_ptr<biprog::Expression>()
 
-extern int yylex();
-extern int yyparse();
-extern FILE *yyin;
+biprog::Program program;
 
+extern FILE *yyin;
 extern int col;
 extern int line;
 
-typedef std::multimap<std::string,biprog::Declaration*> scope_type;
-///@todo std::unordered_multimap preferable after C++11 transition
-
-std::deque<scope_type> scopes;
+extern int yylex();
+extern int yyparse();
 
 void yyerror(const char *msg) {
   std::cerr << "Error (line " << line << " col " << col << "): " << msg << std::endl;
@@ -52,52 +46,6 @@ void yyerror(const char *msg) {
 
 void yywarn(const char *msg) {
   std::cerr << "Warning (line " << line << " col " << col << "): " << msg << std::endl;
-}
-
-void push_scope() {
-  scopes.push_front(scope_type());
-}
-
-void pop_scope() {
-  scopes.pop_front();
-}
-
-biprog::Declaration* add(biprog::Declaration* decl) {
-  scopes.front().insert(std::make_pair(decl->name, decl));
-  return decl;
-}
-
-biprog::Reference* match(const char* name,
-    boost::shared_ptr<biprog::Expression> brackets,
-    boost::shared_ptr<biprog::Expression> parens,
-    boost::shared_ptr<biprog::Expression> braces) {
-  std::deque<biprog::Match> matches;
-  biprog::Match match;
-  
-  BOOST_AUTO(scope, scopes.begin());
-  bool found = false;
-  while (!found && scope != scopes.end()) {
-    BOOST_AUTO(decls, scope->equal_range(name));
-    found = decls.first != decls.second;
-
-    BOOST_AUTO(decl, decls.first);
-    while (decl != decls.second) {
-      if (decl->second->match(brackets, parens, braces, match)) {
-        matches.push_back(match);
-        match.clear();
-      }
-      ++decl;
-    }
-    ++scope;
-  }
-  
-  if (matches.size() > 0) {
-    std::sort(matches.begin(), matches.end());
-  } else {
-    yywarn("no match for symbol");
-  }
-
-  return new biprog::Reference(name, brackets, parens, braces);
 }
 
 %}
@@ -161,11 +109,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = match($1, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL); }
-    | IDENTIFIER brackets       { $$ = match($1, BI_SP($2), BI_SP_NULL, BI_SP_NULL); }
-    | IDENTIFIER parens         { $$ = match($1, BI_SP_NULL, BI_SP($2), BI_SP_NULL); }
-    | IDENTIFIER braces         { $$ = match($1, BI_SP_NULL, BI_SP_NULL, BI_SP($2)); }
-    | IDENTIFIER parens braces  { $$ = match($1, BI_SP_NULL, BI_SP($2), BI_SP($3)); }
+    : IDENTIFIER                { $$ = program.lookup($1, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL); }
+    | IDENTIFIER brackets       { $$ = program.lookup($1, BI_SP($2), BI_SP_NULL, BI_SP_NULL); }
+    | IDENTIFIER parens         { $$ = program.lookup($1, BI_SP_NULL, BI_SP($2), BI_SP_NULL); }
+    | IDENTIFIER braces         { $$ = program.lookup($1, BI_SP_NULL, BI_SP_NULL, BI_SP($2)); }
+    | IDENTIFIER parens braces  { $$ = program.lookup($1, BI_SP_NULL, BI_SP($2), BI_SP($3)); }
     ;
 
 parens
@@ -178,8 +126,8 @@ brackets
     ;
 
 braces
-    : '{' { push_scope(); } statements '}' { pop_scope(); }  { $$ = $3; }
-    | '{' '}'                                                { $$ = NULL; }
+    : '{' { program.push(); } statements '}' { program.pop(); }  { $$ = $3; }
+    | '{' '}'                                                    { $$ = NULL; }
     ;
 
 bool_literal
@@ -397,31 +345,31 @@ statement_operator
     ;
 
 model
-    : MODEL IDENTIFIER parens braces              { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
-    | MODEL IDENTIFIER braces                     { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
-    | MODEL IDENTIFIER parens statement_operator  { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
-    | MODEL IDENTIFIER statement_operator         { $$ = add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
+    : MODEL IDENTIFIER parens braces              { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
+    | MODEL IDENTIFIER braces                     { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
+    | MODEL IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    | MODEL IDENTIFIER statement_operator         { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
-    | METHOD IDENTIFIER braces                     { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
-    | METHOD IDENTIFIER statement_operator         { $$ = add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
+    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
+    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP($5))); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP($5))); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets statement_operator  { $$ = add(new biprog::Dim($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL)); }
+    : DIM IDENTIFIER brackets statement_operator  { $$ = program.add(new biprog::Dim($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 var
-    : VAR IDENTIFIER type_operator type statement_operator           { $$ = add(new biprog::Var($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL, $4)); }
-    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = add(new biprog::Var($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL, $5)); }
+    : VAR IDENTIFIER type_operator type statement_operator           { $$ = program.add(new biprog::Var($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL, $4)); }
+    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = program.add(new biprog::Var($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL, $5)); }
     ;
 
 if
@@ -455,7 +403,7 @@ statements
  ***************************************************************************/
 
 file
-    : { push_scope(); } statements { pop_scope(); }
+    : statements
     |
     ;
     
