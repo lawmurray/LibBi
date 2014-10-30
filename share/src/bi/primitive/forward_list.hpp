@@ -72,7 +72,7 @@ public:
 
 private:
   /**
-   * Iterator to before beginning.
+   * Root node ("before beginning").
    */
   boost::shared_ptr<forward_list_node<T> > before;
 };
@@ -89,15 +89,14 @@ bi::forward_list<T>::~forward_list() {
 }
 
 template<class T>
-bi::forward_list<T>::forward_list(const forward_list<T>& o) {
-  ///@todo Deep copy.
+bi::forward_list<T>::forward_list(const forward_list<T>& o) : before(o.before) {
+  //
 }
 
 template<class T>
 bi::forward_list<T>& bi::forward_list<T>::operator=(
     const forward_list<T>& o) {
-  ///@todo Deep copy.
-  before->next = o.before->next;
+  before = o.before;
 }
 
 template<class T>
