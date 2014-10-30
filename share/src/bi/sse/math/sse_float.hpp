@@ -368,6 +368,10 @@ BI_FORCE_INLINE inline sse_float atanh(const sse_float x) {
   BI_SSEFLOAT_UNIVARIATE(atanh, x)
 }
 
+BI_FORCE_INLINE inline sse_float heaviside(const sse_float x) {
+   BI_SSEFLOAT_UNIVARIATE(heaviside, x)
+}
+
 BI_FORCE_INLINE inline float max_reduce(const sse_float x) {
   return bi::max(bi::max(x.unpacked.a, x.unpacked.b), bi::max(x.unpacked.c, x.unpacked.d));
 }

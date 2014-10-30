@@ -364,6 +364,10 @@ BI_FORCE_INLINE inline avx_double atanh(const avx_double x) {
   BI_AVXDOUBLE_UNIVARIATE(atanh, x)
 }
 
+BI_FORCE_INLINE inline avx_double heaviside(const avx_double x) {
+  BI_AVXDOUBLE_UNIVARIATE(heaviside, x)
+}
+
 BI_FORCE_INLINE inline double max_reduce(const avx_double x) {
   return bi::max(bi::max_reduce(x.unpacked.a), bi::max_reduce(x.unpacked.b));
 }

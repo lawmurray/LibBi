@@ -31,7 +31,7 @@ public:
    * @param file NetCDF file name.
    * @param mode File open mode.
    */
-  OptimiserNetCDFBuffer(const Model& m, const size_t T = 0,
+  OptimiserNetCDFBuffer(const Model& m, const size_t T = 0, const size_t P = 0,
       const std::string& file = "", const FileMode mode = READ_ONLY,
       const SchemaMode schema = PARAM_ONLY);
 

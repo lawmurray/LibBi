@@ -84,6 +84,8 @@ CUDA_FUNC_BOTH double erf(const double x);
 CUDA_FUNC_BOTH float erf(const float x);
 CUDA_FUNC_BOTH double erfc(const double x);
 CUDA_FUNC_BOTH float erfc(const float x);
+CUDA_FUNC_BOTH double heaviside(const double x);
+CUDA_FUNC_BOTH float heavisidef(const float x);
 
 template<class T>
 CUDA_FUNC_BOTH bool isnan(const T x);
@@ -369,6 +371,14 @@ inline double bi::erfc(const double x){
 
 inline float bi::erfc(const float x) {
   return ::erfcf(x);
+}
+
+inline double bi::heaviside(const double x){
+  return (x < 0) ? 0 : 1;
+}
+
+inline float bi::heavisidef(const float x) {
+  return (x < 0) ? 0 : 1;
 }
 
 template<class T>

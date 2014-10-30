@@ -365,6 +365,11 @@ BI_FORCE_INLINE inline sse_double atanh(const sse_double x) {
   BI_SSEDOUBLE_UNIVARIATE(atanh, x)
 }
 
+BI_FORCE_INLINE inline sse_double heaviside(const sse_double x) {
+  BI_SSEDOUBLE_UNIVARIATE(heaviside, x)
+}
+
+
 BI_FORCE_INLINE inline double max_reduce(const sse_double x) {
   return bi::max(x.unpacked.a, x.unpacked.b);
 }

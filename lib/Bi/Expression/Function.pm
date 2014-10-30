@@ -142,7 +142,8 @@ sub is_math {
       'acosh' => 1,
       'atanh' => 1,
       'erf', => 1,
-      'erfc', => 1
+      'erfc', => 1,
+      'heaviside' => 1
     );
     
     return exists $MATH_FUNCTIONS{$self->get_name};

@@ -359,6 +359,10 @@ BI_FORCE_INLINE inline avx_float atanh(const avx_float x) {
   BI_AVXFLOAT_UNIVARIATE(atanh, x)
 }
 
+BI_FORCE_INLINE inline avx_float heaviside(const avx_float x) {
+  BI_AVXFLOAT_UNIVARIATE(heaviside, x)
+}
+
 BI_FORCE_INLINE inline float max_reduce(const avx_float x) {
   return bi::max(bi::max_reduce(x.unpacked.a), bi::max_reduce(x.unpacked.b));
 }

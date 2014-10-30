@@ -27,10 +27,7 @@
 #include "bi/stopper/MinimumESSStopper.hpp"
 #include "bi/stopper/StdDevStopper.hpp"
 #include "bi/stopper/VarStopper.hpp"
-[% ELSE %]
-#include "bi/method/BootstrapPF.hpp"
 [% END %]
-#include "bi/cache/BootstrapPFCache.hpp"
 #include "bi/resampler/MultinomialResampler.hpp"
 #include "bi/resampler/MetropolisResampler.hpp"
 #include "bi/resampler/RejectionResampler.hpp"
@@ -38,12 +35,17 @@
 #include "bi/resampler/StratifiedResampler.hpp"
 #include "bi/resampler/SystematicResampler.hpp"
 [% END %]
-
+#include "bi/cache/SimulatorCache.hpp"
+#include "bi/cache/BootstrapPFCache.hpp"
+#include "bi/buffer/SimulatorBuffer.hpp"
+#include "bi/method/FilterFactory.hpp"
 #include "bi/method/Simulator.hpp"
 #include "bi/method/Forcer.hpp"
 #include "bi/method/Observer.hpp"
-#include "bi/buffer/InputNetCDFBuffer.hpp"
-#include "bi/buffer/OptimiserNetCDFBuffer.hpp"
+#include "bi/netcdf/InputNetCDFBuffer.hpp"
+#include "bi/netcdf/OptimiserNetCDFBuffer.hpp"
+#include "bi/null/InputNullBuffer.hpp"
+#include "bi/null/OptimiserNullBuffer.hpp"
 #include "bi/misc/TicToc.hpp"
 
 #include <iostream>
@@ -94,34 +96,46 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('filter') == 'kalman' %]
   NPARTICLES = 1;
   [% END %]
-  State<model_type,LOCATION> s(NPARTICLES);
+  state<model_type,LOCATION> s(NPARTICLES);
   NPARTICLES = s.size(); // may change according to implementation
 
   /* inputs */
-  InputNetCDFBuffer *bufInput = NULL, *bufInit = NULL, *bufObs = NULL;
-  if (!INPUT_FILE.empty()) {
-    bufInput = new InputNetCDFBuffer(m, INPUT_FILE, INPUT_NS, INPUT_NP);
-  }
-  if (!INIT_FILE.empty()) {
-    bufInit = new InputNetCDFBuffer(m, INIT_FILE, INIT_NS, INIT_NP);
-  }
-  if (!OBS_FILE.empty()) {
-    bufObs = new InputNetCDFBuffer(m, OBS_FILE, OBS_NS, OBS_NP);
-  }
+  /* input file */
+  [% IF client.get_named_arg('input-file') != '' %]
+      InputNetCDFBuffer bufInput(m, INPUT_FILE, INPUT_NS, INPUT_NP);
+  [% ELSE %]
+      InputNullBuffer bufInput(m);
+  [% END %]
+  
+  /* init file */
+  [% IF client.get_named_arg('init-file') != '' %]
+      InputNetCDFBuffer bufInit(m, INIT_FILE, INIT_NS, INIT_NP);
+  [% ELSE %]
+      InputNullBuffer bufInit(m);
+  [% END %]
+
+   /* obs file */
+  [% IF client.get_named_arg('obs-file') != '' %]
+      InputNetCDFBuffer bufObs(m, OBS_FILE, OBS_NS, OBS_NP);
+  [% ELSE %]
+      InputNullBuffer bufObs(m);
+  [% END %]
 
   /* schedule */
   Schedule sched(m, START_TIME, END_TIME, NOUTPUTS, NBRIDGES, bufInput, bufObs, WITH_OUTPUT_AT_OBS);
 
   /* output */
-  OptimiserNetCDFBuffer* bufOutput = NULL;
-  if (WITH_OUTPUT && !OUTPUT_FILE.empty()) {
-    bufOutput = new OptimiserNetCDFBuffer(m, sched.numOutputs(), OUTPUT_FILE, NetCDFBuffer::REPLACE);
-  }
+  [% IF client.get_named_arg('output-file') != '' %]
+      typedef OptimiserNetCDFBuffer buffer_type;
+  [% ELSE %]
+      typedef OptimiserNullBuffer buffer_type;
+  [% END %]
+  SimulatorBuffer<SimulatorCache<LOCATION,buffer_type> > out(m, 0, sched.numOutputs(), OUTPUT_FILE, REPLACE, MULTI);
   
   /* simulator */
-  BOOST_AUTO(in, bi::ForcerFactory<LOCATION>::create(bufInput));
+  BOOST_AUTO(in, ForcerFactory<LOCATION>::create(bufInput));
   BOOST_AUTO(obs, ObserverFactory<LOCATION>::create(bufObs));
-  BOOST_AUTO(sim, bi::SimulatorFactory::create(m, in, obs));
+  BOOST_AUTO(sim, SimulatorFactory::create(m, *in, *obs));
   
     /* filter */
   [% IF client.get_named_arg('filter') == 'kalman' %]
@@ -154,7 +168,7 @@ int main(int argc, char* argv[]) {
         
     /* particle filter */
     [% IF client.get_named_arg('filter') == 'lookahead' %]
-      BOOST_AUTO(filter, (LookaheadPFFactory::create(m, sim, &resam, outFilter)));
+      BOOST_AUTO(filter, (FilterFactory::createlookaheadPF(m, *sim, resam)));
     [% ELSIF client.get_named_arg('filter') == 'adaptive' %]
       /* stopper */
       [% IF client.get_named_arg('stopper') == 'deterministic' %]
@@ -168,9 +182,9 @@ int main(int argc, char* argv[]) {
       [% ELSIF client.get_named_arg('stopper') == 'var' %]
       VarStopper stopper(REL_THRESHOLD, MAX_P);
       [% END %]
-      BOOST_AUTO(filter, (AdaptivePFFactory::create(m, sim, &resam, &stopper, BLOCK_P, outFilter)));
+          BOOST_AUTO(filter, (FilterFactory::createAdaptivePF(m, *sim, resam, stopper, NPARTICLES, BLOCK_PARTICLES)));
     [% ELSE %]
-      BOOST_AUTO(filter, (BootstrapPFFactory::create(m, sim, &resam, outFilter)));
+      BOOST_AUTO(filter, (FilterFactory::createBootstrapPF(m, *sim, resam)));
     [% END %]
   [% END %]
   
@@ -181,7 +195,7 @@ int main(int argc, char* argv[]) {
   } else {
     mode = MAXIMUM_LIKELIHOOD;
   }    
-  BOOST_AUTO(optimiser, (NelderMeadOptimiserFactory<LOCATION>::create(m, filter, bufOutput, mode)));
+  BOOST_AUTO(optimiser, (NelderMeadOptimiserFactory<LOCATION>::create(m, filter, out, mode)));
 
   /* optimise */
   #ifdef ENABLE_GPERFTOOLS
@@ -214,10 +228,6 @@ int main(int argc, char* argv[]) {
   delete sim;
   delete obs;
   delete in;
-  delete bufOutput;
-  delete bufObs;
-  delete bufInit;
-  delete bufInput;
 
   return 0;
 }

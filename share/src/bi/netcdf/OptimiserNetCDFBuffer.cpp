@@ -10,7 +10,7 @@
 #include "../math/view.hpp"
 
 bi::OptimiserNetCDFBuffer::OptimiserNetCDFBuffer(const Model& m,
-    const size_t T, const std::string& file, const FileMode mode,
+    const size_t P, const size_t T, const std::string& file, const FileMode mode,
     const SchemaMode schema) :
     SimulatorNetCDFBuffer(m, 0, T, file, mode, schema) {
   if (mode == NEW || mode == REPLACE) {
