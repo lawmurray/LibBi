@@ -10,6 +10,8 @@
 
 #include "boost/shared_ptr.hpp"
 
+#include <list>
+
 namespace bi {
 template<class T> class partial_ordered_set;
 
@@ -19,13 +21,11 @@ template<class T> class partial_ordered_set;
  * @tparam T Value type.
  */
 template<class T>
-class partial_ordered_set_node: public boost::enable_shared_from_this<
-    partial_ordered_set_node<T> > {
-  friend class partial_ordered_set<T> ;
+class partial_ordered_set_node {
 public:
+  friend class partial_ordered_set<T>;
   typedef T value_type;
   typedef partial_ordered_set_node<T> node_type;
-  typedef boost::shared_ptr<node_type> node_pointer_type;
 
   /**
    * Constructor.
@@ -34,27 +34,35 @@ public:
 
   /**
    * Constructor.
+   *
+   * @param value Value.
+   * @param colour Colour.
    */
-  partial_ordered_set_node(const T& value, const int colour);
+  partial_ordered_set_node(const T& value, const int colour = 0);
 
 private:
-  /**
-   * Accept a visitor.
-   *
-   * @param colour The colour of visited nodes.
-   *
-   * @return Replacement node. For the edge that resulted in this recursive
-   * call, gives the node that is to become the arrival node of this edge.
-   * This may is the current node if no change needs to be made.
-   */
-  node_pointer_type insert(node_pointer_type o, const int colour);
+  bool empty() const;
+  void clear();
+  void swap(node_type& o);
 
   /**
-   * Recursively prune from this node.
+   * Insert descendant.
+   *
+   * @param node The descendant node.
+   */
+  void insert(boost::shared_ptr<node_type> node);
+
+  /**
+   * Prune this node from recursion by colouring.
    *
    * @param colour The colour of visited nodes.
    */
-  void prune(const Colour colour);
+  void prune(const int colour);
+
+  /**
+   * Output dot graph.
+   */
+  void dot() const;
 
   /**
    * Value.
@@ -67,57 +75,106 @@ private:
   int colour;
 
   /**
+   * Is this a root node?
+   */
+  bool root;
+
+  /**
    * Child nodes.
    */
-  std::set<boost::shared_ptr<node_type> > children;
+  std::list<boost::shared_ptr<node_type> > children;
 };
 }
 
+#include "../misc/assert.hpp"
+
+#include "boost/typeof/typeof.hpp"
+
 template<class T>
 inline bi::partial_ordered_set_node<T>::partial_ordered_set_node() :
-    colour(0) {
+    colour(0), root(true) {
   //
 }
 
 template<class T>
 inline bi::partial_ordered_set_node<T>::partial_ordered_set_node(
-    const T& value) :
-    value(value) {
+    const T& value, const int colour) :
+    value(value), colour(colour), root(false) {
   //
+}
+
+template<class T>
+inline bool bi::partial_ordered_set_node<T>::empty() const {
+  return children.empty();
+}
+
+template<class T>
+inline void bi::partial_ordered_set_node<T>::clear() {
+  children.clear();
+}
+
+template<class T>
+void bi::partial_ordered_set_node<T>::swap(node_type& o) {
+  std::swap(value, o.value);
+  std::swap(colour, o.colour);
+  std::swap(children, o.children);
+  std::swap(root, o.root);
 }
 
 template<class T>
 void bi::partial_ordered_set_node<T>::insert(
     boost::shared_ptr<node_type> node) {
-  this->colour = node->colour;  // marks as visited
-  bool inserted = false;  // has node been inserted in at least one place?
-  std::set<boost::shared_ptr<node_type> > children1; // new children
+  /* pre-condition */
+  BI_ASSERT(root || node->value < this->value);
+
+  bool child = false;  // has the node been inserted as a direct child?
+  bool desc = false;   // has the node been inserted as another descendant?
+  std::list < boost::shared_ptr<node_type> > children1;  // new children
+  colour = node->colour;
 
   BOOST_AUTO(iter, children.begin());
   for (; iter != children.end(); ++iter) {
-    if ((*iter)->colour != node->colour && node->value < (*iter)->value) {
+    if (node->colour != (*iter)->colour && node->value < (*iter)->value) {
       (*iter)->insert(node);
-      inserted = true;
-      children1.insert(*iter); // keep this child
+      children1.push_back(*iter);  // keep this child
+      desc = true;
     } else if ((*iter)->value < node->value) {
-      node->children.insert(*iter);
+      node->children.push_back(*iter);
       (*iter)->prune(node->colour);
-      inserted = true;
-      children1.insert(node); // replace this child with inserted node
+      if (!child) {
+        children1.push_back(node);  // replace this child with the inserted node
+        child = true;
+      }
+    } else {
+      (*iter)->colour = node->colour;
+      children1.push_back(*iter); // keep this child
     }
   }
-  if (!inserted) {
-    children1.insert(node);
+  if (!desc && !child) {
+    children1.push_back(node);
   }
   children.swap(children1);
 }
 
 template<class T>
 void bi::partial_ordered_set_node<T>::prune(const int colour) {
-  this->colour = colour;  // marks as visited
+  this->colour = colour;  // mark as visited
   BOOST_AUTO(iter, children.begin());
   for (; iter != children.end(); ++iter) {
-    iter->prune(colour);
+    (*iter)->prune(colour);
+  }
+}
+
+template<class T>
+void bi::partial_ordered_set_node<T>::dot() const {
+  BOOST_AUTO(iter, children.begin());
+  for (; iter != children.end(); ++iter) {
+    if (root) {
+      std::cout << "\"" << (*iter)->value << "\";" << std::endl;
+    } else {
+      std::cout << "\"" << this->value << "\" -> \"" << (*iter)->value << "\";" << std::endl;
+    }
+    (*iter)->dot();
   }
 }
 

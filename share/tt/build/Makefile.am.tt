@@ -14,7 +14,8 @@ CLIENTS = [
     'sample',
     'test',
     #'test_parser', # handled separately
-    'test_resampler'
+    'test_partial_ordered_set',
+    'test_resampler',
 ];
 %]
 

@@ -1,0 +1,47 @@
+[%
+## @file
+##
+## @author Lawrence Murray <lawrence.murray@csiro.au>
+## $Rev$
+## $Date$
+%]
+
+#include "bi/primitive/partial_ordered_set.hpp"
+
+struct Coord {
+  int x, y;
+  
+  Coord() {
+    //
+  }
+  
+  Coord(const int x, const int y) : x(x), y(y) {
+    //
+  }
+  
+  bool operator<(const Coord& o) {
+    return x < o.x && y < o.y;
+  }
+};
+
+std::ostream& operator<<(std::ostream& out, const Coord& coord) {
+  out << '(' << coord.x << ',' << coord.y << ')';
+  return out;
+}
+
+int main(int argc, char* argv[]) {
+  bi::partial_ordered_set<Coord> g;
+
+  g.insert({1, 5});
+  g.insert({2, 4});
+  g.insert({6, 5});
+  g.insert({3, 8});
+  g.insert({2, 1});
+  g.insert({5, 4});
+  g.insert({4, 3});
+
+  g.dot();
+
+  return 0;
+}
+
