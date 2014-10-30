@@ -9,7 +9,7 @@
 [%
 # client programs
 CLIENTS = [
-    'nm',
+    'optimise',
     'filter',
     'sample',
     'test',

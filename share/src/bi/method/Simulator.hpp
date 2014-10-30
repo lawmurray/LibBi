@@ -11,6 +11,7 @@
 #include "../state/Schedule.hpp"
 #include "../cache/SimulatorCache.hpp"
 #include "../state/State.hpp"
+#include "../buffer/InputBuffer.hpp"
 
 namespace bi {
 /**
