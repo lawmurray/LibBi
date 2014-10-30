@@ -20,6 +20,7 @@ template<class T>
 class partial_ordered_set {
 public:
   typedef T value_type;
+  typedef partial_ordered_set_node<T> node_type;
   typedef std::allocator<T> allocator_type;
   typedef std::size_t size_type;
   typedef std::ptrdiff_t difference_type;
@@ -60,15 +61,9 @@ public:
 
 private:
   /**
-   * Walk through set with visitor.
+   * Root nodes.
    */
-  template<class Visitor>
-  T walk(Visitor& visitor);
-
-  /**
-   * Root node ("before beginning").
-   */
-  boost::shared_ptr<partial_ordered_set_node<T> > root;
+  node_type root;
 };
 }
 
@@ -84,25 +79,24 @@ bi::partial_ordered_set<T>::~partial_ordered_set() {
 
 template<class T>
 bi::partial_ordered_set<T>::partial_ordered_set(
-    const partial_ordered_set<T>& o) :
-    root(o.root) {
-  //
+    const partial_ordered_set<T>& o) {
+  BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class T>
 bi::partial_ordered_set<T>& bi::partial_ordered_set<T>::operator=(
     const partial_ordered_set<T>& o) {
-  root = o.root;
+  BI_ASSERT_MSG(false, "Not implemented");
 }
 
 template<class T>
 bool bi::partial_ordered_set<T>::empty() const {
-  return root.empty();
+  return root.children.empty();
 }
 
 template<class T>
 void bi::partial_ordered_set<T>::clear() {
-  root.clear();
+  root.children.clear();
 }
 
 template<class T>
@@ -111,9 +105,10 @@ void bi::partial_ordered_set<T>::swap(partial_ordered_set<T>& o) {
 }
 
 template<class T>
-std::pair<typename bi::partial_ordered_set<T>::iterator,bool> bi::partial_ordered_set<
-    T>::insert(const T& value) {
-
+void bi::partial_ordered_set<T>::insert(const T& value) {
+  boost::shared_ptr<node_type> node = boost::make_shared < node_type
+      > (value, root.colour + 1);
+  root.insert(node);
 }
 
 typename bi::partial_ordered_set<T>::iterator bi::partial_ordered_set<T>::find(
