@@ -55,16 +55,27 @@ public:
 
 private:
   /**
+   * Relationship types between nodes.
+   */
+  enum Relationship {
+    ANCESTOR, CHILD, UNRELATED
+  };
+
+  static Relationship insert(boost::shared_ptr<node_type> current,
+      boost::shared_ptr<node_type> node);
+
+  static void dot(boost::shared_ptr<node_type> current);
+
+  /**
    * Root node.
    */
-  node_type root;
+  boost::shared_ptr<node_type> root;
 };
 }
 
-#include "boost/make_shared.hpp"
-
 template<class T>
-bi::partial_ordered_set<T>::partial_ordered_set() {
+bi::partial_ordered_set<T>::partial_ordered_set() :
+    root(boost::make_shared<node_type>()) {
   //
 }
 
@@ -87,12 +98,12 @@ bi::partial_ordered_set<T>& bi::partial_ordered_set<T>::operator=(
 
 template<class T>
 bool bi::partial_ordered_set<T>::empty() const {
-  return root.empty();
+  return root->empty();
 }
 
 template<class T>
 void bi::partial_ordered_set<T>::clear() {
-  root.clear();
+  root->clear();
 }
 
 template<class T>
@@ -103,15 +114,78 @@ void bi::partial_ordered_set<T>::swap(partial_ordered_set<T>& o) {
 template<class T>
 void bi::partial_ordered_set<T>::insert(const T& value) {
   boost::shared_ptr<node_type> node = boost::make_shared < node_type
-      > (value, root.colour + 1);
-  root.insert(node);
+      > (value, root->colour + 1);
+  insert(root, node);
+}
+
+template<class T>
+typename bi::partial_ordered_set<T>::Relationship bi::partial_ordered_set<T>::insert(
+    boost::shared_ptr<node_type> current, boost::shared_ptr<node_type> node) {
+  Relationship rel = UNRELATED;
+  if (current->colour != node->colour) {
+    current->colour = node->colour;
+    if (current < node) {
+      /* #current is a child of #node, no need to recurse further */
+      node->children.push_back(current);
+      rel = CHILD;
+    } else if (node < current) {
+      /* #current is an ancestor of #node, recurse to find direct parent(s) of
+       * #node */
+      std::list < boost::shared_ptr<node_type> > children;
+      bool child = true;
+
+      BOOST_AUTO(iter, current->children.begin());
+      for (; iter != current->children.end(); ++iter) {
+        rel = insert(*iter, node);
+        if (rel == ANCESTOR) {
+          child = false;
+          children.push_back(*iter);
+        } else if (rel == UNRELATED) {
+          children.push_back(*iter);
+        }
+      }
+      if (child) {
+        children.push_back(node);
+      }
+      current->children.swap(children);
+      rel = ANCESTOR;
+    } else {
+      /* no relationship between #current and #node, but descendants of #current
+       * may also be descendants of #node */
+      BOOST_AUTO(iter, current->children.begin());
+      for (; iter != current->children.end(); ++iter) {
+        rel = insert(*iter, node);
+        BI_ASSERT(rel != ANCESTOR);
+      }
+      rel = UNRELATED;
+    }
+  }
+  return rel;
 }
 
 template<class T>
 void bi::partial_ordered_set<T>::dot() const {
   std::cout << "digraph {" << std::endl;
-  root.dot();
+  ++root->colour;
+  dot(root);
   std::cout << "}" << std::endl;
+}
+
+template<class T>
+void bi::partial_ordered_set<T>::dot(boost::shared_ptr<node_type> current) {
+  BOOST_AUTO(iter, current->children.begin());
+  for (; iter != current->children.end(); ++iter) {
+    if (current->root) {
+      std::cout << "\"root\" -> \"" << (*iter)->value << "\";" << std::endl;
+    } else {
+      std::cout << "\"" << current->value << "\" -> \"" << (*iter)->value
+          << "\";" << std::endl;
+    }
+    if ((*iter)->colour != current->colour) {
+      (*iter)->colour = current->colour;
+      dot (*iter);
+    }
+  }
 }
 
 #endif
