@@ -7,6 +7,7 @@
 %]
 
 #include "bi/primitive/poset.hpp"
+#include "bi/primitive/pointer_less.hpp"
 
 struct Coord {
   int x, y;

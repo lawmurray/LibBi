@@ -16,10 +16,11 @@ namespace bi {
  * Partially ordered set.
  *
  * @tparam T Value type.
+ * @tparam Compare Comparison functor.
  *
  * @todo Be careful of overflow in colouring.
  */
-template<class T>
+template<class T, class Compare = std::less<T> >
 class poset {
 public:
   /**
@@ -37,7 +38,7 @@ public:
   /**
    * Output dot graph. Useful for diagnostic purposes.
    */
-  void dot() const;
+  void dot();
 
 private:
   /**
@@ -78,12 +79,17 @@ private:
   /*
    * Sub-operations for dot.
    */
-  void dot(const int u) const;
+  void dot(const int u);
 
   /**
    * Vertex values.
    */
   std::vector<T> vals;
+
+  /**
+   * Vertex colours.
+   */
+  std::vector<int> cols;
 
   /**
    * Forward and backward edges.
@@ -96,18 +102,14 @@ private:
   std::set<int> roots, leaves;
 
   /**
-   * Leaves, forward and backward.
+   * Comparison.
    */
-
-  /**
-   * Vertex colours.
-   */
-  mutable std::vector<int> cols;
+  Compare compare;
 
   /**
    * Current colour.
    */
-  mutable int col;
+  int col;
 };
 }
 
@@ -115,22 +117,22 @@ private:
 
 #include "boost/typeof/typeof.hpp"
 
-template<class T>
-bi::poset<T>::poset() :
+template<class T, class Compare>
+bi::poset<T,Compare>::poset() :
     col(0) {
   //
 }
 
-template<class T>
-void bi::poset<T>::insert(const T& val) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::insert(const T& val) {
   const int v = add_vertex(val);
   forward(v);
   backward(v);
   reduce();
 }
 
-template<class T>
-int bi::poset<T>::add_vertex(const T& val) {
+template<class T, class Compare>
+int bi::poset<T,Compare>::add_vertex(const T& val) {
   const int v = vals.size();
 
   vals.push_back(val);
@@ -148,16 +150,16 @@ int bi::poset<T>::add_vertex(const T& val) {
   return v;
 }
 
-template<class T>
-void bi::poset<T>::add_edge(const int u, const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::add_edge(const int u, const int v) {
   forwards[u].insert(v);
   backwards[v].insert(u);
   leaves.erase(u);
   roots.erase(v);
 }
 
-template<class T>
-void bi::poset<T>::remove_edge(const int u, const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::remove_edge(const int u, const int v) {
   forwards[u].erase(v);
   backwards[v].erase(u);
   if (forwards[u].size() == 0) {
@@ -168,8 +170,8 @@ void bi::poset<T>::remove_edge(const int u, const int v) {
   }
 }
 
-template<class T>
-void bi::poset<T>::forward(const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::forward(const int v) {
   ++col;
   BOOST_AUTO(iter, roots.begin());
   while (iter != roots.end()) {
@@ -178,11 +180,11 @@ void bi::poset<T>::forward(const int v) {
   }
 }
 
-template<class T>
-void bi::poset<T>::forward(const int u, const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::forward(const int u, const int v) {
   if (cols[u] < col) {
     cols[u] = col;
-    if (vals[u] < vals[v]) {
+    if (compare(vals[u], vals[v])) {
       add_edge(v, u);
     } else {
       BOOST_AUTO(iter, forwards[u].begin());
@@ -194,8 +196,8 @@ void bi::poset<T>::forward(const int u, const int v) {
   }
 }
 
-template<class T>
-void bi::poset<T>::backward(const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::backward(const int v) {
   ++col;
   BOOST_AUTO(iter, leaves.begin());
   while (iter != leaves.end()) {
@@ -204,11 +206,11 @@ void bi::poset<T>::backward(const int v) {
   }
 }
 
-template<class T>
-void bi::poset<T>::backward(const int u, const int v) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::backward(const int u, const int v) {
   if (cols[u] < col) {
     cols[u] = col;
-    if (vals[v] < vals[u]) {
+    if (compare(vals[v], vals[u])) {
       add_edge(u, v);
     } else {
       BOOST_AUTO(iter, backwards[u].begin());
@@ -220,8 +222,8 @@ void bi::poset<T>::backward(const int u, const int v) {
   }
 }
 
-template<class T>
-void bi::poset<T>::reduce() {
+template<class T, class Compare>
+void bi::poset<T,Compare>::reduce() {
   std::set<int> lroots(roots);
   BOOST_AUTO(iter, lroots.begin());
   while (iter != lroots.end()) {
@@ -230,8 +232,8 @@ void bi::poset<T>::reduce() {
   }
 }
 
-template<class T>
-void bi::poset<T>::reduce(const int u) {
+template<class T, class Compare>
+void bi::poset<T,Compare>::reduce(const int u) {
   int lcol = ++col;
 
   /* depth first search discovery */
@@ -245,23 +247,18 @@ void bi::poset<T>::reduce(const int u) {
   }
 
   /* remove edges for children that were rediscovered */
-  std::set<int> rm;
-  iter = forwards[u].begin();
-  while (iter != forwards[u].end()) {
-    if (cols[*iter] > lcol) {  // rediscovered, remove
-      rm.insert(*iter);
+  std::set<int> lforwards(forwards[u]);
+  iter = lforwards.begin();
+  while (iter != lforwards.end()) {
+    if (cols[*iter] > lcol) {  // rediscovered
+      remove_edge(u, *iter);
     }
-    ++iter;
-  }
-  iter = rm.begin();
-  while (iter != rm.end()) {
-    remove_edge(u, *iter);
     ++iter;
   }
 }
 
-template<class T>
-void bi::poset<T>::dot() const {
+template<class T, class Compare>
+void bi::poset<T,Compare>::dot() {
   ++col;
   std::cout << "digraph {" << std::endl;
   BOOST_AUTO(iter, roots.begin());
@@ -272,8 +269,8 @@ void bi::poset<T>::dot() const {
   std::cout << "}" << std::endl;
 }
 
-template<class T>
-void bi::poset<T>::dot(const int u) const {
+template<class T, class Compare>
+void bi::poset<T,Compare>::dot(const int u) {
   if (cols[u] != col) {
     cols[u] = col;
     std::cout << "\"" << vals[u] << "\"" << std::endl;
