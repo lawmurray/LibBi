@@ -1,10 +1,10 @@
 =head1 NAME
 
-test_partial_ordered_set - test partial_ordered_set class.
+test_poset - test poset class.
 
 =head1 SYNOPSIS
 
-    libbi test_partial_ordered_set ...
+    libbi test_poset ...
 
 =head1 INHERITS
 
@@ -12,7 +12,7 @@ L<Bi::Client>
 
 =cut
 
-package Bi::Test::test_partial_ordered_set;
+package Bi::Test::test_poset;
 
 use parent 'Bi::Client';
 use warnings;
@@ -30,7 +30,7 @@ our @CLIENT_OPTIONS = ();
 sub init {
     my $self = shift;
 
-    $self->{_binary} = 'test_partial_ordered_set';
+    $self->{_binary} = 'test_poset';
     push(@{$self->{_params}}, @CLIENT_OPTIONS);
 }
 
