@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditioned {
+class Conditioned : public virtual Expression {
 public:
   /**
    * Constructor.

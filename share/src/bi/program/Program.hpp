@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_PROGRAM_HPP
 #define BI_PROGRAM_PROGRAM_HPP
 
-#include "Declaration.hpp"
 #include "Reference.hpp"
 
 #include <deque>
@@ -46,7 +45,7 @@ public:
   /**
    * Add any other declaration to the global scope.
    */
-  Declaration* add(Declaration* decl);
+  Named* add(Named* decl);
 
   /**
    * Lookup a reference, if possible.
@@ -57,7 +56,7 @@ public:
       boost::shared_ptr<biprog::Expression> braces);
 
 private:
-  typedef std::map<std::string,biprog::Declaration*> scope_type;
+  typedef std::map<std::string,biprog::Named*> scope_type;
 
   /**
    * Stack scopes.

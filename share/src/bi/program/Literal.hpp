@@ -19,8 +19,8 @@ namespace biprog {
  * @todo Flyweight this.
  */
 template<class T1>
-class Literal: public Expression, public boost::enable_shared_from_this<
-    Literal<T1> > {
+class Literal: public virtual Expression,
+    public boost::enable_shared_from_this<Literal<T1> > {
 public:
   /**
    * Constructor.

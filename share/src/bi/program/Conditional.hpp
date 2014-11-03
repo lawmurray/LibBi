@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_CONDITIONAL_HPP
 #define BI_PROGRAM_CONDITIONAL_HPP
 
-#include "Statement.hpp"
 #include "Conditioned.hpp"
 #include "Braced.hpp"
 #include "Expression.hpp"
@@ -19,15 +18,15 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditional: public Statement,
-    public Conditioned,
+class Conditional: public Conditioned,
     public Braced,
     public boost::enable_shared_from_this<Conditional> {
 public:
   /**
    * Constructor.
    */
-  Conditional(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces);
+  Conditional(boost::shared_ptr<Expression> cond,
+      boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -36,7 +35,8 @@ public:
 };
 }
 
-inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces) :
+inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond,
+    boost::shared_ptr<Expression> braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

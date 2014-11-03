@@ -16,12 +16,12 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braced {
+class Braced : public virtual Expression {
 public:
   /**
    * Constructor.
    *
-   * @param in Statement in curly brackets.
+   * @param in Expression in curly brackets.
    */
   Braced(boost::shared_ptr<Expression> braces);
 

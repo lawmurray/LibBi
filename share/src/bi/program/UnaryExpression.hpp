@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class UnaryExpression: public Expression,
+class UnaryExpression: public virtual Expression,
     public boost::enable_shared_from_this<UnaryExpression> {
 public:
   /**
@@ -32,8 +32,6 @@ public:
    * Destructor.
    */
   virtual ~UnaryExpression();
-
-  virtual bool match(boost::shared_ptr<UnaryExpression> o, Match& match);
 
   /**
    * Operator.
@@ -55,11 +53,6 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op,
 
 inline biprog::UnaryExpression::~UnaryExpression() {
   //
-}
-
-inline bool biprog::UnaryExpression::match(
-    boost::shared_ptr<UnaryExpression> o, Match& match) {
-  return op == o->op && right->match(o->right, match);
 }
 
 #endif

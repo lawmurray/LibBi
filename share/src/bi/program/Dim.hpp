@@ -8,7 +8,8 @@
 #ifndef BI_PROGRAM_DIM_HPP
 #define BI_PROGRAM_DIM_HPP
 
-#include "Declaration.hpp"
+#include "Named.hpp"
+#include "Bracketed.hpp"
 
 namespace biprog {
 /**
@@ -16,14 +17,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public Declaration, public boost::enable_shared_from_this<Dim> {
+class Dim: public Named,
+    public Bracketed,
+    public boost::enable_shared_from_this<Dim> {
 public:
   /**
    * Constructor.
    */
-  Dim(const char* name, boost::shared_ptr<Expression> brackets,
-      boost::shared_ptr<Expression> parens,
-      boost::shared_ptr<Expression> braces);
+  Dim(const char* name, boost::shared_ptr<Expression> brackets);
 
   /**
    * Destructor.
@@ -33,10 +34,8 @@ public:
 }
 
 inline biprog::Dim::Dim(const char* name,
-    boost::shared_ptr<Expression> brackets,
-    boost::shared_ptr<Expression> parens,
-    boost::shared_ptr<Expression> braces) :
-    Declaration(name, brackets, parens, braces) {
+    boost::shared_ptr<Expression> brackets) :
+    Named(name), Bracketed(brackets) {
   //
 }
 

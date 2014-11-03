@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class BinaryExpression: public Expression,
+class BinaryExpression: public virtual Expression,
     public boost::enable_shared_from_this<BinaryExpression> {
 public:
   /**
@@ -30,8 +30,6 @@ public:
    * Destructor.
    */
   virtual ~BinaryExpression();
-
-  virtual bool match(boost::shared_ptr<BinaryExpression> o, Match& match);
 
   /**
    * Left operand.
@@ -59,12 +57,6 @@ inline biprog::BinaryExpression::BinaryExpression(
 
 inline biprog::BinaryExpression::~BinaryExpression() {
   //
-}
-
-inline bool biprog::BinaryExpression::match(
-    boost::shared_ptr<BinaryExpression> o, Match& match) {
-  return op == o->op && left->match(o->left, match)
-      && right->match(o->right, match);
 }
 
 #endif

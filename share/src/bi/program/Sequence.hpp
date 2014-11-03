@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_SEQUENCE_HPP
 #define BI_PROGRAM_SEQUENCE_HPP
 
-#include "Statement.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -16,13 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Sequence: public Statement, public boost::enable_shared_from_this<
-    Sequence> {
+class Sequence: public virtual Expression,
+    public boost::enable_shared_from_this<Sequence> {
 public:
   /**
    * Constructor.
    */
-  Sequence(boost::shared_ptr<Expression> head, boost::shared_ptr<Expression> tail);
+  Sequence(boost::shared_ptr<Expression> head,
+      boost::shared_ptr<Expression> tail);
 
   /**
    * Destructor.
@@ -41,7 +42,8 @@ public:
 };
 }
 
-inline biprog::Sequence::Sequence(boost::shared_ptr<Expression> head, boost::shared_ptr<Expression> tail) :
+inline biprog::Sequence::Sequence(boost::shared_ptr<Expression> head,
+    boost::shared_ptr<Expression> tail) :
     head(head), tail(tail) {
   //
 }

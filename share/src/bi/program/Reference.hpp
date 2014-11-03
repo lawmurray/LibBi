@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_REFERENCE_HPP
 #define BI_PROGRAM_REFERENCE_HPP
 
-#include "Expression.hpp"
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
@@ -20,8 +19,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public Expression,
-    public Named,
+class Reference: public Named,
     public Bracketed,
     public Parenthesised,
     public Braced,
@@ -36,7 +34,8 @@ public:
    * @param braces Expression in braces.
    */
   Reference(const char* name, boost::shared_ptr<Expression> brackets,
-      boost::shared_ptr<Expression> parens, boost::shared_ptr<Expression> braces);
+      boost::shared_ptr<Expression> parens,
+      boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -45,8 +44,10 @@ public:
 };
 }
 
-inline biprog::Reference::Reference(const char* name, boost::shared_ptr<Expression> brackets,
-    boost::shared_ptr<Expression> parens, boost::shared_ptr<Expression> braces) :
+inline biprog::Reference::Reference(const char* name,
+    boost::shared_ptr<Expression> brackets,
+    boost::shared_ptr<Expression> parens,
+    boost::shared_ptr<Expression> braces) :
     Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces) {
   //
 }

@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Typed {
+class Typed : public virtual Expression {
 public:
   /**
    * Constructor.

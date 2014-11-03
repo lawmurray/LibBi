@@ -9,7 +9,6 @@
 #define BI_PROGRAM_TYPE_HPP
 
 #include "Named.hpp"
-#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -17,9 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Type: public Named,
-    public Expression,
-    public boost::enable_shared_from_this<Type> {
+class Type: public Named, public boost::enable_shared_from_this<Type> {
 public:
   /**
    * Constructor.

@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_LOOP_HPP
 #define BI_PROGRAM_LOOP_HPP
 
-#include "Statement.hpp"
 #include "Conditioned.hpp"
 #include "Braced.hpp"
 #include "Expression.hpp"
@@ -19,15 +18,15 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public Statement,
-    public Conditioned,
+class Loop: public Conditioned,
     public Braced,
     public boost::enable_shared_from_this<Loop> {
 public:
   /**
    * Constructor.
    */
-  Loop(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces);
+  Loop(boost::shared_ptr<Expression> cond,
+      boost::shared_ptr<Expression> braces);
 
   /**
    * Destructor.
@@ -36,7 +35,8 @@ public:
 };
 }
 
-inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond, boost::shared_ptr<Expression> braces) :
+inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond,
+    boost::shared_ptr<Expression> braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

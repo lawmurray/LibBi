@@ -8,6 +8,8 @@
 #ifndef BI_PROGRAM_NAMED_HPP
 #define BI_PROGRAM_NAMED_HPP
 
+#include "Expression.hpp"
+
 #include <string>
 
 namespace biprog {
@@ -16,7 +18,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Named {
+class Named : public virtual Expression {
 public:
   /**
    * Constructor.

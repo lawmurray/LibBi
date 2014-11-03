@@ -5,7 +5,6 @@
 #include "bi/program/Function.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
-#include "bi/program/Match.hpp"
 #include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
 #include "bi/program/Program.hpp"
@@ -345,31 +344,31 @@ statement_operator
     ;
 
 model
-    : MODEL IDENTIFIER parens braces              { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
-    | MODEL IDENTIFIER braces                     { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
-    | MODEL IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
-    | MODEL IDENTIFIER statement_operator         { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
+    : MODEL IDENTIFIER parens braces              { $$ = program.add(new biprog::Model($2, BI_SP($3), BI_SP($4))); }
+    | MODEL IDENTIFIER braces                     { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3))); }
+    | MODEL IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Model($2, BI_SP($3), BI_SP_NULL)); }
+    | MODEL IDENTIFIER statement_operator         { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL)); }
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP($4))); }
-    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP($3))); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
-    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL)); }
+    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::Method($2, BI_SP($3), BI_SP($4))); }
+    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3))); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Method($2, BI_SP($3), BI_SP_NULL)); }
+    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP($5))); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::Function($2, BI_SP_NULL, BI_SP($3), BI_SP_NULL)); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::Function($2, BI_SP($3), BI_SP($5))); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::Function($2, BI_SP($3), BI_SP_NULL)); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets statement_operator  { $$ = program.add(new biprog::Dim($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL)); }
+    : DIM IDENTIFIER brackets statement_operator  { $$ = program.add(new biprog::Dim($2, BI_SP($3))); }
     ;
 
 var
-    : VAR IDENTIFIER type_operator type statement_operator           { $$ = program.add(new biprog::Var($2, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL, $4)); }
-    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = program.add(new biprog::Var($2, BI_SP($3), BI_SP_NULL, BI_SP_NULL, $5)); }
+    : VAR IDENTIFIER type_operator type statement_operator           { $$ = program.add(new biprog::Var($2, BI_SP_NULL, $4)); }
+    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = program.add(new biprog::Var($2, BI_SP($3), $5)); }
     ;
 
 if

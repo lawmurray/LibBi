@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Bracketed {
+class Bracketed : public virtual Expression {
 public:
   /**
    * Constructor.
