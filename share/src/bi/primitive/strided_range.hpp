@@ -20,7 +20,7 @@ namespace bi {
 /**
  * Strided range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct strided_range {

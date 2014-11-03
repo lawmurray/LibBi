@@ -49,7 +49,7 @@ struct cross_pitched_functor : public std::unary_function<T,T> {
  * can be seen as iterating row-major over the same matrix. This implies
  * striding in memory.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct cross_pitched_sequence {

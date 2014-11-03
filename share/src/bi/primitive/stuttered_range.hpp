@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Stuttered range, repeating each element of a base range multiple times.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct stuttered_range {
@@ -54,7 +54,7 @@ private:
 /**
  * Factory function for creating stuttered_range objects.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  *
  * @param first Beginning of base range.
  * @param last End of base range.

@@ -114,7 +114,10 @@
  *   @defgroup primitive_functor Functors
  *   @ingroup primitive
  *
- *   @defgroup primitive_iterators Iterators
+ *   @defgroup primitive_container Containers
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_iterator Iterators
  *   @ingroup primitive
  *
  *   @defgroup primitive_vector Vector primitives
@@ -123,7 +126,7 @@
  *   @defgroup primitive_matrix Matrix primitives
  *   @ingroup primitive
  *
- *   @defgroup primitive_allocators Allocators
+ *   @defgroup primitive_allocator Allocators
  *   @ingroup primitive
  *
  * @defgroup typelist Type lists

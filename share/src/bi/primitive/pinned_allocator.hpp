@@ -15,7 +15,7 @@ namespace bi {
  * Allocator for pinned host memory. If ENABLE_CUDA is not defined, reverts to
  * pageable host memory.
  *
- * @ingroup primitive_allocators
+ * @ingroup primitive_allocator
  */
 #ifdef ENABLE_CUDA
 template <class T>

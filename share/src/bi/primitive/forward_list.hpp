@@ -14,11 +14,15 @@
 
 namespace bi {
 /**
- * Thread-safe implementation of a singly-linked list. This emulates the
- * C++11 implementation of std::forward_list, but is intended to be
- * thread-safe, and does not invalidate iterators on removed elements.
+ * Thread-safe implementation of a singly-linked list.
+ *
+ * @ingroup primitive_container
  *
  * @tparam T Value type.
+ *
+ * This emulates the C++11 implementation of std::forward_list, but is
+ * intended to be thread-safe, and does not invalidate iterators on removed
+ * elements.
  */
 template<class T>
 class forward_list {

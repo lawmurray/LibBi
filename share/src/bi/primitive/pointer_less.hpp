@@ -15,7 +15,7 @@ namespace bi {
  */
 template<class T>
 struct pointer_less {
-  bool operator()(const T* o1, const T* o2) {
+  bool operator()(const T o1, const T o2) {
     return *o1 < *o2;
   }
 };

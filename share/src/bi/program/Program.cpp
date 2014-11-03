@@ -24,7 +24,7 @@ void biprog::Program::pop() {
 }
 
 biprog::Named* biprog::Program::add(biprog::Named* decl) {
-  scopes.front()[decl->name] = decl;
+  scopes.front()[decl->name].insert(decl);
   return decl;
 }
 

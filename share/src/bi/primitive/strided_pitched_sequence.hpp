@@ -53,7 +53,7 @@ private:
 /**
  * Pitched sequence.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct strided_pitched_sequence {

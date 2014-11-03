@@ -18,6 +18,8 @@ template<class T> class forward_list_iterator;
 /**
  * Node of a forward_list.
  *
+ * @ingroup primitive_container
+ *
  * @tparam T Value type.
  */
 template<class T>

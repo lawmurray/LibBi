@@ -46,7 +46,7 @@ struct cross_functor : public std::unary_function<T,T> {
  * matrix, cross_sequence can be seen as iterating row-wise over the same
  * matrix.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct cross_sequence {

@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Repeated sequence, repeating an entire counting sequence multiple times.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct repeated_sequence {

@@ -46,7 +46,7 @@ struct strided_functor : public std::unary_function<T,T> {
 /**
  * Strided sequence.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct strided_sequence {

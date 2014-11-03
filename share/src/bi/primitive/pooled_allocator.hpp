@@ -21,7 +21,7 @@ namespace bi {
  *
  * @tparam A Other allocator type.
  *
- * @ingroup primitive_allocators
+ * @ingroup primitive_allocator
  *
  * This class is thread safe.
  */

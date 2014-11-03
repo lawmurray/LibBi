@@ -46,7 +46,7 @@ struct pitched_functor : public std::unary_function<T,T> {
 /**
  * Pitched sequence.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct pitched_sequence {

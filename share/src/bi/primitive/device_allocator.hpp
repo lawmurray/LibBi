@@ -14,7 +14,7 @@ namespace bi {
 /**
  * Allocator for device memory.
  *
- * @ingroup primitive_allocators
+ * @ingroup primitive_allocator
  */
 template<class T>
 class device_allocator {

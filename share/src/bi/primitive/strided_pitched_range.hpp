@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Strided and pitched range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct strided_pitched_range {

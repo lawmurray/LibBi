@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Cross range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct cross_range {

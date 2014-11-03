@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Cross-pitched range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct cross_pitched_range {

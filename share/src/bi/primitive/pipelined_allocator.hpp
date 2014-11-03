@@ -17,7 +17,7 @@ namespace bi {
  * Wraps an allocator and pipelines its deallocations with respect to a CUDA
  * stream.
  *
- * @ingroup primitive_allocators
+ * @ingroup primitive_allocator
  *
  * Every deallocation is deferred and an event added to the CUDA stream
  * associated with the current thread. The deallocation is then not actually

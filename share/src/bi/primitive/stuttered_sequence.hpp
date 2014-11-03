@@ -18,7 +18,7 @@ namespace bi {
  * Stuttered sequence, repeating each element of a counting sequence several
  * times.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct stuttered_sequence {

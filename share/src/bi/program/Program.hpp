@@ -9,10 +9,11 @@
 #define BI_PROGRAM_PROGRAM_HPP
 
 #include "Reference.hpp"
+#include "../primitive/poset.hpp"
+#include "../primitive/pointer_less.hpp"
 
 #include <deque>
 #include <map> /// @todo Use unordered_map types after transition to C++11
-#include <algorithm>
 
 namespace biprog {
 /**
@@ -56,7 +57,12 @@ public:
       boost::shared_ptr<biprog::Expression> braces);
 
 private:
-  typedef std::map<std::string,biprog::Named*> scope_type;
+  /**
+   * @todo Should use boost::shared_ptr, but needs to be in union for Bison.
+   */
+  typedef Expression* pointer_type;
+  typedef bi::pointer_less<Expression*> compare_type;
+  typedef std::map<std::string,bi::poset<pointer_type,compare_type> > scope_type;
 
   /**
    * Stack scopes.
