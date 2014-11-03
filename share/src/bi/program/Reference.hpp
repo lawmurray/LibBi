@@ -41,6 +41,22 @@ public:
    * Destructor.
    */
   virtual ~Reference();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Reference& o) const;
+  virtual bool operator<=(const Reference& o) const;
+  virtual bool operator>(const Reference& o) const;
+  virtual bool operator>=(const Reference& o) const;
+  virtual bool operator==(const Reference& o) const;
+  virtual bool operator!=(const Reference& o) const;
 };
 }
 
@@ -54,6 +70,34 @@ inline biprog::Reference::Reference(const char* name,
 
 inline biprog::Reference::~Reference() {
   //
+}
+
+inline bool biprog::Reference::operator<(const Reference& o) const {
+  return *brackets < *o.brackets && *parens < *o.parens && *braces < *o.braces;
+}
+
+inline bool biprog::Reference::operator<=(const Reference& o) const {
+  return *brackets <= *o.brackets && *parens <= *o.parens
+      && *braces <= *o.braces;
+}
+
+inline bool biprog::Reference::operator>(const Reference& o) const {
+  return *brackets > *o.brackets && *parens > *o.parens && *braces > *o.braces;
+}
+
+inline bool biprog::Reference::operator>=(const Reference& o) const {
+  return *brackets >= *o.brackets && *parens >= *o.parens
+      && *braces >= *o.braces;
+}
+
+inline bool biprog::Reference::operator==(const Reference& o) const {
+  return *brackets == *o.brackets && *parens == *o.parens
+      && *braces == *o.braces;
+}
+
+inline bool biprog::Reference::operator!=(const Reference& o) const {
+  return *brackets != *o.brackets || *parens != *o.parens
+      || *braces != *o.braces;
 }
 
 #endif

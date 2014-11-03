@@ -30,6 +30,22 @@ public:
    */
   virtual ~Sequence();
 
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Sequence& o) const;
+  virtual bool operator<=(const Sequence& o) const;
+  virtual bool operator>(const Sequence& o) const;
+  virtual bool operator>=(const Sequence& o) const;
+  virtual bool operator==(const Sequence& o) const;
+  virtual bool operator!=(const Sequence& o) const;
+
   /**
    * First statement.
    */
@@ -50,6 +66,30 @@ inline biprog::Sequence::Sequence(boost::shared_ptr<Expression> head,
 
 inline biprog::Sequence::~Sequence() {
   //
+}
+
+inline bool biprog::Sequence::operator<(const Sequence& o) const {
+  return *head < *o.head && *tail < *o.tail;
+}
+
+inline bool biprog::Sequence::operator<=(const Sequence& o) const {
+  return *head <= *o.head && *tail <= *o.tail;
+}
+
+inline bool biprog::Sequence::operator>(const Sequence& o) const {
+  return *head > *o.head && *tail > *o.tail;
+}
+
+inline bool biprog::Sequence::operator>=(const Sequence& o) const {
+  return *head >= *o.head && *tail >= *o.tail;
+}
+
+inline bool biprog::Sequence::operator==(const Sequence& o) const {
+  return *head == *o.head && *tail == *o.tail;
+}
+
+inline bool biprog::Sequence::operator!=(const Sequence& o) const {
+  return *head != *o.head || *tail != *o.tail;
 }
 
 #endif

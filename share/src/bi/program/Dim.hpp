@@ -30,6 +30,22 @@ public:
    * Destructor.
    */
   virtual ~Dim();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Dim& o) const;
+  virtual bool operator<=(const Dim& o) const;
+  virtual bool operator>(const Dim& o) const;
+  virtual bool operator>=(const Dim& o) const;
+  virtual bool operator==(const Dim& o) const;
+  virtual bool operator!=(const Dim& o) const;
 };
 }
 
@@ -41,6 +57,30 @@ inline biprog::Dim::Dim(const char* name,
 
 inline biprog::Dim::~Dim() {
   //
+}
+
+inline bool biprog::Dim::operator<(const Dim& o) const {
+  return *brackets < *o.brackets;
+}
+
+inline bool biprog::Dim::operator<=(const Dim& o) const {
+  return *brackets <= *o.brackets;
+}
+
+inline bool biprog::Dim::operator>(const Dim& o) const {
+  return *brackets > *o.brackets;
+}
+
+inline bool biprog::Dim::operator>=(const Dim& o) const {
+  return *brackets >= *o.brackets;
+}
+
+inline bool biprog::Dim::operator==(const Dim& o) const {
+  return *brackets == *o.brackets;
+}
+
+inline bool biprog::Dim::operator!=(const Dim& o) const {
+  return *brackets != *o.brackets;
 }
 
 #endif

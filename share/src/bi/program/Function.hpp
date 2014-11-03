@@ -33,6 +33,22 @@ public:
    * Destructor.
    */
   virtual ~Function();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Function& o) const;
+  virtual bool operator<=(const Function& o) const;
+  virtual bool operator>(const Function& o) const;
+  virtual bool operator>=(const Function& o) const;
+  virtual bool operator==(const Function& o) const;
+  virtual bool operator!=(const Function& o) const;
 };
 }
 
@@ -45,6 +61,30 @@ inline biprog::Function::Function(const char* name,
 
 inline biprog::Function::~Function() {
   //
+}
+
+inline bool biprog::Function::operator<(const Function& o) const {
+  return *parens < *o.parens && *braces < *o.braces;
+}
+
+inline bool biprog::Function::operator<=(const Function& o) const {
+  return *parens <= *o.parens && *braces <= *o.braces;
+}
+
+inline bool biprog::Function::operator>(const Function& o) const {
+  return *parens > *o.parens && *braces > *o.braces;
+}
+
+inline bool biprog::Function::operator>=(const Function& o) const {
+  return *parens >= *o.parens && *braces >= *o.braces;
+}
+
+inline bool biprog::Function::operator==(const Function& o) const {
+  return *parens == *o.parens && *braces == *o.braces;
+}
+
+inline bool biprog::Function::operator!=(const Function& o) const {
+  return *parens != *o.parens || *braces != *o.braces;
 }
 
 #endif

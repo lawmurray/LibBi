@@ -32,6 +32,22 @@ public:
    * Destructor.
    */
   virtual ~Var();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Var& o) const;
+  virtual bool operator<=(const Var& o) const;
+  virtual bool operator>(const Var& o) const;
+  virtual bool operator>=(const Var& o) const;
+  virtual bool operator==(const Var& o) const;
+  virtual bool operator!=(const Var& o) const;
 };
 }
 
@@ -43,6 +59,30 @@ inline biprog::Var::Var(const char* name,
 
 inline biprog::Var::~Var() {
   //
+}
+
+inline bool biprog::Var::operator<(const Var& o) const {
+  return *brackets < *o.brackets && *type < *o.type;
+}
+
+inline bool biprog::Var::operator<=(const Var& o) const {
+  return *brackets <= *o.brackets && *type <= *o.type;
+}
+
+inline bool biprog::Var::operator>(const Var& o) const {
+  return *brackets > *o.brackets && *type > *o.type;
+}
+
+inline bool biprog::Var::operator>=(const Var& o) const {
+  return *brackets >= *o.brackets && *type >= *o.type;
+}
+
+inline bool biprog::Var::operator==(const Var& o) const {
+  return *brackets == *o.brackets && *type == *o.type;
+}
+
+inline bool biprog::Var::operator!=(const Var& o) const {
+  return *brackets != *o.brackets || *type != *o.type;
 }
 
 #endif

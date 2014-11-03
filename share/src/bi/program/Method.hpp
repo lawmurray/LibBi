@@ -33,6 +33,22 @@ public:
    * Destructor.
    */
   virtual ~Method();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Method& o) const;
+  virtual bool operator<=(const Method& o) const;
+  virtual bool operator>(const Method& o) const;
+  virtual bool operator>=(const Method& o) const;
+  virtual bool operator==(const Method& o) const;
+  virtual bool operator!=(const Method& o) const;
 };
 }
 
@@ -47,5 +63,28 @@ inline biprog::Method::~Method() {
 //
 }
 
-#endif
+inline bool biprog::Method::operator<(const Method& o) const {
+  return *parens < *o.parens && *braces < *o.braces;
+}
 
+inline bool biprog::Method::operator<=(const Method& o) const {
+  return *parens <= *o.parens && *braces <= *o.braces;
+}
+
+inline bool biprog::Method::operator>(const Method& o) const {
+  return *parens > *o.parens && *braces > *o.braces;
+}
+
+inline bool biprog::Method::operator>=(const Method& o) const {
+  return *parens >= *o.parens && *braces >= *o.braces;
+}
+
+inline bool biprog::Method::operator==(const Method& o) const {
+  return *parens == *o.parens && *braces == *o.braces;
+}
+
+inline bool biprog::Method::operator!=(const Method& o) const {
+  return *parens != *o.parens || *braces != *o.braces;
+}
+
+#endif

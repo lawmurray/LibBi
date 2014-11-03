@@ -32,6 +32,22 @@ public:
    * Destructor.
    */
   virtual ~Conditional();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Conditional& o) const;
+  virtual bool operator<=(const Conditional& o) const;
+  virtual bool operator>(const Conditional& o) const;
+  virtual bool operator>=(const Conditional& o) const;
+  virtual bool operator==(const Conditional& o) const;
+  virtual bool operator!=(const Conditional& o) const;
 };
 }
 
@@ -43,6 +59,36 @@ inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond,
 
 inline biprog::Conditional::~Conditional() {
   //
+}
+
+inline bool biprog::Conditional::operator<(
+    const Conditional& o) const {
+  return *cond < *o.cond && *braces < *o.braces;
+}
+
+inline bool biprog::Conditional::operator<=(
+    const Conditional& o) const {
+  return *cond <= *o.cond && *braces <= *o.braces;
+}
+
+inline bool biprog::Conditional::operator>(
+    const Conditional& o) const {
+  return *cond > *o.cond && *braces > *o.braces;
+}
+
+inline bool biprog::Conditional::operator>=(
+    const Conditional& o) const {
+  return *cond >= *o.cond && *braces >= *o.braces;
+}
+
+inline bool biprog::Conditional::operator==(
+    const Conditional& o) const {
+  return *cond == *o.cond && *braces == *o.braces;
+}
+
+inline bool biprog::Conditional::operator!=(
+    const Conditional& o) const {
+  return *cond != *o.cond || *braces != *o.braces;
 }
 
 #endif

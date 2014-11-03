@@ -29,6 +29,22 @@ public:
    * Destructor.
    */
   virtual ~Type();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Type& o) const;
+  virtual bool operator<=(const Type& o) const;
+  virtual bool operator>(const Type& o) const;
+  virtual bool operator>=(const Type& o) const;
+  virtual bool operator==(const Type& o) const;
+  virtual bool operator!=(const Type& o) const;
 };
 }
 
@@ -39,6 +55,32 @@ inline biprog::Type::Type(const char* name) :
 
 inline biprog::Type::~Type() {
   //
+}
+
+inline bool biprog::Type::operator<(const Type& o) const {
+  return false;
+}
+
+inline bool biprog::Type::operator<=(const Type& o) const {
+  return operator==(o);
+}
+
+inline bool biprog::Type::operator>(const Type& o) const {
+  return false;
+}
+
+inline bool biprog::Type::operator>=(const Type& o) const {
+  return operator==(o);
+}
+
+inline bool biprog::Type::operator==(const Type& o) const {
+  ///@todo Avoid string comparison.
+  return name.compare(o.name) == 0;
+}
+
+inline bool biprog::Type::operator!=(const Type& o) const {
+  ///@todo Avoid string comparison.
+  return name.compare(o.name) != 0;
 }
 
 #endif

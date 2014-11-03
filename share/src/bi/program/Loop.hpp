@@ -32,6 +32,22 @@ public:
    * Destructor.
    */
   virtual ~Loop();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Loop& o) const;
+  virtual bool operator<=(const Loop& o) const;
+  virtual bool operator>(const Loop& o) const;
+  virtual bool operator>=(const Loop& o) const;
+  virtual bool operator==(const Loop& o) const;
+  virtual bool operator!=(const Loop& o) const;
 };
 }
 
@@ -43,6 +59,30 @@ inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond,
 
 inline biprog::Loop::~Loop() {
   //
+}
+
+inline bool biprog::Loop::operator<(const Loop& o) const {
+  return *cond < *o.cond && *braces < *o.braces;
+}
+
+inline bool biprog::Loop::operator<=(const Loop& o) const {
+  return *cond <= *o.cond && *braces <= *o.braces;
+}
+
+inline bool biprog::Loop::operator>(const Loop& o) const {
+  return *cond > *o.cond && *braces > *o.braces;
+}
+
+inline bool biprog::Loop::operator>=(const Loop& o) const {
+  return *cond >= *o.cond && *braces >= *o.braces;
+}
+
+inline bool biprog::Loop::operator==(const Loop& o) const {
+  return *cond == *o.cond && *braces == *o.braces;
+}
+
+inline bool biprog::Loop::operator!=(const Loop& o) const {
+  return *cond != *o.cond || *braces != *o.braces;
 }
 
 #endif

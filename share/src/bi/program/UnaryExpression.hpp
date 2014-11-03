@@ -33,6 +33,22 @@ public:
    */
   virtual ~UnaryExpression();
 
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const UnaryExpression& o) const;
+  virtual bool operator<=(const UnaryExpression& o) const;
+  virtual bool operator>(const UnaryExpression& o) const;
+  virtual bool operator>=(const UnaryExpression& o) const;
+  virtual bool operator==(const UnaryExpression& o) const;
+  virtual bool operator!=(const UnaryExpression& o) const;
+
   /**
    * Operator.
    */
@@ -53,6 +69,36 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op,
 
 inline biprog::UnaryExpression::~UnaryExpression() {
   //
+}
+
+inline bool biprog::UnaryExpression::operator<(
+    const UnaryExpression& o) const {
+  return op == o.op && *right < *o.right;
+}
+
+inline bool biprog::UnaryExpression::operator<=(
+    const UnaryExpression& o) const {
+  return op == o.op && *right <= *o.right;
+}
+
+inline bool biprog::UnaryExpression::operator>(
+    const UnaryExpression& o) const {
+  return op == o.op && *right > *o.right;
+}
+
+inline bool biprog::UnaryExpression::operator>=(
+    const UnaryExpression& o) const {
+  return op == o.op && *right >= *o.right;
+}
+
+inline bool biprog::UnaryExpression::operator==(
+    const UnaryExpression& o) const {
+  return op == o.op && *right == *o.right;
+}
+
+inline bool biprog::UnaryExpression::operator!=(
+    const UnaryExpression& o) const {
+  return op != o.op || *right != *o.right;
 }
 
 #endif

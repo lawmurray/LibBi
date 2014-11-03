@@ -32,6 +32,22 @@ public:
    */
   virtual ~Literal();
 
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Literal& o) const;
+  virtual bool operator<=(const Literal& o) const;
+  virtual bool operator>(const Literal& o) const;
+  virtual bool operator>=(const Literal& o) const;
+  virtual bool operator==(const Literal& o) const;
+  virtual bool operator!=(const Literal& o) const;
+
   /**
    * Value.
    */
@@ -48,6 +64,36 @@ inline biprog::Literal<T1>::Literal(const T1& value) :
 template<class T1>
 inline biprog::Literal<T1>::~Literal() {
   //
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator<(const Literal<T1>& o) const {
+  return false;
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator<=(const Literal<T1>& o) const {
+  return operator==(o);
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator>(const Literal<T1>& o) const {
+  return false;
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator>=(const Literal<T1>& o) const {
+  return operator==(o);
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator==(const Literal<T1>& o) const {
+  return value == o.value;
+}
+
+template<class T1>
+inline bool biprog::Literal<T1>::operator!=(const Literal<T1>& o) const {
+  return value != o.value;
 }
 
 #endif

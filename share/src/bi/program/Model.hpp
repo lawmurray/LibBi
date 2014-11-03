@@ -33,6 +33,22 @@ public:
    * Destructor.
    */
   virtual ~Model();
+
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const Model& o) const;
+  virtual bool operator<=(const Model& o) const;
+  virtual bool operator>(const Model& o) const;
+  virtual bool operator>=(const Model& o) const;
+  virtual bool operator==(const Model& o) const;
+  virtual bool operator!=(const Model& o) const;
 };
 }
 
@@ -45,6 +61,30 @@ inline biprog::Model::Model(const char* name,
 
 inline biprog::Model::~Model() {
   //
+}
+
+inline bool biprog::Model::operator<(const Model& o) const {
+  return *parens < *o.parens && *braces < *o.braces;
+}
+
+inline bool biprog::Model::operator<=(const Model& o) const {
+  return *parens <= *o.parens && *braces <= *o.braces;
+}
+
+inline bool biprog::Model::operator>(const Model& o) const {
+  return *parens > *o.parens && *braces > *o.braces;
+}
+
+inline bool biprog::Model::operator>=(const Model& o) const {
+  return *parens >= *o.parens && *braces >= *o.braces;
+}
+
+inline bool biprog::Model::operator==(const Model& o) const {
+  return *parens == *o.parens && *braces == *o.braces;
+}
+
+inline bool biprog::Model::operator!=(const Model& o) const {
+  return *parens != *o.parens || *braces != *o.braces;
 }
 
 #endif

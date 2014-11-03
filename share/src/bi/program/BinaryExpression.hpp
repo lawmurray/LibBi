@@ -31,6 +31,22 @@ public:
    */
   virtual ~BinaryExpression();
 
+  /*
+   * Operators.
+   */
+  using Expression::operator<;
+  using Expression::operator<=;
+  using Expression::operator>;
+  using Expression::operator>=;
+  using Expression::operator==;
+  using Expression::operator!=;
+  virtual bool operator<(const BinaryExpression& o) const;
+  virtual bool operator<=(const BinaryExpression& o) const;
+  virtual bool operator>(const BinaryExpression& o) const;
+  virtual bool operator>=(const BinaryExpression& o) const;
+  virtual bool operator==(const BinaryExpression& o) const;
+  virtual bool operator!=(const BinaryExpression& o) const;
+
   /**
    * Left operand.
    */
@@ -57,6 +73,36 @@ inline biprog::BinaryExpression::BinaryExpression(
 
 inline biprog::BinaryExpression::~BinaryExpression() {
   //
+}
+
+inline bool biprog::BinaryExpression::operator<(
+    const BinaryExpression& o) const {
+  return op == o.op && *left < *o.left && *right < *o.right;
+}
+
+inline bool biprog::BinaryExpression::operator<=(
+    const BinaryExpression& o) const {
+  return op == o.op && *left <= *o.left && *right <= *o.right;
+}
+
+inline bool biprog::BinaryExpression::operator>(
+    const BinaryExpression& o) const {
+  return op == o.op && *left > *o.left && *right > *o.right;
+}
+
+inline bool biprog::BinaryExpression::operator>=(
+    const BinaryExpression& o) const {
+  return op == o.op && *left >= *o.left && *right >= *o.right;
+}
+
+inline bool biprog::BinaryExpression::operator==(
+    const BinaryExpression& o) const {
+  return op == o.op && *left == *o.left && *right == *o.right;
+}
+
+inline bool biprog::BinaryExpression::operator!=(
+    const BinaryExpression& o) const {
+  return op != o.op || *left != *o.left || *right != *o.right;
 }
 
 #endif
