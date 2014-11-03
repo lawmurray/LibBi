@@ -2,6 +2,7 @@
 #include "bi/program/BinaryExpression.hpp"
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Dim.hpp"
+#include "bi/program/EmptyExpression.hpp"
 #include "bi/program/Function.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
@@ -27,7 +28,7 @@
 #include "parser.hpp"
 
 #define BI_SP(x) boost::shared_ptr<biprog::Expression>(x)
-#define BI_SP_NULL boost::shared_ptr<biprog::Expression>()
+#define BI_SP_NULL boost::shared_ptr<biprog::Expression>(new biprog::EmptyExpression())
 
 biprog::Program program;
 
@@ -117,7 +118,7 @@ reference
 
 parens
     : '(' expression ')'  { $$ = $2; }
-    | '(' ')'             { $$ = NULL; }
+    | '(' ')'             { $$ = new biprog::EmptyExpression(); }
     ;
     
 brackets
@@ -126,7 +127,7 @@ brackets
 
 braces
     : '{' { program.push(); } statements '}' { program.pop(); }  { $$ = $3; }
-    | '{' '}'                                                    { $$ = NULL; }
+    | '{' '}'                                                    { $$ = new biprog::EmptyExpression(); }
     ;
 
 bool_literal

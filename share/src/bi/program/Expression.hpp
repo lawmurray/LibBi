@@ -21,16 +21,17 @@ namespace biprog {
  * Forward declarations of concrete types.
  */
 class BinaryExpression;
-class Sequence;
-class UnaryExpression;
-class Loop;
 class Conditional;
+class Dim;
+class EmptyExpression;
 class Function;
+class Loop;
 class Method;
 class Model;
 class Reference;
+class Sequence;
 class Type;
-class Dim;
+class UnaryExpression;
 class Var;
 
 /**
@@ -105,27 +106,6 @@ public:
   BI_EXPRESSION_OP(==, BinaryExpression)
   BI_EXPRESSION_OP(!=, BinaryExpression)
 
-  BI_EXPRESSION_OP(<, Sequence)
-  BI_EXPRESSION_OP(<=, Sequence)
-  BI_EXPRESSION_OP(>, Sequence)
-  BI_EXPRESSION_OP(>=, Sequence)
-  BI_EXPRESSION_OP(==, Sequence)
-  BI_EXPRESSION_OP(!=, Sequence)
-
-  BI_EXPRESSION_OP(<, UnaryExpression)
-  BI_EXPRESSION_OP(<=, UnaryExpression)
-  BI_EXPRESSION_OP(>, UnaryExpression)
-  BI_EXPRESSION_OP(>=, UnaryExpression)
-  BI_EXPRESSION_OP(==, UnaryExpression)
-  BI_EXPRESSION_OP(!=, UnaryExpression)
-
-  BI_EXPRESSION_OP(<, Loop)
-  BI_EXPRESSION_OP(<=, Loop)
-  BI_EXPRESSION_OP(>, Loop)
-  BI_EXPRESSION_OP(>=, Loop)
-  BI_EXPRESSION_OP(==, Loop)
-  BI_EXPRESSION_OP(!=, Loop)
-
   BI_EXPRESSION_OP(<, Conditional)
   BI_EXPRESSION_OP(<=, Conditional)
   BI_EXPRESSION_OP(>, Conditional)
@@ -133,12 +113,33 @@ public:
   BI_EXPRESSION_OP(==, Conditional)
   BI_EXPRESSION_OP(!=, Conditional)
 
+  BI_EXPRESSION_OP(<, Dim)
+  BI_EXPRESSION_OP(<=, Dim)
+  BI_EXPRESSION_OP(>, Dim)
+  BI_EXPRESSION_OP(>=, Dim)
+  BI_EXPRESSION_OP(==, Dim)
+  BI_EXPRESSION_OP(!=, Dim)
+
+  BI_EXPRESSION_OP(<, EmptyExpression)
+  BI_EXPRESSION_OP(<=, EmptyExpression)
+  BI_EXPRESSION_OP(>, EmptyExpression)
+  BI_EXPRESSION_OP(>=, EmptyExpression)
+  BI_EXPRESSION_OP(==, EmptyExpression)
+  BI_EXPRESSION_OP(!=, EmptyExpression)
+
   BI_EXPRESSION_OP(<, Function)
   BI_EXPRESSION_OP(<=, Function)
   BI_EXPRESSION_OP(>, Function)
   BI_EXPRESSION_OP(>=, Function)
   BI_EXPRESSION_OP(==, Function)
   BI_EXPRESSION_OP(!=, Function)
+
+  BI_EXPRESSION_OP(<, Loop)
+  BI_EXPRESSION_OP(<=, Loop)
+  BI_EXPRESSION_OP(>, Loop)
+  BI_EXPRESSION_OP(>=, Loop)
+  BI_EXPRESSION_OP(==, Loop)
+  BI_EXPRESSION_OP(!=, Loop)
 
   BI_EXPRESSION_OP(<, Method)
   BI_EXPRESSION_OP(<=, Method)
@@ -161,6 +162,13 @@ public:
   BI_EXPRESSION_OP(==, Reference)
   BI_EXPRESSION_OP(!=, Reference)
 
+  BI_EXPRESSION_OP(<, Sequence)
+  BI_EXPRESSION_OP(<=, Sequence)
+  BI_EXPRESSION_OP(>, Sequence)
+  BI_EXPRESSION_OP(>=, Sequence)
+  BI_EXPRESSION_OP(==, Sequence)
+  BI_EXPRESSION_OP(!=, Sequence)
+
   BI_EXPRESSION_OP(<, Type)
   BI_EXPRESSION_OP(<=, Type)
   BI_EXPRESSION_OP(>, Type)
@@ -168,12 +176,12 @@ public:
   BI_EXPRESSION_OP(==, Type)
   BI_EXPRESSION_OP(!=, Type)
 
-  BI_EXPRESSION_OP(<, Dim)
-  BI_EXPRESSION_OP(<=, Dim)
-  BI_EXPRESSION_OP(>, Dim)
-  BI_EXPRESSION_OP(>=, Dim)
-  BI_EXPRESSION_OP(==, Dim)
-  BI_EXPRESSION_OP(!=, Dim)
+  BI_EXPRESSION_OP(<, UnaryExpression)
+  BI_EXPRESSION_OP(<=, UnaryExpression)
+  BI_EXPRESSION_OP(>, UnaryExpression)
+  BI_EXPRESSION_OP(>=, UnaryExpression)
+  BI_EXPRESSION_OP(==, UnaryExpression)
+  BI_EXPRESSION_OP(!=, UnaryExpression)
 
   BI_EXPRESSION_OP(<, Var)
   BI_EXPRESSION_OP(<=, Var)

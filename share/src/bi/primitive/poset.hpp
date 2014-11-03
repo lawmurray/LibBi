@@ -177,7 +177,9 @@ void bi::poset<T,Compare>::forward(const int v) {
   ++col;
   BOOST_AUTO(iter, roots.begin());
   while (iter != roots.end()) {
-    forward(*iter, v);
+    if (*iter != v) {
+      forward(*iter, v);
+    }
     ++iter;
   }
 }
@@ -203,7 +205,9 @@ void bi::poset<T,Compare>::backward(const int v) {
   ++col;
   BOOST_AUTO(iter, leaves.begin());
   while (iter != leaves.end()) {
-    backward(*iter, v);
+    if (*iter != v) {
+      backward(*iter, v);
+    }
     ++iter;
   }
 }
