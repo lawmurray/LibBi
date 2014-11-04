@@ -12,23 +12,6 @@
 #include "boost/enable_shared_from_this.hpp"
 
 namespace biprog {
-/*
- * Forward declarations of concrete types.
- */
-class BinaryExpression;
-class Conditional;
-class Dim;
-class EmptyExpression;
-class Function;
-class Loop;
-class Method;
-class Model;
-class Reference;
-class Sequence;
-class Type;
-class UnaryExpression;
-class Var;
-
 /**
  * Expression.
  *
@@ -39,7 +22,7 @@ public:
   /**
    * Destructor.
    */
-  virtual ~Expression() = 0;
+  virtual ~Expression() {};
 
   /*
    * Operators, to compare expressions in terms of the partial order induced
@@ -52,10 +35,6 @@ public:
   virtual bool operator==(const Expression& o) const = 0;
   virtual bool operator!=(const Expression& o) const = 0;
 };
-}
-
-inline biprog::Expression::~Expression() {
-  //
 }
 
 #endif
