@@ -18,8 +18,8 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public Conditioned,
-    public Braced,
+class Loop: public virtual Conditioned,
+    public virtual Braced,
     public boost::enable_shared_from_this<Loop> {
 public:
   /**

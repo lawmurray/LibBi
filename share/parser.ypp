@@ -126,8 +126,8 @@ brackets
     ;
 
 braces
-    : '{' { program.push(); } statements '}' { program.pop(); }  { $$ = $3; }
-    | '{' '}'                                                    { $$ = new biprog::EmptyExpression(); }
+    : '{' statements '}'  { $$ = $3; }
+    | '{' '}'             { $$ = new biprog::EmptyExpression(); }
     ;
 
 bool_literal
@@ -352,15 +352,15 @@ model
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::Method($2, BI_SP($3), BI_SP($4))); }
-    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP($3))); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Method($2, BI_SP($3), BI_SP_NULL)); }
-    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::Method($2, BI_SP_NULL, BI_SP_NULL)); }
+    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::MethodOverload($2, BI_SP($3), BI_SP($4))); }
+    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::MethodOverload($2, BI_SP_NULL, BI_SP($3))); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::MethodOverload($2, BI_SP($3), BI_SP_NULL)); }
+    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::MethodOverload($2, BI_SP_NULL, BI_SP_NULL)); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::Function($2, BI_SP($3), BI_SP($5))); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::Function($2, BI_SP($3), BI_SP_NULL)); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::FunctionOverload($2, BI_SP($3), BI_SP($5))); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::FunctionOverload($2, BI_SP($3), BI_SP_NULL)); }
     ;
 
 dim

@@ -10,7 +10,6 @@
 
 #include "Conditioned.hpp"
 #include "Braced.hpp"
-#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -18,8 +17,8 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditional: public Conditioned,
-    public Braced,
+class Conditional: public virtual Conditioned,
+    public virtual Braced,
     public boost::enable_shared_from_this<Conditional> {
 public:
   /**

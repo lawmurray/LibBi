@@ -7,24 +7,45 @@
  */
 #include "Program.hpp"
 
+#include "../misc/assert.hpp"
+
 biprog::Program::Program() {
-  push();
+  push(this);
 }
 
 biprog::Program::~Program() {
   pop();
 }
 
-void biprog::Program::push() {
-  scopes.push_front(scope_type());
+biprog::Scoped* biprog::Program::top() {
+  return scopes.front();
+}
+
+void biprog::Program::push(Scoped* scope) {
+  scopes.push_front(scope);
 }
 
 void biprog::Program::pop() {
+  /* pre-condition */
+  BI_ASSERT(scopes.size() > 1);  // should never pop self
+
   scopes.pop_front();
 }
 
+biprog::MethodOverload* biprog::Program::add(
+    biprog::MethodOverload* overload) {
+  top()->add(overload);
+  return overload;
+}
+
+biprog::FunctionOverload* biprog::Program::add(
+    biprog::FunctionOverload* overload) {
+  top()->add(overload);
+  return overload;
+}
+
 biprog::Named* biprog::Program::add(biprog::Named* decl) {
-  scopes.front()[decl->name].insert(decl);
+  top()->add(decl);
   return decl;
 }
 

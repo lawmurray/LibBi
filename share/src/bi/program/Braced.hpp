@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_BRACED_HPP
 #define BI_PROGRAM_BRACED_HPP
 
-#include "Expression.hpp"
+#include "Scoped.hpp"
 
 namespace biprog {
 /**
@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braced : public virtual Expression {
+class Braced: public virtual Scoped {
 public:
   /**
    * Constructor.

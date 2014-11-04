@@ -22,20 +22,47 @@ public:
   /**
    * Destructor.
    */
-  virtual ~Expression() {};
+  virtual ~Expression() = 0;
 
   /*
    * Operators, to compare expressions in terms of the partial order induced
    * by specialisation.
    */
-  virtual bool operator<(const Expression& o) const = 0;
-  virtual bool operator<=(const Expression& o) const = 0;
-  virtual bool operator>(const Expression& o) const = 0;
-  virtual bool operator>=(const Expression& o) const = 0;
-  virtual bool operator==(const Expression& o) const = 0;
-  virtual bool operator!=(const Expression& o) const = 0;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 };
 }
 
-#endif
+inline biprog::Expression::~Expression() {
+  //
+}
 
+inline bool biprog::Expression::operator<(const Expression& o) const {
+  return false;
+}
+
+inline bool biprog::Expression::operator<=(const Expression& o) const {
+  return false;
+}
+
+inline bool biprog::Expression::operator>(const Expression& o) const {
+  return false;
+}
+
+inline bool biprog::Expression::operator>=(const Expression& o) const {
+  return false;
+}
+
+inline bool biprog::Expression::operator==(const Expression& o) const {
+  return false;
+}
+
+inline bool biprog::Expression::operator!=(const Expression& o) const {
+  return true;
+}
+
+#endif

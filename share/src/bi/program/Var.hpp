@@ -18,9 +18,9 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Var: public Named,
-    public Bracketed,
-    public Typed,
+class Var: public virtual Named,
+    public virtual Bracketed,
+    public virtual Typed,
     public boost::enable_shared_from_this<Var> {
 public:
   /**

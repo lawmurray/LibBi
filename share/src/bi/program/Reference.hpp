@@ -19,10 +19,10 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public Named,
-    public Bracketed,
-    public Parenthesised,
-    public Braced,
+class Reference: public virtual Named,
+    public virtual Bracketed,
+    public virtual Parenthesised,
+    public virtual Braced,
     public boost::enable_shared_from_this<Reference> {
 public:
   /**

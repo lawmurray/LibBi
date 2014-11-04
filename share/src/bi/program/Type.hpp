@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Type: public Named, public boost::enable_shared_from_this<Type> {
+class Type: public virtual Named, public boost::enable_shared_from_this<Type> {
 public:
   /**
    * Constructor.
