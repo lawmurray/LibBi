@@ -51,14 +51,14 @@ void yywarn(const char *msg) {
 %}
 
 %union {
-    bool valBool;
-    int valInt;
-    double valDouble;
-    char* valString;
+  bool valBool;
+  int valInt;
+  double valDouble;
+  char* valString;
     
-    biprog::Type* valType;
-    biprog::Operator valOperator;
-    biprog::Expression* valExpression;
+  biprog::Type* valType;
+  biprog::Operator valOperator;
+  biprog::Expression* valExpression;
 }
 
 %token MODEL FUNCTION METHOD BUILTIN DIM VAR IF WHILE
@@ -109,11 +109,11 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = program.lookup($1, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL); }
-    | IDENTIFIER brackets       { $$ = program.lookup($1, BI_SP($2), BI_SP_NULL, BI_SP_NULL); }
-    | IDENTIFIER parens         { $$ = program.lookup($1, BI_SP_NULL, BI_SP($2), BI_SP_NULL); }
-    | IDENTIFIER braces         { $$ = program.lookup($1, BI_SP_NULL, BI_SP_NULL, BI_SP($2)); }
-    | IDENTIFIER parens braces  { $$ = program.lookup($1, BI_SP_NULL, BI_SP($2), BI_SP($3)); }
+    : IDENTIFIER                { $$ = new biprog::Reference($1, BI_SP_NULL, BI_SP_NULL, BI_SP_NULL, program.lookup($1)); }
+    | IDENTIFIER brackets       { $$ = new biprog::Reference($1, BI_SP($2), BI_SP_NULL, BI_SP_NULL, program.lookup($1)); }
+    | IDENTIFIER parens         { $$ = new biprog::Reference($1, BI_SP_NULL, BI_SP($2), BI_SP_NULL, program.lookup($1)); }
+    | IDENTIFIER braces         { $$ = new biprog::Reference($1, BI_SP_NULL, BI_SP_NULL, BI_SP($2), program.lookup($1)); }
+    | IDENTIFIER parens braces  { $$ = new biprog::Reference($1, BI_SP_NULL, BI_SP($2), BI_SP($3), program.lookup($1)); }
     ;
 
 parens
@@ -381,11 +381,11 @@ while
     ;
 
 statement
-    : model                          { program.add(BI_SP($1)); }
-    | method                         { program.add(BI_SP($1)); }
-    | function                       { program.add(BI_SP($1)); }
-    | dim                            { program.add(BI_SP($1)); }
-    | var                            { program.add(BI_SP($1)); }
+    : model
+    | method
+    | function
+    | dim
+    | var
     | if
     | while
     | expression statement_operator
@@ -394,7 +394,7 @@ statement
 statements
     : statement
     | expression
-    | statement statements  { $$ = new biprog::Sequence(BI_SP($1), BI_SP($2)); }
+    | statement statements  { boost::shared_ptr<biprog::Expression> expr = BI_SP($1); program.add(expr); $$ = new biprog::Sequence(expr, BI_SP($2)); }
     ;
 
 
@@ -403,7 +403,7 @@ statements
  ***************************************************************************/
 
 file
-    : statements
+    : statements  { boost::shared_ptr<biprog::Expression> expr = BI_SP($1); program.add(expr); program.setRoot(expr); }
     |
     ;
     

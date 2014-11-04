@@ -49,19 +49,26 @@ public:
   void pop();
 
   /**
+   * Set the root statement.
+   */
+  void setRoot(boost::shared_ptr<Expression> root);
+
+  /**
    * Add a declaration.
    */
   void add(boost::shared_ptr<Expression> decl);
 
   /**
-   * Lookup a reference, if possible.
+   * Lookup a reference. Returns an EmptyExpression if none found.
    */
-  Reference* lookup(const char* name,
-      boost::shared_ptr<biprog::Expression> brackets,
-      boost::shared_ptr<biprog::Expression> parens,
-      boost::shared_ptr<biprog::Expression> braces);
+  boost::shared_ptr<Expression> lookup(const char* name);
 
 private:
+  /**
+   * Expression.
+   */
+  boost::shared_ptr<Expression> root;
+
   /**
    * Scope stack.
    */

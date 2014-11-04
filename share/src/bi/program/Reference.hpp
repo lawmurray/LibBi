@@ -32,10 +32,12 @@ public:
    * @param brackets Expression in square brackets.
    * @param parens Expression in parentheses.
    * @param braces Expression in braces.
+   * @param target Target of the reference. May be null if unresolved.
    */
   Reference(const char* name, boost::shared_ptr<Expression> brackets,
       boost::shared_ptr<Expression> parens,
-      boost::shared_ptr<Expression> braces);
+      boost::shared_ptr<Expression> braces,
+      boost::shared_ptr<Expression> target);
 
   /**
    * Destructor.
@@ -51,14 +53,21 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+  /**
+   * Target.
+   */
+  boost::shared_ptr<Expression> target;
 };
 }
 
 inline biprog::Reference::Reference(const char* name,
     boost::shared_ptr<Expression> brackets,
     boost::shared_ptr<Expression> parens,
-    boost::shared_ptr<Expression> braces) :
-    Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces) {
+    boost::shared_ptr<Expression> braces,
+    boost::shared_ptr<Expression> target) :
+    Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces), target(
+        target) {
   //
 }
 

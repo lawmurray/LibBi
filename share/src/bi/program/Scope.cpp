@@ -11,6 +11,16 @@
 #include "Method.hpp"
 #include "FunctionOverload.hpp"
 #include "Function.hpp"
+#include "EmptyExpression.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::Scope::find(const char* name) {
+  BOOST_AUTO(iter, decls.find(name));
+  if (iter != decls.end()) {
+    return iter->second;
+  } else {
+    return boost::make_shared<EmptyExpression>();
+  }
+}
 
 void biprog::Scope::add(boost::shared_ptr<MethodOverload> overload) {
   boost::shared_ptr<Method> method;

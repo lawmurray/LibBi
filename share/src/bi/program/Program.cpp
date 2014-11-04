@@ -10,9 +10,13 @@
 #include "MethodOverload.hpp"
 #include "FunctionOverload.hpp"
 #include "Named.hpp"
+#include "EmptyExpression.hpp"
 #include "../misc/assert.hpp"
 
-biprog::Program::Program() {
+#include "boost/typeof/typeof.hpp"
+
+biprog::Program::Program() :
+    root(boost::make_shared<EmptyExpression>()) {
   push();
 }
 
@@ -38,10 +42,17 @@ void biprog::Program::pop() {
   scopes.pop_front();
 }
 
+void biprog::Program::setRoot(boost::shared_ptr<biprog::Expression> root) {
+  this->root = root;
+}
+
 void biprog::Program::add(boost::shared_ptr<biprog::Expression> decl) {
-  boost::shared_ptr<Named> named = boost::dynamic_pointer_cast<Named>(decl);
-  boost::shared_ptr<MethodOverload> method = boost::dynamic_pointer_cast<MethodOverload>(decl);
-  boost::shared_ptr<FunctionOverload> function = boost::dynamic_pointer_cast<FunctionOverload>(decl);
+  boost::shared_ptr<Named> named = boost::dynamic_pointer_cast < Named
+      > (decl);
+  boost::shared_ptr<MethodOverload> method = boost::dynamic_pointer_cast
+      < MethodOverload > (decl);
+  boost::shared_ptr<FunctionOverload> function = boost::dynamic_pointer_cast
+      < FunctionOverload > (decl);
 
   if (method) {
     top()->add(method);
@@ -49,14 +60,18 @@ void biprog::Program::add(boost::shared_ptr<biprog::Expression> decl) {
     top()->add(function);
   } else if (named) {
     top()->add(named);
-  } else {
-    BI_ASSERT(false);
   }
 }
 
-biprog::Reference* biprog::Program::lookup(const char* name,
-    boost::shared_ptr<biprog::Expression> brackets,
-    boost::shared_ptr<biprog::Expression> parens,
-    boost::shared_ptr<biprog::Expression> braces) {
-  return new Reference(name, brackets, parens, braces);
+boost::shared_ptr<biprog::Expression> biprog::Program::lookup(
+    const char* name) {
+  BOOST_AUTO(iter, scopes.begin());
+  while (iter != scopes.end()) {
+    BOOST_AUTO(find, (*iter)->find(name));
+    if (find) {
+      return find;
+    }
+    ++iter;
+  }
+  return boost::make_shared<EmptyExpression>();
 }

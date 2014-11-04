@@ -29,6 +29,11 @@ public:
   virtual ~Scope();
 
   /**
+   * Find declaration by name. Returns an EmptyExpression if not found.
+   */
+  boost::shared_ptr<Expression> find(const char* name);
+
+  /**
    * Insert method declaration into this scope.
    */
   void add(boost::shared_ptr<MethodOverload> overload);
