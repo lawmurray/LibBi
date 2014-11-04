@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -33,18 +33,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Type& o) const;
-  virtual bool operator<=(const Type& o) const;
-  virtual bool operator>(const Type& o) const;
-  virtual bool operator>=(const Type& o) const;
-  virtual bool operator==(const Type& o) const;
-  virtual bool operator!=(const Type& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 };
 }
 
@@ -57,30 +51,40 @@ inline biprog::Type::~Type() {
   //
 }
 
-inline bool biprog::Type::operator<(const Type& o) const {
+inline bool biprog::Type::operator<(const Expression& o) const {
   return false;
 }
 
-inline bool biprog::Type::operator<=(const Type& o) const {
+inline bool biprog::Type::operator<=(const Expression& o) const {
   return operator==(o);
 }
 
-inline bool biprog::Type::operator>(const Type& o) const {
+inline bool biprog::Type::operator>(const Expression& o) const {
   return false;
 }
 
-inline bool biprog::Type::operator>=(const Type& o) const {
+inline bool biprog::Type::operator>=(const Expression& o) const {
   return operator==(o);
 }
 
-inline bool biprog::Type::operator==(const Type& o) const {
-  ///@todo Avoid string comparison.
-  return name.compare(o.name) == 0;
+inline bool biprog::Type::operator==(const Expression& o) const {
+  try {
+    const Type& expr = dynamic_cast<const Type&>(o);
+    ///@todo Avoid string comparison.
+    return name.compare(expr.name) == 0;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Type::operator!=(const Type& o) const {
-  ///@todo Avoid string comparison.
-  return name.compare(o.name) != 0;
+inline bool biprog::Type::operator!=(const Expression& o) const {
+  try {
+    const Type& expr = dynamic_cast<const Type&>(o);
+    ///@todo Avoid string comparison.
+    return name.compare(expr.name) != 0;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

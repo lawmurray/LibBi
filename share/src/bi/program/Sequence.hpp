@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -33,18 +33,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Sequence& o) const;
-  virtual bool operator<=(const Sequence& o) const;
-  virtual bool operator>(const Sequence& o) const;
-  virtual bool operator>=(const Sequence& o) const;
-  virtual bool operator==(const Sequence& o) const;
-  virtual bool operator!=(const Sequence& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 
   /**
    * First statement.
@@ -68,28 +62,58 @@ inline biprog::Sequence::~Sequence() {
   //
 }
 
-inline bool biprog::Sequence::operator<(const Sequence& o) const {
-  return *head < *o.head && *tail < *o.tail;
+inline bool biprog::Sequence::operator<(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head < *expr.head && *tail < *expr.tail;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Sequence::operator<=(const Sequence& o) const {
-  return *head <= *o.head && *tail <= *o.tail;
+inline bool biprog::Sequence::operator<=(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head <= *expr.head && *tail <= *expr.tail;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Sequence::operator>(const Sequence& o) const {
-  return *head > *o.head && *tail > *o.tail;
+inline bool biprog::Sequence::operator>(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head > *expr.head && *tail > *expr.tail;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Sequence::operator>=(const Sequence& o) const {
-  return *head >= *o.head && *tail >= *o.tail;
+inline bool biprog::Sequence::operator>=(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head >= *expr.head && *tail >= *expr.tail;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Sequence::operator==(const Sequence& o) const {
-  return *head == *o.head && *tail == *o.tail;
+inline bool biprog::Sequence::operator==(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head == *expr.head && *tail == *expr.tail;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Sequence::operator!=(const Sequence& o) const {
-  return *head != *o.head || *tail != *o.tail;
+inline bool biprog::Sequence::operator!=(const Expression& o) const {
+  try {
+    const Sequence& expr = dynamic_cast<const Sequence&>(o);
+    return *head != *expr.head || *tail != *expr.tail;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

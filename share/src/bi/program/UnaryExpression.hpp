@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -36,18 +36,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const UnaryExpression& o) const;
-  virtual bool operator<=(const UnaryExpression& o) const;
-  virtual bool operator>(const UnaryExpression& o) const;
-  virtual bool operator>=(const UnaryExpression& o) const;
-  virtual bool operator==(const UnaryExpression& o) const;
-  virtual bool operator!=(const UnaryExpression& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 
   /**
    * Operator.
@@ -71,34 +65,58 @@ inline biprog::UnaryExpression::~UnaryExpression() {
   //
 }
 
-inline bool biprog::UnaryExpression::operator<(
-    const UnaryExpression& o) const {
-  return op == o.op && *right < *o.right;
+inline bool biprog::UnaryExpression::operator<(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op == expr.op && *right < *expr.right;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::UnaryExpression::operator<=(
-    const UnaryExpression& o) const {
-  return op == o.op && *right <= *o.right;
+inline bool biprog::UnaryExpression::operator<=(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op == expr.op && *right <= *expr.right;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::UnaryExpression::operator>(
-    const UnaryExpression& o) const {
-  return op == o.op && *right > *o.right;
+inline bool biprog::UnaryExpression::operator>(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op == expr.op && *right > *expr.right;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::UnaryExpression::operator>=(
-    const UnaryExpression& o) const {
-  return op == o.op && *right >= *o.right;
+inline bool biprog::UnaryExpression::operator>=(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op == expr.op && *right >= *expr.right;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::UnaryExpression::operator==(
-    const UnaryExpression& o) const {
-  return op == o.op && *right == *o.right;
+inline bool biprog::UnaryExpression::operator==(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op == expr.op && *right == *expr.right;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::UnaryExpression::operator!=(
-    const UnaryExpression& o) const {
-  return op != o.op || *right != *o.right;
+inline bool biprog::UnaryExpression::operator!=(const Expression& o) const {
+  try {
+    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
+    return op != expr.op || *right != *expr.right;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

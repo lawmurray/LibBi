@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -35,18 +35,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Literal& o) const;
-  virtual bool operator<=(const Literal& o) const;
-  virtual bool operator>(const Literal& o) const;
-  virtual bool operator>=(const Literal& o) const;
-  virtual bool operator==(const Literal& o) const;
-  virtual bool operator!=(const Literal& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 
   /**
    * Value.
@@ -67,33 +61,43 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator<(const Literal<T1>& o) const {
+inline bool biprog::Literal<T1>::operator<(const Expression& o) const {
   return false;
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator<=(const Literal<T1>& o) const {
+inline bool biprog::Literal<T1>::operator<=(const Expression& o) const {
   return operator==(o);
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator>(const Literal<T1>& o) const {
+inline bool biprog::Literal<T1>::operator>(const Expression& o) const {
   return false;
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator>=(const Literal<T1>& o) const {
+inline bool biprog::Literal<T1>::operator>=(const Expression& o) const {
   return operator==(o);
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator==(const Literal<T1>& o) const {
-  return value == o.value;
+inline bool biprog::Literal<T1>::operator==(const Expression& o) const {
+  try {
+    const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
+    return value == expr.value;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator!=(const Literal<T1>& o) const {
-  return value != o.value;
+inline bool biprog::Literal<T1>::operator!=(const Expression& o) const {
+  try {
+    const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
+    return value != expr.value;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

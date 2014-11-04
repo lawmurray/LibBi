@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -34,18 +34,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Dim& o) const;
-  virtual bool operator<=(const Dim& o) const;
-  virtual bool operator>(const Dim& o) const;
-  virtual bool operator>=(const Dim& o) const;
-  virtual bool operator==(const Dim& o) const;
-  virtual bool operator!=(const Dim& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 };
 }
 
@@ -59,28 +53,58 @@ inline biprog::Dim::~Dim() {
   //
 }
 
-inline bool biprog::Dim::operator<(const Dim& o) const {
-  return *brackets < *o.brackets;
+inline bool biprog::Dim::operator<(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets < *expr.brackets;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Dim::operator<=(const Dim& o) const {
-  return *brackets <= *o.brackets;
+inline bool biprog::Dim::operator<=(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets <= *expr.brackets;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Dim::operator>(const Dim& o) const {
-  return *brackets > *o.brackets;
+inline bool biprog::Dim::operator>(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets > *expr.brackets;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Dim::operator>=(const Dim& o) const {
-  return *brackets >= *o.brackets;
+inline bool biprog::Dim::operator>=(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets >= *expr.brackets;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Dim::operator==(const Dim& o) const {
-  return *brackets == *o.brackets;
+inline bool biprog::Dim::operator==(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets == *expr.brackets;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Dim::operator!=(const Dim& o) const {
-  return *brackets != *o.brackets;
+inline bool biprog::Dim::operator!=(const Expression& o) const {
+  try {
+    const Dim& expr = dynamic_cast<const Dim&>(o);
+    return *brackets != *expr.brackets;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

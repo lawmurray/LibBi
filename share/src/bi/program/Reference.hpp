@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -45,18 +45,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Reference& o) const;
-  virtual bool operator<=(const Reference& o) const;
-  virtual bool operator>(const Reference& o) const;
-  virtual bool operator>=(const Reference& o) const;
-  virtual bool operator==(const Reference& o) const;
-  virtual bool operator!=(const Reference& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 };
 }
 
@@ -72,32 +66,64 @@ inline biprog::Reference::~Reference() {
   //
 }
 
-inline bool biprog::Reference::operator<(const Reference& o) const {
-  return *brackets < *o.brackets && *parens < *o.parens && *braces < *o.braces;
+inline bool biprog::Reference::operator<(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets < *expr.brackets && *parens < *expr.parens
+        && *braces < *expr.braces;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Reference::operator<=(const Reference& o) const {
-  return *brackets <= *o.brackets && *parens <= *o.parens
-      && *braces <= *o.braces;
+inline bool biprog::Reference::operator<=(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets <= *expr.brackets && *parens <= *expr.parens
+        && *braces <= *expr.braces;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Reference::operator>(const Reference& o) const {
-  return *brackets > *o.brackets && *parens > *o.parens && *braces > *o.braces;
+inline bool biprog::Reference::operator>(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets > *expr.brackets && *parens > *expr.parens
+        && *braces > *expr.braces;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Reference::operator>=(const Reference& o) const {
-  return *brackets >= *o.brackets && *parens >= *o.parens
-      && *braces >= *o.braces;
+inline bool biprog::Reference::operator>=(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets >= *expr.brackets && *parens >= *expr.parens
+        && *braces >= *expr.braces;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Reference::operator==(const Reference& o) const {
-  return *brackets == *o.brackets && *parens == *o.parens
-      && *braces == *o.braces;
+inline bool biprog::Reference::operator==(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets == *expr.brackets && *parens == *expr.parens
+        && *braces == *expr.braces;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Reference::operator!=(const Reference& o) const {
-  return *brackets != *o.brackets || *parens != *o.parens
-      || *braces != *o.braces;
+inline bool biprog::Reference::operator!=(const Expression& o) const {
+  try {
+    const Reference& expr = dynamic_cast<const Reference&>(o);
+    return *brackets != *expr.brackets || *parens != *expr.parens
+        || *braces != *expr.braces;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif

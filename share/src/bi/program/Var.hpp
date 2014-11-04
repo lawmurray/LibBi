@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csirexpr.au>
  * $Rev$
  * $Date$
  */
@@ -36,18 +36,12 @@ public:
   /*
    * Operators.
    */
-  using Expression::operator<;
-  using Expression::operator<=;
-  using Expression::operator>;
-  using Expression::operator>=;
-  using Expression::operator==;
-  using Expression::operator!=;
-  virtual bool operator<(const Var& o) const;
-  virtual bool operator<=(const Var& o) const;
-  virtual bool operator>(const Var& o) const;
-  virtual bool operator>=(const Var& o) const;
-  virtual bool operator==(const Var& o) const;
-  virtual bool operator!=(const Var& o) const;
+  virtual bool operator<(const Expression& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator>(const Expression& o) const;
+  virtual bool operator>=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
+  virtual bool operator!=(const Expression& o) const;
 };
 }
 
@@ -61,28 +55,58 @@ inline biprog::Var::~Var() {
   //
 }
 
-inline bool biprog::Var::operator<(const Var& o) const {
-  return *brackets < *o.brackets && *type < *o.type;
+inline bool biprog::Var::operator<(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets < *expr.brackets && *type < *expr.type;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Var::operator<=(const Var& o) const {
-  return *brackets <= *o.brackets && *type <= *o.type;
+inline bool biprog::Var::operator<=(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets <= *expr.brackets && *type <= *expr.type;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Var::operator>(const Var& o) const {
-  return *brackets > *o.brackets && *type > *o.type;
+inline bool biprog::Var::operator>(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets > *expr.brackets && *type > *expr.type;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Var::operator>=(const Var& o) const {
-  return *brackets >= *o.brackets && *type >= *o.type;
+inline bool biprog::Var::operator>=(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets >= *expr.brackets && *type >= *expr.type;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Var::operator==(const Var& o) const {
-  return *brackets == *o.brackets && *type == *o.type;
+inline bool biprog::Var::operator==(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets == *expr.brackets && *type == *expr.type;
+  } catch (std::bad_cast e) {
+    return false;
+  }
 }
 
-inline bool biprog::Var::operator!=(const Var& o) const {
-  return *brackets != *o.brackets || *type != *o.type;
+inline bool biprog::Var::operator!=(const Expression& o) const {
+  try {
+    const Var& expr = dynamic_cast<const Var&>(o);
+    return *brackets != *expr.brackets || *type != *expr.type;
+  } catch (std::bad_cast e) {
+    return true;
+  }
 }
 
 #endif
