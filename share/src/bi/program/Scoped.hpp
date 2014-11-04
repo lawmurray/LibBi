@@ -9,44 +9,34 @@
 #define BI_PROGRAM_SCOPED_HPP
 
 #include "Expression.hpp"
-#include "Named.hpp"
-
-#include <map> ///@todo Use unordered_map after transition to C++11
+#include "Scope.hpp"
 
 namespace biprog {
-class MethodOverload;
-class FunctionOverload;
 /**
  * Scoped statement.
  */
 class Scoped: public virtual Expression {
 public:
   /**
+   * Constructor.
+   */
+  Scoped(boost::shared_ptr<Scope> scope);
+
+  /**
    * Destructor.
    */
   virtual ~Scoped() = 0;
 
   /**
-   * Insert method declaration into this scope.
+   * Scope.
    */
-  void add(MethodOverload* overload);
-
-  /**
-   * Insert function declaration into this scope.
-   */
-  void add(FunctionOverload* overload);
-
-  /**
-   * Insert any other declaration into this scope.
-   */
-  void add(Named* decl);
-
-private:
-  /**
-   * Declarations within this scope.
-   */
-  std::map<std::string,Expression*> decls;
+  boost::shared_ptr<Scope> scope;
 };
+}
+
+inline biprog::Scoped::Scoped(boost::shared_ptr<Scope> scope) :
+    scope(scope) {
+  //
 }
 
 inline biprog::Scoped::~Scoped() {

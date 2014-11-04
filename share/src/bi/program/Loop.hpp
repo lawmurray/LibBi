@@ -10,7 +10,7 @@
 
 #include "Conditioned.hpp"
 #include "Braced.hpp"
-#include "Expression.hpp"
+#include "Scoped.hpp"
 
 namespace biprog {
 /**
@@ -20,13 +20,14 @@ namespace biprog {
  */
 class Loop: public virtual Conditioned,
     public virtual Braced,
+    public virtual Scoped,
     public boost::enable_shared_from_this<Loop> {
 public:
   /**
    * Constructor.
    */
   Loop(boost::shared_ptr<Expression> cond,
-      boost::shared_ptr<Expression> braces);
+      boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope);
 
   /**
    * Destructor.
@@ -46,8 +47,8 @@ public:
 }
 
 inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond,
-    boost::shared_ptr<Expression> braces) :
-    Conditioned(cond), Braced(braces) {
+    boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope) :
+    Conditioned(cond), Braced(braces), Scoped(scope) {
   //
 }
 

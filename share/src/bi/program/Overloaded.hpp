@@ -16,7 +16,7 @@ namespace biprog {
 /**
  * Overloaded declaration.
  */
-class Overloaded : public virtual Expression {
+class Overloaded: public virtual Expression {
 public:
   /**
    * Destructor.
@@ -26,13 +26,15 @@ public:
   /**
    * Add overload.
    */
-  void add(Expression* overload);
+  void add(boost::shared_ptr<Expression> overload);
 
 private:
+  typedef boost::shared_ptr<Expression> pointer_type;
+
   /**
    * Overloads.
    */
-  bi::poset<Expression*,bi::pointer_less<Expression*> > overloads;
+  bi::poset<pointer_type,bi::pointer_less<pointer_type> > overloads;
 };
 }
 
@@ -40,7 +42,7 @@ inline biprog::Overloaded::~Overloaded() {
   //
 }
 
-inline void biprog::Overloaded::add(Expression* overload) {
+inline void biprog::Overloaded::add(boost::shared_ptr<Expression> overload) {
   overloads.insert(overload);
 }
 

@@ -74,7 +74,7 @@ libbi_a_SOURCES = \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
   src/bi/program/Program.cpp \
-  src/bi/program/Scoped.cpp \
+  src/bi/program/Scope.cpp \
   src/bi/random/Random.cpp \
   src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \

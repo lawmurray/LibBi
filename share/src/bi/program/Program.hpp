@@ -8,8 +8,10 @@
 #ifndef BI_PROGRAM_PROGRAM_HPP
 #define BI_PROGRAM_PROGRAM_HPP
 
-#include "Scoped.hpp"
+#include "Scope.hpp"
 #include "Reference.hpp"
+
+#include "boost/shared_ptr.hpp"
 
 #include <deque>
 
@@ -19,7 +21,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Program : public virtual Scoped {
+class Program {
 public:
   /**
    * Constructor.
@@ -34,12 +36,12 @@ public:
   /**
    * Top scope on stack.
    */
-  Scoped* top();
+  boost::shared_ptr<Scope> top();
 
   /**
    * Push new scope on stack.
    */
-  void push(Scoped* scope);
+  void push();
 
   /**
    * Pop scope from stack.
@@ -47,19 +49,9 @@ public:
   void pop();
 
   /**
-   * Add method overload.
+   * Add a declaration.
    */
-  MethodOverload* add(MethodOverload* method);
-
-  /**
-   * Add function overload.
-   */
-  FunctionOverload* add(FunctionOverload* func);
-
-  /**
-   * Add any other declaration.
-   */
-  Named* add(Named* decl);
+  void add(boost::shared_ptr<Expression> decl);
 
   /**
    * Lookup a reference, if possible.
@@ -73,7 +65,7 @@ private:
   /**
    * Scope stack.
    */
-  std::deque<Scoped*> scopes;
+  std::deque<boost::shared_ptr<Scope> > scopes;
 };
 }
 

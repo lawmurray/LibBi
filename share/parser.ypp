@@ -3,10 +3,10 @@
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
-#include "bi/program/Function.hpp"
+#include "bi/program/FunctionOverload.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
-#include "bi/program/Method.hpp"
+#include "bi/program/MethodOverload.hpp"
 #include "bi/program/Model.hpp"
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
@@ -126,8 +126,8 @@ brackets
     ;
 
 braces
-    : '{' statements '}'  { $$ = $3; }
-    | '{' '}'             { $$ = new biprog::EmptyExpression(); }
+    : '{' { program.push(); } statements '}' { program.pop(); }  { $$ = $3; }
+    | '{'  '}'                                                   { $$ = new biprog::EmptyExpression(); }
     ;
 
 bool_literal
@@ -345,47 +345,47 @@ statement_operator
     ;
 
 model
-    : MODEL IDENTIFIER parens braces              { $$ = program.add(new biprog::Model($2, BI_SP($3), BI_SP($4))); }
-    | MODEL IDENTIFIER braces                     { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP($3))); }
-    | MODEL IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::Model($2, BI_SP($3), BI_SP_NULL)); }
-    | MODEL IDENTIFIER statement_operator         { $$ = program.add(new biprog::Model($2, BI_SP_NULL, BI_SP_NULL)); }
+    : MODEL IDENTIFIER parens braces              { $$ = new biprog::Model($2, BI_SP($3), BI_SP($4), program.top()); }
+    | MODEL IDENTIFIER braces                     { $$ = new biprog::Model($2, BI_SP_NULL, BI_SP($3), program.top()); }
+    | MODEL IDENTIFIER parens statement_operator  { $$ = new biprog::Model($2, BI_SP($3), BI_SP_NULL, program.top()); }
+    | MODEL IDENTIFIER statement_operator         { $$ = new biprog::Model($2, BI_SP_NULL, BI_SP_NULL, program.top()); }
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = program.add(new biprog::MethodOverload($2, BI_SP($3), BI_SP($4))); }
-    | METHOD IDENTIFIER braces                     { $$ = program.add(new biprog::MethodOverload($2, BI_SP_NULL, BI_SP($3))); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = program.add(new biprog::MethodOverload($2, BI_SP($3), BI_SP_NULL)); }
-    | METHOD IDENTIFIER statement_operator         { $$ = program.add(new biprog::MethodOverload($2, BI_SP_NULL, BI_SP_NULL)); }
+    : METHOD IDENTIFIER parens braces              { $$ = new biprog::MethodOverload($2, BI_SP($3), BI_SP($4), program.top()); }
+    | METHOD IDENTIFIER braces                     { $$ = new biprog::MethodOverload($2, BI_SP_NULL, BI_SP($3), program.top()); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = new biprog::MethodOverload($2, BI_SP($3), BI_SP_NULL, program.top()); }
+    | METHOD IDENTIFIER statement_operator         { $$ = new biprog::MethodOverload($2, BI_SP_NULL, BI_SP_NULL, program.top()); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = program.add(new biprog::FunctionOverload($2, BI_SP($3), BI_SP($5))); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = program.add(new biprog::FunctionOverload($2, BI_SP($3), BI_SP_NULL)); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::FunctionOverload($2, BI_SP($3), BI_SP($5), program.top()); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::FunctionOverload($2, BI_SP($3), BI_SP_NULL, program.top()); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets statement_operator  { $$ = program.add(new biprog::Dim($2, BI_SP($3))); }
+    : DIM IDENTIFIER brackets statement_operator  { $$ = new biprog::Dim($2, BI_SP($3)); }
     ;
 
 var
-    : VAR IDENTIFIER type_operator type statement_operator           { $$ = program.add(new biprog::Var($2, BI_SP_NULL, $4)); }
-    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = program.add(new biprog::Var($2, BI_SP($3), $5)); }
+    : VAR IDENTIFIER type_operator type statement_operator           { $$ = new biprog::Var($2, BI_SP_NULL, $4); }
+    | VAR IDENTIFIER brackets type_operator type statement_operator  { $$ = new biprog::Var($2, BI_SP($3), $5); }
     ;
 
 if
-    : IF parens braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3)); }
+    : IF parens braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), program.top()); }
     ;
 
 while
-    : WHILE parens braces  { $$ = new biprog::Loop(BI_SP($2), BI_SP($3)); }
+    : WHILE parens braces  { $$ = new biprog::Loop(BI_SP($2), BI_SP($3), program.top()); }
     ;
 
 statement
-    : model
-    | method
-    | function
-    | dim
-    | var
+    : model                          { program.add(BI_SP($1)); }
+    | method                         { program.add(BI_SP($1)); }
+    | function                       { program.add(BI_SP($1)); }
+    | dim                            { program.add(BI_SP($1)); }
+    | var                            { program.add(BI_SP($1)); }
     | if
     | while
     | expression statement_operator
