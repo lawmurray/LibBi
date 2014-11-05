@@ -62,5 +62,5 @@ bool biprog::FunctionOverload::operator!=(const Expression& o) const {
 }
 
 void biprog::FunctionOverload::output(std::ostream& out) const {
-  out << "function " << name << *parens << *braces;
+  out << "function " << name << *parens << ' ' << *braces;
 }

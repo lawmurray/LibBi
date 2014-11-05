@@ -62,5 +62,5 @@ bool biprog::MethodOverload::operator!=(const Expression& o) const {
 }
 
 void biprog::MethodOverload::output(std::ostream& out) const {
-  out << "method " << *parens << *braces;
+  out << "method " << name << *parens << ' ' << *braces;
 }

@@ -62,5 +62,5 @@ bool biprog::Model::operator!=(const Expression& o) const {
 }
 
 void biprog::Model::output(std::ostream& out) const {
-  out << "model " << *parens << *braces;
+  out << "model " << name << *parens << ' ' << *braces;
 }
