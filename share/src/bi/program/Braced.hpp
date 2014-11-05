@@ -30,6 +30,7 @@ public:
    */
   virtual ~Braced() = 0;
 
+protected:
   /**
    * First statement in in brackets.
    */

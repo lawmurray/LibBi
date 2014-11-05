@@ -43,6 +43,12 @@ public:
   virtual bool operator!=(const Expression& o) const;
 
   /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
+
+protected:
+  /**
    * Value.
    */
   T1 value;
@@ -61,27 +67,27 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator<(const Expression& o) const {
+bool biprog::Literal<T1>::operator<(const Expression& o) const {
   return false;
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator<=(const Expression& o) const {
+bool biprog::Literal<T1>::operator<=(const Expression& o) const {
   return operator==(o);
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator>(const Expression& o) const {
+bool biprog::Literal<T1>::operator>(const Expression& o) const {
   return false;
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator>=(const Expression& o) const {
+bool biprog::Literal<T1>::operator>=(const Expression& o) const {
   return operator==(o);
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator==(const Expression& o) const {
+bool biprog::Literal<T1>::operator==(const Expression& o) const {
   try {
     const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
     return value == expr.value;
@@ -91,13 +97,18 @@ inline bool biprog::Literal<T1>::operator==(const Expression& o) const {
 }
 
 template<class T1>
-inline bool biprog::Literal<T1>::operator!=(const Expression& o) const {
+bool biprog::Literal<T1>::operator!=(const Expression& o) const {
   try {
     const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
     return value != expr.value;
   } catch (std::bad_cast e) {
     return true;
   }
+}
+
+template<class T1>
+void biprog::Literal<T1>::output(std::ostream& out) const {
+  out << value;
 }
 
 #endif

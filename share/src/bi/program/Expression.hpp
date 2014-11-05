@@ -26,8 +26,8 @@ public:
   virtual ~Expression() = 0;
 
   /*
-   * Operators, to compare expressions in terms of the partial order induced
-   * by specialisation.
+   * Comparison operators for comparing expressions in terms of
+   * specialisation.
    */
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
@@ -35,6 +35,20 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+  /**
+   * Output operator. Defers to output() for polymorphism.
+   */
+  friend std::ostream& operator<<(std::ostream& out, const Expression& expr) {
+    expr.output(out);
+    return out;
+  }
+
+protected:
+  /**
+   * Output to stream.
+   */
+  virtual void output(std::ostream& out) const = 0;
 };
 }
 

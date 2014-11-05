@@ -49,6 +49,11 @@ public:
   void pop();
 
   /**
+   * Get the root statement.
+   */
+  boost::shared_ptr<Expression> getRoot();
+
+  /**
    * Set the root statement.
    */
   void setRoot(boost::shared_ptr<Expression> root);

@@ -43,6 +43,12 @@ public:
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
 
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
+
   /**
    * Operator.
    */
@@ -63,60 +69,6 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op,
 
 inline biprog::UnaryExpression::~UnaryExpression() {
   //
-}
-
-inline bool biprog::UnaryExpression::operator<(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right < *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::UnaryExpression::operator<=(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right <= *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::UnaryExpression::operator>(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right > *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::UnaryExpression::operator>=(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right >= *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::UnaryExpression::operator==(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right == *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::UnaryExpression::operator!=(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op != expr.op || *right != *expr.right;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

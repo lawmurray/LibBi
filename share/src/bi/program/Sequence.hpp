@@ -40,6 +40,12 @@ public:
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
 
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
+
   /**
    * First statement.
    */
@@ -60,60 +66,6 @@ inline biprog::Sequence::Sequence(boost::shared_ptr<Expression> head,
 
 inline biprog::Sequence::~Sequence() {
   //
-}
-
-inline bool biprog::Sequence::operator<(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head < *expr.head && *tail < *expr.tail;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Sequence::operator<=(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head <= *expr.head && *tail <= *expr.tail;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Sequence::operator>(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head > *expr.head && *tail > *expr.tail;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Sequence::operator>=(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head >= *expr.head && *tail >= *expr.tail;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Sequence::operator==(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head == *expr.head && *tail == *expr.tail;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Sequence::operator!=(const Expression& o) const {
-  try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head != *expr.head || *tail != *expr.tail;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

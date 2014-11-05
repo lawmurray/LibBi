@@ -42,6 +42,10 @@ void biprog::Program::pop() {
   scopes.pop_front();
 }
 
+boost::shared_ptr<biprog::Expression> biprog::Program::getRoot() {
+  return root;
+}
+
 void biprog::Program::setRoot(boost::shared_ptr<biprog::Expression> root) {
   this->root = root;
 }

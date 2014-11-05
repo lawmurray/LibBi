@@ -40,6 +40,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -51,60 +57,6 @@ inline biprog::Dim::Dim(const char* name,
 
 inline biprog::Dim::~Dim() {
   //
-}
-
-inline bool biprog::Dim::operator<(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets < *expr.brackets;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Dim::operator<=(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets <= *expr.brackets;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Dim::operator>(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets > *expr.brackets;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Dim::operator>=(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets >= *expr.brackets;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Dim::operator==(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets == *expr.brackets;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Dim::operator!=(const Expression& o) const {
-  try {
-    const Dim& expr = dynamic_cast<const Dim&>(o);
-    return *brackets != *expr.brackets;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

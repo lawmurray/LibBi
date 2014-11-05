@@ -35,45 +35,17 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
 inline biprog::EmptyExpression::~EmptyExpression() {
   //
-}
-
-inline bool biprog::EmptyExpression::operator<(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::EmptyExpression::operator<=(const Expression& o) const {
-  return operator==(o);
-}
-
-inline bool biprog::EmptyExpression::operator>(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::EmptyExpression::operator>=(const Expression& o) const {
-  return operator==(o);
-}
-
-inline bool biprog::EmptyExpression::operator==(const Expression& o) const {
-  try {
-    const EmptyExpression& expr = dynamic_cast<const EmptyExpression&>(o);
-    return true;
-  } catch (std::bad_cast e) {
-    return true;
-  }
-}
-
-inline bool biprog::EmptyExpression::operator!=(const Expression& o) const {
-  try {
-    const EmptyExpression& expr = dynamic_cast<const EmptyExpression&>(o);
-    return false;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

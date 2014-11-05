@@ -413,6 +413,7 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
+  std::cout << *program.getRoot() << std::endl;
 
   return 0;
 }

@@ -41,6 +41,12 @@ public:
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
 
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
+
   /**
    * Left operand.
    */
@@ -67,60 +73,6 @@ inline biprog::BinaryExpression::BinaryExpression(
 
 inline biprog::BinaryExpression::~BinaryExpression() {
   //
-}
-
-inline bool biprog::BinaryExpression::operator<(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left < *expr.left && *right < *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::BinaryExpression::operator<=(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left <= *expr.left && *right <= *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::BinaryExpression::operator>(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left > *expr.left && *right > *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::BinaryExpression::operator>=(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left >= *expr.left && *right >= *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::BinaryExpression::operator==(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left == *expr.left && *right == *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::BinaryExpression::operator!=(const Expression& o) const {
-  try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op != expr.op || *left != *expr.left || *right != *expr.right;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

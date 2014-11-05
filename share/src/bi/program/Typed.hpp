@@ -30,6 +30,7 @@ public:
    */
   virtual ~Typed() = 0;
 
+protected:
   /**
    * Type.
    */

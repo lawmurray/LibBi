@@ -43,6 +43,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -54,60 +60,6 @@ inline biprog::Loop::Loop(boost::shared_ptr<Expression> cond,
 
 inline biprog::Loop::~Loop() {
   //
-}
-
-inline bool biprog::Loop::operator<(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond < *expr.cond && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Loop::operator<=(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond <= *expr.cond && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Loop::operator>(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond > *expr.cond && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Loop::operator>=(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond >= *expr.cond && *braces >= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Loop::operator==(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond == *expr.cond && *braces == *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Loop::operator!=(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond != *expr.cond || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

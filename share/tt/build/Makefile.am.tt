@@ -73,8 +73,24 @@ libbi_a_SOURCES = \
   src/bi/host/random/RandomHost.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
+  src/bi/program/BinaryExpression.cpp \
+  src/bi/program/Conditional.cpp \
+  src/bi/program/Dim.cpp \
+  src/bi/program/EmptyExpression.cpp \
+  src/bi/program/Function.cpp \
+  src/bi/program/FunctionOverload.cpp \
+  src/bi/program/Loop.cpp \
+  src/bi/program/Method.cpp \
+  src/bi/program/MethodOverload.cpp \
+  src/bi/program/Model.cpp \
+  src/bi/program/Operator.cpp \
   src/bi/program/Program.cpp \
+  src/bi/program/Reference.cpp \
   src/bi/program/Scope.cpp \
+  src/bi/program/Sequence.cpp \
+  src/bi/program/Type.cpp \
+  src/bi/program/UnaryExpression.cpp \
+  src/bi/program/Var.cpp \
   src/bi/random/Random.cpp \
   src/bi/resampler/MetropolisResampler.cpp \
   src/bi/resampler/MultinomialResampler.cpp \

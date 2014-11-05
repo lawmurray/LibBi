@@ -43,6 +43,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -54,60 +60,6 @@ inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond,
 
 inline biprog::Conditional::~Conditional() {
   //
-}
-
-inline bool biprog::Conditional::operator<(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond < *expr.cond && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Conditional::operator<=(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond <= *expr.cond && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Conditional::operator>(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond > *expr.cond && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Conditional::operator>=(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond >= *expr.cond && *braces >= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Conditional::operator==(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond == *expr.cond && *braces == *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Conditional::operator!=(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond != *expr.cond || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

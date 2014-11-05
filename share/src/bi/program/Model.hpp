@@ -45,6 +45,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -57,60 +63,6 @@ inline biprog::Model::Model(const char* name,
 
 inline biprog::Model::~Model() {
   //
-}
-
-inline bool biprog::Model::operator<(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens < *expr.parens && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Model::operator<=(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens <= *expr.parens && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Model::operator>(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens > *expr.parens && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Model::operator>=(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens >= *expr.parens && *braces >= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Model::operator==(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens == *expr.parens && *braces == *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Model::operator!=(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens != *expr.parens || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

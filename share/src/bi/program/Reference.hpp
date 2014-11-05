@@ -54,6 +54,12 @@ public:
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
 
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
+
   /**
    * Target.
    */
@@ -73,66 +79,6 @@ inline biprog::Reference::Reference(const char* name,
 
 inline biprog::Reference::~Reference() {
   //
-}
-
-inline bool biprog::Reference::operator<(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets < *expr.brackets && *parens < *expr.parens
-        && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Reference::operator<=(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets <= *expr.brackets && *parens <= *expr.parens
-        && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Reference::operator>(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets > *expr.brackets && *parens > *expr.parens
-        && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Reference::operator>=(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets >= *expr.brackets && *parens >= *expr.parens
-        && *braces >= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Reference::operator==(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets == *expr.brackets && *parens == *expr.parens
-        && *braces == *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Reference::operator!=(const Expression& o) const {
-  try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets != *expr.brackets || *parens != *expr.parens
-        || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

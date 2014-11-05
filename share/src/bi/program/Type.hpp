@@ -39,6 +39,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -49,42 +55,6 @@ inline biprog::Type::Type(const char* name) :
 
 inline biprog::Type::~Type() {
   //
-}
-
-inline bool biprog::Type::operator<(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Type::operator<=(const Expression& o) const {
-  return operator==(o);
-}
-
-inline bool biprog::Type::operator>(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Type::operator>=(const Expression& o) const {
-  return operator==(o);
-}
-
-inline bool biprog::Type::operator==(const Expression& o) const {
-  try {
-    const Type& expr = dynamic_cast<const Type&>(o);
-    ///@todo Avoid string comparison.
-    return name.compare(expr.name) == 0;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::Type::operator!=(const Expression& o) const {
-  try {
-    const Type& expr = dynamic_cast<const Type&>(o);
-    ///@todo Avoid string comparison.
-    return name.compare(expr.name) != 0;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

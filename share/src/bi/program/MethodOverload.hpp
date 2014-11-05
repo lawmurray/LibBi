@@ -45,6 +45,12 @@ public:
   virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
   virtual bool operator!=(const Expression& o) const;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 
@@ -57,60 +63,6 @@ inline biprog::MethodOverload::MethodOverload(const char* name,
 
 inline biprog::MethodOverload::~MethodOverload() {
 //
-}
-
-inline bool biprog::MethodOverload::operator<(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens < *expr.parens && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::MethodOverload::operator<=(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens <= *expr.parens && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::MethodOverload::operator>(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens > *expr.parens && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::MethodOverload::operator>=(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens >= *expr.parens && *braces >= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::MethodOverload::operator==(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens == *expr.parens && *braces == *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-inline bool biprog::MethodOverload::operator!=(const Expression& o) const {
-  try {
-    const MethodOverload& expr = dynamic_cast<const MethodOverload&>(o);
-    return *parens != *expr.parens || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
-  }
 }
 
 #endif

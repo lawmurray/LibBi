@@ -12,7 +12,7 @@
 
 namespace biprog {
 /**
- * Operator.
+ * Operator codes.
  *
  * @ingroup program
  */
@@ -48,9 +48,23 @@ enum Operator {
   OP_EQUALS,    /// =
   OP_SIMTO,     /// ~
   OP_LEFT_ARROW,
+  OP_RIGHT_ARROW,
   OP_COMMA,
   OP_SEMICOLON
 };
+
+/**
+ * Operator strings.
+ *
+ * @ingroup program
+ */
+extern const char* const ops[];
+
 }
+
+/**
+ * Output an operator.
+ */
+std::ostream& operator<<(std::ostream& out, const biprog::Operator op);
 
 #endif

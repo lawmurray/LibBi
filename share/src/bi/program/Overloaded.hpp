@@ -28,7 +28,7 @@ public:
    */
   void add(boost::shared_ptr<Expression> overload);
 
-private:
+protected:
   typedef boost::shared_ptr<Expression> pointer_type;
 
   /**

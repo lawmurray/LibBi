@@ -23,6 +23,12 @@ public:
    * Destructor.
    */
   virtual ~Method();
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 

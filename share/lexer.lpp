@@ -66,7 +66,6 @@ L?\'(\.|[^\'])*\'                   { count(); yylval.valString = strdup(yytext)
 
 "->"                                { count(); return RIGHT_ARROW; }
 "<-"                                { count(); return LEFT_ARROW; } 
-"=>"                                { count(); return RIGHT_DOUBLE_ARROW; }
 ".."                                { count(); return DOUBLE_DOT; }
 ">>"                                { count(); return RIGHT_OP; }
 "<<"                                { count(); return LEFT_OP; }

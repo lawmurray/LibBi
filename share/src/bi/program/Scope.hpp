@@ -48,7 +48,7 @@ public:
    */
   void add(boost::shared_ptr<Named> decl);
 
-private:
+protected:
   /**
    * Declarations within this scope.
    */
