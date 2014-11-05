@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_OPERATOR_HPP
 #define BI_PROGRAM_OPERATOR_HPP
 
-#include <string>
+#include <ostream>
 
 namespace biprog {
 /**

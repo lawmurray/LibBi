@@ -45,5 +45,6 @@ const char* const biprog::ops[] = {
   };
 
 std::ostream& operator<<(std::ostream& out, const biprog::Operator op) {
-  out << std::string(biprog::ops[op]);
+  out << biprog::ops[op];
+  return out;
 }
