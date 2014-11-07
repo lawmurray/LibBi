@@ -9,7 +9,7 @@
 
  <type name="libbi">
   <annotation><documentation>
-    libbi syntax description
+    LibBi syntax description
   </documentation><contributors><![CDATA[
     Lawrence Murray <lawrence.murray@csiro.au>
   ]]></contributors>
@@ -68,7 +68,7 @@
   </scheme>
   
   <scheme name="libbi">
-   <block start="/(\{)/" end="/(\})/" scheme="libbi"
+   <block start="/(\{)/" end="/(\})/" scheme="c"
           region00="SymbolStrong" region01="PairStart" region10="SymbolStrong" region11="PairEnd"/>
    <inherit scheme="Expression"/>
   </scheme>
@@ -130,9 +130,8 @@
 
    <!-- Keywords: datatypes -->
    <keywords region="Keyword.typenames">
-      <word name="Real"/>
-      <word name="Int"/>
-      <word name="String"/>
+      <word name="true"/>
+      <word name="false"/>
    </keywords>
 
    <!-- Keywords -->
@@ -141,6 +140,7 @@
       <word name="method"/>
       <word name="function"/>
       <word name="transform"/>
+      <word name="const"/>
       <word name="var"/>
       <word name="dim"/>
       <word name="if"/>
