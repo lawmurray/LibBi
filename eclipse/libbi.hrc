@@ -137,6 +137,7 @@
    <!-- Keywords -->
    <keywords region="Keyword">
       <word name="model"/>
+      <word name="class"/>
       <word name="method"/>
       <word name="function"/>
       <word name="transform"/>
@@ -146,6 +147,8 @@
       <word name="if"/>
       <word name="else"/>
       <word name="while"/>
+      <word name="for"/>
+      <word name="foreach"/>
    </keywords>
 
   </scheme>
