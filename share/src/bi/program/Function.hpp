@@ -24,6 +24,8 @@ public:
    */
   virtual ~Function();
 
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
 protected:
   /**
    * Output.

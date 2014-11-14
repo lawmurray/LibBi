@@ -15,10 +15,12 @@ class BinaryExpression;
 class Conditional;
 class Dim;
 class EmptyExpression;
+class Function;
 class FunctionOverload;
 class Group;
 template<class T1> class Literal;
 class Loop;
+class Method;
 class MethodOverload;
 class Model;
 class Reference;
@@ -41,6 +43,7 @@ public:
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Conditional> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Dim> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<EmptyExpression> o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Function> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<FunctionOverload> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Group> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<bool> > o) = 0;
@@ -48,6 +51,7 @@ public:
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<double> > o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Loop> o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Method> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<MethodOverload> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Model> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Reference> o) = 0;
