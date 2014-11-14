@@ -219,7 +219,7 @@ template<class S1, class IO1, class IO2>
 void bi::Simulator<B,F,O>::sample(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out, IO2& inInit) {
   ScheduleIterator iter = first;
-  init(rng, *iter, s, inInit);
+  init(rng, *iter, s, out, inInit);
   output0(s, out);
   output(*iter, s, out);
   while (iter + 1 != last) {

@@ -7,6 +7,13 @@
  */
 #include "BinaryExpression.hpp"
 
+boost::shared_ptr<biprog::Expression> biprog::BinaryExpression::accept(
+    Visitor& v) {
+  left = left->accept(v);
+  right = right->accept(v);
+  return v.visit(shared_from_this());
+}
+
 bool biprog::BinaryExpression::operator<(const Expression& o) const {
   try {
     const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);

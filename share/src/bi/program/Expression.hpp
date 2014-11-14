@@ -13,6 +13,8 @@
 #include "boost/enable_shared_from_this.hpp"
 
 namespace biprog {
+class Visitor;
+
 /**
  * Expression.
  *
@@ -24,6 +26,15 @@ public:
    * Destructor.
    */
   virtual ~Expression() = 0;
+
+  /**
+   * Accept visitor.
+   *
+   * @param v The visitor.
+   *
+   * @return New expression with which to replace this one (may be the same).
+   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
 
   /*
    * Comparison operators for comparing expressions in terms of
