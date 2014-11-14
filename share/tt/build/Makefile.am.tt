@@ -88,7 +88,6 @@ libbi_a_SOURCES = \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
   src/bi/program/Scope.cpp \
-  src/bi/program/Sequence.cpp \
   src/bi/program/Type.cpp \
   src/bi/program/UnaryExpression.cpp \
   src/bi/program/Var.cpp \

@@ -12,7 +12,6 @@
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
-#include "bi/program/Sequence.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
@@ -395,7 +394,7 @@ statement
 statements
     : statement
     | expression
-    | statement statements  { boost::shared_ptr<biprog::Expression> expr = BI_SP($1); program.add(expr); $$ = new biprog::Sequence(expr, BI_SP($2)); }
+    | statement statements  { boost::shared_ptr<biprog::Expression> expr = BI_SP($1); program.add(expr); $$ = new biprog::BinaryExpression(expr, biprog::OP_SEMICOLON, BI_SP($2)); }
     ;
 
 
