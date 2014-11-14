@@ -7,7 +7,12 @@
  */
 #include "Group.hpp"
 
-#include "../misc/assert.hpp"
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::Group::accept(Visitor& v) {
+  expr = expr->accept(v);
+  return v.visit(shared_from_this());
+}
 
 bool biprog::Group::operator<(const Expression& o) const {
   try {
@@ -74,7 +79,5 @@ void biprog::Group::output(std::ostream& out) const {
   case BRACES:
     out << '{' << *expr << '}';
     break;
-  default:
-    BI_ASSERT(false);
   }
 }

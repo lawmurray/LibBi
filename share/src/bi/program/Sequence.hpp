@@ -17,7 +17,7 @@ namespace biprog {
  * @ingroup program
  */
 class Sequence: public virtual Expression,
-    public boost::enable_shared_from_this<Sequence> {
+    public virtual boost::enable_shared_from_this<Sequence> {
 public:
   /**
    * Constructor.
@@ -30,9 +30,8 @@ public:
    */
   virtual ~Sequence();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

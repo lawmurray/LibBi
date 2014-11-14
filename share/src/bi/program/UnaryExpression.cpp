@@ -7,6 +7,14 @@
  */
 #include "UnaryExpression.hpp"
 
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::UnaryExpression::accept(
+    Visitor& v) {
+  right = right->accept(v);
+  return v.visit(shared_from_this());
+}
+
 bool biprog::UnaryExpression::operator<(const Expression& o) const {
   try {
     const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);

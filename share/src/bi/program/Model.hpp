@@ -12,6 +12,7 @@
 #include "Parenthesised.hpp"
 #include "Braced.hpp"
 #include "Scoped.hpp"
+#include "Overloaded.hpp"
 
 namespace biprog {
 /**
@@ -23,7 +24,8 @@ class Model: public virtual Named,
     public virtual Parenthesised,
     public virtual Braced,
     public virtual Scoped,
-    public boost::enable_shared_from_this<Model> {
+    public virtual Overloaded,
+    public virtual boost::enable_shared_from_this<Model> {
 public:
   /**
    * Constructor.
@@ -36,9 +38,8 @@ public:
    */
   virtual ~Model();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

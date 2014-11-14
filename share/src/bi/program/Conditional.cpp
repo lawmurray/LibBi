@@ -7,6 +7,15 @@
  */
 #include "Conditional.hpp"
 
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::Conditional::accept(
+    Visitor& v) {
+  cond = cond->accept(v);
+  braces = braces->accept(v);
+  return v.visit(shared_from_this());
+}
+
 bool biprog::Conditional::operator<(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);

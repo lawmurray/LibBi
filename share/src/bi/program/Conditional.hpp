@@ -21,7 +21,7 @@ namespace biprog {
 class Conditional: public virtual Conditioned,
     public virtual Braced,
     public virtual Scoped,
-    public boost::enable_shared_from_this<Conditional> {
+    public virtual boost::enable_shared_from_this<Conditional> {
 public:
   /**
    * Constructor.
@@ -34,9 +34,8 @@ public:
    */
   virtual ~Conditional();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

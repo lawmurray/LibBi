@@ -7,6 +7,13 @@
  */
 #include "EmptyExpression.hpp"
 
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::EmptyExpression::accept(
+    Visitor& v) {
+  return v.visit(shared_from_this());
+}
+
 bool biprog::EmptyExpression::operator<(const Expression& o) const {
   return false;
 }

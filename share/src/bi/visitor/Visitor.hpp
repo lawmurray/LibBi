@@ -11,6 +11,22 @@
 #include "boost/shared_ptr.hpp"
 
 namespace biprog {
+class BinaryExpression;
+class Conditional;
+class Dim;
+class EmptyExpression;
+class FunctionOverload;
+class Group;
+template<class T1> class Literal;
+class Loop;
+class MethodOverload;
+class Model;
+class Reference;
+class Sequence;
+class Type;
+class UnaryExpression;
+class Var;
+
 /**
  * Visitor.
  */
@@ -22,21 +38,18 @@ public:
   virtual ~Visitor();
 
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<BinaryExpression> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Braced> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Bracketed> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Conditional> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Dim> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<EmptyExpression> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Function> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<FunctionOverload> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Group> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal> o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<bool> > o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<int> > o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<double> > o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Loop> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Method> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<MethodOverload> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Model> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Operator> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Program> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Reference> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Sequence> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Type> o) = 0;

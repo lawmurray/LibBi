@@ -7,6 +7,8 @@
  */
 #include "BinaryExpression.hpp"
 
+#include "../visitor/Visitor.hpp"
+
 boost::shared_ptr<biprog::Expression> biprog::BinaryExpression::accept(
     Visitor& v) {
   left = left->accept(v);

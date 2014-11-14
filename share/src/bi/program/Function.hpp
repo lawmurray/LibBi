@@ -17,7 +17,7 @@ namespace biprog {
  * @ingroup program
  */
 class Function: public virtual Overloaded,
-    public boost::enable_shared_from_this<Function> {
+    public virtual boost::enable_shared_from_this<Function> {
 public:
   /**
    * Destructor.

@@ -21,7 +21,7 @@ namespace biprog {
 class Loop: public virtual Conditioned,
     public virtual Braced,
     public virtual Scoped,
-    public boost::enable_shared_from_this<Loop> {
+    public virtual boost::enable_shared_from_this<Loop> {
 public:
   /**
    * Constructor.
@@ -34,9 +34,8 @@ public:
    */
   virtual ~Loop();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

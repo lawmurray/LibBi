@@ -19,7 +19,7 @@ namespace biprog {
  */
 class Dim: public virtual Named,
     public virtual Bracketed,
-    public boost::enable_shared_from_this<Dim> {
+    public virtual boost::enable_shared_from_this<Dim> {
 public:
   /**
    * Constructor.
@@ -31,9 +31,8 @@ public:
    */
   virtual ~Dim();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

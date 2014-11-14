@@ -20,7 +20,7 @@ namespace biprog {
  */
 template<class T1>
 class Literal: public virtual Expression,
-    public boost::enable_shared_from_this<Literal<T1> > {
+    public virtual boost::enable_shared_from_this<Literal<T1> > {
 public:
   /**
    * Constructor.
@@ -32,9 +32,8 @@ public:
    */
   virtual ~Literal();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;
@@ -55,6 +54,8 @@ protected:
 };
 }
 
+#include "../visitor/Visitor.hpp"
+
 template<class T1>
 inline biprog::Literal<T1>::Literal(const T1& value) :
     value(value) {
@@ -64,6 +65,12 @@ inline biprog::Literal<T1>::Literal(const T1& value) :
 template<class T1>
 inline biprog::Literal<T1>::~Literal() {
   //
+}
+
+template<class T1>
+boost::shared_ptr<biprog::Expression> biprog::Literal<T1>::accept(
+    Visitor& v) {
+  return v.visit(this->shared_from_this());
 }
 
 template<class T1>

@@ -18,7 +18,7 @@ namespace biprog {
  * @ingroup program
  */
 class BinaryExpression: public virtual Expression,
-    public boost::enable_shared_from_this<BinaryExpression> {
+    public virtual boost::enable_shared_from_this<BinaryExpression> {
 public:
   /**
    * Constructor.

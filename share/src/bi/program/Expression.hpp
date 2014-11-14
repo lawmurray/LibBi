@@ -20,7 +20,7 @@ class Visitor;
  *
  * @ingroup program
  */
-class Expression: public boost::enable_shared_from_this<Expression> {
+class Expression {
 public:
   /**
    * Destructor.
@@ -34,7 +34,7 @@ public:
    *
    * @return New expression with which to replace this one (may be the same).
    */
-  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+  virtual boost::shared_ptr<Expression> accept(Visitor& v) = 0;
 
   /*
    * Comparison operators for comparing expressions in terms of

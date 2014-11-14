@@ -19,16 +19,15 @@ namespace biprog {
  * Used for empty brackets, parentheses or braces.
  */
 class EmptyExpression: public virtual Expression,
-    public boost::enable_shared_from_this<EmptyExpression> {
+    public virtual boost::enable_shared_from_this<EmptyExpression> {
 public:
   /**
    * Destructor.
    */
   virtual ~EmptyExpression();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

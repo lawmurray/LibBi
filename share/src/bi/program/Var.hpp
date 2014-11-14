@@ -21,7 +21,7 @@ namespace biprog {
 class Var: public virtual Named,
     public virtual Bracketed,
     public virtual Typed,
-    public boost::enable_shared_from_this<Var> {
+    public virtual boost::enable_shared_from_this<Var> {
 public:
   /**
    * Constructor.
@@ -33,9 +33,8 @@ public:
    */
   virtual ~Var();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

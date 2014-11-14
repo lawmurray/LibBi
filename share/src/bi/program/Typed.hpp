@@ -34,7 +34,7 @@ protected:
   /**
    * Type.
    */
-  boost::shared_ptr<Type> type;
+  boost::shared_ptr<Expression> type;
 };
 }
 

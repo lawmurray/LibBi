@@ -9,6 +9,7 @@
 #define BI_PROGRAM_SCOPE_HPP
 
 #include "Expression.hpp"
+#include "Overloaded.hpp"
 
 #include <map> ///@todo Use unordered_map after transition to C++11
 
@@ -31,7 +32,7 @@ public:
   /**
    * Find declaration by name. Returns an EmptyExpression if not found.
    */
-  boost::shared_ptr<Expression> find(const char* name);
+  boost::shared_ptr<Overloaded> find(const char* name);
 
   /**
    * Insert method declaration into this scope.
@@ -52,7 +53,7 @@ protected:
   /**
    * Declarations within this scope.
    */
-  std::map<std::string,boost::shared_ptr<Expression> > decls;
+  std::map<std::string,boost::shared_ptr<Overloaded> > decls;
 };
 }
 

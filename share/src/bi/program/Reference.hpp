@@ -23,7 +23,7 @@ class Reference: public virtual Named,
     public virtual Bracketed,
     public virtual Parenthesised,
     public virtual Braced,
-    public boost::enable_shared_from_this<Reference> {
+    public virtual boost::enable_shared_from_this<Reference> {
 public:
   /**
    * Constructor.
@@ -44,9 +44,8 @@ public:
    */
   virtual ~Reference();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

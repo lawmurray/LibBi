@@ -7,6 +7,12 @@
  */
 #include "Type.hpp"
 
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::Type::accept(Visitor& v) {
+  return v.visit(shared_from_this());
+}
+
 bool biprog::Type::operator<(const Expression& o) const {
   return false;
 }

@@ -7,6 +7,14 @@
  */
 #include "Sequence.hpp"
 
+#include "../visitor/Visitor.hpp"
+
+boost::shared_ptr<biprog::Expression> biprog::Sequence::accept(Visitor& v) {
+  head = head->accept(v);
+  tail = tail->accept(v);
+  return v.visit(shared_from_this());
+}
+
 bool biprog::Sequence::operator<(const Expression& o) const {
   try {
     const Sequence& expr = dynamic_cast<const Sequence&>(o);

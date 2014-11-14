@@ -18,7 +18,7 @@ namespace biprog {
  * @ingroup program
  */
 class UnaryExpression: public virtual Expression,
-    public boost::enable_shared_from_this<UnaryExpression> {
+    public virtual boost::enable_shared_from_this<UnaryExpression> {
 public:
   /**
    * Constructor.
@@ -33,9 +33,8 @@ public:
    */
   virtual ~UnaryExpression();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

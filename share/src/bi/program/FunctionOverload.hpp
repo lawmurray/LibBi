@@ -23,7 +23,7 @@ class FunctionOverload: public virtual Named,
     public virtual Parenthesised,
     public virtual Braced,
     public virtual Scoped,
-    public boost::enable_shared_from_this<FunctionOverload> {
+    public virtual boost::enable_shared_from_this<FunctionOverload> {
 public:
   /**
    * Constructor.
@@ -36,9 +36,8 @@ public:
    */
   virtual ~FunctionOverload();
 
-  /*
-   * Operators.
-   */
+  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;
