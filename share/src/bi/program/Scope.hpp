@@ -9,14 +9,14 @@
 #define BI_PROGRAM_SCOPE_HPP
 
 #include "Expression.hpp"
+#include "../primitive/poset.hpp"
+#include "../primitive/pointer_less.hpp"
 
 #include <map> ///@todo Use unordered_map after transition to C++11
 
-#include "boost/shared_ptr.hpp"
-
 namespace biprog {
-class MethodOverload;
-class FunctionOverload;
+class Method;
+class Function;
 class Named;
 /**
  * Scope statement.
@@ -31,17 +31,7 @@ public:
   /**
    * Find declaration by name. Returns an EmptyExpression if not found.
    */
-  boost::shared_ptr<Expression> find(const char* name);
-
-  /**
-   * Insert method declaration into this scope.
-   */
-  void add(boost::shared_ptr<MethodOverload> overload);
-
-  /**
-   * Insert function declaration into this scope.
-   */
-  void add(boost::shared_ptr<FunctionOverload> overload);
+  //boost::shared_ptr<Expression> find(const char* name);
 
   /**
    * Insert any other declaration into this scope.
@@ -49,10 +39,15 @@ public:
   void add(boost::shared_ptr<Named> decl);
 
 protected:
+  typedef Expression value_type;
+  typedef boost::shared_ptr<value_type> pointer_type;
+  typedef bi::poset<pointer_type,bi::pointer_less<pointer_type> > poset_type;
+  typedef std::map<std::string,boost::shared_ptr<poset_type> > map_type;
+
   /**
    * Declarations within this scope.
    */
-  std::map<std::string,boost::shared_ptr<Expression> > decls;
+  map_type decls;
 };
 }
 

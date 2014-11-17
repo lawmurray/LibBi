@@ -7,8 +7,8 @@
  */
 #include "Program.hpp"
 
-#include "MethodOverload.hpp"
-#include "FunctionOverload.hpp"
+#include "Method.hpp"
+#include "Function.hpp"
 #include "Named.hpp"
 #include "EmptyExpression.hpp"
 #include "../misc/assert.hpp"
@@ -53,10 +53,10 @@ void biprog::Program::setRoot(boost::shared_ptr<biprog::Expression> root) {
 void biprog::Program::add(boost::shared_ptr<biprog::Expression> decl) {
   boost::shared_ptr<Named> named = boost::dynamic_pointer_cast < Named
       > (decl);
-  boost::shared_ptr<MethodOverload> method = boost::dynamic_pointer_cast
-      < MethodOverload > (decl);
-  boost::shared_ptr<FunctionOverload> function = boost::dynamic_pointer_cast
-      < FunctionOverload > (decl);
+  boost::shared_ptr<Method> method = boost::dynamic_pointer_cast
+      < Method > (decl);
+  boost::shared_ptr<Function> function = boost::dynamic_pointer_cast
+      < Function > (decl);
 
   if (method) {
     top()->add(method);
@@ -69,13 +69,13 @@ void biprog::Program::add(boost::shared_ptr<biprog::Expression> decl) {
 
 boost::shared_ptr<biprog::Expression> biprog::Program::lookup(
     const char* name) {
-  BOOST_AUTO(iter, scopes.begin());
-  while (iter != scopes.end()) {
-    BOOST_AUTO(find, (*iter)->find(name));
-    if (find) {
-      return find;
-    }
-    ++iter;
-  }
+//  BOOST_AUTO(iter, scopes.begin());
+//  while (iter != scopes.end()) {
+//    BOOST_AUTO(find, (*iter)->find(name));
+//    if (find) {
+//      return find;
+//    }
+//    ++iter;
+//  }
   return boost::make_shared<EmptyExpression>();
 }

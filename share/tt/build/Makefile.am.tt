@@ -78,11 +78,9 @@ libbi_a_SOURCES = \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \
   src/bi/program/Function.cpp \
-  src/bi/program/FunctionOverload.cpp \
   src/bi/program/Group.cpp \
   src/bi/program/Loop.cpp \
   src/bi/program/Method.cpp \
-  src/bi/program/MethodOverload.cpp \
   src/bi/program/Model.cpp \
   src/bi/program/Operator.cpp \
   src/bi/program/Program.cpp \

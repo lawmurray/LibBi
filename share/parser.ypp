@@ -3,11 +3,11 @@
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
-#include "bi/program/FunctionOverload.hpp"
+#include "bi/program/Function.hpp"
 #include "bi/program/Group.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
-#include "bi/program/MethodOverload.hpp"
+#include "bi/program/Method.hpp"
 #include "bi/program/Model.hpp"
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
@@ -352,15 +352,15 @@ model
     ;
     
 method
-    : METHOD IDENTIFIER parens braces              { $$ = new biprog::MethodOverload($2, BI_SP($3), BI_SP($4), program.top()); }
-    | METHOD IDENTIFIER braces                     { $$ = new biprog::MethodOverload($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
-    | METHOD IDENTIFIER parens statement_operator  { $$ = new biprog::MethodOverload($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
-    | METHOD IDENTIFIER statement_operator         { $$ = new biprog::MethodOverload($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
+    : METHOD IDENTIFIER parens braces              { $$ = new biprog::Method($2, BI_SP($3), BI_SP($4), program.top()); }
+    | METHOD IDENTIFIER braces                     { $$ = new biprog::Method($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
+    | METHOD IDENTIFIER parens statement_operator  { $$ = new biprog::Method($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
+    | METHOD IDENTIFIER statement_operator         { $$ = new biprog::Method($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::FunctionOverload($2, BI_SP($3), BI_SP($5), program.top()); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::FunctionOverload($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), program.top()); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::Function($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
     ;
 
 dim
