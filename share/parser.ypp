@@ -63,7 +63,8 @@ void yywarn(const char *msg) {
   biprog::Expression* valExpression;
 }
 
-%token MODEL TRANSFORM CLASS FUNCTION METHOD BUILTIN DIM VAR IF ELSE WHILE
+%token MODEL TRANSFORM CLASS FUNCTION METHOD BUILTIN DIM VAR
+%token INHERITS IF ELSE WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
 %token <valInt> INT_LITERAL
@@ -357,10 +358,14 @@ transform
     ;
 
 class
-    : CLASS IDENTIFIER parens braces              { $$ = new biprog::Class($2, BI_SP($3), BI_SP($4), program.top()); }
-    | CLASS IDENTIFIER braces                     { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
-    | CLASS IDENTIFIER parens statement_operator  { $$ = new biprog::Class($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
-    | CLASS IDENTIFIER statement_operator         { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
+    : CLASS IDENTIFIER parens braces                            { $$ = new biprog::Class($2, BI_SP($3), BI_SP_EMPTY, BI_SP($4), program.top()); }
+    | CLASS IDENTIFIER braces                                   { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP($3), program.top()); }
+    | CLASS IDENTIFIER parens statement_operator                { $$ = new biprog::Class($2, BI_SP($3), BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
+    | CLASS IDENTIFIER statement_operator                       { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
+    | CLASS IDENTIFIER parens INHERITS type braces              { $$ = new biprog::Class($2, BI_SP($3), BI_SP($5), BI_SP($6), program.top()); }
+    | CLASS IDENTIFIER INHERITS type braces                     { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP($4), BI_SP($5), program.top()); }
+    | CLASS IDENTIFIER parens INHERITS type statement_operator  { $$ = new biprog::Class($2, BI_SP($3), BI_SP($5), BI_SP_EMPTY, program.top()); }
+    | CLASS IDENTIFIER INHERITS type statement_operator         { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP($4), BI_SP_EMPTY, program.top()); }
     ;
 
 method

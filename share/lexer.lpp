@@ -49,6 +49,7 @@ IS                                 (u|U|l|L)*
 "function"                          { count(); return FUNCTION; }
 "dim"                               { count(); return DIM; }
 "var"                               { count(); return VAR; }
+"inherits"                          { count(); return INHERITS; }
 "if"                                { count(); return IF; }
 "else"                              { count(); return ELSE; }
 "while"                             { count(); return WHILE; }
