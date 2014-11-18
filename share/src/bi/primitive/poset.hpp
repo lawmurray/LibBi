@@ -31,6 +31,17 @@ public:
   poset();
 
   /**
+   * Find what would be the parent vertices for a given value.
+   *
+   * @tparam Container Container type with push_back() function.
+   *
+   * @param val The value.
+   * @param[out] out Container in which to insert values of parent vertices.
+   */
+  template<class Container>
+  void find(const T& val, Container& out);
+
+  /**
    * Insert vertex.
    *
    * @param val Value at the vertex.
@@ -69,13 +80,19 @@ private:
   void remove_edge(const int y, const int v);
 
   /*
+   * Sub-operations for find.
+   */
+  template<class Container>
+  void find(const int u, const T& val, Container& out);
+
+  /*
    * Sub-operations for insert.
    */
   void forward(const int v);
   void forward(const int u, const int v);
   void backward(const int v);
   void backward(const int u, const int v);
-  void reduce(); // transitive reduction
+  void reduce();  // transitive reduction
   void reduce(const int u);
 
   /*
@@ -126,6 +143,20 @@ bi::poset<T,Compare>::poset() :
 }
 
 template<class T, class Compare>
+template<class Container>
+void bi::poset<T,Compare>::find(const T& val, Container& out) {
+  ++col;
+  BOOST_AUTO(iter, roots.begin());
+  while (iter != roots.end()) {
+    cols[*iter] = col;
+    if (compare(val, vals[*iter])) {
+      find(*iter, val, out);
+    }
+    ++iter;
+  }
+}
+
+template<class T, class Compare>
 void bi::poset<T,Compare>::insert(const T& val) {
   const int v = add_vertex(val);
   forward(v);
@@ -169,6 +200,26 @@ void bi::poset<T,Compare>::remove_edge(const int u, const int v) {
   }
   if (backwards[v].size() == 0) {
     roots.insert(v);
+  }
+}
+
+template<class T, class Compare>
+template<class Container>
+void bi::poset<T,Compare>::find(const int u, const T& val, Container& out) {
+  bool deeper = false;
+  BOOST_AUTO(iter, forwards[u].begin());
+  while (iter != forwards[u].end()) {
+    if (cols[*iter] < col) {
+      cols[*iter] = col;
+      if (compare(val, vals[*iter])) {
+        deeper = true;
+        find(*iter, val, out);
+      }
+    }
+    ++iter;
+  }
+  if (!deeper) {
+    out.push_back(vals[u]);
   }
 }
 
@@ -233,7 +284,7 @@ void bi::poset<T,Compare>::reduce() {
   std::set<int> lroots(roots);
   BOOST_AUTO(iter, lroots.begin());
   while (iter != lroots.end()) {
-    reduce(*iter);
+    reduce (*iter);
     ++iter;
   }
 }
@@ -248,7 +299,7 @@ void bi::poset<T,Compare>::reduce(const int u) {
     if (cols[*iter] < lcol) {
       cols[*iter] = lcol;
     }
-    reduce(*iter);
+    reduce (*iter);
     ++iter;
   }
 
@@ -269,7 +320,7 @@ void bi::poset<T,Compare>::dot() {
   std::cout << "digraph {" << std::endl;
   BOOST_AUTO(iter, roots.begin());
   while (iter != roots.end()) {
-    dot(*iter);
+    dot (*iter);
     ++iter;
   }
   std::cout << "}" << std::endl;
@@ -284,7 +335,7 @@ void bi::poset<T,Compare>::dot(const int u) {
     while (iter != forwards[u].end()) {
       std::cout << "\"" << vals[u] << "\" -> \"" << vals[*iter] << "\""
           << std::endl;
-      dot(*iter);
+      dot (*iter);
       ++iter;
     }
   }
