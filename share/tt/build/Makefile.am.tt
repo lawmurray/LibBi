@@ -74,6 +74,7 @@ libbi_a_SOURCES = \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
   src/bi/program/BinaryExpression.cpp \
+  src/bi/program/Class.cpp \
   src/bi/program/Conditional.cpp \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \

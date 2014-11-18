@@ -44,6 +44,7 @@ IS                                 (u|U|l|L)*
 
 "model"                             { count(); return MODEL; }
 "transform"                         { count(); return TRANSFORM; }
+"class"                             { count(); return CLASS; }
 "method"                            { count(); return METHOD; }
 "function"                          { count(); return FUNCTION; }
 "dim"                               { count(); return DIM; }

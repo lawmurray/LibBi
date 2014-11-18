@@ -1,5 +1,6 @@
 %code requires {
 #include "bi/program/BinaryExpression.hpp"
+#include "bi/program/Class.hpp"
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
@@ -62,7 +63,7 @@ void yywarn(const char *msg) {
   biprog::Expression* valExpression;
 }
 
-%token MODEL TRANSFORM FUNCTION METHOD BUILTIN DIM VAR IF ELSE WHILE
+%token MODEL TRANSFORM CLASS FUNCTION METHOD BUILTIN DIM VAR IF ELSE WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
 %token <valInt> INT_LITERAL
@@ -95,7 +96,7 @@ void yywarn(const char *msg) {
 %type <valExpression> logical_and_expression logical_or_expression
 %type <valExpression> constraint_expression assignment_expression
 %type <valExpression> tuple_expression expression
-%type <valExpression> model transform method function dim var if while
+%type <valExpression> model transform class method function dim var if while
 %type <valExpression> statement statements
 
 %start file
@@ -349,12 +350,17 @@ statement_operator
 model
     : MODEL IDENTIFIER parens braces              { $$ = new biprog::Model($2, BI_SP($3), BI_SP($4), program.top()); }
     | MODEL IDENTIFIER braces                     { $$ = new biprog::Model($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
-    | MODEL IDENTIFIER parens statement_operator  { $$ = new biprog::Model($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
-    | MODEL IDENTIFIER statement_operator         { $$ = new biprog::Model($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
     ;
 
 transform
     : TRANSFORM IDENTIFIER parens RIGHT_ARROW braces  { $$ = new biprog::Transform($2, BI_SP($3), BI_SP($5), program.top()); }
+    ;
+
+class
+    : CLASS IDENTIFIER parens braces              { $$ = new biprog::Class($2, BI_SP($3), BI_SP($4), program.top()); }
+    | CLASS IDENTIFIER braces                     { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
+    | CLASS IDENTIFIER parens statement_operator  { $$ = new biprog::Class($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
+    | CLASS IDENTIFIER statement_operator         { $$ = new biprog::Class($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
     ;
 
 method
@@ -389,6 +395,7 @@ while
 statement
     : model
     | transform
+    | class
     | method
     | function
     | dim

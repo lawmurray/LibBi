@@ -12,6 +12,7 @@
 
 namespace biprog {
 class BinaryExpression;
+class Class;
 class Conditional;
 class Dim;
 class EmptyExpression;
@@ -38,6 +39,7 @@ public:
   virtual ~Visitor();
 
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<BinaryExpression> o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Class> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Conditional> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Dim> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<EmptyExpression> o) = 0;
