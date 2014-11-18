@@ -27,7 +27,9 @@ public:
    * Constructor.
    */
   Conditional(boost::shared_ptr<Expression> cond,
-      boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope);
+      boost::shared_ptr<Expression> braces,
+      boost::shared_ptr<Expression> falseBraces,
+      boost::shared_ptr<Scope> scope);
 
   /**
    * Destructor.
@@ -48,12 +50,19 @@ protected:
    * Output.
    */
   virtual void output(std::ostream& out) const;
+
+  /**
+   * Block if condition is false. May be empty if there is no else clause.
+   */
+  boost::shared_ptr<Expression> falseBraces;
 };
 }
 
 inline biprog::Conditional::Conditional(boost::shared_ptr<Expression> cond,
-    boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope) :
-    Conditioned(cond), Braced(braces), Scoped(scope) {
+    boost::shared_ptr<Expression> braces,
+    boost::shared_ptr<Expression> falseBraces, boost::shared_ptr<Scope> scope) :
+    Conditioned(cond), Braced(braces), Scoped(scope), falseBraces(
+        falseBraces) {
   //
 }
 

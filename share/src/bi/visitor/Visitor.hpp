@@ -22,6 +22,7 @@ class Loop;
 class Method;
 class Model;
 class Reference;
+class Transform;
 class Type;
 class UnaryExpression;
 class Var;
@@ -50,6 +51,7 @@ public:
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Method> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Model> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Reference> o) = 0;
+  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Transform> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Type> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<UnaryExpression> o) = 0;
   virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Var> o) = 0;

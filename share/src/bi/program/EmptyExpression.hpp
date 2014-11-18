@@ -28,6 +28,8 @@ public:
 
   virtual boost::shared_ptr<Expression> accept(Visitor& v);
 
+  virtual operator bool() const;
+
   virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator>(const Expression& o) const;

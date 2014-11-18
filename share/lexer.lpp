@@ -43,11 +43,13 @@ IS                                 (u|U|l|L)*
 <COMMENT_EOL,COMMENT_INLINE>.       { count(); }
 
 "model"                             { count(); return MODEL; }
+"transform"                         { count(); return TRANSFORM; }
 "method"                            { count(); return METHOD; }
 "function"                          { count(); return FUNCTION; }
 "dim"                               { count(); return DIM; }
 "var"                               { count(); return VAR; }
 "if"                                { count(); return IF; }
+"else"                              { count(); return ELSE; }
 "while"                             { count(); return WHILE; }
 "true"                              { count(); yylval.valBool = true; return BOOL_LITERAL; }
 "false"                             { count(); yylval.valBool = false; return BOOL_LITERAL; }
@@ -57,10 +59,9 @@ IS                                 (u|U|l|L)*
 0[xX]{H}+{IS}?                      { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
 0{D}+{IS}?                          { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
 {D}+{IS}?                           { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
-L?\'(\.|[^\'])+\'                   { count(); yylval.valInt = atoi(yytext); return INT_LITERAL; }
-{D}+{E}{FS}?                        { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
-{D}*\.{D}+({E})?{FS}?               { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
-{D}+\.{D}*({E})?{FS}?               { count(); yylval.valInt = atof(yytext); return DOUBLE_LITERAL; }
+{D}+{E}{FS}?                        { count(); yylval.valDouble = atof(yytext); return DOUBLE_LITERAL; }
+{D}*\.{D}+({E})?{FS}?               { count(); yylval.valDouble = atof(yytext); return DOUBLE_LITERAL; }
+{D}+\.{D}*({E})?{FS}?               { count(); yylval.valDouble = atof(yytext); return DOUBLE_LITERAL; }
 L?\"(\.|[^\"])*\"                   { count(); yylval.valString = strdup(yytext); return STRING_LITERAL; }
 L?\'(\.|[^\'])*\'                   { count(); yylval.valString = strdup(yytext); return STRING_LITERAL; }
 

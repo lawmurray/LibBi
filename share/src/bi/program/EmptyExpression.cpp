@@ -14,6 +14,10 @@ boost::shared_ptr<biprog::Expression> biprog::EmptyExpression::accept(
   return v.visit(shared_from_this());
 }
 
+biprog::EmptyExpression::operator bool() const {
+  return false;
+}
+
 bool biprog::EmptyExpression::operator<(const Expression& o) const {
   return false;
 }

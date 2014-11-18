@@ -13,13 +13,15 @@ boost::shared_ptr<biprog::Expression> biprog::Conditional::accept(
     Visitor& v) {
   cond = cond->accept(v);
   braces = braces->accept(v);
+  falseBraces = falseBraces->accept(v);
   return v.visit(shared_from_this());
 }
 
 bool biprog::Conditional::operator<(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond < *expr.cond && *braces < *expr.braces;
+    return *cond < *expr.cond && *braces < *expr.braces
+        && *falseBraces < *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -28,7 +30,8 @@ bool biprog::Conditional::operator<(const Expression& o) const {
 bool biprog::Conditional::operator<=(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond <= *expr.cond && *braces <= *expr.braces;
+    return *cond <= *expr.cond && *braces <= *expr.braces
+        && *falseBraces <= *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -37,7 +40,8 @@ bool biprog::Conditional::operator<=(const Expression& o) const {
 bool biprog::Conditional::operator>(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond > *expr.cond && *braces > *expr.braces;
+    return *cond > *expr.cond && *braces > *expr.braces
+        && *falseBraces > *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -46,7 +50,8 @@ bool biprog::Conditional::operator>(const Expression& o) const {
 bool biprog::Conditional::operator>=(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond >= *expr.cond && *braces >= *expr.braces;
+    return *cond >= *expr.cond && *braces >= *expr.braces
+        && *falseBraces >= *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -55,7 +60,8 @@ bool biprog::Conditional::operator>=(const Expression& o) const {
 bool biprog::Conditional::operator==(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond == *expr.cond && *braces == *expr.braces;
+    return *cond == *expr.cond && *braces == *expr.braces
+        && *falseBraces == *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -64,7 +70,8 @@ bool biprog::Conditional::operator==(const Expression& o) const {
 bool biprog::Conditional::operator!=(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond != *expr.cond || *braces != *expr.braces;
+    return *cond != *expr.cond || *braces != *expr.braces
+        || *falseBraces != *expr.falseBraces;
   } catch (std::bad_cast e) {
     return true;
   }
@@ -72,4 +79,7 @@ bool biprog::Conditional::operator!=(const Expression& o) const {
 
 void biprog::Conditional::output(std::ostream& out) const {
   out << "if " << *cond << *braces;
+  if (*falseBraces) {
+    out << " else " << *falseBraces;
+  }
 }

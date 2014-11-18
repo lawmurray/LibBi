@@ -37,6 +37,11 @@ public:
   virtual boost::shared_ptr<Expression> accept(Visitor& v) = 0;
 
   /*
+   * Bool cast to check for non-empty expression.
+   */
+  virtual operator bool() const;
+
+  /*
    * Comparison operators for comparing expressions in terms of
    * specialisation.
    */
@@ -65,30 +70,6 @@ protected:
 
 inline biprog::Expression::~Expression() {
   //
-}
-
-inline bool biprog::Expression::operator<(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Expression::operator<=(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Expression::operator>(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Expression::operator>=(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Expression::operator==(const Expression& o) const {
-  return false;
-}
-
-inline bool biprog::Expression::operator!=(const Expression& o) const {
-  return true;
 }
 
 #endif

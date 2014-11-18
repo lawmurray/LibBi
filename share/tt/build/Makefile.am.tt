@@ -77,6 +77,7 @@ libbi_a_SOURCES = \
   src/bi/program/Conditional.cpp \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \
+  src/bi/program/Expression.cpp \
   src/bi/program/Function.cpp \
   src/bi/program/Group.cpp \
   src/bi/program/Loop.cpp \
@@ -86,6 +87,7 @@ libbi_a_SOURCES = \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
   src/bi/program/Scope.cpp \
+  src/bi/program/Transform.cpp \
   src/bi/program/Type.cpp \
   src/bi/program/UnaryExpression.cpp \
   src/bi/program/Var.cpp \

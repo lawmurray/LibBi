@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_METHODOVERLOAD_HPP
-#define BI_PROGRAM_METHODOVERLOAD_HPP
+#ifndef BI_PROGRAM_METHOD_HPP
+#define BI_PROGRAM_METHOD_HPP
 
 #include "Named.hpp"
 #include "Parenthesised.hpp"
@@ -51,13 +51,6 @@ protected:
    */
   virtual void output(std::ostream& out) const;
 };
-}
-
-inline biprog::Method::Method(const char* name,
-    boost::shared_ptr<Expression> parens,
-    boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope) :
-    Named(name), Parenthesised(parens), Braced(braces), Scoped(scope) {
-  //
 }
 
 inline biprog::Method::~Method() {

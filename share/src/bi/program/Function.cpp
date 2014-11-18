@@ -9,9 +9,18 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::Function::accept(
-    Visitor& v) {
+biprog::Function::Function(const char* name,
+    boost::shared_ptr<Expression> parens,
+    boost::shared_ptr<Expression> retParens,
+    boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope) :
+    Named(name), Parenthesised(parens), Braced(braces), Scoped(scope), retParens(
+        retParens) {
+  //
+}
+
+boost::shared_ptr<biprog::Expression> biprog::Function::accept(Visitor& v) {
   parens = parens->accept(v);
+  retParens = retParens->accept(v);
   braces = braces->accept(v);
   return v.visit(shared_from_this());
 }
@@ -71,5 +80,6 @@ bool biprog::Function::operator!=(const Expression& o) const {
 }
 
 void biprog::Function::output(std::ostream& out) const {
-  out << "function " << name << *parens << ' ' << *braces;
+  out << "function " << name << *parens << " -> " << *retParens << ' '
+      << *braces;
 }

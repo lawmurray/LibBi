@@ -12,6 +12,7 @@
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
+#include "bi/program/Transform.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
@@ -61,7 +62,7 @@ void yywarn(const char *msg) {
   biprog::Expression* valExpression;
 }
 
-%token MODEL FUNCTION METHOD BUILTIN DIM VAR IF WHILE
+%token MODEL TRANSFORM FUNCTION METHOD BUILTIN DIM VAR IF ELSE WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
 %token <valInt> INT_LITERAL
@@ -94,7 +95,8 @@ void yywarn(const char *msg) {
 %type <valExpression> logical_and_expression logical_or_expression
 %type <valExpression> constraint_expression assignment_expression
 %type <valExpression> tuple_expression expression
-%type <valExpression> model method function dim var if while statement statements
+%type <valExpression> model transform method function dim var if while
+%type <valExpression> statement statements
 
 %start file
 %%
@@ -350,17 +352,19 @@ model
     | MODEL IDENTIFIER parens statement_operator  { $$ = new biprog::Model($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
     | MODEL IDENTIFIER statement_operator         { $$ = new biprog::Model($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
     ;
-    
+
+transform
+    : TRANSFORM IDENTIFIER parens RIGHT_ARROW braces  { $$ = new biprog::Transform($2, BI_SP($3), BI_SP($5), program.top()); }
+    ;
+
 method
     : METHOD IDENTIFIER parens braces              { $$ = new biprog::Method($2, BI_SP($3), BI_SP($4), program.top()); }
-    | METHOD IDENTIFIER braces                     { $$ = new biprog::Method($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
     | METHOD IDENTIFIER parens statement_operator  { $$ = new biprog::Method($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
-    | METHOD IDENTIFIER statement_operator         { $$ = new biprog::Method($2, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), program.top()); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::Function($2, BI_SP($3), BI_SP_EMPTY, program.top()); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP($6), program.top()); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP_EMPTY, program.top()); }
     ;
 
 dim
@@ -373,7 +377,9 @@ var
     ;
 
 if
-    : IF parens braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), program.top()); }
+    : IF parens braces ELSE if      { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5), program.top()); }
+    | IF parens braces ELSE braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5), program.top()); }
+    | IF parens braces              { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP_EMPTY, program.top()); }
     ;
 
 while
@@ -382,6 +388,7 @@ while
 
 statement
     : model
+    | transform
     | method
     | function
     | dim
