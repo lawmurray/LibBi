@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PRIMITIVE_POINTERLESSOREQUAL_HPP
-#define BI_PRIMITIVE_POINTERLESSOREQUAL_HPP
+#ifndef BI_PRIMITIVE_POINTERLESSEQUAL_HPP
+#define BI_PRIMITIVE_POINTERLESSEQUAL_HPP
 
 namespace bi {
 /**
@@ -14,7 +14,7 @@ namespace bi {
  * their values with the less-than-or-equal operator.
  */
 template<class T>
-struct pointer_less_or_equal {
+struct pointer_less_equal {
   bool operator()(const T o1, const T o2) {
     return *o1 <= *o2;
   }
