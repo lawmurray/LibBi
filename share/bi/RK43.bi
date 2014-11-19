@@ -1,22 +1,20 @@
-model ODEState(ODE (args) { statements }) {
-  map(statements, ode_declare_state);
-}
-
-method ODEDerivative(ODE (args) { statements }) {
-  map(statements, ode_derivatives);
-}
-
-method sample(ODE (args) { statements }) {
-  /* intermediate state */
-  model State {
-    map(statements, ode_declare_state);
+transform eval(ODE (args) { statements }) -> {
+  /* class to hold state */
+  transform ode_declare({ d(x[coords])/d(t) = expression }) -> {
+    var x[dims]:Real;
+  }
+  class State {
+    map(statements, ode_declare);
   }
   
-  /* compute derivatives */
+  /* method to compute derivatives */
+  transform ode_derivatives({ d(x[coords])/d(t) = expression }) -> {
+    dx.x[coords] <- expression;
+  }
   method d(x:State, dx:State) {
     map(statements, ode_derivatives);
   }
-  
+
   var r1:State;
   var r2:State;
   var err:State;
@@ -51,10 +49,7 @@ method sample(ODE (args) { statements }) {
   const b5:Real = 0.34866717899928;
   const c5:Real = 0.845495878172715;
   const e5:Real = 0.0728532188162504; // b5 - b5hat
-  
-  /* variables to hold derivatives */
-  map(statements, ode_declare);
-  
+    
   t <- t1;
   h <- h_h0;
   logfacold <- log(1.0e-4);
@@ -115,14 +110,4 @@ method sample(ODE (args) { statements }) {
       n <- n + 1;
     }
   }
-}
-
-transform ode_declare({ d(x[coords])/d(t) = expression }) {
-  var dx[dims]:Real;
-  // how to name this differently for each x?
-  // how to get dims from coords?
-}
-
-transform ode_derivatives({ d(x[coords])/d(t) = expression }) {
-  dx.x[coords] <- expression;
 }

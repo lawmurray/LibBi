@@ -38,7 +38,7 @@ bool biprog::Conditional::operator==(const Expression& o) const {
 }
 
 void biprog::Conditional::output(std::ostream& out) const {
-  out << "if " << *cond << *braces;
+  out << "if " << *cond << ' ' << *braces;
   if (*falseBraces) {
     out << " else " << *falseBraces;
   }

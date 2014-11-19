@@ -15,8 +15,6 @@ namespace biprog {
  * Literal.
  *
  * @ingroup program
- *
- * @todo Flyweight this.
  */
 template<class T1>
 class Literal: public virtual Expression,
