@@ -34,12 +34,8 @@ public:
 
   virtual boost::shared_ptr<Expression> accept(Visitor& v);
 
-  virtual bool operator<(const Expression& o) const;
   virtual bool operator<=(const Expression& o) const;
-  virtual bool operator>(const Expression& o) const;
-  virtual bool operator>=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
-  virtual bool operator!=(const Expression& o) const;
 
   /**
    * Output.
@@ -74,23 +70,8 @@ boost::shared_ptr<biprog::Expression> biprog::Literal<T1>::accept(
 }
 
 template<class T1>
-bool biprog::Literal<T1>::operator<(const Expression& o) const {
-  return false;
-}
-
-template<class T1>
 bool biprog::Literal<T1>::operator<=(const Expression& o) const {
-  return operator==(o);
-}
-
-template<class T1>
-bool biprog::Literal<T1>::operator>(const Expression& o) const {
-  return false;
-}
-
-template<class T1>
-bool biprog::Literal<T1>::operator>=(const Expression& o) const {
-  return operator==(o);
+  return *this == o;
 }
 
 template<class T1>
@@ -100,16 +81,6 @@ bool biprog::Literal<T1>::operator==(const Expression& o) const {
     return value == expr.value;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-template<class T1>
-bool biprog::Literal<T1>::operator!=(const Expression& o) const {
-  try {
-    const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
-    return value != expr.value;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

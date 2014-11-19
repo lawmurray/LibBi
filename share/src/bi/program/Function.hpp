@@ -29,7 +29,7 @@ public:
    * Constructor.
    */
   Function(const char* name, boost::shared_ptr<Expression> parens,
-      boost::shared_ptr<Expression> retParens,
+      boost::shared_ptr<Expression> ret,
       boost::shared_ptr<Expression> braces, boost::shared_ptr<Scope> scope);
 
   /**
@@ -39,12 +39,8 @@ public:
 
   virtual boost::shared_ptr<Expression> accept(Visitor& v);
 
-  virtual bool operator<(const Expression& o) const;
-  virtual bool operator<=(const Expression& o) const;
-  virtual bool operator>(const Expression& o) const;
-  virtual bool operator>=(const Expression& o) const;
-  virtual bool operator==(const Expression& o) const;
-  virtual bool operator!=(const Expression& o) const;
+    virtual bool operator<=(const Expression& o) const;
+ virtual bool operator==(const Expression& o) const;
 
 protected:
   /**
@@ -55,7 +51,7 @@ protected:
   /**
    * Parentheses for return value.
    */
-  boost::shared_ptr<Expression> retParens;
+  boost::shared_ptr<Expression> ret;
 };
 }
 

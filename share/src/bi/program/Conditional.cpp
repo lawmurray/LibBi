@@ -17,41 +17,11 @@ boost::shared_ptr<biprog::Expression> biprog::Conditional::accept(
   return v.visit(shared_from_this());
 }
 
-bool biprog::Conditional::operator<(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond < *expr.cond && *braces < *expr.braces
-        && *falseBraces < *expr.falseBraces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::Conditional::operator<=(const Expression& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
     return *cond <= *expr.cond && *braces <= *expr.braces
         && *falseBraces <= *expr.falseBraces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Conditional::operator>(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond > *expr.cond && *braces > *expr.braces
-        && *falseBraces > *expr.falseBraces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Conditional::operator>=(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond >= *expr.cond && *braces >= *expr.braces
-        && *falseBraces >= *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -64,16 +34,6 @@ bool biprog::Conditional::operator==(const Expression& o) const {
         && *falseBraces == *expr.falseBraces;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::Conditional::operator!=(const Expression& o) const {
-  try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond != *expr.cond || *braces != *expr.braces
-        || *falseBraces != *expr.falseBraces;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

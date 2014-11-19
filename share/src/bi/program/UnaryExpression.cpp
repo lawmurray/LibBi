@@ -15,37 +15,10 @@ boost::shared_ptr<biprog::Expression> biprog::UnaryExpression::accept(
   return v.visit(shared_from_this());
 }
 
-bool biprog::UnaryExpression::operator<(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right < *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::UnaryExpression::operator<=(const Expression& o) const {
   try {
     const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
     return op == expr.op && *right <= *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::UnaryExpression::operator>(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right > *expr.right;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::UnaryExpression::operator>=(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op == expr.op && *right >= *expr.right;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -57,15 +30,6 @@ bool biprog::UnaryExpression::operator==(const Expression& o) const {
     return op == expr.op && *right == *expr.right;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::UnaryExpression::operator!=(const Expression& o) const {
-  try {
-    const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
-    return op != expr.op || *right != *expr.right;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

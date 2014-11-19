@@ -14,37 +14,10 @@ boost::shared_ptr<biprog::Expression> biprog::Group::accept(Visitor& v) {
   return v.visit(shared_from_this());
 }
 
-bool biprog::Group::operator<(const Expression& o) const {
-  try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim == group.delim && *expr < *group.expr;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::Group::operator<=(const Expression& o) const {
   try {
     const Group& group = dynamic_cast<const Group&>(o);
     return delim == group.delim && *expr <= *group.expr;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Group::operator>(const Expression& o) const {
-  try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim == group.delim && *expr > *group.expr;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Group::operator>=(const Expression& o) const {
-  try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim == group.delim && *expr >= *group.expr;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -56,15 +29,6 @@ bool biprog::Group::operator==(const Expression& o) const {
     return delim == group.delim && *expr == *group.expr;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::Group::operator!=(const Expression& o) const {
-  try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim != group.delim || *expr != *group.expr;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

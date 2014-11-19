@@ -137,13 +137,14 @@
    <!-- Keywords -->
    <keywords region="Keyword">
       <word name="model"/>
+      <word name="transform"/>
       <word name="class"/>
       <word name="method"/>
       <word name="function"/>
-      <word name="transform"/>
       <word name="const"/>
       <word name="var"/>
       <word name="dim"/>
+      <word name="inherits"/>
       <word name="if"/>
       <word name="else"/>
       <word name="while"/>

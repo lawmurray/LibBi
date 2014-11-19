@@ -374,8 +374,8 @@ method
     ;
 
 function
-    : FUNCTION IDENTIFIER parens RIGHT_ARROW parens braces              { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP($6), program.top()); }
-    | FUNCTION IDENTIFIER parens RIGHT_ARROW parens statement_operator  { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP_EMPTY, program.top()); }
+    : FUNCTION IDENTIFIER parens RIGHT_ARROW type_expression braces              { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP($6), program.top()); }
+    | FUNCTION IDENTIFIER parens RIGHT_ARROW type_expression statement_operator  { $$ = new biprog::Function($2, BI_SP($3), BI_SP($5), BI_SP_EMPTY, program.top()); }
     ;
 
 dim

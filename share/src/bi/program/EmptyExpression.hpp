@@ -30,12 +30,8 @@ public:
 
   virtual operator bool() const;
 
-  virtual bool operator<(const Expression& o) const;
-  virtual bool operator<=(const Expression& o) const;
-  virtual bool operator>(const Expression& o) const;
-  virtual bool operator>=(const Expression& o) const;
-  virtual bool operator==(const Expression& o) const;
-  virtual bool operator!=(const Expression& o) const;
+    virtual bool operator<=(const Expression& o) const;
+ virtual bool operator==(const Expression& o) const;
 
 protected:
   /**

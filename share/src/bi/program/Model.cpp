@@ -15,37 +15,10 @@ boost::shared_ptr<biprog::Expression> biprog::Model::accept(Visitor& v) {
   return v.visit(shared_from_this());
 }
 
-bool biprog::Model::operator<(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens < *expr.parens && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::Model::operator<=(const Expression& o) const {
   try {
     const Model& expr = dynamic_cast<const Model&>(o);
     return *parens <= *expr.parens && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Model::operator>(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens > *expr.parens && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Model::operator>=(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens >= *expr.parens && *braces >= *expr.braces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -57,15 +30,6 @@ bool biprog::Model::operator==(const Expression& o) const {
     return *parens == *expr.parens && *braces == *expr.braces;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::Model::operator!=(const Expression& o) const {
-  try {
-    const Model& expr = dynamic_cast<const Model&>(o);
-    return *parens != *expr.parens || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

@@ -24,41 +24,11 @@ boost::shared_ptr<biprog::Expression> biprog::Class::accept(Visitor& v) {
   return v.visit(shared_from_this());
 }
 
-bool biprog::Class::operator<(const Expression& o) const {
-  try {
-    const Class& expr = dynamic_cast<const Class&>(o);
-    return *parens < *expr.parens && *base < *expr.base
-        && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::Class::operator<=(const Expression& o) const {
   try {
     const Class& expr = dynamic_cast<const Class&>(o);
     return *parens <= *expr.parens && *base <= *expr.base
         && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Class::operator>(const Expression& o) const {
-  try {
-    const Class& expr = dynamic_cast<const Class&>(o);
-    return *parens > *expr.parens && *base > *expr.base
-        && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Class::operator>=(const Expression& o) const {
-  try {
-    const Class& expr = dynamic_cast<const Class&>(o);
-    return *parens >= *expr.parens && *base >= *expr.base
-        && *braces >= *expr.braces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -71,16 +41,6 @@ bool biprog::Class::operator==(const Expression& o) const {
         && *braces == *expr.braces;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::Class::operator!=(const Expression& o) const {
-  try {
-    const Class& expr = dynamic_cast<const Class&>(o);
-    return *parens != *expr.parens || *base != *expr.base
-        || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 

@@ -15,37 +15,10 @@ boost::shared_ptr<biprog::Expression> biprog::Loop::accept(Visitor& v) {
   return v.visit(shared_from_this());
 }
 
-bool biprog::Loop::operator<(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond < *expr.cond && *braces < *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
 bool biprog::Loop::operator<=(const Expression& o) const {
   try {
     const Loop& expr = dynamic_cast<const Loop&>(o);
     return *cond <= *expr.cond && *braces <= *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Loop::operator>(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond > *expr.cond && *braces > *expr.braces;
-  } catch (std::bad_cast e) {
-    return false;
-  }
-}
-
-bool biprog::Loop::operator>=(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond >= *expr.cond && *braces >= *expr.braces;
   } catch (std::bad_cast e) {
     return false;
   }
@@ -57,15 +30,6 @@ bool biprog::Loop::operator==(const Expression& o) const {
     return *cond == *expr.cond && *braces == *expr.braces;
   } catch (std::bad_cast e) {
     return false;
-  }
-}
-
-bool biprog::Loop::operator!=(const Expression& o) const {
-  try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond != *expr.cond || *braces != *expr.braces;
-  } catch (std::bad_cast e) {
-    return true;
   }
 }
 
