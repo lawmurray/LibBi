@@ -1,24 +1,40 @@
-transform eval(ODE (args) { statements }) -> {
-  /* class to hold state */
-  transform ode_declare({ d(x[coords])/d(t) = expression }) -> {
-    var x[dims]:Real;
-  }
-  class State {
-    map(statements, ode_declare);
-  }
+/**
+ * Numerical integration of ODE system using RK4(3) method.
+ */
+method eval(ODE (args) { statements }) -> {
+  /**
+   * State of ODE system.
+   */
+  class ODEState {
+    map(statements, transform { d(x[coords])/d(t) = expr } -> { var x[dims]:Real });
   
-  /* method to compute derivatives */
-  transform ode_derivatives({ d(x[coords])/d(t) = expression }) -> {
-    dx.x[coords] <- expression;
-  }
-  method d(x:State, dx:State) {
-    map(statements, ode_derivatives);
+    /**
+     * Evaluate derivatives.
+     */
+    method d(dx:ODEState) {
+      map(statements, transform { d(x[coords])/d(t) = expr } -> { dx.x[coords] <- expr });
+    }
   }
 
-  var r1:State;
-  var r2:State;
-  var err:State;
-  var old:State;  
+  /**
+   * Assignment between model and state variables.
+   */  
+  method eval(o1 <- o2:ODEState) {
+    map(statements, transform { d(x[coords])/d(t) = expr } -> { o1.x[coords] = o2.x[coords]; });
+  }
+  
+  /**
+   * Assignment between state and model variables.
+   */  
+  method eval(o1:ODEState <- o2) {
+    map(statements, transform { d(x[coords])/d(t) = expr } -> { o1.x[coords] = o2.x[coords]; });
+  }
+
+  var r1:ODEState;
+  var r2:ODEState;
+  var err:ODEState;
+  var old:ODEState;
+  
   var t:Real;
   var h:Real;
   var e:Real;
@@ -54,7 +70,7 @@ transform eval(ODE (args) { statements }) -> {
   h <- h_h0;
   logfacold <- log(1.0e-4);
   n <- 0;
-  old <- current state;
+  old <- this;
   r1 <- old;
   
   while (t < t2 && n < h_nsteps) {
@@ -68,7 +84,7 @@ transform eval(ODE (args) { statements }) -> {
       t <- t2;
     } else {
       /* stages */
-      d(r1, r2);
+      r1.d(r2);
       r2 <- a*r1;
       //...etc
             
@@ -89,7 +105,7 @@ transform eval(ODE (args) { statements }) -> {
       } else {
         /* reject */
         r1 <- old;
-        current_state <- old;
+        this <- old;
       }
       
       /* next step size */
