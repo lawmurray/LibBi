@@ -13,7 +13,7 @@
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
-#include "bi/program/Transform.hpp"
+#include "bi/program/Macro.hpp"
 #include "bi/program/Type.hpp"
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
@@ -63,7 +63,7 @@ void yywarn(const char *msg) {
   biprog::Expression* valExpression;
 }
 
-%token MODEL TRANSFORM CLASS FUNCTION METHOD BUILTIN DIM VAR
+%token MODEL MACRO CLASS FUNCTION METHOD BUILTIN DIM VAR
 %token INHERITS IF ELSE WHILE
 %token <valString> IDENTIFIER
 %token <valBool> BOOL_LITERAL
@@ -97,7 +97,7 @@ void yywarn(const char *msg) {
 %type <valExpression> logical_and_expression logical_or_expression
 %type <valExpression> constraint_expression assignment_expression
 %type <valExpression> tuple_expression expression
-%type <valExpression> model transform class method function dim var if while
+%type <valExpression> model macro class method function dim var if while
 %type <valExpression> statement statements
 
 %start file
@@ -353,8 +353,9 @@ model
     | MODEL IDENTIFIER braces                     { $$ = new biprog::Model($2, BI_SP_EMPTY, BI_SP($3), program.top()); }
     ;
 
-transform
-    : TRANSFORM IDENTIFIER parens RIGHT_ARROW braces  { $$ = new biprog::Transform($2, BI_SP($3), BI_SP($5), program.top()); }
+macro
+    : MACRO IDENTIFIER parens braces RIGHT_ARROW braces  { $$ = new biprog::Macro($2, BI_SP($3), BI_SP($4), BI_SP($6), program.top()); }
+    | MACRO IDENTIFIER braces RIGHT_ARROW braces         { $$ = new biprog::Macro($2, BI_SP($3), BI_SP_EMPTY, BI_SP($5), program.top()); }
     ;
 
 class
@@ -399,7 +400,7 @@ while
 
 statement
     : model
-    | transform
+    | macro
     | class
     | method
     | function

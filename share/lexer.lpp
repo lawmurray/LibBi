@@ -43,7 +43,7 @@ IS                                 (u|U|l|L)*
 <COMMENT_EOL,COMMENT_INLINE>.       { count(); }
 
 "model"                             { count(); return MODEL; }
-"transform"                         { count(); return TRANSFORM; }
+"macro"                             { count(); return MACRO; }
 "class"                             { count(); return CLASS; }
 "method"                            { count(); return METHOD; }
 "function"                          { count(); return FUNCTION; }

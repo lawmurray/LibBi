@@ -1,33 +1,50 @@
 /**
  * Numerical integration of ODE system using RK4(3) method.
  */
-method eval(ODE (args) { statements }) -> {
+macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * State of ODE system.
    */
   class ODEState {
-    map(statements, transform { d(x[coords])/d(t) = expr } -> { var x[dims]:Real });
+    macro declare { d(x[coords])/d(t) = expr } -> {
+      var x[dims]:Real;
+    }
+    
+    macro evaluate { d(x[coords])/d(t) = expr } -> {
+      dx.x[coords] <- expr;
+    }
+  
+    /*
+     * State variables.
+     */
+    map(declare) { statements }
   
     /**
      * Evaluate derivatives.
      */
     method d(dx:ODEState) {
-      map(statements, transform { d(x[coords])/d(t) = expr } -> { dx.x[coords] <- expr });
+      map(evaluate) { statements }
     }
   }
 
   /**
    * Assignment between model and state variables.
-   */  
-  method eval(o1 <- o2:ODEState) {
-    map(statements, transform { d(x[coords])/d(t) = expr } -> { o1.x[coords] = o2.x[coords]; });
+   */
+  macro { o1 <- o2:ODEState } -> {
+    macro assign { d(x[coords])/d(t) = expr } -> {
+      o1.x[coords] <- o2.x[coords];
+    }
+    map(assign) { statements }
   }
   
   /**
    * Assignment between state and model variables.
    */  
-  method eval(o1:ODEState <- o2) {
-    map(statements, transform { d(x[coords])/d(t) = expr } -> { o1.x[coords] = o2.x[coords]; });
+  macro { o1:ODEState <- o2 } -> {
+    macro assign { d(x[coords])/d(t) = expr } -> {
+      o1.x[coords] <- o2.x[coords];
+    }
+    map(assign) { statements }
   }
 
   var r1:ODEState;

@@ -137,7 +137,7 @@
    <!-- Keywords -->
    <keywords region="Keyword">
       <word name="model"/>
-      <word name="transform"/>
+      <word name="macro"/>
       <word name="class"/>
       <word name="method"/>
       <word name="function"/>

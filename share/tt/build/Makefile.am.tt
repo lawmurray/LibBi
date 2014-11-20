@@ -82,13 +82,13 @@ libbi_a_SOURCES = \
   src/bi/program/Function.cpp \
   src/bi/program/Group.cpp \
   src/bi/program/Loop.cpp \
+  src/bi/program/Macro.cpp \
   src/bi/program/Method.cpp \
   src/bi/program/Model.cpp \
   src/bi/program/Operator.cpp \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
   src/bi/program/Scope.cpp \
-  src/bi/program/Transform.cpp \
   src/bi/program/Type.cpp \
   src/bi/program/UnaryExpression.cpp \
   src/bi/program/Var.cpp \
