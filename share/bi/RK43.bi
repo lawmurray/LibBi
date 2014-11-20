@@ -1,28 +1,28 @@
 /**
  * Numerical integration of ODE system using RK4(3) method.
  */
-macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
+def ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * State of ODE system.
    */
-  class ODEState {
-    macro declare { d(x[coords])/d(t) = expr } -> {
-      var x[dims]:Real;
+  def ODEState {
+    def declare { d(x[coords])/d(t) = expr } -> {
+      def x[dims]:Real;
     }
     
-    macro evaluate { d(x[coords])/d(t) = expr } -> {
+    def evaluate { d(x[coords])/d(t) = expr } -> {
       dx.x[coords] <- expr;
     }
   
     /*
-     * State variables.
+     * State defiables.
      */
     map(declare) { statements }
   
     /**
      * Evaluate derivatives.
      */
-    method d(dx:ODEState) {
+    def d(dx:ODEState) {
       map(evaluate) { statements }
     }
   }
@@ -30,8 +30,8 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * Assignment between model and state variables.
    */
-  method (o1 <- o2:ODEState) {
-    macro assign { d(x[coords])/d(t) = expr } -> {
+  def (o1 <- o2:ODEState) {
+    def assign { d(x[coords])/d(t) = expr } -> {
       o1.x[coords] <- o2.x[coords];
     }
     map(assign) { statements }
@@ -40,8 +40,8 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * Assignment between state and model variables.
    */  
-  method (o1:ODEState <- o2) {
-    macro assign { d(x[coords])/d(t) = expr } -> {
+  def (o1:ODEState <- o2) {
+    def assign { d(x[coords])/d(t) = expr } -> {
       o1.x[coords] <- o2.x[coords];
     }
     map(assign) { statements }
@@ -50,24 +50,24 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /*
    * Coefficients
    */
-  val a21:Real(0.225022458725713);
-  val b1:Real(0.0512293066403392);
-  val e1:Real(-0.0859880154628801); // b1 - b1hat
-  val a32:Real(0.544043312951405);
-  val b2:Real(0.380954825726402);
-  val c2:Real(0.225022458725713);
-  val e2:Real(0.189074063397015); // b2 - b2hat
-  val a43:Real(0.144568243493995);
-  val b3:Real(-0.373352596392383);
-  val c3:Real(0.595272619591744);
-  val e3:Real(-0.144145875232852); // b3 - b3hat
-  val a54:Real(0.786664342198357);
-  val b4:Real(0.592501285026362);
-  val c4:Real(0.576752375860736);
-  val e4:Real(-0.0317933915175331); // b4 - b4hat
-  val b5:Real(0.34866717899928);
-  val c5:Real(0.845495878172715);
-  val e5:Real(0.0728532188162504); // b5 - b5hat
+  def a21:Real -> 0.225022458725713;
+  def b1:Real -> 0.0512293066403392;
+  def e1:Real -> -0.0859880154628801; // b1 - b1hat
+  def a32:Real -> 0.544043312951405;
+  def b2:Real -> 0.380954825726402;
+  def c2:Real -> 0.225022458725713;
+  def e2:Real -> 0.189074063397015; // b2 - b2hat
+  def a43:Real -> 0.144568243493995;
+  def b3:Real -> -0.373352596392383;
+  def c3:Real -> 0.595272619591744;
+  def e3:Real -> -0.144145875232852; // b3 - b3hat
+  def a54:Real -> 0.786664342198357;
+  def b4:Real -> 0.592501285026362;
+  def c4:Real -> 0.576752375860736;
+  def e4:Real -> -0.0317933915175331; // b4 - b4hat
+  def b5:Real -> 0.34866717899928;
+  def c5:Real -> 0.845495878172715;
+  def e5:Real -> 0.0728532188162504; // b5 - b5hat
   
   /*
    * Implementation.
