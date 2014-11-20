@@ -15,8 +15,6 @@
 #include <map> ///@todo Use unordered_map after transition to C++11
 
 namespace biprog {
-class Method;
-class Function;
 class Named;
 /**
  * Scope statement.

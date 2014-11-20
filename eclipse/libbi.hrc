@@ -143,6 +143,7 @@
       <word name="function"/>
       <word name="const"/>
       <word name="var"/>
+      <word name="val"/>
       <word name="dim"/>
       <word name="inherits"/>
       <word name="if"/>

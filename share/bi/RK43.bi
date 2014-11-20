@@ -30,7 +30,7 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * Assignment between model and state variables.
    */
-  macro { o1 <- o2:ODEState } -> {
+  method (o1 <- o2:ODEState) {
     macro assign { d(x[coords])/d(t) = expr } -> {
       o1.x[coords] <- o2.x[coords];
     }
@@ -40,13 +40,38 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   /**
    * Assignment between state and model variables.
    */  
-  macro { o1:ODEState <- o2 } -> {
+  method (o1:ODEState <- o2) {
     macro assign { d(x[coords])/d(t) = expr } -> {
       o1.x[coords] <- o2.x[coords];
     }
     map(assign) { statements }
   }
-
+  
+  /*
+   * Coefficients
+   */
+  val a21:Real(0.225022458725713);
+  val b1:Real(0.0512293066403392);
+  val e1:Real(-0.0859880154628801); // b1 - b1hat
+  val a32:Real(0.544043312951405);
+  val b2:Real(0.380954825726402);
+  val c2:Real(0.225022458725713);
+  val e2:Real(0.189074063397015); // b2 - b2hat
+  val a43:Real(0.144568243493995);
+  val b3:Real(-0.373352596392383);
+  val c3:Real(0.595272619591744);
+  val e3:Real(-0.144145875232852); // b3 - b3hat
+  val a54:Real(0.786664342198357);
+  val b4:Real(0.592501285026362);
+  val c4:Real(0.576752375860736);
+  val e4:Real(-0.0317933915175331); // b4 - b4hat
+  val b5:Real(0.34866717899928);
+  val c5:Real(0.845495878172715);
+  val e5:Real(0.0728532188162504); // b5 - b5hat
+  
+  /*
+   * Implementation.
+   */
   var r1:ODEState;
   var r2:ODEState;
   var err:ODEState;
@@ -62,26 +87,6 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
   var n:Int;
   var id:Int;
   var p:Int;
-
-  /* coefficients */
-  const a21:Real = 0.225022458725713;
-  const b1:Real = 0.0512293066403392;
-  const e1:Real = -0.0859880154628801; // b1 - b1hat
-  const a32:Real = 0.544043312951405;
-  const b2:Real = 0.380954825726402;
-  const c2:Real = 0.225022458725713;
-  const e2:Real = 0.189074063397015; // b2 - b2hat
-  const a43:Real = 0.144568243493995;
-  const b3:Real = -0.373352596392383;
-  const c3:Real = 0.595272619591744;
-  const e3:Real = -0.144145875232852; // b3 - b3hat
-  const a54:Real = 0.786664342198357;
-  const b4:Real = 0.592501285026362;
-  const c4:Real = 0.576752375860736;
-  const e4:Real = -0.0317933915175331; // b4 - b4hat
-  const b5:Real = 0.34866717899928;
-  const c5:Real = 0.845495878172715;
-  const e5:Real = 0.0728532188162504; // b5 - b5hat
     
   t <- t1;
   h <- h_h0;
@@ -113,7 +118,7 @@ macro ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements } -> {
       }
       e2 <- e2/N;
       
-      if (es <= 1.0) {
+      if (e2 <= 1.0) {
         /* accept */
         t <- t + h;
         if (t < t2) {
