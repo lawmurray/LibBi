@@ -10,12 +10,6 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-biprog::Sequence::Sequence(boost::shared_ptr<Typed> head,
-    boost::shared_ptr<Typed> tail) :
-    head(head), tail(tail) {
-  //
-}
-
 boost::shared_ptr<biprog::Typed> biprog::Sequence::accept(Visitor& v) {
   type = type->accept(v);
   head = head->accept(v);

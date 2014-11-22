@@ -35,5 +35,5 @@ bool biprog::Loop::operator==(const Typed& o) const {
 }
 
 void biprog::Loop::output(std::ostream& out) const {
-  out << "while " << *cond << *braces;
+  out << "while " << *cond << ' ' << *braces;
 }

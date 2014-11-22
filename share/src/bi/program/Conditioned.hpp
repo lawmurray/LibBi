@@ -40,7 +40,8 @@ protected:
 
 inline biprog::Conditioned::Conditioned(boost::shared_ptr<Typed> cond) :
     cond(cond) {
-  //
+  /* pre-condition */
+  BI_ASSERT(cond);
 }
 
 inline biprog::Conditioned::~Conditioned() {

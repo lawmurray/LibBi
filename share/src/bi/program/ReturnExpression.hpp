@@ -52,7 +52,8 @@ protected:
 inline biprog::ReturnExpression::ReturnExpression(
     boost::shared_ptr<Typed> expr) :
     Typed(expr->type), expr(expr) {
-  //
+  /* pre-condition */
+  BI_ASSERT(expr);
 }
 
 inline biprog::ReturnExpression::~ReturnExpression() {

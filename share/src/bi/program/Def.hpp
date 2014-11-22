@@ -52,6 +52,14 @@ protected:
 };
 }
 
+inline biprog::Def::Def(const char* name, boost::shared_ptr<Typed> parens,
+    boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces,
+    boost::shared_ptr<Scope> scope) :
+    Named(name), Parenthesised(parens), Typed(type), Braced(braces), Scoped(
+        scope) {
+  //
+}
+
 inline biprog::Def::~Def() {
   //
 }

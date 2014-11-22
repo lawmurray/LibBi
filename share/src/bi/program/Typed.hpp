@@ -38,6 +38,11 @@ public:
   virtual ~Typed() = 0;
 
   /**
+   * Set type.
+   */
+  void setType(boost::shared_ptr<Typed> type);
+
+  /**
    * Accept visitor.
    *
    * @param v The visitor.
@@ -51,6 +56,16 @@ public:
    */
   boost::shared_ptr<Typed> type;
 };
+}
+
+inline biprog::Typed::Typed() :
+    type(boost::shared_ptr<Typed>()) {
+  //
+}
+
+inline biprog::Typed::Typed(boost::shared_ptr<Typed> type) :
+    type(type) {
+  //
 }
 
 inline biprog::Typed::~Typed() {

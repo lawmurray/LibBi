@@ -41,7 +41,8 @@ protected:
 
 inline biprog::Parenthesised::Parenthesised(boost::shared_ptr<Typed> parens) :
     parens(parens) {
-  //
+  /* pre-condition */
+  BI_ASSERT(parens);
 }
 
 inline biprog::Parenthesised::~Parenthesised() {

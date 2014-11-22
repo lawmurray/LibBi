@@ -47,8 +47,7 @@ protected:
 };
 }
 
-inline biprog::Var::Var(const char* name,
-    boost::shared_ptr<Typed> brackets,
+inline biprog::Var::Var(const char* name, boost::shared_ptr<Typed> brackets,
     boost::shared_ptr<Typed> type) :
     Named(name), Bracketed(brackets), Typed(type) {
   //

@@ -41,7 +41,8 @@ protected:
 
 inline biprog::Braced::Braced(boost::shared_ptr<Typed> braces) :
     braces(braces) {
-  //
+  /* pre-condition */
+  BI_ASSERT(braces);
 }
 
 inline biprog::Braced::~Braced() {

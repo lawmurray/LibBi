@@ -41,7 +41,8 @@ protected:
 
 inline biprog::Bracketed::Bracketed(boost::shared_ptr<Typed> brackets) :
     brackets(brackets) {
-  //
+  /* pre-condition */
+  BI_ASSERT(brackets);
 }
 
 inline biprog::Bracketed::~Bracketed() {

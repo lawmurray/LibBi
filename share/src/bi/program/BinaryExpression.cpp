@@ -10,12 +10,6 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-biprog::BinaryExpression::BinaryExpression(boost::shared_ptr<Typed> left,
-    Operator op, boost::shared_ptr<Typed> right) :
-    Typed(left->type), left(left), op(op), right(right) {
-  //
-}
-
 boost::shared_ptr<biprog::Typed> biprog::BinaryExpression::accept(
     Visitor& v) {
   type = type->accept(v);

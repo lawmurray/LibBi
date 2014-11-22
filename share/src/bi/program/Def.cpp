@@ -9,14 +9,6 @@
 
 #include "../visitor/Visitor.hpp"
 
-biprog::Def::Def(const char* name, boost::shared_ptr<Typed> parens,
-    boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces,
-    boost::shared_ptr<Scope> scope) :
-    Named(name), Parenthesised(parens), Typed(type), Braced(braces), Scoped(
-        scope) {
-  //
-}
-
 boost::shared_ptr<biprog::Typed> biprog::Def::accept(Visitor& v) {
   parens = parens->accept(v);
   type = type->accept(v);
@@ -45,11 +37,14 @@ bool biprog::Def::operator==(const Typed& o) const {
 }
 
 void biprog::Def::output(std::ostream& out) const {
-  out << "def " << name << *parens;
-  if (type) {
+  out << "def " << name;
+  if (*parens) {
+    out << *parens;
+  }
+  if (*type) {
     out << ':' << *type;
   }
-  if (braces) {
+  if (*braces) {
     out << ' ' << *braces;
   }
 }

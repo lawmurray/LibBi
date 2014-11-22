@@ -9,12 +9,6 @@
 
 #include "EmptyExpression.hpp"
 
-biprog::Typed::Typed() :
-    type(boost::shared_ptr<Typed>()) {
-  //
-}
-
-biprog::Typed::Typed(boost::shared_ptr<Typed> type) :
-    type(type) {
-  //
+void biprog::Typed::setType(boost::shared_ptr<Typed> type) {
+  this->type = type;
 }

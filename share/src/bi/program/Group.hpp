@@ -56,7 +56,8 @@ protected:
 inline biprog::Group::Group(const Delimiter delim,
     boost::shared_ptr<Typed> expr) :
     Typed(expr->type), delim(delim), expr(expr) {
-  //
+  /* pre-condition */
+  BI_ASSERT(expr);
 }
 
 inline biprog::Group::~Group() {

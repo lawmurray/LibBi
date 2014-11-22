@@ -59,6 +59,17 @@ protected:
 };
 }
 
+inline biprog::BinaryExpression::BinaryExpression(
+    boost::shared_ptr<Typed> left, Operator op,
+    boost::shared_ptr<Typed> right) :
+    left(left), op(op), right(right) {
+  /* pre-conditions */
+  BI_ASSERT(left);
+  BI_ASSERT(right);
+
+  setType(left->type);  //@todo Infer type properly
+}
+
 inline biprog::BinaryExpression::~BinaryExpression() {
   //
 }

@@ -52,6 +52,14 @@ protected:
 };
 }
 
+inline biprog::Sequence::Sequence(boost::shared_ptr<Typed> head,
+    boost::shared_ptr<Typed> tail) :
+    head(head), tail(tail) {
+  /* pre-conditions */
+  BI_ASSERT(head);
+  BI_ASSERT(tail);
+}
+
 inline biprog::Sequence::~Sequence() {
   //
 }

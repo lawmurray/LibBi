@@ -37,7 +37,8 @@ protected:
 
 inline biprog::Scoped::Scoped(boost::shared_ptr<Scope> scope) :
     scope(scope) {
-  //
+  /* pre-condition */
+  BI_ASSERT(scope);
 }
 
 inline biprog::Scoped::~Scoped() {

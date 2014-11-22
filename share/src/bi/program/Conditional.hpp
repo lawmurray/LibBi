@@ -58,7 +58,8 @@ inline biprog::Conditional::Conditional(boost::shared_ptr<Typed> cond,
     boost::shared_ptr<Typed> braces, boost::shared_ptr<Typed> falseBraces,
     boost::shared_ptr<Scope> scope) :
     Conditioned(cond), Braced(braces), Scoped(scope), falseBraces(falseBraces) {
-  //
+  /* pre-condition */
+  BI_ASSERT(falseBraces);
 }
 
 inline biprog::Conditional::~Conditional() {

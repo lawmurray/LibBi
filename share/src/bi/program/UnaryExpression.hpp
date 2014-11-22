@@ -58,8 +58,11 @@ protected:
 
 inline biprog::UnaryExpression::UnaryExpression(Operator op,
     boost::shared_ptr<Typed> right) :
-    Typed(right->type), op(op), right(right) {
-  //
+    op(op), right(right) {
+  /* pre-condition */
+  BI_ASSERT(right);
+
+  setType(right->type);  //@todo Infer type properly
 }
 
 inline biprog::UnaryExpression::~UnaryExpression() {
