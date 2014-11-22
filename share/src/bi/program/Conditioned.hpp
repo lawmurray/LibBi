@@ -30,7 +30,6 @@ public:
    */
   virtual ~Conditioned() = 0;
 
-protected:
   /**
    * First statement in in brackets.
    */

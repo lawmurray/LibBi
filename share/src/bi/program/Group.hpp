@@ -35,12 +35,6 @@ public:
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
 
-protected:
-  /**
-   * Output.
-   */
-  virtual void output(std::ostream& out) const;
-
   /**
    * Delimiter around group.
    */
@@ -50,6 +44,12 @@ protected:
    * Grouped expression.
    */
   boost::shared_ptr<Typed> expr;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 

@@ -53,16 +53,16 @@ public:
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
 
+  /**
+   * Target.
+   */
+  boost::shared_ptr<Typed> target;
+
 protected:
   /**
    * Output.
    */
   virtual void output(std::ostream& out) const;
-
-  /**
-   * Target.
-   */
-  boost::shared_ptr<Typed> target;
 };
 }
 

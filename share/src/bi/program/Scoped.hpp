@@ -27,7 +27,6 @@ public:
    */
   virtual ~Scoped() = 0;
 
-protected:
   /**
    * Scope.
    */

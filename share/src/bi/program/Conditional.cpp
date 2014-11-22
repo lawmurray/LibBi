@@ -7,10 +7,10 @@
  */
 #include "Conditional.hpp"
 
+#include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Conditional::accept(
-    Visitor& v) {
+boost::shared_ptr<biprog::Typed> biprog::Conditional::accept(Visitor& v) {
   type = type->accept(v);
   cond = cond->accept(v);
   braces = braces->accept(v);
@@ -20,22 +20,30 @@ boost::shared_ptr<biprog::Typed> biprog::Conditional::accept(
 
 bool biprog::Conditional::operator<=(const Typed& o) const {
   try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond <= *expr.cond && *braces <= *expr.braces
-        && *falseBraces <= *expr.falseBraces;
+    const Conditional& o1 = dynamic_cast<const Conditional&>(o);
+    return *cond <= *o1.cond && *braces <= *o1.braces
+        && *falseBraces <= *o1.falseBraces;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
 }
 
 bool biprog::Conditional::operator==(const Typed& o) const {
   try {
-    const Conditional& expr = dynamic_cast<const Conditional&>(o);
-    return *cond == *expr.cond && *braces == *expr.braces
-        && *falseBraces == *expr.falseBraces;
+    const Conditional& o1 = dynamic_cast<const Conditional&>(o);
+    return *cond == *o1.cond && *braces == *o1.braces
+        && *falseBraces == *o1.falseBraces;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  return false;
 }
 
 void biprog::Conditional::output(std::ostream& out) const {

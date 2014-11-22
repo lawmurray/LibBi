@@ -41,16 +41,16 @@ public:
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
 
+  /**
+   * Block if condition is false. May be empty if there is no else clause.
+   */
+  boost::shared_ptr<Typed> falseBraces;
+
 protected:
   /**
    * Output.
    */
   virtual void output(std::ostream& out) const;
-
-  /**
-   * Block if condition is false. May be empty if there is no else clause.
-   */
-  boost::shared_ptr<Typed> falseBraces;
 };
 }
 

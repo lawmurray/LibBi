@@ -31,7 +31,6 @@ public:
    */
   virtual ~Parenthesised() = 0;
 
-protected:
   /**
    * First statement in in brackets.
    */

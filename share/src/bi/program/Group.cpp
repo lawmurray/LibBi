@@ -7,6 +7,7 @@
  */
 #include "Group.hpp"
 
+#include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
 boost::shared_ptr<biprog::Typed> biprog::Group::accept(Visitor& v) {
@@ -17,20 +18,28 @@ boost::shared_ptr<biprog::Typed> biprog::Group::accept(Visitor& v) {
 
 bool biprog::Group::operator<=(const Typed& o) const {
   try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim == group.delim && *expr <= *group.expr;
+    const Group& o1 = dynamic_cast<const Group&>(o);
+    return delim == o1.delim && *expr <= *o1.expr && *type <= *o1.type;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
 }
 
 bool biprog::Group::operator==(const Typed& o) const {
   try {
-    const Group& group = dynamic_cast<const Group&>(o);
-    return delim == group.delim && *expr == *group.expr;
+    const Group& o1 = dynamic_cast<const Group&>(o);
+    return delim == o1.delim && *expr == *o1.expr && *type == *o1.type;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  return false;
 }
 
 void biprog::Group::output(std::ostream& out) const {

@@ -20,33 +20,29 @@ boost::shared_ptr<biprog::Typed> biprog::BinaryExpression::accept(
 
 bool biprog::BinaryExpression::operator<=(const Typed& o) const {
   try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left <= *expr.left && *right <= *expr.right;
+    const BinaryExpression& o1 = dynamic_cast<const BinaryExpression&>(o);
+    return op == o1.op && *left <= *o1.left && *right <= *o1.right
+        && *type <= *o1.type;
   } catch (std::bad_cast e) {
     //
   }
-//  try {
-//    const Reference& expr = dynamic_cast<const Reference&>(o);
-//    return type <= *expr.type && !*expr.brackets && !*expr.parens && !*expr.braces;
-//  } catch (std::bad_cast e) {
-//    //
-//  }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
   return false;
 }
 
 bool biprog::BinaryExpression::operator==(const Typed& o) const {
   try {
-    const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
-    return op == expr.op && *left == *expr.left && *right == *expr.right;
+    const BinaryExpression& o1 = dynamic_cast<const BinaryExpression&>(o);
+    return op == o1.op && *left == *o1.left && *right == *o1.right
+        && *type == *o1.type;
   } catch (std::bad_cast e) {
     //
   }
-//  try {
-//    const Reference& expr = dynamic_cast<const Reference&>(o);
-//    return type < *expr.type && !*expr.brackets && !*expr.parens && !*expr.braces;
-//  } catch (std::bad_cast e) {
-//    //
-//  }
   return false;
 }
 

@@ -34,20 +34,6 @@ public:
    */
   virtual operator bool() const;
 
-  /*
-   * Comparison operators for comparing expressions in terms of
-   * specialisation.
-   *
-   * The first two are the most commonly used, and so overridden by derived
-   * classes. The remainder are expressed in terms of these.
-   */
-  virtual bool operator<=(const Expression& o) const;
-  virtual bool operator==(const Expression& o) const;
-  bool operator<(const Expression& o) const;
-  bool operator>(const Expression& o) const;
-  bool operator>=(const Expression& o) const;
-  bool operator!=(const Expression& o) const;
-
   /**
    * Output operator. Defers to output() for polymorphism.
    */
@@ -66,22 +52,6 @@ protected:
 
 inline biprog::Expression::~Expression() {
   //
-}
-
-inline bool biprog::Expression::operator<(const Expression& o) const {
-  return *this <= o && *this != o;
-}
-
-inline bool biprog::Expression::operator>(const Expression& o) const {
-  return !(*this <= o);
-}
-
-inline bool biprog::Expression::operator>=(const Expression& o) const {
-  return !(*this < o);
-}
-
-inline bool biprog::Expression::operator!=(const Expression& o) const {
-  return !(*this == o);
 }
 
 #endif

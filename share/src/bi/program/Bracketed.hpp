@@ -31,7 +31,6 @@ public:
    */
   virtual ~Bracketed() = 0;
 
-protected:
   /**
    * First statement in index brackets.
    */

@@ -7,6 +7,7 @@
  */
 #include "Loop.hpp"
 
+#include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
 boost::shared_ptr<biprog::Typed> biprog::Loop::accept(Visitor& v) {
@@ -18,17 +19,24 @@ boost::shared_ptr<biprog::Typed> biprog::Loop::accept(Visitor& v) {
 
 bool biprog::Loop::operator<=(const Typed& o) const {
   try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond <= *expr.cond && *braces <= *expr.braces;
+    const Loop& o1 = dynamic_cast<const Loop&>(o);
+    return *cond <= *o1.cond && *braces <= *o1.braces;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
 }
 
 bool biprog::Loop::operator==(const Typed& o) const {
   try {
-    const Loop& expr = dynamic_cast<const Loop&>(o);
-    return *cond == *expr.cond && *braces == *expr.braces;
+    const Loop& o1 = dynamic_cast<const Loop&>(o);
+    return *cond == *o1.cond && *braces == *o1.braces;
   } catch (std::bad_cast e) {
     return false;
   }

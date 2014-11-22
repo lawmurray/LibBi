@@ -19,33 +19,27 @@ boost::shared_ptr<biprog::Typed> biprog::Sequence::accept(Visitor& v) {
 
 bool biprog::Sequence::operator<=(const Typed& o) const {
   try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head <= *expr.head && *tail <= *expr.tail;
+    const Sequence& o1 = dynamic_cast<const Sequence&>(o);
+    return *head <= *o1.head && *tail <= *o1.tail;
   } catch (std::bad_cast e) {
     //
   }
-//  try {
-//    const Reference& expr = dynamic_cast<const Reference&>(o);
-//    return type <= *expr.type && !*expr.brackets && !*expr.parens && !*expr.braces;
-//  } catch (std::bad_cast e) {
-//    //
-//  }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
   return false;
 }
 
 bool biprog::Sequence::operator==(const Typed& o) const {
   try {
-    const Sequence& expr = dynamic_cast<const Sequence&>(o);
-    return *head == *expr.head && *tail == *expr.tail;
+    const Sequence& o1 = dynamic_cast<const Sequence&>(o);
+    return *head == *o1.head && *tail == *o1.tail;
   } catch (std::bad_cast e) {
     //
   }
-//  try {
-//    const Reference& expr = dynamic_cast<const Reference&>(o);
-//    return type < *expr.type && !*expr.brackets && !*expr.parens && !*expr.braces;
-//  } catch (std::bad_cast e) {
-//    //
-//  }
   return false;
 }
 

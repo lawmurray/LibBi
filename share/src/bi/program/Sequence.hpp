@@ -34,12 +34,6 @@ public:
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
 
-protected:
-  /**
-   * Output.
-   */
-  virtual void output(std::ostream& out) const;
-
   /**
    * Left operand.
    */
@@ -49,6 +43,12 @@ protected:
    * Right operand.
    */
   boost::shared_ptr<Typed> tail;
+
+protected:
+  /**
+   * Output.
+   */
+  virtual void output(std::ostream& out) const;
 };
 }
 

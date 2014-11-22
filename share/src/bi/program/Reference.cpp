@@ -19,22 +19,24 @@ boost::shared_ptr<biprog::Typed> biprog::Reference::accept(Visitor& v) {
 
 bool biprog::Reference::operator<=(const Typed& o) const {
   try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets <= *expr.brackets && *parens <= *expr.parens
-        && *braces <= *expr.braces;
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return *brackets <= *o1.brackets && *type <= *o1.type
+        && *parens <= *o1.parens && *braces <= *o1.braces;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  return false;
 }
 
 bool biprog::Reference::operator==(const Typed& o) const {
   try {
-    const Reference& expr = dynamic_cast<const Reference&>(o);
-    return *brackets == *expr.brackets && *parens == *expr.parens
-        && *braces == *expr.braces;
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return *brackets == *o1.brackets && *type == *o1.type
+        && *parens == *o1.parens && *braces == *o1.braces;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  return false;
 }
 
 void biprog::Reference::output(std::ostream& out) const {

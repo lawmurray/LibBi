@@ -40,7 +40,6 @@ public:
    */
   virtual void output(std::ostream& out) const;
 
-protected:
   /**
    * Value.
    */
@@ -48,6 +47,7 @@ protected:
 };
 }
 
+#include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
 template<class T1>
@@ -62,24 +62,37 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-boost::shared_ptr<biprog::Typed> biprog::Literal<T1>::accept(
-    Visitor& v) {
+boost::shared_ptr<biprog::Typed> biprog::Literal<T1>::accept(Visitor& v) {
   return v.visit(this->shared_from_this());
 }
 
 template<class T1>
 bool biprog::Literal<T1>::operator<=(const Typed& o) const {
-  return *this == o;
+  try {
+    const Literal<T1>& o1 = dynamic_cast<const Literal<T1>&>(o);
+    return value == o1.value && *type <= *o1.type;
+    // ^ use of == is deliberate, expression comparison, not value comparison
+  } catch (std::bad_cast e) {
+    //
+  }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
 }
 
 template<class T1>
 bool biprog::Literal<T1>::operator==(const Typed& o) const {
   try {
-    const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
-    return value == expr.value;
+    const Literal<T1>& o1 = dynamic_cast<const Literal<T1>&>(o);
+    return value == o1.value;
   } catch (std::bad_cast e) {
-    return false;
+    //
   }
+  return false;
 }
 
 template<class T1>

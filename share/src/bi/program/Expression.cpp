@@ -10,11 +10,3 @@
 biprog::Expression::operator bool() const {
   return true;
 }
-
-bool biprog::Expression::operator<=(const Expression& o) const {
-  return false;
-}
-
-bool biprog::Expression::operator==(const Expression& o) const {
-  return false;
-}
