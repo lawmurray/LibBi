@@ -38,11 +38,6 @@ public:
   virtual ~Typed() = 0;
 
   /**
-   * Set type.
-   */
-  void setType(boost::shared_ptr<Typed> type);
-
-  /**
    * Accept visitor.
    *
    * @param v The visitor.

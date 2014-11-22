@@ -62,7 +62,7 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op,
   /* pre-condition */
   BI_ASSERT(right);
 
-  setType(right->type);  //@todo Infer type properly
+  type = right->type;  //@todo Infer type properly
 }
 
 inline biprog::UnaryExpression::~UnaryExpression() {

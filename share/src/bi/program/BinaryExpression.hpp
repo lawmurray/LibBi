@@ -67,7 +67,7 @@ inline biprog::BinaryExpression::BinaryExpression(
   BI_ASSERT(left);
   BI_ASSERT(right);
 
-  setType(left->type);  //@todo Infer type properly
+  type = left->type;  //@todo Infer type properly
 }
 
 inline biprog::BinaryExpression::~BinaryExpression() {
