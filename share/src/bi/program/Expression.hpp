@@ -27,15 +27,6 @@ public:
    */
   virtual ~Expression() = 0;
 
-  /**
-   * Accept visitor.
-   *
-   * @param v The visitor.
-   *
-   * @return New expression with which to replace this one (may be the same).
-   */
-  virtual boost::shared_ptr<Expression> accept(Visitor& v) = 0;
-
   /*
    * Bool cast to check for non-empty expression.
    */

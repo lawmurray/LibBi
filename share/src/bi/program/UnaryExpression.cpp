@@ -9,13 +9,14 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::UnaryExpression::accept(
+boost::shared_ptr<biprog::Typed> biprog::UnaryExpression::accept(
     Visitor& v) {
+  type = type->accept(v);
   right = right->accept(v);
   return v.visit(shared_from_this());
 }
 
-bool biprog::UnaryExpression::operator<=(const Expression& o) const {
+bool biprog::UnaryExpression::operator<=(const Typed& o) const {
   try {
     const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
     return op == expr.op && *right <= *expr.right;
@@ -24,7 +25,7 @@ bool biprog::UnaryExpression::operator<=(const Expression& o) const {
   }
 }
 
-bool biprog::UnaryExpression::operator==(const Expression& o) const {
+bool biprog::UnaryExpression::operator==(const Typed& o) const {
   try {
     const UnaryExpression& expr = dynamic_cast<const UnaryExpression&>(o);
     return op == expr.op && *right == *expr.right;

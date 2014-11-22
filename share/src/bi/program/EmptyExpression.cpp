@@ -9,7 +9,7 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::EmptyExpression::accept(
+boost::shared_ptr<biprog::Typed> biprog::EmptyExpression::accept(
     Visitor& v) {
   return v.visit(shared_from_this());
 }
@@ -18,11 +18,11 @@ biprog::EmptyExpression::operator bool() const {
   return false;
 }
 
-bool biprog::EmptyExpression::operator<=(const Expression& o) const {
+bool biprog::EmptyExpression::operator<=(const Typed& o) const {
   return operator==(o);
 }
 
-bool biprog::EmptyExpression::operator==(const Expression& o) const {
+bool biprog::EmptyExpression::operator==(const Typed& o) const {
   try {
     const EmptyExpression& expr = dynamic_cast<const EmptyExpression&>(o);
     return true;

@@ -9,6 +9,7 @@
 #define BI_PROGRAM_PARENTHESISED_HPP
 
 #include "Expression.hpp"
+#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -23,7 +24,7 @@ public:
    *
    * @param parens Expression in parentheses.
    */
-  Parenthesised(boost::shared_ptr<Expression> parens);
+  Parenthesised(boost::shared_ptr<Typed> parens);
 
   /**
    * Destructor.
@@ -34,11 +35,11 @@ protected:
   /**
    * First statement in in brackets.
    */
-  boost::shared_ptr<Expression> parens;
+  boost::shared_ptr<Typed> parens;
 };
 }
 
-inline biprog::Parenthesised::Parenthesised(boost::shared_ptr<Expression> parens) :
+inline biprog::Parenthesised::Parenthesised(boost::shared_ptr<Typed> parens) :
     parens(parens) {
   //
 }

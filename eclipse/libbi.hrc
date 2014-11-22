@@ -136,16 +136,9 @@
 
    <!-- Keywords -->
    <keywords region="Keyword">
-      <word name="model"/>
-      <word name="macro"/>
-      <word name="class"/>
-      <word name="method"/>
-      <word name="function"/>
-      <word name="const"/>
-      <word name="var"/>
-      <word name="val"/>
+      <word name="def"/>
       <word name="dim"/>
-      <word name="inherits"/>
+      <word name="var"/>
       <word name="if"/>
       <word name="else"/>
       <word name="while"/>

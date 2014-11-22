@@ -26,17 +26,18 @@ public:
   /**
    * Constructor.
    */
-  Var(const char* name, boost::shared_ptr<Expression> brackets, Type* type);
+  Var(const char* name, boost::shared_ptr<Typed> brackets,
+      boost::shared_ptr<Typed> type);
 
   /**
    * Destructor.
    */
   virtual ~Var();
 
-  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+  virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
-    virtual bool operator<=(const Expression& o) const;
- virtual bool operator==(const Expression& o) const;
+  virtual bool operator<=(const Typed& o) const;
+  virtual bool operator==(const Typed& o) const;
 
 protected:
   /**
@@ -47,7 +48,8 @@ protected:
 }
 
 inline biprog::Var::Var(const char* name,
-    boost::shared_ptr<Expression> brackets, Type* type) :
+    boost::shared_ptr<Typed> brackets,
+    boost::shared_ptr<Typed> type) :
     Named(name), Bracketed(brackets), Typed(type) {
   //
 }

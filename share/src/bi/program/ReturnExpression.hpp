@@ -5,30 +5,31 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_GROUP_HPP
-#define BI_PROGRAM_GROUP_HPP
+#ifndef BI_PROGRAM_RETURNEXPRESSION_HPP
+#define BI_PROGRAM_RETURNEXPRESSION_HPP
 
 #include "Typed.hpp"
-#include "Delimiter.hpp"
 
 namespace biprog {
 /**
- * Group.
+ * Unary expression.
  *
  * @ingroup program
  */
-class Group: public virtual Typed,
-    public virtual boost::enable_shared_from_this<Group> {
+class ReturnExpression: public virtual Typed,
+    public virtual boost::enable_shared_from_this<ReturnExpression> {
 public:
   /**
    * Constructor.
+   *
+   * @param expr Right operand.
    */
-  Group(const Delimiter delim, boost::shared_ptr<Typed> expr);
+  ReturnExpression(boost::shared_ptr<Typed> expr);
 
   /**
    * Destructor.
    */
-  virtual ~Group();
+  virtual ~ReturnExpression();
 
   virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
@@ -42,24 +43,19 @@ protected:
   virtual void output(std::ostream& out) const;
 
   /**
-   * Delimiter around group.
-   */
-  Delimiter delim;
-
-  /**
-   * Grouped expression.
+   * Right operand.
    */
   boost::shared_ptr<Typed> expr;
 };
 }
 
-inline biprog::Group::Group(const Delimiter delim,
+inline biprog::ReturnExpression::ReturnExpression(
     boost::shared_ptr<Typed> expr) :
-    Typed(expr->type), delim(delim), expr(expr) {
+    Typed(expr->type), expr(expr) {
   //
 }
 
-inline biprog::Group::~Group() {
+inline biprog::ReturnExpression::~ReturnExpression() {
   //
 }
 

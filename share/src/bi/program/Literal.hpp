@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_LITERAL_HPP
 #define BI_PROGRAM_LITERAL_HPP
 
-#include "Expression.hpp"
+#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -17,7 +17,7 @@ namespace biprog {
  * @ingroup program
  */
 template<class T1>
-class Literal: public virtual Expression,
+class Literal: public virtual Typed,
     public virtual boost::enable_shared_from_this<Literal<T1> > {
 public:
   /**
@@ -30,10 +30,10 @@ public:
    */
   virtual ~Literal();
 
-  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+  virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
-  virtual bool operator<=(const Expression& o) const;
-  virtual bool operator==(const Expression& o) const;
+  virtual bool operator<=(const Typed& o) const;
+  virtual bool operator==(const Typed& o) const;
 
   /**
    * Output.
@@ -62,18 +62,18 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-boost::shared_ptr<biprog::Expression> biprog::Literal<T1>::accept(
+boost::shared_ptr<biprog::Typed> biprog::Literal<T1>::accept(
     Visitor& v) {
   return v.visit(this->shared_from_this());
 }
 
 template<class T1>
-bool biprog::Literal<T1>::operator<=(const Expression& o) const {
+bool biprog::Literal<T1>::operator<=(const Typed& o) const {
   return *this == o;
 }
 
 template<class T1>
-bool biprog::Literal<T1>::operator==(const Expression& o) const {
+bool biprog::Literal<T1>::operator==(const Typed& o) const {
   try {
     const Literal<T1>& expr = dynamic_cast<const Literal<T1>&>(o);
     return value == expr.value;

@@ -7,16 +7,12 @@
  */
 #include "Scope.hpp"
 
-#include "Method.hpp"
-#include "Method.hpp"
-#include "Function.hpp"
-#include "Function.hpp"
 #include "EmptyExpression.hpp"
 #include "../misc/assert.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
-//boost::shared_ptr<biprog::Expression> biprog::Scope::find(const char* name) {
+//boost::shared_ptr<biprog::Typed> biprog::Scope::find(const char* name) {
 //  BOOST_AUTO(iter, decls.find(name));
 //  if (iter != decls.end()) {
 //    return iter->find;

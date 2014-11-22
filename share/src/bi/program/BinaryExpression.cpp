@@ -10,14 +10,21 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::BinaryExpression::accept(
+biprog::BinaryExpression::BinaryExpression(boost::shared_ptr<Typed> left,
+    Operator op, boost::shared_ptr<Typed> right) :
+    Typed(left->type), left(left), op(op), right(right) {
+  //
+}
+
+boost::shared_ptr<biprog::Typed> biprog::BinaryExpression::accept(
     Visitor& v) {
+  type = type->accept(v);
   left = left->accept(v);
   right = right->accept(v);
   return v.visit(shared_from_this());
 }
 
-bool biprog::BinaryExpression::operator<=(const Expression& o) const {
+bool biprog::BinaryExpression::operator<=(const Typed& o) const {
   try {
     const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
     return op == expr.op && *left <= *expr.left && *right <= *expr.right;
@@ -33,7 +40,7 @@ bool biprog::BinaryExpression::operator<=(const Expression& o) const {
   return false;
 }
 
-bool biprog::BinaryExpression::operator==(const Expression& o) const {
+bool biprog::BinaryExpression::operator==(const Typed& o) const {
   try {
     const BinaryExpression& expr = dynamic_cast<const BinaryExpression&>(o);
     return op == expr.op && *left == *expr.left && *right == *expr.right;

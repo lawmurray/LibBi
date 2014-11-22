@@ -42,17 +42,13 @@ IS                                 (u|U|l|L)*
 <COMMENT_INLINE>"\n"                { count(); }
 <COMMENT_EOL,COMMENT_INLINE>.       { count(); }
 
-"model"                             { count(); return MODEL; }
-"macro"                             { count(); return MACRO; }
-"class"                             { count(); return CLASS; }
-"method"                            { count(); return METHOD; }
-"function"                          { count(); return FUNCTION; }
+"def"                               { count(); return DEF; }
 "dim"                               { count(); return DIM; }
 "var"                               { count(); return VAR; }
-"inherits"                          { count(); return INHERITS; }
 "if"                                { count(); return IF; }
 "else"                              { count(); return ELSE; }
 "while"                             { count(); return WHILE; }
+"return"                            { count(); return RETURN; }
 "true"                              { count(); yylval.valBool = true; return BOOL_LITERAL; }
 "false"                             { count(); yylval.valBool = false; return BOOL_LITERAL; }
 

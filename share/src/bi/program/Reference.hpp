@@ -11,6 +11,7 @@
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
+#include "Typed.hpp"
 #include "Braced.hpp"
 
 namespace biprog {
@@ -22,6 +23,7 @@ namespace biprog {
 class Reference: public virtual Named,
     public virtual Bracketed,
     public virtual Parenthesised,
+    public virtual Typed,
     public virtual Braced,
     public virtual boost::enable_shared_from_this<Reference> {
 public:
@@ -31,23 +33,25 @@ public:
    * @param name Name.
    * @param brackets Expression in square brackets.
    * @param parens Expression in parentheses.
+   * @param type Type.
    * @param braces Expression in braces.
    * @param target Target of the reference. May be null if unresolved.
    */
-  Reference(const char* name, boost::shared_ptr<Expression> brackets,
-      boost::shared_ptr<Expression> parens,
-      boost::shared_ptr<Expression> braces,
-      boost::shared_ptr<Expression> target);
+  Reference(const char* name, boost::shared_ptr<Typed> brackets,
+      boost::shared_ptr<Typed> parens,
+      boost::shared_ptr<Typed> type,
+      boost::shared_ptr<Typed> braces,
+      boost::shared_ptr<Typed> target);
 
   /**
    * Destructor.
    */
   virtual ~Reference();
 
-  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+  virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
-    virtual bool operator<=(const Expression& o) const;
- virtual bool operator==(const Expression& o) const;
+  virtual bool operator<=(const Typed& o) const;
+  virtual bool operator==(const Typed& o) const;
 
 protected:
   /**
@@ -58,17 +62,17 @@ protected:
   /**
    * Target.
    */
-  boost::shared_ptr<Expression> target;
+  boost::shared_ptr<Typed> target;
 };
 }
 
 inline biprog::Reference::Reference(const char* name,
-    boost::shared_ptr<Expression> brackets,
-    boost::shared_ptr<Expression> parens,
-    boost::shared_ptr<Expression> braces,
-    boost::shared_ptr<Expression> target) :
-    Named(name), Bracketed(brackets), Parenthesised(parens), Braced(braces), target(
-        target) {
+    boost::shared_ptr<Typed> brackets,
+    boost::shared_ptr<Typed> parens, boost::shared_ptr<Typed> type,
+    boost::shared_ptr<Typed> braces,
+    boost::shared_ptr<Typed> target) :
+    Named(name), Bracketed(brackets), Parenthesised(parens), Typed(type), Braced(
+        braces), target(target) {
   //
 }
 

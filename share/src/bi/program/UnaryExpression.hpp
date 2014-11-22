@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_UNARYEXPRESSION_HPP
 #define BI_PROGRAM_UNARYEXPRESSION_HPP
 
-#include "Expression.hpp"
+#include "Typed.hpp"
 #include "Operator.hpp"
 
 namespace biprog {
@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class UnaryExpression: public virtual Expression,
+class UnaryExpression: public virtual Typed,
     public virtual boost::enable_shared_from_this<UnaryExpression> {
 public:
   /**
@@ -26,17 +26,17 @@ public:
    * @param op Operator.
    * @param right Right operand.
    */
-  UnaryExpression(Operator op, boost::shared_ptr<Expression> right);
+  UnaryExpression(Operator op, boost::shared_ptr<Typed> right);
 
   /**
    * Destructor.
    */
   virtual ~UnaryExpression();
 
-  virtual boost::shared_ptr<Expression> accept(Visitor& v);
+  virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
-    virtual bool operator<=(const Expression& o) const;
- virtual bool operator==(const Expression& o) const;
+  virtual bool operator<=(const Typed& o) const;
+  virtual bool operator==(const Typed& o) const;
 
 protected:
   /**
@@ -52,13 +52,13 @@ protected:
   /**
    * Right operand.
    */
-  boost::shared_ptr<Expression> right;
+  boost::shared_ptr<Typed> right;
 };
 }
 
 inline biprog::UnaryExpression::UnaryExpression(Operator op,
-    boost::shared_ptr<Expression> right) :
-    op(op), right(right) {
+    boost::shared_ptr<Typed> right) :
+    Typed(right->type), op(op), right(right) {
   //
 }
 

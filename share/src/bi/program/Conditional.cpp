@@ -9,15 +9,16 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::Conditional::accept(
+boost::shared_ptr<biprog::Typed> biprog::Conditional::accept(
     Visitor& v) {
+  type = type->accept(v);
   cond = cond->accept(v);
   braces = braces->accept(v);
   falseBraces = falseBraces->accept(v);
   return v.visit(shared_from_this());
 }
 
-bool biprog::Conditional::operator<=(const Expression& o) const {
+bool biprog::Conditional::operator<=(const Typed& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
     return *cond <= *expr.cond && *braces <= *expr.braces
@@ -27,7 +28,7 @@ bool biprog::Conditional::operator<=(const Expression& o) const {
   }
 }
 
-bool biprog::Conditional::operator==(const Expression& o) const {
+bool biprog::Conditional::operator==(const Typed& o) const {
   try {
     const Conditional& expr = dynamic_cast<const Conditional&>(o);
     return *cond == *expr.cond && *braces == *expr.braces

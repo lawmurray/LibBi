@@ -7,8 +7,6 @@
  */
 #include "Program.hpp"
 
-#include "Method.hpp"
-#include "Function.hpp"
 #include "Named.hpp"
 #include "EmptyExpression.hpp"
 #include "../misc/assert.hpp"
@@ -42,32 +40,23 @@ void biprog::Program::pop() {
   scopes.pop_front();
 }
 
-boost::shared_ptr<biprog::Expression> biprog::Program::getRoot() {
+boost::shared_ptr<biprog::Typed> biprog::Program::getRoot() {
   return root;
 }
 
-void biprog::Program::setRoot(boost::shared_ptr<biprog::Expression> root) {
+void biprog::Program::setRoot(boost::shared_ptr<biprog::Typed> root) {
   this->root = root;
 }
 
-void biprog::Program::add(boost::shared_ptr<biprog::Expression> decl) {
+void biprog::Program::add(boost::shared_ptr<biprog::Typed> decl) {
   boost::shared_ptr<Named> named = boost::dynamic_pointer_cast < Named
       > (decl);
-  boost::shared_ptr<Method> method = boost::dynamic_pointer_cast
-      < Method > (decl);
-  boost::shared_ptr<Function> function = boost::dynamic_pointer_cast
-      < Function > (decl);
-
-  if (method) {
-    top()->add(method);
-  } else if (function) {
-    top()->add(function);
-  } else if (named) {
+  if (named) {
     top()->add(named);
   }
 }
 
-boost::shared_ptr<biprog::Expression> biprog::Program::lookup(
+boost::shared_ptr<biprog::Typed> biprog::Program::lookup(
     const char* name) {
 //  BOOST_AUTO(iter, scopes.begin());
 //  while (iter != scopes.end()) {

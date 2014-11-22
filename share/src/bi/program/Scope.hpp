@@ -9,6 +9,7 @@
 #define BI_PROGRAM_SCOPE_HPP
 
 #include "Expression.hpp"
+#include "Named.hpp"
 #include "../primitive/poset.hpp"
 #include "../primitive/pointer_less_equal.hpp"
 
@@ -29,7 +30,7 @@ public:
   /**
    * Find declaration by name. Returns an EmptyExpression if not found.
    */
-  //boost::shared_ptr<Expression> find(const char* name);
+  //boost::shared_ptr<Typed> find(const char* name);
 
   /**
    * Insert any other declaration into this scope.

@@ -8,8 +8,8 @@
 #ifndef BI_PROGRAM_PROGRAM_HPP
 #define BI_PROGRAM_PROGRAM_HPP
 
+#include "Typed.hpp"
 #include "Scope.hpp"
-#include "Reference.hpp"
 
 #include "boost/shared_ptr.hpp"
 
@@ -51,28 +51,28 @@ public:
   /**
    * Get the root statement.
    */
-  boost::shared_ptr<Expression> getRoot();
+  boost::shared_ptr<Typed> getRoot();
 
   /**
    * Set the root statement.
    */
-  void setRoot(boost::shared_ptr<Expression> root);
+  void setRoot(boost::shared_ptr<Typed> root);
 
   /**
    * Add a declaration.
    */
-  void add(boost::shared_ptr<Expression> decl);
+  void add(boost::shared_ptr<Typed> decl);
 
   /**
    * Lookup a reference. Returns an EmptyExpression if none found.
    */
-  boost::shared_ptr<Expression> lookup(const char* name);
+  boost::shared_ptr<Typed> lookup(const char* name);
 
 private:
   /**
    * Expression.
    */
-  boost::shared_ptr<Expression> root;
+  boost::shared_ptr<Typed> root;
 
   /**
    * Scope stack.

@@ -5,33 +5,39 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_DIM_HPP
-#define BI_PROGRAM_DIM_HPP
+#ifndef BI_PROGRAM_DEF_HPP
+#define BI_PROGRAM_DEF_HPP
 
 #include "Named.hpp"
-#include "Bracketed.hpp"
+#include "Parenthesised.hpp"
 #include "Typed.hpp"
+#include "Braced.hpp"
+#include "Scoped.hpp"
 
 namespace biprog {
 /**
- * Dimension.
+ * Def.
  *
  * @ingroup program
  */
-class Dim: public virtual Named,
-    public virtual Bracketed,
+class Def: public virtual Named,
+    public virtual Parenthesised,
     public virtual Typed,
-    public virtual boost::enable_shared_from_this<Dim> {
+    public virtual Braced,
+    public virtual Scoped,
+    public virtual boost::enable_shared_from_this<Def> {
 public:
   /**
    * Constructor.
    */
-  Dim(const char* name, boost::shared_ptr<Typed> brackets);
+  Def(const char* name, boost::shared_ptr<Typed> parens,
+      boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces,
+      boost::shared_ptr<Scope> scope);
 
   /**
    * Destructor.
    */
-  virtual ~Dim();
+  virtual ~Def();
 
   virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
@@ -46,12 +52,7 @@ protected:
 };
 }
 
-inline biprog::Dim::Dim(const char* name, boost::shared_ptr<Typed> brackets) :
-    Named(name), Bracketed(brackets) {
-  //
-}
-
-inline biprog::Dim::~Dim() {
+inline biprog::Def::~Def() {
   //
 }
 

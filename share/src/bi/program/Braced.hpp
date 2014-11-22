@@ -9,6 +9,7 @@
 #define BI_PROGRAM_BRACED_HPP
 
 #include "Expression.hpp"
+#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -16,14 +17,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braced {
+class Braced: public virtual Expression {
 public:
   /**
    * Constructor.
    *
    * @param in Expression in curly brackets.
    */
-  Braced(boost::shared_ptr<Expression> braces);
+  Braced(boost::shared_ptr<Typed> braces);
 
   /**
    * Destructor.
@@ -34,11 +35,11 @@ protected:
   /**
    * First statement in in brackets.
    */
-  boost::shared_ptr<Expression> braces;
+  boost::shared_ptr<Typed> braces;
 };
 }
 
-inline biprog::Braced::Braced(boost::shared_ptr<Expression> braces) :
+inline biprog::Braced::Braced(boost::shared_ptr<Typed> braces) :
     braces(braces) {
   //
 }

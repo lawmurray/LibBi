@@ -9,6 +9,7 @@
 #define BI_PROGRAM_BRACKETED_HPP
 
 #include "Expression.hpp"
+#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -23,7 +24,7 @@ public:
    *
    * @param brackets Expression in square brackets.
    */
-  Bracketed(boost::shared_ptr<Expression> brackets);
+  Bracketed(boost::shared_ptr<Typed> brackets);
 
   /**
    * Destructor.
@@ -34,11 +35,11 @@ protected:
   /**
    * First statement in index brackets.
    */
-  boost::shared_ptr<Expression> brackets;
+  boost::shared_ptr<Typed> brackets;
 };
 }
 
-inline biprog::Bracketed::Bracketed(boost::shared_ptr<Expression> brackets) :
+inline biprog::Bracketed::Bracketed(boost::shared_ptr<Typed> brackets) :
     brackets(brackets) {
   //
 }

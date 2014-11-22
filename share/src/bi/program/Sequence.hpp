@@ -5,31 +5,29 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_BINARYEXPRESSION_HPP
-#define BI_PROGRAM_BINARYEXPRESSION_HPP
+#ifndef BI_PROGRAM_SEQUENCE_HPP
+#define BI_PROGRAM_SEQUENCE_HPP
 
 #include "Typed.hpp"
-#include "Operator.hpp"
 
 namespace biprog {
 /**
- * Binary expression.
+ * Sequence of statements.
  *
  * @ingroup program
  */
-class BinaryExpression: public virtual Typed,
-    public virtual boost::enable_shared_from_this<BinaryExpression> {
+class Sequence: public virtual Typed,
+    public virtual boost::enable_shared_from_this<Sequence> {
 public:
   /**
    * Constructor.
    */
-  BinaryExpression(boost::shared_ptr<Typed> left, Operator op,
-      boost::shared_ptr<Typed> right);
+  Sequence(boost::shared_ptr<Typed> head, boost::shared_ptr<Typed> tail);
 
   /**
    * Destructor.
    */
-  virtual ~BinaryExpression();
+  virtual ~Sequence();
 
   virtual boost::shared_ptr<Typed> accept(Visitor& v);
 
@@ -45,21 +43,16 @@ protected:
   /**
    * Left operand.
    */
-  boost::shared_ptr<Typed> left;
-
-  /**
-   * Operator.
-   */
-  Operator op;
+  boost::shared_ptr<Typed> head;
 
   /**
    * Right operand.
    */
-  boost::shared_ptr<Typed> right;
+  boost::shared_ptr<Typed> tail;
 };
 }
 
-inline biprog::BinaryExpression::~BinaryExpression() {
+inline biprog::Sequence::~Sequence() {
   //
 }
 

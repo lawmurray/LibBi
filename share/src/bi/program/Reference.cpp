@@ -9,14 +9,15 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::Reference::accept(Visitor& v) {
+boost::shared_ptr<biprog::Typed> biprog::Reference::accept(Visitor& v) {
+  type = type->accept(v);
   brackets = brackets->accept(v);
   parens = parens->accept(v);
   braces = braces->accept(v);
   return v.visit(shared_from_this());
 }
 
-bool biprog::Reference::operator<=(const Expression& o) const {
+bool biprog::Reference::operator<=(const Typed& o) const {
   try {
     const Reference& expr = dynamic_cast<const Reference&>(o);
     return *brackets <= *expr.brackets && *parens <= *expr.parens
@@ -26,7 +27,7 @@ bool biprog::Reference::operator<=(const Expression& o) const {
   }
 }
 
-bool biprog::Reference::operator==(const Expression& o) const {
+bool biprog::Reference::operator==(const Typed& o) const {
   try {
     const Reference& expr = dynamic_cast<const Reference&>(o);
     return *brackets == *expr.brackets && *parens == *expr.parens

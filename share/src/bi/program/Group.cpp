@@ -9,12 +9,13 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Expression> biprog::Group::accept(Visitor& v) {
+boost::shared_ptr<biprog::Typed> biprog::Group::accept(Visitor& v) {
+  type = type->accept(v);
   expr = expr->accept(v);
   return v.visit(shared_from_this());
 }
 
-bool biprog::Group::operator<=(const Expression& o) const {
+bool biprog::Group::operator<=(const Typed& o) const {
   try {
     const Group& group = dynamic_cast<const Group&>(o);
     return delim == group.delim && *expr <= *group.expr;
@@ -23,7 +24,7 @@ bool biprog::Group::operator<=(const Expression& o) const {
   }
 }
 
-bool biprog::Group::operator==(const Expression& o) const {
+bool biprog::Group::operator==(const Typed& o) const {
   try {
     const Group& group = dynamic_cast<const Group&>(o);
     return delim == group.delim && *expr == *group.expr;

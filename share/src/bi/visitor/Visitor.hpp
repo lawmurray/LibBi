@@ -12,19 +12,18 @@
 
 namespace biprog {
 class BinaryExpression;
-class Class;
 class Conditional;
+class Def;
 class Dim;
 class EmptyExpression;
-class Function;
+class Expression;
 class Group;
 template<class T1> class Literal;
 class Loop;
-class Method;
-class Model;
 class Reference;
-class Macro;
-class Type;
+class Typed;
+class ReturnExpression;
+class Sequence;
 class UnaryExpression;
 class Var;
 
@@ -38,25 +37,22 @@ public:
    */
   virtual ~Visitor();
 
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<BinaryExpression> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Class> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Conditional> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Dim> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<EmptyExpression> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Function> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Group> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<bool> > o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<int> > o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<double> > o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Loop> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Method> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Model> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Reference> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Macro> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Type> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<UnaryExpression> o) = 0;
-  virtual boost::shared_ptr<Expression> visit(boost::shared_ptr<Var> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<BinaryExpression> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Conditional> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Def> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Dim> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<EmptyExpression> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Group> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<bool> > o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<int> > o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<double> > o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Loop> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Reference> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<ReturnExpression> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Sequence> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<UnaryExpression> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Var> o) = 0;
 };
 }
 
