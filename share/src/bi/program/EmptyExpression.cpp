@@ -9,6 +9,7 @@
 
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
+#include "../misc/compile.hpp"
 
 boost::shared_ptr<biprog::Typed> biprog::EmptyExpression::accept(Visitor& v) {
   return v.visit(shared_from_this());
@@ -24,7 +25,7 @@ bool biprog::EmptyExpression::operator<=(const Typed& o) const {
 
 bool biprog::EmptyExpression::operator==(const Typed& o) const {
   try {
-    const EmptyExpression& o1 = dynamic_cast<const EmptyExpression&>(o);
+    BI_UNUSED const EmptyExpression& o1 = dynamic_cast<const EmptyExpression&>(o);
     return true;
   } catch (std::bad_cast e) {
     return true;
