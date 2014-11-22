@@ -15,7 +15,7 @@ def eval(ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements }) {
     }
   
     /*
-     * State variables.
+     * State defiables.
      */
     map(declare, statements);
   
