@@ -80,6 +80,7 @@ void yywarn(const char *msg) {
 %type <valOperator> assignment_operator tuple_operator statement_operator
 
 %type <valTyped> type reference parens brackets braces
+%type <valTyped> optional_parens optional_brackets optional_braces
 %type <valTyped> bool_literal int_literal double_literal string_literal
 %type <valTyped> traversal_expression type_expression primary_expression
 %type <valTyped> default_expression unary_expression pow_expression
@@ -90,7 +91,7 @@ void yywarn(const char *msg) {
 %type <valTyped> logical_and_expression logical_or_expression
 %type <valTyped> constraint_expression assignment_expression
 %type <valTyped> tuple_expression expression
-%type <valTyped> def dim var if while return
+%type <valTyped> optional_type def nonblock_def dim var if while return
 %type <valTyped> block_statement nonblock_statement statement statements file
 
 %start file
@@ -98,7 +99,7 @@ void yywarn(const char *msg) {
 
 
 /***************************************************************************
- * Expressions                                                             *
+ * References                                                              *
  ***************************************************************************/
 
 type
@@ -106,11 +107,7 @@ type
     ;
 
 reference
-    : IDENTIFIER                { $$ = new biprog::Reference($1, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, program.lookup($1)); }
-    | IDENTIFIER brackets       { $$ = new biprog::Reference($1, BI_SP($2), BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, program.lookup($1)); }
-    | IDENTIFIER parens         { $$ = new biprog::Reference($1, BI_SP_EMPTY, BI_SP($2), BI_SP_EMPTY, BI_SP_EMPTY, program.lookup($1)); }
-    | IDENTIFIER braces         { $$ = new biprog::Reference($1, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP($2), program.lookup($1)); }
-    | IDENTIFIER parens braces  { $$ = new biprog::Reference($1, BI_SP_EMPTY, BI_SP($2), BI_SP_EMPTY, BI_SP($3), program.lookup($1)); }
+    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, BI_SP($2), BI_SP($3), BI_SP_EMPTY, BI_SP($4), program.lookup($1)); }
     ;
 
 parens
@@ -127,6 +124,26 @@ braces
     | '{'  '}'                                                   { $$ = new biprog::Group(biprog::BRACES, BI_SP_EMPTY); }
     ;
 
+optional_parens
+    : parens
+    |         { $$ = BI_SP_EMPTY; }
+    ;
+
+optional_brackets
+    : brackets
+    |           { $$ = BI_SP_EMPTY; }
+    ;
+    
+optional_braces
+    : braces
+    |         { $$ = BI_SP_EMPTY; }
+    ;
+
+
+/***************************************************************************
+ * Literals                                                                *
+ ***************************************************************************/
+
 bool_literal
     : BOOL_LITERAL  { $$ = new biprog::Literal<bool>($1); }
     ;
@@ -142,6 +159,11 @@ double_literal
 string_literal
     : STRING_LITERAL  { $$ = new biprog::Literal<std::string>($1); }
     ;
+
+
+/***************************************************************************
+ * Expressions                                                             *
+ ***************************************************************************/
     
 traversal_operator
     : '.'  { $$ = biprog::OP_TRAVERSE; }
@@ -337,19 +359,21 @@ expression
  * Statements                                                              *
  ***************************************************************************/
 
+optional_type
+    : type_operator type  { $$ = $2; }
+    |                     { $$ = BI_SP_EMPTY; }
+    ;
+
 statement_operator
     : ';'  { $$ = biprog::OP_SEMICOLON; }
     ;
 
 def
-    : DEF IDENTIFIER parens type_operator type braces              { $$ = new biprog::Def($2, BI_SP($3), BI_SP($5), BI_SP($6), program.top()); }
-    | DEF IDENTIFIER parens type_operator type statement_operator  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($5), BI_SP_EMPTY, program.top()); }
-    | DEF IDENTIFIER parens braces                                 { $$ = new biprog::Def($2, BI_SP($3), BI_SP_EMPTY, BI_SP($4), program.top()); }
-    | DEF IDENTIFIER parens statement_operator                     { $$ = new biprog::Def($2, BI_SP($3), BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
-    | DEF IDENTIFIER type_operator type braces                     { $$ = new biprog::Def($2, BI_SP_EMPTY, BI_SP($4), BI_SP($5), program.top()); }
-    | DEF IDENTIFIER type_operator type statement_operator         { $$ = new biprog::Def($2, BI_SP_EMPTY, BI_SP($4), BI_SP_EMPTY, program.top()); }
-    | DEF IDENTIFIER braces                                        { $$ = new biprog::Def($2, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP($3), program.top()); }
-    | DEF IDENTIFIER statement_operator                            { $$ = new biprog::Def($2, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, program.top()); }
+    : DEF IDENTIFIER optional_parens optional_type braces  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP($5), program.top()); }
+    ;
+
+nonblock_def
+    : DEF IDENTIFIER optional_parens optional_type  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP_EMPTY, program.top()); }
     ;
 
 dim
@@ -357,10 +381,7 @@ dim
     ;
 
 var
-    : VAR IDENTIFIER type_operator type parens           { $$ = new biprog::Var($2, BI_SP_EMPTY, BI_SP($4)); }
-    | VAR IDENTIFIER brackets type_operator type parens  { $$ = new biprog::Var($2, BI_SP($3), BI_SP($5)); }
-    | VAR IDENTIFIER type_operator type                  { $$ = new biprog::Var($2, BI_SP_EMPTY, BI_SP($4)); }
-    | VAR IDENTIFIER brackets type_operator type         { $$ = new biprog::Var($2, BI_SP($3), BI_SP($5)); }
+    : VAR IDENTIFIER optional_brackets type  { $$ = new biprog::Var($2, BI_SP($3), BI_SP($4)); }
     ;
 
 if
@@ -384,7 +405,8 @@ block_statement
     ;
     
 nonblock_statement
-    : dim
+    : nonblock_def
+    | dim
     | var
     | return
     | expression
