@@ -91,7 +91,7 @@ void yywarn(const char *msg) {
 %type <valTyped> constraint_expression assignment_expression
 %type <valTyped> tuple_expression expression
 %type <valTyped> def dim var if while return
-%type <valTyped> statement statements file
+%type <valTyped> block_statement nonblock_statement statement statements file
 
 %start file
 %%
@@ -377,19 +377,26 @@ return
     : RETURN expression  { $$ = new biprog::ReturnExpression(BI_SP($2)); }
     ;
 
-statement
+block_statement
     : def
-    | dim statement_operator
-    | var statement_operator
     | if
     | while
-    | return statement_operator
-    | expression statement_operator  { $$ = $1; /* needed for type conversion */ } 
+    ;
+    
+nonblock_statement
+    : dim
+    | var
+    | return
+    | expression
+    ;
+
+statement
+    : block_statement
+    | nonblock_statement statement_operator
     ;
     
 statements
     : statement
-    | expression            { $$ = $1; /* needed for type conversion */ }
     | statement statements  { boost::shared_ptr<biprog::Typed> head = BI_SP($1); program.add(head); $$ = new biprog::Sequence(head, BI_SP($2)); }
     ;
 
