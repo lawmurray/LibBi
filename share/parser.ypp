@@ -1,12 +1,14 @@
 %code requires {
 #include "bi/program/BinaryExpression.hpp"
+#include "bi/program/Braces.hpp"
+#include "bi/program/Brackets.hpp"
 #include "bi/program/Conditional.hpp"
 #include "bi/program/Def.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
-#include "bi/program/Group.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
+#include "bi/program/Parentheses.hpp"
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
@@ -27,7 +29,7 @@
 #include "parser.hpp"
 
 #define BI_SP(x) boost::shared_ptr<BOOST_TYPEOF(*x)>(x)
-#define BI_SP_EMPTY boost::make_shared<biprog::EmptyExpression>()
+#define BI_EMPTY new biprog::EmptyExpression()
 
 biprog::Program program;
 
@@ -90,9 +92,10 @@ void yywarn(const char *msg) {
 %type <valTyped> exclusive_or_expression inclusive_or_expression
 %type <valTyped> logical_and_expression logical_or_expression
 %type <valTyped> constraint_expression assignment_expression
-%type <valTyped> tuple_expression expression
-%type <valTyped> optional_type def nonblock_def dim var if while return
-%type <valTyped> block_statement nonblock_statement statement statements file
+%type <valTyped> tuple_expression expression optional_expression
+%type <valTyped> optional_type def dim var if while return
+%type <valTyped> block_statement nonblock_statement tail_statement statement
+%type <valTyped> statements optional_statements file
 
 %start file
 %%
@@ -103,40 +106,38 @@ void yywarn(const char *msg) {
  ***************************************************************************/
 
 type
-    : IDENTIFIER  { $$ = new biprog::Reference($1, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, BI_SP_EMPTY, program.lookup($1)); }
+    : IDENTIFIER optional_parens  { $$ = new biprog::Reference($1, BI_SP(BI_EMPTY), BI_SP($2), BI_SP(BI_EMPTY), BI_SP(BI_EMPTY), BI_SP(BI_EMPTY)); }
     ;
 
 reference
-    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, BI_SP($2), BI_SP($3), BI_SP_EMPTY, BI_SP($4), program.lookup($1)); }
-    ;
-
-parens
-    : '(' expression ')'  { $$ = new biprog::Group(biprog::PARENS, BI_SP($2)); }
-    | '(' ')'             { $$ = new biprog::Group(biprog::PARENS, BI_SP_EMPTY); }
-    ;
-    
-brackets
-    : '[' expression ']'  { $$ = new biprog::Group(biprog::BRACKETS, BI_SP($2)); }
-    ;
-
-braces
-    : '{' { program.push(); } statements '}' { program.pop(); }  { $$ = new biprog::Group(biprog::BRACES, BI_SP($3)); }
-    | '{'  '}'                                                   { $$ = new biprog::Group(biprog::BRACES, BI_SP_EMPTY); }
+    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, BI_SP($2), BI_SP($3), BI_SP(BI_EMPTY), BI_SP($4), BI_SP(BI_EMPTY)); }
     ;
 
 optional_parens
     : parens
-    |         { $$ = BI_SP_EMPTY; }
+    |         { $$ = BI_EMPTY; }
     ;
 
 optional_brackets
     : brackets
-    |           { $$ = BI_SP_EMPTY; }
+    |           { $$ = BI_EMPTY; }
     ;
     
 optional_braces
     : braces
-    |         { $$ = BI_SP_EMPTY; }
+    |         { $$ = BI_EMPTY; }
+    ;
+
+parens
+    : '(' optional_expression ')'  { $$ = new biprog::Parentheses(BI_SP($2)); }
+    ;
+    
+brackets
+    : '[' expression ']'  { $$ = new biprog::Brackets(BI_SP($2)); }
+    ;
+
+braces
+    : '{'  { program.push(new biprog::Braces()); }  optional_statements '}'  { program.top()->expr = BI_SP($3); $$ = program.pop(); }
     ;
 
 
@@ -180,7 +181,7 @@ type_operator
     
 type_expression
     : traversal_expression
-    | traversal_expression type_operator traversal_expression  { $1->type = BI_SP($3); $$ = $1; }
+    | type_expression type_operator traversal_expression  { $1->type = BI_SP($3); $$ = $1; }
     ;
     
 primary_expression
@@ -353,6 +354,11 @@ tuple_expression
 expression
     : tuple_expression
     ;
+    
+optional_expression
+    : expression
+    |             { $$ = BI_EMPTY; }
+    ;
 
 
 /***************************************************************************
@@ -361,7 +367,7 @@ expression
 
 optional_type
     : type_operator type  { $$ = $2; }
-    |                     { $$ = BI_SP_EMPTY; }
+    |                     { $$ = BI_EMPTY; }
     ;
 
 statement_operator
@@ -369,11 +375,8 @@ statement_operator
     ;
 
 def
-    : DEF IDENTIFIER optional_parens optional_type braces  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP($5), program.top()); }
-    ;
-
-nonblock_def
-    : DEF IDENTIFIER optional_parens optional_type  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP_EMPTY, program.top()); }
+    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP($5)); }
+    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = new biprog::Def($2, BI_SP($3), BI_SP($4), BI_SP(BI_EMPTY)); }
     ;
 
 dim
@@ -381,17 +384,17 @@ dim
     ;
 
 var
-    : VAR IDENTIFIER optional_brackets type  { $$ = new biprog::Var($2, BI_SP($3), BI_SP($4)); }
+    : VAR IDENTIFIER optional_brackets type_operator type  { $$ = new biprog::Var($2, BI_SP($3), BI_SP($5)); }
     ;
 
 if
-    : IF parens braces ELSE if      { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5), program.top()); }
-    | IF parens braces ELSE braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5), program.top()); }
-    | IF parens braces              { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP_EMPTY, program.top()); }
+    : IF parens braces ELSE if      { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5)); }
+    | IF parens braces ELSE braces  { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP($5)); }
+    | IF parens braces              { $$ = new biprog::Conditional(BI_SP($2), BI_SP($3), BI_SP(BI_EMPTY)); }
     ;
 
 while
-    : WHILE parens braces  { $$ = new biprog::Loop(BI_SP($2), BI_SP($3), program.top()); }
+    : WHILE parens braces  { $$ = new biprog::Loop(BI_SP($2), BI_SP($3)); }
     ;
 
 return
@@ -405,21 +408,30 @@ block_statement
     ;
     
 nonblock_statement
-    : nonblock_def
-    | dim
+    : dim
     | var
     | return
     | expression
     ;
-
+    
 statement
     : block_statement
     | nonblock_statement statement_operator
     ;
     
+tail_statement
+    : expression
+    ;
+
+optional_statements
+    : statements
+    |             { $$ = BI_EMPTY; }
+    ;
+    
 statements
     : statement
-    | statement statements  { boost::shared_ptr<biprog::Typed> head = BI_SP($1); program.add(head); $$ = new biprog::Sequence(head, BI_SP($2)); }
+    | tail_statement
+    | statement statements  { $$ = new biprog::Sequence(BI_SP($1), BI_SP($2)); }
     ;
 
 
@@ -428,7 +440,7 @@ statements
  ***************************************************************************/
 
 file
-    : statements  { boost::shared_ptr<biprog::Typed> expr = BI_SP($1); program.add(expr); program.setRoot(expr); }
+    : statements  { program.setRoot(BI_SP($1)); }
     ;
     
 %%

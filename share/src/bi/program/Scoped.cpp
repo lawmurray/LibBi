@@ -5,14 +5,14 @@
  * $Rev$
  * $Date$
  */
-#include "Scope.hpp"
+#include "Scoped.hpp"
 
 #include "EmptyExpression.hpp"
 #include "../misc/assert.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
-//boost::shared_ptr<biprog::Typed> biprog::Scope::find(const char* name) {
+//boost::shared_ptr<biprog::Typed> biprog::Scoped::find(const char* name) {
 //  BOOST_AUTO(iter, decls.find(name));
 //  if (iter != decls.end()) {
 //    return iter->find;
@@ -21,7 +21,7 @@
 //  }
 //}
 
-void biprog::Scope::add(boost::shared_ptr<Named> decl) {
+void biprog::Scoped::add(boost::shared_ptr<Named> decl) {
   BOOST_AUTO(key, decl->name);
   BOOST_AUTO(val, boost::make_shared<poset_type>());
   BOOST_AUTO(pair, std::make_pair(key, val));

@@ -74,20 +74,21 @@ libbi_a_SOURCES = \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
   src/bi/program/BinaryExpression.cpp \
+  src/bi/program/Braces.cpp \
+  src/bi/program/Brackets.cpp \
   src/bi/program/Conditional.cpp \
   src/bi/program/Def.cpp \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \
   src/bi/program/Expression.cpp \
-  src/bi/program/Group.cpp \
   src/bi/program/Loop.cpp \
   src/bi/program/Operator.cpp \
+  src/bi/program/Parentheses.cpp \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
   src/bi/program/ReturnExpression.cpp \
-  src/bi/program/Scope.cpp \
+  src/bi/program/Scoped.cpp \
   src/bi/program/Sequence.cpp \
-  src/bi/program/Typed.cpp \
   src/bi/program/UnaryExpression.cpp \
   src/bi/program/Var.cpp \
   src/bi/random/Random.cpp \

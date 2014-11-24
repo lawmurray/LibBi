@@ -11,7 +11,6 @@
 #include "Typed.hpp"
 #include "Conditioned.hpp"
 #include "Braced.hpp"
-#include "Scoped.hpp"
 
 namespace biprog {
 /**
@@ -22,14 +21,12 @@ namespace biprog {
 class Loop: public virtual Typed,
     public virtual Conditioned,
     public virtual Braced,
-    public virtual Scoped,
     public virtual boost::enable_shared_from_this<Loop> {
 public:
   /**
    * Constructor.
    */
-  Loop(boost::shared_ptr<Typed> cond, boost::shared_ptr<Typed> braces,
-      boost::shared_ptr<Scope> scope);
+  Loop(boost::shared_ptr<Typed> cond, boost::shared_ptr<Typed> braces);
 
   /**
    * Destructor.
@@ -50,8 +47,8 @@ protected:
 }
 
 inline biprog::Loop::Loop(boost::shared_ptr<Typed> cond,
-    boost::shared_ptr<Typed> braces, boost::shared_ptr<Scope> scope) :
-    Conditioned(cond), Braced(braces), Scoped(scope) {
+    boost::shared_ptr<Typed> braces) :
+    Conditioned(cond), Braced(braces) {
   //
 }
 

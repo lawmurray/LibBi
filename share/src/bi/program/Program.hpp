@@ -9,7 +9,7 @@
 #define BI_PROGRAM_PROGRAM_HPP
 
 #include "Typed.hpp"
-#include "Scope.hpp"
+#include "Braces.hpp"
 
 #include "boost/shared_ptr.hpp"
 
@@ -36,17 +36,17 @@ public:
   /**
    * Top scope on stack.
    */
-  boost::shared_ptr<Scope> top();
+  Braces* top();
 
   /**
    * Push new scope on stack.
    */
-  void push();
+  void push(Braces* scope);
 
   /**
-   * Pop scope from stack.
+   * Pop scope from stack and return it.
    */
-  void pop();
+  Braces* pop();
 
   /**
    * Get the root statement.
@@ -76,8 +76,11 @@ private:
 
   /**
    * Scope stack.
+   *
+   * Uses raw Braces* pointers rather than smart pointers due to the way
+   * GNU Bison works.
    */
-  std::deque<boost::shared_ptr<Scope> > scopes;
+  std::deque<Braces*> scopes;
 };
 }
 

@@ -12,14 +12,16 @@
 
 namespace biprog {
 class BinaryExpression;
+class Braces;
+class Brackets;
 class Conditional;
 class Def;
 class Dim;
 class EmptyExpression;
 class Expression;
-class Group;
 template<class T1> class Literal;
 class Loop;
+class Parentheses;
 class Reference;
 class Typed;
 class ReturnExpression;
@@ -42,12 +44,14 @@ public:
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Def> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Dim> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<EmptyExpression> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Group> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Braces> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Brackets> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<bool> > o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<int> > o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<double> > o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Loop> o) = 0;
+  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Parentheses> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Reference> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<ReturnExpression> o) = 0;
   virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Sequence> o) = 0;

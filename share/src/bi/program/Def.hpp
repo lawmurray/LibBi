@@ -12,7 +12,6 @@
 #include "Parenthesised.hpp"
 #include "Typed.hpp"
 #include "Braced.hpp"
-#include "Scoped.hpp"
 
 namespace biprog {
 /**
@@ -24,15 +23,13 @@ class Def: public virtual Named,
     public virtual Parenthesised,
     public virtual Typed,
     public virtual Braced,
-    public virtual Scoped,
     public virtual boost::enable_shared_from_this<Def> {
 public:
   /**
    * Constructor.
    */
   Def(const char* name, boost::shared_ptr<Typed> parens,
-      boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces,
-      boost::shared_ptr<Scope> scope);
+      boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces);
 
   /**
    * Destructor.
@@ -53,10 +50,8 @@ protected:
 }
 
 inline biprog::Def::Def(const char* name, boost::shared_ptr<Typed> parens,
-    boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces,
-    boost::shared_ptr<Scope> scope) :
-    Named(name), Parenthesised(parens), Typed(type), Braced(braces), Scoped(
-        scope) {
+    boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces) :
+    Named(name), Parenthesised(parens), Typed(type), Braced(braces) {
   //
 }
 

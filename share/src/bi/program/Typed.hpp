@@ -67,8 +67,7 @@ public:
 };
 }
 
-inline biprog::Typed::Typed() :
-    type(boost::shared_ptr<Typed>()) {
+inline biprog::Typed::Typed() {
   //
 }
 

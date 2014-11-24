@@ -15,29 +15,32 @@
 
 biprog::Program::Program() :
     root(boost::make_shared<EmptyExpression>()) {
-  push();
+  push(new Braces());
 }
 
 biprog::Program::~Program() {
   pop();
 }
 
-boost::shared_ptr<biprog::Scope> biprog::Program::top() {
+biprog::Braces* biprog::Program::top() {
   /* pre-condition */
   BI_ASSERT(scopes.size() > 0);
 
   return scopes.front();
 }
 
-void biprog::Program::push() {
-  scopes.push_front(boost::make_shared<Scope>());
+void biprog::Program::push(Braces* scope) {
+  scopes.push_front(scope);
 }
 
-void biprog::Program::pop() {
+biprog::Braces* biprog::Program::pop() {
   /* pre-condition */
   BI_ASSERT(scopes.size() > 0);
 
+  BOOST_AUTO(ret, top());
   scopes.pop_front();
+
+  return ret;
 }
 
 boost::shared_ptr<biprog::Typed> biprog::Program::getRoot() {
@@ -56,8 +59,7 @@ void biprog::Program::add(boost::shared_ptr<biprog::Typed> decl) {
   }
 }
 
-boost::shared_ptr<biprog::Typed> biprog::Program::lookup(
-    const char* name) {
+boost::shared_ptr<biprog::Typed> biprog::Program::lookup(const char* name) {
 //  BOOST_AUTO(iter, scopes.begin());
 //  while (iter != scopes.end()) {
 //    BOOST_AUTO(find, (*iter)->find(name));

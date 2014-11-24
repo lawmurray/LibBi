@@ -1,7 +1,7 @@
 /**
  * Numerical integration of ODE system using RK4(3) method.
  */
-def eval(ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements }) {
+def eval(ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements; }) {
   /**
    * State of ODE system.
    */

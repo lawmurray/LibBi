@@ -11,7 +11,6 @@
 #include "Typed.hpp"
 #include "Conditioned.hpp"
 #include "Braced.hpp"
-#include "Scoped.hpp"
 
 namespace biprog {
 /**
@@ -22,14 +21,13 @@ namespace biprog {
 class Conditional: public virtual Typed,
     public virtual Conditioned,
     public virtual Braced,
-    public virtual Scoped,
     public virtual boost::enable_shared_from_this<Conditional> {
 public:
   /**
    * Constructor.
    */
   Conditional(boost::shared_ptr<Typed> cond, boost::shared_ptr<Typed> braces,
-      boost::shared_ptr<Typed> falseBraces, boost::shared_ptr<Scope> scope);
+      boost::shared_ptr<Typed> falseBraces);
 
   /**
    * Destructor.
@@ -55,9 +53,8 @@ protected:
 }
 
 inline biprog::Conditional::Conditional(boost::shared_ptr<Typed> cond,
-    boost::shared_ptr<Typed> braces, boost::shared_ptr<Typed> falseBraces,
-    boost::shared_ptr<Scope> scope) :
-    Conditioned(cond), Braced(braces), Scoped(scope), falseBraces(falseBraces) {
+    boost::shared_ptr<Typed> braces, boost::shared_ptr<Typed> falseBraces) :
+    Conditioned(cond), Braced(braces), falseBraces(falseBraces) {
   /* pre-condition */
   BI_ASSERT(falseBraces);
 }

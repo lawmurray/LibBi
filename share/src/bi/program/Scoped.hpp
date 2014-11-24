@@ -9,7 +9,12 @@
 #define BI_PROGRAM_SCOPED_HPP
 
 #include "Expression.hpp"
-#include "Scope.hpp"
+#include "Named.hpp"
+
+#include "../primitive/poset.hpp"
+#include "../primitive/pointer_less_equal.hpp"
+
+#include <map> ///@todo Use unordered_map after transition to C++11
 
 namespace biprog {
 /**
@@ -18,26 +23,31 @@ namespace biprog {
 class Scoped: public virtual Expression {
 public:
   /**
-   * Constructor.
-   */
-  Scoped(boost::shared_ptr<Scope> scope);
-
-  /**
    * Destructor.
    */
   virtual ~Scoped() = 0;
 
   /**
-   * Scope.
+   * Find declaration by name. Returns an EmptyExpression if not found.
    */
-  boost::shared_ptr<Scope> scope;
-};
-}
+  //boost::shared_ptr<Typed> find(const char* name);
 
-inline biprog::Scoped::Scoped(boost::shared_ptr<Scope> scope) :
-    scope(scope) {
-  /* pre-condition */
-  BI_ASSERT(scope);
+  /**
+   * Insert any other declaration into this scope.
+   */
+  void add(boost::shared_ptr<Named> decl);
+
+protected:
+  typedef Expression value_type;
+  typedef boost::shared_ptr<value_type> pointer_type;
+  typedef bi::poset<pointer_type,bi::pointer_less_equal<pointer_type> > poset_type;
+  typedef std::map<std::string,boost::shared_ptr<poset_type> > map_type;
+
+  /**
+   * Declarations within this scope.
+   */
+  map_type decls;
+};
 }
 
 inline biprog::Scoped::~Scoped() {
