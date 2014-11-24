@@ -9,8 +9,9 @@
 #define BI_PROGRAM_SCOPED_HPP
 
 #include "Expression.hpp"
+#include "Reference.hpp"
 #include "Named.hpp"
-
+#include "../exception/AmbiguousReferenceException.hpp"
 #include "../primitive/poset.hpp"
 #include "../primitive/pointer_less_equal.hpp"
 
@@ -28,17 +29,23 @@ public:
   virtual ~Scoped() = 0;
 
   /**
-   * Find declaration by name. Returns an EmptyExpression if not found.
+   * Resolve reference.
    */
-  //boost::shared_ptr<Typed> find(const char* name);
+  bool resolve(boost::shared_ptr<Reference> ref)
+      throw (AmbiguousReferenceException);
 
   /**
    * Insert any other declaration into this scope.
    */
   void add(boost::shared_ptr<Named> decl);
 
+  /**
+   * Root expression.
+   */
+  boost::shared_ptr<Typed> expr;
+
 protected:
-  typedef Expression value_type;
+  typedef Named value_type;
   typedef boost::shared_ptr<value_type> pointer_type;
   typedef bi::poset<pointer_type,bi::pointer_less_equal<pointer_type> > poset_type;
   typedef std::map<std::string,boost::shared_ptr<poset_type> > map_type;

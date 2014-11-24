@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <deque>
 }
 
 %{
@@ -30,8 +31,6 @@
 
 #define BI_SP(x) boost::shared_ptr<BOOST_TYPEOF(*x)>(x)
 #define BI_EMPTY new biprog::EmptyExpression()
-
-biprog::Program program;
 
 extern FILE *yyin;
 extern int col;
@@ -47,6 +46,58 @@ void yyerror(const char *msg) {
 
 void yywarn(const char *msg) {
   std::cerr << "Warning (line " << line << " col " << col << "): " << msg << std::endl;
+}
+
+/**
+ * Scope stack.
+ */
+std::deque<biprog::Scoped*> scopes;
+
+/**
+ * Innermost scope.
+ */
+biprog::Scoped* top() {
+  /* pre-condition */
+  BI_ASSERT(scopes.size() > 0);
+
+  return scopes.front();
+}
+
+/**
+ * Push new innermost scope.
+ */
+void push(biprog::Scoped* scope) {
+  scopes.push_front(scope);
+}
+
+/**
+ * Pop innermost scope.
+ */
+biprog::Typed* pop() {
+  /* pre-condition */
+  BI_ASSERT(scopes.size() > 0);
+
+  biprog::Typed* ret = dynamic_cast<biprog::Typed*>(top());
+  scopes.pop_front();
+
+  return ret;
+}
+
+/**
+ * Resolve reference through current stack.
+ */
+bool resolve(boost::shared_ptr<biprog::Reference> ref) {
+  bool resolved = false;
+  BOOST_AUTO(iter, scopes.begin());
+  try {
+    while (!resolved && iter != scopes.end()) {
+      resolved = (*iter)->resolve(ref);
+      ++iter;
+    }
+  } catch (biprog::AmbiguousReferenceException& e) {
+    yyerror(e.msg.c_str());
+  }
+  return resolved;
 }
 
 %}
@@ -137,7 +188,7 @@ brackets
     ;
 
 braces
-    : '{'  { program.push(new biprog::Braces()); }  optional_statements '}'  { program.top()->expr = BI_SP($3); $$ = program.pop(); }
+    : '{'  { push(new biprog::Braces()); }  optional_statements '}'  { top()->expr = BI_SP($3); $$ = pop(); }
     ;
 
 
@@ -440,7 +491,7 @@ statements
  ***************************************************************************/
 
 file
-    : statements  { program.setRoot(BI_SP($1)); }
+    : { push(new biprog::Program()); }  statements  { top()->expr = BI_SP($2); }
     ;
     
 %%
@@ -449,7 +500,7 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
-  std::cout << *program.getRoot() << std::endl;
+  std::cout << *top()->expr << std::endl;
 
   return 0;
 }

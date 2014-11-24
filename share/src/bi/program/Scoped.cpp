@@ -8,18 +8,28 @@
 #include "Scoped.hpp"
 
 #include "EmptyExpression.hpp"
+#include "../exception/AmbiguousReferenceException.hpp"
+#include "../exception/UnresolvedReferenceException.hpp"
 #include "../misc/assert.hpp"
 
 #include "boost/typeof/typeof.hpp"
 
-//boost::shared_ptr<biprog::Typed> biprog::Scoped::find(const char* name) {
-//  BOOST_AUTO(iter, decls.find(name));
-//  if (iter != decls.end()) {
-//    return iter->find;
-//  } else {
-//    return boost::make_shared<EmptyExpression>();
-//  }
-//}
+#include <list>
+
+bool biprog::Scoped::resolve(boost::shared_ptr<Reference> ref)
+    throw (AmbiguousReferenceException) {
+  BOOST_AUTO(iter, decls.find(ref->name));
+  if (iter != decls.end()) {
+    std::list<pointer_type> matches;
+    iter->second->find(ref, matches);
+    if (matches.size() == 1) {
+      return true;
+    } else if (matches.size() > 1) {
+      throw AmbiguousReferenceException(ref, matches);
+    }
+  }
+  return false;
+}
 
 void biprog::Scoped::add(boost::shared_ptr<Named> decl) {
   BOOST_AUTO(key, decl->name);

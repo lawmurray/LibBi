@@ -37,9 +37,6 @@ public:
   virtual bool operator==(const Typed& o) const;
 
 protected:
-  /**
-   * Output.
-   */
   virtual void output(std::ostream& out) const;
 };
 }

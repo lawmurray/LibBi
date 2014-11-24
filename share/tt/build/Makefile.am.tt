@@ -49,6 +49,7 @@ lexer.lpp: parser.hpp
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
+  src/bi/exception/UnresolvedReferenceException.cpp \
   src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
   src/bi/netcdf/netcdf.cpp \
   src/bi/netcdf/NetCDFBuffer.cpp \
