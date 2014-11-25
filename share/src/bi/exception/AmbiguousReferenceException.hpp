@@ -11,19 +11,16 @@
 #include "Exception.hpp"
 #include "../program/Reference.hpp"
 
-#include "boost/shared_ptr.hpp"
-
 namespace biprog {
 /**
  * Ambiguous reference in program.
  */
-struct AmbiguousReferenceException : public Exception {
+struct AmbiguousReferenceException: public Exception {
   /**
    * Constructor.
    */
   template<class Container>
-  AmbiguousReferenceException(boost::shared_ptr<Reference> ref,
-      Container matches);
+  AmbiguousReferenceException(Reference* ref, Container matches);
 
   /**
    * Destructor.
@@ -38,7 +35,7 @@ struct AmbiguousReferenceException : public Exception {
 
 template<class Container>
 biprog::AmbiguousReferenceException::AmbiguousReferenceException(
-    boost::shared_ptr<Reference> ref, Container matches) {
+    Reference* ref, Container matches) {
   std::stringstream buf;
   buf << "ambiguous reference " << ref << "; candidates are:" << std::endl;
   BOOST_AUTO(iter, matches.begin());

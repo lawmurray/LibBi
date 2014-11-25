@@ -10,10 +10,16 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Brackets::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Brackets::clone() {
+  return new Brackets(expr->clone());
+}
+
+biprog::Typed* biprog::Brackets::accept(Visitor& v) {
   type = type->accept(v);
   expr = expr->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Brackets::operator<=(const Typed& o) const {

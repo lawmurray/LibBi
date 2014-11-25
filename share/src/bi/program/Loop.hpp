@@ -20,20 +20,20 @@ namespace biprog {
  */
 class Loop: public virtual Typed,
     public virtual Conditioned,
-    public virtual Braced,
-    public virtual boost::enable_shared_from_this<Loop> {
+    public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Loop(boost::shared_ptr<Typed> cond, boost::shared_ptr<Typed> braces);
+  Loop(Typed* cond, Typed* braces);
 
   /**
    * Destructor.
    */
   virtual ~Loop();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -46,8 +46,7 @@ protected:
 };
 }
 
-inline biprog::Loop::Loop(boost::shared_ptr<Typed> cond,
-    boost::shared_ptr<Typed> braces) :
+inline biprog::Loop::Loop(Typed* cond, Typed* braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

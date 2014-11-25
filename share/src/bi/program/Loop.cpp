@@ -10,11 +10,17 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Loop::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Loop::clone() {
+  return new Loop(cond->clone(), braces->clone());
+}
+
+biprog::Typed* biprog::Loop::accept(Visitor& v) {
   type = type->accept(v);
   cond = cond->accept(v);
   braces = braces->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Loop::operator<=(const Typed& o) const {

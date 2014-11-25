@@ -20,20 +20,20 @@ namespace biprog {
  */
 class Dim: public virtual Named,
     public virtual Bracketed,
-    public virtual Typed,
-    public virtual boost::enable_shared_from_this<Dim> {
+    public virtual Typed {
 public:
   /**
    * Constructor.
    */
-  Dim(const char* name, boost::shared_ptr<Typed> brackets);
+  Dim(const std::string name, Typed* brackets);
 
   /**
    * Destructor.
    */
   virtual ~Dim();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -46,7 +46,7 @@ protected:
 };
 }
 
-inline biprog::Dim::Dim(const char* name, boost::shared_ptr<Typed> brackets) :
+inline biprog::Dim::Dim(const std::string name, Typed* brackets) :
     Named(name), Bracketed(brackets) {
   //
 }

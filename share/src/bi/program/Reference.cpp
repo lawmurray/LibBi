@@ -9,12 +9,19 @@
 
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Reference::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Reference::clone() {
+  return new Reference(name, brackets->clone(), parens->clone(),
+      type->clone(), braces->clone(), target);
+}
+
+biprog::Typed* biprog::Reference::accept(Visitor& v) {
   type = type->accept(v);
   brackets = brackets->accept(v);
   parens = parens->accept(v);
   braces = braces->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Reference::operator<=(const Typed& o) const {

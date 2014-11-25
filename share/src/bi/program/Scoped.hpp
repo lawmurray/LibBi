@@ -24,6 +24,11 @@ namespace biprog {
 class Scoped: public virtual Expression {
 public:
   /**
+   * Constructor.
+   */
+  Scoped(Typed* expr = NULL);
+
+  /**
    * Destructor.
    */
   virtual ~Scoped() = 0;
@@ -31,24 +36,23 @@ public:
   /**
    * Resolve reference.
    */
-  bool resolve(boost::shared_ptr<Reference> ref)
-      throw (AmbiguousReferenceException);
+  bool resolve(Reference* ref) throw (AmbiguousReferenceException);
 
   /**
    * Insert any other declaration into this scope.
    */
-  void add(boost::shared_ptr<Named> decl);
+  void add(Named* decl);
 
   /**
    * Root expression.
    */
-  boost::shared_ptr<Typed> expr;
+  Typed* expr;
 
 protected:
   typedef Named value_type;
-  typedef boost::shared_ptr<value_type> pointer_type;
+  typedef value_type* pointer_type;
   typedef bi::poset<pointer_type,bi::pointer_less_equal<pointer_type> > poset_type;
-  typedef std::map<std::string,boost::shared_ptr<poset_type> > map_type;
+  typedef std::map<std::string,poset_type> map_type;
 
   /**
    * Declarations within this scope.
@@ -57,8 +61,12 @@ protected:
 };
 }
 
-inline biprog::Scoped::~Scoped() {
+inline biprog::Scoped::Scoped(Typed* expr) : expr(expr) {
   //
+}
+
+inline biprog::Scoped::~Scoped() {
+  delete expr;
 }
 
 #endif

@@ -1,14 +1,12 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
+ * @author Lawrence Murray <lawrence.murray@csiro.au*
  * $Rev$
  * $Date$
  */
 #ifndef BI_VISITOR_VISITOR_HPP
 #define BI_VISITOR_VISITOR_HPP
-
-#include "boost/shared_ptr.hpp"
 
 namespace biprog {
 class BinaryExpression;
@@ -39,24 +37,24 @@ public:
    */
   virtual ~Visitor();
 
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<BinaryExpression> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Conditional> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Def> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Dim> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<EmptyExpression> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Braces> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Brackets> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<bool> > o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<int> > o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<double> > o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Literal<std::string> > o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Loop> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Parentheses> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Reference> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<ReturnExpression> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Sequence> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<UnaryExpression> o) = 0;
-  virtual boost::shared_ptr<Typed> visit(boost::shared_ptr<Var> o) = 0;
+  virtual Typed* visit(BinaryExpression* o) = 0;
+  virtual Typed* visit(Conditional* o) = 0;
+  virtual Typed* visit(Def* o) = 0;
+  virtual Typed* visit(Dim* o) = 0;
+  virtual Typed* visit(EmptyExpression* o) = 0;
+  virtual Typed* visit(Braces* o) = 0;
+  virtual Typed* visit(Brackets* o) = 0;
+  virtual Typed* visit(Literal<bool>* o) = 0;
+  virtual Typed* visit(Literal<int>* o) = 0;
+  virtual Typed* visit(Literal<double>* o) = 0;
+  virtual Typed* visit(Literal<std::string>* o) = 0;
+  virtual Typed* visit(Loop* o) = 0;
+  virtual Typed* visit(Parentheses* o) = 0;
+  virtual Typed* visit(Reference* o) = 0;
+  virtual Typed* visit(ReturnExpression* o) = 0;
+  virtual Typed* visit(Sequence* o) = 0;
+  virtual Typed* visit(UnaryExpression* o) = 0;
+  virtual Typed* visit(Var* o) = 0;
 };
 }
 

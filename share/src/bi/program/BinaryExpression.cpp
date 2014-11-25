@@ -10,12 +10,17 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::BinaryExpression::accept(
-    Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::BinaryExpression::clone() {
+  return new BinaryExpression(left->clone(), op, right->clone());
+}
+
+biprog::Typed* biprog::BinaryExpression::accept(Visitor& v) {
   type = type->accept(v);
   left = left->accept(v);
   right = right->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::BinaryExpression::operator<=(const Typed& o) const {

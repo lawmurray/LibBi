@@ -10,10 +10,16 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Parentheses::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Parentheses::clone() {
+  return new Parentheses(expr->clone());
+}
+
+biprog::Typed* biprog::Parentheses::accept(Visitor& v) {
   type = type->accept(v);
   expr = expr->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Parentheses::operator<=(const Typed& o) const {

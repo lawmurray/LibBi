@@ -11,8 +11,14 @@
 #include "../visitor/Visitor.hpp"
 #include "../misc/compile.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::EmptyExpression::accept(Visitor& v) {
-  return v.visit(shared_from_this());
+#include <typeinfo>
+
+biprog::Typed* biprog::EmptyExpression::clone() {
+  return new EmptyExpression();
+}
+
+biprog::Typed* biprog::EmptyExpression::accept(Visitor& v) {
+  return v.visit(this);
 }
 
 biprog::EmptyExpression::operator bool() const {
@@ -25,7 +31,8 @@ bool biprog::EmptyExpression::operator<=(const Typed& o) const {
 
 bool biprog::EmptyExpression::operator==(const Typed& o) const {
   try {
-    BI_UNUSED const EmptyExpression& o1 = dynamic_cast<const EmptyExpression&>(o);
+    BI_UNUSED const EmptyExpression& o1 =
+        dynamic_cast<const EmptyExpression&>(o);
     return true;
   } catch (std::bad_cast e) {
     return true;

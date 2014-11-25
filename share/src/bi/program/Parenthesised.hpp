@@ -17,14 +17,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Parenthesised : public virtual Expression {
+class Parenthesised: public virtual Expression {
 public:
   /**
    * Constructor.
    *
    * @param parens Expression in parentheses.
    */
-  Parenthesised(boost::shared_ptr<Typed> parens);
+  Parenthesised(Typed* parens);
 
   /**
    * Destructor.
@@ -34,18 +34,18 @@ public:
   /**
    * First statement in in brackets.
    */
-  boost::shared_ptr<Typed> parens;
+  Typed* parens;
 };
 }
 
-inline biprog::Parenthesised::Parenthesised(boost::shared_ptr<Typed> parens) :
+inline biprog::Parenthesised::Parenthesised(Typed* parens) :
     parens(parens) {
   /* pre-condition */
   BI_ASSERT(parens);
 }
 
 inline biprog::Parenthesised::~Parenthesised() {
-  //
+  delete parens;
 }
 
 #endif

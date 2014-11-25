@@ -20,21 +20,20 @@ namespace biprog {
  */
 class Var: public virtual Named,
     public virtual Bracketed,
-    public virtual Typed,
-    public virtual boost::enable_shared_from_this<Var> {
+    public virtual Typed {
 public:
   /**
    * Constructor.
    */
-  Var(const char* name, boost::shared_ptr<Typed> brackets,
-      boost::shared_ptr<Typed> type);
+  Var(const std::string name, Typed* brackets, Typed* type);
 
   /**
    * Destructor.
    */
   virtual ~Var();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -47,8 +46,7 @@ protected:
 };
 }
 
-inline biprog::Var::Var(const char* name, boost::shared_ptr<Typed> brackets,
-    boost::shared_ptr<Typed> type) :
+inline biprog::Var::Var(const std::string name, Typed* brackets, Typed* type) :
     Named(name), Bracketed(brackets), Typed(type) {
   //
 }

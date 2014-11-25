@@ -25,7 +25,7 @@ public:
    *
    * @param name Name.
    */
-  Named(const char* name);
+  Named(std::string name);
 
   /**
    * Destructor.
@@ -39,7 +39,7 @@ public:
 };
 }
 
-inline biprog::Named::Named(const char* name) : name(name) {
+inline biprog::Named::Named(std::string name) : name(name) {
   //
 }
 

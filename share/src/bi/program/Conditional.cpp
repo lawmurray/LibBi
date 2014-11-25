@@ -10,12 +10,18 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Conditional::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Conditional::clone() {
+  return new Conditional(cond->clone(), braces->clone(), falseBraces->clone());
+}
+
+biprog::Typed* biprog::Conditional::accept(Visitor& v) {
   type = type->accept(v);
   cond = cond->accept(v);
   braces = braces->accept(v);
   falseBraces = falseBraces->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Conditional::operator<=(const Typed& o) const {

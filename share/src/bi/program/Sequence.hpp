@@ -16,20 +16,20 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Sequence: public virtual Typed,
-    public virtual boost::enable_shared_from_this<Sequence> {
+class Sequence: public virtual Typed {
 public:
   /**
    * Constructor.
    */
-  Sequence(boost::shared_ptr<Typed> head, boost::shared_ptr<Typed> tail);
+  Sequence(Typed* head, Typed* tail);
 
   /**
    * Destructor.
    */
   virtual ~Sequence();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -37,12 +37,12 @@ public:
   /**
    * Left operand.
    */
-  boost::shared_ptr<Typed> head;
+  Typed* head;
 
   /**
    * Right operand.
    */
-  boost::shared_ptr<Typed> tail;
+  Typed* tail;
 
 protected:
   /**
@@ -52,8 +52,7 @@ protected:
 };
 }
 
-inline biprog::Sequence::Sequence(boost::shared_ptr<Typed> head,
-    boost::shared_ptr<Typed> tail) :
+inline biprog::Sequence::Sequence(Typed* head, Typed* tail) :
     head(head), tail(tail) {
   /* pre-conditions */
   BI_ASSERT(head);
@@ -61,7 +60,8 @@ inline biprog::Sequence::Sequence(boost::shared_ptr<Typed> head,
 }
 
 inline biprog::Sequence::~Sequence() {
-  //
+  delete head;
+  delete tail;
 }
 
 #endif

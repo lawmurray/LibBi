@@ -16,22 +16,22 @@ namespace biprog {
  *
  * @ingroup program
  */
-class ReturnExpression: public virtual Typed,
-    public virtual boost::enable_shared_from_this<ReturnExpression> {
+class ReturnExpression: public virtual Typed {
 public:
   /**
    * Constructor.
    *
    * @param expr Right operand.
    */
-  ReturnExpression(boost::shared_ptr<Typed> expr);
+  ReturnExpression(Typed* expr);
 
   /**
    * Destructor.
    */
   virtual ~ReturnExpression();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -39,7 +39,7 @@ public:
   /**
    * Right operand.
    */
-  boost::shared_ptr<Typed> expr;
+  Typed* expr;
 
 protected:
   /**
@@ -49,9 +49,8 @@ protected:
 };
 }
 
-inline biprog::ReturnExpression::ReturnExpression(
-    boost::shared_ptr<Typed> expr) :
-    Typed(expr->type), expr(expr) {
+inline biprog::ReturnExpression::ReturnExpression(Typed* expr) :
+    Typed(expr->type->clone()), expr(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }

@@ -18,20 +18,20 @@ namespace biprog {
  * @ingroup program
  */
 class Parentheses: public virtual Typed,
-    public virtual Grouped,
-    public virtual boost::enable_shared_from_this<Parentheses> {
+    public virtual Grouped {
 public:
   /**
    * Constructor.
    */
-  Parentheses(boost::shared_ptr<Typed> expr);
+  Parentheses(Typed* expr);
 
   /**
    * Destructor.
    */
   virtual ~Parentheses();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -44,8 +44,8 @@ protected:
 };
 }
 
-inline biprog::Parentheses::Parentheses(boost::shared_ptr<Typed> expr) :
-    Typed(expr->type), Grouped(expr) {
+inline biprog::Parentheses::Parentheses(Typed* expr) :
+    Typed(expr->type->clone()), Grouped(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }

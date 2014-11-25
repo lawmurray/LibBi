@@ -10,11 +10,17 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Sequence::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Sequence::clone() {
+  return new Sequence(head->clone(), tail->clone());
+}
+
+biprog::Typed* biprog::Sequence::accept(Visitor& v) {
   type = type->accept(v);
   head = head->accept(v);
   tail = tail->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Sequence::operator<=(const Typed& o) const {

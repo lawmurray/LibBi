@@ -24,7 +24,7 @@ public:
    *
    * @param brackets Expression in square brackets.
    */
-  Bracketed(boost::shared_ptr<Typed> brackets);
+  Bracketed(Typed* brackets);
 
   /**
    * Destructor.
@@ -34,18 +34,18 @@ public:
   /**
    * First statement in index brackets.
    */
-  boost::shared_ptr<Typed> brackets;
+  Typed* brackets;
 };
 }
 
-inline biprog::Bracketed::Bracketed(boost::shared_ptr<Typed> brackets) :
+inline biprog::Bracketed::Bracketed(Typed* brackets) :
     brackets(brackets) {
   /* pre-condition */
   BI_ASSERT(brackets);
 }
 
 inline biprog::Bracketed::~Bracketed() {
-  //
+  delete brackets;
 }
 
 #endif

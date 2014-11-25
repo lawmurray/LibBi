@@ -17,21 +17,20 @@ namespace biprog {
  *
  * @ingroup program
  */
-class BinaryExpression: public virtual Typed,
-    public virtual boost::enable_shared_from_this<BinaryExpression> {
+class BinaryExpression: public virtual Typed {
 public:
   /**
    * Constructor.
    */
-  BinaryExpression(boost::shared_ptr<Typed> left, Operator op,
-      boost::shared_ptr<Typed> right);
+  BinaryExpression(Typed* left, Operator op, Typed* right);
 
   /**
    * Destructor.
    */
   virtual ~BinaryExpression();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -39,7 +38,7 @@ public:
   /**
    * Left operand.
    */
-  boost::shared_ptr<Typed> left;
+  Typed* left;
 
   /**
    * Operator.
@@ -49,7 +48,7 @@ public:
   /**
    * Right operand.
    */
-  boost::shared_ptr<Typed> right;
+  Typed* right;
 
 protected:
   /**
@@ -59,10 +58,9 @@ protected:
 };
 }
 
-inline biprog::BinaryExpression::BinaryExpression(
-    boost::shared_ptr<Typed> left, Operator op,
-    boost::shared_ptr<Typed> right) :
-    left(left), op(op), right(right) {
+inline biprog::BinaryExpression::BinaryExpression(Typed* left, Operator op,
+    Typed* right) :
+    Typed(left->type->clone()), left(left), op(op), right(right) {
   /* pre-conditions */
   BI_ASSERT(left);
   BI_ASSERT(right);
@@ -71,7 +69,8 @@ inline biprog::BinaryExpression::BinaryExpression(
 }
 
 inline biprog::BinaryExpression::~BinaryExpression() {
-  //
+  delete left;
+  delete right;
 }
 
 #endif

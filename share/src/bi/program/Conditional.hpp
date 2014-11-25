@@ -20,21 +20,20 @@ namespace biprog {
  */
 class Conditional: public virtual Typed,
     public virtual Conditioned,
-    public virtual Braced,
-    public virtual boost::enable_shared_from_this<Conditional> {
+    public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Conditional(boost::shared_ptr<Typed> cond, boost::shared_ptr<Typed> braces,
-      boost::shared_ptr<Typed> falseBraces);
+  Conditional(Typed* cond, Typed* braces, Typed* falseBraces);
 
   /**
    * Destructor.
    */
   virtual ~Conditional();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -42,7 +41,7 @@ public:
   /**
    * Block if condition is false. May be empty if there is no else clause.
    */
-  boost::shared_ptr<Typed> falseBraces;
+  Typed* falseBraces;
 
 protected:
   /**
@@ -52,15 +51,15 @@ protected:
 };
 }
 
-inline biprog::Conditional::Conditional(boost::shared_ptr<Typed> cond,
-    boost::shared_ptr<Typed> braces, boost::shared_ptr<Typed> falseBraces) :
+inline biprog::Conditional::Conditional(Typed* cond, Typed* braces,
+    Typed* falseBraces) :
     Conditioned(cond), Braced(braces), falseBraces(falseBraces) {
   /* pre-condition */
   BI_ASSERT(falseBraces);
 }
 
 inline biprog::Conditional::~Conditional() {
-  //
+  delete falseBraces;
 }
 
 #endif

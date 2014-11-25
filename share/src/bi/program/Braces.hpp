@@ -17,16 +17,25 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braces: public virtual Typed,
-    public virtual Scoped,
-    public virtual boost::enable_shared_from_this<Braces> {
+class Braces: public virtual Typed, public virtual Scoped {
 public:
+  /**
+   * Constructor.
+   */
+  Braces();
+
+  /**
+   * Constructor.
+   */
+  Braces(Typed* expr);
+
   /**
    * Destructor.
    */
   virtual ~Braces();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -37,6 +46,15 @@ protected:
    */
   virtual void output(std::ostream& out) const;
 };
+}
+
+inline biprog::Braces::Braces() {
+  //
+}
+
+inline biprog::Braces::Braces(Typed* expr) :
+    Typed(expr->type->clone()), Scoped(expr) {
+  //
 }
 
 inline biprog::Braces::~Braces() {

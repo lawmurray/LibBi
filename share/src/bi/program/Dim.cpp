@@ -10,10 +10,16 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::Dim::accept(Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::Dim::clone() {
+  return new Dim(name, brackets->clone());
+}
+
+biprog::Typed* biprog::Dim::accept(Visitor& v) {
   brackets = brackets->accept(v);
   type = type->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::Dim::operator<=(const Typed& o) const {

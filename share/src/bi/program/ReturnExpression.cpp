@@ -10,11 +10,16 @@
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
-boost::shared_ptr<biprog::Typed> biprog::ReturnExpression::accept(
-    Visitor& v) {
+#include <typeinfo>
+
+biprog::Typed* biprog::ReturnExpression::clone() {
+  return new ReturnExpression(expr->clone());
+}
+
+biprog::Typed* biprog::ReturnExpression::accept(Visitor& v) {
   type = type->accept(v);
   expr = expr->accept(v);
-  return v.visit(shared_from_this());
+  return v.visit(this);
 }
 
 bool biprog::ReturnExpression::operator<=(const Typed& o) const {

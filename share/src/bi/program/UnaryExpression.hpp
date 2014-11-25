@@ -17,8 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class UnaryExpression: public virtual Typed,
-    public virtual boost::enable_shared_from_this<UnaryExpression> {
+class UnaryExpression: public virtual Typed {
 public:
   /**
    * Constructor.
@@ -26,14 +25,15 @@ public:
    * @param op Operator.
    * @param right Right operand.
    */
-  UnaryExpression(Operator op, boost::shared_ptr<Typed> right);
+  UnaryExpression(Operator op, Typed* right);
 
   /**
    * Destructor.
    */
   virtual ~UnaryExpression();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -46,7 +46,7 @@ public:
   /**
    * Right operand.
    */
-  boost::shared_ptr<Typed> right;
+  Typed* right;
 
 protected:
   /**
@@ -56,9 +56,8 @@ protected:
 };
 }
 
-inline biprog::UnaryExpression::UnaryExpression(Operator op,
-    boost::shared_ptr<Typed> right) :
-    op(op), right(right) {
+inline biprog::UnaryExpression::UnaryExpression(Operator op, Typed* right) :
+    Typed(right->type->clone()), op(op), right(right) {
   /* pre-condition */
   BI_ASSERT(right);
 
@@ -66,7 +65,7 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op,
 }
 
 inline biprog::UnaryExpression::~UnaryExpression() {
-  //
+  delete right;
 }
 
 #endif

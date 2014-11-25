@@ -16,14 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditioned : public virtual Expression {
+class Conditioned: public virtual Expression {
 public:
   /**
    * Constructor.
    *
    * @param cond Conditional expression.
    */
-  Conditioned(boost::shared_ptr<Typed> cond);
+  Conditioned(Typed* cond);
 
   /**
    * Destructor.
@@ -33,18 +33,18 @@ public:
   /**
    * First statement in in brackets.
    */
-  boost::shared_ptr<Typed> cond;
+  Typed* cond;
 };
 }
 
-inline biprog::Conditioned::Conditioned(boost::shared_ptr<Typed> cond) :
+inline biprog::Conditioned::Conditioned(Typed* cond) :
     cond(cond) {
   /* pre-condition */
   BI_ASSERT(cond);
 }
 
 inline biprog::Conditioned::~Conditioned() {
-  //
+  delete cond;
 }
 
 #endif

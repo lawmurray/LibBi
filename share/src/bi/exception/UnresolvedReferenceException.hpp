@@ -11,8 +11,6 @@
 #include "Exception.hpp"
 #include "../program/Reference.hpp"
 
-#include "boost/shared_ptr.hpp"
-
 namespace biprog {
 /**
  * Unresolved reference in program.
@@ -21,7 +19,7 @@ struct UnresolvedReferenceException: public Exception {
   /**
    * Constructor.
    */
-  UnresolvedReferenceException(boost::shared_ptr<Reference> ref);
+  UnresolvedReferenceException(Reference* ref);
 
   /**
    * Destructor.

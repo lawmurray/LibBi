@@ -10,7 +10,7 @@
 #include <sstream>
 
 biprog::UnresolvedReferenceException::UnresolvedReferenceException(
-    boost::shared_ptr<Reference> ref) {
+    Reference* ref) {
   std::stringstream buf;
   buf << "unresolved reference " << ref << std::endl;
   msg = buf.str();

@@ -24,8 +24,7 @@ class Reference: public virtual Named,
     public virtual Bracketed,
     public virtual Parenthesised,
     public virtual Typed,
-    public virtual Braced,
-    public virtual boost::enable_shared_from_this<Reference> {
+    public virtual Braced {
 public:
   /**
    * Constructor.
@@ -37,18 +36,16 @@ public:
    * @param braces Expression in braces.
    * @param target Target of the reference. May be null if unresolved.
    */
-  Reference(const char* name, boost::shared_ptr<Typed> brackets,
-      boost::shared_ptr<Typed> parens,
-      boost::shared_ptr<Typed> type,
-      boost::shared_ptr<Typed> braces,
-      boost::shared_ptr<Typed> target);
+  Reference(const std::string name, Typed* brackets, Typed* parens,
+      Typed* type, Typed* braces, Typed* target = NULL);
 
   /**
    * Destructor.
    */
   virtual ~Reference();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -56,7 +53,7 @@ public:
   /**
    * Target.
    */
-  boost::shared_ptr<Typed> target;
+  Typed* target;
 
 protected:
   /**
@@ -66,11 +63,8 @@ protected:
 };
 }
 
-inline biprog::Reference::Reference(const char* name,
-    boost::shared_ptr<Typed> brackets,
-    boost::shared_ptr<Typed> parens, boost::shared_ptr<Typed> type,
-    boost::shared_ptr<Typed> braces,
-    boost::shared_ptr<Typed> target) :
+inline biprog::Reference::Reference(const std::string name, Typed* brackets,
+    Typed* parens, Typed* type, Typed* braces, Typed* target) :
     Named(name), Bracketed(brackets), Parenthesised(parens), Typed(type), Braced(
         braces), target(target) {
   //

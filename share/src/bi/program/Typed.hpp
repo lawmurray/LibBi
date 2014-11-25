@@ -30,12 +30,17 @@ public:
    *
    * @param type type.
    */
-  Typed(boost::shared_ptr<Typed> type);
+  Typed(Typed* type);
 
   /**
    * Destructor.
    */
   virtual ~Typed() = 0;
+
+  /**
+   * Clone expression.
+   */
+  virtual Typed* clone() = 0;
 
   /**
    * Accept visitor.
@@ -44,7 +49,7 @@ public:
    *
    * @return New expression with which to replace this one (may be the same).
    */
-  virtual boost::shared_ptr<Typed> accept(Visitor& v) = 0;
+  virtual Typed* accept(Visitor& v) = 0;
 
   /*
    * Comparison operators for comparing expressions in terms of
@@ -63,21 +68,22 @@ public:
   /**
    * Type.
    */
-  boost::shared_ptr<Typed> type;
+  Typed* type;
 };
 }
 
-inline biprog::Typed::Typed() {
+inline biprog::Typed::Typed() :
+    type(NULL) {
   //
 }
 
-inline biprog::Typed::Typed(boost::shared_ptr<Typed> type) :
+inline biprog::Typed::Typed(Typed* type) :
     type(type) {
   //
 }
 
 inline biprog::Typed::~Typed() {
-  //
+  delete type;
 }
 
 inline bool biprog::Typed::operator<(const Typed& o) const {

@@ -17,8 +17,7 @@ namespace biprog {
  * @ingroup program
  */
 template<class T1>
-class Literal: public virtual Typed,
-    public virtual boost::enable_shared_from_this<Literal<T1> > {
+class Literal: public virtual Typed {
 public:
   /**
    * Constructor.
@@ -30,7 +29,8 @@ public:
    */
   virtual ~Literal();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -50,6 +50,8 @@ public:
 #include "Reference.hpp"
 #include "../visitor/Visitor.hpp"
 
+#include <typeinfo>
+
 template<class T1>
 inline biprog::Literal<T1>::Literal(const T1& value) :
     value(value) {
@@ -62,8 +64,13 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-boost::shared_ptr<biprog::Typed> biprog::Literal<T1>::accept(Visitor& v) {
-  return v.visit(this->shared_from_this());
+biprog::Typed* biprog::Literal<T1>::clone() {
+  return new Literal<T1>(value);
+}
+
+template<class T1>
+biprog::Typed* biprog::Literal<T1>::accept(Visitor& v) {
+  return v.visit(this);
 }
 
 template<class T1>

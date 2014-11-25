@@ -22,21 +22,20 @@ namespace biprog {
 class Def: public virtual Named,
     public virtual Parenthesised,
     public virtual Typed,
-    public virtual Braced,
-    public virtual boost::enable_shared_from_this<Def> {
+    public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Def(const char* name, boost::shared_ptr<Typed> parens,
-      boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces);
+  Def(const std::string name, Typed* parens, Typed* type, Typed* braces);
 
   /**
    * Destructor.
    */
   virtual ~Def();
 
-  virtual boost::shared_ptr<Typed> accept(Visitor& v);
+  virtual Typed* clone();
+  virtual Typed* accept(Visitor& v);
 
   virtual bool operator<=(const Typed& o) const;
   virtual bool operator==(const Typed& o) const;
@@ -49,8 +48,8 @@ protected:
 };
 }
 
-inline biprog::Def::Def(const char* name, boost::shared_ptr<Typed> parens,
-    boost::shared_ptr<Typed> type, boost::shared_ptr<Typed> braces) :
+inline biprog::Def::Def(const std::string name, Typed* parens, Typed* type,
+    Typed* braces) :
     Named(name), Parenthesised(parens), Typed(type), Braced(braces) {
   //
 }

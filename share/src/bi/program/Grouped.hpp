@@ -26,7 +26,7 @@ public:
   /**
    * Constructor.
    */
-  Grouped(boost::shared_ptr<Typed> expr);
+  Grouped(Typed* expr);
 
   /**
    * Destructor.
@@ -36,24 +36,23 @@ public:
   /**
    * Grouped expression.
    */
-  boost::shared_ptr<Typed> expr;
+  Typed* expr;
 };
 }
 
-#include "EmptyExpression.hpp"
-
-inline biprog::Grouped::Grouped() : expr(boost::make_shared<EmptyExpression>()) {
+inline biprog::Grouped::Grouped() :
+    expr(NULL) {
   //
 }
 
-inline biprog::Grouped::Grouped(boost::shared_ptr<Typed> expr) :
+inline biprog::Grouped::Grouped(Typed* expr) :
     expr(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }
 
 inline biprog::Grouped::~Grouped() {
-  //
+  delete expr;
 }
 
 #endif
