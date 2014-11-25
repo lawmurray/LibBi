@@ -8,9 +8,9 @@
 #ifndef BI_PROGRAM_DIM_HPP
 #define BI_PROGRAM_DIM_HPP
 
+#include "Statement.hpp"
 #include "Named.hpp"
 #include "Bracketed.hpp"
-#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -18,25 +18,25 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Dim: public virtual Named,
-    public virtual Bracketed,
-    public virtual Typed {
+class Dim: public virtual Statement,
+    public virtual Named,
+    public virtual Bracketed {
 public:
   /**
    * Constructor.
    */
-  Dim(const std::string name, Typed* brackets);
+  Dim(const std::string name, Expression* brackets);
 
   /**
    * Destructor.
    */
   virtual ~Dim();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Dim* clone();
+  virtual Statement* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Statement& o) const;
+  virtual bool operator==(const Statement& o) const;
 
 protected:
   /**
@@ -46,7 +46,7 @@ protected:
 };
 }
 
-inline biprog::Dim::Dim(const std::string name, Typed* brackets) :
+inline biprog::Dim::Dim(const std::string name, Expression* brackets) :
     Named(name), Bracketed(brackets) {
   //
 }

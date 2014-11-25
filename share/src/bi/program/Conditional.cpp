@@ -12,19 +12,18 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Conditional::clone() {
+biprog::Conditional* biprog::Conditional::clone() {
   return new Conditional(cond->clone(), braces->clone(), falseBraces->clone());
 }
 
-biprog::Typed* biprog::Conditional::accept(Visitor& v) {
-  type = type->accept(v);
+biprog::Statement* biprog::Conditional::accept(Visitor& v) {
   cond = cond->accept(v);
   braces = braces->accept(v);
   falseBraces = falseBraces->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Conditional::operator<=(const Typed& o) const {
+bool biprog::Conditional::operator<=(const Statement& o) const {
   try {
     const Conditional& o1 = dynamic_cast<const Conditional&>(o);
     return *cond <= *o1.cond && *braces <= *o1.braces
@@ -34,14 +33,14 @@ bool biprog::Conditional::operator<=(const Typed& o) const {
   }
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
-    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+    return !*o1.brackets && !*o1.parens && !*o1.braces;
   } catch (std::bad_cast e) {
     //
   }
   return false;
 }
 
-bool biprog::Conditional::operator==(const Typed& o) const {
+bool biprog::Conditional::operator==(const Statement& o) const {
   try {
     const Conditional& o1 = dynamic_cast<const Conditional&>(o);
     return *cond == *o1.cond && *braces == *o1.braces

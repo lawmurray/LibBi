@@ -16,14 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Conditioned: public virtual Expression {
+class Conditioned {
 public:
   /**
    * Constructor.
    *
    * @param cond Conditional expression.
    */
-  Conditioned(Typed* cond);
+  Conditioned(Expression* cond);
 
   /**
    * Destructor.
@@ -33,11 +33,11 @@ public:
   /**
    * First statement in in brackets.
    */
-  Typed* cond;
+  Expression* cond;
 };
 }
 
-inline biprog::Conditioned::Conditioned(Typed* cond) :
+inline biprog::Conditioned::Conditioned(Expression* cond) :
     cond(cond) {
   /* pre-condition */
   BI_ASSERT(cond);

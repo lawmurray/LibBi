@@ -33,13 +33,14 @@ public:
   /**
    * Find what would be the parent vertices for a given value.
    *
+   * @tparam Comparable Type comparable to value type.
    * @tparam Container Container type with push_back() function.
    *
    * @param val The value.
    * @param[out] out Container in which to insert values of parent vertices.
    */
-  template<class Container>
-  void find(const T& val, Container& out);
+  template<class Comparable, class Container>
+  void find(const Comparable& val, Container& out);
 
   /**
    * Insert vertex.
@@ -143,8 +144,8 @@ bi::poset<T,Compare>::poset() :
 }
 
 template<class T, class Compare>
-template<class Container>
-void bi::poset<T,Compare>::find(const T& val, Container& out) {
+template<class Comparable, class Container>
+void bi::poset<T,Compare>::find(const Comparable& val, Container& out) {
   ++col;
   BOOST_AUTO(iter, roots.begin());
   while (iter != roots.end()) {

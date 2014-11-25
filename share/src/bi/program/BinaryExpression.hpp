@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_BINARYEXPRESSION_HPP
 #define BI_PROGRAM_BINARYEXPRESSION_HPP
 
-#include "Typed.hpp"
+#include "Expression.hpp"
 #include "Operator.hpp"
 
 namespace biprog {
@@ -17,28 +17,28 @@ namespace biprog {
  *
  * @ingroup program
  */
-class BinaryExpression: public virtual Typed {
+class BinaryExpression: public virtual Expression {
 public:
   /**
    * Constructor.
    */
-  BinaryExpression(Typed* left, Operator op, Typed* right);
+  BinaryExpression(Expression* left, Operator op, Expression* right);
 
   /**
    * Destructor.
    */
   virtual ~BinaryExpression();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual BinaryExpression* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
   /**
    * Left operand.
    */
-  Typed* left;
+  Expression* left;
 
   /**
    * Operator.
@@ -48,7 +48,7 @@ public:
   /**
    * Right operand.
    */
-  Typed* right;
+  Expression* right;
 
 protected:
   /**
@@ -58,9 +58,9 @@ protected:
 };
 }
 
-inline biprog::BinaryExpression::BinaryExpression(Typed* left, Operator op,
-    Typed* right) :
-    Typed(left->type->clone()), left(left), op(op), right(right) {
+inline biprog::BinaryExpression::BinaryExpression(Expression* left, Operator op,
+    Expression* right) :
+    Expression(left->type->clone()), left(left), op(op), right(right) {
   /* pre-conditions */
   BI_ASSERT(left);
   BI_ASSERT(right);

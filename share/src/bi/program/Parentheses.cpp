@@ -12,17 +12,17 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Parentheses::clone() {
+biprog::Parentheses* biprog::Parentheses::clone() {
   return new Parentheses(expr->clone());
 }
 
-biprog::Typed* biprog::Parentheses::accept(Visitor& v) {
+biprog::Expression* biprog::Parentheses::accept(Visitor& v) {
   type = type->accept(v);
   expr = expr->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Parentheses::operator<=(const Typed& o) const {
+bool biprog::Parentheses::operator<=(const Expression& o) const {
   try {
     const Parentheses& o1 = dynamic_cast<const Parentheses&>(o);
     return *expr <= *o1.expr && *type <= *o1.type;
@@ -38,7 +38,7 @@ bool biprog::Parentheses::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::Parentheses::operator==(const Typed& o) const {
+bool biprog::Parentheses::operator==(const Expression& o) const {
   try {
     const Parentheses& o1 = dynamic_cast<const Parentheses&>(o);
     return *expr == *o1.expr && *type == *o1.type;

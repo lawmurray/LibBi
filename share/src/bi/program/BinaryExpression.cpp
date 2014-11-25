@@ -12,18 +12,18 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::BinaryExpression::clone() {
+biprog::BinaryExpression* biprog::BinaryExpression::clone() {
   return new BinaryExpression(left->clone(), op, right->clone());
 }
 
-biprog::Typed* biprog::BinaryExpression::accept(Visitor& v) {
+biprog::Expression* biprog::BinaryExpression::accept(Visitor& v) {
   type = type->accept(v);
   left = left->accept(v);
   right = right->accept(v);
   return v.visit(this);
 }
 
-bool biprog::BinaryExpression::operator<=(const Typed& o) const {
+bool biprog::BinaryExpression::operator<=(const Expression& o) const {
   try {
     const BinaryExpression& o1 = dynamic_cast<const BinaryExpression&>(o);
     return op == o1.op && *left <= *o1.left && *right <= *o1.right
@@ -40,7 +40,7 @@ bool biprog::BinaryExpression::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::BinaryExpression::operator==(const Typed& o) const {
+bool biprog::BinaryExpression::operator==(const Expression& o) const {
   try {
     const BinaryExpression& o1 = dynamic_cast<const BinaryExpression&>(o);
     return op == o1.op && *left == *o1.left && *right == *o1.right

@@ -8,8 +8,7 @@
 #ifndef BI_PROGRAM_BRACED_HPP
 #define BI_PROGRAM_BRACED_HPP
 
-#include "Expression.hpp"
-#include "Typed.hpp"
+#include "Statement.hpp"
 
 namespace biprog {
 /**
@@ -17,14 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braced: public virtual Expression {
+class Braced {
 public:
   /**
    * Constructor.
    *
    * @param in Expression in curly brackets.
    */
-  Braced(Typed* braces);
+  Braced(Statement* braces);
 
   /**
    * Destructor.
@@ -34,11 +33,11 @@ public:
   /**
    * First statement in in brackets.
    */
-  Typed* braces;
+  Statement* braces;
 };
 }
 
-inline biprog::Braced::Braced(Typed* braces) :
+inline biprog::Braced::Braced(Statement* braces) :
     braces(braces) {
   /* pre-condition */
   BI_ASSERT(braces);

@@ -31,5 +31,5 @@ void biprog::Scoped::add(Named* decl) {
   BOOST_AUTO(val, poset_type());
   BOOST_AUTO(pair, std::make_pair(key, val));
   BOOST_AUTO(iter, decls.insert(pair).first);
-  iter->second.insert(decl);
+  iter->second.insert(dynamic_cast<Statement*>(decl));
 }

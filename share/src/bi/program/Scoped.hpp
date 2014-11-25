@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_SCOPED_HPP
 #define BI_PROGRAM_SCOPED_HPP
 
-#include "Expression.hpp"
+#include "Statement.hpp"
 #include "Reference.hpp"
 #include "Named.hpp"
 #include "../exception/AmbiguousReferenceException.hpp"
@@ -21,12 +21,12 @@ namespace biprog {
 /**
  * Scoped statement.
  */
-class Scoped: public virtual Expression {
+class Scoped {
 public:
   /**
    * Constructor.
    */
-  Scoped(Typed* expr = NULL);
+  Scoped(Statement* stmt = NULL);
 
   /**
    * Destructor.
@@ -44,12 +44,12 @@ public:
   void add(Named* decl);
 
   /**
-   * Root expression.
+   * Root statement.
    */
-  Typed* expr;
+  Statement* stmt;
 
 protected:
-  typedef Named value_type;
+  typedef Statement value_type;
   typedef value_type* pointer_type;
   typedef bi::poset<pointer_type,bi::pointer_less_equal<pointer_type> > poset_type;
   typedef std::map<std::string,poset_type> map_type;
@@ -61,12 +61,12 @@ protected:
 };
 }
 
-inline biprog::Scoped::Scoped(Typed* expr) : expr(expr) {
+inline biprog::Scoped::Scoped(Statement* stmt) : stmt(stmt) {
   //
 }
 
 inline biprog::Scoped::~Scoped() {
-  delete expr;
+  delete stmt;
 }
 
 #endif

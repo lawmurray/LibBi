@@ -12,20 +12,20 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Braces::clone() {
-  return new Braces(expr->clone());
+biprog::Braces* biprog::Braces::clone() {
+  return new Braces(stmt->clone());
 }
 
-biprog::Typed* biprog::Braces::accept(Visitor& v) {
+biprog::Braces* biprog::Braces::accept(Visitor& v) {
   type = type->accept(v);
-  expr = expr->accept(v);
+  stmt = stmt->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Braces::operator<=(const Typed& o) const {
+bool biprog::Braces::operator<=(const Expression& o) const {
   try {
     const Braces& o1 = dynamic_cast<const Braces&>(o);
-    return *expr <= *o1.expr && *type <= *o1.type;
+    return *stmt <= *o1.stmt && *type <= *o1.type;
   } catch (std::bad_cast e) {
     //
   }
@@ -38,10 +38,36 @@ bool biprog::Braces::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::Braces::operator==(const Typed& o) const {
+bool biprog::Braces::operator==(const Expression& o) const {
   try {
     const Braces& o1 = dynamic_cast<const Braces&>(o);
-    return *expr == *o1.expr && *type == *o1.type;
+    return *stmt == *o1.stmt && *type == *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
+}
+
+bool biprog::Braces::operator<=(const Statement& o) const {
+  try {
+    const Braces& o1 = dynamic_cast<const Braces&>(o);
+    return *stmt <= *o1.stmt && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  try {
+    const Reference& o1 = dynamic_cast<const Reference&>(o);
+    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+  } catch (std::bad_cast e) {
+    //
+  }
+  return false;
+}
+
+bool biprog::Braces::operator==(const Statement& o) const {
+  try {
+    const Braces& o1 = dynamic_cast<const Braces&>(o);
+    return *stmt == *o1.stmt && *type == *o1.type;
   } catch (std::bad_cast e) {
     //
   }
@@ -49,5 +75,5 @@ bool biprog::Braces::operator==(const Typed& o) const {
 }
 
 void biprog::Braces::output(std::ostream& out) const {
-  out << '{' << *expr << '}';
+  out << '{' << *stmt << '}';
 }

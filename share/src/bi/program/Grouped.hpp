@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_GROUPED_HPP
 #define BI_PROGRAM_GROUPED_HPP
 
-#include "Typed.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -26,7 +26,7 @@ public:
   /**
    * Constructor.
    */
-  Grouped(Typed* expr);
+  Grouped(Expression* expr);
 
   /**
    * Destructor.
@@ -36,7 +36,7 @@ public:
   /**
    * Grouped expression.
    */
-  Typed* expr;
+  Expression* expr;
 };
 }
 
@@ -45,8 +45,8 @@ inline biprog::Grouped::Grouped() :
   //
 }
 
-inline biprog::Grouped::Grouped(Typed* expr) :
-    expr(expr) {
+inline biprog::Grouped::Grouped(Expression* expr) :
+    Expression(expr->type->clone()), expr(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }

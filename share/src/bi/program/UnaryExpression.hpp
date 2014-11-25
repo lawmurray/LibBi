@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_UNARYEXPRESSION_HPP
 #define BI_PROGRAM_UNARYEXPRESSION_HPP
 
-#include "Typed.hpp"
+#include "Expression.hpp"
 #include "Operator.hpp"
 
 namespace biprog {
@@ -17,7 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class UnaryExpression: public virtual Typed {
+class UnaryExpression: public virtual Expression {
 public:
   /**
    * Constructor.
@@ -25,18 +25,18 @@ public:
    * @param op Operator.
    * @param right Right operand.
    */
-  UnaryExpression(Operator op, Typed* right);
+  UnaryExpression(Operator op, Expression* right);
 
   /**
    * Destructor.
    */
   virtual ~UnaryExpression();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual UnaryExpression* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
   /**
    * Operator.
@@ -46,7 +46,7 @@ public:
   /**
    * Right operand.
    */
-  Typed* right;
+  Expression* right;
 
 protected:
   /**
@@ -56,8 +56,8 @@ protected:
 };
 }
 
-inline biprog::UnaryExpression::UnaryExpression(Operator op, Typed* right) :
-    Typed(right->type->clone()), op(op), right(right) {
+inline biprog::UnaryExpression::UnaryExpression(Operator op, Expression* right) :
+    Expression(right->type->clone()), op(op), right(right) {
   /* pre-condition */
   BI_ASSERT(right);
 

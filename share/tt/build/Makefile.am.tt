@@ -81,13 +81,13 @@ libbi_a_SOURCES = \
   src/bi/program/Def.cpp \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \
-  src/bi/program/Expression.cpp \
+  src/bi/program/EmptyStatement.cpp \
   src/bi/program/Loop.cpp \
   src/bi/program/Operator.cpp \
   src/bi/program/Parentheses.cpp \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
-  src/bi/program/ReturnExpression.cpp \
+  src/bi/program/ReturnStatement.cpp \
   src/bi/program/Scoped.cpp \
   src/bi/program/Sequence.cpp \
   src/bi/program/UnaryExpression.cpp \

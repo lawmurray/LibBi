@@ -12,18 +12,18 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Def::clone() {
+biprog::Def* biprog::Def::clone() {
   return new Def(name, parens->clone(), type->clone(), braces->clone());
 }
 
-biprog::Typed* biprog::Def::accept(Visitor& v) {
+biprog::Statement* biprog::Def::accept(Visitor& v) {
   parens = parens->accept(v);
   type = type->accept(v);
   braces = braces->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Def::operator<=(const Typed& o) const {
+bool biprog::Def::operator<=(const Statement& o) const {
   try {
     const Def& o1 = dynamic_cast<const Def&>(o);
     return *parens <= *o1.parens && *type <= *o1.type && *braces <= *o1.braces;
@@ -39,7 +39,7 @@ bool biprog::Def::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::Def::operator==(const Typed& o) const {
+bool biprog::Def::operator==(const Statement& o) const {
   try {
     const Def& o1 = dynamic_cast<const Def&>(o);
     return *parens == *o1.parens && *type == *o1.type && *braces == *o1.braces;

@@ -12,17 +12,17 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::UnaryExpression::clone() {
+biprog::UnaryExpression* biprog::UnaryExpression::clone() {
   return new UnaryExpression(op, right->clone());
 }
 
-biprog::Typed* biprog::UnaryExpression::accept(Visitor& v) {
+biprog::Expression* biprog::UnaryExpression::accept(Visitor& v) {
   type = type->accept(v);
   right = right->accept(v);
   return v.visit(this);
 }
 
-bool biprog::UnaryExpression::operator<=(const Typed& o) const {
+bool biprog::UnaryExpression::operator<=(const Expression& o) const {
   try {
     const UnaryExpression& o1 = dynamic_cast<const UnaryExpression&>(o);
     return op == o1.op && *right <= *o1.right && *type <= *o1.type;
@@ -38,7 +38,7 @@ bool biprog::UnaryExpression::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::UnaryExpression::operator==(const Typed& o) const {
+bool biprog::UnaryExpression::operator==(const Expression& o) const {
   try {
     const UnaryExpression& o1 = dynamic_cast<const UnaryExpression&>(o);
     return op == o1.op && *right == *o1.right && *type == *o1.type;

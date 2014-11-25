@@ -12,25 +12,18 @@
 
 namespace biprog {
 /**
- * Typed object.
+ * Typed declaration.
  *
  * @ingroup program
  */
-class Typed: public virtual Expression {
+class Typed {
 public:
   /**
    * Constructor.
    *
-   * @param type type.
+   * @param type Type.
    */
-  Typed();
-
-  /**
-   * Constructor.
-   *
-   * @param type type.
-   */
-  Typed(Typed* type);
+  Typed(Expression* type);
 
   /**
    * Destructor.
@@ -38,68 +31,19 @@ public:
   virtual ~Typed() = 0;
 
   /**
-   * Clone expression.
-   */
-  virtual Typed* clone() = 0;
-
-  /**
-   * Accept visitor.
-   *
-   * @param v The visitor.
-   *
-   * @return New expression with which to replace this one (may be the same).
-   */
-  virtual Typed* accept(Visitor& v) = 0;
-
-  /*
-   * Comparison operators for comparing expressions in terms of
-   * specialisation.
-   *
-   * The first two are the most commonly used, and so overridden by derived
-   * classes. The remainder are expressed in terms of these.
-   */
-  virtual bool operator<=(const Typed& o) const = 0;
-  virtual bool operator==(const Typed& o) const = 0;
-  bool operator<(const Typed& o) const;
-  bool operator>(const Typed& o) const;
-  bool operator>=(const Typed& o) const;
-  bool operator!=(const Typed& o) const;
-
-  /**
    * Type.
    */
-  Typed* type;
+  Expression* type;
 };
 }
 
-inline biprog::Typed::Typed() :
-    type(NULL) {
-  //
-}
-
-inline biprog::Typed::Typed(Typed* type) :
+inline biprog::Typed::Typed(Expression* type) :
     type(type) {
   //
 }
 
 inline biprog::Typed::~Typed() {
   delete type;
-}
-
-inline bool biprog::Typed::operator<(const Typed& o) const {
-  return *this <= o && *this != o;
-}
-
-inline bool biprog::Typed::operator>(const Typed& o) const {
-  return !(*this <= o);
-}
-
-inline bool biprog::Typed::operator>=(const Typed& o) const {
-  return !(*this < o);
-}
-
-inline bool biprog::Typed::operator!=(const Typed& o) const {
-  return !(*this == o);
 }
 
 #endif

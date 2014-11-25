@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_LOOP_HPP
 #define BI_PROGRAM_LOOP_HPP
 
-#include "Typed.hpp"
+#include "Statement.hpp"
 #include "Conditioned.hpp"
 #include "Braced.hpp"
 
@@ -18,25 +18,25 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Loop: public virtual Typed,
+class Loop: public virtual Statement,
     public virtual Conditioned,
     public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Loop(Typed* cond, Typed* braces);
+  Loop(Expression* cond, Statement* braces);
 
   /**
    * Destructor.
    */
   virtual ~Loop();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Loop* clone();
+  virtual Statement* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Statement& o) const;
+  virtual bool operator==(const Statement& o) const;
 
 protected:
   /**
@@ -46,7 +46,7 @@ protected:
 };
 }
 
-inline biprog::Loop::Loop(Typed* cond, Typed* braces) :
+inline biprog::Loop::Loop(Expression* cond, Statement* braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

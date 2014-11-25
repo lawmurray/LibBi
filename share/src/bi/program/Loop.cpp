@@ -12,18 +12,17 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Loop::clone() {
+biprog::Loop* biprog::Loop::clone() {
   return new Loop(cond->clone(), braces->clone());
 }
 
-biprog::Typed* biprog::Loop::accept(Visitor& v) {
-  type = type->accept(v);
+biprog::Statement* biprog::Loop::accept(Visitor& v) {
   cond = cond->accept(v);
   braces = braces->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Loop::operator<=(const Typed& o) const {
+bool biprog::Loop::operator<=(const Statement& o) const {
   try {
     const Loop& o1 = dynamic_cast<const Loop&>(o);
     return *cond <= *o1.cond && *braces <= *o1.braces;
@@ -32,14 +31,14 @@ bool biprog::Loop::operator<=(const Typed& o) const {
   }
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
-    return !*o1.brackets && !*o1.parens && !*o1.braces && *type <= *o1.type;
+    return !*o1.brackets && !*o1.parens && !*o1.braces;
   } catch (std::bad_cast e) {
     //
   }
   return false;
 }
 
-bool biprog::Loop::operator==(const Typed& o) const {
+bool biprog::Loop::operator==(const Statement& o) const {
   try {
     const Loop& o1 = dynamic_cast<const Loop&>(o);
     return *cond == *o1.cond && *braces == *o1.braces;

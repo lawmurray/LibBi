@@ -8,10 +8,10 @@
 #ifndef BI_PROGRAM_REFERENCE_HPP
 #define BI_PROGRAM_REFERENCE_HPP
 
+#include "Expression.hpp"
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
-#include "Typed.hpp"
 #include "Braced.hpp"
 
 namespace biprog {
@@ -20,10 +20,10 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public virtual Named,
+class Reference: public virtual Expression,
+    public virtual Named,
     public virtual Bracketed,
     public virtual Parenthesised,
-    public virtual Typed,
     public virtual Braced {
 public:
   /**
@@ -36,24 +36,24 @@ public:
    * @param braces Expression in braces.
    * @param target Target of the reference. May be null if unresolved.
    */
-  Reference(const std::string name, Typed* brackets, Typed* parens,
-      Typed* type, Typed* braces, Typed* target = NULL);
+  Reference(const std::string name, Expression* brackets, Expression* parens,
+      Expression* type, Statement* braces, Expression* target = NULL);
 
   /**
    * Destructor.
    */
   virtual ~Reference();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Reference* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
   /**
    * Target.
    */
-  Typed* target;
+  Expression* target;
 
 protected:
   /**
@@ -63,9 +63,10 @@ protected:
 };
 }
 
-inline biprog::Reference::Reference(const std::string name, Typed* brackets,
-    Typed* parens, Typed* type, Typed* braces, Typed* target) :
-    Named(name), Bracketed(brackets), Parenthesised(parens), Typed(type), Braced(
+inline biprog::Reference::Reference(const std::string name,
+    Expression* brackets, Expression* parens, Expression* type,
+    Statement* braces, Expression* target) :
+    Named(name), Bracketed(brackets), Parenthesised(parens), Expression(type), Braced(
         braces), target(target) {
   //
 }

@@ -16,7 +16,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Program: public Scoped {
+class Program: public virtual Scoped {
 public:
   /**
    * Destructor.

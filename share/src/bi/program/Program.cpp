@@ -8,5 +8,5 @@
 #include "Program.hpp"
 
 void biprog::Program::output(std::ostream& out) const {
-  out << *expr;
+  out << *stmt;
 }

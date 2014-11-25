@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_SEQUENCE_HPP
 #define BI_PROGRAM_SEQUENCE_HPP
 
-#include "Typed.hpp"
+#include "Statement.hpp"
 
 namespace biprog {
 /**
@@ -16,33 +16,33 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Sequence: public virtual Typed {
+class Sequence: public virtual Statement {
 public:
   /**
    * Constructor.
    */
-  Sequence(Typed* head, Typed* tail);
+  Sequence(Statement* head, Statement* tail);
 
   /**
    * Destructor.
    */
   virtual ~Sequence();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Sequence* clone();
+  virtual Statement* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Statement& o) const;
+  virtual bool operator==(const Statement& o) const;
 
   /**
    * Left operand.
    */
-  Typed* head;
+  Statement* head;
 
   /**
    * Right operand.
    */
-  Typed* tail;
+  Statement* tail;
 
 protected:
   /**
@@ -52,7 +52,7 @@ protected:
 };
 }
 
-inline biprog::Sequence::Sequence(Typed* head, Typed* tail) :
+inline biprog::Sequence::Sequence(Statement* head, Statement* tail) :
     head(head), tail(tail) {
   /* pre-conditions */
   BI_ASSERT(head);

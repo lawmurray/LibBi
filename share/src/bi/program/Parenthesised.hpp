@@ -9,7 +9,6 @@
 #define BI_PROGRAM_PARENTHESISED_HPP
 
 #include "Expression.hpp"
-#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -17,14 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Parenthesised: public virtual Expression {
+class Parenthesised {
 public:
   /**
    * Constructor.
    *
    * @param parens Expression in parentheses.
    */
-  Parenthesised(Typed* parens);
+  Parenthesised(Expression* parens);
 
   /**
    * Destructor.
@@ -34,11 +33,11 @@ public:
   /**
    * First statement in in brackets.
    */
-  Typed* parens;
+  Expression* parens;
 };
 }
 
-inline biprog::Parenthesised::Parenthesised(Typed* parens) :
+inline biprog::Parenthesised::Parenthesised(Expression* parens) :
     parens(parens) {
   /* pre-condition */
   BI_ASSERT(parens);

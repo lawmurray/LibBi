@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_LITERAL_HPP
 #define BI_PROGRAM_LITERAL_HPP
 
-#include "Typed.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -17,7 +17,7 @@ namespace biprog {
  * @ingroup program
  */
 template<class T1>
-class Literal: public virtual Typed {
+class Literal: public virtual Expression {
 public:
   /**
    * Constructor.
@@ -29,11 +29,11 @@ public:
    */
   virtual ~Literal();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Literal<T1>* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
   /**
    * Output.
@@ -64,17 +64,17 @@ inline biprog::Literal<T1>::~Literal() {
 }
 
 template<class T1>
-biprog::Typed* biprog::Literal<T1>::clone() {
+biprog::Literal<T1>* biprog::Literal<T1>::clone() {
   return new Literal<T1>(value);
 }
 
 template<class T1>
-biprog::Typed* biprog::Literal<T1>::accept(Visitor& v) {
+biprog::Expression* biprog::Literal<T1>::accept(Visitor& v) {
   return v.visit(this);
 }
 
 template<class T1>
-bool biprog::Literal<T1>::operator<=(const Typed& o) const {
+bool biprog::Literal<T1>::operator<=(const Expression& o) const {
   try {
     const Literal<T1>& o1 = dynamic_cast<const Literal<T1>&>(o);
     return value == o1.value && *type <= *o1.type;
@@ -92,7 +92,7 @@ bool biprog::Literal<T1>::operator<=(const Typed& o) const {
 }
 
 template<class T1>
-bool biprog::Literal<T1>::operator==(const Typed& o) const {
+bool biprog::Literal<T1>::operator==(const Expression& o) const {
   try {
     const Literal<T1>& o1 = dynamic_cast<const Literal<T1>&>(o);
     return value == o1.value;

@@ -9,7 +9,6 @@
 #define BI_PROGRAM_BRACKETED_HPP
 
 #include "Expression.hpp"
-#include "Typed.hpp"
 
 namespace biprog {
 /**
@@ -17,14 +16,14 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Bracketed : public virtual Expression {
+class Bracketed {
 public:
   /**
    * Constructor.
    *
    * @param brackets Expression in square brackets.
    */
-  Bracketed(Typed* brackets);
+  Bracketed(Expression* brackets);
 
   /**
    * Destructor.
@@ -34,11 +33,11 @@ public:
   /**
    * First statement in index brackets.
    */
-  Typed* brackets;
+  Expression* brackets;
 };
 }
 
-inline biprog::Bracketed::Bracketed(Typed* brackets) :
+inline biprog::Bracketed::Bracketed(Expression* brackets) :
     brackets(brackets) {
   /* pre-condition */
   BI_ASSERT(brackets);

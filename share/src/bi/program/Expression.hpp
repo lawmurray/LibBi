@@ -14,40 +14,103 @@ namespace biprog {
 class Visitor;
 
 /**
- * Expression.
+ * Expression object.
  *
  * @ingroup program
  */
 class Expression {
 public:
   /**
+   * Constructor.
+   *
+   * @param type type.
+   */
+  Expression();
+
+  /**
+   * Constructor.
+   *
+   * @param type type.
+   */
+  Expression(Expression* type);
+
+  /**
    * Destructor.
    */
   virtual ~Expression() = 0;
+
+  /**
+   * Clone expression.
+   */
+  virtual Expression* clone() = 0;
+
+  /**
+   * Accept visitor.
+   *
+   * @param v The visitor.
+   *
+   * @return New expression with which to replace this one (may be the same).
+   */
+  virtual Expression* accept(Visitor& v) = 0;
 
   /*
    * Bool cast to check for non-empty expression.
    */
   virtual operator bool() const;
 
-  /**
-   * Output operator. Defers to output() for polymorphism.
+  /*
+   * Comparison operators for comparing expressions in terms of
+   * specialisation.
+   *
+   * The first two are the most commonly used, and so overridden by derived
+   * classes. The remainder are expressed in terms of these.
    */
-  friend std::ostream& operator<<(std::ostream& out, const Expression& expr) {
-    expr.output(out);
-    return out;
-  }
+  virtual bool operator<=(const Expression& o) const = 0;
+  virtual bool operator==(const Expression& o) const = 0;
+  bool operator<(const Expression& o) const;
+  bool operator>(const Expression& o) const;
+  bool operator>=(const Expression& o) const;
+  bool operator!=(const Expression& o) const;
 
-protected:
   /**
-   * Output to stream.
+   * Type.
    */
-  virtual void output(std::ostream& out) const = 0;
+  Expression* type;
 };
 }
 
-inline biprog::Expression::~Expression() {
+inline biprog::Expression::Expression() :
+    type(NULL) {
   //
+}
+
+inline biprog::Expression::Expression(Expression* type) :
+    type(type) {
+  //
+}
+
+inline biprog::Expression::~Expression() {
+  delete type;
+}
+
+inline biprog::Expression::operator bool() const {
+  return true;
+}
+
+inline bool biprog::Expression::operator<(const Expression& o) const {
+  return *this <= o && *this != o;
+}
+
+inline bool biprog::Expression::operator>(const Expression& o) const {
+  return !(*this <= o);
+}
+
+inline bool biprog::Expression::operator>=(const Expression& o) const {
+  return !(*this < o);
+}
+
+inline bool biprog::Expression::operator!=(const Expression& o) const {
+  return !(*this == o);
 }
 
 #endif

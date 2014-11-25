@@ -6,13 +6,14 @@
 #include "bi/program/Def.hpp"
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
+#include "bi/program/EmptyStatement.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
 #include "bi/program/Parentheses.hpp"
 #include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
 #include "bi/program/Reference.hpp"
-#include "bi/program/ReturnExpression.hpp"
+#include "bi/program/ReturnStatement.hpp"
 #include "bi/program/Sequence.hpp"
 #include "bi/program/UnaryExpression.hpp"
 #include "bi/program/Var.hpp"
@@ -28,7 +29,8 @@
 %{
 #include "parser.hpp"
 
-#define BI_EMPTY new biprog::EmptyExpression()
+#define BI_EMPTY_STMT new biprog::EmptyStatement()
+#define BI_EMPTY_EXPR new biprog::EmptyExpression()
 
 extern FILE *yyin;
 extern int col;
@@ -71,14 +73,11 @@ void push(biprog::Scoped* scope) {
 /**
  * Pop innermost scope.
  */
-biprog::Typed* pop() {
+void pop() {
   /* pre-condition */
   BI_ASSERT(scopes.size() > 0);
 
-  biprog::Typed* ret = dynamic_cast<biprog::Typed*>(top());
   scopes.pop_front();
-
-  return ret;
 }
 
 /**
@@ -107,7 +106,8 @@ bool resolve(biprog::Reference* ref) {
   char* valString;
 
   biprog::Operator valOperator;
-  biprog::Typed* valTyped;
+  biprog::Statement* valStatement;
+  biprog::Expression* valExpression;
 }
 
 %token DEF DIM VAR INHERITS IF ELSE WHILE RETURN
@@ -130,21 +130,24 @@ bool resolve(biprog::Reference* ref) {
 %type <valOperator> logical_or_operator constraint_operator
 %type <valOperator> assignment_operator tuple_operator statement_operator
 
-%type <valTyped> type reference parens brackets braces
-%type <valTyped> optional_parens optional_brackets optional_braces
-%type <valTyped> bool_literal int_literal double_literal string_literal
-%type <valTyped> traversal_expression type_expression primary_expression
-%type <valTyped> default_expression unary_expression pow_expression
-%type <valTyped> multiplicative_expression additive_expression
-%type <valTyped> shift_expression relational_expression
-%type <valTyped> equality_expression and_expression
-%type <valTyped> exclusive_or_expression inclusive_or_expression
-%type <valTyped> logical_and_expression logical_or_expression
-%type <valTyped> constraint_expression assignment_expression
-%type <valTyped> tuple_expression expression optional_expression
-%type <valTyped> optional_type def dim var if while return
-%type <valTyped> block_statement nonblock_statement tail_statement statement
-%type <valTyped> statements optional_statements file
+%type <valExpression> type reference parens brackets
+%type <valExpression> optional_parens optional_brackets
+%type <valExpression> bool_literal int_literal double_literal string_literal
+%type <valExpression> traversal_expression type_expression primary_expression
+%type <valExpression> default_expression unary_expression pow_expression
+%type <valExpression> multiplicative_expression additive_expression
+%type <valExpression> shift_expression relational_expression
+%type <valExpression> equality_expression and_expression
+%type <valExpression> exclusive_or_expression inclusive_or_expression
+%type <valExpression> logical_and_expression logical_or_expression
+%type <valExpression> constraint_expression assignment_expression
+%type <valExpression> tuple_expression expression optional_expression
+%type <valExpression> optional_type
+
+%type <valStatement> braces optional_braces
+%type <valStatement> def dim var if while return
+%type <valStatement> block_statement nonblock_statement tail_statement statement
+%type <valStatement> statements optional_statements file
 
 %start file
 %%
@@ -155,26 +158,26 @@ bool resolve(biprog::Reference* ref) {
  ***************************************************************************/
 
 type
-    : IDENTIFIER optional_parens  { $$ = new biprog::Reference($1, BI_EMPTY, $2, BI_EMPTY, BI_EMPTY); }
+    : IDENTIFIER optional_parens  { $$ = new biprog::Reference($1, BI_EMPTY_EXPR, $2, BI_EMPTY_EXPR, BI_EMPTY_STMT); }
     ;
 
 reference
-    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, $2, $3, BI_EMPTY, $4); }
+    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, $2, $3, BI_EMPTY_EXPR, $4); }
     ;
 
 optional_parens
     : parens
-    |         { $$ = BI_EMPTY; }
+    |         { $$ = BI_EMPTY_EXPR; }
     ;
 
 optional_brackets
     : brackets
-    |           { $$ = BI_EMPTY; }
+    |           { $$ = BI_EMPTY_EXPR; }
     ;
     
 optional_braces
     : braces
-    |         { $$ = BI_EMPTY; }
+    |         { $$ = BI_EMPTY_STMT; }
     ;
 
 parens
@@ -186,7 +189,7 @@ brackets
     ;
 
 braces
-    : '{'  { push(new biprog::Braces()); }  optional_statements '}'  { top()->expr = $3; $$ = pop(); }
+    : '{'  { push(new biprog::Braces()); }  optional_statements '}'  { top()->stmt = $3; $$ = dynamic_cast<biprog::Statement*>(top()); pop(); }
     ;
 
 
@@ -406,7 +409,7 @@ expression
     
 optional_expression
     : expression
-    |             { $$ = BI_EMPTY; }
+    |             { $$ = BI_EMPTY_EXPR; }
     ;
 
 
@@ -425,7 +428,7 @@ statement_operator
 
 def
     : DEF IDENTIFIER optional_parens optional_type braces              { $$ = new biprog::Def($2, $3, $4, $5); }
-    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = new biprog::Def($2, $3, $4, BI_EMPTY); }
+    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = new biprog::Def($2, $3, $4, BI_EMPTY_STMT); }
     ;
 
 dim
@@ -439,7 +442,7 @@ var
 if
     : IF parens braces ELSE if      { $$ = new biprog::Conditional($2, $3, $5); }
     | IF parens braces ELSE braces  { $$ = new biprog::Conditional($2, $3, $5); }
-    | IF parens braces              { $$ = new biprog::Conditional($2, $3, BI_EMPTY); }
+    | IF parens braces              { $$ = new biprog::Conditional($2, $3, BI_EMPTY_STMT); }
     ;
 
 while
@@ -447,7 +450,7 @@ while
     ;
 
 return
-    : RETURN expression  { $$ = new biprog::ReturnExpression($2); }
+    : RETURN expression  { $$ = new biprog::ReturnStatement($2); }
     ;
 
 block_statement
@@ -474,7 +477,7 @@ tail_statement
 
 optional_statements
     : statements
-    |             { $$ = BI_EMPTY; }
+    |             { $$ = BI_EMPTY_STMT; }
     ;
     
 statements
@@ -489,7 +492,7 @@ statements
  ***************************************************************************/
 
 file
-    : { push(new biprog::Program()); }  statements  { top()->expr = $2; }
+    : { push(new biprog::Program()); }  statements  { top()->stmt = $2; }
     ;
     
 %%
@@ -498,7 +501,7 @@ int main() {
   do {
     yyparse();
   } while (!feof(yyin));
-  std::cout << *top()->expr << std::endl;
+  std::cout << *top()->stmt << std::endl;
   delete top();
 
   return 0;

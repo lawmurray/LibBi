@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_BRACKETS_HPP
 #define BI_PROGRAM_BRACKETS_HPP
 
-#include "Typed.hpp"
 #include "Grouped.hpp"
 
 namespace biprog {
@@ -17,31 +16,31 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Brackets: public virtual Typed, public virtual Grouped {
+class Brackets: public virtual Grouped {
 public:
   /**
    * Constructor.
    */
-  Brackets(Typed* expr);
+  Brackets(Expression* expr);
 
   /**
    * Destructor.
    */
   virtual ~Brackets();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Brackets* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
 protected:
   virtual void output(std::ostream& out) const;
 };
 }
 
-inline biprog::Brackets::Brackets(Typed* expr) :
-    Typed(expr->type->clone()), Grouped(expr) {
+inline biprog::Brackets::Brackets(Expression* expr) :
+    Grouped(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }

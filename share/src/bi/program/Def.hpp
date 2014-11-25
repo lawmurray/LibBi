@@ -8,6 +8,7 @@
 #ifndef BI_PROGRAM_DEF_HPP
 #define BI_PROGRAM_DEF_HPP
 
+#include "Statement.hpp"
 #include "Named.hpp"
 #include "Parenthesised.hpp"
 #include "Typed.hpp"
@@ -19,26 +20,28 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Def: public virtual Named,
-    public virtual Parenthesised,
+class Def: public virtual Statement,
+    public virtual Named,
     public virtual Typed,
+    public virtual Parenthesised,
     public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Def(const std::string name, Typed* parens, Typed* type, Typed* braces);
+  Def(const std::string name, Expression* parens, Expression* type,
+      Statement* braces);
 
   /**
    * Destructor.
    */
   virtual ~Def();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Def* clone();
+  virtual Statement* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Statement& o) const;
+  virtual bool operator==(const Statement& o) const;
 
 protected:
   /**
@@ -48,8 +51,8 @@ protected:
 };
 }
 
-inline biprog::Def::Def(const std::string name, Typed* parens, Typed* type,
-    Typed* braces) :
+inline biprog::Def::Def(const std::string name, Expression* parens,
+    Expression* type, Statement* braces) :
     Named(name), Parenthesised(parens), Typed(type), Braced(braces) {
   //
 }

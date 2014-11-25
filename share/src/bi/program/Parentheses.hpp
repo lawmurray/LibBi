@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_PARENTHESES_HPP
 #define BI_PROGRAM_PARENTHESES_HPP
 
-#include "Typed.hpp"
 #include "Grouped.hpp"
 
 namespace biprog {
@@ -17,24 +16,23 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Parentheses: public virtual Typed,
-    public virtual Grouped {
+class Parentheses: public virtual Grouped {
 public:
   /**
    * Constructor.
    */
-  Parentheses(Typed* expr);
+  Parentheses(Expression* expr);
 
   /**
    * Destructor.
    */
   virtual ~Parentheses();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual Parentheses* clone();
+  virtual Expression* accept(Visitor& v);
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
 protected:
   /**
@@ -44,8 +42,8 @@ protected:
 };
 }
 
-inline biprog::Parentheses::Parentheses(Typed* expr) :
-    Typed(expr->type->clone()), Grouped(expr) {
+inline biprog::Parentheses::Parentheses(Expression* expr) :
+    Grouped(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }

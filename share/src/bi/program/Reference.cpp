@@ -11,12 +11,12 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Reference::clone() {
+biprog::Reference* biprog::Reference::clone() {
   return new Reference(name, brackets->clone(), parens->clone(),
       type->clone(), braces->clone(), target);
 }
 
-biprog::Typed* biprog::Reference::accept(Visitor& v) {
+biprog::Expression* biprog::Reference::accept(Visitor& v) {
   type = type->accept(v);
   brackets = brackets->accept(v);
   parens = parens->accept(v);
@@ -24,7 +24,7 @@ biprog::Typed* biprog::Reference::accept(Visitor& v) {
   return v.visit(this);
 }
 
-bool biprog::Reference::operator<=(const Typed& o) const {
+bool biprog::Reference::operator<=(const Expression& o) const {
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
     return *brackets <= *o1.brackets && *type <= *o1.type
@@ -35,7 +35,7 @@ bool biprog::Reference::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::Reference::operator==(const Typed& o) const {
+bool biprog::Reference::operator==(const Expression& o) const {
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
     return *brackets == *o1.brackets && *type == *o1.type

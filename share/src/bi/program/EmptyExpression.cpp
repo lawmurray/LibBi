@@ -13,11 +13,11 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::EmptyExpression::clone() {
+biprog::EmptyExpression* biprog::EmptyExpression::clone() {
   return new EmptyExpression();
 }
 
-biprog::Typed* biprog::EmptyExpression::accept(Visitor& v) {
+biprog::Expression* biprog::EmptyExpression::accept(Visitor& v) {
   return v.visit(this);
 }
 
@@ -25,11 +25,11 @@ biprog::EmptyExpression::operator bool() const {
   return false;
 }
 
-bool biprog::EmptyExpression::operator<=(const Typed& o) const {
+bool biprog::EmptyExpression::operator<=(const Expression& o) const {
   return operator==(o);
 }
 
-bool biprog::EmptyExpression::operator==(const Typed& o) const {
+bool biprog::EmptyExpression::operator==(const Expression& o) const {
   try {
     BI_UNUSED const EmptyExpression& o1 =
         dynamic_cast<const EmptyExpression&>(o);

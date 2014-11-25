@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_EMPTYEXPRESSION_HPP
 #define BI_PROGRAM_EMPTYEXPRESSION_HPP
 
-#include "Typed.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -18,20 +18,20 @@ namespace biprog {
  *
  * Used for empty brackets, parentheses or braces.
  */
-class EmptyExpression: public virtual Typed {
+class EmptyExpression: public virtual Expression {
 public:
   /**
    * Destructor.
    */
   virtual ~EmptyExpression();
 
-  virtual Typed* clone();
-  virtual Typed* accept(Visitor& v);
+  virtual EmptyExpression* clone();
+  virtual Expression* accept(Visitor& v);
 
   virtual operator bool() const;
 
-  virtual bool operator<=(const Typed& o) const;
-  virtual bool operator==(const Typed& o) const;
+  virtual bool operator<=(const Expression& o) const;
+  virtual bool operator==(const Expression& o) const;
 
 protected:
   /**

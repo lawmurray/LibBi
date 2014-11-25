@@ -12,17 +12,17 @@
 
 #include <typeinfo>
 
-biprog::Typed* biprog::Var::clone() {
+biprog::Var* biprog::Var::clone() {
   return new Var(name, brackets->clone(), type->clone());
 }
 
-biprog::Typed* biprog::Var::accept(Visitor& v) {
+biprog::Statement* biprog::Var::accept(Visitor& v) {
   brackets = brackets->accept(v);
   type = type->accept(v);
   return v.visit(this);
 }
 
-bool biprog::Var::operator<=(const Typed& o) const {
+bool biprog::Var::operator<=(const Statement& o) const {
   try {
     const Var& o1 = dynamic_cast<const Var&>(o);
     return *brackets <= *o1.brackets && *type <= *o1.type;
@@ -38,7 +38,7 @@ bool biprog::Var::operator<=(const Typed& o) const {
   return false;
 }
 
-bool biprog::Var::operator==(const Typed& o) const {
+bool biprog::Var::operator==(const Statement& o) const {
   try {
     const Var& o1 = dynamic_cast<const Var&>(o);
     return *brackets == *o1.brackets && *type == *o1.type;
