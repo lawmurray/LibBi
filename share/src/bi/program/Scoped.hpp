@@ -12,6 +12,7 @@
 #include "Reference.hpp"
 #include "Named.hpp"
 #include "../exception/AmbiguousReferenceException.hpp"
+#include "../exception/UnresolvedReferenceException.hpp"
 #include "../primitive/poset.hpp"
 #include "../primitive/pointer_less_equal.hpp"
 

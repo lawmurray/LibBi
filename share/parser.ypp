@@ -82,20 +82,34 @@ void pop() {
 }
 
 /**
+ * Add to innermost scope.
+ */
+template<class T>
+T* add(T* decl) {
+  scopes.front()->add(decl);
+  return decl;
+}
+
+/**
  * Resolve reference through current stack.
  */
-bool resolve(biprog::Reference* ref) {
-  bool resolved = false;
-  BOOST_AUTO(iter, scopes.begin());
+biprog::Reference* resolve(biprog::Reference* ref) {
   try {
+    bool resolved = false;
+	  BOOST_AUTO(iter, scopes.begin());
     while (!resolved && iter != scopes.end()) {
       resolved = (*iter)->resolve(ref);
       ++iter;
     }
+    if (!resolved) {
+      throw biprog::UnresolvedReferenceException(ref);
+    }
   } catch (biprog::AmbiguousReferenceException& e) {
     yyerror(e.msg.c_str());
+  } catch (biprog::UnresolvedReferenceException& e) {
+    yyerror(e.msg.c_str());
   }
-  return resolved;
+  return ref;
 }
 
 %}
@@ -162,7 +176,7 @@ type_operator
     ;
 
 type
-    : IDENTIFIER optional_parens  { $$ = new biprog::Reference(std::string($1), BI_EMPTY_EXPR, $2, BI_EMPTY_STMT, BI_EMPTY_EXPR); }
+    : IDENTIFIER optional_parens  { $$ = resolve(new biprog::Reference(std::string($1), BI_EMPTY_EXPR, $2, BI_EMPTY_STMT, BI_EMPTY_EXPR)); }
     ;
 
 optional_type
@@ -171,7 +185,7 @@ optional_type
     ;
 
 reference
-    : IDENTIFIER optional_brackets optional_parens optional_type optional_braces  { $$ = new biprog::Reference(std::string($1), $2, $3, $4, $5); }
+    : IDENTIFIER optional_brackets optional_parens optional_type optional_braces  { $$ = resolve(new biprog::Reference(std::string($1), $2, $3, $4, $5)); }
     ;
 
 optional_parens
@@ -422,16 +436,16 @@ statement_operator
     ;
 
 def
-    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = new biprog::Def(std::string($2), $3, $4, $5); }
-    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = new biprog::Def(std::string($2), $3, $4, BI_EMPTY_EXPR); }
+    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = add(new biprog::Def(std::string($2), $3, $4, $5)); }
+    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = add(new biprog::Def(std::string($2), $3, $4, BI_EMPTY_EXPR)); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets  { $$ = new biprog::Dim(std::string($2), $3); }
+    : DIM IDENTIFIER brackets  { $$ = add(new biprog::Dim(std::string($2), $3)); }
     ;
 
 var
-    : VAR IDENTIFIER optional_brackets type_operator type  { $$ = new biprog::Var(std::string($2), $3, $5); }
+    : VAR IDENTIFIER optional_brackets type_operator type  { $$ = add(new biprog::Var(std::string($2), $3, $5)); }
     ;
 
 if

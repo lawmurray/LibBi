@@ -37,10 +37,10 @@ public:
    * @param parens Expression in parentheses.
    * @param type Type.
    * @param braces Expression in braces.
-   * @param target Target of the reference. May be null if unresolved.
+   * @param target Target of the reference.
    */
   Reference(const std::string name, Expression* brackets, Expression* parens,
-      Statement* type, Expression* braces, Expression* target = new EmptyExpression());
+      Statement* type, Expression* braces, Statement* target = new EmptyStatement());
 
   /**
    * Destructor.
@@ -59,7 +59,7 @@ public:
   /**
    * Target.
    */
-  Expression* target;
+  Statement* target;
 
 protected:
   /**
@@ -71,7 +71,7 @@ protected:
 
 inline biprog::Reference::Reference(const std::string name,
     Expression* brackets, Expression* parens, Statement* type,
-    Expression* braces, Expression* target) :
+    Expression* braces, Statement* target) :
     Named(name), Bracketed(brackets), Parenthesised(parens), Expression(type), Braced(
         braces), target(target) {
   //

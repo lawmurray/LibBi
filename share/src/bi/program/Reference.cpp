@@ -7,6 +7,9 @@
  */
 #include "Reference.hpp"
 
+#include "Def.hpp"
+#include "Dim.hpp"
+#include "Var.hpp"
 #include "../visitor/Visitor.hpp"
 
 #include <typeinfo>
@@ -37,8 +40,8 @@ biprog::Statement* biprog::Reference::acceptStatement(Visitor& v) {
 bool biprog::Reference::operator<=(const Expression& o) const {
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
-    return *brackets <= *o1.brackets && *type <= *o1.type
-        && *parens <= *o1.parens && *braces <= *o1.braces;
+    return *brackets <= *o1.brackets && *parens <= *o1.parens
+        && *type <= *o1.type && *braces <= *o1.braces;
   } catch (std::bad_cast e) {
     //
   }
@@ -48,8 +51,8 @@ bool biprog::Reference::operator<=(const Expression& o) const {
 bool biprog::Reference::operator==(const Expression& o) const {
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
-    return *brackets == *o1.brackets && *type == *o1.type
-        && *parens == *o1.parens && *braces == *o1.braces;
+    return *brackets == *o1.brackets && *parens == *o1.parens
+        && *type == *o1.type && *braces == *o1.braces;
   } catch (std::bad_cast e) {
     //
   }
@@ -59,8 +62,27 @@ bool biprog::Reference::operator==(const Expression& o) const {
 bool biprog::Reference::operator<=(const Statement& o) const {
   try {
     const Reference& o1 = dynamic_cast<const Reference&>(o);
-    return *brackets <= *o1.brackets && *type <= *o1.type
-        && *parens <= *o1.parens && *braces <= *o1.braces;
+    return *brackets <= *o1.brackets && *parens <= *o1.parens
+        && *type <= *o1.type && *braces <= *o1.braces;
+  } catch (std::bad_cast e) {
+    //
+  }
+  try {
+    const Def& o1 = dynamic_cast<const Def&>(o);
+    return !*brackets && *parens <= *o1.parens && !*type
+        && *braces <= *o1.braces;
+  } catch (std::bad_cast e) {
+    //
+  }
+  try {
+    const Dim& o1 = dynamic_cast<const Dim&>(o);
+    return !*brackets && !*parens && !*type && !*braces;
+  } catch (std::bad_cast e) {
+    //
+  }
+  try {
+    const Var& o1 = dynamic_cast<const Var&>(o);
+    return *brackets <= *o1.brackets && !*parens && !*type && !*braces;
   } catch (std::bad_cast e) {
     //
   }

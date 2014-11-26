@@ -17,10 +17,11 @@ bool biprog::Scoped::resolve(Reference* ref)
   if (iter != decls.end()) {
     std::list<pointer_type> matches;
     iter->second.find(ref, matches);
-    if (matches.size() == 1) {
-      return true;
-    } else if (matches.size() > 1) {
+    if (matches.size() > 1) {
       throw AmbiguousReferenceException(ref, matches);
+    } else if (matches.size() == 1) {
+      ref->target = matches.front();
+      return true;
     }
   }
   return false;

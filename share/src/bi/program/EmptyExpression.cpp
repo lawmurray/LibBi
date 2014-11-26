@@ -35,7 +35,7 @@ bool biprog::EmptyExpression::operator==(const Expression& o) const {
         dynamic_cast<const EmptyExpression&>(o);
     return true;
   } catch (std::bad_cast e) {
-    return true;
+    return false;
   }
 }
 
