@@ -62,9 +62,4 @@ extern const char* const ops[];
 
 }
 
-/**
- * Output an operator.
- */
-std::ostream& operator<<(std::ostream& out, const biprog::Operator op);
-
 #endif

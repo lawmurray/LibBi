@@ -64,8 +64,6 @@ inline biprog::BinaryExpression::BinaryExpression(Expression* left,
   /* pre-conditions */
   BI_ASSERT(left);
   BI_ASSERT(right);
-
-  type = left->type;  ///@todo Infer type properly
 }
 
 inline biprog::BinaryExpression::~BinaryExpression() {

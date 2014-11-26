@@ -50,5 +50,5 @@ bool biprog::UnaryExpression::operator==(const Expression& o) const {
 }
 
 void biprog::UnaryExpression::output(std::ostream& out) const {
-  out << op << *right;
+  out << ops[op] << *right;
 }

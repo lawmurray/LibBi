@@ -60,8 +60,6 @@ inline biprog::UnaryExpression::UnaryExpression(Operator op, Expression* right) 
     Expression(right->type->clone()), op(op), right(right) {
   /* pre-condition */
   BI_ASSERT(right);
-
-  type = right->type;  //@todo Infer type properly
 }
 
 inline biprog::UnaryExpression::~UnaryExpression() {

@@ -9,6 +9,7 @@
 #define BI_PROGRAM_EXPRESSION_HPP
 
 #include "Statement.hpp"
+#include "EmptyStatement.hpp"
 #include "../misc/assert.hpp"
 
 namespace biprog {
@@ -26,14 +27,7 @@ public:
    *
    * @param type type.
    */
-  Expression();
-
-  /**
-   * Constructor.
-   *
-   * @param type type.
-   */
-  Expression(Statement* type);
+  Expression(Statement* type = new EmptyStatement());
 
   /**
    * Destructor.
@@ -77,15 +71,24 @@ public:
    * Type.
    */
   Statement* type;
+
+  /**
+   * Output operator. Defers to output() for polymorphism.
+   */
+  friend std::ostream& operator<<(std::ostream& out, const Expression& expr) {
+    expr.output(out);
+    return out;
+  }
+
+protected:
+  /**
+   * Output to stream.
+   */
+  virtual void output(std::ostream& out) const = 0;
 };
 }
 
 #include "EmptyStatement.hpp"
-
-inline biprog::Expression::Expression() :
-    type(new EmptyStatement()) {
-  //
-}
 
 inline biprog::Expression::Expression(Statement* type) :
     type(type) {

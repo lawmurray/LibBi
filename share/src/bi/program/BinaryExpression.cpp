@@ -53,5 +53,5 @@ bool biprog::BinaryExpression::operator==(const Expression& o) const {
 }
 
 void biprog::BinaryExpression::output(std::ostream& out) const {
-  out << *left << op << *right;
+  out << *left << ops[op] << *right;
 }

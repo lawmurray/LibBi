@@ -79,5 +79,17 @@ bool biprog::Reference::operator==(const Statement& o) const {
 }
 
 void biprog::Reference::output(std::ostream& out) const {
-  out << name << *brackets << *parens << *braces;
+  out << name;
+  if (*brackets) {
+    out << *brackets;
+  }
+  if (*parens) {
+    out << *parens;
+  }
+  if (*type) {
+    out << ':' << *type;
+  }
+  if (*braces) {
+    out << *braces;
+  }
 }
