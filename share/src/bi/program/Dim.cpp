@@ -16,9 +16,10 @@ biprog::Dim* biprog::Dim::clone() {
   return new Dim(name, brackets->clone());
 }
 
-biprog::Statement* biprog::Dim::accept(Visitor& v) {
-  brackets = brackets->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Dim::acceptStatement(Visitor& v) {
+  brackets = brackets->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Dim::operator<=(const Statement& o) const {
@@ -48,5 +49,5 @@ bool biprog::Dim::operator==(const Statement& o) const {
 }
 
 void biprog::Dim::output(std::ostream& out) const {
-  out << "dim " << name << *brackets;
+  out << "dim " << name << *brackets << ';';
 }

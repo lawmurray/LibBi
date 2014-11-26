@@ -26,7 +26,7 @@ public:
   /**
    * Constructor.
    */
-  Scoped(Statement* stmt = NULL);
+  Scoped(Statement* stmt = new EmptyStatement());
 
   /**
    * Destructor.

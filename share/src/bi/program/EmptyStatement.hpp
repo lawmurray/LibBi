@@ -24,7 +24,7 @@ public:
   virtual ~EmptyStatement();
 
   virtual EmptyStatement* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual operator bool() const;
 

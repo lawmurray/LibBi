@@ -82,6 +82,7 @@ libbi_a_SOURCES = \
   src/bi/program/Dim.cpp \
   src/bi/program/EmptyExpression.cpp \
   src/bi/program/EmptyStatement.cpp \
+  src/bi/program/ExpressionStatement.cpp \
   src/bi/program/Loop.cpp \
   src/bi/program/Operator.cpp \
   src/bi/program/Parentheses.cpp \

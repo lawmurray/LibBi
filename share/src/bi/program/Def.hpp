@@ -29,8 +29,8 @@ public:
   /**
    * Constructor.
    */
-  Def(const std::string name, Expression* parens, Expression* type,
-      Statement* braces);
+  Def(const std::string name, Expression* parens, Statement* type,
+      Expression* braces);
 
   /**
    * Destructor.
@@ -38,7 +38,7 @@ public:
   virtual ~Def();
 
   virtual Def* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
   virtual bool operator==(const Statement& o) const;
@@ -52,7 +52,7 @@ protected:
 }
 
 inline biprog::Def::Def(const std::string name, Expression* parens,
-    Expression* type, Statement* braces) :
+    Statement* type, Expression* braces) :
     Named(name), Parenthesised(parens), Typed(type), Braced(braces) {
   //
 }

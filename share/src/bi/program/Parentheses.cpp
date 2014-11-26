@@ -16,10 +16,11 @@ biprog::Parentheses* biprog::Parentheses::clone() {
   return new Parentheses(expr->clone());
 }
 
-biprog::Expression* biprog::Parentheses::accept(Visitor& v) {
-  type = type->accept(v);
-  expr = expr->accept(v);
-  return v.visit(this);
+biprog::Expression* biprog::Parentheses::acceptExpression(Visitor& v) {
+  type = type->acceptStatement(v);
+  expr = expr->acceptExpression(v);
+
+  return v.visitExpression(this);
 }
 
 bool biprog::Parentheses::operator<=(const Expression& o) const {

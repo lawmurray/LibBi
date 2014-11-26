@@ -17,8 +17,8 @@ biprog::EmptyStatement* biprog::EmptyStatement::clone() {
   return new EmptyStatement();
 }
 
-biprog::Statement* biprog::EmptyStatement::accept(Visitor& v) {
-  return v.visit(this);
+biprog::Statement* biprog::EmptyStatement::acceptStatement(Visitor& v) {
+  return v.visitStatement(this);
 }
 
 biprog::EmptyStatement::operator bool() const {

@@ -9,6 +9,7 @@
 #define BI_PROGRAM_GROUPED_HPP
 
 #include "Expression.hpp"
+#include "EmptyExpression.hpp"
 
 namespace biprog {
 /**
@@ -21,12 +22,7 @@ public:
   /**
    * Constructor.
    */
-  Grouped();
-
-  /**
-   * Constructor.
-   */
-  Grouped(Expression* expr);
+  Grouped(Expression* expr = new EmptyExpression());
 
   /**
    * Destructor.
@@ -38,11 +34,6 @@ public:
    */
   Expression* expr;
 };
-}
-
-inline biprog::Grouped::Grouped() :
-    expr(NULL) {
-  //
 }
 
 inline biprog::Grouped::Grouped(Expression* expr) :

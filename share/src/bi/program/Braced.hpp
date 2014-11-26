@@ -8,7 +8,7 @@
 #ifndef BI_PROGRAM_BRACED_HPP
 #define BI_PROGRAM_BRACED_HPP
 
-#include "Statement.hpp"
+#include "Expression.hpp"
 
 namespace biprog {
 /**
@@ -23,7 +23,7 @@ public:
    *
    * @param in Expression in curly brackets.
    */
-  Braced(Statement* braces);
+  Braced(Expression* braces);
 
   /**
    * Destructor.
@@ -33,11 +33,11 @@ public:
   /**
    * First statement in in brackets.
    */
-  Statement* braces;
+  Expression* braces;
 };
 }
 
-inline biprog::Braced::Braced(Statement* braces) :
+inline biprog::Braced::Braced(Expression* braces) :
     braces(braces) {
   /* pre-condition */
   BI_ASSERT(braces);

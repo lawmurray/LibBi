@@ -33,7 +33,7 @@ public:
   virtual ~UnaryExpression();
 
   virtual UnaryExpression* clone();
-  virtual Expression* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
 
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;

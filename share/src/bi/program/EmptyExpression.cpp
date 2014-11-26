@@ -17,8 +17,8 @@ biprog::EmptyExpression* biprog::EmptyExpression::clone() {
   return new EmptyExpression();
 }
 
-biprog::Expression* biprog::EmptyExpression::accept(Visitor& v) {
-  return v.visit(this);
+biprog::Expression* biprog::EmptyExpression::acceptExpression(Visitor& v) {
+  return v.visitExpression(this);
 }
 
 biprog::EmptyExpression::operator bool() const {

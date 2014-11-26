@@ -30,7 +30,7 @@ public:
   virtual ~BinaryExpression();
 
   virtual BinaryExpression* clone();
-  virtual Expression* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
 
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
@@ -58,14 +58,14 @@ protected:
 };
 }
 
-inline biprog::BinaryExpression::BinaryExpression(Expression* left, Operator op,
-    Expression* right) :
+inline biprog::BinaryExpression::BinaryExpression(Expression* left,
+    Operator op, Expression* right) :
     Expression(left->type->clone()), left(left), op(op), right(right) {
   /* pre-conditions */
   BI_ASSERT(left);
   BI_ASSERT(right);
 
-  type = left->type;  //@todo Infer type properly
+  type = left->type;  ///@todo Infer type properly
 }
 
 inline biprog::BinaryExpression::~BinaryExpression() {

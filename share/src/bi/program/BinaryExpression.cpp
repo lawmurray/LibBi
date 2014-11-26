@@ -16,11 +16,12 @@ biprog::BinaryExpression* biprog::BinaryExpression::clone() {
   return new BinaryExpression(left->clone(), op, right->clone());
 }
 
-biprog::Expression* biprog::BinaryExpression::accept(Visitor& v) {
-  type = type->accept(v);
-  left = left->accept(v);
-  right = right->accept(v);
-  return v.visit(this);
+biprog::Expression* biprog::BinaryExpression::acceptExpression(Visitor& v) {
+  type = type->acceptStatement(v);
+  left = left->acceptExpression(v);
+  right = right->acceptExpression(v);
+
+  return v.visitExpression(this);
 }
 
 bool biprog::BinaryExpression::operator<=(const Expression& o) const {

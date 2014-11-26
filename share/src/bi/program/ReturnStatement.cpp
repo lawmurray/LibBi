@@ -16,9 +16,10 @@ biprog::ReturnStatement* biprog::ReturnStatement::clone() {
   return new ReturnStatement(expr->clone());
 }
 
-biprog::Statement* biprog::ReturnStatement::accept(Visitor& v) {
-  expr = expr->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::ReturnStatement::acceptStatement(Visitor& v) {
+  expr = expr->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::ReturnStatement::operator<=(const Statement& o) const {
@@ -48,5 +49,5 @@ bool biprog::ReturnStatement::operator==(const Statement& o) const {
 }
 
 void biprog::ReturnStatement::output(std::ostream& out) const {
-  out << "return " << *expr;
+  out << "return " << *expr << ';';
 }

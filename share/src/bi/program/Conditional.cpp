@@ -16,11 +16,12 @@ biprog::Conditional* biprog::Conditional::clone() {
   return new Conditional(cond->clone(), braces->clone(), falseBraces->clone());
 }
 
-biprog::Statement* biprog::Conditional::accept(Visitor& v) {
-  cond = cond->accept(v);
-  braces = braces->accept(v);
-  falseBraces = falseBraces->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Conditional::acceptStatement(Visitor& v) {
+  cond = cond->acceptExpression(v);
+  braces = braces->acceptExpression(v);
+  falseBraces = falseBraces->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Conditional::operator<=(const Statement& o) const {

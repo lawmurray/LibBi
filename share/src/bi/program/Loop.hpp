@@ -25,7 +25,7 @@ public:
   /**
    * Constructor.
    */
-  Loop(Expression* cond, Statement* braces);
+  Loop(Expression* cond, Expression* braces);
 
   /**
    * Destructor.
@@ -33,7 +33,7 @@ public:
   virtual ~Loop();
 
   virtual Loop* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
   virtual bool operator==(const Statement& o) const;
@@ -46,7 +46,7 @@ protected:
 };
 }
 
-inline biprog::Loop::Loop(Expression* cond, Statement* braces) :
+inline biprog::Loop::Loop(Expression* cond, Expression* braces) :
     Conditioned(cond), Braced(braces) {
   //
 }

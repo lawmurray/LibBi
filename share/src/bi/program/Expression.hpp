@@ -8,6 +8,7 @@
 #ifndef BI_PROGRAM_EXPRESSION_HPP
 #define BI_PROGRAM_EXPRESSION_HPP
 
+#include "Statement.hpp"
 #include "../misc/assert.hpp"
 
 namespace biprog {
@@ -32,7 +33,7 @@ public:
    *
    * @param type type.
    */
-  Expression(Expression* type);
+  Expression(Statement* type);
 
   /**
    * Destructor.
@@ -51,7 +52,7 @@ public:
    *
    * @return New expression with which to replace this one (may be the same).
    */
-  virtual Expression* accept(Visitor& v) = 0;
+  virtual Expression* acceptExpression(Visitor& v) = 0;
 
   /*
    * Bool cast to check for non-empty expression.
@@ -75,16 +76,18 @@ public:
   /**
    * Type.
    */
-  Expression* type;
+  Statement* type;
 };
 }
 
+#include "EmptyStatement.hpp"
+
 inline biprog::Expression::Expression() :
-    type(NULL) {
+    type(new EmptyStatement()) {
   //
 }
 
-inline biprog::Expression::Expression(Expression* type) :
+inline biprog::Expression::Expression(Statement* type) :
     type(type) {
   //
 }

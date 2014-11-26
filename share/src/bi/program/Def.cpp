@@ -16,11 +16,12 @@ biprog::Def* biprog::Def::clone() {
   return new Def(name, parens->clone(), type->clone(), braces->clone());
 }
 
-biprog::Statement* biprog::Def::accept(Visitor& v) {
-  parens = parens->accept(v);
-  type = type->accept(v);
-  braces = braces->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Def::acceptStatement(Visitor& v) {
+  parens = parens->acceptExpression(v);
+  type = type->acceptStatement(v);
+  braces = braces->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Def::operator<=(const Statement& o) const {
@@ -59,5 +60,7 @@ void biprog::Def::output(std::ostream& out) const {
   }
   if (*braces) {
     out << ' ' << *braces;
+  } else {
+    out << ';';
   }
 }

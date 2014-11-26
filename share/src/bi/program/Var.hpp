@@ -27,7 +27,7 @@ public:
   /**
    * Constructor.
    */
-  Var(const std::string name, Expression* brackets, Expression* type);
+  Var(const std::string name, Expression* brackets, Statement* type);
 
   /**
    * Destructor.
@@ -35,7 +35,7 @@ public:
   virtual ~Var();
 
   virtual Var* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
   virtual bool operator==(const Statement& o) const;
@@ -49,7 +49,7 @@ protected:
 }
 
 inline biprog::Var::Var(const std::string name, Expression* brackets,
-    Expression* type) :
+    Statement* type) :
     Named(name), Bracketed(brackets), Typed(type) {
   //
 }

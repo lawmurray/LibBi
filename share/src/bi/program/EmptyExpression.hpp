@@ -26,7 +26,7 @@ public:
   virtual ~EmptyExpression();
 
   virtual EmptyExpression* clone();
-  virtual Expression* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
 
   virtual operator bool() const;
 

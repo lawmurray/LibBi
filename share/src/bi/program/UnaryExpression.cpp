@@ -16,10 +16,11 @@ biprog::UnaryExpression* biprog::UnaryExpression::clone() {
   return new UnaryExpression(op, right->clone());
 }
 
-biprog::Expression* biprog::UnaryExpression::accept(Visitor& v) {
-  type = type->accept(v);
-  right = right->accept(v);
-  return v.visit(this);
+biprog::Expression* biprog::UnaryExpression::acceptExpression(Visitor& v) {
+  type = type->acceptStatement(v);
+  right = right->acceptExpression(v);
+
+  return v.visitExpression(this);
 }
 
 bool biprog::UnaryExpression::operator<=(const Expression& o) const {
