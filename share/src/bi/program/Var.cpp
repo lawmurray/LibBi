@@ -16,10 +16,11 @@ biprog::Var* biprog::Var::clone() {
   return new Var(name, brackets->clone(), type->clone());
 }
 
-biprog::Statement* biprog::Var::accept(Visitor& v) {
-  brackets = brackets->accept(v);
-  type = type->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Var::acceptStatement(Visitor& v) {
+  type = type->acceptStatement(v);
+  brackets = brackets->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Var::operator<=(const Statement& o) const {
@@ -49,5 +50,5 @@ bool biprog::Var::operator==(const Statement& o) const {
 }
 
 void biprog::Var::output(std::ostream& out) const {
-  out << "var " << name << *brackets << ':' << *type;
+  out << "var " << name << *brackets << ':' << *type << ';';
 }

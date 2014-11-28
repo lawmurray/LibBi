@@ -8,6 +8,8 @@
 #ifndef BI_PROGRAM_EXPRESSION_HPP
 #define BI_PROGRAM_EXPRESSION_HPP
 
+#include "Statement.hpp"
+#include "EmptyStatement.hpp"
 #include "../misc/assert.hpp"
 
 namespace biprog {
@@ -25,14 +27,7 @@ public:
    *
    * @param type type.
    */
-  Expression();
-
-  /**
-   * Constructor.
-   *
-   * @param type type.
-   */
-  Expression(Expression* type);
+  Expression(Statement* type = new EmptyStatement());
 
   /**
    * Destructor.
@@ -51,7 +46,7 @@ public:
    *
    * @return New expression with which to replace this one (may be the same).
    */
-  virtual Expression* accept(Visitor& v) = 0;
+  virtual Expression* acceptExpression(Visitor& v) = 0;
 
   /*
    * Bool cast to check for non-empty expression.
@@ -75,16 +70,27 @@ public:
   /**
    * Type.
    */
-  Expression* type;
+  Statement* type;
+
+  /**
+   * Output operator. Defers to output() for polymorphism.
+   */
+  friend std::ostream& operator<<(std::ostream& out, const Expression& expr) {
+    expr.output(out);
+    return out;
+  }
+
+protected:
+  /**
+   * Output to stream.
+   */
+  virtual void output(std::ostream& out) const = 0;
 };
 }
 
-inline biprog::Expression::Expression() :
-    type(NULL) {
-  //
-}
+#include "EmptyStatement.hpp"
 
-inline biprog::Expression::Expression(Expression* type) :
+inline biprog::Expression::Expression(Statement* type) :
     type(type) {
   //
 }

@@ -17,8 +17,8 @@ biprog::EmptyExpression* biprog::EmptyExpression::clone() {
   return new EmptyExpression();
 }
 
-biprog::Expression* biprog::EmptyExpression::accept(Visitor& v) {
-  return v.visit(this);
+biprog::Expression* biprog::EmptyExpression::acceptExpression(Visitor& v) {
+  return v.visitExpression(this);
 }
 
 biprog::EmptyExpression::operator bool() const {
@@ -35,7 +35,7 @@ bool biprog::EmptyExpression::operator==(const Expression& o) const {
         dynamic_cast<const EmptyExpression&>(o);
     return true;
   } catch (std::bad_cast e) {
-    return true;
+    return false;
   }
 }
 

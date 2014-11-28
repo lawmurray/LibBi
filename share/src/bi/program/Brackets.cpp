@@ -16,10 +16,11 @@ biprog::Brackets* biprog::Brackets::clone() {
   return new Brackets(expr->clone());
 }
 
-biprog::Expression* biprog::Brackets::accept(Visitor& v) {
-  type = type->accept(v);
-  expr = expr->accept(v);
-  return v.visit(this);
+biprog::Expression* biprog::Brackets::acceptExpression(Visitor& v) {
+  type = type->acceptStatement(v);
+  expr = expr->acceptExpression(v);
+
+  return v.visitExpression(this);
 }
 
 bool biprog::Brackets::operator<=(const Expression& o) const {

@@ -30,7 +30,7 @@ public:
   virtual ~Literal();
 
   virtual Literal<T1>* clone();
-  virtual Expression* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
 
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
@@ -69,8 +69,8 @@ biprog::Literal<T1>* biprog::Literal<T1>::clone() {
 }
 
 template<class T1>
-biprog::Expression* biprog::Literal<T1>::accept(Visitor& v) {
-  return v.visit(this);
+biprog::Expression* biprog::Literal<T1>::acceptExpression(Visitor& v) {
+  return v.visitExpression(this);
 }
 
 template<class T1>

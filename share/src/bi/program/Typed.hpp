@@ -8,7 +8,8 @@
 #ifndef BI_PROGRAM_TYPED_HPP
 #define BI_PROGRAM_TYPED_HPP
 
-#include "Expression.hpp"
+#include "Statement.hpp"
+#include "EmptyStatement.hpp"
 
 namespace biprog {
 /**
@@ -23,7 +24,7 @@ public:
    *
    * @param type Type.
    */
-  Typed(Expression* type);
+  Typed(Statement* type = new EmptyStatement());
 
   /**
    * Destructor.
@@ -33,11 +34,11 @@ public:
   /**
    * Type.
    */
-  Expression* type;
+  Statement* type;
 };
 }
 
-inline biprog::Typed::Typed(Expression* type) :
+inline biprog::Typed::Typed(Statement* type) :
     type(type) {
   //
 }

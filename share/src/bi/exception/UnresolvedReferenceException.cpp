@@ -12,6 +12,6 @@
 biprog::UnresolvedReferenceException::UnresolvedReferenceException(
     Reference* ref) {
   std::stringstream buf;
-  buf << "unresolved reference " << ref << std::endl;
+  buf << "unresolved reference " << *dynamic_cast<Expression*>(ref) << std::endl;
   msg = buf.str();
 }

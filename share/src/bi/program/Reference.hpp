@@ -8,11 +8,13 @@
 #ifndef BI_PROGRAM_REFERENCE_HPP
 #define BI_PROGRAM_REFERENCE_HPP
 
+#include "Statement.hpp"
 #include "Expression.hpp"
 #include "Named.hpp"
 #include "Bracketed.hpp"
 #include "Parenthesised.hpp"
 #include "Braced.hpp"
+#include "EmptyExpression.hpp"
 
 namespace biprog {
 /**
@@ -20,7 +22,8 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Reference: public virtual Expression,
+class Reference: public virtual Statement,
+    public virtual Expression,
     public virtual Named,
     public virtual Bracketed,
     public virtual Parenthesised,
@@ -34,10 +37,10 @@ public:
    * @param parens Expression in parentheses.
    * @param type Type.
    * @param braces Expression in braces.
-   * @param target Target of the reference. May be null if unresolved.
+   * @param target Target of the reference.
    */
   Reference(const std::string name, Expression* brackets, Expression* parens,
-      Expression* type, Statement* braces, Expression* target = NULL);
+      Statement* type, Expression* braces, Statement* target = new EmptyStatement());
 
   /**
    * Destructor.
@@ -45,15 +48,18 @@ public:
   virtual ~Reference();
 
   virtual Reference* clone();
-  virtual Expression* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
+  virtual bool operator<=(const Statement& o) const;
+  virtual bool operator==(const Statement& o) const;
 
   /**
    * Target.
    */
-  Expression* target;
+  Statement* target;
 
 protected:
   /**
@@ -64,8 +70,8 @@ protected:
 }
 
 inline biprog::Reference::Reference(const std::string name,
-    Expression* brackets, Expression* parens, Expression* type,
-    Statement* braces, Expression* target) :
+    Expression* brackets, Expression* parens, Statement* type,
+    Expression* braces, Statement* target) :
     Named(name), Bracketed(brackets), Parenthesised(parens), Expression(type), Braced(
         braces), target(target) {
   //

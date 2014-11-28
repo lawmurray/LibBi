@@ -16,10 +16,11 @@ biprog::Sequence* biprog::Sequence::clone() {
   return new Sequence(head->clone(), tail->clone());
 }
 
-biprog::Statement* biprog::Sequence::accept(Visitor& v) {
-  head = head->accept(v);
-  tail = tail->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Sequence::acceptStatement(Visitor& v) {
+  head = head->acceptStatement(v);
+  tail = tail->acceptStatement(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Sequence::operator<=(const Statement& o) const {
@@ -49,5 +50,5 @@ bool biprog::Sequence::operator==(const Statement& o) const {
 }
 
 void biprog::Sequence::output(std::ostream& out) const {
-  out << *head << ';' << std::endl << *tail;
+  out << *head << std::endl << *tail;
 }

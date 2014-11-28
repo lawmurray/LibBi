@@ -7,6 +7,7 @@
 #include "bi/program/Dim.hpp"
 #include "bi/program/EmptyExpression.hpp"
 #include "bi/program/EmptyStatement.hpp"
+#include "bi/program/ExpressionStatement.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
 #include "bi/program/Parentheses.hpp"
@@ -81,20 +82,34 @@ void pop() {
 }
 
 /**
+ * Add to innermost scope.
+ */
+template<class T>
+T* add(T* decl) {
+  scopes.front()->add(decl);
+  return decl;
+}
+
+/**
  * Resolve reference through current stack.
  */
-bool resolve(biprog::Reference* ref) {
-  bool resolved = false;
-  BOOST_AUTO(iter, scopes.begin());
+biprog::Reference* resolve(biprog::Reference* ref) {
   try {
+    bool resolved = false;
+	  BOOST_AUTO(iter, scopes.begin());
     while (!resolved && iter != scopes.end()) {
       resolved = (*iter)->resolve(ref);
       ++iter;
     }
+    if (!resolved) {
+      throw biprog::UnresolvedReferenceException(ref);
+    }
   } catch (biprog::AmbiguousReferenceException& e) {
     yyerror(e.msg.c_str());
+  } catch (biprog::UnresolvedReferenceException& e) {
+    yyerror(e.msg.c_str());
   }
-  return resolved;
+  return ref;
 }
 
 %}
@@ -130,10 +145,10 @@ bool resolve(biprog::Reference* ref) {
 %type <valOperator> logical_or_operator constraint_operator
 %type <valOperator> assignment_operator tuple_operator statement_operator
 
-%type <valExpression> type reference parens brackets
-%type <valExpression> optional_parens optional_brackets
+%type <valExpression> reference parens brackets braces
+%type <valExpression> optional_parens optional_brackets optional_braces
 %type <valExpression> bool_literal int_literal double_literal string_literal
-%type <valExpression> traversal_expression type_expression primary_expression
+%type <valExpression> traversal_expression primary_expression
 %type <valExpression> default_expression unary_expression pow_expression
 %type <valExpression> multiplicative_expression additive_expression
 %type <valExpression> shift_expression relational_expression
@@ -142,12 +157,11 @@ bool resolve(biprog::Reference* ref) {
 %type <valExpression> logical_and_expression logical_or_expression
 %type <valExpression> constraint_expression assignment_expression
 %type <valExpression> tuple_expression expression optional_expression
-%type <valExpression> optional_type
 
-%type <valStatement> braces optional_braces
+%type <valStatement> type optional_type
 %type <valStatement> def dim var if while return
-%type <valStatement> block_statement nonblock_statement tail_statement statement
-%type <valStatement> statements optional_statements file
+%type <valStatement> tail_capture statement statements optional_statements
+%type <valStatement> file
 
 %start file
 %%
@@ -157,12 +171,21 @@ bool resolve(biprog::Reference* ref) {
  * References                                                              *
  ***************************************************************************/
 
+type_operator
+    : ':'  { $$ = biprog::OP_TYPE; }
+    ;
+
 type
-    : IDENTIFIER optional_parens  { $$ = new biprog::Reference($1, BI_EMPTY_EXPR, $2, BI_EMPTY_EXPR, BI_EMPTY_STMT); }
+    : IDENTIFIER optional_parens  { $$ = resolve(new biprog::Reference(std::string($1), BI_EMPTY_EXPR, $2, BI_EMPTY_STMT, BI_EMPTY_EXPR)); }
+    ;
+
+optional_type
+    : type_operator type  { $$ = $2; }
+    |                     { $$ = BI_EMPTY_STMT; }
     ;
 
 reference
-    : IDENTIFIER optional_brackets optional_parens optional_braces  { $$ = new biprog::Reference($1, $2, $3, BI_EMPTY_EXPR, $4); }
+    : IDENTIFIER optional_brackets optional_parens optional_type optional_braces  { $$ = resolve(new biprog::Reference(std::string($1), $2, $3, $4, $5)); }
     ;
 
 optional_parens
@@ -177,7 +200,7 @@ optional_brackets
     
 optional_braces
     : braces
-    |         { $$ = BI_EMPTY_STMT; }
+    |         { $$ = BI_EMPTY_EXPR; }
     ;
 
 parens
@@ -189,7 +212,7 @@ brackets
     ;
 
 braces
-    : '{'  { push(new biprog::Braces()); }  optional_statements '}'  { top()->stmt = $3; $$ = dynamic_cast<biprog::Statement*>(top()); pop(); }
+    : '{'  { push(new biprog::Braces()); }  optional_statements '}'  { top()->stmt = $3; $$ = dynamic_cast<biprog::Expression*>(top()); pop(); }
     ;
 
 
@@ -227,17 +250,8 @@ traversal_expression
     | traversal_expression traversal_operator reference  { $$ = new biprog::BinaryExpression($1, $2, $3); }
     ;
     
-type_operator
-    : ':'  { $$ = biprog::OP_TYPE; }
-    ;
-    
-type_expression
-    : traversal_expression
-    | type_expression type_operator traversal_expression  { $1->type = $3; $$ = $1; }
-    ;
-    
 primary_expression
-    : type_expression
+    : traversal_expression
     | bool_literal
     | int_literal
     | double_literal
@@ -417,32 +431,26 @@ optional_expression
  * Statements                                                              *
  ***************************************************************************/
 
-optional_type
-    : type_operator type  { $$ = $2; }
-    |                     { $$ = NULL; }
-    ;
-
 statement_operator
     : ';'  { $$ = biprog::OP_SEMICOLON; }
     ;
 
 def
-    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = new biprog::Def($2, $3, $4, $5); }
-    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = new biprog::Def($2, $3, $4, BI_EMPTY_STMT); }
+    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = add(new biprog::Def(std::string($2), $3, $4, $5)); }
+    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = add(new biprog::Def(std::string($2), $3, $4, BI_EMPTY_EXPR)); }
     ;
 
 dim
-    : DIM IDENTIFIER brackets  { $$ = new biprog::Dim($2, $3); }
+    : DIM IDENTIFIER brackets  { $$ = add(new biprog::Dim(std::string($2), $3)); }
     ;
 
 var
-    : VAR IDENTIFIER optional_brackets type_operator type  { $$ = new biprog::Var($2, $3, $5); }
+    : VAR IDENTIFIER optional_brackets type_operator type  { $$ = add(new biprog::Var(std::string($2), $3, $5)); }
     ;
 
 if
-    : IF parens braces ELSE if      { $$ = new biprog::Conditional($2, $3, $5); }
-    | IF parens braces ELSE braces  { $$ = new biprog::Conditional($2, $3, $5); }
-    | IF parens braces              { $$ = new biprog::Conditional($2, $3, BI_EMPTY_STMT); }
+    : IF parens braces ELSE braces  { $$ = new biprog::Conditional($2, $3, $5); }
+    | IF parens braces              { $$ = new biprog::Conditional($2, $3, BI_EMPTY_EXPR); }
     ;
 
 while
@@ -453,26 +461,18 @@ return
     : RETURN expression  { $$ = new biprog::ReturnStatement($2); }
     ;
 
-block_statement
+statement
     : def
+    | dim statement_operator
+    | var statement_operator
     | if
     | while
+    | return statement_operator
+    | expression statement_operator  { $$ = new biprog::ExpressionStatement($1); }
     ;
-    
-nonblock_statement
-    : dim
-    | var
-    | return
-    | expression
-    ;
-    
-statement
-    : block_statement
-    | nonblock_statement statement_operator
-    ;
-    
-tail_statement
-    : expression
+
+tail_capture
+    : reference  { $$ = new biprog::ExpressionStatement($1); }
     ;
 
 optional_statements
@@ -482,7 +482,7 @@ optional_statements
     
 statements
     : statement
-    | tail_statement
+    | tail_capture
     | statement statements  { $$ = new biprog::Sequence($1, $2); }
     ;
 

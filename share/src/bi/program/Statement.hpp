@@ -37,7 +37,7 @@ public:
    *
    * @return New statement with which to replace this one (may be the same).
    */
-  virtual Statement* accept(Visitor& v) = 0;
+  virtual Statement* acceptStatement(Visitor& v) = 0;
 
   /*
    * Bool cast to check for non-empty statement.
@@ -78,7 +78,7 @@ inline biprog::Statement::~Statement() {
   //
 }
 
-biprog::Statement::operator bool() const {
+inline biprog::Statement::operator bool() const {
   return true;
 }
 

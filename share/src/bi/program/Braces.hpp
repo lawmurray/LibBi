@@ -8,7 +8,6 @@
 #ifndef BI_PROGRAM_BRACES_HPP
 #define BI_PROGRAM_BRACES_HPP
 
-#include "Statement.hpp"
 #include "Expression.hpp"
 #include "Scoped.hpp"
 
@@ -18,9 +17,7 @@ namespace biprog {
  *
  * @ingroup program
  */
-class Braces: public virtual Statement,
-    public virtual Expression,
-    public virtual Scoped {
+class Braces: public virtual Expression, public virtual Scoped {
 public:
   /**
    * Constructor.
@@ -38,12 +35,10 @@ public:
   virtual ~Braces();
 
   virtual Braces* clone();
-  virtual Braces* accept(Visitor& v);
+  virtual Expression* acceptExpression(Visitor& v);
 
   virtual bool operator<=(const Expression& o) const;
   virtual bool operator==(const Expression& o) const;
-  virtual bool operator<=(const Statement& o) const;
-  virtual bool operator==(const Statement& o) const;
 
 protected:
   /**
@@ -58,7 +53,7 @@ inline biprog::Braces::Braces() {
 }
 
 inline biprog::Braces::Braces(Statement* stmt) :
-    Expression(NULL), Scoped(stmt) {
+    Scoped(stmt) {
   //
 }
 

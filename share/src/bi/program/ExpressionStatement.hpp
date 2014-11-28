@@ -5,33 +5,33 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_PROGRAM_RETURNSTATEMENT_HPP
-#define BI_PROGRAM_RETURNSTATEMENT_HPP
+#ifndef BI_PROGRAM_EXPRESSIONSTATEMENT_HPP
+#define BI_PROGRAM_EXPRESSIONSTATEMENT_HPP
 
 #include "Statement.hpp"
 #include "Expression.hpp"
 
 namespace biprog {
 /**
- * Return statement.
+ * Expression statement.
  *
  * @ingroup program
  */
-class ReturnStatement: public virtual Statement {
+class ExpressionStatement: public virtual Statement {
 public:
   /**
    * Constructor.
    *
    * @param expr Expression.
    */
-  ReturnStatement(Expression* expr);
+  ExpressionStatement(Expression* expr);
 
   /**
    * Destructor.
    */
-  virtual ~ReturnStatement();
+  virtual ~ExpressionStatement();
 
-  virtual ReturnStatement* clone();
+  virtual ExpressionStatement* clone();
   virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
@@ -50,13 +50,13 @@ protected:
 };
 }
 
-inline biprog::ReturnStatement::ReturnStatement(Expression* expr) :
+inline biprog::ExpressionStatement::ExpressionStatement(Expression* expr) :
     expr(expr) {
   /* pre-condition */
   BI_ASSERT(expr);
 }
 
-inline biprog::ReturnStatement::~ReturnStatement() {
+inline biprog::ExpressionStatement::~ExpressionStatement() {
   //
 }
 

@@ -25,7 +25,7 @@ public:
   /**
    * Constructor.
    */
-  Conditional(Expression* cond, Statement* braces, Statement* falseBraces);
+  Conditional(Expression* cond, Expression* braces, Expression* falseBraces);
 
   /**
    * Destructor.
@@ -33,7 +33,7 @@ public:
   virtual ~Conditional();
 
   virtual Conditional* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
   virtual bool operator==(const Statement& o) const;
@@ -41,7 +41,7 @@ public:
   /**
    * Block if condition is false. May be empty if there is no else clause.
    */
-  Statement* falseBraces;
+  Expression* falseBraces;
 
 protected:
   /**
@@ -51,8 +51,8 @@ protected:
 };
 }
 
-inline biprog::Conditional::Conditional(Expression* cond, Statement* braces,
-    Statement* falseBraces) :
+inline biprog::Conditional::Conditional(Expression* cond, Expression* braces,
+    Expression* falseBraces) :
     Conditioned(cond), Braced(braces), falseBraces(falseBraces) {
   /* pre-condition */
   BI_ASSERT(falseBraces);

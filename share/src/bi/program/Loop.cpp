@@ -16,10 +16,11 @@ biprog::Loop* biprog::Loop::clone() {
   return new Loop(cond->clone(), braces->clone());
 }
 
-biprog::Statement* biprog::Loop::accept(Visitor& v) {
-  cond = cond->accept(v);
-  braces = braces->accept(v);
-  return v.visit(this);
+biprog::Statement* biprog::Loop::acceptStatement(Visitor& v) {
+  cond = cond->acceptExpression(v);
+  braces = braces->acceptExpression(v);
+
+  return v.visitStatement(this);
 }
 
 bool biprog::Loop::operator<=(const Statement& o) const {

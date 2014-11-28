@@ -29,7 +29,7 @@ public:
   virtual ~Sequence();
 
   virtual Sequence* clone();
-  virtual Statement* accept(Visitor& v);
+  virtual Statement* acceptStatement(Visitor& v);
 
   virtual bool operator<=(const Statement& o) const;
   virtual bool operator==(const Statement& o) const;
