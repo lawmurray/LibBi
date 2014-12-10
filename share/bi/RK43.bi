@@ -7,7 +7,7 @@ def eval(ODE(h:Real, atoler:Real, rtoler:Real, alg:String) { statements; }) {
    */
   def ODEState {
     def declare(d(x[coords])/d(t) = expr) {
-      var x[dims]:Real;
+      var x[coords]:Real;
     }
     
     def evaluate(d(x[coords])/d(t) = expr) {

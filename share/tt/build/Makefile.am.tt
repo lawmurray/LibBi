@@ -86,6 +86,7 @@ libbi_a_SOURCES = \
   src/bi/program/Loop.cpp \
   src/bi/program/Operator.cpp \
   src/bi/program/Parentheses.cpp \
+  src/bi/program/Placeholder.cpp \
   src/bi/program/Program.cpp \
   src/bi/program/Reference.cpp \
   src/bi/program/ReturnStatement.cpp \

@@ -25,6 +25,7 @@ class ExpressionStatement;
 template<class T1> class Literal;
 class Loop;
 class Parentheses;
+class Placeholder;
 class Reference;
 class ReturnStatement;
 class Sequence;
@@ -48,6 +49,7 @@ public:
   virtual Statement* visitStatement(ExpressionStatement* o) = 0;
   virtual Statement* visitStatement(Braces* o) = 0;
   virtual Statement* visitStatement(Loop* o) = 0;
+  virtual Statement* visitStatement(Placeholder* o) = 0;
   virtual Statement* visitStatement(Reference* o) = 0;
   virtual Statement* visitStatement(ReturnStatement* o) = 0;
   virtual Statement* visitStatement(Sequence* o) = 0;

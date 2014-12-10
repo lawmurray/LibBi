@@ -12,6 +12,7 @@
 #include "Named.hpp"
 #include "Parenthesised.hpp"
 #include "Typed.hpp"
+#include "Scoped.hpp"
 #include "Braced.hpp"
 
 namespace biprog {
@@ -22,15 +23,17 @@ namespace biprog {
  */
 class Def: public virtual Statement,
     public virtual Named,
-    public virtual Typed,
     public virtual Parenthesised,
+    public virtual Typed,
+    public virtual Scoped,
     public virtual Braced {
 public:
   /**
    * Constructor.
    */
-  Def(const std::string name, Expression* parens, Statement* type,
-      Expression* braces);
+  Def(const std::string name, Expression* parens = new EmptyExpression(),
+      Statement* type = new EmptyStatement(), Expression* braces =
+          new EmptyExpression());
 
   /**
    * Destructor.

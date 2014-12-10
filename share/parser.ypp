@@ -10,9 +10,10 @@
 #include "bi/program/ExpressionStatement.hpp"
 #include "bi/program/Literal.hpp"
 #include "bi/program/Loop.hpp"
-#include "bi/program/Parentheses.hpp"
-#include "bi/program/Program.hpp"
 #include "bi/program/Operator.hpp"
+#include "bi/program/Parentheses.hpp"
+#include "bi/program/Placeholder.hpp"
+#include "bi/program/Program.hpp"
 #include "bi/program/Reference.hpp"
 #include "bi/program/ReturnStatement.hpp"
 #include "bi/program/Sequence.hpp"
@@ -52,23 +53,23 @@ void yywarn(const char *msg) {
 /**
  * Scope stack.
  */
-std::deque<biprog::Scoped*> scopes;
+std::deque<biprog::Scoped*> bi_scopes;
 
 /**
  * Innermost scope.
  */
 biprog::Scoped* top() {
   /* pre-condition */
-  BI_ASSERT(scopes.size() > 0);
+  BI_ASSERT(bi_scopes.size() > 0);
 
-  return scopes.front();
+  return bi_scopes.front();
 }
 
 /**
  * Push new innermost scope.
  */
 void push(biprog::Scoped* scope) {
-  scopes.push_front(scope);
+  bi_scopes.push_front(scope);
 }
 
 /**
@@ -76,9 +77,9 @@ void push(biprog::Scoped* scope) {
  */
 void pop() {
   /* pre-condition */
-  BI_ASSERT(scopes.size() > 0);
+  BI_ASSERT(bi_scopes.size() > 0);
 
-  scopes.pop_front();
+  bi_scopes.pop_front();
 }
 
 /**
@@ -86,7 +87,7 @@ void pop() {
  */
 template<class T>
 T* add(T* decl) {
-  scopes.front()->add(decl);
+  bi_scopes.front()->add(decl);
   return decl;
 }
 
@@ -94,20 +95,19 @@ T* add(T* decl) {
  * Resolve reference through current stack.
  */
 biprog::Reference* resolve(biprog::Reference* ref) {
-  try {
-    bool resolved = false;
-	  BOOST_AUTO(iter, scopes.begin());
-    while (!resolved && iter != scopes.end()) {
-      resolved = (*iter)->resolve(ref);
-      ++iter;
-    }
-    if (!resolved) {
-      throw biprog::UnresolvedReferenceException(ref);
-    }
-  } catch (biprog::AmbiguousReferenceException& e) {
-    yyerror(e.msg.c_str());
-  } catch (biprog::UnresolvedReferenceException& e) {
-    yyerror(e.msg.c_str());
+  bool resolved = false;
+  BOOST_AUTO(iter, bi_scopes.begin());
+  while (!resolved && iter != bi_scopes.end()) {
+    resolved = (*iter)->resolve(ref);
+    ++iter;
+  }
+  
+  biprog::Def* def;
+  if (!resolved && def == dynamic_cast<biprog::Def*>(top())) {
+    biprog::Placeholder* ph = add(new biprog::Placeholder(ref->name, ref->type->clone()));
+    ref->target = ph;
+  } else {
+    throw biprog::UnresolvedReferenceException(ref);
   }
   return ref;
 }
@@ -123,6 +123,7 @@ biprog::Reference* resolve(biprog::Reference* ref) {
   biprog::Operator valOperator;
   biprog::Statement* valStatement;
   biprog::Expression* valExpression;
+  biprog::Def* valDef;
 }
 
 %token DEF DIM VAR INHERITS IF ELSE WHILE RETURN
@@ -157,6 +158,7 @@ biprog::Reference* resolve(biprog::Reference* ref) {
 %type <valExpression> logical_and_expression logical_or_expression
 %type <valExpression> constraint_expression assignment_expression
 %type <valExpression> tuple_expression expression optional_expression
+%type <valExpression> def_end
 
 %type <valStatement> type optional_type
 %type <valStatement> def dim var if while return
@@ -240,7 +242,7 @@ string_literal
 /***************************************************************************
  * Expressions                                                             *
  ***************************************************************************/
-    
+
 traversal_operator
     : '.'  { $$ = biprog::OP_TRAVERSE; }
     ;
@@ -436,8 +438,12 @@ statement_operator
     ;
 
 def
-    : DEF IDENTIFIER optional_parens optional_type braces              { $$ = add(new biprog::Def(std::string($2), $3, $4, $5)); }
-    | DEF IDENTIFIER optional_parens optional_type statement_operator  { $$ = add(new biprog::Def(std::string($2), $3, $4, BI_EMPTY_EXPR)); }
+    : DEF IDENTIFIER { $<valDef>$ = new biprog::Def(std::string($2)); push($<valDef>$); } optional_parens { $<valDef>3->parens = $4; } optional_type def_end  { $<valDef>3->type = $6; $<valDef>3->braces = $7; pop(); $$ = add($<valDef>3); }
+    ;
+
+def_end
+    : braces
+    | statement_operator  { $$ = BI_EMPTY_EXPR; }
     ;
 
 dim
@@ -498,11 +504,16 @@ file
 %%
 
 int main() {
-  do {
-    yyparse();
-  } while (!feof(yyin));
-  std::cout << *top()->stmt << std::endl;
-  delete top();
-
+  try {
+    do {
+      yyparse();
+    } while (!feof(yyin));
+    std::cout << *top()->stmt << std::endl;
+    delete top();
+  } catch (biprog::AmbiguousReferenceException& e) {
+    yyerror(e.msg.c_str());
+  } catch (biprog::UnresolvedReferenceException& e) {
+    yyerror(e.msg.c_str());
+  }
   return 0;
 }
