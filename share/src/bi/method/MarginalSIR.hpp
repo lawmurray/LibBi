@@ -151,6 +151,13 @@ public:
       const double acceptRate);
 
   /**
+   * Report last stepon stderr.
+   *
+   * @param now Current step in time schedule.
+   */
+  void reportT(const ScheduleElement now);
+
+  /**
    * Terminate.
    */
   void term();
@@ -204,6 +211,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     le = step(rng, first, iter, last, s);
     s.les(iter->indexOutput()) = le;
   }
+  reportT(*iter);
   output(s, out);
   term();
 }
@@ -310,6 +318,20 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now,
       std::cerr << "\tresample-move with acceptance rate " << acceptRate;
     }
     std::cerr << std::endl;
+  }
+}
+
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+#else
+  const int rank = 0;
+#endif
+
+  if (rank == 0) {
+    std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\t...finished." << std::endl;
   }
 }
 
