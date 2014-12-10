@@ -196,10 +196,13 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
+  double le;
   ScheduleIterator iter = first;
-  s.les(iter->indexOutput()) = init(rng, iter, s, inInit);
+  le = init(rng, iter, s, inInit);
+  s.les(iter->indexOutput()) = le;
   while (iter + 1 != last) {
-    s.les(iter->indexOutput()) = step(rng, first, iter, last, s);
+    le = step(rng, first, iter, last, s);
+    s.les(iter->indexOutput()) = le;
   }
   output(s, out);
   term();
@@ -247,7 +250,6 @@ double bi::MarginalSIR<B,F,A,R>::step(Random& rng,
 
   double le = logsumexp_reduce(s.logWeights())
       - bi::log(static_cast<double>(s.size()));
-
   return le;
 }
 
