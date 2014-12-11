@@ -245,7 +245,7 @@ template<class M1, class IO1>
 void bi::BootstrapPF<B,S,R>::samplePath(Random& rng, M1 X, IO1& out) {
   if (out.size() > 0) {
     int p = rng.multinomial(out.getLogWeights());
-    out.readPath(p, X);
+    out.readPath(p, columns(X, 0, out.size()));
   }
 }
 

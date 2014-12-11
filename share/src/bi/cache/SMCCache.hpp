@@ -33,7 +33,7 @@ public:
    */
   SMCCache(const Model& m, const size_t P = 0, const size_t T = 0,
       const std::string& file = "", const FileMode mode = READ_ONLY,
-      const SchemaMode schema = DEFAULT);
+      const SchemaMode schema = MULTI);
 
 private:
   /**
