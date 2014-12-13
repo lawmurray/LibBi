@@ -365,7 +365,7 @@ void bi::MCMCCache<CL,IO1>::writePath(const int p, const M1 X) {
   if (p - first == len) {
     len = p - first + 1;
   }
-  for (int t = 0; t < X.size2(); ++t) {
+  for (int t = 0; t < pathCache.size(); ++t) {
     pathCache[t]->set(p - first, column(X, t));
   }
 }

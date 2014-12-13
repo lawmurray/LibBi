@@ -155,6 +155,13 @@ public:
   void report(const ScheduleElement now);
 
   /**
+   * Report last step on stderr.
+   *
+   * @param now Current step in time schedule.
+   */
+  void reportT(const ScheduleElement now);
+
+  /**
    * Terminate.
    */
   void term();
@@ -203,6 +210,8 @@ private:
 };
 }
 
+#include <sstream>
+
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
     const int Nmoves) :
@@ -221,11 +230,27 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   init(rng, *iter, s, out, inInit);
   output0(s, out);
   correct(rng, *iter, s);
+      #ifdef ENABLE_DIAGNOSTICS
+    std::stringstream buf;
+    buf << "sir" << iter->indexOutput() << ".nc";
+    SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
+    outtmp.write(s);
+    outtmp.flush();
+    #endif
+  
   output(*iter, s, out);
   while (iter + 1 != last) {
     step(rng, first, iter, last, s, out);
+    #ifdef ENABLE_DIAGNOSTICS
+    std::stringstream buf;
+    buf << "sir" << iter->indexOutput() << ".nc";
+    SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
+    outtmp.write(s);
+    outtmp.flush();
+    #endif
   }
   term(s);
+  reportT(*iter);
   output0(s, out);
 }
 
@@ -355,6 +380,20 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now) {
       std::cerr << "\tresample-move with acceptance rate " << lastAcceptRate;
     }
     std::cerr << std::endl;
+  }
+}
+
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+#else
+  const int rank = 0;
+#endif
+
+  if (rank == 0) {
+    std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\t...finished." << std::endl;
   }
 }
 

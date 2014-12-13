@@ -150,7 +150,7 @@ template<class S1, class IO1>
 void bi::BootstrapPF<B,F,O,R>::samplePath(Random& rng, S1& s, IO1& out) {
   if (out.size() > 0) {
     int p = rng.multinomial(out.getLogWeights());
-    out.readPath(p, s.path);
+    out.readPath(p, columns(s.path, 0, out.len));
     subrange(s.times, 0, out.len) = out.timeCache.get(0, out.len);
   }
 }

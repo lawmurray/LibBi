@@ -277,9 +277,9 @@ template<class S1, class IO1>
 void bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
     const ScheduleIterator last, S1& s2, IO1& out) {
   filter.step(rng, iter, last, s2, out);
-  if (iter + 1 == last) {
+  //if (iter + 1 == last) {
     filter.samplePath(rng, s2, out);
-  }
+  //}
 }
 
 template<class B, class F>
