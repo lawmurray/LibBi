@@ -95,14 +95,7 @@ libbi_a_SOURCES = \
   src/bi/program/UnaryExpression.cpp \
   src/bi/program/Var.cpp \
   src/bi/random/Random.cpp \
-  src/bi/resampler/MetropolisResampler.cpp \
-  src/bi/resampler/MultinomialResampler.cpp \
-  src/bi/resampler/RejectionResampler.cpp \
-  src/bi/resampler/Resampler.cpp \
   src/bi/resampler/ResamplerFactory.cpp \
-  src/bi/resampler/ScanResampler.cpp \
-  src/bi/resampler/StratifiedResampler.cpp \
-  src/bi/resampler/SystematicResampler.cpp \
   src/bi/stopper/StopperFactory.cpp
 
 if ENABLE_SSE

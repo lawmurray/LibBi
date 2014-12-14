@@ -68,6 +68,12 @@ public:
    */
   void resizeMax(const int maxP, const bool preserve = true);
 
+  /**
+   * @copydoc BootstrapPFState::gather()
+   */
+  template<class V1>
+  void gather(const ScheduleElement now, const V1 as);
+
 private:
   /**
    * Proposal log-weights.
@@ -148,6 +154,16 @@ inline void bi::AuxiliaryPFState<B,L>::resizeMax(const int maxP,
     const bool preserve) {
   qlws.resize(maxP, preserve);
   BootstrapPFState<B,L>::resizeMax(maxP, preserve);
+}
+
+template<class B, bi::Location L>
+template<class V1>
+void bi::AuxiliaryPFState<B,L>::gather(const ScheduleElement now,
+    const V1 as) {
+  BootstrapPFState<B,L>::gather(as);
+  if (!now.hasOutput()) {
+    bi::gather(as, logAuxWeights(), logAuxWeights());
+  }
 }
 
 template<class B, bi::Location L>

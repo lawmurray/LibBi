@@ -22,14 +22,6 @@ namespace bi {
 class MultinomialResampler: public ScanResampler {
 public:
   /**
-   * Constructor.
-   *
-   * @param essRel Minimum ESS, as proportion of total number of particles,
-   * to trigger resampling.
-   */
-  MultinomialResampler(const double essRel = 0.5);
-
-  /**
    * Select ancestors.
    *
    * @tparam V1 Vector type.

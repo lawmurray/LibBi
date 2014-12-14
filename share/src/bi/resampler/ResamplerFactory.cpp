@@ -7,26 +7,27 @@
  */
 #include "ResamplerFactory.hpp"
 
-boost::shared_ptr<bi::MultinomialResampler> bi::ResamplerFactory::createMultinomialResampler(
+boost::shared_ptr<bi::Resampler<bi::MultinomialResampler> > bi::ResamplerFactory::createMultinomialResampler(
     const double essRel) {
-  return boost::shared_ptr<MultinomialResampler>(new MultinomialResampler(essRel));
+  return boost::make_shared<Resampler<MultinomialResampler> >(essRel);
 }
 
-boost::shared_ptr<bi::StratifiedResampler> bi::ResamplerFactory::createStratifiedResampler(
+boost::shared_ptr<bi::Resampler<bi::StratifiedResampler> > bi::ResamplerFactory::createStratifiedResampler(
     const double essRel) {
-  return boost::shared_ptr<StratifiedResampler>(new StratifiedResampler(essRel));
+  return boost::make_shared<Resampler<StratifiedResampler> >(essRel);
 }
 
-boost::shared_ptr<bi::SystematicResampler> bi::ResamplerFactory::createSystematicResampler(
+boost::shared_ptr<bi::Resampler<bi::SystematicResampler> > bi::ResamplerFactory::createSystematicResampler(
     const double essRel) {
-  return boost::shared_ptr<SystematicResampler>(new SystematicResampler(essRel));
+  return boost::make_shared<Resampler<SystematicResampler> >(essRel);
 }
 
-boost::shared_ptr<bi::MetropolisResampler> bi::ResamplerFactory::createMetropolisResampler(
+boost::shared_ptr<bi::Resampler<bi::MetropolisResampler> > bi::ResamplerFactory::createMetropolisResampler(
     const int B, const double essRel) {
-  return boost::shared_ptr<MetropolisResampler>(new MetropolisResampler(B, essRel));
+  BOOST_AUTO(resam, boost::make_shared<Resampler<MetropolisResampler> >(essRel));
+  resam->setSteps(B);
 }
 
-boost::shared_ptr<bi::RejectionResampler> bi::ResamplerFactory::createRejectionResampler() {
-  return boost::shared_ptr<RejectionResampler>(new RejectionResampler());
+boost::shared_ptr<bi::Resampler<bi::RejectionResampler> > bi::ResamplerFactory::createRejectionResampler() {
+  return boost::make_shared<Resampler<RejectionResampler> >(1.0);
 }

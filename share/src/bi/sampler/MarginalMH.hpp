@@ -74,17 +74,19 @@ public:
    * Initialise starting state.
    *
    * @tparam S1 State type.
+   * @tparam IO1 Output type.
    * @tparam IO2 Input type.
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param[out] s1 State.
+   * @param[in,out] out Output buffer;
    * @param inInit Initialisation file.
    */
-  template<class S1, class IO2>
+  template<class S1, class IO1, class IO2>
   void init(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator last, S1& s1, IO2& inInit);
+      const ScheduleIterator last, S1& s1, IO1& out, IO2& inInit);
 
   /**
    * Propose new state.
@@ -113,9 +115,11 @@ public:
    * @param[in,out] rng Random number generator.
    * @param s1 Current state.
    * @param s2 Proposed state.
+   *
+   * @return Was proposal accepted?
    */
   template<class S1, class S2, class IO1>
-  void acceptReject(Random& rng, S1& s1, S2& s2, IO1& out);
+  bool acceptReject(Random& rng, S1& s1, S2& s2, IO1& out);
 
   /**
    * Extend log-likelihood to next observation.
@@ -141,22 +145,24 @@ public:
    * @tparam IO1 Output type.
    *
    * @param c Index in output file.
-   * @param[out] s State.
-   * @param out Output buffer.
+   * @param s State.
+   * @param[in,out] out Output buffer.
    */
   template<class S1, class IO1>
-  void output(const int c, S1& s, IO1& out);
+  void output(const int c, const S1& s1, IO1& out);
 
   /**
    * Report progress on stderr.
    *
    * @tparam S1 State type.
+   * @tparam S2 State type.
    *
    * @param c Number of steps taken.
-   * @param s State.
+   * @param s1 Current state.
+   * @param s2 Alternative state.
    */
-  template<class S1>
-  void report(const int c, S1& s);
+  template<class S1, class S2>
+  void report(const int c, const S1& s1, const S2& s2);
 
   /**
    * Terminate.
@@ -205,24 +211,24 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
   /* pre-condition */
   BI_ERROR(C > 0);
 
-  init(rng, first, last, s, inInit);
-  output(0, s, out);
+  init(rng, first, last, s.s1, s.out, inInit);
+  output(0, s.s1, out);
   for (int c = 1; c < C; ++c) {
     propose(rng, first, last, s.s1, s.s2, s.out);
     acceptReject(rng, s.s1, s.s2, s.out);
-    report(c, s);
-    output(c, s, out);
+    report(c, s.s1, s.s2);
+    output(c, s.s1, out);
   }
   term();
 }
 
 template<class B, class F>
-template<class S1, class IO2>
+template<class S1, class IO1, class IO2>
 void bi::MarginalMH<B,F>::init(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S1& s, IO2& inInit) {
-  filter.init(rng, *first, s.s1, s.out, inInit);
-  filter.filter(rng, first, last, s.s1, s.out);
-  filter.samplePath(rng, s.s1, s.out);
+    const ScheduleIterator last, S1& s1, IO1& out, IO2& inInit) {
+  filter.init(rng, *first, s1, out, inInit);
+  filter.filter(rng, first, last, s1, out);
+  filter.samplePath(rng, s1, out);
   lastAccepted = true;
   accepted = 1;
   total = 1;
@@ -244,7 +250,7 @@ void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
 
 template<class B, class F>
 template<class S1, class S2, class IO1>
-void bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
+bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
   if (!bi::is_finite(s2.logLikelihood)) {
     lastAccepted = false;
   } else if (!bi::is_finite(s1.logLikelihood)) {
@@ -270,6 +276,8 @@ void bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
     ++accepted;
   }
   ++total;
+
+  return lastAccepted;
 }
 
 template<class B, class F>
@@ -284,8 +292,8 @@ void bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
 
 template<class B, class F>
 template<class S1, class IO1>
-void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
-  out.write(c, s.s1);
+void bi::MarginalMH<B,F>::output(const int c, const S1& s1, IO1& out) {
+  out.write(c, s1);
   if (out.isFull()) {
     out.flush();
     out.clear();
@@ -293,26 +301,26 @@ void bi::MarginalMH<B,F>::output(const int c, S1& s, IO1& out) {
 }
 
 template<class B, class F>
-template<class S1>
-void bi::MarginalMH<B,F>::report(const int c, S1& s) {
+template<class S1, class S2>
+void bi::MarginalMH<B,F>::report(const int c, const S1& s1, const S2& s2) {
   std::cerr << c << ":\t";
   std::cerr.width(10);
-  std::cerr << s.s1.logLikelihood;
+  std::cerr << s1.logLikelihood;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.s1.logPrior;
+  std::cerr << s1.logPrior;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.s1.logProposal;
+  std::cerr << s1.logProposal;
   std::cerr << "\tbeats\t";
   std::cerr.width(10);
-  std::cerr << s.s2.logLikelihood;
+  std::cerr << s2.logLikelihood;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.s2.logPrior;
+  std::cerr << s2.logPrior;
   std::cerr << '\t';
   std::cerr.width(10);
-  std::cerr << s.s2.logProposal;
+  std::cerr << s2.logProposal;
   std::cerr << '\t';
   if (lastAccepted) {
     std::cerr << "accept";

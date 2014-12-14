@@ -183,31 +183,13 @@ template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
     const ScheduleElement now, S1& s)
         throw (ParticleFilterDegeneratedException) {
-  if (resam.isTriggered(now, s.logWeights(), &s.logLikelihood)) {
-    if (resampler_needs_max<R>::value && now.isObserved()) {
-      resam.setMaxLogWeight(getMaxLogWeight(now, s));
-    }
-    typename precompute_type<R,S1::location>::type pre;
-    resam.precompute(s.logWeights(), pre);
-    if (now.hasOutput()) {
-      resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      resam.copy(s.ancestors(), s.getDyn());
-    } else {
-      typename S1::temp_int_vector_type as1(s.ancestors().size());
-      resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
-      resam.copy(as1, s.getDyn());
-      bi::gather(as1, s.ancestors(), s.ancestors());
-    }
-    s.logWeights().clear();
-  } else if (now.hasOutput()) {
-    seq_elements(s.ancestors(), 0);
-  }
+  resam.resample(rng, now, s);
 }
 
 template<class B, class F, class O, class R>
 template<class S1>
 void bi::BootstrapPF<B,F,O,R>::term(S1& s) {
-  s.logLikelihood += logsumexp_reduce(s.logWeights())
+  s.logLikelihood = logsumexp_reduce(s.logWeights())
       - bi::log(double(s.size()));
   Simulator<B,F,O>::term(s);
 }

@@ -148,11 +148,10 @@ public:
    * Report progress on stderr.
    *
    * @param now Current step in time schedule.
-   * @param ess Effective sample size of theta-particles.
-   * @param r Was resampling performed?
-   * @param acceptRate Acceptance rate of rejuvenation step (if any).
+   * @param s State.
    */
-  void report(const ScheduleElement now);
+  template<class S1>
+  void report(const ScheduleElement now, S1& s);
 
   /**
    * Report last step on stderr.
@@ -162,9 +161,10 @@ public:
   void reportT(const ScheduleElement now);
 
   /**
-   * Terminate.
+   * Finalise.
    */
-  void term();
+  template<class S1>
+  void term(S1& s);
   //@}
 
 private:
@@ -199,11 +199,6 @@ private:
   bool lastResample;
 
   /**
-   * Last ESS when testing to resample.
-   */
-  double lastEss;
-
-  /**
    * Last acceptance rate when rejuvenating.
    */
   double lastAcceptRate;
@@ -216,7 +211,7 @@ template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
     const int Nmoves) :
     m(m), mmh(mmh), adapter(adapter), resam(resam), Nmoves(Nmoves), lastResample(
-        false), lastEss(0.0), lastAcceptRate(0.0) {
+        false), lastAcceptRate(0.0) {
   //
 }
 
@@ -227,31 +222,28 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const int C, IO1& out, IO2& inInit) {
   // should be very similar to Filter::filter()
   ScheduleIterator iter = first;
-  init(rng, *iter, s, out, inInit);
+  init(rng, iter, s, out, inInit);
   output0(s, out);
-  correct(rng, *iter, s);
-      #ifdef ENABLE_DIAGNOSTICS
-    std::stringstream buf;
-    buf << "sir" << iter->indexOutput() << ".nc";
-    SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
-    outtmp.write(s);
-    outtmp.flush();
-    #endif
-  
-  output(*iter, s, out);
+#ifdef ENABLE_DIAGNOSTICS
+  std::stringstream buf;
+  buf << "sir" << iter->indexOutput() << ".nc";
+  SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
+  outtmp.write(s);
+  outtmp.flush();
+#endif
   while (iter + 1 != last) {
     step(rng, first, iter, last, s, out);
-    #ifdef ENABLE_DIAGNOSTICS
+#ifdef ENABLE_DIAGNOSTICS
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
     SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
     outtmp.write(s);
     outtmp.flush();
-    #endif
+#endif
   }
   term(s);
   reportT(*iter);
-  output0(s, out);
+  outputT(s, out);
 }
 
 template<class B, class F, class A, class R>
@@ -266,7 +258,6 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
   out.clear();
 
   lastResample = false;
-  lastEss = 0.0;
   lastAcceptRate = 0.0;
 }
 
@@ -280,12 +271,13 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   do {
     resample(rng, *iter, s);
     rejuvenate(rng, first, iter + 1, s);
-    report(*iter);
+    report(*iter, s);
 
     ++iter;
     for (p = 0; p < s.size(); ++p) {
       iter1 = iter;
-      s.logWeights()(p) += mmh.extend(rng, iter1, last, *s.s1s[p], *s.out1s[p]);
+      mmh.extend(rng, iter1, last, *s.s1s[p], *s.out1s[p]);
+      s.logWeights()(p) += s.s1s[p]->logIncrement;
     }
     iter = iter1;
     output(*iter, s, out);
@@ -296,29 +288,7 @@ template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
-  double lW;
-  lastResample = false;
-  if (resam.isTriggered(now, s.logWeights(), &lW, &lastEss)) {
-    lastResample = true;
-    if (resampler_needs_max < R > ::value && now.isObserved()) {
-      resam.setMaxLogWeight(getMaxLogWeight(now, s));
-    }
-    typename precompute_type<R,S1::location>::type pre;
-    resam.precompute(s.logWeights(), pre);
-    if (now.hasOutput()) {
-      resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      resam.copy(s.ancestors(), s.s1s);
-    } else {
-      typename S1::temp_int_vector_type as1(s.ancestors().size());
-      resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
-      resam.copy(as1, s.s1s);
-      bi::gather(as1, s.ancestors(), s.ancestors());
-    }
-    s.logWeights().clear();
-    s.logLikelihood += lW;
-  } else if (now.hasOutput()) {
-    seq_elements(s.ancestors(), 0);
-  }
+  resam.resample(rng, now, s);
 }
 
 template<class B, class F, class A, class R>
@@ -329,7 +299,7 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   for (p = 0; p < s.size(); ++p) {
     for (move = 0; move < Nmoves; ++move) {
       mmh.propose(rng, first, last, *s.s1s[p], s.s2, s.out2);
-      if (mmh.acceptReject(rng, *s.s1s[p], s.s2)) {
+      if (mmh.acceptReject(rng, *s.s1s[p], s.s2, *s.out1s[p])) {
         ++naccept;
       }
     }
@@ -365,7 +335,8 @@ void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
 }
 
 template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now) {
+template<class S1>
+void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -375,7 +346,7 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now) {
 
   if (rank == 0) {
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
-        << lastEss;
+        << s.ess;
     if (lastResample) {
       std::cerr << "\tresample-move with acceptance rate " << lastAcceptRate;
     }
@@ -393,13 +364,16 @@ void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
 #endif
 
   if (rank == 0) {
-    std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\t...finished." << std::endl;
+    std::cerr << now.indexOutput() << ":\ttime " << now.getTime()
+        << "\t...finished." << std::endl;
   }
 }
 
 template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::term() {
-  //
+template<class S1>
+void bi::MarginalSIR<B,F,A,R>::term(S1& s) {
+  s.logLikelihood += logsumexp_reduce(s.logWeights())
+      - bi::log(double(s.size()));
 }
 
 #endif

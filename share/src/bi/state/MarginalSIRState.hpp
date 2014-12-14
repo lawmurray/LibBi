@@ -8,6 +8,8 @@
 #ifndef BI_STATE_MARGINALSIRSTATE_HPP
 #define BI_STATE_MARGINALSIRSTATE_HPP
 
+#include "ScheduleElement.hpp"
+
 #include <vector>
 
 namespace bi {
@@ -34,6 +36,8 @@ public:
   typedef int int_value_type;
   typedef host_vector<int_value_type> int_vector_type;
   typedef typename int_vector_type::vector_reference_type int_vector_reference_type;
+  typedef typename loc_temp_vector<L,int_value_type>::type temp_int_vector_type;
+  typedef typename loc_temp_matrix<L,int_value_type>::type temp_int_matrix_type;
 
   /**
    * Constructor.
@@ -93,6 +97,12 @@ public:
   const int_vector_reference_type ancestors() const;
 
   /**
+   * @copydoc MarginalSIRState::gather()
+   */
+  template<class V1>
+  void gather(const ScheduleElement now, const V1 as);
+
+  /**
    * \f$\theta\f$-particles.
    */
   std::vector<S1*> s1s;
@@ -113,9 +123,19 @@ public:
   IO1 out2;
 
   /**
-   * Log-evidence.
+   * Marginal log-likelihood over parameters.
    */
-  double logEvidence;
+  double logLikelihood;
+
+  /**
+   * Last increment of the marginal log-likelihood over parameters.
+   */
+  double logIncrement;
+
+  /**
+   * Last ESS.
+   */
+  double ess;
 
 private:
   /**
@@ -161,10 +181,11 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int Y, const int T) :
-    s1s(Ptheta), out1s(Ptheta), s2(m, Px, Y, T), out2(m, Px, T), logEvidence(
-        0.0), lws(Ptheta), as(Ptheta), ptheta(0), Ptheta(Ptheta) {
+    s1s(Ptheta), out1s(Ptheta), s2(Px, Y, T), out2(m, Px, T), logLikelihood(
+        0.0), logIncrement(0.0), ess(0.0), lws(Ptheta), as(Ptheta), ptheta(0), Ptheta(
+        Ptheta) {
   for (int p = 0; p < size(); ++p) {
-    s1s[p] = new S1(m, Px, Y, T);
+    s1s[p] = new S1(Px, Y, T);
     out1s[p] = new IO1(m, Px, T);
   }
 }
@@ -172,9 +193,9 @@ bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    s1s(o.s1s.size()), out1s(o.out1s.size()), s2(o.s2), out2(o.out2), logEvidence(
-        o.logEvidence), lws(o.lws), as(o.as), ptheta(o.ptheta), Ptheta(
-        o.Ptheta) {
+    s1s(o.s1s.size()), out1s(o.out1s.size()), s2(o.s2), out2(o.out2), logLikelihood(
+        o.logLikelihood), logIncrement(o.logIncrement), ess(0.0), lws(o.lws), as(
+        o.as), ptheta(o.ptheta), Ptheta(o.Ptheta) {
   for (int p = 0; p < size(); ++p) {
     s1s[p] = new S1(*o.s1s[p]);
     out1s[p] = new IO1(*o.out1s[p]);
@@ -193,7 +214,9 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   }
   s2 = o.s2;
   out2 = o.out2;
-  logEvidence = o.logEvidence;
+  logLikelihood = o.logLikelihood;
+  logIncrement = o.logIncrement;
+  ess = o.ess;
   lws = o.lws;
   as = o.as;
   ptheta = o.ptheta;
@@ -210,7 +233,9 @@ void bi::MarginalSIRState<B,L,S1,IO1>::clear() {
   }
   s2.clear();
   out2.clear();
-  logEvidence = 0.0;
+  logLikelihood = 0.0;
+  logIncrement = 0.0;
+  ess = 0.0;
   logWeights().clear();
   seq_elements(ancestors(), 0);
 }
@@ -221,7 +246,9 @@ void bi::MarginalSIRState<B,L,S1,IO1>::swap(MarginalSIRState<B,L,S1,IO1>& o) {
   std::swap(out1s, o.out1s);
   s2.swap(o.s2);
   out2.swap(o.out2);
-  std::swap(logEvidence, o.logEvidence);
+  std::swap(logLikelihood, o.logLikelihood);
+  std::swap(logIncrement, o.logIncrement);
+  std::swap(ess, o.ess);
   lws.swap(o.lws);
   as.swap(o.as);
 }
@@ -256,6 +283,31 @@ const typename bi::MarginalSIRState<B,L,S1,IO1>::int_vector_reference_type bi::M
 }
 
 template<class B, bi::Location L, class S1, class IO1>
+template<class V1>
+void bi::MarginalSIRState<B,L,S1,IO1>::gather(const ScheduleElement now,
+    const V1 as) {
+  /* pre-condition */
+  BI_ASSERT(!V1::on_device);
+
+  if (now.hasOutput()) {
+    ancestors() = as;
+  } else {
+    bi::gather(as, ancestors(), ancestors());
+  }
+
+  // don't use OpenMP for this, causing segfault with Intel compiler, and
+  // with CUDA, possibly due to different CUDA contexts with different
+  // threads playing with the resize and assignment
+  for (int i = 0; i < as.size(); ++i) {
+    int a = as(i);
+    if (i != a) {
+      *s1s[i] = *s1s[a];
+      *out1s[i] = *out1s[a];
+    }
+  }
+}
+
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
 void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
@@ -265,7 +317,9 @@ void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
   }
   ar & s2;
   ar & out2;
-  ar & logEvidence;
+  ar & logLikelihood;
+  ar & logIncrement;
+  ar & ess;
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
   ar & ptheta;
@@ -282,7 +336,9 @@ void bi::MarginalSIRState<B,L,S1,IO1>::load(Archive& ar,
   }
   ar & s2;
   ar & out2;
-  ar & logEvidence;
+  ar & logLikelihood;
+  ar & logIncrement;
+  ar & ess;
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);
   ar & ptheta;

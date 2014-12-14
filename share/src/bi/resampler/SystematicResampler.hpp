@@ -63,14 +63,6 @@ struct resample_cumulative_offspring: public std::unary_function<T,int> {
 class SystematicResampler: public ScanResampler {
 public:
   /**
-   * Constructor.
-   *
-   * @param essRel Minimum ESS, as proportion of total number of particles,
-   * to trigger resampling.
-   */
-  SystematicResampler(const double essRel = 0.5);
-
-  /**
    * @name Low-level interface
    */
   //@{

@@ -43,16 +43,6 @@ public:
   template<class V1>
   void writeLogWeights(const size_t p, const V1 lws);
 
-  /**
-   * Write incremental log-evidences.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param les Log-evidences.
-   */
-  template<class V1>
-  void writeLogEvidences(const V1 les);
-
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -68,22 +58,12 @@ protected:
    * Log-weights variable.
    */
   int lwVar;
-
-  /**
-   * Incremental log evidence variable
-   */
-  int leVar;
 };
 }
 
 template<class V1>
 void bi::SMCNetCDFBuffer::writeLogWeights(const size_t p, const V1 lws) {
   writeRange(lwVar, p, lws);
-}
-
-template<class V1>
-void bi::SMCNetCDFBuffer::writeLogEvidences(const V1 les) {
-  writeRange(leVar, 0, les);
 }
 
 #endif

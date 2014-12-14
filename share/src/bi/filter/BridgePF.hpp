@@ -72,12 +72,6 @@ public:
    */
   template<class S1>
   void correct(Random& rng, const ScheduleElement now, S1& s);
-
-  /**
-   * @copydoc BootstrapPF::resample()
-   */
-  template<class S1>
-  void resample(Random& rng, const ScheduleElement now, S1& s);
 //@}
 
 protected:
@@ -144,36 +138,6 @@ void bi::BridgePF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
     s.logAuxWeights().clear();
     this->m.observationLogDensities(s, this->obs.getMask(now.indexObs()),
         s.logWeights());
-  }
-}
-
-template<class B, class F, class O, class R>
-template<class S1>
-void bi::BridgePF<B,F,O,R>::resample(Random& rng, const ScheduleElement now,
-    S1& s) {
-  if (this->resam.isTriggered(now, s.logWeights(), &s.logLikelihood)) {
-    if (resampler_needs_max<R>::value) {
-      if (now.isObserved()) {
-        this->resam.setMaxLogWeight(this->getMaxLogWeight(now, s));
-      } else if (now.hasBridge()) {
-        this->resam.setMaxLogWeight(this->getMaxLogWeightBridge(now, s));
-      }
-    }
-    typename precompute_type<R,S1::location>::type pre;
-    this->resam.precompute(s.logWeights(), pre);
-    if (now.hasOutput()) {
-      this->resam.ancestorsPermute(rng, s.logWeights(), s.ancestors(), pre);
-      this->resam.copy(s.ancestors(), s.getDyn());
-    } else {
-      typename S1::temp_int_vector_type as1(s.ancestors().size());
-      this->resam.ancestorsPermute(rng, s.logWeights(), as1, pre);
-      this->resam.copy(as1, s.getDyn());
-      bi::gather(as1, s.ancestors(), s.ancestors());
-      bi::gather(as1, s.logAuxWeights(), s.logAuxWeights());
-    }
-    s.logWeights().clear();
-  } else if (now.hasOutput()) {
-    seq_elements(s.ancestors(), 0);
   }
 }
 

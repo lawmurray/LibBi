@@ -8,7 +8,6 @@
 #ifndef BI_RESAMPLER_METROPOLISRESAMPLER_HPP
 #define BI_RESAMPLER_METROPOLISRESAMPLER_HPP
 
-#include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
 #include "../random/Random.hpp"
 #include "../misc/exception.hpp"
@@ -22,7 +21,7 @@ namespace bi {
  * Implements the Metropolis resampler as described in @ref Murray2011a
  * "Murray (2011)" and @ref Murray2014 "Murray, Lee & Jacob (2014)".
  */
-class MetropolisResampler: public Resampler {
+class MetropolisResampler {
 public:
   /**
    * Constructor.
@@ -31,10 +30,15 @@ public:
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
    */
-  MetropolisResampler(const int B, const double essRel = 0.5);
+  MetropolisResampler(const int B = 0);
 
   /**
-   * Set number of steps to take.
+   * Get number of steps.
+   */
+  int getSteps() const;
+
+  /**
+   * Set number of steps.
    */
   void setSteps(const int B);
 
@@ -72,6 +76,19 @@ struct precompute_type<MetropolisResampler,L> {
 #ifdef __CUDACC__
 #include "../cuda/resampler/MetropolisResamplerGPU.cuh"
 #endif
+
+inline bi::MetropolisResampler::MetropolisResampler(const int B) :
+    B(B) {
+  //
+}
+
+inline int bi::MetropolisResampler::getSteps() const {
+  return B;
+}
+
+inline void bi::MetropolisResampler::setSteps(const int B) {
+  this->B = B;
+}
 
 template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,

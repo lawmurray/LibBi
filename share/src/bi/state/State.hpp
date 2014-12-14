@@ -42,18 +42,18 @@ int roundup(const int P);
 inline int bi::roundup(const int P) {
   int P1 = P;
 
-  #if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
   /* either < 32 or a multiple of 32 number of trajectories required */
   if (P1 > 32) {
     P1 = ((P1 + 31) / 32) * 32;
   }
-  #elif defined(ENABLE_SSE)
+#elif defined(ENABLE_SSE)
   /* zero, one or a multiple of 4 (single precision) or 2 (double
    * precision) required */
   if (P1 > 1) {
     P1 = ((P1 + BI_SIMD_SIZE - 1)/BI_SIMD_SIZE)*BI_SIMD_SIZE;
   }
-  #endif
+#endif
 
   return P1;
 }
@@ -181,6 +181,16 @@ public:
    * Clear.
    */
   void clear();
+
+  /**
+   * Gather particles.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param as Ancestry.
+   */
+  template<class V1>
+  void gather(const V1 as);
 
   /**
    * @name Built-in variables
@@ -435,6 +445,7 @@ private:
 }
 
 #include "../math/view.hpp"
+#include "../primitive/matrix_primitive.hpp"
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P, const int Y, const int T) :
@@ -850,6 +861,12 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
 template<class B, bi::Location L>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() const {
   return subrange(Xdn.ref(), p, P, 0, NR + ND);
+}
+
+template<class B, bi::Location L>
+template<class V1>
+void bi::State<B,L>::gather(const V1 as) {
+  bi::gather_rows(as, getDyn(), getDyn());
 }
 
 template<class B, bi::Location L>

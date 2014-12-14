@@ -78,6 +78,22 @@ public:
    */
   void resizeMax(const int maxP, const bool preserve = true);
 
+  /**
+   * Gather particles after resampling.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param now Current step in time schedule.
+   * @param as Ancestry.
+   */
+  template<class V1>
+  void gather(const ScheduleElement now, const V1 as);
+
+  /**
+   * Last ESS.
+   */
+  double ess;
+
 private:
   /**
    * Log-weights.
@@ -110,7 +126,8 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::BootstrapPFState<B,L>::BootstrapPFState(const int P, const int Y, const int T) :
+bi::BootstrapPFState<B,L>::BootstrapPFState(const int P, const int Y,
+    const int T) :
     FilterState<B,L>(P, Y, T), lws(P), as(P) {
   //
 }
@@ -179,6 +196,18 @@ inline void bi::BootstrapPFState<B,L>::resizeMax(const int maxP,
   FilterState<B,L>::resizeMax(maxP, preserve);
   lws.resize(maxP, preserve);
   as.resize(maxP, preserve);
+}
+
+template<class B, bi::Location L>
+template<class V1>
+void bi::BootstrapPFState<B,L>::gather(const ScheduleElement now,
+    const V1 as) {
+  FilterState<B,L>::gather(as);
+  if (now.hasOutput()) {
+    ancestors() = as;
+  } else {
+    bi::gather(as, ancestors(), ancestors());
+  }
 }
 
 template<class B, bi::Location L>

@@ -186,7 +186,7 @@ typename V1::value_type sumexpsq_reduce(const V1 x);
  * @ingroup primitive_vector
  *
  * @param lws \f$\log \mathbf{w}\f$; log-weights.
- * @param[out] lW If given, contains the log of the sum of weights on exit.
+ * @param[out] lW If given, contains the mean of the weights on exit.
  *
  * @return Effective sample size computed from given weights.
  *
@@ -977,7 +977,7 @@ typename V1::value_type bi::ess_reduce(const V1 lws, double* lW = NULL) {
   sum = op_reduce(lws, nan_minus_and_exp_ess_functor<T1>(mx), sum,
       ess_functor<T1>());
   if (lW != NULL) {
-    *lW = mx + bi::log(sum.first);
+    *lW = mx + bi::log(sum.first) - bi::log(double(lws.size()));
   }
   return sum.first * sum.first / sum.second;
 }

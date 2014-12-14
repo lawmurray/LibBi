@@ -28,8 +28,11 @@ struct ResamplerPrecompute {
  * %Resampler for particle filter.
  *
  * @ingroup method_resampler
+ *
+ * @tparam R Base resampler type.
  */
-class Resampler {
+template<class R>
+class Resampler: public R {
 public:
   /**
    * Constructor.
@@ -44,6 +47,16 @@ public:
    */
   //@{
   /**
+   * Get ESS threshold.
+   */
+  double getEssRel() const;
+
+  /**
+   * Set ESS threshold.
+   */
+  void setEssRel(const double essRel);
+
+  /**
    * Get maximum log-weight.
    */
   double getMaxLogWeight() const;
@@ -54,21 +67,17 @@ public:
   void setMaxLogWeight(const double maxLogWeight);
 
   /**
-   * Is resampling criterion triggered?
+   * Resample.
    *
-   * @tparam V1 Vector type.
+   * @tparam S1 State type.
    *
+   * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
-   * @param lws Log-weights.
-   * @param[out] lW If given, the log of the sum of weights is written to this
-   * variable.
-   * @param[out] ess If given, the ESS of weihts is written to this variable.
-   *
-   * @return True if resampling is triggered, false otherwise.
+   * @param[in,out] s State.
    */
-  template<class V1>
-  bool isTriggered(const ScheduleElement now, const V1 lws, double* lW = NULL,
-      double* ess = NULL) const throw (ParticleFilterDegeneratedException);
+  template<class S1>
+  void resample(Random& rng, const ScheduleElement now, S1& s)
+      throw (ParticleFilterDegeneratedException);
   //@}
 
   /**
@@ -76,130 +85,18 @@ public:
    */
   //@{
   /**
-   * Perform precomputations.
+   * Is resampling criterion triggered?
    *
-   * @tparam V1 Vector type.
-   * @tparam pre Precompute type.
+   * @tparam S1 State type.
    *
-   * @param lws Log-weights.
-   * @param pre Precompute object.
+   * @param now Current step in time schedule.
+   * @param s[in,out] State.
+   *
+   * @return True if resampling is triggered, false otherwise.
    */
-  template<class V1, Location L>
-  void precompute(const V1 lws, ResamplerPrecompute<L>& pre);
-
-  /**
-   * Compute offspring vector from ancestors vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param as Ancestors.
-   * @param[out] os Offspring.
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
-
-  /**
-   * Compute ancestor vector from offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param os Offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void offspringToAncestors(const V1 os, V2 as);
-
-  /**
-   * Compute already-permuted ancestor vector from offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param os Offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void offspringToAncestorsPermute(const V1 os, V2 as);
-
-  /**
-   * Compute ancestor vector from cumulative offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param Os Cumulative offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
-
-  /**
-   * Compute already-permuted ancestor vector from cumulative offspring
-   * vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param Os Cumulative offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
-
-  /**
-   * Permute ancestors to permit in-place copy.
-   *
-   * @tparam V1 Integral vector type.
-   *
-   * @param[in,out] as Ancestry.
-   */
-  template<class V1>
-  static void permute(V1 as);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
-   *
-   * @param as Ancestry.
-   * @param[in,out] X Matrix. Rows of the matrix are copied.
-   *
-   * The copy is performed in-place. For each particle @c i that is to be
-   * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
-   * @c i. This ensures that all particles are either read or (over)written,
-   * constraint.
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 X);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam T1 Assignable type.
-   *
-   * @param as Ancestry.
-   * @oaram[in,out] v STL vector.
-   */
-  template<class V1, class T1>
-  static void copy(const V1 as, std::vector<T1*>& v);
-
-  /**
-   * Copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
-   * @tparam M2 Matrix type.
-   *
-   * @param X1 Input matrix.
-   * @param as Ancestry.
-   * @param X2 Output matrix.
-   */
-  template<class V1, class M1, class M2>
-  static void copy(const V1 as, const M1 X1, M2 X2);
+  template<class S1>
+  bool isTriggered(const ScheduleElement now, S1& s) const
+      throw (ParticleFilterDegeneratedException);
   //@}
 
 protected:
@@ -215,134 +112,61 @@ protected:
 };
 }
 
-#include "../host/resampler/ResamplerHost.hpp"
-#ifdef __CUDACC__
-#include "../cuda/resampler/ResamplerGPU.cuh"
-#endif
-
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
 #include "boost/mpl/if.hpp"
 
-inline double bi::Resampler::getMaxLogWeight() const {
-  return maxLogWeight;
-}
+template<class R>
+inline bi::Resampler<R>::Resampler(const double essRel) :
+    essRel(essRel), maxLogWeight(0.0) {
+  /* pre-condition */
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
 
-template<class V1>
-bool bi::Resampler::isTriggered(const ScheduleElement now, const V1 lws,
-    double* lW, double* ess) const throw (ParticleFilterDegeneratedException) {
-  bool r = false;
-  double lW1 = 0.0, ess1 = 0.0, P = lws.size();
-
-  if (now.isObserved() || now.hasBridge()) {
-    if (ess != NULL || (essRel > 0.0 && essRel < 1.0)) {
-      ess1 = ess_reduce(lws, &lW1);  // computes lW as well if not NULL
-    } else if (essRel >= 1.0) {
-      lW1 = logsumexp_reduce(lws);
-    }
-    r = essRel >= 1.0 || (essRel > 0.0 && ess1 < essRel * P);
-
-    if (r && lW != NULL) {
-      *lW += lW1 - bi::log(P);
-    }
-    if (ess != NULL) {
-      *ess = ess1;
-    }
-  }
-  return r;
-}
-
-template<class V1, bi::Location L>
-void bi::Resampler::precompute(const V1 lws, ResamplerPrecompute<L>& pre) {
   //
 }
 
-template<class V1, class V2>
-void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::ancestorsToOffspring(as, os);
+template<class R>
+inline double bi::Resampler<R>::getMaxLogWeight() const {
+  return maxLogWeight;
 }
 
-template<class V1, class V2>
-void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::offspringToAncestors(os, as);
+template<class R>
+void bi::Resampler<R>::setMaxLogWeight(const double maxLogWeight) {
+  this->maxLogWeight = maxLogWeight;
 }
 
-template<class V1, class V2>
-void bi::Resampler::offspringToAncestorsPermute(const V1 os, V2 as) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::offspringToAncestorsPermute(os, as);
-}
+template<class R>
+template<class S1>
+void bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
+    throw (ParticleFilterDegeneratedException) {
+  if (isTriggered(now, s)) {
+    typename precompute_type<R,S1::location>::type pre;
+    typename S1::temp_int_vector_type as1(s.size());
 
-template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::cumulativeOffspringToAncestors(Os, as);
-}
+    R::precompute(s.logWeights(), pre);
+    R::ancestorsPermute(rng, s.logWeights(), as1, pre);
 
-template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestorsPermute(const V1 Os,
-    V2 as) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::cumulativeOffspringToAncestorsPermute(Os, as);
-}
-
-template<class V1>
-void bi::Resampler::permute(const V1 as) {
-#ifdef __CUDACC__
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-#else
-  typedef ResamplerHost impl;
-#endif
-  impl::permute(as);
-}
-
-template<class V1, class M1>
-void bi::Resampler::copy(const V1 as, M1 s) {
-  gather_rows(as, s, s);
-}
-
-template<class V1, class T1>
-void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
-  /* pre-condition */
-  BI_ASSERT(!V1::on_device);
-
-  // don't use OpenMP for this, causing segfault with Intel compiler, and
-  // with CUDA, possibly due to different CUDA contexts with different
-  // threads playing with the resize and assignment
-  for (int i = 0; i < as.size(); ++i) {
-    int a = as(i);
-    if (i != a) {
-      *v[i] = *v[a];
-    }
+    s.gather(now, as1);
+    set_elements(s.logWeights(), s.logLikelihood);
+  } else if (now.hasOutput()) {
+    seq_elements(s.ancestors(), 0);
   }
 }
 
-template<class V1, class M1, class M2>
-void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
-  gather_rows(as, X1, X2);
+template<class R>
+template<class S1>
+bool bi::Resampler<R>::isTriggered(const ScheduleElement now, S1& s) const
+    throw (ParticleFilterDegeneratedException) {
+  bool r = false;
+  double lW;
+  if (now.isObserved() || now.hasBridge()) {
+    s.ess = ess_reduce(s.logWeights(), &lW);
+    s.logIncrement = lW - s.logLikelihood;
+    s.logLikelihood = lW;
+    r = essRel >= 1.0 || (essRel > 0.0 && s.ess < essRel * s.size());
+  }
+  return r;
 }
 
 #endif

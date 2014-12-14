@@ -8,8 +8,6 @@
 #ifndef BI_RESAMPLER_SCANRESAMPLER_HPP
 #define BI_RESAMPLER_SCANRESAMPLER_HPP
 
-#include "Resampler.hpp"
-
 namespace bi {
 /**
  * Precomputed results for ScanResampler.
@@ -25,23 +23,13 @@ struct ScanResamplerPrecompute {
  *
  * @ingroup method_resampler
  */
-class ScanResampler: public Resampler {
+class ScanResampler {
 public:
-  /**
-   * @copydoc Resampler::Resampler
-   */
-  ScanResampler(const double essRel = 0.5);
-
-  /**
-   * @name Low-level interface
-   */
-  //@{
   /**
    * @copydoc Resampler::precompute
    */
   template<class V1, Location L>
   void precompute(const V1 lws, ScanResamplerPrecompute<L>& pre);
-  //@}
 };
 }
 

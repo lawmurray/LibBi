@@ -26,18 +26,6 @@ namespace bi {
 class StratifiedResampler: public ScanResampler {
 public:
   /**
-   * Constructor.
-   *
-   * @param essRel Minimum ESS, as proportion of total number of particles,
-   * to trigger resampling.
-   */
-  StratifiedResampler(const double essRel = 0.5);
-
-  /**
-   * @name Low-level interface
-   */
-  //@{
-  /**
    * Select cumulative offspring.
    *
    * @tparam V1 Vector type.
@@ -68,7 +56,6 @@ public:
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
       ScanResamplerPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
-//@}
 };
 
 /**

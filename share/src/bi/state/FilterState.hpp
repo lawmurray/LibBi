@@ -69,9 +69,14 @@ public:
   double logProposal;
 
   /**
-   * Marginal log-likelihood of parameters.
+   * Marginal log-likelihood over state.
    */
   double logLikelihood;
+
+  /**
+   * Last increment of the marginal log-likelihood over state.
+   */
+  double logIncrement;
 
 private:
   /**
@@ -97,14 +102,14 @@ private:
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const int P, const int Y, const int T) :
     State<B,L>(P, Y, T), path(B::NR + B::ND, T), times(T), logPrior(-BI_INF), logProposal(
-        -BI_INF), logLikelihood(0.0) {
+        -BI_INF), logLikelihood(0.0), logIncrement(0.0) {
   //
 }
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const FilterState<B,L>& o) :
     State<B,L>(o), path(o.path), times(o.times), logPrior(o.logPrior), logProposal(
-        o.logProposal), logLikelihood(o.logLikelihood) {
+        o.logProposal), logLikelihood(o.logLikelihood), logIncrement(o.logIncrement) {
   //
 }
 
@@ -115,6 +120,7 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
   path = o.path;
   times = o.times;
   logLikelihood = o.logLikelihood;
+  logIncrement = o.logIncrement;
   logPrior = o.logPrior;
   logProposal = o.logProposal;
 
@@ -127,6 +133,7 @@ void bi::FilterState<B,L>::clear() {
   logPrior = -BI_INF;
   logProposal = -BI_INF;
   logLikelihood = 0.0;
+  logIncrement = 0.0;
 }
 
 template<class B, bi::Location L>
@@ -135,6 +142,7 @@ void bi::FilterState<B,L>::swap(FilterState<B,L>& o) {
   std::swap(logPrior, o.logPrior);
   std::swap(logProposal, o.logProposal);
   std::swap(logLikelihood, o.logLikelihood);
+  std::swap(logIncrement, o.logIncrement);
 }
 
 template<class B, bi::Location L>
@@ -146,6 +154,7 @@ void bi::FilterState<B,L>::save(Archive& ar, const unsigned version) const {
   ar & logPrior;
   ar & logProposal;
   ar & logLikelihood;
+  ar & logIncrement;
 }
 
 template<class B, bi::Location L>
@@ -157,6 +166,7 @@ void bi::FilterState<B,L>::load(Archive& ar, const unsigned version) {
   ar & logPrior;
   ar & logProposal;
   ar & logLikelihood;
+  ar & logIncrement;
 }
 
 #endif
