@@ -21,7 +21,7 @@ namespace bi {
  * @ingroup method_sampler
  *
  * @tparam B Model type
- * @tparam F MarginalMH type.
+ * @tparam F Filter type.
  * @tparam A Adapter type.
  * @tparam R Resampler type.
  *
@@ -39,15 +39,15 @@ public:
    * Constructor.
    *
    * @param m Model.
-   * @param mmh PMMH sampler.
+   * @param filter Filter.
    * @param adapter Adapter.
    * @param resam Resampler for theta-particles.
-   * @param Nmoves Number of steps per \f$\theta\f$-particle.
+   * @param nmoves Number of steps per \f$\theta\f$-particle.
    * @param adapter Proposal adaptation strategy.
    * @param adapterScale Scaling factor for local proposals.
    * @param out Output.
    */
-  MarginalSIR(B& m, F& mmh, A& adapter, R& resam, const int Nmoves = 1);
+  MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1);
 
   /**
    * @name High-level interface
@@ -127,18 +127,6 @@ public:
       const ScheduleIterator now, S1& s);
 
   /**
-   * @copydoc Simulator::output0()
-   */
-  template<class S1, class IO1>
-  void output0(const S1& s, IO1& out);
-
-  /**
-   * @copydoc Simulator::output()
-   */
-  template<class S1, class IO1>
-  void output(const ScheduleElement now, const S1& s, IO1& out);
-
-  /**
    * @copydoc Simulator::outputT()
    */
   template<class S1, class IO1>
@@ -164,7 +152,7 @@ public:
    * Finalise.
    */
   template<class S1>
-  void term(S1& s);
+  void term(Random& rng, S1& s);
   //@}
 
 private:
@@ -174,9 +162,9 @@ private:
   B& m;
 
   /**
-   * Marginal MH sampler.
+   * Filter.
    */
-  F& mmh;
+  F& filter;
 
   /**
    * Adapter.
@@ -191,7 +179,7 @@ private:
   /**
    * Number of PMMH steps when rejuvenating.
    */
-  int Nmoves;
+  int nmoves;
 
   /**
    * Was a resample performed on the last step?
@@ -208,9 +196,9 @@ private:
 #include <sstream>
 
 template<class B, class F, class A, class R>
-bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& mmh, A& adapter, R& resam,
-    const int Nmoves) :
-    m(m), mmh(mmh), adapter(adapter), resam(resam), Nmoves(Nmoves), lastResample(
+bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
+    const int nmoves) :
+    m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), lastResample(
         false), lastAcceptRate(0.0) {
   //
 }
@@ -220,10 +208,9 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  // should be very similar to Filter::filter()
+  // should look very similar to Filter::filter()
   ScheduleIterator iter = first;
   init(rng, iter, s, out, inInit);
-  output0(s, out);
 #ifdef ENABLE_DIAGNOSTICS
   std::stringstream buf;
   buf << "sir" << iter->indexOutput() << ".nc";
@@ -241,7 +228,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     outtmp.flush();
 #endif
   }
-  term(s);
+  term(rng, s);
   reportT(*iter);
   outputT(s, out);
 }
@@ -251,8 +238,15 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
     S1& s, IO1& out, IO2& inInit) {
   for (int p = 0; p < s.size(); ++p) {
-    mmh.init(rng, first, first + 1, *s.s1s[p], *s.out1s[p], inInit);
-    s.logWeights()(p) = s.s1s[p]->logLikelihood;
+    BOOST_AUTO(&s1, *s.s1s[p]);
+    BOOST_AUTO(&out1, *s.out1s[p]);
+
+    filter.init(rng, *first, s1, out1, inInit);
+    filter.output0(s1, out1);
+    filter.correct(rng, *first, s1);
+    filter.output(*first, s1, out1);
+
+    s.logWeights()(p) = s1.logLikelihood;
     s.ancestors()(p) = p;
   }
   out.clear();
@@ -266,66 +260,104 @@ template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
   ScheduleIterator iter1;
-  int p;
-
   do {
     resample(rng, *iter, s);
     rejuvenate(rng, first, iter + 1, s);
     report(*iter, s);
 
-    ++iter;
-    for (p = 0; p < s.size(); ++p) {
+    for (int p = 0; p < s.size(); ++p) {
+      BOOST_AUTO(&s1, *s.s1s[p]);
+      BOOST_AUTO(&out1, *s.out1s[p]);
+
       iter1 = iter;
-      mmh.extend(rng, iter1, last, *s.s1s[p], *s.out1s[p]);
-      s.logWeights()(p) += s.s1s[p]->logIncrement;
+      filter.step(rng, iter1, last, s1, out1);
+#ifdef ENABLE_DIAGNOSTICS
+      filter.samplePath(rng, s1, out1);
+#endif
+      s.logWeights()(p) += s1.logIncrement;
     }
+
     iter = iter1;
-    output(*iter, s, out);
   } while (iter + 1 != last && !iter->isObserved());
+
+  double lW;
+  s.ess = ess_reduce(s.logWeights(), &lW);
+  s.logIncrement = lW - s.logLikelihood;
+  s.logLikelihood = lW;
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
-  resam.resample(rng, now, s);
+  lastResample = resam.resample(rng, now, s);
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
-  int p, move, naccept = 0;
-  for (p = 0; p < s.size(); ++p) {
-    for (move = 0; move < Nmoves; ++move) {
-      mmh.propose(rng, first, last, *s.s1s[p], s.s2, s.out2);
-      if (mmh.acceptReject(rng, *s.s1s[p], s.s2, *s.out1s[p])) {
-        ++naccept;
+  if (lastResample) {
+    int naccept = 0;
+    bool accept = false;
+
+    for (int p = 0; p < s.size(); ++p) {
+      BOOST_AUTO(&s1, *s.s1s[p]);
+      BOOST_AUTO(&out1, *s.out1s[p]);
+      BOOST_AUTO(&s2, s.s2);
+      BOOST_AUTO(&out2, s.out2);
+
+      for (int move = 0; move < nmoves; ++move) {
+        /* propose replacement */
+        try {
+          filter.propose(rng, *first, s1, s2, out2);
+          filter.filter(rng, first, last, s2, out2);
+        } catch (CholeskyException e) {
+          s2.logLikelihood = -BI_INF;
+        } catch (ParticleFilterDegeneratedException e) {
+          s2.logLikelihood = -BI_INF;
+        }
+
+        /* accept or reject */
+        if (!bi::is_finite(s2.logLikelihood)) {
+          accept = false;
+        } else if (!bi::is_finite(s1.logLikelihood)) {
+          accept = true;
+        } else {
+          double loglr = s2.logLikelihood - s1.logLikelihood;
+          double logpr = s2.logPrior - s1.logPrior;
+          double logqr = s1.logProposal - s2.logProposal;
+
+          if (!bi::is_finite(s1.logProposal)
+              && !bi::is_finite(s2.logProposal)) {
+            logqr = 0.0;
+          }
+          double logratio = loglr + logpr + logqr;
+          double u = rng.uniform<double>();
+
+          accept = bi::log(u) < logratio;
+        }
+
+        if (accept) {
+#ifdef ENABLE_DIAGNOSTICS
+          filter.samplePath(rng, s2, out2);
+#endif
+//          s1.swap(s2);
+//          out1.swap(out2);
+          ++naccept;
+        }
       }
     }
-  }
 
-  int totalMoves = Nmoves * s.size();
+    int ntotal = nmoves * s.size();
 #ifdef ENABLE_MPI
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-  boost::mpi::all_reduce(world, &totalMoves, 1, &totalMoves, std::plus<int>());
-  boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
+    boost::mpi::communicator world;
+    const int rank = world.rank();
+    boost::mpi::all_reduce(world, &ntotal, 1, &ntotal, std::plus<int>());
+    boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
-  lastAcceptRate = static_cast<double>(naccept) / totalMoves;
-}
-
-template<class B, class F, class A, class R>
-template<class S1, class IO1>
-void bi::MarginalSIR<B,F,A,R>::output0(const S1& s, IO1& out) {
-  //
-}
-
-template<class B, class F, class A, class R>
-template<class S1, class IO1>
-void bi::MarginalSIR<B,F,A,R>::output(const ScheduleElement now, const S1& s,
-    IO1& out) {
-  //
+    lastAcceptRate = double(naccept) / ntotal;
+  }
 }
 
 template<class B, class F, class A, class R>
@@ -371,9 +403,14 @@ void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
 
 template<class B, class F, class A, class R>
 template<class S1>
-void bi::MarginalSIR<B,F,A,R>::term(S1& s) {
+void bi::MarginalSIR<B,F,A,R>::term(Random& rng, S1& s) {
   s.logLikelihood += logsumexp_reduce(s.logWeights())
       - bi::log(double(s.size()));
+  for (int p = 0; p < s.size(); ++p) {
+    BOOST_AUTO(&s1, *s.s1s[p]);
+    BOOST_AUTO(&out1, *s.out1s[p]);
+    filter.samplePath(rng, s1, out1);
+  }
 }
 
 #endif

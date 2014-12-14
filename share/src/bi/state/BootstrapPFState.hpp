@@ -128,13 +128,13 @@ private:
 template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>::BootstrapPFState(const int P, const int Y,
     const int T) :
-    FilterState<B,L>(P, Y, T), lws(P), as(P) {
+    FilterState<B,L>(P, Y, T), ess(0.0), lws(P), as(P) {
   //
 }
 
 template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>::BootstrapPFState(const BootstrapPFState<B,L>& o) :
-    FilterState<B,L>(o), lws(o.lws), as(o.as) {
+    FilterState<B,L>(o), ess(0.0), lws(o.lws), as(o.as) {
   //
 }
 
@@ -142,6 +142,7 @@ template<class B, bi::Location L>
 bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
     const BootstrapPFState<B,L>& o) {
   FilterState<B,L>::operator=(o);
+  ess = o.ess;
   logWeights() = o.logWeights();
   ancestors() = o.ancestors();
 
@@ -151,6 +152,7 @@ bi::BootstrapPFState<B,L>& bi::BootstrapPFState<B,L>::operator=(
 template<class B, bi::Location L>
 void bi::BootstrapPFState<B,L>::clear() {
   FilterState<B,L>::clear();
+  ess = 0.0;
   logWeights().clear();
   seq_elements(ancestors(), 0);
 }
@@ -158,6 +160,7 @@ void bi::BootstrapPFState<B,L>::clear() {
 template<class B, bi::Location L>
 void bi::BootstrapPFState<B,L>::swap(BootstrapPFState<B,L>& o) {
   FilterState<B,L>::swap(o);
+  std::swap(ess, o.ess);
   lws.swap(o.lws);
   as.swap(o.as);
 }

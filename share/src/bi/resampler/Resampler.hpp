@@ -74,28 +74,11 @@ public:
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
    * @param[in,out] s State.
+   *
+   * @return Was resampling performed?
    */
   template<class S1>
-  void resample(Random& rng, const ScheduleElement now, S1& s)
-      throw (ParticleFilterDegeneratedException);
-  //@}
-
-  /**
-   * @name Low-level interface
-   */
-  //@{
-  /**
-   * Is resampling criterion triggered?
-   *
-   * @tparam S1 State type.
-   *
-   * @param now Current step in time schedule.
-   * @param s[in,out] State.
-   *
-   * @return True if resampling is triggered, false otherwise.
-   */
-  template<class S1>
-  bool isTriggered(const ScheduleElement now, S1& s) const
+  bool resample(Random& rng, const ScheduleElement now, S1& s)
       throw (ParticleFilterDegeneratedException);
   //@}
 
@@ -138,9 +121,10 @@ void bi::Resampler<R>::setMaxLogWeight(const double maxLogWeight) {
 
 template<class R>
 template<class S1>
-void bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
+bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
     throw (ParticleFilterDegeneratedException) {
-  if (isTriggered(now, s)) {
+  bool r = (now.isObserved() || now.hasBridge()) && s.ess < essRel * s.size();
+  if (r) {
     typename precompute_type<R,S1::location>::type pre;
     typename S1::temp_int_vector_type as1(s.size());
 
@@ -151,20 +135,6 @@ void bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
     set_elements(s.logWeights(), s.logLikelihood);
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
-  }
-}
-
-template<class R>
-template<class S1>
-bool bi::Resampler<R>::isTriggered(const ScheduleElement now, S1& s) const
-    throw (ParticleFilterDegeneratedException) {
-  bool r = false;
-  double lW;
-  if (now.isObserved() || now.hasBridge()) {
-    s.ess = ess_reduce(s.logWeights(), &lW);
-    s.logIncrement = lW - s.logLikelihood;
-    s.logLikelihood = lW;
-    r = essRel >= 1.0 || (essRel > 0.0 && s.ess < essRel * s.size());
   }
   return r;
 }

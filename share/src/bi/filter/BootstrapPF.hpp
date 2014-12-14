@@ -175,6 +175,10 @@ void bi::BootstrapPF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
   if (now.isObserved()) {
     this->m.observationLogDensities(s, this->obs.getMask(now.indexObs()),
         s.logWeights());
+    double lW;
+    s.ess = ess_reduce(s.logWeights(), &lW);
+    s.logIncrement = lW - s.logLikelihood;
+    s.logLikelihood = lW;
   }
 }
 

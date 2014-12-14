@@ -122,23 +122,6 @@ public:
   bool acceptReject(Random& rng, S1& s1, S2& s2, IO1& out);
 
   /**
-   * Extend log-likelihood to next observation.
-   *
-   * @tparam S2 State type.
-   * @tparam IO1 Output type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param[in,out] iter Current position in time schedule. Advanced on
-   * return.
-   * @param last End of time schedule.
-   * @param[in,out] s2 Proposed state.
-   * @param[in,out] out Output buffer.
-   */
-  template<class S2, class IO1>
-  void extend(Random& rng, ScheduleIterator& iter,
-      const ScheduleIterator last, S2& s2, IO1& out);
-
-  /**
    * Output.
    *
    * @tparam S1 State type.
@@ -278,16 +261,6 @@ bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
   ++total;
 
   return lastAccepted;
-}
-
-template<class B, class F>
-template<class S1, class IO1>
-void bi::MarginalMH<B,F>::extend(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, S1& s2, IO1& out) {
-  filter.step(rng, iter, last, s2, out);
-  //if (iter + 1 == last) {
-    filter.samplePath(rng, s2, out);
-  //}
 }
 
 template<class B, class F>

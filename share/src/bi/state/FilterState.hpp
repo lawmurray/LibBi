@@ -109,7 +109,8 @@ bi::FilterState<B,L>::FilterState(const int P, const int Y, const int T) :
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const FilterState<B,L>& o) :
     State<B,L>(o), path(o.path), times(o.times), logPrior(o.logPrior), logProposal(
-        o.logProposal), logLikelihood(o.logLikelihood), logIncrement(o.logIncrement) {
+        o.logProposal), logLikelihood(o.logLikelihood), logIncrement(
+        o.logIncrement) {
   //
 }
 
@@ -119,10 +120,10 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
   State<B,L>::operator=(o);
   path = o.path;
   times = o.times;
-  logLikelihood = o.logLikelihood;
-  logIncrement = o.logIncrement;
   logPrior = o.logPrior;
   logProposal = o.logProposal;
+  logLikelihood = o.logLikelihood;
+  logIncrement = o.logIncrement;
 
   return *this;
 }

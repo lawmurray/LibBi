@@ -126,6 +126,11 @@ void bi::BridgePF<B,F,O,R>::bridge(Random& rng, const ScheduleIterator iter,
         s.logAuxWeights());
 
     axpy(1.0, s.logAuxWeights(), s.logWeights());
+
+    double lW;
+    s.ess = ess_reduce(s.logWeights(), &lW);
+    s.logIncrement = lW - s.logLikelihood;
+    s.logLikelihood = lW;
   }
 }
 
@@ -136,8 +141,7 @@ void bi::BridgePF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
   if (now.isObserved()) {
     axpy(-1.0, s.logAuxWeights(), s.logWeights());
     s.logAuxWeights().clear();
-    this->m.observationLogDensities(s, this->obs.getMask(now.indexObs()),
-        s.logWeights());
+    BootstrapPF<B,F,O,R>::correct(rng, now, s);
   }
 }
 

@@ -315,8 +315,7 @@ int main(int argc, char* argv[]) {
   /* sampler */
   [% IF client.get_named_arg('target') == 'posterior' %]
   [% IF client.get_named_arg('sampler') == 'sir' %]
-  BOOST_AUTO(mmh, SamplerFactory::createMarginalMH(m, *filter));
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *mmh, sampleAdapter, *sampleResam, NMOVES));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *filter, sampleAdapter, *sampleResam, NMOVES));
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, sampleAdapter, *sampleStopper));
   [% ELSE %]
