@@ -959,7 +959,7 @@ inline typename V1::value_type bi::sumexpsq_reduce(const V1 x) {
 }
 
 template<class V1>
-typename V1::value_type bi::ess_reduce(const V1 lws, double* lW = NULL) {
+typename V1::value_type bi::ess_reduce(const V1 lws, double* lW) {
   /* pre-condition */
   BI_ASSERT(lws.size() > 0);
 
