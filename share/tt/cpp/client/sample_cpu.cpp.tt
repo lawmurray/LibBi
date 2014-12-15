@@ -22,7 +22,8 @@
 #include "bi/state/MarginalSIRState.hpp"
 #include "bi/state/MarginalSISState.hpp"
 
-#include "bi/adapter/GaussianAdapter.hpp"
+#include "bi/adapter/MarginalSIRAdapter.hpp"
+#include "bi/adapter/MarginalSISAdapter.hpp"
 
 #include "bi/buffer/SimulatorBuffer.hpp"
 #include "bi/buffer/ParticleFilterBuffer.hpp"
@@ -235,8 +236,18 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(sampleStopper, sampleStopperBase);
   [% END %]
     
-  /* adapter for theta-particles */ 
-  GaussianAdapter<model_type,LOCATION> sampleAdapterBase;
+  /* adapter for theta-particles */
+  [% IF client.get_named_arg('sampler') == 'sir' %]
+  [% IF client.get_named_arg('adapter') == 'global' %]
+  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(ADAPTER_ESS_REL, false, ADAPTER_SCALE);
+  [% ELSIF client.get_named_arg('adapter') == 'local' %]
+  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(ADAPTER_ESS_REL, true, ADAPTER_SCALE);
+  [% ELSE %]
+  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(1.0); // will cause to never be ready
+  [% END %]
+  [% ELSIF client.get_named_arg('sample') == 'sis' %]
+  MarginalSISAdapter<model_type,LOCATION> sampleAdapterBase;
+  [% END %]
   [% IF client.get_named_arg('with-mpi') %]
   DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);
   [% ELSE %]

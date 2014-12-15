@@ -9,7 +9,6 @@
 #ifndef BI_SAMPLER_MARGINALSIR_HPP
 #define BI_SAMPLER_MARGINALSIR_HPP
 
-#include "misc.hpp"
 #include "../state/Schedule.hpp"
 #include "../misc/exception.hpp"
 #include "../primitive/vector_primitive.hpp"
@@ -99,6 +98,16 @@ public:
   template<class S1, class IO1>
   void step(Random& rng, const ScheduleIterator first, ScheduleIterator& iter,
       const ScheduleIterator last, S1& s, IO1& out);
+
+  /**
+   * Adapt proposal.
+   *
+   * @tparam S1 State type.
+   *
+   * @param[in,out] s State.
+   */
+  template<class S1>
+  void adapt(const S1& s);
 
   /**
    * Resample \f$\theta\f$-particles.
@@ -261,6 +270,7 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
   ScheduleIterator iter1;
   do {
+    adapt(s);
     resample(rng, *iter, s);
     rejuvenate(rng, first, iter + 1, s);
     report(*iter, s);
@@ -276,7 +286,6 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 #endif
       s.logWeights()(p) += s1.logIncrement;
     }
-
     iter = iter1;
   } while (iter + 1 != last && !iter->isObserved());
 
@@ -284,6 +293,16 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   s.ess = ess_reduce(s.logWeights(), &lW);
   s.logIncrement = lW - s.logLikelihood;
   s.logLikelihood = lW;
+}
+
+template<class B, class F, class A, class R>
+template<class S1>
+void bi::MarginalSIR<B,F,A,R>::adapt(const S1& s) {
+  adapter.clear();
+  adapter.add(s);
+  if (adapter.ready()) {
+    adapter.adapt();
+  }
 }
 
 template<class B, class F, class A, class R>
@@ -300,6 +319,7 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   if (lastResample) {
     int naccept = 0;
     bool accept = false;
+    bool ready = adapter.ready();
 
     for (int p = 0; p < s.size(); ++p) {
       BOOST_AUTO(&s1, *s.s1s[p]);
@@ -310,8 +330,14 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
       for (int move = 0; move < nmoves; ++move) {
         /* propose replacement */
         try {
-          filter.propose(rng, *first, s1, s2, out2);
-          filter.filter(rng, first, last, s2, out2);
+          if (ready) {
+            filter.propose(rng, *first, s1, s2, out2, adapter);
+          } else {
+            filter.propose(rng, *first, s1, s2, out2);
+          }
+          if (bi::is_finite(s2.logPrior)) {
+            filter.filter(rng, first, last, s2, out2);
+          }
         } catch (CholeskyException e) {
           s2.logLikelihood = -BI_INF;
         } catch (ParticleFilterDegeneratedException e) {

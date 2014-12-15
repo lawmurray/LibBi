@@ -8,6 +8,9 @@
 #ifndef BI_ADAPTER_MARGINALSISADAPTER_HPP
 #define BI_ADAPTER_MARGINALSISADAPTER_HPP
 
+#include "GaussianAdapter.hpp"
+#include "../state/ScheduleIterator.hpp"
+
 namespace bi {
 /**
  * Adapter for MarginalSIS.
@@ -15,7 +18,7 @@ namespace bi {
  * @ingroup method_adapter
  */
 template<class B, Location L>
-class MarginalSISAdapter {
+class MarginalSISAdapter : public GaussianAdapter<B,L> {
 public:
   /**
    * Constructor.
@@ -26,12 +29,7 @@ public:
   /**
    * Is an adapted proposal ready?
    */
-  bool ready() const;
-
-  /**
-   * Is the adapted proposal finalised?
-   */
-  bool finished() const;
+  bool ready(const int k = 0) const;
 
   /**
    * Add state.
@@ -42,17 +40,6 @@ public:
    */
   template<class S1>
   void add(const S1& s);
-
-  /**
-   * Get the proposal distribution and lookahead.
-   *
-   * @param[out] iter Iterator to last element of schedule to which to run.
-   * @param[out] q Proposal.
-   *
-   * If ready() does not return true, @p q should not be trusted.
-   */
-  template<class Q1>
-  void get(Q1& q, ScheduleIterator& iter);
 
 private:
   /**
@@ -80,25 +67,14 @@ bi::MarginalSISAdapter<B,L>::MarginalSISAdapter(const ScheduleIterator first,
 }
 
 template<class B, bi::Location L>
-bool bi::MarginalSISAdapter<B,L>::ready() const {
-
-}
-
-template<class B, bi::Location L>
-bool bi::MarginalSISAdapter<B,L>::finished() const {
-  return iter == last;
+bool bi::MarginalSISAdapter<B,L>::ready(const int k) const {
+  return true;
 }
 
 template<class B, bi::Location L>
 template<class S1>
 void bi::MarginalSISAdapter<B,L>::add(const S1& s) {
-
-}
-
-template<class B, bi::Location L>
-template<class Q1>
-void bi::MarginalSISAdapter<B,L>::get(Q1& q, ScheduleIterator& iter) {
-  iter = this->iter;
+  GaussianAdapter<B,L>::add(s, s.logWeights());
 }
 
 #endif

@@ -87,7 +87,7 @@ public:
    *
    * @tparam S1 State type.
    * @tparam S2 State type.
-   * @tparam IO1, Output type.
+   * @tparam IO1 Output type.
    *
    * @param[in,out] rng Random number generator.
    * @param now Current step in time schedule.
@@ -98,6 +98,25 @@ public:
   template<class S1, class S2, class IO1>
   void propose(Random& rng, const ScheduleElement now, S1& s1, S2& s2,
       IO1& out);
+
+  /**
+   * Propose new state from existing state, using adapter.
+   *
+   * @tparam S1 State type.
+   * @tparam S2 State type.
+   * @tparam IO1 Output type.
+   * @tparam A Adapter type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param now Current step in time schedule.
+   * @param[in,out] s1 Existing state.
+   * @param[in,out] s2 New state.
+   * @param out Output file.
+   * @param adapter Adapter.
+   */
+  template<class S1, class S2, class IO1, class A>
+  void propose(Random& rng, const ScheduleElement now, S1& s1, S2& s2,
+      IO1& out, A& adapter);
 
   /**
    * Advance model forward to time of next output, and output.
@@ -320,6 +339,38 @@ void bi::Simulator<B,F,O>::propose(Random& rng, const ScheduleElement now,
 
   /* prior log-density */
   s2.get(PY_VAR) = s2.get(P_VAR);
+  s2.logPrior = m.parameterLogDensity(s2);
+
+  /* dynamic inputs */
+  if (now.hasInput()) {
+    in.update(now.indexInput(), s2);
+  }
+
+  /* observations */
+  if (now.hasObs()) {
+    obs.update(now.indexObs(), s2);
+  }
+
+  /* initial values */
+  m.initialSamples(rng, s2);
+
+  out.clear();
+}
+
+template<class B, class F, class O>
+template<class S1, class S2, class IO1, class A>
+void bi::Simulator<B,F,O>::propose(Random& rng, const ScheduleElement now,
+    S1& s1, S2& s2, IO1& out, A& adapter) {
+  s2.clear();
+  s2.setTime(now.getTime());
+
+  /* static inputs */
+  in.update0(s2);
+
+  /* proposal */
+  adapter.propose(rng, s1, s2);
+
+  /* prior */
   s2.logPrior = m.parameterLogDensity(s2);
 
   /* dynamic inputs */
