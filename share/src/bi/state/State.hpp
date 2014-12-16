@@ -386,6 +386,16 @@ public:
   CUDA_FUNC_BOTH
   const matrix_reference_type getDyn() const;
 
+  /**
+   * Log-prior density of parameters.
+   */
+  double logPrior;
+
+  /**
+   * Log-proposal density of parameters.
+   */
+  double logProposal;
+
 protected:
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -445,10 +455,12 @@ private:
 }
 
 #include "../math/view.hpp"
+#include "../math/constant.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P, const int Y, const int T) :
+    logPrior(-BI_INF), logProposal(-BI_INF),
     Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + 2 * NO),  // includes py- and oy-vars
     p(0), P(P) {
@@ -460,7 +472,7 @@ bi::State<B,L>::State(const int P, const int Y, const int T) :
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+  logPrior(o.logPrior), logProposal(o.logProposal), Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   for (int i = 0; i < NB; ++i) {
     builtin[i] = o.builtin[i];
   }
@@ -479,6 +491,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
 template<class B, bi::Location L>
 template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
+  logPrior = o.logPrior;
+  logProposal = o.logProposal;
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {
@@ -489,6 +503,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
 
 template<class B, bi::Location L>
 void bi::State<B,L>::swap(State<B,L>& o) {
+  std::swap(logPrior, o.logPrior);
+  std::swap(logProposal, o.logProposal);
   Xdn.swap(o.Xdn);
   Kdn.swap(o.Kdn);
   for (int i = 0; i < NB; ++i) {
@@ -544,6 +560,8 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
 
 template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
+  logPrior = -BI_INF;
+  logProposal = -BI_INF;
   rows(Xdn, p, P).clear();
   Kdn.clear();
 }
@@ -872,6 +890,8 @@ void bi::State<B,L>::gather(const V1 as) {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
+  ar & logPrior;
+  ar & logProposal;
   save_resizable_matrix(ar, version, Xdn);
   save_resizable_matrix(ar, version, Kdn);
   ar & builtin;
@@ -882,6 +902,8 @@ void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::load(Archive& ar, const unsigned version) {
+  ar & logPrior;
+  ar & logProposal;
   load_resizable_matrix(ar, version, Xdn);
   load_resizable_matrix(ar, version, Kdn);
   ar & builtin;

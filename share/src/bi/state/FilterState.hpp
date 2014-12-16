@@ -59,16 +59,6 @@ public:
   typename State<B,L>::vector_type times;
 
   /**
-   * Log-prior density of parameters.
-   */
-  double logPrior;
-
-  /**
-   * Log-proposal density of parameters.
-   */
-  double logProposal;
-
-  /**
    * Marginal log-likelihood over state.
    */
   double logLikelihood;
@@ -101,15 +91,13 @@ private:
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const int P, const int Y, const int T) :
-    State<B,L>(P, Y, T), path(B::NR + B::ND, T), times(T), logPrior(-BI_INF), logProposal(
-        -BI_INF), logLikelihood(0.0), logIncrement(0.0) {
+    State<B,L>(P, Y, T), path(B::NR + B::ND, T), times(T), logLikelihood(0.0), logIncrement(0.0) {
   //
 }
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const FilterState<B,L>& o) :
-    State<B,L>(o), path(o.path), times(o.times), logPrior(o.logPrior), logProposal(
-        o.logProposal), logLikelihood(o.logLikelihood), logIncrement(
+    State<B,L>(o), path(o.path), times(o.times), logLikelihood(o.logLikelihood), logIncrement(
         o.logIncrement) {
   //
 }
@@ -120,8 +108,6 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
   State<B,L>::operator=(o);
   path = o.path;
   times = o.times;
-  logPrior = o.logPrior;
-  logProposal = o.logProposal;
   logLikelihood = o.logLikelihood;
   logIncrement = o.logIncrement;
 
@@ -131,8 +117,6 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
 template<class B, bi::Location L>
 void bi::FilterState<B,L>::clear() {
   State<B,L>::clear();
-  logPrior = -BI_INF;
-  logProposal = -BI_INF;
   logLikelihood = 0.0;
   logIncrement = 0.0;
 }
@@ -140,8 +124,6 @@ void bi::FilterState<B,L>::clear() {
 template<class B, bi::Location L>
 void bi::FilterState<B,L>::swap(FilterState<B,L>& o) {
   State<B,L>::swap(o);
-  std::swap(logPrior, o.logPrior);
-  std::swap(logProposal, o.logProposal);
   std::swap(logLikelihood, o.logLikelihood);
   std::swap(logIncrement, o.logIncrement);
 }
@@ -152,8 +134,6 @@ void bi::FilterState<B,L>::save(Archive& ar, const unsigned version) const {
   ar & boost::serialization::base_object < State<B,L> > (*this);
   save_resizable_matrix(ar, version, path);
   save_resizable_vector(ar, version, times);
-  ar & logPrior;
-  ar & logProposal;
   ar & logLikelihood;
   ar & logIncrement;
 }
@@ -164,8 +144,6 @@ void bi::FilterState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < State<B,L> > (*this);
   load_resizable_matrix(ar, version, path);
   load_resizable_vector(ar, version, times);
-  ar & logPrior;
-  ar & logProposal;
   ar & logLikelihood;
   ar & logIncrement;
 }
