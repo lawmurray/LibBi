@@ -143,7 +143,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   synchronize();
   TicToc clock;
 #endif
@@ -174,7 +174,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
   }
   boost::mpi::broadcast(world, O, 0);
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportResample(timesteps, rank, usecs);
@@ -239,7 +239,7 @@ template<class M1, class O1>
 void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   typedef typename temp_host_vector<int>::type int_vector_type;
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   synchronize();
   TicToc clock;
 #endif
@@ -316,7 +316,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportRedistribute(timesteps, rank, usecs);

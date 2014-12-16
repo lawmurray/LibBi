@@ -409,7 +409,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   /* pre-conditions */
   BI_ASSERT(X.size1() == as.size());
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 1
   synchronize();
   TicToc clock;
 #endif
@@ -429,7 +429,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
     }
     insert(X, as);
   }
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 1
   synchronize();
   usecs = clock.toc();
   report();

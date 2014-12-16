@@ -51,9 +51,6 @@ public:
 
   /**
    * @name Low-level interface
-   *
-   * Largely used by other features of the library or for finer control over
-   * performance and behaviour.
    */
   //@{
   /**
@@ -66,24 +63,13 @@ public:
    *
    * @tparam S1 State type.
    *
-   * @param rng Random number generator.
-   * @param[out] s State.
-   */
-  template<class S1>
-  void propose(Random& rng, S1& s);
-
-  /**
-   * Weight a parameter sample.
-   *
-   * @tparam S1 State type.
-   *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
    * @param last End of time schedule.
    * @param[out] s State.
    */
   template<class S1>
-  void weight(Random& rng, const ScheduleIterator first,
+  void propose(Random& rng, const ScheduleIterator first,
       const ScheduleIterator last, S1& s);
 
   /**
@@ -98,11 +84,6 @@ public:
    */
   template<class S1, class IO1>
   void output(const int c, S1& s, IO1& out);
-
-  /**
-   * Terminate.
-   */
-  void term();
   //@}
 
 private:
@@ -139,71 +120,29 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  ScheduleIterator iter;
-
-  init();
   while (!adapter.finished()) {
-    adapter.get(iter, s);
     propose(rng, s);
-    weight(rng, first, iter + 1, s);
-    adapter.add(s);
   }
-  while (!stopper.stop()) {
-    draw(rng, first, last, s);
-    output(s, out);
-    stopper.add(s.logWeight);
+  for (int c = 0; c < C; ++c) {
+    propose(rng, first, last, s);
+    output(c, s, out);
   }
-
-  term();
-}
-
-template<class B, class F, class A, class S>
-void bi::MarginalSIS<B,F,A,S>::init() {
-
 }
 
 template<class B, class F, class A, class S>
 template<class S1>
-void bi::MarginalSIS<B,F,A,S>::propose(Random& rng, S1& s) {
-  if (adapter.ready()) {
-    s.q.sample(rng, vec(s.get(PY_VAR)));
-    s.logProposal = s.q.logDensity(vec(s.get(PY_VAR)));
-  } else {
-    m.proposalParameterSample(rng, s);
-    s.get(PY_VAR) = s.get(P_VAR);
-    s.logProposal = m.proposalParameterLogDensity(s);
-  }
-  s.logPrior = m.parameterLogDensity(s);
-  s.logLikelihood = -BI_INF;
-}
-
-template<class B, class F, class A, class S>
-template<class S1>
-void bi::MarginalSIS<B,F,A,S>::weight(Random& rng,
+void bi::MarginalSIS<B,F,A,S>::propose(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
-  double ll, lu;
-  int k;
-
-  ScheduleIterator iter = first;
-  filter.init(rng, *iter, s, s.out);
-  s.logWeight = s.logPrior - s.logProposal;
-  filter.output0(s, s.out);
-
-  ll = filter.correct(rng, *iter, s);
-
-  s.logWeight += ll;
-  filter.output(*iter, s, s.out);
-
-  while (iter + 1 != last) {
-    k = iter->indexObs();
-
-    /* propagation and weighting */
-    ll = filter.step(rng, iter, last, s, s.out);
-    s.logLikelihood += ll;
-    s.logWeight += ll;
+  if (adapter.ready()) {
+    filter.propose(rng, adapter.first(), s, s.out, adapter);
+  } else {
+    filter.propose(rng, adapter.first(), s, s.out);
   }
-  filter.term(s);
+  if (bi::is_finite(s.logPrior)) {
+    filter.filter(rng, adapter.first(), adapter.last(), s, s.out);
+  }
   filter.samplePath(rng, s, s.out);
+  adapter.add(s);
 }
 
 template<class B, class F, class A, class S>
@@ -214,11 +153,6 @@ void bi::MarginalSIS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
     out.flush();
     out.clear();
   }
-}
-
-template<class B, class F, class A, class S>
-void bi::MarginalSIS<B,F,A,S>::term() {
-
 }
 
 #endif

@@ -22,6 +22,7 @@
 #include "bi/state/MarginalSIRState.hpp"
 #include "bi/state/MarginalSISState.hpp"
 
+#include "bi/adapter/MarginalMHAdapter.hpp"
 #include "bi/adapter/MarginalSIRAdapter.hpp"
 #include "bi/adapter/MarginalSISAdapter.hpp"
 
@@ -245,8 +246,10 @@ int main(int argc, char* argv[]) {
   [% ELSE %]
   MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(1.0); // will cause to never be ready
   [% END %]
-  [% ELSIF client.get_named_arg('sample') == 'sis' %]
+  [% ELSIF client.get_named_arg('sampler') == 'sis' %]
   MarginalSISAdapter<model_type,LOCATION> sampleAdapterBase;
+  [% ELSE %]
+  MarginalMHAdapter<model_type,LOCATION> sampleAdapterBase;
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
   DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);

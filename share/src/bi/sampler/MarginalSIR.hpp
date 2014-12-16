@@ -220,7 +220,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   // should look very similar to Filter::filter()
   ScheduleIterator iter = first;
   init(rng, iter, s, out, inInit);
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 3
   std::stringstream buf;
   buf << "sir" << iter->indexOutput() << ".nc";
   SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
@@ -229,7 +229,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
 #endif
   while (iter + 1 != last) {
     step(rng, first, iter, last, s, out);
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 3
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
     SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
@@ -281,7 +281,7 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 
       iter1 = iter;
       filter.step(rng, iter1, last, s1, out1);
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 3
       filter.samplePath(rng, s1, out1);
 #endif
       s.logWeights()(p) += s1.logIncrement;
@@ -365,7 +365,7 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
         }
 
         if (accept) {
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 3
           filter.samplePath(rng, s2, out2);
 #endif
 //          s1.swap(s2);

@@ -51,9 +51,9 @@ C<--with-gdb> or C<--with-cuda-gdb> when debugging.
 
 Print detailed timing information to standard output.
 
-=item C<--enable-diagnostics> (default off)
+=item C<--enable-diagnostics n> (default 0)
 
-Enable diagnostic outputs to standard error.
+Enable diagnostic output n to standard error.
 
 =item C<--enable-single> (default off)
 
@@ -182,7 +182,7 @@ sub new {
         'disable-extra-debug' => sub { $self->{_extra_debug} = 0 },
         'enable-timing' => sub { $self->{_timing} = 1 },
         'disable-timing' => sub { $self->{_timing} = 0 },
-        'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
+        'enable-diagnostics=i' => \$self->{_diagnostics},
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
         'enable-gperftools' => sub { $self->{_gperftools} = 1 },
         'disable-gperftools' => sub { $self->{_gperftools} = 0 },
@@ -222,7 +222,7 @@ sub new {
     push(@builddir, 'single') if $self->{_single};
     push(@builddir, 'extradebug') if $self->{_extra_debug};
     push(@builddir, 'timing') if $self->{_timing};
-    push(@builddir, 'diagnostics') if $self->{_diagnostics};
+    push(@builddir, 'diagnostics' . $self->{_diagnostics}) if $self->{_diagnostics};
     push(@builddir, 'gperftools') if $self->{_gperftools};
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
@@ -344,7 +344,7 @@ sub _configure {
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
     $options .= $self->{_extra_debug} ? ' --enable-extradebug' : ' --disable-extradebug';
     $options .= $self->{_timing} ? ' --enable-timing' : ' --disable-timing';
-    $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
+    $options .= $self->{_diagnostics} ? ' --enable-diagnostics=' . $self->{_diagnostics} : ' --disable-diagnostics';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
     if ($self->{_extra_debug}) {
