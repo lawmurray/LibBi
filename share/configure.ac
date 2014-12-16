@@ -102,6 +102,15 @@ AC_ARG_ENABLE([diagnostics],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-diagnostics]) ;;
      esac],[diagnostics=false])
 
+AC_ARG_ENABLE([diagnostics2],
+     [  --enable-diagnostics2    output diagnostics2 during run],
+     [case "${enableval}" in
+       yes) diagnostics2=true ;;
+       no)  diagnostics2=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-diagnostics2]) ;;
+     esac],[diagnostics2=false])
+
+
 AC_ARG_ENABLE([gperftools],
      [  --enable-gperftools    enable gperftools profiler],
      [case "${enableval}" in
@@ -316,6 +325,7 @@ AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
 AM_CONDITIONAL([ENABLE_TIMING], [test x$timing = xtrue])
 AM_CONDITIONAL([ENABLE_DIAGNOSTICS], [test x$diagnostics = xtrue])
+AM_CONDITIONAL([ENABLE_DIAGNOSTICS2], [test x$diagnostics2 = xtrue])
 AM_CONDITIONAL([ENABLE_GPERFTOOLS], [test x$gperftools = xtrue])
 
 # Variables for automake

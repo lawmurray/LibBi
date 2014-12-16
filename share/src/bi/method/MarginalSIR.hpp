@@ -209,7 +209,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   ScheduleIterator iter = first;
   le = init(rng, iter, s, inInit);
   s.les(iter->indexOutput()) = le;
-    #ifdef ENABLE_DIAGNOSTICS
+    #ifdef ENABLE_DIAGNOSTICS2
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
     SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);
@@ -220,7 +220,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   while (iter + 1 != last) {
     le = step(rng, first, iter, last, s);
     s.les(iter->indexOutput()) = le;
-    #ifdef ENABLE_DIAGNOSTICS
+    #ifdef ENABLE_DIAGNOSTICS2
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
     SMCBuffer<SMCCache<ON_HOST,SMCNetCDFBuffer> > outtmp(m, s.size(), last->indexOutput(), buf.str(), REPLACE);

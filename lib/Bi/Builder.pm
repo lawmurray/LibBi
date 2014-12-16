@@ -55,6 +55,10 @@ Print detailed timing information to standard output.
 
 Enable diagnostic outputs to standard error.
 
+=item C<--enable-diagnostics2> (default off)
+
+Enable another type of diagnostic.
+
 =item C<--enable-single> (default off)
 
 Use single-precision floating point.
@@ -150,6 +154,7 @@ sub new {
         _extra_debug => 0,
         _timing => 0,
         _diagnostics => 0,
+        _diagnostics2 => 0,
         _gperftools => 0,
         _tstamps => {},
     };
@@ -183,7 +188,9 @@ sub new {
         'enable-timing' => sub { $self->{_timing} = 1 },
         'disable-timing' => sub { $self->{_timing} = 0 },
         'enable-diagnostics' => sub { $self->{_diagnostics} = 1 },
+        'enable-diagnostics2' => sub { $self->{_diagnostics2} = 1 },
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
+        'disable-diagnostics2' => sub { $self->{_diagnostics2} = 0 },
         'enable-gperftools' => sub { $self->{_gperftools} = 1 },
         'disable-gperftools' => sub { $self->{_gperftools} = 0 },
     );
@@ -223,6 +230,7 @@ sub new {
     push(@builddir, 'extradebug') if $self->{_extra_debug};
     push(@builddir, 'timing') if $self->{_timing};
     push(@builddir, 'diagnostics') if $self->{_diagnostics};
+    push(@builddir, 'diagnostics2') if $self->{_diagnostics2};
     push(@builddir, 'gperftools') if $self->{_gperftools};
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
@@ -343,6 +351,7 @@ sub _configure {
     $options .= $self->{_extra_debug} ? ' --enable-extradebug' : ' --disable-extradebug';
     $options .= $self->{_timing} ? ' --enable-timing' : ' --disable-timing';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics' : ' --disable-diagnostics';
+    $options .= $self->{_diagnostics2} ? ' --enable-diagnostics2' : ' --disable-diagnostics2';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
     if ($self->{_extra_debug}) {
