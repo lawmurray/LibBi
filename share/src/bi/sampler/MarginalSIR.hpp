@@ -368,8 +368,8 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
 #if ENABLE_DIAGNOSTICS == 3
           filter.samplePath(rng, s2, out2);
 #endif
-//          s1.swap(s2);
-//          out1.swap(out2);
+          s1.swap(s2);
+          out1.swap(out2);
           ++naccept;
         }
       }
