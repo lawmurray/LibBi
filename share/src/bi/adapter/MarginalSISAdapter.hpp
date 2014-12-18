@@ -74,7 +74,10 @@ bool bi::MarginalSISAdapter<B,L>::ready(const int k) const {
 template<class B, bi::Location L>
 template<class S1>
 void bi::MarginalSISAdapter<B,L>::add(const S1& s) {
-  GaussianAdapter<B,L>::add(s, s.logWeights());
+  host_vector<double> logWeights(s.logIncrements.size());
+  inclusive_scan(s.logIncrements, logWeights);
+  addscal_elements(logWeights, s.logPrior - s.logProposal, logWeights);
+  GaussianAdapter<B,L>::add(s, logWeights);
 }
 
 #endif

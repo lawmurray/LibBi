@@ -214,9 +214,11 @@ void bi::InputNetCDFBuffer::map() {
     ncDim = recDims[k];
     ncVar = timeVars[k];
 
-    times.push_back(tnxt);
-    recStarts.push_back(std::vector < size_t > (recDims.size(), 0));
-    recLens.push_back(std::vector < size_t > (recDims.size(), 0));
+    if (times.empty() || times.back() != tnxt) {
+      times.push_back(tnxt);
+      recStarts.push_back(std::vector < size_t > (recDims.size(), 0));
+      recLens.push_back(std::vector < size_t > (recDims.size(), 0));
+    }
     recStarts.back()[k] = starts[k];
     recLens.back()[k] = lens[k];
 

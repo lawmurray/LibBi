@@ -59,14 +59,14 @@ public:
   typename State<B,L>::vector_type times;
 
   /**
-   * Marginal log-likelihood over state.
+   * Marginal log-likelihood increments at each observation time.
    */
-  double logLikelihood;
+  host_vector<double> logIncrements;
 
   /**
-   * Last increment of the marginal log-likelihood over state.
+   * Marginal log-likelihood.
    */
-  double logIncrement;
+  double logLikelihood;
 
 private:
   /**
@@ -91,14 +91,15 @@ private:
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const int P, const int Y, const int T) :
-    State<B,L>(P, Y, T), path(B::NR + B::ND, T), times(T), logLikelihood(0.0), logIncrement(0.0) {
+    State<B,L>(P, Y, T), path(B::NR + B::ND, T), times(T), logIncrements(Y), logLikelihood(
+        0.0) {
   //
 }
 
 template<class B, bi::Location L>
 bi::FilterState<B,L>::FilterState(const FilterState<B,L>& o) :
-    State<B,L>(o), path(o.path), times(o.times), logLikelihood(o.logLikelihood), logIncrement(
-        o.logIncrement) {
+    State<B,L>(o), path(o.path), times(o.times), logIncrements(
+        o.logIncrements), logLikelihood(o.logLikelihood) {
   //
 }
 
@@ -108,8 +109,8 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
   State<B,L>::operator=(o);
   path = o.path;
   times = o.times;
+  logIncrements = o.logIncrements;
   logLikelihood = o.logLikelihood;
-  logIncrement = o.logIncrement;
 
   return *this;
 }
@@ -117,15 +118,19 @@ bi::FilterState<B,L>& bi::FilterState<B,L>::operator=(
 template<class B, bi::Location L>
 void bi::FilterState<B,L>::clear() {
   State<B,L>::clear();
+  path.clear();
+  times.clear();
+  logIncrements.clear();
   logLikelihood = 0.0;
-  logIncrement = 0.0;
 }
 
 template<class B, bi::Location L>
 void bi::FilterState<B,L>::swap(FilterState<B,L>& o) {
   State<B,L>::swap(o);
+  std::swap(path, o.path);
+  std::swap(times, o.times);
+  std::swap(logIncrements, o.logIncrements);
   std::swap(logLikelihood, o.logLikelihood);
-  std::swap(logIncrement, o.logIncrement);
 }
 
 template<class B, bi::Location L>
@@ -134,8 +139,8 @@ void bi::FilterState<B,L>::save(Archive& ar, const unsigned version) const {
   ar & boost::serialization::base_object < State<B,L> > (*this);
   save_resizable_matrix(ar, version, path);
   save_resizable_vector(ar, version, times);
+  save_resizable_vector(ar, version, logIncrements);
   ar & logLikelihood;
-  ar & logIncrement;
 }
 
 template<class B, bi::Location L>
@@ -144,8 +149,8 @@ void bi::FilterState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < State<B,L> > (*this);
   load_resizable_matrix(ar, version, path);
   load_resizable_vector(ar, version, times);
+  load_resizable_vector(ar, version, logIncrements);
   ar & logLikelihood;
-  ar & logIncrement;
 }
 
 #endif

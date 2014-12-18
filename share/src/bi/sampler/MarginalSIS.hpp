@@ -54,11 +54,6 @@ public:
    */
   //@{
   /**
-   * Initialise.
-   */
-  void init();
-
-  /**
    * Propose a new parameter sample.
    *
    * @tparam S1 State type.
@@ -120,8 +115,8 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIS<B,F,A,S>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  while (!adapter.finished()) {
-    propose(rng, s);
+  while (!adapter.ready(last->indexObs() - 1)) {
+    propose(rng, first, last, s);
   }
   for (int c = 0; c < C; ++c) {
     propose(rng, first, last, s);
@@ -134,21 +129,22 @@ template<class S1>
 void bi::MarginalSIS<B,F,A,S>::propose(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s) {
   if (adapter.ready()) {
-    filter.propose(rng, adapter.first(), s, s.out, adapter);
+    filter.propose(rng, *first, s.s1, s.s2, s.out, adapter);
   } else {
-    filter.propose(rng, adapter.first(), s, s.out);
+    filter.propose(rng, *first, s.s1, s.s2, s.out);
   }
-  if (bi::is_finite(s.logPrior)) {
-    filter.filter(rng, adapter.first(), adapter.last(), s, s.out);
+  if (bi::is_finite(s.s2.logPrior)) {
+    filter.filter(rng, first, last, s.s2, s.out);
+    filter.samplePath(rng, s.s2, s.out);
+    std::swap(s.s1, s.s2);
   }
-  filter.samplePath(rng, s, s.out);
-  adapter.add(s);
+  adapter.add(s.s1);
 }
 
 template<class B, class F, class A, class S>
 template<class S1, class IO1>
 void bi::MarginalSIS<B,F,A,S>::output(const int c, S1& s, IO1& out) {
-  out.write(c, s);
+  out.write(c, s.s1);
   if (out.isFull()) {
     out.flush();
     out.clear();

@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
   MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(1.0); // will cause to never be ready
   [% END %]
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  MarginalSISAdapter<model_type,LOCATION> sampleAdapterBase;
+  MarginalSISAdapter<model_type,LOCATION> sampleAdapterBase(sched.begin(), sched.end());
   [% ELSE %]
   MarginalMHAdapter<model_type,LOCATION> sampleAdapterBase;
   [% END %]
@@ -300,8 +300,7 @@ int main(int argc, char* argv[]) {
     [% IF client.get_named_arg('sampler') == 'sir' %]
     MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-    typedef GaussianPdf<> proposal_type;
-    MarginalSISState<model_type,LOCATION,state_type,cache_type,proposal_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
+    MarginalSISState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSE %]
     MarginalMHState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% END %]

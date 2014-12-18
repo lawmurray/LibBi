@@ -8,6 +8,7 @@
 #ifndef BI_STATE_MARGINALSISSTATE_HPP
 #define BI_STATE_MARGINALSISSTATE_HPP
 
+#include "MarginalMHState.hpp"
 
 namespace bi {
 /**
@@ -19,10 +20,9 @@ namespace bi {
  * @tparam L Location.
  * @tparam S1 Filter state type.
  * @tparam IO1 Output type.
- * @tparam Q1 Proposal type.
  */
-template<class B, Location L, class S1, class IO1, class Q1>
-class MarginalSISState: public S1 {
+template<class B, Location L, class S1, class IO1>
+class MarginalSISState: public MarginalMHState<B,L,S1,IO1> {
 public:
   /**
    * Constructor.
@@ -37,32 +37,12 @@ public:
   /**
    * Shallow copy constructor.
    */
-  MarginalSISState(const MarginalSISState<B,L,S1,IO1,Q1>& o);
+  MarginalSISState(const MarginalSISState<B,L,S1,IO1>& o);
 
   /**
    * Assignment operator.
    */
-  MarginalSISState& operator=(const MarginalSISState<B,L,S1,IO1,Q1>& o);
-
-  /**
-   * Clear.
-   */
-  void clear();
-
-  /**
-   * Swap.
-   */
-  void swap(MarginalSISState<B,L,S1,IO1,Q1>& o);
-
-  /**
-   * Proposal distribution.
-   */
-  Q1 q;
-
-  /*
-   * Incremental log-likelihoods.
-   */
-  host_vector<double> logLikelihoods;
+  MarginalSISState& operator=(const MarginalSISState<B,L,S1,IO1>& o);
 
 private:
   /**
@@ -85,60 +65,43 @@ private:
 };
 }
 
-template<class B, bi::Location L, class S1, class IO1, class Q1>
-bi::MarginalSISState<B,L,S1,IO1,Q1>::MarginalSISState(B& m, const int P,
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSISState<B,L,S1,IO1>::MarginalSISState(B& m, const int P,
     const int Y, const int T) :
-    S1(m, P, Y, T), q(B::NP), logLikelihoods(Y) {
+    MarginalMHState<B,L,S1,IO1>(m, P, Y, T) {
   //
 }
 
-template<class B, bi::Location L, class S1, class IO1, class Q1>
-bi::MarginalSISState<B,L,S1,IO1,Q1>::MarginalSISState(
-    const MarginalSISState<B,L,S1,IO1,Q1>& o) :
-    S1(o), q(o.q), logLikelihoods(o.logLikelihoods) {
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSISState<B,L,S1,IO1>::MarginalSISState(
+    const MarginalSISState<B,L,S1,IO1>& o) :
+    MarginalMHState<B,L,S1,IO1>(o) {
   //
 }
 
-template<class B, bi::Location L, class S1, class IO1, class Q1>
-bi::MarginalSISState<B,L,S1,IO1,Q1>& bi::MarginalSISState<B,L,S1,IO1,Q1>::operator=(
-    const MarginalSISState<B,L,S1,IO1,Q1>& o) {
-  S1::operator=(o);
-  q = o.q;
-  logLikelihoods = o.logLikelihoods;
-
+template<class B, bi::Location L, class S1, class IO1>
+bi::MarginalSISState<B,L,S1,IO1>& bi::MarginalSISState<B,L,S1,IO1>::operator=(
+    const MarginalSISState<B,L,S1,IO1>& o) {
+  MarginalMHState<B,L,S1,IO1>::operator=(o);
   return *this;
 }
 
-template<class B, bi::Location L, class S1, class IO1, class Q1>
-void bi::MarginalSISState<B,L,S1,IO1,Q1>::clear() {
-  S1::clear();
-  q.clear();
-  logLikelihoods.clear();
-}
-
-template<class B, bi::Location L, class S1, class IO1, class Q1>
-void bi::MarginalSISState<B,L,S1,IO1,Q1>::swap(MarginalSISState<B,L,S1,IO1,Q1>& o) {
-  S1::swap(o);
-  q.swap(o.q);
-  logLikelihoods.swap(o.logLikelihoods);
-}
-
-template<class B, bi::Location L, class S1, class IO1, class Q1>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalSISState<B,L,S1,IO1,Q1>::save(Archive& ar,
+void bi::MarginalSISState<B,L,S1,IO1>::save(Archive& ar,
     const unsigned version) const {
-  ar & boost::serialization::base_object < S1 > (*this);
-  ar & q;
-  load_resizable_vector(ar, version, logLikelihoods);
+  ar
+      & boost::serialization::base_object < MarginalMHState<B,L,S1,IO1>
+          > (*this);
 }
 
-template<class B, bi::Location L, class S1, class IO1, class Q1>
+template<class B, bi::Location L, class S1, class IO1>
 template<class Archive>
-void bi::MarginalSISState<B,L,S1,IO1,Q1>::load(Archive& ar,
+void bi::MarginalSISState<B,L,S1,IO1>::load(Archive& ar,
     const unsigned version) {
-  ar & boost::serialization::base_object < S1 > (*this);
-  ar & q;
-  save_resizable_vector(ar, version, logLikelihoods);
+  ar
+      & boost::serialization::base_object < MarginalMHState<B,L,S1,IO1>
+          > (*this);
 }
 
 #endif

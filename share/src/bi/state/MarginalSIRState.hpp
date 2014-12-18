@@ -123,14 +123,14 @@ public:
   IO1 out2;
 
   /**
+   * Marginal log-likelihood increments.
+   */
+  host_vector<double> logIncrements;
+
+  /**
    * Marginal log-likelihood over parameters.
    */
   double logLikelihood;
-
-  /**
-   * Last increment of the marginal log-likelihood over parameters.
-   */
-  double logIncrement;
 
   /**
    * Last ESS.
@@ -181,8 +181,8 @@ private:
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
     const int Px, const int Y, const int T) :
-    s1s(Ptheta), out1s(Ptheta), s2(Px, Y, T), out2(m, Px, T), logLikelihood(
-        0.0), logIncrement(0.0), ess(0.0), lws(Ptheta), as(Ptheta), ptheta(0), Ptheta(
+    s1s(Ptheta), out1s(Ptheta), s2(Px, Y, T), out2(m, Px, T), logIncrements(Y), logLikelihood(
+        0.0), ess(0.0), lws(Ptheta), as(Ptheta), ptheta(0), Ptheta(
         Ptheta) {
   for (int p = 0; p < size(); ++p) {
     s1s[p] = new S1(Px, Y, T);
@@ -193,8 +193,8 @@ bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(B& m, const int Ptheta,
 template<class B, bi::Location L, class S1, class IO1>
 bi::MarginalSIRState<B,L,S1,IO1>::MarginalSIRState(
     const MarginalSIRState<B,L,S1,IO1>& o) :
-    s1s(o.s1s.size()), out1s(o.out1s.size()), s2(o.s2), out2(o.out2), logLikelihood(
-        o.logLikelihood), logIncrement(o.logIncrement), ess(0.0), lws(o.lws), as(
+    s1s(o.s1s.size()), out1s(o.out1s.size()), s2(o.s2), out2(o.out2), logIncrements(o.logIncrements), logLikelihood(
+        o.logLikelihood), ess(0.0), lws(o.lws), as(
         o.as), ptheta(o.ptheta), Ptheta(o.Ptheta) {
   for (int p = 0; p < size(); ++p) {
     s1s[p] = new S1(*o.s1s[p]);
@@ -214,8 +214,8 @@ bi::MarginalSIRState<B,L,S1,IO1>& bi::MarginalSIRState<B,L,S1,IO1>::operator=(
   }
   s2 = o.s2;
   out2 = o.out2;
+  logIncrements = o.logIncrements;
   logLikelihood = o.logLikelihood;
-  logIncrement = o.logIncrement;
   ess = o.ess;
   lws = o.lws;
   as = o.as;
@@ -233,8 +233,8 @@ void bi::MarginalSIRState<B,L,S1,IO1>::clear() {
   }
   s2.clear();
   out2.clear();
+  logIncrements.clear();
   logLikelihood = 0.0;
-  logIncrement = 0.0;
   ess = 0.0;
   logWeights().clear();
   seq_elements(ancestors(), 0);
@@ -246,8 +246,8 @@ void bi::MarginalSIRState<B,L,S1,IO1>::swap(MarginalSIRState<B,L,S1,IO1>& o) {
   std::swap(out1s, o.out1s);
   s2.swap(o.s2);
   out2.swap(o.out2);
+  std::swap(logIncrements, o.logIncrements);
   std::swap(logLikelihood, o.logLikelihood);
-  std::swap(logIncrement, o.logIncrement);
   std::swap(ess, o.ess);
   lws.swap(o.lws);
   as.swap(o.as);
@@ -317,8 +317,8 @@ void bi::MarginalSIRState<B,L,S1,IO1>::save(Archive& ar,
   }
   ar & s2;
   ar & out2;
+  save_resizable_vector(ar, version, logIncrements);
   ar & logLikelihood;
-  ar & logIncrement;
   ar & ess;
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
@@ -336,8 +336,8 @@ void bi::MarginalSIRState<B,L,S1,IO1>::load(Archive& ar,
   }
   ar & s2;
   ar & out2;
+  load_resizable_vector(ar, version, logIncrements);
   ar & logLikelihood;
-  ar & logIncrement;
   ar & ess;
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);

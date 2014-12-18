@@ -284,14 +284,14 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 #if ENABLE_DIAGNOSTICS == 3
       filter.samplePath(rng, s1, out1);
 #endif
-      s.logWeights()(p) += s1.logIncrement;
+      s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
     }
     iter = iter1;
   } while (iter + 1 != last && !iter->isObserved());
 
   double lW;
   s.ess = ess_reduce(s.logWeights(), &lW);
-  s.logIncrement = lW - s.logLikelihood;
+  s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 }
 
