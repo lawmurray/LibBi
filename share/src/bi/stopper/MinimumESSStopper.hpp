@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_MINIMUMESSSTOPPER_HPP
 #define BI_STOPPER_MINIMUMESSSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on ESS criterion.
@@ -23,18 +25,18 @@ public:
   /**
    * @copydoc Stopper::stop(const double maxlw)
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add()
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::reset()
@@ -60,7 +62,7 @@ inline bi::MinimumESSStopper::MinimumESSStopper(const double threshold,
   //
 }
 
-inline bool bi::MinimumESSStopper::stop(const double maxlw) const {
+inline bool bi::MinimumESSStopper::stop(const double maxlw) {
   double ess = (sumw * sumw) / sumw2;
   double miness = this->threshold;
   double minsumw = bi::exp(maxlw) * (miness - 1.0) / 2.0;

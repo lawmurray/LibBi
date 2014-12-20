@@ -60,7 +60,7 @@ template<class IO1>
 template<class S1>
 void bi::SRSBuffer<IO1>::write(const int c, const S1& s) {
   parent_type::write(c, s);
-  parent_type::writeLogWeight(c, s.logWeight);
+  parent_type::writeLogWeight(c, s.logPrior + s.logLikelihood - s.logProposal);
 }
 
 #endif

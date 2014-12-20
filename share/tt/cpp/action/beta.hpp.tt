@@ -78,10 +78,10 @@ public:
     lp += (a - BI_REAL(1.0))*bi::log(mode) +
         (b - BI_REAL(1.0))*bi::log(BI_REAL(1.0) - mode) - logZ;
   } else {
-    lp = std::numeric_limits<real>::infinity();
+    lp = BI_INF;
   }
   [% ELSE %]
-  lp = std::numeric_limits<real>::infinity();
+  lp = BI_INF;
   [% END %]
 
   [% put_output(action, 'xy') %]

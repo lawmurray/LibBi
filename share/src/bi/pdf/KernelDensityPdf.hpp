@@ -191,7 +191,7 @@ private:
 
 #include "misc.hpp"
 #include "functor.hpp"
-#include "../math/pi.hpp"
+#include "../math/constant.hpp"
 #include "../math/view.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../misc/assert.hpp"

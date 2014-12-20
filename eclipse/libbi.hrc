@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding='Windows-1251'?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN"
+  "http://colorer.sf.net/2003/hrc.dtd"[
+<!ENTITY c-win32 SYSTEM "c-win32.ent.hrc">
+]>
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://colorer.sf.net/2003/hrc http://colorer.sf.net/2003/hrc.xsd">
+
+ <type name="libbi">
+  <annotation><documentation>
+    LibBi syntax description
+  </documentation><contributors><![CDATA[
+    Lawrence Murray <lawrence.murray@csiro.au>
+  ]]></contributors>
+  </annotation>
+
+  <import type="def"/>
+
+  <region name="String" parent="def:String"/>
+  <region name="StringEscape" parent="def:StringContent"/>
+  <region name="StringFormat" parent="def:VarStrong"/>
+  <region name="Character" parent='def:Character'/>
+
+  <region name="LineComment" parent="def:LineComment"/>
+  <region name="Comment" parent="def:Comment"/>
+
+  <region name="Number" parent="def:Number"/>
+  <region name="Symbol" parent="def:Symbol"/>
+
+  <region name="Keyword" parent="def:Keyword"/>
+  <region name="Keyword.typenames" parent="Keyword"/>
+  
+  <region name="FuncOutline" parent="def:Outlined"/>
+ 
+  <scheme name="TabsAsErrors" if="tabs-as-errors">
+    <regexp match="/\t+/" region='def:Error'/>
+  </scheme>
+
+  <scheme name="SpacesAsErrors" if="spaces-as-errors">
+    <regexp match="/\x20+$/" region='def:Error'/>
+  </scheme>
+ 
+  <scheme name="Character">
+   <regexp match="/[Ll]?'(\\\D | \\[0-7]{1,3} | \\x[\da-fA-F]{2} | [^\\']){1,4}'/x" region="Character"/>
+   <!-- <regexp match="/'.*?'/" region="def:Error"/> -->
+  </scheme>
+
+  <scheme name="String">
+   <block start="/(?{def:StringEdge}[Ll]?&#34;)/" end="/(?{def:StringEdge}&#34;)/"
+          scheme="StringContent" region="String" inner-region="yes"
+          region00='def:PairStart' region10='def:PairEnd'
+   />
+  </scheme>
+
+  <entity name='format' value='[\-\+\#0]*?[\d\*]*(?{}\.[\d\*]+)?[Ll]?[SsCcsuidopxXnEefgG]'/>
+
+  <scheme name="StringContent">
+   <regexp match="/\\\\$/" region="def:Error"/>
+	 <regexp match="/((\%)[\dA-Z_]{2,}(\%))(%format;|%)?!/" region1="def:Var" region2="def:PairStart" region3="def:PairEnd"/>
+   <regexp match="/\\[^xX\d]/" region="StringEscape"/>
+   <regexp match="/\\$/" region="StringEscape"/>
+   <regexp match="/\\x[\da-fA-F]{1,8}/i" region="StringEscape"/>
+   <regexp match="/\\[0-7]{1,12}/" region="StringEscape"/>
+   <regexp match="/\%(%format;|\%)/" region="StringFormat"/>
+   <regexp match="/[^\\\&#34;]$/" region="def:Error"/>
+   <inherit scheme="TabsAsErrors"/>
+  </scheme>
+  
+  <scheme name="libbi">
+   <block start="/(\{)/" end="/(\})/" scheme="c"
+          region00="SymbolStrong" region01="PairStart" region10="SymbolStrong" region11="PairEnd"/>
+   <inherit scheme="Expression"/>
+  </scheme>
+
+  <scheme name="Operators">
+   <keywords region="Symbol">
+      <symb name="="/>
+      <symb name="+"/><symb name="-"/>
+      <symb name="/"/><symb name="*"/>
+      <symb name="&amp;"/><symb name="^"/>
+      <symb name="|"/>
+      <symb name=","/><symb name="."/>
+      <symb name="!"/><symb name="~"/>
+      <symb name="&lt;"/><symb name="&gt;"/>
+      <symb name="%"/>
+      <symb name="?" region="StructureSymbol"/>
+      <symb name=":" region="StructureSymbol"/>
+      <symb name="#"/>
+      <symb name="@"/>
+   </keywords>
+  </scheme>
+
+  <scheme name="Expression">
+   <block start="/(\()/" end="/(\))/" scheme="Expression"
+          region00="Symbol" region01="PairStart" region10="Symbol" region11="PairEnd"/>
+   <block start="/(\[)/" end="/(\])/" scheme="Expression"
+          region00="Symbol" region01="PairStart" region10="Symbol" region11="PairEnd"/>
+
+   <!-- Numbers -->
+   <inherit scheme="def:Number"/>
+   <inherit scheme="def:BadHex"/>
+
+   <!-- Bad tokens -->
+   <regexp match="/#\w+/" region="def:Error"/>
+   <regexp match="/\b[\d\$\`\@]\w+/i" region="def:Error"/>
+
+   <inherit scheme="TabsAsErrors"/>
+   <inherit scheme="SpacesAsErrors"/>
+
+   <inherit scheme="Character"/>
+   <inherit scheme="String"/>
+
+   <!-- Comments -->
+   <block start="/\/\//" end="/$/" scheme="def:Comment" region="LineComment"/>
+   <block scheme="def:Comment" region="Comment">
+      <start region0="def:PairStart"><![CDATA[/\/\*/]]></start>
+      <end   region0="def:PairEnd"  ><![CDATA[/\*\//]]></end>
+   </block>
+
+   <!-- Standard symbols -->
+   <inherit scheme="Operators"/>
+
+   <!-- <keywords region="def:Error">
+      <symb name="["/><symb name="]"/>
+      <symb name="{"/><symb name="}"/>
+      <symb name="("/><symb name=")"/>
+      <symb name="*/"/>
+   </keywords> -->
+
+   <!-- Keywords: datatypes -->
+   <keywords region="Keyword.typenames">
+      <word name="true"/>
+      <word name="false"/>
+   </keywords>
+
+   <!-- Keywords -->
+   <keywords region="Keyword">
+      <word name="def"/>
+      <word name="dim"/>
+      <word name="var"/>
+      <word name="if"/>
+      <word name="else"/>
+      <word name="while"/>
+      <word name="for"/>
+      <word name="foreach"/>
+   </keywords>
+
+  </scheme>
+	
+</type>
+</hrc>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - GPL 2.0
+   - ***** END LICENSE BLOCK ***** -->
+

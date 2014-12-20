@@ -20,7 +20,7 @@ namespace bi {
  * @tparam T1 Scalar type.
  * @tparam CL Cache location.
  */
-template<class T1, Location CL>
+template<class T1, Location CL = ON_HOST>
 class Cache1D: public Cache {
 public:
   /**
@@ -60,7 +60,7 @@ public:
   T1 get(const int p) const;
 
   /**
-   * Get subrange of pages.
+   * Get range of pages.
    *
    * @param p Starting index of range.
    * @param len Length of range.

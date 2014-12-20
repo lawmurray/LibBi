@@ -8,6 +8,22 @@
 #ifndef BI_HOST_RESAMPLER_STRATIFIEDRESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_STRATIFIEDRESAMPLERHOST_HPP
 
+#include "ResamplerHost.hpp"
+
+namespace bi {
+/**
+ * StratifiedResampler implementation on host.
+ */
+class StratifiedResamplerHost: public ResamplerHost {
+public:
+  /**
+   * @copydoc StratifiedResampler::op
+   */
+  template<class V1, class V2>
+  static void op(Random& rng, const V1 Ws, V2 Os, const int n);
+};
+}
+
 template<class V1, class V2>
 void bi::StratifiedResamplerHost::op(Random& rng, const V1 Ws, V2 Os,
     const int n) {

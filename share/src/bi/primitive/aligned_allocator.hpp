@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_ALIGNED_ALLOCATOR_HPP
-#define BI_MISC_ALIGNED_ALLOCATOR_HPP
+#ifndef BI_PRIMITIVE_ALIGNEDALLOCATOR_HPP
+#define BI_PRIMITIVE_ALIGNEDALLOCATOR_HPP
 
 #include <cstdlib>
 
@@ -15,7 +15,7 @@ namespace bi {
  * Allocator for aligned memory. Useful to align buffers for ready loading
  * of SIMD vectors.
  *
- * @ingroup primitive_allocators
+ * @ingroup primitive_allocator
  */
 template <class T, unsigned X = 32>
 class aligned_allocator {

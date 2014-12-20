@@ -61,7 +61,6 @@ public:
 #ifdef __CUDACC__
 #include "../cuda/updater/StaticUpdaterGPU.cuh"
 #endif
-#include "../method/misc.hpp"
 
 template<class B, class S>
 void bi::StaticUpdater<B,S>::update(State<B,ON_HOST>& s) {

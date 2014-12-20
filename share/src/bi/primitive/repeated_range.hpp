@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_REPEATED_RANGE_HPP
-#define BI_MISC_REPEATED_RANGE_HPP
+#ifndef BI_PRIMITIVE_REPEATEDRANGE_HPP
+#define BI_PRIMITIVE_REPEATEDRANGE_HPP
 
 #include "repeated_sequence.hpp"
 
@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Repeated range, repeating over a base range multiple times.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct repeated_range {
@@ -54,7 +54,7 @@ private:
 /**
  * Factory function for creating repeated_range objects.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  *
  * @param first Beginning of base range.
  * @param last End of base range.

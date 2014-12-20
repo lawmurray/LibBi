@@ -7,6 +7,8 @@
 #ifndef BI_STOPPER_VARSTOPPER_HPP
 #define BI_STOPPER_VARSTOPPER_HPP
 
+#include "Stopper.hpp"
+
 namespace bi {
 /**
  * Stopper based on variance criterion.
@@ -23,18 +25,18 @@ public:
   /**
    * @copydoc Stopper::stop(const double maxlw)
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add()
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::reset()
@@ -55,7 +57,7 @@ inline bi::VarStopper::VarStopper(const double threshold, const int maxP,
   //
 }
 
-inline bool bi::VarStopper::stop(const double maxlw) const {
+inline bool bi::VarStopper::stop(const double maxlw) {
   double minsum = this->T * this->threshold;
 
   return Stopper::stop(maxlw) || sum >= minsum;

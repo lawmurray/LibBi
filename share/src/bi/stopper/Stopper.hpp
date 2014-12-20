@@ -7,7 +7,8 @@
 #ifndef BI_STOPPER_STOPPER_HPP
 #define BI_STOPPER_STOPPER_HPP
 
-#include "../math/scalar.hpp"
+#include "../math/constant.hpp"
+#include "../math/function.hpp"
 
 namespace bi {
 /**
@@ -33,7 +34,7 @@ public:
   /**
    * Stop?
    */
-  bool stop(const double maxlw) const;
+  bool stop(const double maxlw = BI_INF);
 
   /**
    * Add weight.
@@ -41,7 +42,7 @@ public:
    * @param lw New log-weight.
    * @param maxlw Maximum log-weight.
    */
-  void add(const double lw, const double maxlw);
+  void add(const double lw, const double maxlw = BI_INF);
 
   /**
    * Add weights.
@@ -52,7 +53,7 @@ public:
    * @param maxlw Maximum log-weight.
    */
   template<class V1>
-  void add(const V1 lws, const double maxlw);
+  void add(const V1 lws, const double maxlw = BI_INF);
 
   /**
    * Reset for reuse.
@@ -82,12 +83,13 @@ protected:
 };
 }
 
-inline bi::Stopper::Stopper(const double threshold, const int maxP, const int T) :
+inline bi::Stopper::Stopper(const double threshold, const int maxP,
+    const int T) :
     threshold(threshold), maxP(maxP), T(T), P(0) {
   //
 }
 
-inline bool bi::Stopper::stop(const double maxlw) const {
+inline bool bi::Stopper::stop(const double maxlw) {
   return P >= maxP;
 }
 

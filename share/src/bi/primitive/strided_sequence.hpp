@@ -8,8 +8,8 @@
  * Implementation based on discussion at
  * http://groups.google.com/group/thrust-users/browse_thread/thread/a506470f5c634813
  */
-#ifndef BI_MISC_STRIDEDSEQUENCE_HPP
-#define BI_MISC_STRIDEDSEQUENCE_HPP
+#ifndef BI_PRIMITIVE_STRIDEDSEQUENCE_HPP
+#define BI_PRIMITIVE_STRIDEDSEQUENCE_HPP
 
 #include "../primitive/functor.hpp"
 
@@ -18,7 +18,7 @@
 
 namespace bi {
 /**
- * @ingroup misc_iterator
+ * @ingroup PRIMITIVE_iterator
  *
  * Converts a linear index into a strided index.
  */
@@ -46,7 +46,7 @@ struct strided_functor : public std::unary_function<T,T> {
 /**
  * Strided sequence.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct strided_sequence {

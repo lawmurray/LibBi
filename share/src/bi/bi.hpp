@@ -23,13 +23,21 @@
  * @defgroup method Methods
  * Inference methods.
  *
- *   @defgroup method_sampler Samplers
+ *   @defgroup method_simulator Simulators
  *   @ingroup method
- *   Samplers for parameters.
+ *   Simulators.
  *
  *   @defgroup method_filter Filters
  *   @ingroup method
  *   Kalman and particle filters.
+ *
+ *   @defgroup method_optimiser Optimisers
+ *   @ingroup method
+ *   Optimisers for parameters.
+ *
+ *   @defgroup method_sampler Samplers
+ *   @ingroup method
+ *   Samplers for parameters.
  *
  *   @defgroup method_resampler Resamplers
  *   @ingroup method
@@ -54,6 +62,11 @@
  *
  *   @defgroup state_gpu Device memory bindings
  *   @ingroup state
+ *
+ * @defgroup program Programs
+ * Representation of programs written in the LibBi language.
+ *
+ * @defgroup server Servers
  *
  * @defgroup io I/O
  *
@@ -101,7 +114,10 @@
  *   @defgroup primitive_functor Functors
  *   @ingroup primitive
  *
- *   @defgroup primitive_iterators Iterators
+ *   @defgroup primitive_container Containers
+ *   @ingroup primitive
+ *
+ *   @defgroup primitive_iterator Iterators
  *   @ingroup primitive
  *
  *   @defgroup primitive_vector Vector primitives
@@ -110,10 +126,8 @@
  *   @defgroup primitive_matrix Matrix primitives
  *   @ingroup primitive
  *
- *   @defgroup primitive_allocators Allocators
+ *   @defgroup primitive_allocator Allocators
  *   @ingroup primitive
- *
- * @defgroup kd kd trees
  *
  * @defgroup typelist Type lists
  *

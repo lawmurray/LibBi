@@ -9,7 +9,6 @@
 #define BI_CUDA_UPDATER_STATICLOGDENSITYGPU_CUH
 
 #include "../../state/State.hpp"
-#include "../../method/misc.hpp"
 
 namespace bi {
 /**

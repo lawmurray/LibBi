@@ -8,8 +8,8 @@
  * Implementation based on discussion at
  * http://groups.google.com/group/thrust-users/browse_thread/thread/a506470f5c634813
  */
-#ifndef BI_MISC_STRIDEDRANGE_HPP
-#define BI_MISC_STRIDEDRANGE_HPP
+#ifndef BI_PRIMITIVE_STRIDEDRANGE_HPP
+#define BI_PRIMITIVE_STRIDEDRANGE_HPP
 
 #include "strided_sequence.hpp"
 
@@ -20,7 +20,7 @@ namespace bi {
 /**
  * Strided range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct strided_range {

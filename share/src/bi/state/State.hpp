@@ -42,18 +42,18 @@ int roundup(const int P);
 inline int bi::roundup(const int P) {
   int P1 = P;
 
-  #if defined(ENABLE_CUDA)
+#if defined(ENABLE_CUDA)
   /* either < 32 or a multiple of 32 number of trajectories required */
   if (P1 > 32) {
     P1 = ((P1 + 31) / 32) * 32;
   }
-  #elif defined(ENABLE_SSE)
+#elif defined(ENABLE_SSE)
   /* zero, one or a multiple of 4 (single precision) or 2 (double
    * precision) required */
   if (P1 > 1) {
     P1 = ((P1 + BI_SIMD_SIZE - 1)/BI_SIMD_SIZE)*BI_SIMD_SIZE;
   }
-  #endif
+#endif
 
   return P1;
 }
@@ -99,10 +99,12 @@ public:
   /**
    * Constructor.
    *
-   * @param P Number of trajectories to store.
+   * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
   CUDA_FUNC_BOTH
-  State(const int P = 1);
+  State(const int P = 1, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -179,6 +181,16 @@ public:
    * Clear.
    */
   void clear();
+
+  /**
+   * Gather particles.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param as Ancestry.
+   */
+  template<class V1>
+  void gather(const V1 as);
 
   /**
    * @name Built-in variables
@@ -374,6 +386,16 @@ public:
   CUDA_FUNC_BOTH
   const matrix_reference_type getDyn() const;
 
+  /**
+   * Log-prior density of parameters.
+   */
+  double logPrior;
+
+  /**
+   * Log-proposal density of parameters.
+   */
+  double logProposal;
+
 protected:
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -433,9 +455,12 @@ private:
 }
 
 #include "../math/view.hpp"
+#include "../math/constant.hpp"
+#include "../primitive/matrix_primitive.hpp"
 
 template<class B, bi::Location L>
-bi::State<B,L>::State(const int P) :
+bi::State<B,L>::State(const int P, const int Y, const int T) :
+    logPrior(-BI_INF), logProposal(-BI_INF),
     Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + 2 * NO),  // includes py- and oy-vars
     p(0), P(P) {
@@ -447,7 +472,7 @@ bi::State<B,L>::State(const int P) :
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+  logPrior(o.logPrior), logProposal(o.logProposal), Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   for (int i = 0; i < NB; ++i) {
     builtin[i] = o.builtin[i];
   }
@@ -466,6 +491,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
 template<class B, bi::Location L>
 template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
+  logPrior = o.logPrior;
+  logProposal = o.logProposal;
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {
@@ -476,6 +503,8 @@ bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
 
 template<class B, bi::Location L>
 void bi::State<B,L>::swap(State<B,L>& o) {
+  std::swap(logPrior, o.logPrior);
+  std::swap(logProposal, o.logProposal);
   Xdn.swap(o.Xdn);
   Kdn.swap(o.Kdn);
   for (int i = 0; i < NB; ++i) {
@@ -531,6 +560,8 @@ inline void bi::State<B,L>::resizeMax(const int maxP, const bool preserve) {
 
 template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
+  logPrior = -BI_INF;
+  logProposal = -BI_INF;
   rows(Xdn, p, P).clear();
   Kdn.clear();
 }
@@ -851,8 +882,16 @@ inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getD
 }
 
 template<class B, bi::Location L>
+template<class V1>
+void bi::State<B,L>::gather(const V1 as) {
+  bi::gather_rows(as, getDyn(), getDyn());
+}
+
+template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
+  ar & logPrior;
+  ar & logProposal;
   save_resizable_matrix(ar, version, Xdn);
   save_resizable_matrix(ar, version, Kdn);
   ar & builtin;
@@ -863,6 +902,8 @@ void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
 template<class B, bi::Location L>
 template<class Archive>
 void bi::State<B,L>::load(Archive& ar, const unsigned version) {
+  ar & logPrior;
+  ar & logProposal;
   load_resizable_matrix(ar, version, Xdn);
   load_resizable_matrix(ar, version, Kdn);
   ar & builtin;

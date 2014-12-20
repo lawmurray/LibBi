@@ -8,6 +8,92 @@
 #ifndef BI_CUDA_RESAMPLER_RESAMPLERGPU_CUH
 #define BI_CUDA_RESAMPLER_RESAMPLERGPU_CUH
 
+namespace bi {
+/**
+ * Resampler implementation on device.
+ */
+class ResamplerGPU {
+public:
+  /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
+  /**
+   * @copydoc Resampler::offspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestors(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::offspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestorsPermute(const V1 os, V2 as);
+
+  /**
+   * Like offspringToAncestorsPermute(), but only performs first stage of
+   * permutation. Second stage should be completed with postPermute().
+   */
+  template<class V1, class V2, class V3>
+  static void offspringToAncestorsPrePermute(const V1 os, V2 as, V3 is);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
+
+  /**
+   * Like cumulativeOffspringToAncestorsPermute(), but only performs first
+   * stage of permutation. Second stage should be completed with
+   * postPermute().
+   */
+  template<class V1, class V2, class V3>
+  static void cumulativeOffspringToAncestorsPrePermute(const V1 Os, V2 as,
+      V3 is);
+
+  /**
+   * @copydoc Resampler::permute()
+   */
+  template<class V1>
+  static void permute(V1 as);
+
+  /**
+   * First stage of permutation.
+   *
+   * @tparam V1 Integer vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param as Input ancestry.
+   * @param is[out] Claims.
+   */
+  template<class V1, class V2>
+  static void prePermute(const V1 as, V2 is);
+
+  /**
+   * Second stage of permutation.
+   *
+   * @tparam V1 Integer vector type.
+   * @tparam V2 Integer vector type.
+   * @tparam V3 Integer vector type.
+   *
+   * @param as Input ancestry.
+   * @param is Claims, as output from pre-permute function.
+   * @param[out] cs Output, permuted ancestry.
+   */
+  template<class V1, class V2, class V3>
+  static void postPermute(const V1 as, const V2 is, V3 cs);
+};
+}
+
 #include "ResamplerKernel.cuh"
 #include "../../primitive/vector_primitive.hpp"
 #include "../../primitive/matrix_primitive.hpp"

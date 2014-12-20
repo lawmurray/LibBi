@@ -683,7 +683,9 @@ void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
     BOOST_AUTO(d, diagonal(U));
     T1 largest = amax_reduce(d);
 
-    if (largest <= 0.0) {
+    if (!is_finite(largest)) {
+      throw e;
+    } else if (largest <= 0.0) {
       U.clear();
     } else if (strat == ADJUST_DIAGONAL) {
       bool success = false;

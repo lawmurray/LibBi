@@ -8,48 +8,11 @@
 #ifndef BI_RESAMPLER_METROPOLISRESAMPLER_HPP
 #define BI_RESAMPLER_METROPOLISRESAMPLER_HPP
 
-#include "Resampler.hpp"
 #include "../cuda/cuda.hpp"
 #include "../random/Random.hpp"
 #include "../misc/exception.hpp"
 
 namespace bi {
-/**
- * MetropolisResampler implementation on host.
- */
-class MetropolisResamplerHost: public ResamplerHost {
-public:
-  /**
-   * @copydoc MetropolisResampler::ancestors()
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as, int B);
-
-  /**
-   * @copydoc MetropolisResampler::ancestorsPermute()
-   */
-  template<class V1, class V2>
-  static void ancestorsPermute(Random& rng, const V1 lws, V2 as, int B);
-};
-
-/**
- * MetropolisResampler implementation on device.
- */
-class MetropolisResamplerGPU: public ResamplerGPU {
-public:
-  /**
-   * @copydoc MetropolisResampler::ancestors()
-   */
-  template<class V1, class V2>
-  static void ancestors(Random& rng, const V1 lws, V2 as, int B);
-
-  /**
-   * @copydoc MetropolisResampler::ancestorsPermute()
-   */
-  template<class V1, class V2>
-  static void ancestorsPermute(Random& rng, const V1 lws, V2 as, int B);
-};
-
 /**
  * Metropolis resampler for particle filter.
  *
@@ -58,7 +21,7 @@ public:
  * Implements the Metropolis resampler as described in @ref Murray2011a
  * "Murray (2011)" and @ref Murray2014 "Murray, Lee & Jacob (2014)".
  */
-class MetropolisResampler: public Resampler {
+class MetropolisResampler {
 public:
   /**
    * Constructor.
@@ -66,59 +29,46 @@ public:
    * @param B Number of Metropolis steps to take.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
-   * @param bridgeEssRel Minimum ESS, as proportion of total number of
-   * particles, to trigger resampling after bridge weighting.
    */
-  MetropolisResampler(const int B, const double essRel = 0.5,
-      const double bridgeEssRel = 0.5);
+  MetropolisResampler(const int B = 0);
 
   /**
-   * Set number of steps to take.
+   * Get number of steps.
+   */
+  int getSteps() const;
+
+  /**
+   * Set number of steps.
    */
   void setSteps(const int B);
 
   /**
-   * @name High-level interface
+   * @copydoc MultinomialResampler::ancestors
    */
-  //@{
-  /**
-   * @copydoc Resampler::resample(Random&, V1, V2, O1&)
-   */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1 s);
-  //@}
+  template<class V1, class V2, Location L>
+  void ancestors(Random& rng, const V1 lws, V2 as,
+      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
 
   /**
-   * @name Low-level interface
+   * @copydoc MultinomialResampler::ancestorsPermute
    */
-  //@{
-  /**
-   * @copydoc Resampler::ancestors()
-   */
-  template<class V1, class V2>
-  void ancestors(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::ancestors()
-   */
-  template<class V1, class V2>
-  void ancestorsPermute(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::offspring()
-   */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
-  //@}
+  template<class V1, class V2, Location L>
+  void ancestorsPermute(Random& rng, const V1 lws, V2 as,
+      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
 
 private:
   /**
    * Number of Metropolis steps to take.
    */
   int B;
+};
+
+/**
+ * @internal
+ */
+template<Location L>
+struct precompute_type<MetropolisResampler,L> {
+  typedef ResamplerPrecompute<L> type;
 };
 }
 
@@ -127,39 +77,42 @@ private:
 #include "../cuda/resampler/MetropolisResamplerGPU.cuh"
 #endif
 
-template<class V1, class V2, class O1>
-void bi::MetropolisResampler::resample(Random& rng, V1 lws, V2 as, O1 s) {
-  ancestorsPermute(rng, lws, as);
-  copy(as, s);
-  lws.clear();
+inline bi::MetropolisResampler::MetropolisResampler(const int B) :
+    B(B) {
+  //
 }
 
-template<class V1, class V2>
-void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as)
-    throw (ParticleFilterDegeneratedException) {
+inline int bi::MetropolisResampler::getSteps() const {
+  return B;
+}
+
+inline void bi::MetropolisResampler::setSteps(const int B) {
+  this->B = B;
+}
+
+template<class V1, class V2, bi::Location L>
+void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,
+    ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+#ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
-      MetropolisResamplerHost>::type impl;
+  MetropolisResamplerHost>::type impl;
+#else
+  typedef MetropolisResamplerHost impl;
+#endif
   impl::ancestors(rng, lws, as, B);
 }
 
-template<class V1, class V2>
+template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as) throw (ParticleFilterDegeneratedException) {
+    V2 as, ResamplerPrecompute<L>& pre)
+        throw (ParticleFilterDegeneratedException) {
+#ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
-      MetropolisResamplerHost>::type impl;
+  MetropolisResamplerHost>::type impl;
+#else
+  typedef MetropolisResamplerHost impl;
+#endif
   impl::ancestorsPermute(rng, lws, as, B);
-}
-
-template<class V1, class V2>
-void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, V2 os,
-    const int P) throw (ParticleFilterDegeneratedException) {
-  /* pre-condition */
-  BI_ASSERT(P >= 0);
-  BI_ASSERT(lws.size() == os.size());
-
-  typename sim_temp_vector<V2>::type as(P);
-  ancestors(rng, lws, as);
-  ancestorsToOffspring(as, os);
 }
 
 #endif

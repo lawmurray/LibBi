@@ -28,7 +28,6 @@ void bi::SMCNetCDFBuffer::create() {
   nc_put_att(ncid, "libbi_version", PACKAGE_VERSION);
 
   lwVar = nc_def_var(ncid, "logweight", NC_REAL, npDim);
-  leVar = nc_def_var(ncid, "logevidence", NC_REAL, nrDim);
 
   nc_enddef(ncid);
 }
@@ -43,12 +42,4 @@ void bi::SMCNetCDFBuffer::map() {
       "Variable logweight has " << dimids.size() << " dimensions, should have 1, in file " << file);
   BI_ERROR_MSG(dimids[0] == npDim,
       "Only dimension of variable logweight should be np, in file " << file);
-
-  leVar = nc_inq_varid(ncid, "logevidence");
-  BI_ERROR_MSG(leVar >= 0, "No variable logevidence in file " << file);
-  dimids = nc_inq_vardimid(ncid, leVar);
-  BI_ERROR_MSG(dimids.size() == 1,
-      "Variable logevidence has " << dimids.size() << " dimensions, should have 1, in file " << file);
-  BI_ERROR_MSG(dimids[0] == nrDim,
-      "Only dimension of variable logevidence should be nr, in file " << file);
 }

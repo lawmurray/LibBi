@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_CROSSSEQUENCE_HPP
-#define BI_MISC_CROSSSEQUENCE_HPP
+#ifndef BI_PRIMITIVE_CROSSSEQUENCE_HPP
+#define BI_PRIMITIVE_CROSSSEQUENCE_HPP
 
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 
 namespace bi {
 /**
- * @ingroup misc_iterator
+ * @ingroup PRIMITIVE_iterator
  *
  * Converts a column-wise iterator over a matrix into a row-wise iterator.
  */
@@ -46,7 +46,7 @@ struct cross_functor : public std::unary_function<T,T> {
  * matrix, cross_sequence can be seen as iterating row-wise over the same
  * matrix.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct cross_sequence {

@@ -23,8 +23,10 @@ public:
    * Constructor.
    *
    * @param P Number of \f$x\f$-particles.
+   * @param Y Number of observation times.
+   * @param T Number of output times.
    */
-  AuxiliaryPFState(const int P = 0);
+  AuxiliaryPFState(const int P = 0, const int Y = 0, const int T = 0);
 
   /**
    * Shallow copy constructor.
@@ -35,6 +37,11 @@ public:
    * Assignment operator.
    */
   AuxiliaryPFState& operator=(const AuxiliaryPFState<B,L>& o);
+
+  /**
+   * Clear.
+   */
+  void clear();
 
   /**
    * Swap.
@@ -60,6 +67,12 @@ public:
    * @copydoc BootstrapPFState::resizeMax()
    */
   void resizeMax(const int maxP, const bool preserve = true);
+
+  /**
+   * @copydoc BootstrapPFState::gather()
+   */
+  template<class V1>
+  void gather(const ScheduleElement now, const V1 as);
 
 private:
   /**
@@ -88,8 +101,8 @@ private:
 }
 
 template<class B, bi::Location L>
-bi::AuxiliaryPFState<B,L>::AuxiliaryPFState(const int P) :
-    BootstrapPFState<B,L>(P), qlws(P) {
+bi::AuxiliaryPFState<B,L>::AuxiliaryPFState(const int P, const int Y, const int T) :
+    BootstrapPFState<B,L>(P, Y, T), qlws(P) {
   //
 }
 
@@ -103,9 +116,15 @@ template<class B, bi::Location L>
 bi::AuxiliaryPFState<B,L>& bi::AuxiliaryPFState<B,L>::operator=(
     const AuxiliaryPFState<B,L>& o) {
   BootstrapPFState<B,L>::operator=(o);
-  qlws = o.qlws;
+  logAuxWeights() = o.logAuxWeights();
 
   return *this;
+}
+
+template<class B, bi::Location L>
+void bi::AuxiliaryPFState<B,L>::clear() {
+  BootstrapPFState<B,L>::clear();
+  logAuxWeights().clear();
 }
 
 template<class B, bi::Location L>
@@ -135,6 +154,16 @@ inline void bi::AuxiliaryPFState<B,L>::resizeMax(const int maxP,
     const bool preserve) {
   qlws.resize(maxP, preserve);
   BootstrapPFState<B,L>::resizeMax(maxP, preserve);
+}
+
+template<class B, bi::Location L>
+template<class V1>
+void bi::AuxiliaryPFState<B,L>::gather(const ScheduleElement now,
+    const V1 as) {
+  BootstrapPFState<B,L>::gather(as);
+  if (!now.hasOutput()) {
+    bi::gather(as, logAuxWeights(), logAuxWeights());
+  }
 }
 
 template<class B, bi::Location L>

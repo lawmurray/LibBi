@@ -96,11 +96,7 @@ AC_ARG_ENABLE([timing],
 
 AC_ARG_ENABLE([diagnostics],
      [  --enable-diagnostics    output diagnostics during run],
-     [case "${enableval}" in
-       yes) diagnostics=true ;;
-       no)  diagnostics=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-diagnostics]) ;;
-     esac],[diagnostics=false])
+     [diagnostics="${enableval}"],[diagnostics=false])
 
 AC_ARG_ENABLE([diagnostics2],
      [  --enable-diagnostics2    output diagnostics2 during run],
@@ -136,23 +132,17 @@ AC_ARG_ENABLE([gperftools],
 #     HomeBrew versions seem to produce extremely slow SSE and AVX code
 #     though (this requires investigation).
 #   * g++ symlinks to clang++ by default.
-# Decision is to prefer g++-4.2 when CUDA is enabled (forcibly disabling
-# OpenMP), clang++ when SSE or AVX is enabled (so no OpenMP) and g++
-# otherwise (which will use a custom g++ install if there is one).
 #
-if test x$cuda = xtrue; then
-    compilers="icpc g++-4.2 g++ clang++"
-elif test x$sse = xtrue; then
-    compilers="icpc clang++ g++"
-else
-    compilers="icpc g++ clang++"
-fi
+compilers="icpc g++ clang++"
+
 AC_PROG_CXX([$compilers])
 AC_PATH_PROG([NVCC], [nvcc], [nvcc], [$PATH:/usr/local/cuda/bin])
 NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_CXXCPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_PROG_LEX
+AC_PROG_YACC
 
 # Compiler characteristics
 if test x$CXX = xg++-4.2; then
@@ -324,9 +314,9 @@ AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
 AM_CONDITIONAL([ENABLE_TIMING], [test x$timing = xtrue])
-AM_CONDITIONAL([ENABLE_DIAGNOSTICS], [test x$diagnostics = xtrue])
-AM_CONDITIONAL([ENABLE_DIAGNOSTICS2], [test x$diagnostics2 = xtrue])
 AM_CONDITIONAL([ENABLE_GPERFTOOLS], [test x$gperftools = xtrue])
+
+AC_DEFINE_UNQUOTED([ENABLE_DIAGNOSTICS], [$diagnostics])
 
 # Variables for automake
 #AC_SUBST([NVCC], $NVCC)

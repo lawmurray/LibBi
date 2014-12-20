@@ -8,6 +8,28 @@
 #ifndef BI_HOST_RESAMPLER_METROPOLISRESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_METROPOLISRESAMPLERHOST_HPP
 
+#include "ResamplerHost.hpp"
+
+namespace bi {
+/**
+ * MetropolisResampler implementation on host.
+ */
+class MetropolisResamplerHost: public ResamplerHost {
+public:
+  /**
+   * @copydoc MetropolisResampler::ancestors()
+   */
+  template<class V1, class V2>
+  static void ancestors(Random& rng, const V1 lws, V2 as, int B);
+
+  /**
+   * @copydoc MetropolisResampler::ancestorsPermute()
+   */
+  template<class V1, class V2>
+  static void ancestorsPermute(Random& rng, const V1 lws, V2 as, int B);
+};
+}
+
 template<class V1, class V2>
 void bi::MetropolisResamplerHost::ancestors(Random& rng, const V1 lws,
     V2 as, int B) {

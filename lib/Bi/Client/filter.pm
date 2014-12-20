@@ -139,41 +139,6 @@ for a rejection resampler (Murray, Lee & Jacob 2013), or
 
 =back
 
-=head2 Stratified and multinomial resampler-specific options
-
-=over 4
-
-=item C<--with-sort> (default off)
-
-Sort weights prior to resampling.
-
-=item C<--with-kde> (default off)
-
-Resample from a kernel density estimate of the filter density (in the style
-of Liu & West 2001).
-
-=back
-
-=head2 Kernel density estimate options
-
-The following additional options are available when C<--with-kde> is set.
-
-=over 4
-
-=item C<--b-abs> or C<--b-rel> (default 0)
-
-Bandwidth. If C<--b-rel> is used, particles are standardised to zero mean and
-unit covariance for the construction of the kernel density estimate. If
-C<--b-abs> is used they are not. A value of zero in either case will result
-in a rule-of-thumb bandwidth.
-
-=item C<--with-shrink> (default on)
-
-True to shrink the kernel density estimate to preserve covariance
-(Liu & West 2001).
-
-=back
-
 =head2 Metropolis resampler-specific options
 
 The following additional options are available when C<--resampler> is set to
@@ -199,19 +164,10 @@ C<bridge>:
 Number of dense bridge times. This argument gives the number of equispaced
 times at which to assign bridge weights, and potentially resample. With
 C<--end-time T> and C<--nbridges K>, then for each C<k> in C<0,...,K-1>,
-brdige weighting will occur at time C<T*k/K>.
-
-=item C<--bridge-ess-rel> (default 0.5)
-
-Threshold for effective sample size (ESS) resampling trigger after
-intermediate bridge weighting steps. See C<--ess-rel> for further
-details. When sampling bridges between fully-observed states,
-C<--ess-rel> should be set to 1 and C<--bridge-ess-rel> tuned
-instead to minimise variance in marginal likelihood estimates.
+bridge weighting will occur at time C<T*k/K>.
 
 =back
 
-=begin comment
 =head2 Adaptive particle filter-specific options
 
 The following additional options are available when C<--filter> is set to
@@ -219,7 +175,7 @@ C<'adaptive'>:
 
 =over 4
 
-=item C<--stopper> (default miness)
+=item C<--stopper> (default C<deterministic>)
 
 The stopping criterion to use; one of:
 
@@ -247,22 +203,20 @@ for a minimum variance.
 
 =back
 
-=item C<--stopper-threshold>
+=item C<--stopper-threshold> (default 128)
 
 Threshold value for stopping criterion.
 
-=item C<--max-particles>
+=item C<--stopper-max> (default 32768)
 
 Maximum number of particles at any time, regardless of the stopping
 criterion.
 
-=item C<--block-particles>
+=item C<--stopper-block> (default 128)
 
-Number of particles.
+Number of particles per block.
 
 =back
-
-=end comment
 
 =cut
 our @CLIENT_OPTIONS = (
@@ -307,31 +261,6 @@ our @CLIENT_OPTIONS = (
       default => 'systematic'
     },
     {
-      name => 'with-sort',
-      type => 'bool',
-      default => 0
-    },
-    {
-      name => 'with-kde',
-      type => 'bool',
-      default => 0
-    },
-    {
-      name => 'b-abs',
-      type => 'float',
-      default => 0.0
-    },
-    {
-      name => 'b-rel',
-      type => 'float',
-      default => 1.0
-    },
-    {
-      name => 'with-shrink',
-      type => 'bool',
-      default => 1
-    },
-    {
       name => 'C',
       type => 'int',
       default => 0
@@ -342,14 +271,9 @@ our @CLIENT_OPTIONS = (
       default => 0
     },
     {
-      name => 'bridge-ess-rel',
-      type => 'float',
-      default => 0.5
-    },
-    {
       name => 'stopper',
       type => 'string',
-      default => 'miness'
+      default => 'deterministic'
     },
     {
       name => 'stopper-threshold',
@@ -357,17 +281,50 @@ our @CLIENT_OPTIONS = (
       default => 128
     },
     {
-      name => 'block-particles',
+      name => 'stopper-block',
       type => 'int',
       default => 128
     },
     {
-      name => 'max-particles',
+      name => 'stopper-max',
       type => 'int',
       default => 32768
     },
     
     # deprecations
+    {
+      name => 'bridge-ess-rel',
+      type => 'float',
+      deprecated => 1,
+      message => '--ess-rel is now used to trigger bridge resampling as well'
+    },
+    {
+      name => 'with-kde',
+      type => 'bool',
+      deprecated => 1,
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'b-abs',
+      type => 'float',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'b-rel',
+      type => 'float',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'with-shrink',
+      type => 'bool',
+      message => 'kernel resampling is no longer supported'
+    },
+    {
+      name => 'with-sort',
+      type => 'bool',
+      deprecated => 1,
+      message => 'presorting weights when resampling is no longer supported'
+    },
     {
       name => 'P',
       type => 'int',

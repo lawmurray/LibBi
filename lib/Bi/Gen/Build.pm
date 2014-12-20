@@ -67,6 +67,8 @@ sub gen {
     $self->copy_file('autogen.sh', 'autogen.sh');
     $self->copy_file('configure.ac', 'configure.ac');
     $self->copy_file('nvcc_wrapper.pl', 'nvcc_wrapper.pl');
+    $self->copy_file('lexer.lpp', 'lexer.lpp');
+    $self->copy_file('parser.ypp', 'parser.ypp');
 }
 
 1;

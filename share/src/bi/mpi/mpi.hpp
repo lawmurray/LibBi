@@ -10,11 +10,15 @@
 
 #ifdef ENABLE_MPI
 #include <mpi.h>
-#include "boost/mpi/environment.hpp"
-#include "boost/mpi/communicator.hpp"
 #endif
 
 #include <string>
+
+#ifdef ENABLE_SINGLE
+#define MPI_REAL MPI_FLOAT
+#else
+#define MPI_REAL MPI_DOUBLE
+#endif
 
 namespace bi {
 /**
@@ -23,6 +27,34 @@ namespace bi {
  * @param name File name.
  */
 std::string append_rank(const std::string& name);
+
+/**
+ * Message tags.
+ */
+enum MPITag {
+  /**
+   * Server tags.
+   */
+  MPI_TAG_JOIN,
+  MPI_TAG_DISCONNECT,
+
+  /*
+   * Stopper tags.
+   */
+  MPI_TAG_STOPPER_STOP,
+  MPI_TAG_STOPPER_LOGWEIGHTS,
+
+  /*
+   * Adapter tags.
+   */
+  MPI_TAG_ADAPTER_PROPOSAL,
+  MPI_TAG_ADAPTER_SAMPLES,
+
+  /*
+   * Base tag index when redistributing particles.
+   */
+  MPI_TAG_PARTICLE
+};
 
 }
 

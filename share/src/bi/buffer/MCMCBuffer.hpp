@@ -59,12 +59,12 @@ bi::MCMCBuffer<IO1>::MCMCBuffer(const Model& m, const size_t P,
 template<class IO1>
 template<class S1>
 void bi::MCMCBuffer<IO1>::write(const int c, const S1& s) {
-  if (c == 0) {
-    IO1::writeTimes(0, s.out.timeCache.get(0, s.out.len));
-  }
   IO1::writeLogLikelihood(c, s.logLikelihood);
   IO1::writeLogPrior(c, s.logPrior);
   IO1::writeParameter(c, row(s.get(P_VAR), 0));
+  if (c == 0) {
+    IO1::writeTimes(0, s.times);
+  }
   IO1::writePath(c, s.path);
 }
 

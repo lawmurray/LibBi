@@ -53,12 +53,23 @@ C<I<command>.prof>.
 =item C<--mpi-np>
 
 Number of processes under C<--enable-mpi>, corresponding to the C<-np>
-option to C<mpirun>
+option to C<mpirun>.
 
 =item C<--mpi-npernode>
 
 Number of processes per node under C<--enable-mpi>. Corresponds to the
 C<-npernode> option to C<mpirun>.
+
+=item C<--role> (default C<client>)
+
+When a client-server architecture is used under MPI, the role of the process;
+either C<client> or C<server>.
+
+=item C<--server-file> (default C<port_name>)
+
+When a client-server architecture is used under MPI, the file containing
+server connection information. A server process will write to this file, a
+client process will read from it.
 
 =back
 
@@ -266,6 +277,16 @@ our @CLIENT_OPTIONS = (
     {
       name => 'mpi-npernode',
       type => 'int',
+    },
+    {
+      name => 'role',
+      type => 'string',
+      default => 'client'
+    },
+    {
+      name => 'server-file',
+      type => 'string',
+      default => 'port_name'
     },
     {
       name => 'with-transform-extended',
@@ -604,7 +625,12 @@ sub process_args {
     # check deprecated arguments
     foreach $param (@{$self->get_params}) {
         if ($param->{deprecated} && $self->is_named_arg($param->{name})) {
-            warn("--" . $param->{name} . " is deprecated, " . $param->{message} . "\n");
+        	my $msg = "--" . $param->{name} . " is deprecated";
+        	if (defined $param->{message}) {
+        		$msg .= ", " . $param->{message};
+        	}
+        	$msg .= "\n";
+        	warn($msg);
             $self->delete_named_arg($param->{name});
         }
     }

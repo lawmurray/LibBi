@@ -55,6 +55,16 @@ public:
    */
   template<class S1>
   void write0(const S1& s);
+
+  /**
+   * Write static components of state after simulation.
+   *
+   * @tparam S1 State type.
+   *
+   * @param s State.
+   */
+  template<class S1>
+  void writeT(const S1& s);
 };
 }
 
@@ -78,6 +88,12 @@ template<class IO1>
 template<class S1>
 void bi::SimulatorBuffer<IO1>::write0(const S1& s) {
   IO1::writeParameters(s.get(P_VAR));
+}
+
+template<class IO1>
+template<class S1>
+void bi::SimulatorBuffer<IO1>::writeT(const S1& s) {
+  //
 }
 
 #endif

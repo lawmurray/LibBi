@@ -607,8 +607,6 @@ void bi::sum_columns(const M1 X, V1 y) {
 
   using namespace thrust;
 
-  typedef typename M1::value_type T1;
-
   BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));
   BOOST_AUTO(keys, make_stuttered_range(counter, counter + X.size1(), X.size2()));
@@ -622,8 +620,6 @@ void bi::sum_rows(const M1 X, V1 y) {
   BI_ASSERT(X.size2() == y.size());
 
   using namespace thrust;
-
-  typedef typename M1::value_type T1;
 
   BOOST_AUTO(discard, make_discard_iterator());
   BOOST_AUTO(counter, make_counting_iterator(0));

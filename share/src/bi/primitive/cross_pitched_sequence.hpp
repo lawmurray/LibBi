@@ -5,15 +5,15 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_CROSS_PITCHED_SEQUENCE_HPP
-#define BI_MISC_CROSS_PITCHED_SEQUENCE_HPP
+#ifndef BI_PRIMITIVE_CROSSPITCHEDSEQUENCE_HPP
+#define BI_PRIMITIVE_CROSSPITCHEDSEQUENCE_HPP
 
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 
 namespace bi {
 /**
- * @ingroup misc_iterator
+ * @ingroup PRIMITIVE_iterator
  *
  * Converts a linear index into an \f$\Re^{m \times n}\f$ matrix to a linear
  * index into an \f$\Re^{M \times n}\f$ (\f$M \geq m\f$) pitched matrix, where
@@ -49,7 +49,7 @@ struct cross_pitched_functor : public std::unary_function<T,T> {
  * can be seen as iterating row-major over the same matrix. This implies
  * striding in memory.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct cross_pitched_sequence {

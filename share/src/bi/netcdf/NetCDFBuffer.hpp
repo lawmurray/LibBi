@@ -8,12 +8,8 @@
 #ifndef BI_NETCDF_NETCDFBUFFER_HPP
 #define BI_NETCDF_NETCDFBUFFER_HPP
 
-#include "../buffer/buffer.hpp"
-#include "../model/Model.hpp"
-#include "../method/misc.hpp"
-#include "../math/scalar.hpp"
-
 #include "netcdf.hpp"
+#include "../buffer/buffer.hpp"
 
 namespace bi {
 /**

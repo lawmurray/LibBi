@@ -59,14 +59,13 @@ template<class IO1>
 template<class S1>
 void bi::SMCBuffer<IO1>::write(const S1& s) {
   for (int p = 0; p < s.size(); ++p) {
-    parent_type::write(p, *s.thetas[p]);
+    parent_type::write(p, *s.s1s[p]);
     if (this->isFull()) {
       this->flush();
       this->clear();
     }
   }
   parent_type::writeLogWeights(0, s.logWeights());
-  parent_type::writeLogEvidences(s.les);
 }
 
 #endif

@@ -113,14 +113,14 @@ void bi::InputNetCDFBuffer::map() {
   /* ns dimension */
   nsDim = nc_inq_dimid(ncid, "ns");
   if (nsDim >= 0) {
-    BI_ERROR_MSG(ns < nc_inq_dimlen(ncid, nsDim),
+    BI_ERROR_MSG(ns < (int )nc_inq_dimlen(ncid, nsDim),
         "Given index " << ns << " outside range of ns dimension");
   }
 
   /* np dimension */
   npDim = nc_inq_dimid(ncid, "np");
   if (npDim >= 0) {
-    BI_ERROR_MSG(np < 0 || np < nc_inq_dimlen(ncid, npDim),
+    BI_ERROR_MSG(np < 0 || np < (int )nc_inq_dimlen(ncid, npDim),
         "Given index " << np << " outside range of np dimension");
   }
 
@@ -214,7 +214,7 @@ void bi::InputNetCDFBuffer::map() {
     ncDim = recDims[k];
     ncVar = timeVars[k];
 
-    if (times.empty() || tnxt > times.back()) {
+    if (times.empty() || times.back() != tnxt) {
       times.push_back(tnxt);
       recStarts.push_back(std::vector < size_t > (recDims.size(), 0));
       recLens.push_back(std::vector < size_t > (recDims.size(), 0));

@@ -58,10 +58,6 @@ Number of weight vector sizes to use.
 
 Number of trials on each combination of parameterisations and sizes.
 
-=item C<--with-sort> (default on)
-
-Sort weights prior to resampling.
-
 =item C<--with-copy> (default off)
 
 Copy weights to host/device and ancestors back to host/device as part of
@@ -104,7 +100,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'with-sort',
       type => 'bool',
-      default => 1
+      deprecated => 1
     },
     {
       name => 'with-copy',

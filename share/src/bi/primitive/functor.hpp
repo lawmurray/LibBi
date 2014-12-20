@@ -7,8 +7,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MATH_FUNCTOR_HPP
-#define BI_MATH_FUNCTOR_HPP
+#ifndef BI_PRIMITIVE_FUNCTOR_HPP
+#define BI_PRIMITIVE_FUNCTOR_HPP
 
 #include "../math/function.hpp"
 #include "../math/misc.hpp"

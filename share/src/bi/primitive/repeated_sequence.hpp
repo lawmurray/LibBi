@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_REPEATED_SEQUENCE_HPP
-#define BI_MISC_REPEATED_SEQUENCE_HPP
+#ifndef BI_PRIMITIVE_REPEATEDSEQUENCE_HPP
+#define BI_PRIMITIVE_REPEATEDSEQUENCE_HPP
 
 #include "../primitive/functor.hpp"
 
@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Repeated sequence, repeating an entire counting sequence multiple times.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class T>
 struct repeated_sequence {

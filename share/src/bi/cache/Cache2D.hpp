@@ -20,7 +20,7 @@ namespace bi {
  * @tparam T1 Scalar type.
  * @tparam CL Cache location.
  */
-template<class T1, Location CL>
+template<class T1, Location CL = ON_HOST>
 class Cache2D: public Cache {
 public:
   /**
@@ -47,13 +47,23 @@ public:
   Cache2D<T1,CL>& operator=(const Cache2D<T1,CL>& o);
 
   /**
-   * Read page.
+   * Get page.
    *
-   * @param j Column (page) index.
+   * @param j Page index.
    *
    * @return Page.
    */
   const typename matrix_type::vector_reference_type get(const int p) const;
+
+  /**
+   * Get range of pages.
+   *
+   * @param p Starting index of range.
+   * @param len Length of range.
+   *
+   * @return Range of pages.
+   */
+  const typename matrix_type::matrix_reference_type get(const int p, const int len) const;
 
   /**
    * Write page.
@@ -138,6 +148,15 @@ inline const typename bi::Cache2D<T1,CL>::matrix_type::vector_reference_type bi:
   BI_ASSERT(isValid(p));
 
   return column(pages, p);
+}
+
+template<class T1, bi::Location CL>
+inline const typename bi::Cache2D<T1,CL>::matrix_type::matrix_reference_type bi::Cache2D<
+    T1,CL>::get(const int p, const int len) const {
+  /* pre-condition */
+  BI_ASSERT(isValid(p, len));
+
+  return columns(pages, p, len);
 }
 
 template<class T1, bi::Location CL>

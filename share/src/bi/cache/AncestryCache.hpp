@@ -220,7 +220,7 @@ private:
 #include "../cuda/cache/AncestryCacheGPU.cuh"
 #endif
 
-#include "../resampler/Resampler.hpp"
+#include "../resampler/misc.hpp"
 #include "../math/temp_vector.hpp"
 #include "../math/temp_matrix.hpp"
 #include "../math/view.hpp"
@@ -409,7 +409,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
   /* pre-conditions */
   BI_ASSERT(X.size1() == as.size());
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 1
   synchronize();
   TicToc clock;
 #endif
@@ -418,7 +418,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
     init(X);
   } else {
     int_vector_type os(ls.size());
-    Resampler::ancestorsToOffspring(as, os);
+    ancestorsToOffspring(as, os);
 
     bi::scatter(ls, os, this->os);
     if (r) {
@@ -429,7 +429,7 @@ void bi::AncestryCache<CL>::writeState(const M1 X, const V1 as,
     }
     insert(X, as);
   }
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 1
   synchronize();
   usecs = clock.toc();
   report();

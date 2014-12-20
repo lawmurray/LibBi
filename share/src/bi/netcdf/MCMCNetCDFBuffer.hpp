@@ -10,7 +10,6 @@
 
 #include "SimulatorNetCDFBuffer.hpp"
 #include "../state/State.hpp"
-#include "../method/misc.hpp"
 
 #include <vector>
 

@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_PITCHED_RANGE_HPP
-#define BI_MISC_PITCHED_RANGE_HPP
+#ifndef BI_PRIMITIVE_PITCHEDRANGE_HPP
+#define BI_PRIMITIVE_PITCHEDRANGE_HPP
 
 #include "pitched_sequence.hpp"
 
@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Pitched range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct pitched_range {

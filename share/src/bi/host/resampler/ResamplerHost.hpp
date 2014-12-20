@@ -8,6 +8,50 @@
 #ifndef BI_HOST_RESAMPLER_RESAMPLERHOST_HPP
 #define BI_HOST_RESAMPLER_RESAMPLERHOST_HPP
 
+namespace bi {
+/**
+ * Resampler implementation on host.
+ */
+class ResamplerHost {
+public:
+  /**
+   * @copydoc Resampler::ancestorsToOffspring()
+   */
+  template<class V1, class V2>
+  static void ancestorsToOffspring(const V1 as, V2 os);
+
+  /**
+   * @copydoc Resampler::offspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestors(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::offspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void offspringToAncestorsPermute(const V1 os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestors()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
+
+  /**
+   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
+   */
+  template<class V1, class V2>
+  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
+
+  /**
+   * @copydoc Resampler::permute()
+   */
+  template<class V1>
+  static void permute(V1 as);
+};
+}
+
 #include "../../primitive/vector_primitive.hpp"
 
 template<class V1, class V2>

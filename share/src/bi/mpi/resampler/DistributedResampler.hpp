@@ -5,8 +5,12 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP
-#define BI_MPI_METHOD_DISTRIBUTEDRESAMPLER_HPP
+#ifndef BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
+#define BI_MPI_RESAMPLER_DISTRIBUTEDRESAMPLER_HPP
+
+#include "../../resampler/Resampler.hpp"
+
+#include "boost/shared_ptr.hpp"
 
 #include <vector>
 
@@ -27,24 +31,21 @@ public:
    * @param base Base resampler.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
-   * @param bridgeEssRel Minimum ESS, as proportion of total number of
-   * particles, to trigger resampling after bridge weighting.
    */
-  DistributedResampler(R* base, const double essRel = 0.5,
-      const double bridgeEssRel = 0.5);
+  DistributedResampler(boost::shared_ptr<R> base, const double essRel = 0.5);
 
   /**
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s)
+  void resample(Random& rng, V1 lws, V2 as, O1& s) const
       throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc Resampler::isTriggered
    */
-  template<class V1>
-  bool isTriggered(const V1 lws) const
+  template<class S1, class V1>
+  bool isTriggered(const ScheduleElement now, const V1 lws, double* lW) const
       throw (ParticleFilterDegeneratedException);
 
   /**
@@ -114,7 +115,7 @@ private:
   /**
    * Base resampler.
    */
-  R* base;
+  boost::shared_ptr<R> base;
 };
 }
 
@@ -130,9 +131,9 @@ private:
 #include <list>
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(R* base,
-    const double essRel, const double bridgeEssRel) :
-    Resampler(essRel, bridgeEssRel), base(base) {
+bi::DistributedResampler<R>::DistributedResampler(boost::shared_ptr<R> base,
+    const double essRel) :
+    Resampler(essRel), base(base) {
   //
 }
 
@@ -142,7 +143,7 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
     throw (ParticleFilterDegeneratedException) {
   typedef typename V1::value_type T1;
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   synchronize();
   TicToc clock;
 #endif
@@ -169,11 +170,11 @@ void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
 
   /* compute offspring on root and broadcast */
   if (rank == 0) {
-    base->offspring(rng, vec(Lws), vec(O), P * size);
+    base.offspring(rng, vec(Lws), vec(O), P * size);
   }
   boost::mpi::broadcast(world, O, 0);
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportResample(timesteps, rank, usecs);
@@ -238,7 +239,7 @@ template<class M1, class O1>
 void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   typedef typename temp_host_vector<int>::type int_vector_type;
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   synchronize();
   TicToc clock;
 #endif
@@ -315,7 +316,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
 
-#ifdef ENABLE_DIAGNOSTICS
+#if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportRedistribute(timesteps, rank, usecs);

@@ -308,7 +308,7 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
      * first, which is on the closed interval [t-1, t] */
     elem.bObs = elem.kObs < int(tObs.size())
         && ((elem.k == 0 && tObs.size() > 0)
-            || elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]);
+            || (elem.kObs > 0 && tObs[elem.kObs - 1] == ts[elem.k - 1]));
     elem.bObserved = elem.kObs < int(tObs.size())
         && tObs[elem.kObs] == ts[elem.k];
 

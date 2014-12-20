@@ -5,8 +5,8 @@
  * $Rev$
  * $Date$
  */
-#ifndef BI_MISC_CROSSRANGE_HPP
-#define BI_MISC_CROSSRANGE_HPP
+#ifndef BI_PRIMITIVE_CROSSRANGE_HPP
+#define BI_PRIMITIVE_CROSSRANGE_HPP
 
 #include "cross_sequence.hpp"
 
@@ -17,7 +17,7 @@ namespace bi {
 /**
  * Cross range.
  *
- * @ingroup primitive_iterators
+ * @ingroup primitive_iterator
  */
 template<class Iterator>
 struct cross_range {

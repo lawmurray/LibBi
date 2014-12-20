@@ -9,6 +9,7 @@
 #define BI_RESAMPLER_RESAMPLER_HPP
 
 #include "../state/State.hpp"
+#include "../state/ScheduleElement.hpp"
 #include "../random/Random.hpp"
 #include "../misc/exception.hpp"
 #include "../misc/location.hpp"
@@ -16,26 +17,45 @@
 
 namespace bi {
 /**
+ * Precomputed results for Resampler.
+ */
+template<Location L>
+struct ResamplerPrecompute {
+  //
+};
+
+/**
  * %Resampler for particle filter.
  *
  * @ingroup method_resampler
+ *
+ * @tparam R Base resampler type.
  */
-class Resampler {
+template<class R>
+class Resampler: public R {
 public:
   /**
    * Constructor.
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
-   * @param bridgeEssRel Minimum ESS, as proportion of total number of
-   * particles, to trigger resampling after bridge weighting.
    */
-  Resampler(const double essRel = 0.5, const double essRelBridge = 0.5);
+  Resampler(const double essRel = 0.5);
 
   /**
-   * @name High-level interface.
+   * @name High-level interface
    */
   //@{
+  /**
+   * Get ESS threshold.
+   */
+  double getEssRel() const;
+
+  /**
+   * Set ESS threshold.
+   */
+  void setEssRel(const double essRel);
+
   /**
    * Get maximum log-weight.
    */
@@ -47,275 +67,19 @@ public:
   void setMaxLogWeight(const double maxLogWeight);
 
   /**
-   * Is ESS-based condition triggered?
+   * Resample.
    *
-   * @tparam V1 Vector type.
+   * @tparam S1 State type.
    *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggered(const V1 lws) const;
-
-  /**
-   * Is ESS-based condition for bridge resampling triggered?
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   */
-  template<class V1>
-  bool isTriggeredBridge(const V1 lws) const;
-
-  /**
-   * Resample state.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   * @tparam O1 Compatible copy() type.
-   *
-   * @param rng Random number generator.
-   * @param[in,out] lws Log-weights.
-   * @param[out] as Ancestry.
+   * @param[in,out] rng Random number generator.
+   * @param now Current step in time schedule.
    * @param[in,out] s State.
    *
-   * The weights @p lws are set to be uniform after the resampling.
+   * @return Was resampling performed?
    */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1& lws, V2& as, O1 s)
+  template<class S1>
+  bool resample(Random& rng, const ScheduleElement now, S1& s)
       throw (ParticleFilterDegeneratedException);
-  //@}
-
-  /**
-   * @name Low-level interface.
-   */
-  //@{
-  /**
-   * Select ancestors.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  void ancestors(Random& rng, const V1 lws, V2 as)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * Select offspring.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] os Offspring.
-   * @param P Total number of offspring to select.
-   */
-  template<class V1, class V2>
-  void offspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * Select cumulative offspring.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param[in,out] rng Random number generator.
-   * @param lws Log-weights.
-   * @param[out] Os Cimulative offspring.
-   * @param P Total number of offspring to select.
-   */
-  template<class V1, class V2>
-  void cumulativeOffspring(Random& rng, const V1 lws, V2 os, const int P)
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * Compute offspring vector from ancestors vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param as Ancestors.
-   * @param[out] os Offspring.
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
-
-  /**
-   * Compute ancestor vector from offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param os Offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void offspringToAncestors(const V1 os, V2 as);
-
-  /**
-   * Compute already-permuted ancestor vector from offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param os Offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void offspringToAncestorsPermute(const V1 os, V2 as);
-
-  /**
-   * Compute ancestor vector from cumulative offspring vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param Os Cumulative offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
-
-  /**
-   * Compute already-permuted ancestor vector from cumulative offspring
-   * vector.
-   *
-   * @tparam V1 Integral vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param Os Cumulative offspring.
-   * @param[out] as Ancestors.
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
-
-  /**
-   * Permute ancestors to permit in-place copy.
-   *
-   * @tparam V1 Integral vector type.
-   *
-   * @param[in,out] as Ancestry.
-   */
-  template<class V1>
-  static void permute(V1 as);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
-   *
-   * @param as Ancestry.
-   * @param[in,out] X Matrix. Rows of the matrix are copied.
-   *
-   * The copy is performed in-place. For each particle @c i that is to be
-   * preserved (i.e. its offspring count is at least 1), @c a[i] should equal
-   * @c i. This ensures that all particles are either read or (over)written,
-   * constraint.
-   */
-  template<class V1, class M1>
-  static void copy(const V1 as, M1 X);
-
-  /**
-   * In-place copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam T1 Assignable type.
-   *
-   * @param as Ancestry.
-   * @oaram[in,out] v STL vector.
-   */
-  template<class V1, class T1>
-  static void copy(const V1 as, std::vector<T1*>& v);
-
-  /**
-   * Copy based on ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam M1 Matrix type.
-   * @tparam M2 Matrix type.
-   *
-   * @param X1 Input matrix.
-   * @param as Ancestry.
-   * @param X2 Output matrix.
-   */
-  template<class V1, class M1, class M2>
-  static void copy(const V1 as, const M1 X1, M2 X2);
-
-  /**
-   * Normalise log-weights after resampling.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @param lws Log-weights.
-   *
-   * The normalisation is such that the sum of the weights (i.e. @c exp of
-   * the components of the vector) is equal to the number of particles.
-   */
-  template<class V1>
-  static void normalise(V1 lws);
-
-  /**
-   * Compute effective sample size (ESS) of log-weights.
-   *
-   * @tparam V1 Vector type.
-   *
-   * @tparam lws Log-weights.
-   *
-   * @return ESS.
-   */
-  template<class V1>
-  static typename V1::value_type ess(const V1 lws);
-
-  /**
-   * Compute sum of squared errors of ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param lws Log-weights.
-   * @param os Offspring.
-   *
-   * @return Sum of squared errors.
-   *
-   * This computes the sum of squared errors in the resampling, as in
-   * @ref Kitagawa1996 "Kitagawa (1996)":
-   *
-   * \f[
-   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)^2\,,
-   * \f]
-   *
-   * where \f$W\f$ is the sum of weights.
-   */
-  template<class V1, class V2>
-  static typename V1::value_type sse(const V1 lws, const V2 os);
-
-  /**
-   * Compute sum of errors of ancestry.
-   *
-   * @tparam V1 Vector type.
-   * @tparam V2 Integral vector type.
-   *
-   * @param lws Log-weights.
-   * @param os Offspring.
-   *
-   * @return Sum of errors.
-   *
-   * This computes the sum of errors in the resampling:
-   *
-   * \f[
-   * \xi = \sum_{i=1}^P \left(\frac{o_i}{P} - \frac{w_i}{W}\right)\,,
-   * \f]
-   *
-   * where \f$W\f$ is the sum of weights.
-   */
-  template<class V1, class V2>
-  static typename V1::value_type se(const V1 lws, const V2 os);
   //@}
 
 protected:
@@ -325,246 +89,54 @@ protected:
   double essRel;
 
   /**
-   * Realtive ESS threshold for bridge sampling.
-   */
-  double bridgeEssRel;
-
-  /**
    * Maximum log-weight.
    */
   double maxLogWeight;
 };
-
-/**
- * Resampler implementation on host.
- */
-class ResamplerHost {
-public:
-  /**
-   * @copydoc Resampler::ancestorsToOffspring()
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
-
-  /**
-   * @copydoc Resampler::offspringToAncestors()
-   */
-  template<class V1, class V2>
-  static void offspringToAncestors(const V1 os, V2 as);
-
-  /**
-   * @copydoc Resampler::offspringToAncestorsPermute()
-   */
-  template<class V1, class V2>
-  static void offspringToAncestorsPermute(const V1 os, V2 as);
-
-  /**
-   * @copydoc Resampler::cumulativeOffspringToAncestors()
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
-
-  /**
-   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
-
-  /**
-   * @copydoc Resampler::permute()
-   */
-  template<class V1>
-  static void permute(V1 as);
-};
-
-/**
- * Resampler implementation on device.
- */
-class ResamplerGPU {
-public:
-  /**
-   * @copydoc Resampler::ancestorsToOffspring()
-   */
-  template<class V1, class V2>
-  static void ancestorsToOffspring(const V1 as, V2 os);
-
-  /**
-   * @copydoc Resampler::offspringToAncestors()
-   */
-  template<class V1, class V2>
-  static void offspringToAncestors(const V1 os, V2 as);
-
-  /**
-   * @copydoc Resampler::offspringToAncestorsPermute()
-   */
-  template<class V1, class V2>
-  static void offspringToAncestorsPermute(const V1 os, V2 as);
-
-  /**
-   * Like offspringToAncestorsPermute(), but only performs first stage of
-   * permutation. Second stage should be completed with postPermute().
-   */
-  template<class V1, class V2, class V3>
-  static void offspringToAncestorsPrePermute(const V1 os, V2 as, V3 is);
-
-  /**
-   * @copydoc Resampler::cumulativeOffspringToAncestors()
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestors(const V1 Os, V2 as);
-
-  /**
-   * @copydoc Resampler::cumulativeOffspringToAncestorsPermute()
-   */
-  template<class V1, class V2>
-  static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
-
-  /**
-   * Like cumulativeOffspringToAncestorsPermute(), but only performs first
-   * stage of permutation. Second stage should be completed with
-   * postPermute().
-   */
-  template<class V1, class V2, class V3>
-  static void cumulativeOffspringToAncestorsPrePermute(const V1 Os, V2 as,
-      V3 is);
-
-  /**
-   * @copydoc Resampler::permute()
-   */
-  template<class V1>
-  static void permute(V1 as);
-
-  /**
-   * First stage of permutation.
-   *
-   * @tparam V1 Integer vector type.
-   * @tparam V2 Integer vector type.
-   *
-   * @param as Input ancestry.
-   * @param is[out] Claims.
-   */
-  template<class V1, class V2>
-  static void prePermute(const V1 as, V2 is);
-
-  /**
-   * Second stage of permutation.
-   *
-   * @tparam V1 Integer vector type.
-   * @tparam V2 Integer vector type.
-   * @tparam V3 Integer vector type.
-   *
-   * @param as Input ancestry.
-   * @param is Claims, as output from pre-permute function.
-   * @param[out] cs Output, permuted ancestry.
-   */
-  template<class V1, class V2, class V3>
-  static void postPermute(const V1 as, const V2 is, V3 cs);
-};
 }
-
-#include "../host/resampler/ResamplerHost.hpp"
-#ifdef __CUDACC__
-#include "../cuda/resampler/ResamplerGPU.cuh"
-#endif
 
 #include "../primitive/vector_primitive.hpp"
 #include "../primitive/matrix_primitive.hpp"
 
 #include "boost/mpl/if.hpp"
 
-inline double bi::Resampler::getMaxLogWeight() const {
+template<class R>
+inline bi::Resampler<R>::Resampler(const double essRel) :
+    essRel(essRel), maxLogWeight(0.0) {
+  /* pre-condition */
+  BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
+
+  //
+}
+
+template<class R>
+inline double bi::Resampler<R>::getMaxLogWeight() const {
   return maxLogWeight;
 }
 
-template<class V1>
-inline bool bi::Resampler::isTriggered(const V1 lws) const {
-  return essRel >= 1.0 || ess(lws) < essRel * lws.size();
+template<class R>
+void bi::Resampler<R>::setMaxLogWeight(const double maxLogWeight) {
+  this->maxLogWeight = maxLogWeight;
 }
 
-template<class V1>
-inline bool bi::Resampler::isTriggeredBridge(const V1 lws) const {
-  return bridgeEssRel >= 1.0 || ess(lws) < bridgeEssRel * lws.size();
-}
+template<class R>
+template<class S1>
+bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
+    throw (ParticleFilterDegeneratedException) {
+  bool r = (now.isObserved() || now.hasBridge()) && s.ess < essRel * s.size();
+  if (r) {
+    typename precompute_type<R,S1::location>::type pre;
+    typename S1::temp_int_vector_type as1(s.size());
 
-template<class V1, class V2>
-void bi::Resampler::ancestorsToOffspring(const V1 as, V2 os) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::ancestorsToOffspring(as, os);
-}
+    R::precompute(s.logWeights(), pre);
+    R::ancestorsPermute(rng, s.logWeights(), as1, pre);
 
-template<class V1, class V2>
-void bi::Resampler::offspringToAncestors(const V1 os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::offspringToAncestors(os, as);
-}
-
-template<class V1, class V2>
-void bi::Resampler::offspringToAncestorsPermute(const V1 os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::offspringToAncestorsPermute(os, as);
-}
-
-template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestors(const V1 Os, V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::cumulativeOffspringToAncestors(Os, as);
-}
-
-template<class V1, class V2>
-void bi::Resampler::cumulativeOffspringToAncestorsPermute(const V1 Os,
-    V2 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::cumulativeOffspringToAncestorsPermute(Os, as);
-}
-
-template<class V1>
-void bi::Resampler::permute(const V1 as) {
-  typedef typename boost::mpl::if_c<V1::on_device,ResamplerGPU,ResamplerHost>::type impl;
-  impl::permute(as);
-}
-
-template<class V1, class M1>
-void bi::Resampler::copy(const V1 as, M1 s) {
-  gather_rows(as, s, s);
-}
-
-template<class V1, class T1>
-void bi::Resampler::copy(const V1 as, std::vector<T1*>& v) {
-  /* pre-condition */
-  BI_ASSERT(!V1::on_device);
-
-  // don't use OpenMP for this, causing segfault with Intel compiler, and
-  // with CUDA, possibly due to different CUDA contexts with different
-  // threads playing with the resize and assignment
-  for (int i = 0; i < as.size(); ++i) {
-    int a = as(i);
-    if (i != a) {
-      *v[i] = *v[a];
-    }
+    s.gather(now, as1);
+    set_elements(s.logWeights(), s.logLikelihood);
+  } else if (now.hasOutput()) {
+    seq_elements(s.ancestors(), 0);
   }
-}
-
-template<class V1, class M1, class M2>
-void bi::Resampler::copy(const V1 as, const M1 X1, M2 X2) {
-  gather_rows(as, X1, X2);
-}
-
-template<class V1>
-void bi::Resampler::normalise(V1 lws) {
-  typedef typename V1::value_type T1;
-  T1 lW = logsumexp_reduce(lws);
-  addscal_elements(lws, bi::log(static_cast<T1>(lws.size())) - lW, lws);
-}
-
-template<class V1>
-typename V1::value_type bi::Resampler::ess(const V1 lws) {
-  typename V1::value_type result = ess_reduce(lws);
-
-  if (result > 0.0) {
-    return result;
-  } else {
-    return 0.0;  // may be nan
-  }
+  return r;
 }
 
 #endif

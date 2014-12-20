@@ -22,7 +22,7 @@ namespace bi {
  * @tparam T1 Scalar type.
  * @tparam CL Cache location.
  */
-template<class T1, Location CL>
+template<class T1, Location CL = ON_HOST>
 class CacheCross: public Cache {
 public:
   /**
