@@ -125,7 +125,7 @@ bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
     throw (ParticleFilterDegeneratedException) {
   bool r = (now.isObserved() || now.hasBridge()) && s.ess < essRel * s.size();
   if (r) {
-    typename precompute_type<R,S1::location>::type pre;
+    typename precompute_type<R,S1::temp_int_vector_type::location>::type pre;
     typename S1::temp_int_vector_type as1(s.size());
 
     R::precompute(s.logWeights(), pre);

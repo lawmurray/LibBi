@@ -33,7 +33,6 @@ LINK = $(CXXLINK) # force C++ linker for CUDA files
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
-  src/bi/exception/UnresolvedReferenceException.cpp \
   src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
   src/bi/netcdf/netcdf.cpp \
   src/bi/netcdf/NetCDFBuffer.cpp \
@@ -58,26 +57,6 @@ libbi_a_SOURCES = \
   src/bi/host/random/RandomHost.cpp \
   src/bi/misc/omp.cpp \
   src/bi/mpi/mpi.cpp \
-  src/bi/program/BinaryExpression.cpp \
-  src/bi/program/Braces.cpp \
-  src/bi/program/Brackets.cpp \
-  src/bi/program/Conditional.cpp \
-  src/bi/program/Def.cpp \
-  src/bi/program/Dim.cpp \
-  src/bi/program/EmptyExpression.cpp \
-  src/bi/program/EmptyStatement.cpp \
-  src/bi/program/ExpressionStatement.cpp \
-  src/bi/program/Loop.cpp \
-  src/bi/program/Operator.cpp \
-  src/bi/program/Parentheses.cpp \
-  src/bi/program/Placeholder.cpp \
-  src/bi/program/Program.cpp \
-  src/bi/program/Reference.cpp \
-  src/bi/program/ReturnStatement.cpp \
-  src/bi/program/Scoped.cpp \
-  src/bi/program/Sequence.cpp \
-  src/bi/program/UnaryExpression.cpp \
-  src/bi/program/Var.cpp \
   src/bi/random/Random.cpp \
   src/bi/resampler/ResamplerFactory.cpp \
   src/bi/stopper/StopperFactory.cpp

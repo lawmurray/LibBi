@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
     typedef ParticleFilterBuffer<BootstrapPFCache<LOCATION> > cache_type;
     [% END %]
     [% IF client.get_named_arg('sampler') == 'sir' %]
-    MarginalSIRState<model_type,LOCATION,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numObs(), sched.numOutputs());
+    MarginalSIRState<model_type,ON_HOST,state_type,cache_type> s(m, NSAMPLES, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSIF client.get_named_arg('sampler') == 'sis' %]
     MarginalSISState<model_type,LOCATION,state_type,cache_type> s(m, NPARTICLES, sched.numObs(), sched.numOutputs());
     [% ELSE %]

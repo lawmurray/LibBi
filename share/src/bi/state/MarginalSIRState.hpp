@@ -30,12 +30,20 @@ public:
   static const bool on_device = (L == ON_DEVICE);
 
   typedef real value_type;
-  typedef host_vector<value_type> vector_type;
+  typedef typename loc_vector<L,value_type>::type vector_type;
+  typedef typename loc_matrix<L,value_type>::type matrix_type;
   typedef typename vector_type::vector_reference_type vector_reference_type;
+  typedef typename matrix_type::matrix_reference_type matrix_reference_type;
+
+  typedef typename loc_temp_vector<L,value_type>::type temp_vector_type;
+  typedef typename loc_temp_matrix<L,value_type>::type temp_matrix_type;
 
   typedef int int_value_type;
-  typedef host_vector<int_value_type> int_vector_type;
+  typedef typename loc_vector<L,int_value_type>::type int_vector_type;
+  typedef typename loc_matrix<L,int_value_type>::type int_matrix_type;
   typedef typename int_vector_type::vector_reference_type int_vector_reference_type;
+  typedef typename int_matrix_type::matrix_reference_type int_matrix_reference_type;
+
   typedef typename loc_temp_vector<L,int_value_type>::type temp_int_vector_type;
   typedef typename loc_temp_matrix<L,int_value_type>::type temp_int_matrix_type;
 

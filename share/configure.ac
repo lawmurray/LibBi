@@ -125,29 +125,28 @@ AC_ARG_ENABLE([gperftools],
 # Compilers etc
 #
 # On Mac OS X:
-#   * clang++ supports SSE and AVX, but not OpenMP or CUDA.
-#   * g++-4.2 supports SSE, OpenMP (but not thread local storage!) and CUDA,
-#     but not AVX.
+#   * clang++ supports SSE, AVX and CUDA, but not OpenMP
 #   * custom g++ installs should support SSE, AVX and OpenMP, but not CUDA.
 #     HomeBrew versions seem to produce extremely slow SSE and AVX code
 #     though (this requires investigation).
 #   * g++ symlinks to clang++ by default.
 #
-compilers="icpc g++ clang++"
+if test x$cuda = xtrue; then
+	compilers="icpc clang++ g++"
+else
+	compilers="icpc g++ clang++"
+fi
 
-AC_PROG_CPP
 AC_PROG_CC([$compilers])
-AC_PROG_CXXCPP
+AC_PROG_CPP
 AC_PROG_CXX([$compilers])
+AC_PROG_CXXCPP
 AC_PATH_PROG([NVCC], [nvcc], [nvcc], [$PATH:/usr/local/cuda/bin])
 NVCC="$NVCC -ccbin=$CXX"
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Compiler characteristics
-if test x$CXX = xg++-4.2; then
-  openmp=false
-fi
 if test x$openmp = xtrue; then
   AC_OPENMP
 fi
@@ -172,23 +171,6 @@ if test x$mpi = xtrue; then
 		LDFLAGS+=" `mpicxx -showme:link`"
 	fi
 fi
-
-# Thrust backend
-if test x$cuda = xtrue; then
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
-else
-  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
-fi
-if test x$openmp = xtrue; then
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
-else
-  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
-fi
-# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
-#   Thrust 1.7, so its OpenMP backend has been re-enabled.
-
-# libtool initialisation
-#LT_INIT
 
 # Checks for libraries
 AC_CHECK_LIB([m], [main], [], [AC_MSG_ERROR([required standard math library not found])])
