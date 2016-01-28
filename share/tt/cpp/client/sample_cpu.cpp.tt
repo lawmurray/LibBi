@@ -240,16 +240,16 @@ int main(int argc, char* argv[]) {
   /* adapter for theta-particles */
   [% IF client.get_named_arg('sampler') == 'sir' %]
   [% IF client.get_named_arg('adapter') == 'global' %]
-  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(ADAPTER_ESS_REL, false, ADAPTER_SCALE);
+  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(ADAPTER_ESS_REL, false, ADAPTER_SCALE);
   [% ELSIF client.get_named_arg('adapter') == 'local' %]
-  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(ADAPTER_ESS_REL, true, ADAPTER_SCALE);
+  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(ADAPTER_ESS_REL, true, ADAPTER_SCALE);
   [% ELSE %]
-  MarginalSIRAdapter<model_type,LOCATION> sampleAdapterBase(1.0); // will cause to never be ready
+  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(1.0); // will cause to never be ready
   [% END %]
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  MarginalSISAdapter<model_type,LOCATION> sampleAdapterBase(sched.begin(), sched.end());
+  MarginalSISAdapter<model_type,ON_HOST> sampleAdapterBase(sched.begin(), sched.end());
   [% ELSE %]
-  MarginalMHAdapter<model_type,LOCATION> sampleAdapterBase;
+  MarginalMHAdapter<model_type,ON_HOST> sampleAdapterBase;
   [% END %]
   [% IF client.get_named_arg('with-mpi') %]
   DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);
