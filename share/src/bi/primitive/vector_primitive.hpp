@@ -966,23 +966,13 @@ typename V1::value_type bi::ess_reduce(const V1 lws, double* lW) {
   typedef typename V1::value_type T1;
 
   T1 mx = max_reduce(lws);
-
-  #ifdef ENABLE_CUDA
-  /* std::pair gives host/device function errors under NVCC */
-  T1 sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  T1 sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  return sum1*sum1/sum2;
-  #else
-  std::pair<T1,T1> sum(0, 0);
+  thrust::pair<T1,T1> sum(0, 0);
   sum = op_reduce(lws, nan_minus_and_exp_ess_functor<T1>(mx), sum,
       ess_functor<T1>());
   if (lW != NULL) {
     *lW = mx + bi::log(sum.first) - bi::log(double(lws.size()));
   }
   return sum.first * sum.first / sum.second;
-  #endif
 }
 
 template<class V1>

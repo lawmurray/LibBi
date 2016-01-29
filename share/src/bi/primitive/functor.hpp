@@ -14,6 +14,8 @@
 #include "../math/misc.hpp"
 #include "../cuda/cuda.hpp"
 
+#include "thrust/pair.h"
+
 namespace bi {
 /**
  * @ingroup primitive_functor
@@ -631,16 +633,16 @@ struct lower_triangle_functor : public std::binary_function<T1,T2,T3> {
  * pair with both answer and squared answer. NaN give zero.
  */
 template<class T>
-struct nan_minus_and_exp_ess_functor : public std::unary_function<T, std::pair<T,T> > {
+struct nan_minus_and_exp_ess_functor : public std::unary_function<T, thrust::pair<T,T> > {
   T y;
 
   CUDA_FUNC_HOST nan_minus_and_exp_ess_functor(const T y) : y(y) {
     //
   }
 
-  CUDA_FUNC_BOTH std::pair<T,T> operator()(const T& x) const {
+  CUDA_FUNC_BOTH thrust::pair<T,T> operator()(const T& x) const {
     T z = bi::nanexp(x - y);
-    return std::pair<T,T>(z, z*z);
+    return thrust::pair<T,T>(z, z*z);
   }
 };
 
@@ -650,9 +652,9 @@ struct nan_minus_and_exp_ess_functor : public std::unary_function<T, std::pair<T
  * Computes both sum and sum of squares in one functor.
  */
 template<typename T>
-struct ess_functor : public std::binary_function<std::pair<T,T>,std::pair<T,T>,std::pair<T,T> > {
-  CUDA_FUNC_BOTH std::pair<T,T> operator()(const std::pair<T,T>& x, const std::pair<T,T>& y) const {
-    return std::pair<T,T>(x.first + y.first, x.second + y.second);
+struct ess_functor : public std::binary_function<thrust::pair<T,T>,thrust::pair<T,T>,thrust::pair<T,T> > {
+  CUDA_FUNC_BOTH thrust::pair<T,T> operator()(const thrust::pair<T,T>& x, const thrust::pair<T,T>& y) const {
+    return thrust::pair<T,T>(x.first + y.first, x.second + y.second);
   }
 };
 

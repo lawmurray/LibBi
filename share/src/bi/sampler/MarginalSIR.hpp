@@ -264,6 +264,8 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
   lastAcceptRate = 0.0;
 }
 
+#include "../math/io.hpp"
+
 template<class B, class F, class A, class R>
 template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
