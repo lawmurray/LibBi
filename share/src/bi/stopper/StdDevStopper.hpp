@@ -7,25 +7,23 @@
 #ifndef BI_STOPPER_STDDEVSTOPPER_HPP
 #define BI_STOPPER_STDDEVSTOPPER_HPP
 
-#include "Stopper.hpp"
-
 namespace bi {
 /**
  * Stopper based on standard deviation criterion.
  *
  * @ingroup method_stopper
  */
-class StdDevStopper: public Stopper {
+class StdDevStopper {
 public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  StdDevStopper(const double threshold, const int maxP, const int T);
+  StdDevStopper();
 
   /**
-   * @copydoc Stopper::stop(const double maxlw)
+   * @copydoc Stopper::stop
    */
-  bool stop(const double maxlw = BI_INF);
+  bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
@@ -51,23 +49,19 @@ private:
 };
 }
 
-inline bi::StdDevStopper::StdDevStopper(const double threshold,
-    const int maxP, const int T) :
-    Stopper(threshold, maxP, T), sum(0.0) {
+inline bi::StdDevStopper::StdDevStopper() :
+    sum(0.0) {
   //
 }
 
-inline bool bi::StdDevStopper::stop(const double maxlw) {
-  double minsum = this->T * this->threshold;
-
-  return Stopper::stop(maxlw) || sum >= minsum;
+inline bool bi::StdDevStopper::stop(const int T, const double threshold,
+    const double maxlw) {
+  return sum >= T * threshold;
 }
 
 inline void bi::StdDevStopper::add(const double lw, const double maxlw) {
   /* pre-condition */
   BI_ASSERT(lw <= maxlw);
-
-  Stopper::add(lw, maxlw);
 
   double mu = bi::exp(lw);
   double s2 = bi::exp(2.0 * lw);
@@ -81,8 +75,6 @@ void bi::StdDevStopper::add(const V1 lws, const double maxlw) {
   /* pre-condition */
   BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  Stopper::add(lws, maxlw);
-
   double mu = sumexp_reduce(lws) / lws.size();
   double s2 = sumexpsq_reduce(lws) / lws.size();
   double val = bi::sqrt(s2 - mu * mu);
@@ -91,7 +83,6 @@ void bi::StdDevStopper::add(const V1 lws, const double maxlw) {
 }
 
 inline void bi::StdDevStopper::reset() {
-  Stopper::reset();
   sum = 0.0;
 }
 

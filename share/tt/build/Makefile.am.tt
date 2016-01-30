@@ -33,6 +33,7 @@ LINK = $(CXXLINK) # force C++ linker for CUDA files
 lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
+  src/bi/adapter/AdapterFactory.cpp \
   src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
   src/bi/netcdf/netcdf.cpp \
   src/bi/netcdf/NetCDFBuffer.cpp \
@@ -76,13 +77,16 @@ endif
 
 if ENABLE_MPI
 libbi_a_SOURCES += \
+  src/bi/mpi/adapter/DistributedAdapterFactory.cpp \
+  src/bi/mpi/resampler/DistributedResamplerFactory.cpp \
+  src/bi/mpi/stopper/DistributedStopperFactory.cpp \
   src/bi/mpi/Client.cpp \
   src/bi/mpi/Server.cpp \
   src/bi/mpi/TreeNetworkNode.cpp
 endif
 
 # programs
-bin_PROGRAMS = test_parser_cpu[% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
+bin_PROGRAMS = [% FOREACH client IN CLIENTS %] [% client %]_cpu [% client %]_gpu[% END %]
 
 [% FOREACH client IN CLIENTS %]
 [% client %]_cpu_LDADD = $(DEPS_LIBS) libbi.a

@@ -7,7 +7,8 @@
 #ifndef BI_STOPPER_MINIMUMESSSTOPPER_HPP
 #define BI_STOPPER_MINIMUMESSSTOPPER_HPP
 
-#include "Stopper.hpp"
+#include "../math/constant.hpp"
+#include "../math/function.hpp"
 
 namespace bi {
 /**
@@ -15,17 +16,17 @@ namespace bi {
  *
  * @ingroup method_stopper
  */
-class MinimumESSStopper: public Stopper {
+class MinimumESSStopper {
 public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  MinimumESSStopper(const double threshold, const int maxP, const int T);
+  MinimumESSStopper();
 
   /**
-   * @copydoc Stopper::stop(const double maxlw)
+   * @copydoc Stopper::stop
    */
-  bool stop(const double maxlw = BI_INF);
+  bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
@@ -56,25 +57,22 @@ private:
 };
 }
 
-inline bi::MinimumESSStopper::MinimumESSStopper(const double threshold,
-    const int maxP, const int T) :
-    Stopper(threshold, maxP, T), sumw(0.0), sumw2(0.0) {
+inline bi::MinimumESSStopper::MinimumESSStopper() :
+    sumw(0.0), sumw2(0.0) {
   //
 }
 
-inline bool bi::MinimumESSStopper::stop(const double maxlw) {
+inline bool bi::MinimumESSStopper::stop(const int T, const double threshold, const double maxlw) {
   double ess = (sumw * sumw) / sumw2;
-  double miness = this->threshold;
-  double minsumw = bi::exp(maxlw) * (miness - 1.0) / 2.0;
+  double minsumw = bi::exp(maxlw) * (threshold - 1.0) / 2.0;
 
-  return Stopper::stop(maxlw) || (sumw >= minsumw && ess >= miness);
+  return (sumw >= minsumw && ess >= threshold);
 }
 
 inline void bi::MinimumESSStopper::add(const double lw, const double maxlw) {
   /* pre-condition */
   BI_ASSERT(lw <= maxlw);
 
-  Stopper::add(lw, maxlw);
   sumw += bi::exp(lw);
   sumw2 += bi::exp(2.0*lw);
 }
@@ -84,13 +82,11 @@ void bi::MinimumESSStopper::add(const V1 lws, const double maxlw) {
   /* pre-condition */
   BI_ASSERT(max_reduce(lws) <= maxlw);
 
-  Stopper::add(lws, maxlw);
   sumw += sumexp_reduce(lws);
   sumw2 += sumexpsq_reduce(lws);
 }
 
 inline void bi::MinimumESSStopper::reset() {
-  Stopper::reset();
   sumw = 0.0;
   sumw2 = 0.0;
 }

@@ -183,6 +183,11 @@ public:
   void clear();
 
   /**
+   * Select single particle.
+   */
+  vector_reference_type select(const int p);
+
+  /**
    * Gather particles.
    *
    * @tparam V1 Vector type.
@@ -462,17 +467,18 @@ template<class B, bi::Location L>
 bi::State<B,L>::State(const int P, const int Y, const int T) :
     logPrior(-BI_INF), logProposal(-BI_INF),
     Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
-    Kdn(1, NP + NPX + NF + NP + 2 * NO),  // includes py- and oy-vars
+    Kdn(1, NP + NPX + NF + NP + 2 * NO),// includes py- and oy-vars
     p(0), P(P) {
-  /* pre-condition */
-  BI_ASSERT(P == roundup(P));
+      /* pre-condition */
+      BI_ASSERT(P == roundup(P));
 
-  clear();
-}
+      clear();
+    }
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-  logPrior(o.logPrior), logProposal(o.logProposal), Xdn(o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
+    logPrior(o.logPrior), logProposal(o.logProposal), Xdn(o.Xdn), Kdn(o.Kdn), p(
+        o.p), P(o.P) {
   for (int i = 0; i < NB; ++i) {
     builtin[i] = o.builtin[i];
   }
@@ -879,6 +885,12 @@ inline typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() {
 template<class B, bi::Location L>
 inline const typename bi::State<B,L>::matrix_reference_type bi::State<B,L>::getDyn() const {
   return subrange(Xdn.ref(), p, P, 0, NR + ND);
+}
+
+template<class B, bi::Location L>
+typename bi::State<B,L>::vector_reference_type bi::State<B,L>::select(
+    const int p) {
+  return row(getDyn(), p);
 }
 
 template<class B, bi::Location L>

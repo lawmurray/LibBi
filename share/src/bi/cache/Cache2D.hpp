@@ -9,7 +9,7 @@
 #define BI_CACHE_CACHE2D_HPP
 
 #include "Cache.hpp"
-#include "../math/matrix.hpp"
+#include "../math/loc_matrix.hpp"
 
 namespace bi {
 /**

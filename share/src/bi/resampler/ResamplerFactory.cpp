@@ -1,9 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
+ * @author Lawrence Murray <murray@stats.ox.ac.uk>
  */
 #include "ResamplerFactory.hpp"
 
@@ -26,6 +24,7 @@ boost::shared_ptr<bi::Resampler<bi::MetropolisResampler> > bi::ResamplerFactory:
     const int B, const double essRel) {
   BOOST_AUTO(resam, boost::make_shared<Resampler<MetropolisResampler> >(essRel));
   resam->setSteps(B);
+  return resam;
 }
 
 boost::shared_ptr<bi::Resampler<bi::RejectionResampler> > bi::ResamplerFactory::createRejectionResampler() {

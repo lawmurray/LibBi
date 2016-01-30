@@ -293,6 +293,7 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 
   double lW;
   s.ess = ess_reduce(s.logWeights(), &lW);
+  ///@todo Incorrect for MPI
   s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 }
@@ -301,10 +302,10 @@ template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::adapt(const S1& s) {
   adapter.clear();
-  adapter.add(s);
-  if (adapter.ready()) {
-    adapter.adapt();
+  for (int p = 0; p < s.size(); ++p) {
+    adapter.add(*s.s1s[p]);
   }
+  adapter.adapt();
 }
 
 template<class B, class F, class A, class R>

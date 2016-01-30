@@ -1,9 +1,7 @@
 /**
  * @file
  *
- * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
+ * @author Lawrence Murray <murray@stats.ox.ac.uk>
  */
 #ifndef BI_RESAMPLER_RESAMPLERFACTORY_HPP
 #define BI_RESAMPLER_RESAMPLERFACTORY_HPP
@@ -14,9 +12,6 @@
 #include "SystematicResampler.hpp"
 #include "MetropolisResampler.hpp"
 #include "RejectionResampler.hpp"
-#ifdef ENABLE_MPI
-#include "../mpi/resampler/DistributedResampler.hpp"
-#endif
 
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -57,24 +52,7 @@ public:
    * Create rejection resampler.
    */
   static boost::shared_ptr<Resampler<RejectionResampler> > createRejectionResampler();
-
-  #ifdef ENABLE_MPI
-  /**
-   * Create distributed resampler.
-   */
-  template<class R>
-  static boost::shared_ptr<DistributedResampler<R> > createDistributedResampler(
-      boost::smart_ptr<R> base, const double essRel = 0.5);
-  #endif
 };
 }
-
-#ifdef ENABLE_MPI
-template<class R>
-boost::shared_ptr<bi::DistributedResampler<R> > bi::ResamplerFactory::createDistributedResampler(
-    boost::smart_ptr<R> base, const double essRel) {
-  return new DistributedResampler<R>(base, essRel);
-}
-#endif
 
 #endif

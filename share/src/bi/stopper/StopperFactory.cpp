@@ -7,30 +7,31 @@
  */
 #include "StopperFactory.hpp"
 
-boost::shared_ptr<bi::MinimumESSStopper> bi::StopperFactory::createMinimumESSStopper(
+#include "boost/make_shared.hpp"
+
+boost::shared_ptr<bi::Stopper<bi::DefaultStopper> > bi::StopperFactory::createDefaultStopper(
     const double threshold, const int maxP, const int T) {
-  return boost::shared_ptr < MinimumESSStopper
-      > (new MinimumESSStopper(threshold, maxP, T));
+  return boost::make_shared < Stopper<DefaultStopper> > (threshold, maxP, T);
 }
 
-boost::shared_ptr<bi::StdDevStopper> bi::StopperFactory::createStdDevStopper(
+boost::shared_ptr<bi::Stopper<bi::MinimumESSStopper> > bi::StopperFactory::createMinimumESSStopper(
     const double threshold, const int maxP, const int T) {
-  return boost::shared_ptr < StdDevStopper
-      > (new StdDevStopper(threshold, maxP, T));
+  return boost::make_shared < Stopper<MinimumESSStopper>
+      > (threshold, maxP, T);
 }
 
-boost::shared_ptr<bi::Stopper> bi::StopperFactory::createStopper(
+boost::shared_ptr<bi::Stopper<bi::StdDevStopper> > bi::StopperFactory::createStdDevStopper(
     const double threshold, const int maxP, const int T) {
-  return boost::shared_ptr < Stopper > (new Stopper(threshold, maxP, T));
+  return boost::make_shared < Stopper<StdDevStopper> > (threshold, maxP, T);
 }
 
-boost::shared_ptr<bi::SumOfWeightsStopper> bi::StopperFactory::createSumOfWeightsStopper(
+boost::shared_ptr<bi::Stopper<bi::SumOfWeightsStopper> > bi::StopperFactory::createSumOfWeightsStopper(
     const double threshold, const int maxP, const int T) {
-  return boost::shared_ptr < SumOfWeightsStopper
-      > (new SumOfWeightsStopper(threshold, maxP, T));
+  return boost::make_shared < Stopper<SumOfWeightsStopper>
+      > (threshold, maxP, T);
 }
 
-boost::shared_ptr<bi::VarStopper> bi::StopperFactory::createVarStopper(
+boost::shared_ptr<bi::Stopper<bi::VarStopper> > bi::StopperFactory::createVarStopper(
     const double threshold, const int maxP, const int T) {
-  return boost::shared_ptr < VarStopper > (new VarStopper(threshold, maxP, T));
+  return boost::make_shared < Stopper<VarStopper> > (threshold, maxP, T);
 }

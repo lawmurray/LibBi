@@ -10,6 +10,7 @@
 
 #include "Cache.hpp"
 #include "../math/matrix.hpp"
+#include "../math/loc_vector.hpp"
 
 namespace bi {
 /**

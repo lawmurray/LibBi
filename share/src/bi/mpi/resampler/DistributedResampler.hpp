@@ -10,8 +10,6 @@
 
 #include "../../resampler/Resampler.hpp"
 
-#include "boost/shared_ptr.hpp"
-
 #include <vector>
 
 namespace bi {
@@ -23,36 +21,21 @@ namespace bi {
  * @tparam R Resampler type.
  */
 template<class R>
-class DistributedResampler: public Resampler {
+class DistributedResampler: public Resampler<R> {
 public:
   /**
    * Constructor.
    *
-   * @param base Base resampler.
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
    */
-  DistributedResampler(boost::shared_ptr<R> base, const double essRel = 0.5);
+  DistributedResampler(const double essRel = 0.5);
 
   /**
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
-  template<class V1, class V2, class O1>
-  void resample(Random& rng, V1 lws, V2 as, O1& s) const
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::isTriggered
-   */
-  template<class S1, class V1>
-  bool isTriggered(const ScheduleElement now, const V1 lws, double* lW) const
-      throw (ParticleFilterDegeneratedException);
-
-  /**
-   * @copydoc Resampler::ess
-   */
-  template<class V1>
-  static typename V1::value_type ess(const V1 lws)
+  template<class S1>
+  bool resample(Random& rng, const ScheduleElement now, S1& s)
       throw (ParticleFilterDegeneratedException);
 
 private:
@@ -83,43 +66,9 @@ private:
    */
   static void reportRedistribute(int timestep, int rank, long usecs);
   //@}
-
-  /**
-   * Select particle from copy() compatible object.
-   *
-   * @tparam B Model type.
-   * @tparam L Location.
-   *
-   * @param s State.
-   * @param p Index of particle to select.
-   *
-   * @return Particle.
-   */
-  template<class B, bi::Location L>
-  static typename bi::State<B,L>::matrix_reference_type::vector_reference_type select(
-      State<B,L>& s, const int p);
-
-  /**
-   * Receive particle.
-   *
-   * @tparam T1 Assignable type.
-   *
-   * @param s State.
-   * @param p Index of particle to select.
-   *
-   * @return Particle.
-   */
-  template<class T1>
-  static T1& select(std::vector<T1*>& s, const int p);
-
-  /**
-   * Base resampler.
-   */
-  boost::shared_ptr<R> base;
 };
 }
 
-#include <cstdio>
 #include "../mpi.hpp"
 #include "../../math/temp_vector.hpp"
 #include "../../math/temp_matrix.hpp"
@@ -131,60 +80,66 @@ private:
 #include <list>
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(boost::shared_ptr<R> base,
-    const double essRel) :
-    Resampler(essRel), base(base) {
+bi::DistributedResampler<R>::DistributedResampler(const double essRel) :
+    Resampler<R>(essRel) {
   //
 }
 
 template<class R>
-template<class V1, class V2, class O1>
-void bi::DistributedResampler<R>::resample(Random& rng, V1 lws, V2 as, O1& s)
-    throw (ParticleFilterDegeneratedException) {
-  typedef typename V1::value_type T1;
-
+template<class S1>
+bool bi::DistributedResampler<R>::resample(Random& rng,
+    const ScheduleElement now, S1& s)
+        throw (ParticleFilterDegeneratedException) {
+  bool r = (now.isObserved() || now.hasBridge())
+      && s.ess < this->essRel * s.size();
+  if (r) {
 #if ENABLE_DIAGNOSTICS == 2
-  synchronize();
-  TicToc clock;
-#endif
-
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-  const int size = world.size();
-  const int P = lws.size();
-
-  typename temp_host_matrix<real>::type Lws(P, size);
-  typename temp_host_matrix<int>::type O(P, size);
-
-  /* gather weights to root */
-  if (V1::on_device) {
-    /* gather takes raw pointer, so need to copy to host */
-    typename temp_host_vector<real>::type lws1(P);
-    lws1 = lws;
     synchronize();
-    boost::mpi::gather(world, lws1.buf(), P, vec(Lws).buf(), 0);
-  } else {
-    /* already on host */
-    boost::mpi::gather(world, lws.buf(), P, vec(Lws).buf(), 0);
-  }
-
-  /* compute offspring on root and broadcast */
-  if (rank == 0) {
-    base.offspring(rng, vec(Lws), vec(O), P * size);
-  }
-  boost::mpi::broadcast(world, O, 0);
-
-#if ENABLE_DIAGNOSTICS == 2
-  long usecs = clock.toc();
-  const int timesteps = s.front()->getOutput().size() - 1;
-  reportResample(timesteps, rank, usecs);
+    TicToc clock;
 #endif
 
-  redistribute(O, s);
-  offspringToAncestors(column(O, rank), as);
-  permute(as);
-  copy(as, s);
-  lws.clear();
+    boost::mpi::communicator world;
+    const int rank = world.rank();
+    const int size = world.size();
+    const int P = s.size();
+
+    typename temp_host_matrix<real>::type Lws(P, size);
+    typename temp_host_matrix<int>::type O(P, size);
+    typename temp_host_vector<int>::type as1(P);
+
+    /* gather weights to root */
+    if (S1::on_device) {
+      /* gather takes raw pointer, so need to copy to host */
+      typename temp_host_vector<real>::type lws1(P);
+      lws1 = s.logWeights();
+      synchronize();
+      boost::mpi::gather(world, lws1.buf(), P, vec(Lws).buf(), 0);
+    } else {
+      /* already on host */
+      boost::mpi::gather(world, s.logWeights().buf(), P, vec(Lws).buf(), 0);
+    }
+
+    /* compute offspring on root and broadcast */
+    if (rank == 0) {
+      //R::offspring(rng, vec(Lws), vec(O), P * size);
+    }
+    boost::mpi::broadcast(world, O, 0);
+
+#if ENABLE_DIAGNOSTICS == 2
+    long usecs = clock.toc();
+    const int timesteps = s.front()->getOutput().size() - 1;
+    reportResample(timesteps, rank, usecs);
+#endif
+
+    redistribute(O, s);
+    offspringToAncestors(column(O, rank), as1);
+    permute(as1);
+    s.gather(now, as1);
+    set_elements(s.logWeights(), s.logLikelihood);
+  } else if (now.hasOutput()) {
+    seq_elements(s.ancestors(), 0);
+  }
+  return r;
 }
 
 template<class R>
@@ -194,45 +149,34 @@ void bi::DistributedResampler<R>::reportResample(int timestep, int rank,
       timestep, rank, usecs);
 }
 
-template<class R>
-template<class V1>
-bool bi::DistributedResampler<R>::isTriggered(const V1 lws) const
-    throw (ParticleFilterDegeneratedException) {
-  boost::mpi::communicator world;
-  const int size = world.size();
-  const int P = lws.size();
-
-  return essRel >= 1.0 || ess(lws) < essRel * size * P;
-}
-
-template<class R>
-template<class V1>
-typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws)
-    throw (ParticleFilterDegeneratedException) {
-  typedef typename V1::value_type T1;
-
-  T1 mx, sum1, sum2, result;
-  boost::mpi::communicator world;
-
-  mx = max_reduce(lws);
-  mx = boost::mpi::all_reduce(world, mx, boost::mpi::maximum<T1>());
-
-  sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  sum1 = boost::mpi::all_reduce(world, sum1, std::plus<T1>());
-
-  sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
-      thrust::plus<T1>());
-  sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
-
-  result = (sum1 * sum1) / sum2;
-
-  if (result > 0.0) {
-    return result;
-  } else {
-    throw ParticleFilterDegeneratedException();
-  }
-}
+//template<class R>
+//template<class V1>
+//typename V1::value_type bi::DistributedResampler<R>::ess(const V1 lws)
+//    throw (ParticleFilterDegeneratedException) {
+//  typedef typename V1::value_type T1;
+//
+//  T1 mx, sum1, sum2, result;
+//  boost::mpi::communicator world;
+//
+//  mx = max_reduce(lws);
+//  mx = boost::mpi::all_reduce(world, mx, boost::mpi::maximum<T1>());
+//
+//  sum1 = op_reduce(lws, nan_minus_and_exp_functor<T1>(mx), 0.0,
+//      thrust::plus<T1>());
+//  sum1 = boost::mpi::all_reduce(world, sum1, std::plus<T1>());
+//
+//  sum2 = op_reduce(lws, nan_minus_exp_and_square_functor<T1>(mx), 0.0,
+//      thrust::plus<T1>());
+//  sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
+//
+//  result = (sum1 * sum1) / sum2;
+//
+//  if (result > 0.0) {
+//    return result;
+//  } else {
+//    throw ParticleFilterDegeneratedException();
+//  }
+//}
 
 template<class R>
 template<class M1, class O1>
@@ -297,9 +241,9 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
     /* transfer particle */
     if (rank == recvr) {
-      reqs.push_back(world.irecv(sendr, tag, select(s, recvi)));
+      reqs.push_back(world.irecv(sendr, tag, s.select(recvi)));
     } else if (rank == sendr) {
-      reqs.push_back(world.isend(recvr, tag, select(s, sendi)));
+      reqs.push_back(world.isend(recvr, tag, s.select(sendi)));
     }
     ++tag;
 
@@ -328,19 +272,6 @@ void bi::DistributedResampler<R>::reportRedistribute(int timestep, int rank,
     long usecs) {
   fprintf(stderr, "%d: DistributedResampler::redistribute proc %d %ld us\n",
       timestep, rank, usecs);
-}
-
-template<class R>
-template<class B, bi::Location L>
-typename bi::State<B,L>::matrix_reference_type::vector_reference_type bi::DistributedResampler<
-    R>::select(State<B,L>& s, const int p) {
-  return row(s.getDyn(), p);
-}
-
-template<class R>
-template<class T1>
-T1& bi::DistributedResampler<R>::select(std::vector<T1*>& s, const int p) {
-  return *s[p];
 }
 
 #endif

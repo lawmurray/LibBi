@@ -22,10 +22,6 @@
 #include "bi/state/MarginalSIRState.hpp"
 #include "bi/state/MarginalSISState.hpp"
 
-#include "bi/adapter/MarginalMHAdapter.hpp"
-#include "bi/adapter/MarginalSIRAdapter.hpp"
-#include "bi/adapter/MarginalSISAdapter.hpp"
-
 #include "bi/buffer/SimulatorBuffer.hpp"
 #include "bi/buffer/ParticleFilterBuffer.hpp"
 #include "bi/buffer/KalmanFilterBuffer.hpp"
@@ -54,18 +50,20 @@
 #include "bi/simulator/ForcerFactory.hpp"
 #include "bi/simulator/ObserverFactory.hpp"
 #include "bi/simulator/SimulatorFactory.hpp"
+#include "bi/adapter/AdapterFactory.hpp"
 #include "bi/filter/FilterFactory.hpp"
 #include "bi/sampler/SamplerFactory.hpp"
 #include "bi/resampler/ResamplerFactory.hpp"
 #include "bi/stopper/StopperFactory.hpp"
 
 #ifdef ENABLE_MPI
-#include "bi/mpi/handler/HandlerFactory.hpp"
-#include "bi/mpi/adapter/DistributedAdapter.hpp"
-#include "bi/mpi/stopper/DistributedStopper.hpp"
-#include "bi/mpi/TreeNetworkNode.hpp"
-#include "bi/mpi/Server.hpp"
-#include "bi/mpi/Client.hpp"
+//#include "bi/mpi/handler/HandlerFactory.hpp"
+#include "bi/mpi/adapter/DistributedAdapterFactory.hpp"
+#include "bi/mpi/resampler/DistributedResamplerFactory.hpp"
+#include "bi/mpi/stopper/DistributedStopperFactory.hpp"
+//#include "bi/mpi/TreeNetworkNode.hpp"
+//#include "bi/mpi/Server.hpp"
+//#include "bi/mpi/Client.hpp"
 #endif
 
 #include "boost/typeof/typeof.hpp"
@@ -98,7 +96,7 @@ int main(int argc, char* argv[]) {
   const int rank = world.rank();
   const int size = world.size();
   NPARTICLES /= size;
-  TreeNetworkNode node;
+  //TreeNetworkNode node;
   #else
   const int rank = 0;
   const int size = 1;
@@ -189,9 +187,7 @@ int main(int argc, char* argv[]) {
   [% END %]
     
   /* stopper for x-particles */
-  [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  BOOST_AUTO(filterStopper, (StopperFactory::createStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
-  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
+  [% IF client.get_named_arg('stopper') == 'sumofweights' %]
   BOOST_AUTO(filterStopper, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'miness' %]
   BOOST_AUTO(filterStopper, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
@@ -199,87 +195,81 @@ int main(int argc, char* argv[]) {
   BOOST_AUTO(filterStopper, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'var' %]
   BOOST_AUTO(filterStopper, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  [% ELSE %]
+  BOOST_AUTO(filterStopper, (StopperFactory::createDefaultStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
   [% END %]
  
   /* resampler for theta-particles */
+  #ifdef ENABLE_MPI
+  #define SAMPLER_RESAMPLER_FACTORY DistributedResamplerFactory
+  #else
+  #define SAMPLER_RESAMPLER_FACTORY ResamplerFactory
+  #endif
   [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
-  BOOST_AUTO(sampleResamBase, (ResamplerFactory::createMetropolisResampler(C, SAMPLE_ESS_REL)));
+  BOOST_AUTO(sampleResam, (SAMPLER_RESAMPLER_FACTORY::createMetropolisResampler(C, SAMPLE_ESS_REL)));
   [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
-  BOOST_AUTO(sampleResamBase, ResamplerFactory::createRejectionResampler());
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createRejectionResampler());
   [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
-  BOOST_AUTO(sampleResamBase, ResamplerFactory::createMultinomialResampler(SAMPLE_ESS_REL));
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createMultinomialResampler(SAMPLE_ESS_REL));
   [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
-  BOOST_AUTO(sampleResamBase, ResamplerFactory::createStratifiedResampler(SAMPLE_ESS_REL));
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createStratifiedResampler(SAMPLE_ESS_REL));
   [% ELSE %]
-  BOOST_AUTO(sampleResamBase, ResamplerFactory::createSystematicResampler(SAMPLE_ESS_REL));
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  BOOST_AUTO(sampleResam, (ResamplerFactory::createDistributedResampler(sampleResamBase, SAMPLE_ESS_REL)));
-  [% ELSE %]
-  BOOST_AUTO(sampleResam, sampleResamBase);
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createSystematicResampler(SAMPLE_ESS_REL));
   [% END %]
     
   /* stopper for theta-particles */
-  [% IF client.get_named_arg('sample-stopper') == 'deterministic' %]
-  BOOST_AUTO(sampleStopperBase, (StopperFactory::createStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
-  [% ELSIF client.get_named_arg('sample-stopper') == 'sumofweights' %]
-  BOOST_AUTO(sampleStopperBase, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  #ifdef ENABLE_MPI
+  #define SAMPLER_STOPPER_FACTORY DistributedStopperFactory
+  #else
+  #define SAMPLER_STOPPER_FACTORY StopperFactory
+  #endif
+  [% IF client.get_named_arg('sample-stopper') == 'sumofweights' %]
+  BOOST_AUTO(sampleStopper, (SAMPLER_STOPPER_FACTORY::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'miness' %]
-  BOOST_AUTO(sampleStopperBase, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  BOOST_AUTO(sampleStopper, (SAMPLER_STOPPER_FACTORY::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'stddev' %]
-  BOOST_AUTO(sampleStopperBase, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  BOOST_AUTO(sampleStopper, (SAMPLER_STOPPER_FACTORY::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('sample-stopper') == 'var' %]
-  BOOST_AUTO(sampleStopperBase, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  BOOST_AUTO(sampleStopper, (StopperFactory::createDistributedStopper(sampleStopperBase)));
+  BOOST_AUTO(sampleStopper, (SAMPLER_STOPPER_FACTORY::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSE %]
-  BOOST_AUTO(sampleStopper, sampleStopperBase);
+  BOOST_AUTO(sampleStopper, (SAMPLER_STOPPER_FACTORY::createDefaultStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
   [% END %]
-    
+
   /* adapter for theta-particles */
-  [% IF client.get_named_arg('sampler') == 'sir' %]
-  [% IF client.get_named_arg('adapter') == 'global' %]
-  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(ADAPTER_ESS_REL, false, ADAPTER_SCALE);
-  [% ELSIF client.get_named_arg('adapter') == 'local' %]
-  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(ADAPTER_ESS_REL, true, ADAPTER_SCALE);
+  #ifdef ENABLE_MPI
+  #define SAMPLER_ADAPTER_FACTORY DistributedAdapterFactory
+  #else
+  #define SAMPLER_ADAPTER_FACTORY AdapterFactory
+  #endif
+  [% IF client.get_named_arg('adapter') == 'local' %]
+  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(true, ADAPTER_SCALE)));
   [% ELSE %]
-  MarginalSIRAdapter<model_type,ON_HOST> sampleAdapterBase(1.0); // will cause to never be ready
-  [% END %]
-  [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  MarginalSISAdapter<model_type,ON_HOST> sampleAdapterBase(sched.begin(), sched.end());
-  [% ELSE %]
-  MarginalMHAdapter<model_type,ON_HOST> sampleAdapterBase;
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  DistributedAdapter<BOOST_TYPEOF(sampleAdapterBase)> sampleAdapter(sampleAdapterBase, node);
-  [% ELSE %]
-  BOOST_AUTO(&sampleAdapter, sampleAdapterBase);
+  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(false, ADAPTER_SCALE)));
   [% END %]
   
   /* client/server setup */
-  #ifdef ENABLE_MPI
-  Client client(node);
-  Server server(node);
-  std::string port_name;
+  //#ifdef ENABLE_MPI
+  //Client client(node);
+  //Server server(node);
+  //std::string port_name;
   
-  if (ROLE.compare("server") == 0) {
-  	server.open();
-  	std::ofstream bufServer(SERVER_FILE.c_str());
-  	bufServer << server.getPortName();
-  	bufServer.close();
-    BOOST_AUTO(handler, (HandlerFactory::createMarginalSISHandler(m, sched.numObs(), sampleAdapter, sampleStopper, node)));
-  	server.run(*handler);
-    delete handler;
-  	server.close();
-  	exit(0);
-  } else {
-    std::ifstream bufServer(SERVER_FILE.c_str());
-    bufServer >> port_name;
-    bufServer.close();
-    //client.connect(port_name.c_str());
-  }
-  #endif
+  //if (ROLE.compare("server") == 0) {
+  //  server.open();
+  //  std::ofstream bufServer(SERVER_FILE.c_str());
+  //  bufServer << server.getPortName();
+  //  bufServer.close();
+  //  BOOST_AUTO(handler, (HandlerFactory::createMarginalSISHandler(m, sched.numObs(), sampleAdapter, sampleStopper, node)));
+  //  server.run(*handler);
+  //  delete handler;
+  //  server.close();
+  //  exit(0);
+  //} else {
+  //  std::ifstream bufServer(SERVER_FILE.c_str());
+  //  bufServer >> port_name;
+  //  bufServer.close();
+  //  //client.connect(port_name.c_str());
+  //}
+  //#endif
   
   /* state */
   [% IF client.get_named_arg('target') == 'posterior' %]
@@ -328,9 +318,9 @@ int main(int argc, char* argv[]) {
   /* sampler */
   [% IF client.get_named_arg('target') == 'posterior' %]
   [% IF client.get_named_arg('sampler') == 'sir' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *filter, sampleAdapter, *sampleResam, NMOVES));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIR(m, *filter, *sampleAdapter, *sampleResam, NMOVES));
   [% ELSIF client.get_named_arg('sampler') == 'sis' %]
-  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, sampleAdapter, *sampleStopper));
+  BOOST_AUTO(sampler, SamplerFactory::createMarginalSIS(m, *filter, *sampleAdapter, *sampleStopper));
   [% ELSE %]
   BOOST_AUTO(sampler, SamplerFactory::createMarginalMH(m, *filter));
   [% END %]
@@ -364,7 +354,7 @@ int main(int argc, char* argv[]) {
   ProfilerStop();
   #endif
   
-  #ifdef ENABLE_MPI
-  client.disconnect();
-  #endif
+  //#ifdef ENABLE_MPI
+  //client.disconnect();
+  //#endif
 }

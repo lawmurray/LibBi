@@ -11,6 +11,7 @@
 #define BI_PRIMITIVE_FUNCTOR_HPP
 
 #include "../math/function.hpp"
+#include "../math/scalar.hpp"
 #include "../math/misc.hpp"
 #include "../cuda/cuda.hpp"
 

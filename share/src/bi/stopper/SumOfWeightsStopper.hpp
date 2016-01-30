@@ -7,7 +7,8 @@
 #ifndef BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
 #define BI_STOPPER_SUMOFWEIGHTSSTOPPER_HPP
 
-#include "Stopper.hpp"
+#include "../math/constant.hpp"
+#include "../math/function.hpp"
 
 namespace bi {
 /**
@@ -15,17 +16,17 @@ namespace bi {
  *
  * @ingroup method_stopper
  */
-class SumOfWeightsStopper: public Stopper {
+class SumOfWeightsStopper {
 public:
   /**
    * @copydoc Stopper::Stopper()
    */
-  SumOfWeightsStopper(const double threshold, const int maxP, const int T);
+  SumOfWeightsStopper();
 
   /**
-   * @copydoc Stopper::stop(const double maxlw)
+   * @copydoc Stopper::stop
    */
-  bool stop(const double maxlw = BI_INF);
+  bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
   /**
    * @copydoc Stopper::add(const double, const double)
@@ -51,17 +52,14 @@ private:
 };
 }
 
-inline bi::SumOfWeightsStopper::SumOfWeightsStopper(const double threshold,
-    const int maxP, const int T) :
-    Stopper(threshold, maxP, T), sumw(0.0) {
+inline bi::SumOfWeightsStopper::SumOfWeightsStopper() : sumw(0.0) {
   //
 }
 
-inline bool bi::SumOfWeightsStopper::stop(const double maxlw) {
-  double minsumw = this->T * this->threshold * bi::exp(maxlw);
+inline bool bi::SumOfWeightsStopper::stop(const int T, const double threshold, const double maxlw) {
+  double minsumw = T * threshold * bi::exp(maxlw);
 
-  return Stopper::stop(maxlw) || sumw >= minsumw;
-
+  return sumw >= minsumw;
 }
 
 inline void bi::SumOfWeightsStopper::add(const double lw, const double maxlw) {
@@ -80,7 +78,6 @@ void bi::SumOfWeightsStopper::add(const V1 lws, const double maxlw) {
 }
 
 inline void bi::SumOfWeightsStopper::reset() {
-  Stopper::reset();
   sumw = 0.0;
 }
 

@@ -105,7 +105,12 @@ public:
   const int_vector_reference_type ancestors() const;
 
   /**
-   * @copydoc MarginalSIRState::gather()
+   * Select single particle.
+   */
+  S1& select(const int p);
+
+  /**
+   * Gather particles.
    */
   template<class V1>
   void gather(const ScheduleElement now, const V1 as);
@@ -288,6 +293,11 @@ template<class B, bi::Location L, class S1, class IO1>
 const typename bi::MarginalSIRState<B,L,S1,IO1>::int_vector_reference_type bi::MarginalSIRState<
     B,L,S1,IO1>::ancestors() const {
   return subrange(as, ptheta, Ptheta);
+}
+
+template<class B, bi::Location L, class S1, class IO1>
+S1& bi::MarginalSIRState<B,L,S1,IO1>::select(const int p) {
+  return *s1s[p];
 }
 
 template<class B, bi::Location L, class S1, class IO1>

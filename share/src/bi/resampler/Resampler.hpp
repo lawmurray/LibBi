@@ -8,6 +8,7 @@
 #ifndef BI_RESAMPLER_RESAMPLER_HPP
 #define BI_RESAMPLER_RESAMPLER_HPP
 
+#include "misc.hpp"
 #include "../state/State.hpp"
 #include "../state/ScheduleElement.hpp"
 #include "../random/Random.hpp"
