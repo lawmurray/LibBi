@@ -29,7 +29,7 @@ void bi_init(const int threads = 0);
 #endif
 
 #ifdef ENABLE_MPI
-#include "boost/mpi.hpp"
+#include "mpi/mpi.hpp"
 #endif
 
 // need to keep in same compilation unit as caller for bi_ode_init()

@@ -11,8 +11,6 @@
 #include "TreeNetworkNode.hpp"
 #include "mpi.hpp"
 
-#include "boost/mpi/communicator.hpp"
-
 namespace bi {
 /**
  * Client.

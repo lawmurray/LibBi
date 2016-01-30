@@ -10,7 +10,7 @@
 #include "../../cuda/device.hpp"
 
 #ifdef ENABLE_MPI
-#include "boost/mpi/communicator.hpp"
+#include "../../mpi/mpi.hpp"
 #endif
 
 void bi::RandomGPU::seeds(Random& rng, const unsigned seed) {

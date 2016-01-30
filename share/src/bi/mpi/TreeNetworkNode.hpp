@@ -8,9 +8,8 @@
 #ifndef BI_MPI_TREENETWORKNODE_HPP
 #define BI_MPI_TREENETWORKNODE_HPP
 
+#include "mpi.hpp"
 #include "../primitive/forward_list.hpp"
-
-#include "boost/mpi/communicator.hpp"
 
 namespace bi {
 /**

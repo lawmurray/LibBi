@@ -9,6 +9,9 @@
 #define BI_MPI_MPI_HPP
 
 #ifdef ENABLE_MPI
+#include "boost/mpi.hpp"
+#include "boost/mpi/communicator.hpp"
+
 #include <mpi.h>
 #endif
 

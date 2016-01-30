@@ -11,7 +11,6 @@
 #include "mpi.hpp"
 #include "TreeNetworkNode.hpp"
 
-#include "boost/mpi/communicator.hpp"
 #include "boost/typeof/typeof.hpp"
 
 namespace bi {

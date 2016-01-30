@@ -8,7 +8,7 @@
 #include "RandomHost.hpp"
 
 #ifdef ENABLE_MPI
-#include "boost/mpi/communicator.hpp"
+#include "../../mpi/mpi.hpp"
 #endif
 
 void bi::RandomHost::seeds(Random& rng, const unsigned seed) {
