@@ -90,12 +90,13 @@ private:
 #include "../math/constant.hpp"
 #include "../primitive/vector_primitive.hpp"
 
-bi::GaussianAdapter::GaussianAdapter(const bool local, const double scale) :
+inline bi::GaussianAdapter::GaussianAdapter(const bool local,
+    const double scale) :
     local(local), scale(scale) {
   //
 }
 
-bool bi::GaussianAdapter::ready(const int k) {
+inline bool bi::GaussianAdapter::ready(const int k) {
   return true;
 }
 

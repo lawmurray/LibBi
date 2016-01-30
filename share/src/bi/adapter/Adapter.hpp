@@ -74,6 +74,8 @@ protected:
 };
 }
 
+#include "boost/typeof/typeof.hpp"
+
 template<class A>
 bi::Adapter<A>::Adapter(const bool local, const double scale) :
     A(local, scale) {

@@ -205,8 +205,8 @@ fi
 
 if test x$mpi = xtrue; then
     AC_CHECK_LIB([mpi], [main], [], [AC_MSG_ERROR([MPI library not found (only required with --enable-mpi)])])
-    AC_SEARCH_LIBS([main], [boost_mpi boost_mpi-mt], [], [AC_MSG_ERROR([Boost.MPI library not found (only required with --enable-mpi)])])
-    AC_SEARCH_LIBS([main], [boost_serialization boost_serialization-mt], [], [AC_MSG_ERROR([Boost.Serialization library not found (only required with --enable-mpi)])])
+    AC_CHECK_LIB([boost_mpi], [main], [], [AC_MSG_ERROR([Boost.MPI library not found (only required with --enable-mpi)])])
+    AC_CHECK_LIB([boost_serialization], [main], [], [AC_MSG_ERROR([Boost.Serialization library not found (only required with --enable-mpi)])])
 fi
 
 # Checks for library functions
