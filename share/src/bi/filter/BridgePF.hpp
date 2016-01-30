@@ -128,7 +128,7 @@ void bi::BridgePF<B,F,O,R>::bridge(Random& rng, const ScheduleIterator iter,
     axpy(1.0, s.logAuxWeights(), s.logWeights());
 
     double lW;
-    s.ess = ess_reduce(s.logWeights(), &lW);
+    s.ess = this->resam.reduce(s.logWeights(), &lW);
     s.logIncrement = lW - s.logLikelihood;
     s.logLikelihood = lW;
   }

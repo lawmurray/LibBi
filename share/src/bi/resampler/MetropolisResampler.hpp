@@ -56,6 +56,13 @@ public:
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
       ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
 
+  /**
+   * @copydoc MultinomialResampler::offspring
+   */
+  template<class V1, class V2, Location L>
+  void offspring(Random& rng, const V1 lws, const int P, V2 os,
+      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+
 private:
   /**
    * Number of Metropolis steps to take.
@@ -76,6 +83,7 @@ struct precompute_type<MetropolisResampler,L> {
 #ifdef __CUDACC__
 #include "../cuda/resampler/MetropolisResamplerGPU.cuh"
 #endif
+#include "../math/sim_temp_vector.hpp"
 
 inline bi::MetropolisResampler::MetropolisResampler(const int B) :
     B(B) {
@@ -113,6 +121,14 @@ void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
   typedef MetropolisResamplerHost impl;
 #endif
   impl::ancestorsPermute(rng, lws, as, B);
+}
+
+template<class V1, class V2, bi::Location L>
+void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
+    ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+  typename sim_temp_vector<V1>::type as(P);
+  ancestors(rng, lws, as);
+  ancestorsToOffspring(as, os);
 }
 
 #endif

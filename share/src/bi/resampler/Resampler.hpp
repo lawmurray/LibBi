@@ -68,6 +68,12 @@ public:
   void setMaxLogWeight(const double maxLogWeight);
 
   /**
+   * Compute ESS and incremental log-likelihood.
+   */
+  template<class V1>
+  double reduce(const V1 lws, double* lW);
+
+  /**
    * Resample.
    *
    * @tparam S1 State type.
@@ -118,6 +124,12 @@ inline double bi::Resampler<R>::getMaxLogWeight() const {
 template<class R>
 void bi::Resampler<R>::setMaxLogWeight(const double maxLogWeight) {
   this->maxLogWeight = maxLogWeight;
+}
+
+template<class R>
+template<class V1>
+double bi::Resampler<R>::reduce(const V1 lws, double* lW) {
+  return ess_reduce(lws, lW);
 }
 
 template<class R>

@@ -48,14 +48,24 @@ public:
    */
   template<class V1, class V2, bi::Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      RejectionResamplerPrecompute& pre) throw (ParticleFilterDegeneratedException);
+      RejectionResamplerPrecompute& pre)
+          throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc Multinomial::ancestorsPermute()
    */
   template<class V1, class V2, bi::Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      RejectionResamplerPrecompute& pre) throw (ParticleFilterDegeneratedException);
+      RejectionResamplerPrecompute& pre)
+          throw (ParticleFilterDegeneratedException);
+
+  /**
+   * @copydoc MultinomialResampler::offspring
+   */
+  template<class V1, class V2, Location L>
+  void offspring(Random& rng, const V1 lws, const int P, V2 os,
+      RejectionResamplerPrecompute& pre)
+          throw (ParticleFilterDegeneratedException);
 
   /**
    * @copydoc Resampler::precompute
@@ -117,6 +127,14 @@ template<class V1>
 void bi::RejectionResampler::precompute(const V1 lws,
     RejectionResamplerPrecompute& pre) {
   BI_ERROR_MSG(false, "Not yet implemented");
+}
+
+template<class V1, class V2, bi::Location L>
+void bi::RejectionResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
+    RejectionResamplerPrecompute& pre) throw (ParticleFilterDegeneratedException) {
+  typename sim_temp_vector<V1>::type as(P);
+  ancestors(rng, lws, as);
+  ancestorsToOffspring(as, os);
 }
 
 #endif

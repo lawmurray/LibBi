@@ -292,7 +292,7 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   } while (iter + 1 != last && !iter->isObserved());
 
   double lW;
-  s.ess = ess_reduce(s.logWeights(), &lW);
+  s.ess = resam.reduce(s.logWeights(), &lW);
   ///@todo Incorrect for MPI
   s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
@@ -322,7 +322,6 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   if (lastResample) {
     int naccept = 0;
     bool accept = false;
-    bool ready = adapter.ready();
 
     for (int p = 0; p < s.size(); ++p) {
       BOOST_AUTO(&s1, *s.s1s[p]);
@@ -333,11 +332,7 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
       for (int move = 0; move < nmoves; ++move) {
         /* propose replacement */
         try {
-          if (ready) {
-            filter.propose(rng, *first, s1, s2, out2, adapter);
-          } else {
-            filter.propose(rng, *first, s1, s2, out2);
-          }
+          filter.propose(rng, *first, s1, s2, out2, adapter);
           if (bi::is_finite(s2.logPrior)) {
             filter.filter(rng, first, last, s2, out2);
           }

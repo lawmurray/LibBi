@@ -71,6 +71,18 @@ template<class V1, class V2>
 static void cumulativeOffspringToAncestorsPermute(const V1 Os, V2 as);
 
 /**
+ * Compute offspring vector from cumulative offspring vector.
+ *
+ * @tparam V1 Integral vector type.
+ * @tparam V2 Integral vector type.
+ *
+ * @param Os Cumulative offspring.
+ * @param[out] os Offspring.
+ */
+template<class V1, class V2>
+static void cumulativeOffspringToOffspring(const V1 Os, V2 os);
+
+/**
  * Permute ancestors to permit in-place copy.
  *
  * @tparam V1 Integral vector type.
@@ -85,6 +97,7 @@ static void permute(V1 as);
 #ifdef __CUDACC__
 #include "../cuda/resampler/ResamplerGPU.cuh"
 #endif
+#include "../primitive/vector_primitive.hpp"
 
 template<class V1, class V2>
 void bi::ancestorsToOffspring(const V1 as, V2 os) {
@@ -135,6 +148,11 @@ void bi::cumulativeOffspringToAncestorsPermute(const V1 Os,
   typedef ResamplerHost impl;
 #endif
   impl::cumulativeOffspringToAncestorsPermute(Os, as);
+}
+
+template<class V1, class V2>
+static void bi::cumulativeOffspringToOffspring(const V1 Os, V2 os) {
+  adjacent_difference(Os, os);
 }
 
 template<class V1>

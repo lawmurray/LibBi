@@ -28,11 +28,6 @@ public:
   GaussianAdapter(const bool local = false, const double scale = 0.25);
 
   /**
-   * Is the <tt>k</tt>th proposal ready?
-   */
-  bool ready(const int k = 0);
-
-  /**
    * Adapt the <tt>k</tt>th proposal.
    */
   template<class M1, class V1>
@@ -94,10 +89,6 @@ inline bi::GaussianAdapter::GaussianAdapter(const bool local,
     const double scale) :
     local(local), scale(scale) {
   //
-}
-
-inline bool bi::GaussianAdapter::ready(const int k) {
-  return true;
 }
 
 template<class M1, class V1>

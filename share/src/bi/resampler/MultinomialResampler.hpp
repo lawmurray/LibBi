@@ -50,6 +50,22 @@ public:
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
       ScanResamplerPrecompute<L>& pre)
           throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Select offspring.
+   *
+   * @tparam V1 Vector type.
+   * @tparam V2 Integer vector type.
+   *
+   * @param[in,out] rng Random number generator.
+   * @param lws Log-weights.
+   * @param P Number of offspring.
+   * @param[out] os Offspring.
+   */
+  template<class V1, class V2, Location L>
+  void offspring(Random& rng, const V1 lws, const int P, V2 os,
+      ScanResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+
 };
 
 /**
@@ -86,6 +102,14 @@ void bi::MultinomialResampler::ancestorsPermute(Random& rng, const V1 lws,
         throw (ParticleFilterDegeneratedException) {
   ancestors(rng, lws, as, pre);
   permute(as);
+}
+
+template<class V1, class V2, bi::Location L>
+void bi::MultinomialResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
+    ScanResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+  typename sim_temp_vector<V1>::type as(P);
+  ancestors(rng, lws, as);
+  ancestorsToOffspring(as, os);
 }
 
 #endif
