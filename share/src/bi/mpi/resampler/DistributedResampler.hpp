@@ -80,10 +80,6 @@ private:
 #include "../../math/temp_matrix.hpp"
 #include "../../math/view.hpp"
 
-#include "boost/mpi/nonblocking.hpp"
-#include "boost/mpi/collectives.hpp"
-
-#include <list>
 
 template<class R>
 bi::DistributedResampler<R>::DistributedResampler(const double essRel) :

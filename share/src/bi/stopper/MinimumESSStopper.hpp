@@ -28,6 +28,13 @@ public:
    */
   bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
+#ifdef ENABLE_MPI
+  /**
+   * @copydoc Stopper::stop
+   */
+  bool distributedStop(const int T, const double threshold, const double maxlw = BI_INF);
+#endif
+
   /**
    * @copydoc Stopper::add(const double, const double)
    */
@@ -57,17 +64,34 @@ private:
 };
 }
 
+#include "../mpi/mpi.hpp"
+
 inline bi::MinimumESSStopper::MinimumESSStopper() :
     sumw(0.0), sumw2(0.0) {
   //
 }
 
-inline bool bi::MinimumESSStopper::stop(const int T, const double threshold, const double maxlw) {
+inline bool bi::MinimumESSStopper::stop(const int T,
+    const double threshold, const double maxlw) {
   double ess = (sumw * sumw) / sumw2;
   double minsumw = bi::exp(maxlw) * (threshold - 1.0) / 2.0;
 
   return (sumw >= minsumw && ess >= threshold);
 }
+
+#ifdef ENABLE_MPI
+inline bool bi::MinimumESSStopper::distributedStop(const int T, \
+    const double threshold, const double maxlw) {
+  boost::mpi::communicator world;
+  double sumw1 = boost::mpi::all_reduce(world, sumw, std::plus<double>());
+  double sumw21 = boost::mpi::all_reduce(world, sumw2, std::plus<double>());
+
+  double ess = (sumw1 * sumw1) / sumw21;
+  double minsumw = bi::exp(maxlw) * (threshold - 1.0) / 2.0;
+
+  return (sumw1 >= minsumw && ess >= threshold);
+}
+#endif
 
 inline void bi::MinimumESSStopper::add(const double lw, const double maxlw) {
   /* pre-condition */

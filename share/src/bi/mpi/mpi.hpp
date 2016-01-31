@@ -11,6 +11,8 @@
 #ifdef ENABLE_MPI
 #include "boost/mpi.hpp"
 #include "boost/mpi/communicator.hpp"
+#include "boost/mpi/nonblocking.hpp"
+#include "boost/mpi/collectives.hpp"
 
 #include <mpi.h>
 #endif

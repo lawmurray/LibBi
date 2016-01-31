@@ -28,6 +28,13 @@ public:
    */
   bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
+#ifdef ENABLE_MPI
+  /**
+   * @copydoc Stopper::stop
+   */
+  bool distributedStop(const int T, const double threshold, const double maxlw = BI_INF);
+#endif
+
   /**
    * @copydoc Stopper::add(const double, const double)
    */
@@ -52,13 +59,25 @@ private:
 };
 }
 
+#include "../mpi/mpi.hpp"
+
 inline bi::VarStopper::VarStopper() : sum(0.0) {
   //
 }
 
-inline bool bi::VarStopper::stop(const int T, const double threshold, const double maxlw) {
+inline bool bi::VarStopper::stop(const int T, const double threshold,
+    const double maxlw) {
   return sum >= T*threshold;
 }
+
+#ifdef ENABLE_MPI
+inline bool bi::VarStopper::distributedStop(const int T,
+    const double threshold, const double maxlw) {
+  boost::mpi::communicator world;
+  double sum1 = boost::mpi::all_reduce(world, sum, std::plus<double>());
+  return sum1 >= T*threshold;
+}
+#endif
 
 inline void bi::VarStopper::add(const double lw, const double maxlw) {
   /* pre-condition */

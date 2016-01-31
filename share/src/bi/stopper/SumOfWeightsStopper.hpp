@@ -28,6 +28,13 @@ public:
    */
   bool stop(const int T, const double threshold, const double maxlw = BI_INF);
 
+#ifdef ENABLE_MPI
+  /**
+   * @copydoc Stopper::stop
+   */
+  bool distributedStop(const int T, const double threshold, const double maxlw = BI_INF);
+#endif
+
   /**
    * @copydoc Stopper::add(const double, const double)
    */
@@ -52,15 +59,29 @@ private:
 };
 }
 
+#include "../mpi/mpi.hpp"
+
 inline bi::SumOfWeightsStopper::SumOfWeightsStopper() : sumw(0.0) {
   //
 }
 
-inline bool bi::SumOfWeightsStopper::stop(const int T, const double threshold, const double maxlw) {
+inline bool bi::SumOfWeightsStopper::stop(const int T,
+    const double threshold, const double maxlw) {
   double minsumw = T * threshold * bi::exp(maxlw);
 
   return sumw >= minsumw;
 }
+
+#ifdef ENABLE_MPI
+inline bool bi::SumOfWeightsStopper::distributedStop(const int T,
+    const double threshold, const double maxlw) {
+  boost::mpi::communicator world;
+  double sumw1 = boost::mpi::all_reduce(world, sumw, std::plus<double>());
+  double minsumw = T * threshold * bi::exp(maxlw);
+
+  return sumw1 >= minsumw;
+}
+#endif
 
 inline void bi::SumOfWeightsStopper::add(const double lw, const double maxlw) {
   /* pre-condition */
