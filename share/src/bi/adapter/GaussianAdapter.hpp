@@ -10,6 +10,8 @@
 
 #include "../random/Random.hpp"
 #include "../misc/exception.hpp"
+#include "../math/vector.hpp"
+#include "../math/matrix.hpp"
 
 namespace bi {
 /**
@@ -28,10 +30,24 @@ public:
   GaussianAdapter(const bool local = false, const double scale = 0.25);
 
   /**
-   * Adapt the <tt>k</tt>th proposal.
+   * Add sample.
+   *
+   * @tparam V1 Vector type.
+   *
+   * @param s State.
+   * @param lw Log-weight.
    */
-  template<class M1, class V1>
-  void adapt(const M1 X, const V1 lws) throw (CholeskyException);
+  template<class S1>
+  void add(const S1& s, const double lw = 0.0);
+
+  /**
+   * Adapt the proposal.
+   */
+  void adapt() throw (CholeskyException);
+
+  #ifdef ENABLE_MPI
+  void distributedAdapt() throw (CholeskyException);
+  #endif
 
   /**
    * Propose.
@@ -48,7 +64,27 @@ public:
   template<class S1, class S2>
   void propose(Random& rng, S1& s1, S2& s2);
 
+  /**
+   * Clear adapter for reuse.
+   */
+  void clear();
+
 private:
+  /**
+   * Accumulated weighted sum of samples.
+   */
+  host_vector<real> smu;
+
+  /**
+   * Accumulated weighted sum of sample cross-products.
+   */
+  host_matrix<real> sSigma;
+
+  /**
+   * Accumulated sum of weights.
+   */
+  double W;
+
   /**
    * Mean.
    */
@@ -81,52 +117,22 @@ private:
 };
 }
 
-#include "../math/operation.hpp"
+#include "../model/Model.hpp"
 #include "../math/constant.hpp"
-#include "../primitive/vector_primitive.hpp"
+#include "../math/scalar.hpp"
 
-inline bi::GaussianAdapter::GaussianAdapter(const bool local,
-    const double scale) :
-    local(local), scale(scale) {
-  //
-}
+template<class S1>
+void bi::GaussianAdapter::add(const S1& s, const double lw) {
+  BOOST_AUTO(theta, vec(s.get(P_VAR)));
+  const int NP = theta.size();
 
-template<class M1, class V1>
-void bi::GaussianAdapter::adapt(const M1 X, const V1 lws)
-    throw (CholeskyException) {
-  typedef typename temp_host_matrix<real>::type temp_matrix_type;
-  typedef typename temp_host_vector<real>::type temp_vector_type;
+  smu.resize(NP, true);
+  sSigma.resize(NP, NP, true);
 
-  const int P = X.size1();
-  const int N = X.size2();
-
-  temp_matrix_type Y(N, P), Z(N, P);
-  temp_vector_type ws(P), vs(P);
-
-  /* weights */
-  expu_elements(lws, ws);
-  sqrt_elements(ws, vs);
-  double W = sum_reduce(ws);
-
-  /* mean */
-  gemv(1.0 / W, X, ws, 0.0, mu);
-
-  /* covariance */
-  Y = X;
-  sub_columns(Y, mu);
-  gdmm(1.0, vs, Y, 0.0, Z, 'R');
-  syrk(1.0 / W, Z, 0.0, Sigma, 'U');
-
-  /* Cholesky factor */
-  chol(Sigma, U);
-
-  /* scale for local moves */
-  if (local) {
-    matrix_scal(scale, U);
-  }
-
-  /* determinant */
-  detU = prod_reduce(diagonal(U));
+  double w = bi::exp(lw);
+  axpy(1.0, theta, smu);
+  syr(1.0, theta, sSigma);
+  W += w;
 }
 
 template<class S1, class S2>

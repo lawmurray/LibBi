@@ -34,6 +34,7 @@ lib_LIBRARIES = libbi.a
 libbi_a_SOURCES = \
   src/bi/bi.cpp \
   src/bi/adapter/AdapterFactory.cpp \
+  src/bi/adapter/GaussianAdapter.cpp \
   src/bi/netcdf/KalmanFilterNetCDFBuffer.cpp \
   src/bi/netcdf/netcdf.cpp \
   src/bi/netcdf/NetCDFBuffer.cpp \

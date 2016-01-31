@@ -21,6 +21,11 @@ public:
    * Constructor.
    */
   DistributedAdapter(const bool local = false, const double scale = 0.25);
+
+  /**
+   * Adapt.
+   */
+  void adapt();
 };
 }
 
@@ -29,6 +34,11 @@ bi::DistributedAdapter<A>::DistributedAdapter(const bool local,
     const double scale) :
     Adapter<A>(local, scale) {
   //
+}
+
+template<class A>
+void bi::DistributedAdapter<A>::adapt() {
+  A::distributedAdapt();
 }
 
 #endif
