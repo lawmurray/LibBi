@@ -258,6 +258,12 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
     s.logWeights()(p) = s1.logLikelihood;
     s.ancestors()(p) = p;
   }
+
+  double lW;
+  s.ess = resam.reduce(s.logWeights(), &lW);
+  s.logLikelihood = lW;
+  s.logIncrements(0) = lW;
+
   out.clear();
 
   lastResample = false;
@@ -293,7 +299,6 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 
   double lW;
   s.ess = resam.reduce(s.logWeights(), &lW);
-  ///@todo Incorrect for MPI
   s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 }
