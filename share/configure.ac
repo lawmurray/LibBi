@@ -147,6 +147,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 # Compiler characteristics
+AC_CHECK_HEADERS([omp.h], [], [openmp=false], [-])
 if test x$openmp = xtrue; then
   AC_OPENMP
 fi
@@ -215,8 +216,6 @@ m4_foreach_w([func], [pow sqrt exp log], [AC_CHECK_FUNC(func, [], \
 
 # Checks for header files
 AC_HEADER_ASSERT
-
-AC_CHECK_HEADERS([omp.h], [], [openmp=false], [-])
 
 AC_CHECK_HEADERS([netcdf.h], [], \
     AC_MSG_ERROR([required NetCDF header not found]), [-])
