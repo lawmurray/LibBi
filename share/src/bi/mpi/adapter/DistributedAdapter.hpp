@@ -23,9 +23,7 @@ public:
   DistributedAdapter(const bool local = false, const double scale = 0.25,
       const double essRel = 0.25);
 
-  /**
-   * Adapt.
-   */
+  bool ready() const;
   void adapt();
 };
 }
