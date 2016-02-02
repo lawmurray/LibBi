@@ -24,7 +24,8 @@ public:
    * Create Gaussian adapter.
    */
   static boost::shared_ptr<DistributedAdapter<GaussianAdapter> > createGaussianAdapter(
-      const bool local = false, const double scale = 0.25);
+      const bool local = false, const double scale = 0.25,
+      const double essRel = 0.25);
 };
 }
 

@@ -26,8 +26,11 @@ public:
    *
    * @param local Use local moves?
    * @param scale Scale factor for standard deviation of local moves.
+   * @param essRel Minimum relative ESS for the adapter to be considered
+   * ready.
    */
-  GaussianAdapter(const bool local = false, const double scale = 0.25);
+  GaussianAdapter(const bool local = false, const double scale = 0.25,
+      const double essRel = 0.25);
 
   /**
    * Add sample.
@@ -41,11 +44,17 @@ public:
   void add(const S1& s, const double lw = 0.0);
 
   /**
+   * Is the proposal ready to adapt?
+   */
+  bool ready() const;
+
+  /**
    * Adapt the proposal.
    */
   void adapt() throw (CholeskyException);
 
   #ifdef ENABLE_MPI
+  bool distributedReady() const;
   void distributedAdapt() throw (CholeskyException);
   #endif
 
@@ -86,6 +95,16 @@ private:
   double W;
 
   /**
+   * Accumulated sum of squared weights.
+   */
+  double W2;
+
+  /**
+   * Accumulated number of samples.
+   */
+  int P;
+
+  /**
    * Mean.
    */
   host_vector<real> mu;
@@ -114,6 +133,11 @@ private:
    * Scale of local moves.
    */
   double scale;
+
+  /**
+   * Minimum relative ESS to be considered ready.
+   */
+  double essRel;
 };
 }
 
@@ -133,6 +157,8 @@ void bi::GaussianAdapter::add(const S1& s, const double lw) {
   axpy(1.0, theta, smu);
   syr(1.0, theta, sSigma);
   W += w;
+  W2 += w*w;
+  ++P;
 }
 
 template<class S1, class S2>

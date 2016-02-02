@@ -42,9 +42,6 @@ public:
    * @param adapter Adapter.
    * @param resam Resampler for theta-particles.
    * @param nmoves Number of steps per \f$\theta\f$-particle.
-   * @param adapter Proposal adaptation strategy.
-   * @param adapterScale Scaling factor for local proposals.
-   * @param out Output.
    */
   MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1);
 
@@ -270,15 +267,12 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
   lastAcceptRate = 0.0;
 }
 
-#include "../math/io.hpp"
-
 template<class B, class F, class A, class R>
 template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
   ScheduleIterator iter1;
   do {
-    adapt(s);
     resample(rng, *iter, s);
     rejuvenate(rng, first, iter + 1, s);
     report(*iter, s);
@@ -327,6 +321,10 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
   if (lastResample) {
     int naccept = 0;
     bool accept = false;
+    bool ready = adapter.ready();
+    if (ready) {
+      adapt(s);
+    }
 
     for (int p = 0; p < s.size(); ++p) {
       BOOST_AUTO(&s1, *s.s1s[p]);
@@ -337,7 +335,11 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
       for (int move = 0; move < nmoves; ++move) {
         /* propose replacement */
         try {
-          filter.propose(rng, *first, s1, s2, out2, adapter);
+          if (ready) {
+            filter.propose(rng, *first, s1, s2, out2, adapter);
+          } else {
+            filter.propose(rng, *first, s1, s2, out2);
+          }
           if (bi::is_finite(s2.logPrior)) {
             filter.filter(rng, first, last, s2, out2);
           }

@@ -11,9 +11,13 @@
 #include "../primitive/vector_primitive.hpp"
 
 bi::GaussianAdapter::GaussianAdapter(const bool local,
-    const double scale) :
-    local(local), scale(scale) {
+    const double scale, const double essRel) :
+    local(local), scale(scale), essRel(essRel) {
   clear();
+}
+
+bool bi::GaussianAdapter::ready() const {
+  return W*W/W2 > essRel*P;
 }
 
 void bi::GaussianAdapter::adapt() throw (CholeskyException) {
@@ -41,6 +45,15 @@ void bi::GaussianAdapter::adapt() throw (CholeskyException) {
 }
 
 #ifdef ENABLE_MPI
+bool bi::GaussianAdapter::distributedReady() const {
+  boost::mpi::communicator world;
+  double W1 = boost::mpi::all_reduce(world, W, std::plus<double>());
+  double W21 = boost::mpi::all_reduce(world, W2, std::plus<double>());
+  double P1 = boost::mpi::all_reduce(world, P, std::plus<int>());
+
+  return W1*W1/W21 > essRel*P1;
+}
+
 void bi::GaussianAdapter::distributedAdapt() throw (CholeskyException) {
   const int NP = smu.size();
 
@@ -84,4 +97,6 @@ void bi::GaussianAdapter::clear() {
   smu.clear();
   sSigma.clear();
   W = 0.0;
+  W2 = 0.0;
+  P = 0;
 }

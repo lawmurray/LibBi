@@ -18,13 +18,15 @@ public:
   /**
    * Constructor.
    */
-  Adapter(const bool local = false, const double scale = 0.25);
+  Adapter(const bool local = false, const double scale = 0.25,
+      const double essRel = 0.25);
 };
 }
 
 template<class A>
-bi::Adapter<A>::Adapter(const bool local, const double scale) :
-    A(local, scale) {
+bi::Adapter<A>::Adapter(const bool local, const double scale,
+    const double essRel) :
+    A(local, scale, essRel) {
   //
 }
 

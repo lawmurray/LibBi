@@ -242,9 +242,9 @@ int main(int argc, char* argv[]) {
   #define SAMPLER_ADAPTER_FACTORY AdapterFactory
   #endif
   [% IF client.get_named_arg('adapter') == 'local' %]
-  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(true, ADAPTER_SCALE)));
+  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(true, ADAPTER_SCALE, ADAPTER_ESS_REL)));
   [% ELSE %]
-  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(false, ADAPTER_SCALE)));
+  BOOST_AUTO(sampleAdapter, (SAMPLER_ADAPTER_FACTORY::createGaussianAdapter(false, ADAPTER_SCALE, ADAPTER_ESS_REL)));
   [% END %]
   
   /* client/server setup */

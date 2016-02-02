@@ -20,7 +20,8 @@ public:
   /**
    * Constructor.
    */
-  DistributedAdapter(const bool local = false, const double scale = 0.25);
+  DistributedAdapter(const bool local = false, const double scale = 0.25,
+      const double essRel = 0.25);
 
   /**
    * Adapt.
@@ -31,9 +32,14 @@ public:
 
 template<class A>
 bi::DistributedAdapter<A>::DistributedAdapter(const bool local,
-    const double scale) :
-    Adapter<A>(local, scale) {
+    const double scale, const double essRel) :
+    Adapter<A>(local, scale, essRel) {
   //
+}
+
+template<class A>
+bool bi::DistributedAdapter<A>::ready() const {
+  return A::distributedReady();
 }
 
 template<class A>
