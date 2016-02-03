@@ -218,6 +218,7 @@ template<class Archive>
 void bi::BootstrapPFState<B,L>::save(Archive& ar,
     const unsigned version) const {
   ar & boost::serialization::base_object < FilterState<B,L> > (*this);
+  ar & ess;
   save_resizable_vector(ar, version, lws);
   save_resizable_vector(ar, version, as);
 }
@@ -226,6 +227,7 @@ template<class B, bi::Location L>
 template<class Archive>
 void bi::BootstrapPFState<B,L>::load(Archive& ar, const unsigned version) {
   ar & boost::serialization::base_object < FilterState<B,L> > (*this);
+  ar & ess;
   load_resizable_vector(ar, version, lws);
   load_resizable_vector(ar, version, as);
 }

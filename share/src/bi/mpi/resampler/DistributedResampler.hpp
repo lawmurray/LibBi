@@ -56,7 +56,7 @@ private:
    * @param[in,out] X Matrix of particles in this process.
    */
   template<class M1, class O1>
-  static void redistribute(M1 O, O1& s);
+  void redistribute(M1 O, O1& s);
 
   /**
    * @name Timing
@@ -156,7 +156,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
       R::precompute(vec(Lws), pre);
       R::offspring(rng, vec(Lws), P * size, vec(O), pre);
     }
-    boost::mpi::broadcast(world, O, 0);
+    boost::mpi::broadcast(world, O.buf(), P*size, 0);
 
 #if ENABLE_DIAGNOSTICS == 2
     long usecs = clock.toc();
