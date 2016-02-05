@@ -64,6 +64,10 @@ int main(int argc, char* argv[]) {
   const int rank = world.rank();
   const int size = world.size();
   NPARTICLES /= size;
+  if (size > 1) {
+  	OUTPUT_FILE += ".";
+  	OUTPUT_FILE += rank;
+  }
   #else
   const int rank = 0;
   const int size = 1;
