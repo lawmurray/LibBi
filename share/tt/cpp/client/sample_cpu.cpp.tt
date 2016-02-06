@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
   NPARTICLES /= size;
   if (size > 1) {
   	OUTPUT_FILE += ".";
-  	OUTPUT_FILE += rank;
+  	OUTPUT_FILE += std::to_string(rank);
   }
   //TreeNetworkNode node;
   #else
