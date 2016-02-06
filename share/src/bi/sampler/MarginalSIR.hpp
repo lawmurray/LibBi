@@ -181,7 +181,7 @@ private:
    * Step for instrumentation.
    */
   enum Step {
-    INIT, ADAPT, RESAMPLE, MOVE, STEP, TERM
+    INIT, RESAMPLE, MOVE, STEP, ADAPT, TERM
   };
 
   /**
