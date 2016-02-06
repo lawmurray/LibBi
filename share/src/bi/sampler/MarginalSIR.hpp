@@ -510,10 +510,11 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
     boost::mpi::reduce(world, lastTotal, ntotal, std::plus<int>(), 0);
 #endif
     if (rank == 0) {
-      std::cerr << "\tmoves " << ntotal << "\taccepts " << naccept
-      std::cerr << now.indexOutput() << ":\ttime " << now.getTime()
-          << "\tESS " << s.ess;
-      << "\trate " << double(naccept) / ntotal;
+      std::cerr << now.indexOutput() << ":\ttime " << now.getTime();
+      std::cerr << "\tESS " << s.ess;
+      std::cerr << "\tmoves " << ntotal;
+      std::cerr << "\taccepts " << naccept;
+      std::cerr << "\trate " << (double(naccept) / ntotal);
       std::cerr << std::endl;
     }
   }
