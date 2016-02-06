@@ -486,12 +486,6 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
       s.logWeights()(p % s.size()) = -BI_INF;
     }
 
-#ifdef ENABLE_MPI
-    boost::mpi::communicator world;
-    const int rank = world.rank();
-    boost::mpi::all_reduce(world, &ntotal, 1, &ntotal, std::plus<int>());
-    boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
-#endif
     lastAccept = naccept;
     lastTotal = ntotal;
   }
@@ -506,19 +500,22 @@ void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
-#ifdef ENABLE_MPI
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-#else
-  const int rank = 0;
-#endif
+  int rank = 0;
+  int naccept = lastAccept;
+  int ntotal = lastTotal;
 
   if (rank == 0) {
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
         << s.ess;
     if (lastResample) {
-      std::cerr << "\tmoves " << lastTotal << "\taccepts " << lastAccept
-          << "\trate " << double(lastAccept) / lastTotal;
+      #ifdef ENABLE_MPI
+      boost::mpi::communicator world;
+      rank = world.rank();
+      boost::mpi::reduce(world, naccept, naccept, std::plus<int>(), 0);
+      boost::mpi::reduce(world, ntotal, ntotal, std::plus<int>(), 0);
+      #endif
+      std::cerr << "\tmoves " << ntotal << "\taccepts " << naccept
+          << "\trate " << double(naccept) / ntotal;
     }
     std::cerr << std::endl;
   }
