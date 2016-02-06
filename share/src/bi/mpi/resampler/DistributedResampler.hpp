@@ -120,18 +120,18 @@ template<class S1>
 bool bi::DistributedResampler<R>::resample(Random& rng,
     const ScheduleElement now, S1& s)
         throw (ParticleFilterDegeneratedException) {
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+  const int P = s.size();
+
   bool r = (now.isObserved() || now.hasBridge())
-      && s.ess < this->essRel * s.size();
+      && s.ess < this->essRel * s.size()*P;
   if (r) {
 #if ENABLE_DIAGNOSTICS == 2
     synchronize();
     TicToc clock;
 #endif
-
-    boost::mpi::communicator world;
-    const int rank = world.rank();
-    const int size = world.size();
-    const int P = s.size();
 
     typename temp_host_matrix<real>::type Lws(P, size);
     typename temp_host_matrix<int>::type O(P, size);
