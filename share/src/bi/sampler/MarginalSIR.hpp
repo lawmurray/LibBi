@@ -11,7 +11,11 @@
 
 #include "../state/Schedule.hpp"
 #include "../misc/exception.hpp"
+#include "../misc/TicToc.hpp"
 #include "../primitive/vector_primitive.hpp"
+
+#include <fstream>
+#include <sstream>
 
 namespace bi {
 /**
@@ -119,7 +123,7 @@ public:
   void resample(Random& rng, const ScheduleElement now, S1& s);
 
   /**
-   * Rejuvenate \f$\theta\f$-particles.
+   * Move \f$\theta\f$-particles.
    *
    * @tparam S1 State type.
    *
@@ -129,7 +133,7 @@ public:
    * @param[in,out] s State.
    */
   template<class S1>
-  void rejuvenate(Random& rng, const ScheduleIterator first,
+  void move(Random& rng, const ScheduleIterator first,
       const ScheduleIterator now, S1& s);
 
   /**
@@ -162,6 +166,43 @@ public:
   //@}
 
 private:
+#if ENABLE_DIAGNOSTICS == 4
+  /**
+   * Start of end of step for instrumentation.
+   */
+  enum StartOrEnd {
+    START,
+    END
+  };
+
+  /**
+   * Step for instrumentation.
+   */
+  enum Step {
+    INIT,
+    ADAPT,
+    RESAMPLE,
+    MOVE,
+    STEP,
+    TERM
+  };
+
+  /**
+   * Clock.
+   */
+  TicToc clock;
+
+  /**
+   * Log file.
+   */
+  std::ofstream logFile;
+#endif
+
+  /**
+   * Profiling output.
+   */
+  void profile(const StartOrEnd startOrEnd, const Step step);
+
   /**
    * Model.
    */
@@ -193,20 +234,39 @@ private:
   bool lastResample;
 
   /**
+   * Is the adapter ready?
+   */
+  bool adapterReady;
+
+  /**
    * Last acceptance rate when rejuvenating.
    */
   double lastAcceptRate;
 };
 }
 
-#include <sstream>
 
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), lastResample(
-        false), lastAcceptRate(0.0) {
-  //
+        false), adapterReady(false), lastAcceptRate(0.0) {
+#if ENABLE_DIAGNOSTICS == 4
+#ifdef ENABLE_MPI
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+#else
+  const int rank = 0;
+  const int size = 1;
+#endif
+  std::stringstream buf;
+  buf << "sir.log";
+  if (size > 1) {
+    buf << "." << rank;
+  }
+  logFile.open(buf.str().c_str());
+#endif
 }
 
 template<class B, class F, class A, class R>
@@ -216,7 +276,9 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const int C, IO1& out, IO2& inInit) {
   // should look very similar to Filter::filter()
   ScheduleIterator iter = first;
+  profile(START, INIT);
   init(rng, iter, s, out, inInit);
+  profile(END, INIT);
 #if ENABLE_DIAGNOSTICS == 3
   std::stringstream buf;
   buf << "sir" << iter->indexOutput() << ".nc";
@@ -225,7 +287,19 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   outtmp.flush();
 #endif
   while (iter + 1 != last) {
+    profile(START, ADAPT);
+    adapt(s);
+    profile(END, ADAPT);
+    profile(START, RESAMPLE);
+    resample(rng, *iter, s);
+    profile(END, RESAMPLE);
+    profile(START, MOVE);
+    move(rng, first, iter + 1, s);
+    profile(END, MOVE);
+    report(*iter, s);
+    profile(START, STEP);
     step(rng, first, iter, last, s, out);
+    profile(END, STEP);
 #if ENABLE_DIAGNOSTICS == 3
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
@@ -234,7 +308,9 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     outtmp.flush();
 #endif
   }
+  profile(START, TERM);
   term(rng, s);
+  profile(END, TERM);
   reportT(*iter);
   outputT(s, out);
 }
@@ -264,6 +340,7 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
   out.clear();
 
   lastResample = false;
+  adapterReady = false;
   lastAcceptRate = 0.0;
 }
 
@@ -273,23 +350,19 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
   ScheduleIterator iter1;
   do {
-    resample(rng, *iter, s);
-    rejuvenate(rng, first, iter + 1, s);
-    report(*iter, s);
-
     for (int p = 0; p < s.size(); ++p) {
       BOOST_AUTO(&s1, *s.s1s[p]);
       BOOST_AUTO(&out1, *s.out1s[p]);
 
       iter1 = iter;
       filter.step(rng, iter1, last, s1, out1);
-#if ENABLE_DIAGNOSTICS == 3
-      filter.samplePath(rng, s1, out1);
-#endif
       s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
     }
     iter = iter1;
   } while (iter + 1 != last && !iter->isObserved());
+#if ENABLE_DIAGNOSTICS == 3
+  filter.samplePath(rng, s1, out1);
+#endif
 
   double lW;
   s.ess = resam.reduce(s.logWeights(), &lW);
@@ -300,11 +373,14 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::adapt(const S1& s) {
-  adapter.clear();
-  for (int p = 0; p < s.size(); ++p) {
-    adapter.add(*s.s1s[p]);
+  adapterReady = adapter.ready();
+  if (adapterReady) {
+    adapter.clear();
+    for (int p = 0; p < s.size(); ++p) {
+      adapter.add(*s.s1s[p]);
+    }
+    adapter.adapt();
   }
-  adapter.adapt();
 }
 
 template<class B, class F, class A, class R>
@@ -316,16 +392,11 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
 
 template<class B, class F, class A, class R>
 template<class S1>
-void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
-    const ScheduleIterator first, const ScheduleIterator last, S1& s) {
+void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
+    const ScheduleIterator last, S1& s) {
   if (lastResample) {
     int naccept = 0;
     bool accept = false;
-    bool ready = adapter.ready();
-    if (ready) {
-      adapt(s);
-    }
-
     for (int p = 0; p < s.size(); ++p) {
       BOOST_AUTO(&s1, *s.s1s[p]);
       BOOST_AUTO(&out1, *s.out1s[p]);
@@ -335,7 +406,7 @@ void bi::MarginalSIR<B,F,A,R>::rejuvenate(Random& rng,
       for (int move = 0; move < nmoves; ++move) {
         /* propose replacement */
         try {
-          if (ready) {
+          if (adapterReady) {
             filter.propose(rng, *first, s1, s2, out2, adapter);
           } else {
             filter.propose(rng, *first, s1, s2, out2);
@@ -442,6 +513,19 @@ void bi::MarginalSIR<B,F,A,R>::term(Random& rng, S1& s) {
     BOOST_AUTO(&out1, *s.out1s[p]);
     filter.samplePath(rng, s1, out1);
   }
+}
+
+template<class B, class F, class A, class R>
+void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd, const Step step) {
+#if ENABLE_DIAGNOSTICS == 4
+  if (startOrEnd == START) {
+    clock.sync();
+  }
+  if (step == INIT) {
+    clock.tic();
+  }
+  logFile << step << ',' << clock.toc() << std::endl;
+#endif
 }
 
 #endif

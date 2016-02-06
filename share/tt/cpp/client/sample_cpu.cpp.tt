@@ -71,6 +71,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <getopt.h>
 
@@ -97,8 +98,9 @@ int main(int argc, char* argv[]) {
   const int size = world.size();
   NPARTICLES /= size;
   if (size > 1) {
-  	OUTPUT_FILE += ".";
-  	OUTPUT_FILE += std::to_string(rank);
+    std::stringstream suffix;
+    suffix << "." << rank;
+    OUTPUT_FILE += suffix.str();
   }
   //TreeNetworkNode node;
   #else

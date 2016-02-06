@@ -41,12 +41,16 @@ public:
    */
   void sync();
 
+  /**
+   * Return absolute time.
+   */
+  long time();
+
 private:
   /**
    * Time of last call to tic().
    */
   timeval start;
-
 };
 
 }
@@ -75,6 +79,13 @@ inline void bi::TicToc::sync() {
   boost::mpi::communicator world;
   world.barrier();
   #endif
+}
+
+inline long bi::TicToc::time() {
+  timeval now;
+  gettimeofday(&now, NULL);
+
+  return now.tv_sec*1e6 + now.tv_usec;
 }
 
 #endif
