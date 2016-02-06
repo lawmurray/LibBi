@@ -500,24 +500,22 @@ void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
-  int rank = 0;
-  int naccept = lastAccept;
-  int ntotal = lastTotal;
+  if (lastResample) {
+    int rank = 0, naccept = lastAccept, ntotal = lastTotal;
 
-  if (rank == 0) {
-    std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
-        << s.ess;
-    if (lastResample) {
-      #ifdef ENABLE_MPI
-      boost::mpi::communicator world;
-      rank = world.rank();
-      boost::mpi::reduce(world, naccept, naccept, std::plus<int>(), 0);
-      boost::mpi::reduce(world, ntotal, ntotal, std::plus<int>(), 0);
-      #endif
+#ifdef ENABLE_MPI
+    boost::mpi::communicator world;
+    rank = world.rank();
+    boost::mpi::reduce(world, lastAccept, naccept, std::plus<int>(), 0);
+    boost::mpi::reduce(world, lastTotal, ntotal, std::plus<int>(), 0);
+#endif
+    if (rank == 0) {
       std::cerr << "\tmoves " << ntotal << "\taccepts " << naccept
-          << "\trate " << double(naccept) / ntotal;
+      std::cerr << now.indexOutput() << ":\ttime " << now.getTime()
+          << "\tESS " << s.ess;
+      << "\trate " << double(naccept) / ntotal;
+      std::cerr << std::endl;
     }
-    std::cerr << std::endl;
   }
 }
 
