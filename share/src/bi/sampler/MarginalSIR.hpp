@@ -524,7 +524,11 @@ void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd, const Step s
   if (step == INIT) {
     clock.tic();
   }
-  logFile << step << ',' << clock.toc() << std::endl;
+  if (startOrEnd == START) {
+    logFile << step << ',' << clock.toc();
+  } else {
+    logFile << ',' << clock.toc() << std::endl;
+  }
 #endif
 }
 
