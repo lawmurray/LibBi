@@ -45,9 +45,12 @@ public:
    * @param filter Filter.
    * @param adapter Adapter.
    * @param resam Resampler for theta-particles.
-   * @param nmoves Number of steps per \f$\theta\f$-particle.
+   * @param nmoves Number of move steps per \f$\theta\f$-particle after each
+   * resample.
+   * @param tmoves Total real time allocated to move steps.
    */
-  MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1);
+  MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1,
+      const double tmoves = 0.0);
 
   /**
    * @name High-level interface
@@ -224,9 +227,14 @@ private:
   R& resam;
 
   /**
-   * Number of PMMH steps when rejuvenating.
+   * Number of PMMH steps when moving.
    */
   int nmoves;
+
+  /**
+   * Total real time allocated to move steps.
+   */
+  double tmoves;
 
   /**
    * Was a resample performed on the last step?
@@ -239,18 +247,17 @@ private:
   bool adapterReady;
 
   /**
-   * Last acceptance rate when rejuvenating.
+   * Last acceptance rate when moving.
    */
   double lastAcceptRate;
 };
 }
 
-
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
-    const int nmoves) :
-    m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), lastResample(
-        false), adapterReady(false), lastAcceptRate(0.0) {
+    const int nmoves, const double tmoves) :
+    m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
+        tmoves), lastResample(false), adapterReady(false), lastAcceptRate(0.0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -516,7 +523,8 @@ void bi::MarginalSIR<B,F,A,R>::term(Random& rng, S1& s) {
 }
 
 template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd, const Step step) {
+void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd,
+    const Step step) {
 #if ENABLE_DIAGNOSTICS == 4
   if (startOrEnd == START) {
     clock.sync();

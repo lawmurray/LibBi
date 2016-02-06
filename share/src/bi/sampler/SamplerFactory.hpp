@@ -34,7 +34,8 @@ public:
    */
   template<class B, class F, class A, class R>
   static boost::shared_ptr<MarginalSIR<B,F,A,R> > createMarginalSIR(B& m,
-      F& mmh, A& adapter, R& resam, const int Nmoves = 1);
+      F& mmh, A& adapter, R& resam, const int nmoves = 1,
+      const double tmoves = 0.0);
 
   /**
    * Create marginal sequential rejection sampler.
@@ -48,19 +49,23 @@ public:
 template<class B, class F>
 boost::shared_ptr<bi::MarginalMH<B,F> > bi::SamplerFactory::createMarginalMH(
     B& m, F& filter) {
-  return boost::shared_ptr<MarginalMH<B,F> >(new MarginalMH<B,F>(m, filter));
+  return boost::shared_ptr < MarginalMH<B,F>
+      > (new MarginalMH<B,F>(m, filter));
 }
 
 template<class B, class F, class A, class R>
 boost::shared_ptr<bi::MarginalSIR<B,F,A,R> > bi::SamplerFactory::createMarginalSIR(
-    B& m, F& mmh, A& adapter, R& resam, const int Nmoves) {
-  return boost::shared_ptr<MarginalSIR<B,F,A,R> >(new MarginalSIR<B,F,A,R>(m, mmh, adapter, resam, Nmoves));
+    B& m, F& mmh, A& adapter, R& resam, const int nmoves,
+    const double tmoves) {
+  return boost::shared_ptr < MarginalSIR<B,F,A,R>
+      > (new MarginalSIR<B,F,A,R>(m, mmh, adapter, resam, nmoves, tmoves));
 }
 
 template<class B, class F, class A, class S>
 boost::shared_ptr<bi::MarginalSIS<B,F,A,S> > bi::SamplerFactory::createMarginalSIS(
     B& m, F& filter, A& adapter, S& stopper) {
-  return boost::shared_ptr<MarginalSIS<B,F,A,S> >(new MarginalSIS<B,F,A,S>(m, filter, adapter, stopper));
+  return boost::shared_ptr < MarginalSIS<B,F,A,S>
+      > (new MarginalSIS<B,F,A,S>(m, filter, adapter, stopper));
 }
 
 #endif

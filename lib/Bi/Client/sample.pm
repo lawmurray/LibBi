@@ -102,7 +102,14 @@ Number of samples to draw.
 
 =item C<--nmoves> (default 1)
 
-Number of MH steps to perform after each resample.
+Number of move steps to perform after each resample.
+ 
+=item C<--tmoves> (default 0.0)
+ 
+Overall (approximate) real time, in seconds, to allocate to move steps. If
+positive, C<--nmoves> and C<--sample-ess-rel> are ignored. Resampling is
+performed after each step, and the number of moves subsequently made becomes
+a random variable dependent on C<--tmoves>.
 
 =item C<--sample-resampler> (default C<systematic>)
 
@@ -184,17 +191,22 @@ our @CLIENT_OPTIONS = (
     {
       name => 'conditional-pf',
       type => 'int',
-      default => '0'
+      default => 0
     },
     {
       name => 'joint-adaptation',
       type => 'int',
-      default => '0'
+      default => 0
     },
-        {
+    {
       name => 'nmoves',
       type => 'int',
-      default => '1'
+      default => 1
+    },
+    {
+      name => 'tmoves',
+      type => 'float',
+      default => 0.0
     },
     {
       name => 'sample-resampler',
