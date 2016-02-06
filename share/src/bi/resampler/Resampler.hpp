@@ -117,6 +117,16 @@ inline bi::Resampler<R>::Resampler(const double essRel) :
 }
 
 template<class R>
+inline double bi::Resampler<R>::getEssRel() const {
+  return essRel;
+}
+
+template<class R>
+inline void bi::Resampler<R>::setEssRel(const double essRel) {
+  this->essRel = essRel;
+}
+
+template<class R>
 inline double bi::Resampler<R>::getMaxLogWeight() const {
   return maxLogWeight;
 }

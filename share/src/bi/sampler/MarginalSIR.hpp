@@ -132,12 +132,13 @@ public:
    *
    * @param[in,out] rng Random number generator.
    * @param first Start of time schedule.
-   * @param now Current position in time schedule.
+   * @param iter Current position in time schedule.
+   * @param last End of time schedule.
    * @param[in,out] s State.
    */
   template<class S1>
   void move(Random& rng, const ScheduleIterator first,
-      const ScheduleIterator now, S1& s);
+      const ScheduleIterator iter, const ScheduleIterator now, S1& s);
 
   /**
    * @copydoc Simulator::outputT()
@@ -169,42 +170,31 @@ public:
   //@}
 
 private:
-#if ENABLE_DIAGNOSTICS == 4
   /**
    * Start of end of step for instrumentation.
    */
   enum StartOrEnd {
-    START,
-    END
+    START, END
   };
 
   /**
    * Step for instrumentation.
    */
   enum Step {
-    INIT,
-    ADAPT,
-    RESAMPLE,
-    MOVE,
-    STEP,
-    TERM
+    INIT, ADAPT, RESAMPLE, MOVE, STEP, TERM
   };
-
-  /**
-   * Clock.
-   */
-  TicToc clock;
-
-  /**
-   * Log file.
-   */
-  std::ofstream logFile;
-#endif
 
   /**
    * Profiling output.
    */
   void profile(const StartOrEnd startOrEnd, const Step step);
+
+#if ENABLE_DIAGNOSTICS == 4
+  /**
+   * Log file.
+   */
+  std::ofstream logFile;
+#endif
 
   /**
    * Model.
@@ -227,6 +217,11 @@ private:
   R& resam;
 
   /**
+   * Clock.
+   */
+  TicToc clock;
+
+  /**
    * Number of PMMH steps when moving.
    */
   int nmoves;
@@ -247,9 +242,14 @@ private:
   bool adapterReady;
 
   /**
-   * Last acceptance rate when moving.
+   * Last number of acceptances when move.
    */
-  double lastAcceptRate;
+  int lastAccept;
+
+  /**
+   * Last total number of moves.
+   */
+  int lastTotal;
 };
 }
 
@@ -257,7 +257,8 @@ template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-        tmoves), lastResample(false), adapterReady(false), lastAcceptRate(0.0) {
+        tmoves), lastResample(false), adapterReady(false), lastAccept(0), lastTotal(
+        0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -274,6 +275,14 @@ bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
   }
   logFile.open(buf.str().c_str());
 #endif
+
+  if (tmoves > 0.0) {
+    /* always resample */
+    resam.setEssRel(1.0);
+
+    /* one move at a time */
+    this->nmoves = 1;
+  }
 }
 
 template<class B, class F, class A, class R>
@@ -301,7 +310,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     resample(rng, *iter, s);
     profile(END, RESAMPLE);
     profile(START, MOVE);
-    move(rng, first, iter + 1, s);
+    move(rng, first, iter, last, s);
     profile(END, MOVE);
     report(*iter, s);
     profile(START, STEP);
@@ -348,7 +357,8 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
 
   lastResample = false;
   adapterReady = false;
-  lastAcceptRate = 0.0;
+  lastAccept = 0;
+  lastTotal = 0;
 }
 
 template<class B, class F, class A, class R>
@@ -400,13 +410,22 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
-    const ScheduleIterator last, S1& s) {
+    const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
   if (lastResample) {
+    /* compute budget */
+    double milestone = tmoves * 1.0e6
+        * bi::pow((iter + 2)->getTo() - first->getFrom(), 1.8)
+        / bi::pow(last->getTo() - first->getFrom(), 1.8);
     int naccept = 0;
+    int ntotal = 0;
+    int p = 0;
     bool accept = false;
-    for (int p = 0; p < s.size(); ++p) {
-      BOOST_AUTO(&s1, *s.s1s[p]);
-      BOOST_AUTO(&out1, *s.out1s[p]);
+    bool complete = (tmoves <= 0.0 && p >= s.size())
+        || (tmoves > 0.0 && clock.toc() >= milestone);
+
+    while (!complete) {
+      BOOST_AUTO(&s1, *s.s1s[p % s.size()]);
+      BOOST_AUTO(&out1, *s.out1s[p % s.size()]);
       BOOST_AUTO(&s2, s.s2);
       BOOST_AUTO(&out2, s.out2);
 
@@ -419,7 +438,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
             filter.propose(rng, *first, s1, s2, out2);
           }
           if (bi::is_finite(s2.logPrior)) {
-            filter.filter(rng, first, last, s2, out2);
+            filter.filter(rng, first, iter + 1, s2, out2);
           }
         } catch (CholeskyException e) {
           s2.logLikelihood = -BI_INF;
@@ -456,16 +475,25 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
           ++naccept;
         }
       }
+      ++p;
+      ++ntotal;
+      complete = (tmoves <= 0.0 && p >= s.size())
+          || (tmoves > 0.0 && clock.toc() >= milestone);
     }
 
-    int ntotal = nmoves * s.size();
+    if (tmoves > 0.0) {
+      /* particle moving when time elapsed must be eliminated */
+      s.logWeights()(p % s.size()) = -BI_INF;
+    }
+
 #ifdef ENABLE_MPI
     boost::mpi::communicator world;
     const int rank = world.rank();
     boost::mpi::all_reduce(world, &ntotal, 1, &ntotal, std::plus<int>());
     boost::mpi::all_reduce(world, &naccept, 1, &naccept, std::plus<int>());
 #endif
-    lastAcceptRate = double(naccept) / ntotal;
+    lastAccept = naccept;
+    lastTotal = ntotal;
   }
 }
 
@@ -489,7 +517,8 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime() << "\tESS "
         << s.ess;
     if (lastResample) {
-      std::cerr << "\tresample-move with acceptance rate " << lastAcceptRate;
+      std::cerr << "\tmoves " << lastTotal << "\taccepts " << lastAccept
+          << "\trate " << double(lastAccept) / lastTotal;
     }
     std::cerr << std::endl;
   }
@@ -529,9 +558,11 @@ void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd,
   if (startOrEnd == START) {
     clock.sync();
   }
-  if (step == INIT) {
+#endif
+  if (startOrEnd == START && step == INIT) {
     clock.tic();
   }
+#if ENABLE_DIAGNOSTICS == 4
   if (startOrEnd == START) {
     logFile << step << ',' << clock.toc();
   } else {
