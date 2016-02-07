@@ -127,7 +127,6 @@ bool bi::GaussianAdapter::adapt(const S1& s) {
         row(X, p) = vec(s.s1s[p]->get(P_VAR));
       }
       expu_elements(s.logWeights(), ws);
-      const double W = sum_reduce(ws);
 
       /* mean */
       mu.resize(NP);
@@ -178,7 +177,6 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
         row(X, p) = vec(s.s1s[p]->get(P_VAR));
       }
       expu_elements(s.logWeights(), ws);
-      const double W = sum_reduce(ws);
 
       /* mean */
       mu.resize(NP);
@@ -210,8 +208,10 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
       /* determinant */
       detU = prod_reduce(diagonal(U));
 
-      std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
-          << ')' << std::endl;
+      if (rank == 0) {
+        std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
+              << ')' << std::endl;
+      }
     } catch (CholeskyException e) {
       ready = false;
     }
@@ -225,18 +225,22 @@ void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
   BOOST_AUTO(theta1, vec(s1.get(P_VAR)));
   BOOST_AUTO(theta2, vec(s2.get(PY_VAR)));
 
+  typename temp_host_vector<real>::type htheta1(theta1), htheta2(theta2);
   const int N = theta1.size();
 
-  rng.gaussians(theta2);
-  s2.logProposal = -0.5 * dot(theta2) - N * BI_HALF_LOG_TWO_PI
+  rng.gaussians(htheta2);
+  s2.logProposal = -0.5 * dot(htheta2) - N * BI_HALF_LOG_TWO_PI
       - bi::log(detU);
   s1.logProposal = s2.logProposal;  // symmetric
-  trmv(U, theta2, 'U', 'T');
+  trmv(U, htheta2, 'U', 'T');
   if (local) {
-    axpy(1.0, theta1, theta2);
+    axpy(1.0, htheta1, htheta2);
   } else {
-    axpy(1.0, mu, theta2);
+    axpy(1.0, mu, htheta2);
   }
+
+  theta1 = htheta1;
+  theta2 = htheta2;
 }
 
 #endif
