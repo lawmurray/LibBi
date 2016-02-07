@@ -108,7 +108,7 @@ template<class V1, class V2, bi::Location L>
 void bi::MultinomialResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
     ScanResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
   typename sim_temp_vector<V1>::type as(P);
-  ancestors(rng, lws, as);
+  ancestors(rng, lws, as, pre);
   ancestorsToOffspring(as, os);
 }
 

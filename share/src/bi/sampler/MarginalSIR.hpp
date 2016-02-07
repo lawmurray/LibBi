@@ -232,6 +232,11 @@ private:
   double tmoves;
 
   /**
+   * Total time taken for init step.
+   */
+  double tinit;
+  
+  /**
    * Was a resample performed on the last step?
    */
   bool lastResample;
@@ -257,8 +262,8 @@ template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-        tmoves), lastResample(false), adapterReady(false), lastAccept(0), lastTotal(
-        0) {
+    tmoves), tinit(0.0), lastResample(false), adapterReady(false), lastAccept(0),
+    lastTotal(0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -413,9 +418,9 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
   if (lastResample) {
     /* compute budget */
-    double milestone = tmoves * 1.0e6
-        * bi::pow((iter + 2)->getTo() - first->getFrom(), 1.8)
-        / bi::pow(last->getTo() - first->getFrom(), 1.8);
+    double milestone = tinit + (tmoves - tinit) * 1.0e6
+        * bi::pow((iter + 2)->getTo() - first->getFrom(), 2.0)
+        / bi::pow(last->getTo() - first->getFrom(), 2.0);
     int naccept = 0;
     int ntotal = 0;
     int p = 0;
@@ -423,6 +428,8 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     bool complete = (tmoves <= 0.0 && p >= s.size())
         || (tmoves > 0.0 && clock.toc() >= milestone);
 
+    std::cerr << "milestone " << milestone/1e6 << "\tcurrent " << clock.toc()/1e6 << std::endl;
+    
     while (!complete) {
       BOOST_AUTO(&s1, *s.s1s[p % s.size()]);
       BOOST_AUTO(&out1, *s.out1s[p % s.size()]);
@@ -555,8 +562,12 @@ void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd,
     clock.sync();
   }
 #endif
-  if (startOrEnd == START && step == INIT) {
-    clock.tic();
+  if (step == INIT) {
+    if (startOrEnd == START) {
+      clock.tic();
+    } else {
+      tinit = clock.toc()/1.0e6;
+    }
   }
 #if ENABLE_DIAGNOSTICS == 4
   if (startOrEnd == START) {
