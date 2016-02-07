@@ -23,8 +23,8 @@ public:
   DistributedAdapter(const bool local = false, const double scale = 0.25,
       const double essRel = 0.25);
 
-  bool ready() const;
-  void adapt();
+  template<class S1>
+  bool adapt(const S1& s);
 };
 }
 
@@ -36,13 +36,9 @@ bi::DistributedAdapter<A>::DistributedAdapter(const bool local,
 }
 
 template<class A>
-bool bi::DistributedAdapter<A>::ready() const {
-  return A::distributedReady();
-}
-
-template<class A>
-void bi::DistributedAdapter<A>::adapt() {
-  A::distributedAdapt();
+template<class S1>
+bool bi::DistributedAdapter<A>::adapt(const S1& s) {
+  return A::distributedAdapt(s);
 }
 
 #endif

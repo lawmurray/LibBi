@@ -9,51 +9,8 @@
 #define BI_PDF_SAMPLE_HPP
 
 #include "../random/Random.hpp"
-#include "ExpGaussianPdf.hpp"
-#include "UniformPdf.hpp"
-#include "GammaPdf.hpp"
-#include "InverseGammaPdf.hpp"
 
 namespace bi {
-/**
- * Rejection sample.
- *
- * @ingroup math_pdf
- *
- * @tparam Q1 Pdf type.
- * @tparam Q2 Pdf type.
- * @tparam V1 Vector type.
- *
- * @param[in,out] rng Random number generator.
- * @param p Target distribution.
- * @param q Proposal distribution.
- * @param M Constant, such that \f$\forall \mathbf{x}: M q(\mathbf{x}) \ge
- * p(\mathbf{x})\f$.
- * @param[out] x \f$\mathbf{x} \sim p(\mathbf{x})\f$.
- */
-template<class Q1, class Q2, class V1>
-void rejection_sample(Random& rng, Q1& p, Q2& q, const real M, V1 x);
-
-/**
- * Standardise samples.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- * @tparam M1 Matrix type.
- * @tparam M2 Matrix type.
- *
- * @param p Distribution providing mean and covariance with which to
- * standardise.
- * @param[in,out] X Samples. Rows index samples, columns variables.
- *
- * Standardises the samples @p X using the mean and covariance of the provided
- * distribution @p p. If this is the sample mean and covariance of the
- * samples, the output sample set will have mean zero and identity covariance.
- */
-template<class V1, class M1, class M2>
-void standardise(const ExpGaussianPdf<V1,M1>& p, M2 X);
-
 /**
  * Normalise log-weights.
  *
@@ -67,55 +24,6 @@ void standardise(const ExpGaussianPdf<V1,M1>& p, M2 X);
  */
 template<class V1>
 void renormalise(V1 lws);
-
-
-/**
- * Condition (log-)Gaussian distribution.
- *
- * @ingroup math_pdf
- *
- * Considers a (log-)Gaussian distribution over a partitioned set
- * of variables \f$\{X_1,X_2\}\f$, \f$|X_1| = M\f$, \f$|X_2| = N\f$. For a
- * sample \f$\mathbf{x}_2\f$, computes \f$p(X_1|\mathbf{x}_2)\f$.
- *
- * @param p1 \f$p(X_1)\f$; marginal of variables in first partition.
- * @param p2 \f$p(X_2)\f$; marginal of variables in second partition.
- * @param C Cross-covariance matrix between \f$X_1\f$ and \f$X_2\f$, %size
- * \f$M \times N\f$.
- * @param x2 \f$\mathbf{x}_2\f$.
- * @param[out] p3 \f$p(X_1|\mathbf{x}_2)\f$.
- */
-template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
-    class M4>
-void condition(const ExpGaussianPdf<V1, M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C, const V3 x2,
-    ExpGaussianPdf<V4, M4>& p3);
-
-/**
- * Marginalise (log-)Gaussian distribution.
- *
- * @ingroup math_pdf
- *
- * Considers a (log-)Gaussian distribution over a partitioned set
- * of variables \f$\{X_1,X_2\}\f$, \f$|X_1| = M\f$, \f$|X_2| = N\f$. For a
- * distribution \f$q(\mathbf{X}_2)\f$, computes
- * \f$\int_{-\infty}^{\infty} p(X_1|\mathbf{x}_2)
- * q(\mathbf{x}_2) \,d\mathbf{x}_2\f$.
- *
- * @param p1 \f$p(X_1)\f$; marginal of variables in first partition.
- * @param p2 \f$p(X_2)\f$; marginal of variables in second
- * partition.
- * @param C \f$C_{\mathbf{x}_1,\mathbf{x}_2}\f$; cross-covariance matrix
- * between \f$X_1\f$ and \f$X_2\f$, %size \f$M \times N\f$.
- * @param q2 \f$q(X_2)\f$.
- * @param[out] p3 \f$\int_{-\infty}^{\infty} p(X_2|\mathbf{x}_1)
- * p(\mathbf{x}_1) \,d\mathbf{x}_1\f$.
- */
-template<class V1, class M1, class V2, class M2, class M3, class V4, class M4,
-    class V5, class M5>
-void marginalise(const ExpGaussianPdf<V1, M1>& p1,
-    const ExpGaussianPdf<V2, M2>& p2, const M3 C,
-    const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5, M5>& p3);
 
 /**
  * Histogram weighted sample set.
@@ -135,22 +43,6 @@ void marginalise(const ExpGaussianPdf<V1, M1>& p1,
  */
 template<class V1, class V2, class V3, class V4>
 void hist(const V1 x, const V2 w, V3 c, V4 h);
-
-/**
- * Compute distance matrix between samples.
- *
- * @tparam M1 Matrix type.
- * @tparam M2 Matrix type.
- *
- * @param X Samples. Rows index samples, columns variables.
- * @param h Gaussian kernel bandwidth.
- * @param[out] D Distance matrix (symmetric, upper diagonal stored).
- *
- * Computes the distance between all the samples of @p X, using a Euclidean
- * norm and Gaussian kernel of bandwidth @p h, writing results to @p D.
- */
-template<class M1, class M2>
-void distance(const M1 X, const real h, M2 D);
 
 /**
  * Compute unweighted mean of sample set.
@@ -181,61 +73,6 @@ void mean(const M1 X, V1 mu);
  */
 template<class M1, class V1, class V2>
 void mean(const M1 X, const V1 w, V2 mu);
-
-/**
- * Compute mean of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- * @tparam V2 Vector type.
- *
- * @param q Pdf.
- * @param[out] mu Mean.
- */
-template<class V1, class V2>
-void mean(const UniformPdf<V1>& q, V2 mu);
-
-/**
- * Compute mean of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- * @tparam M1 Matrix type.
- * @tparam V2 Vector type.
- *
- * @param q Pdf.
- * @param[out] mu Mean.
- */
-template<class V1, class M1, class V2>
-void mean(const ExpGaussianPdf<V1,M1>& q, V2 mu);
-
-/**
- * Compute mean of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- *
- * @param q Pdf.
- * @param[out] mu Mean.
- */
-template<class V1>
-void mean(const GammaPdf& q, V1 mu);
-
-/**
- * Compute mean of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- *
- * @param q Pdf.
- * @param[out] mu Mean.
- */
-template<class V1>
-void mean(const InverseGammaPdf& q, V1 mu);
 
 /**
  * Compute unweighted covariance of sample set.
@@ -275,61 +112,6 @@ void cov(const M1 X, const V1 mu, M2 Sigma);
  */
 template<class M1, class V1, class V2, class M2>
 void cov(const M1 X, const V1 w, const V2 mu, M2 Sigma);
-
-/**
- * Compute covariance of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- * @tparam M1 Matrix type.
- *
- * @param q Pdf.
- * @param[out] Sigma Covariance.
- */
-template<class V1, class M1>
-void cov(const UniformPdf<V1>& q, M1 Sigma);
-
-/**
- * Compute covariance of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam V1 Vector type.
- * @tparam M1 Matrix type.
- * @tparam M2 Matrix type.
- *
- * @param q Pdf.
- * @param[out] Sigma Covariance.
- */
-template<class V1, class M1, class M2>
-void cov(const ExpGaussianPdf<V1,M1>& q, M2 Sigma);
-
-/**
- * Compute covariance of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam M1 Matrix type.
- *
- * @param q Pdf.
- * @param[out] Sigma Covariance.
- */
-template<class M1>
-void cov(const GammaPdf& q, M1 Sigma);
-
-/**
- * Compute covariance of pdf.
- *
- * @ingroup math_pdf
- *
- * @tparam M1 Matrix type.
- *
- * @param q Pdf.
- * @param[out] Sigma Covariance.
- */
-template<class M1>
-void cov(const InverseGammaPdf& q, M1 Sigma);
 
 /**
  * Compute unweighted variance of sample set.
@@ -536,34 +318,9 @@ void det_rows(const M2 X, const V2& is, V3 det);
 
 }
 
-#include "../kd/FastGaussianKernel.hpp"
 #include "../math/misc.hpp"
 #include "../math/sim_temp_vector.hpp"
 #include "../math/sim_temp_matrix.hpp"
-
-template<class Q1, class Q2, class V1>
-inline void bi::rejection_sample(Random& rng, Q1& p, Q2& q, const real M,
-    V1 x) {
-  do {
-    q.sample(rng, x);
-  } while (rng.uniform<real> () > p(x) / (M * q(x)));
-}
-
-template<class V1, class M1, class M2>
-void bi::standardise(const ExpGaussianPdf<V1,M1>& p, M2 X) {
-  /* pre-condition */
-  BI_ASSERT(p.size() == X.size2());
-
-  typename sim_temp_vector<M2>::type mu(X.size2());
-
-  log_columns(X, p.getLogs());
-  mean(X, mu);
-  sub_rows(X, mu);
-  trsm(1.0, p.std(), X, 'R', 'U');
-  add_rows(X, mu);
-  sub_rows(X, p.mean());
-  exp_columns(X, p.getLogs());
-}
 
 template<class V1>
 void bi::renormalise(V1 lws) {
@@ -573,115 +330,6 @@ void bi::renormalise(V1 lws) {
   if (is_finite(mx)) {
     sub_elements(lws, mx, lws);
   }
-}
-
-template<class V1, class M1, class V2, class M2, class M3, class V3, class V4,
-    class M4>
-void bi::condition(const ExpGaussianPdf<V1, M1>& p1, const ExpGaussianPdf<V2,
-    M2>& p2, const M3 C, const V3 x2, ExpGaussianPdf<V4, M4>& p3) {
-  /* pre-condition */
-  BI_ASSERT(x2.size() == p2.size());
-  BI_ASSERT(p3.size() == p1.size());
-  BI_ASSERT(C.size1() == p1.size() && C.size2() == p2.size());
-
-  typename sim_temp_vector<V1>::type z2(p2.size());
-  typename sim_temp_matrix<M1>::type K(p1.size(), p2.size());
-
-  /**
-   * Compute gain matrix:
-   *
-   * \f[\mathcal{K} = C_{\mathbf{x}_1,\mathbf{x}_2}\Sigma_2^{-1}\,.\f]
-   */
-  symm(1.0, p2.prec(), C, 0.0, K, 'R', 'U');
-
-  /**
-   * Then result is given by \f$\mathcal{N}(\boldsymbol{\mu}',
-   * \Sigma')\f$, where:
-   *
-   * \f[\boldsymbol{\mu}' = \boldsymbol{\mu}_1 + \mathcal{K}(\mathbf{x}_2 -
-   * \boldsymbol{\mu}_2)\,,\f]
-   */
-  z2 = x2;
-  log_vector(z2, p2.getLogs());
-  axpy(-1.0, p2.mean(), z2);
-  p3.mean() = p1.mean();
-  gemv(1.0, K, z2, 1.0, p3.mean());
-
-  /**
-   * and:
-   *
-   * \f{eqnarray*}
-   * \Sigma' &=& \Sigma_1 - \mathcal{K}C_{\mathbf{x}_1,\mathbf{x}_2}^T \\
-   * &=& \Sigma_1 - C_{\mathbf{x}_1,\mathbf{x}_2}\Sigma_2^{-1}
-   * C_{\mathbf{x}_1,\mathbf{x}_2}^T\,.\f}
-   */
-  K = C;
-  trsm(1.0, p2.std(), K, 'R', 'U');
-  p3.cov() = p1.cov();
-  syrk(-1.0, K, 1.0, p3.cov(), 'U');
-
-  /* update log-variables and precalculations */
-  p3.setLogs(p1.getLogs());
-  p3.init();
-}
-
-template<class V1, class M1, class V2, class M2, class M3, class V4, class M4,
-    class V5, class M5>
-void bi::marginalise(const ExpGaussianPdf<V1, M1>& p1,
-    const ExpGaussianPdf<V2,M2>& p2, const M3 C,
-    const ExpGaussianPdf<V4, M4>& q2, ExpGaussianPdf<V5,M5>& p3) {
-  /* pre-conditions */
-  BI_ASSERT(q2.size() == p2.size());
-  BI_ASSERT(p3.size() == p1.size());
-  BI_ASSERT(C.size1() == p1.size() && C.size2() == p2.size());
-
-  typename sim_temp_vector<V1>::type z2(p2.size());
-  typename sim_temp_matrix<M1>::type K(p1.size(), p2.size());
-  typename sim_temp_matrix<M1>::type A1(p2.size(), p2.size());
-  typename sim_temp_matrix<M1>::type A2(p2.size(), p2.size());
-
-  /**
-   * Compute gain matrix:
-   *
-   * \f[\mathcal{K} = C_{\mathbf{x}_1,\mathbf{x}_2}\Sigma_2^{-1}\,.\f]
-   */
-  symm(1.0, p2.prec(), C, 0.0, K, 'R', 'U');
-
-  /**
-   * Then result is given by \f$\mathcal{N}(\boldsymbol{\mu}',
-   * \Sigma')\f$, where:
-   *
-   * \f[\boldsymbol{\mu}' = \boldsymbol{\mu}_1 +
-   * \mathcal{K}(\boldsymbol{\mu}_3 - \boldsymbol{\mu}_2)\,,\f]
-   */
-  z2 = q2.mean();
-  axpy(-1.0, p2.mean(), z2);
-  p3.mean() = p1.mean();
-  gemv(1.0, K, z2, 1.0, p3.mean());
-
-  /**
-   * and:
-   *
-   * \f{eqnarray*}
-   * \Sigma' &=& \Sigma_1 + \mathcal{K}(\Sigma_3 -
-   * \Sigma_2)\mathcal{K}^T \\
-   * &=& \Sigma_1 + \mathcal{K}\Sigma_3\mathcal{K}^T -
-   * \mathcal{K}\Sigma_2\mathcal{K}^T\,.
-   * \f}
-   */
-  p3.cov() = p1.cov();
-
-  A1 = K;
-  trmm(1.0, q2.std(), A1, 'R', 'U', 'T');
-  syrk(1.0, A1, 1.0, p3.cov(), 'U');
-
-  A2 = K;
-  trmm(1.0, p2.std(), A2, 'R', 'U', 'T');
-  syrk(-1.0, A2, 1.0, p3.cov(), 'U');
-
-  /* make sure correct log-variables set */
-  p3.setLogs(p2.getLogs());
-  p3.init(); // redo precalculations
 }
 
 template<class V1, class V2, class V3, class V4>
@@ -729,27 +377,6 @@ void bi::hist(const V1 x, const V2 w, V3 c, V4 h) {
   c[0] = 0.5*(mn + c[0]);
 }
 
-template<class M1, class M2>
-void bi::distance(const M1 X, const real h, M2 D) {
-  /* pre-conditions */
-  BI_ASSERT(D.size1() == D.size2());
-  BI_ASSERT(D.size1() == X.size1());
-  BI_ASSERT(!M2::on_device);
-
-  typedef typename M1::value_type T1;
-
-  FastGaussianKernel K(X.size2(), h);
-  typename temp_host_vector<T1>::type d(X.size2());
-  int i, j;
-  for (j = 0; j < D.size2(); ++j) {
-    for (i = 0; i <= j; ++i) {
-      d = row(X, i);
-      axpy(-1.0, row(X, j), d);
-      D(i, j) = K(dot(d));
-    }
-  }
-}
-
 template<class M1, class V1>
 void bi::mean(const M1 X, V1 mu) {
   /* pre-condition */
@@ -771,46 +398,6 @@ void bi::mean(const M1 X, const V1 w, V2 mu) {
 
   T Wt = sum_reduce(w);
   gemv(1.0/Wt, X, w, 0.0, mu, 'T');
-}
-
-template<class V1, class V2>
-void bi::mean(const UniformPdf<V1>& q, V2 mu) {
-  /* pre-condition */
-  BI_ASSERT(q.size() == mu.size());
-
-  axpy(0.5, q.lower(), mu, true);
-  axpy(0.5, q.upper(), mu);
-}
-
-template<class V1, class M1, class V2>
-inline void bi::mean(const ExpGaussianPdf<V1,M1>& q, V2 mu) {
-  /* pre-condition */
-  BI_ASSERT(mu.size() == q.size());
-
-  mu = q.mean();
-}
-
-template<class V1>
-inline void bi::mean(const GammaPdf& q, V1 mu) {
-  /* pre-condition */
-  BI_ASSERT(mu.size() == q.size());
-
-  real alpha = q.shape();
-  real beta = q.scale();
-
-  set_elements(mu, alpha*beta);
-}
-
-template<class V1>
-inline void bi::mean(const InverseGammaPdf& q, V1 mu) {
-  /* pre-condition */
-  BI_ASSERT(mu.size() == q.size());
-  BI_ASSERT(q.shape() > 1.0);
-
-  real alpha = q.shape();
-  real beta = q.scale();
-
-  set_elements(mu, alpha*std::pow(beta, 2));
 }
 
 template<class M1, class V1, class M2>
@@ -845,59 +432,6 @@ void bi::cov(const M1 X, const V1 w, const V2 mu, M2 Sigma) {
   gdmm(1.0, v, Y, 0.0, Z);
   syrk(1.0/Wt, Z, 0.0, Sigma, 'U', 'T');
   // alternative weight: 1.0/(Wt - W2t/Wt)
-}
-
-template<class V1, class M1>
-void bi::cov(const UniformPdf<V1>& q, M1 Sigma) {
-  /* pre-condition */
-  BI_ASSERT(Sigma.size1() == q.size());
-  BI_ASSERT(Sigma.size2() == q.size());
-
-  temp_host_vector<real>::type diff(q.size());
-  diff = q.upper();
-  sub_elements(diff, q.lower(), diff);
-  sq_elements(diff, diff);
-
-  Sigma.clear();
-  axpy(1.0/12.0, diff, diagonal(Sigma));
-}
-
-template<class V1, class M1, class M2>
-void bi::cov(const ExpGaussianPdf<V1, M1>& q, M2 Sigma) {
-  /* pre-condition */
-  BI_ASSERT(Sigma.size1() == q.size());
-  BI_ASSERT(Sigma.size2() == q.size());
-
-  Sigma = q.cov();
-}
-
-template<class M1>
-void bi::cov(const GammaPdf& q, M1 Sigma) {
-  /* pre-condition */
-  BI_ASSERT(Sigma.size1() == q.size());
-  BI_ASSERT(Sigma.size2() == q.size());
-
-  real alpha = q.shape();
-  real beta = q.scale();
-  real sigma = alpha*std::pow(beta, 2);
-
-  Sigma.clear();
-  set_elements(diagonal(Sigma), sigma);
-}
-
-template<class M1>
-void bi::cov(const InverseGammaPdf& q, M1 Sigma) {
-  /* pre-condition */
-  BI_ASSERT(Sigma.size1() == q.size());
-  BI_ASSERT(Sigma.size2() == q.size());
-  BI_ASSERT(q.shape() > 2.0);
-
-  real alpha = q.shape();
-  real beta = q.scale();
-  real sigma = std::pow(beta, 2)/(std::pow(alpha - 1.0, 2)*(alpha - 2.0));
-
-  Sigma.clear();
-  set_elements(diagonal(Sigma), sigma);
 }
 
 template<class M1, class V1, class V2>

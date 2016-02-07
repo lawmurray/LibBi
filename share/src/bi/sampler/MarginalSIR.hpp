@@ -31,9 +31,6 @@ namespace bi {
  * Implements sequential importance resampling over parameters, which, when
  * combined with a particle filter, gives the SMC^2 method described in
  * @ref Chopin2013 "Chopin, Jacob \& Papaspiliopoulos (2013)".
- *
- * @todo Add support for adapter classes.
- * @todo Add support for stopper classes for theta particles.
  */
 template<class B, class F, class A, class R>
 class MarginalSIR {
@@ -398,20 +395,13 @@ void bi::MarginalSIR<B,F,A,R>::adapt(const ScheduleIterator first,
   double t0 = first->getFrom();
   double t = (iter + 1)->getTo() - t0;
   double T = last->getTo() - t0;
-
   tstart = clock.toc();
   tmilestone = tinit
       + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
 
   /* adapt proposal */
-  adapterReady = adapter.ready();
-  if (adapterReady) {
-    adapter.clear();
-    for (int p = 0; p < s.size(); ++p) {
-      adapter.add(*s.s1s[p]);
-    }
-    adapter.adapt();
-  }
+  adapterReady = adapter.adapt(s);
+
   profile(END, ADAPT);
 }
 

@@ -33,30 +33,19 @@ public:
       const double essRel = 0.25);
 
   /**
-   * Add sample.
-   *
-   * @tparam V1 Vector type.
+   * Adapt the proposal.
    *
    * @param s State.
-   * @param lw Log-weight.
+   *
+   * @return Was the adaptation successful?
    */
   template<class S1>
-  void add(const S1& s, const double lw = 0.0);
+  bool adapt(const S1& s);
 
-  /**
-   * Is the proposal ready to adapt?
-   */
-  bool ready() const;
-
-  /**
-   * Adapt the proposal.
-   */
-  void adapt() throw (CholeskyException);
-
-  #ifdef ENABLE_MPI
-  bool distributedReady() const;
-  void distributedAdapt() throw (CholeskyException);
-  #endif
+#ifdef ENABLE_MPI
+  template<class S1>
+  bool distributedAdapt(const S1& s);
+#endif
 
   /**
    * Propose.
@@ -73,37 +62,7 @@ public:
   template<class S1, class S2>
   void propose(Random& rng, S1& s1, S2& s2);
 
-  /**
-   * Clear adapter for reuse.
-   */
-  void clear();
-
 private:
-  /**
-   * Accumulated weighted sum of samples.
-   */
-  host_vector<real> smu;
-
-  /**
-   * Accumulated weighted sum of sample cross-products.
-   */
-  host_matrix<real> sSigma;
-
-  /**
-   * Accumulated sum of weights.
-   */
-  double W;
-
-  /**
-   * Accumulated sum of squared weights.
-   */
-  double W2;
-
-  /**
-   * Accumulated number of samples.
-   */
-  int P;
-
   /**
    * Mean.
    */
@@ -144,22 +103,122 @@ private:
 #include "../model/Model.hpp"
 #include "../math/constant.hpp"
 #include "../math/scalar.hpp"
+#include "../math/view.hpp"
+#include "../math/operation.hpp"
+#include "../math/temp_vector.hpp"
+#include "../math/temp_matrix.hpp"
+#include "../pdf/misc.hpp"
+#include "../primitive/vector_primitive.hpp"
+#include "../mpi/mpi.hpp"
 
 template<class S1>
-void bi::GaussianAdapter::add(const S1& s, const double lw) {
-  BOOST_AUTO(theta, vec(s.get(P_VAR)));
-  const int NP = theta.size();
+bool bi::GaussianAdapter::adapt(const S1& s) {
+  const int NP = s.s1s[0]->get(P_VAR).size2();
+  const int P = s.size();
 
-  smu.resize(NP, true);
-  sSigma.resize(NP, NP, true);
+  bool ready = s.ess >= essRel * P;
+  if (ready) {
+    try {
+      typename temp_host_matrix<real>::type X(P, NP);
+      typename temp_host_vector<real>::type ws(P);
 
-  double w = bi::exp(lw);
-  axpy(1.0, theta, smu);
-  syr(1.0, theta, sSigma);
-  W += w;
-  W2 += w*w;
-  ++P;
+      /* copy samples into single matrix */
+      for (int p = 0; p < P; ++p) {
+        row(X, p) = vec(s.s1s[p]->get(P_VAR));
+      }
+      expu_elements(s.logWeights(), ws);
+      const double W = sum_reduce(ws);
+
+      /* mean */
+      mu.resize(NP);
+      mean(X, ws, mu);
+
+      /* covariance */
+      Sigma.resize(NP, NP);
+      cov(X, ws, mu, Sigma);
+
+      /* Cholesky factor of covariance */
+      U.resize(NP, NP);
+      chol(Sigma, U);
+
+      /* scale for local moves */
+      if (local) {
+        matrix_scal(scale, U);
+      }
+
+      /* determinant */
+      detU = prod_reduce(diagonal(U));
+
+      std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
+          << ')' << std::endl;
+    } catch (CholeskyException e) {
+      ready = false;
+    }
+  }
+  return ready;
 }
+
+#ifdef ENABLE_MPI
+template<class S1>
+bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
+  boost::mpi::communicator world;
+  const int size = world.size();
+  const int NP = s.s1s[0]->get(P_VAR).size2();
+  const int P = s.size();
+
+  bool ready = s.ess >= essRel * P;
+  if (ready) {
+    try {
+      typename temp_host_matrix<real>::type X(P, NP);
+      typename temp_host_vector<real>::type ws(P);
+      typename temp_host_matrix<real>::type Smu(NP, size), SSigma(NP*NP, size);
+
+      /* copy samples into single matrix */
+      for (int p = 0; p < P; ++p) {
+        row(X, p) = vec(s.s1s[p]->get(P_VAR));
+      }
+      expu_elements(s.logWeights(), ws);
+      const double W = sum_reduce(ws);
+
+      /* mean */
+      mu.resize(NP);
+      mean(X, ws, mu);
+
+      /* covariance */
+      Sigma.resize(NP, NP);
+      cov(X, ws, mu, Sigma);
+
+      /* average across processors */
+      boost::mpi::all_gather(world, mu.buf(), NP, vec(Smu).buf());
+      boost::mpi::all_gather(world, Sigma.buf(), NP*NP, vec(SSigma).buf());
+
+      sum_columns(Smu, mu);
+      sum_columns(SSigma, vec(Sigma));
+
+      scal(1.0/size, mu);
+      scal(1.0/size, vec(Sigma));
+
+      /* Cholesky factor of covariance */
+      U.resize(NP, NP);
+      chol(Sigma, U);
+
+      /* scale for local moves */
+      if (local) {
+        matrix_scal(scale, U);
+      }
+
+      /* determinant */
+      detU = prod_reduce(diagonal(U));
+
+      std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
+          << ')' << std::endl;
+    } catch (CholeskyException e) {
+      ready = false;
+    }
+  }
+  return ready;
+}
+#endif
 
 template<class S1, class S2>
 void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
