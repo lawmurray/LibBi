@@ -47,7 +47,7 @@ public:
    * @param resam Resampler for theta-particles.
    * @param nmoves Number of move steps per \f$\theta\f$-particle after each
    * resample.
-   * @param tmoves Total real time allocated to move steps.
+   * @param tmoves Total real time allocated to move steps, in seconds.
    */
   MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1,
       const double tmoves = 0.0);
@@ -111,7 +111,8 @@ public:
    * @param[in,out] s State.
    */
   template<class S1>
-  void adapt(const S1& s);
+  void adapt(const ScheduleIterator first, const ScheduleIterator iter,
+      const ScheduleIterator last, const S1& s);
 
   /**
    * Resample \f$\theta\f$-particles.
@@ -154,13 +155,6 @@ public:
    */
   template<class S1>
   void report(const ScheduleElement now, S1& s);
-
-  /**
-   * Report last step on stderr.
-   *
-   * @param now Current step in time schedule.
-   */
-  void reportT(const ScheduleElement now);
 
   /**
    * Finalise.
@@ -235,7 +229,17 @@ private:
    * Total time taken for init step.
    */
   double tinit;
-  
+
+  /**
+   * Start time for current step.
+   */
+  double tstart;
+
+  /**
+   * Milestone (end) time for current step.
+   */
+  double tmilestone;
+
   /**
    * Was a resample performed on the last step?
    */
@@ -262,8 +266,8 @@ template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-    tmoves), tinit(0.0), lastResample(false), adapterReady(false), lastAccept(0),
-    lastTotal(0) {
+        1.0e6 * tmoves), tinit(0.0), lastResample(false), adapterReady(false), lastAccept(
+        0), lastTotal(0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -282,11 +286,7 @@ bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
 #endif
 
   if (tmoves > 0.0) {
-    /* always resample */
-    resam.setEssRel(1.0);
-
-    /* one move at a time */
-    this->nmoves = 1;
+    this->nmoves = 1;  // one move at a time only
   }
 }
 
@@ -297,9 +297,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const int C, IO1& out, IO2& inInit) {
   // should look very similar to Filter::filter()
   ScheduleIterator iter = first;
-  profile(START, INIT);
   init(rng, iter, s, out, inInit);
-  profile(END, INIT);
 #if ENABLE_DIAGNOSTICS == 3
   std::stringstream buf;
   buf << "sir" << iter->indexOutput() << ".nc";
@@ -308,19 +306,11 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   outtmp.flush();
 #endif
   while (iter + 1 != last) {
-    profile(START, ADAPT);
-    adapt(s);
-    profile(END, ADAPT);
-    profile(START, RESAMPLE);
+    adapt(first, iter, last, s);
     resample(rng, *iter, s);
-    profile(END, RESAMPLE);
-    profile(START, MOVE);
     move(rng, first, iter, last, s);
-    profile(END, MOVE);
     report(*iter, s);
-    profile(START, STEP);
     step(rng, first, iter, last, s, out);
-    profile(END, STEP);
 #if ENABLE_DIAGNOSTICS == 3
     std::stringstream buf;
     buf << "sir" << iter->indexOutput() << ".nc";
@@ -329,10 +319,11 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     outtmp.flush();
 #endif
   }
-  profile(START, TERM);
+  adapt(first, iter, last, s);
+  resample(rng, *iter, s);
+  move(rng, first, iter, last, s);
+  report(*iter, s);
   term(rng, s);
-  profile(END, TERM);
-  reportT(*iter);
   outputT(s, out);
 }
 
@@ -340,6 +331,7 @@ template<class B, class F, class A, class R>
 template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
     S1& s, IO1& out, IO2& inInit) {
+  profile(START, INIT);
   for (int p = 0; p < s.size(); ++p) {
     BOOST_AUTO(&s1, *s.s1s[p]);
     BOOST_AUTO(&out1, *s.out1s[p]);
@@ -364,12 +356,14 @@ void bi::MarginalSIR<B,F,A,R>::init(Random& rng, const ScheduleIterator first,
   adapterReady = false;
   lastAccept = 0;
   lastTotal = 0;
+  profile(END, INIT);
 }
 
 template<class B, class F, class A, class R>
 template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
+  profile(START, STEP);
   ScheduleIterator iter1;
   do {
     for (int p = 0; p < s.size(); ++p) {
@@ -390,11 +384,26 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   s.ess = resam.reduce(s.logWeights(), &lW);
   s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
+
+  profile(END, STEP);
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
-void bi::MarginalSIR<B,F,A,R>::adapt(const S1& s) {
+void bi::MarginalSIR<B,F,A,R>::adapt(const ScheduleIterator first,
+    const ScheduleIterator iter, const ScheduleIterator last, const S1& s) {
+  profile(START, ADAPT);
+
+  /* compute budget */
+  double t0 = first->getFrom();
+  double t = (iter + 1)->getTo() - t0;
+  double T = last->getTo() - t0;
+
+  tstart = clock.toc();
+  tmilestone = tinit
+      + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
+
+  /* adapt proposal */
   adapterReady = adapter.ready();
   if (adapterReady) {
     adapter.clear();
@@ -403,33 +412,31 @@ void bi::MarginalSIR<B,F,A,R>::adapt(const S1& s) {
     }
     adapter.adapt();
   }
+  profile(END, ADAPT);
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
     const ScheduleElement now, S1& s) {
+  profile(START, RESAMPLE);
   lastResample = resam.resample(rng, now, s);
+  profile(END, RESAMPLE);
 }
 
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
+  profile(START, MOVE);
   if (lastResample) {
-    /* compute budget */
-    double milestone = tinit + (tmoves - tinit) * 1.0e6
-        * bi::pow((iter + 2)->getTo() - first->getFrom(), 2.0)
-        / bi::pow(last->getTo() - first->getFrom(), 2.0);
     int naccept = 0;
     int ntotal = 0;
     int p = 0;
     bool accept = false;
     bool complete = (tmoves <= 0.0 && p >= s.size())
-        || (tmoves > 0.0 && clock.toc() >= milestone);
+        || (tmoves > 0.0 && clock.toc() >= tmilestone);
 
-    std::cerr << "milestone " << milestone/1e6 << "\tcurrent " << clock.toc()/1e6 << std::endl;
-    
     while (!complete) {
       BOOST_AUTO(&s1, *s.s1s[p % s.size()]);
       BOOST_AUTO(&out1, *s.out1s[p % s.size()]);
@@ -485,7 +492,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
       ++p;
       ++ntotal;
       complete = (tmoves <= 0.0 && p >= s.size())
-          || (tmoves > 0.0 && clock.toc() >= milestone);
+          || (tmoves > 0.0 && clock.toc() >= tmilestone);
     }
 
     if (tmoves > 0.0) {
@@ -496,6 +503,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     lastAccept = naccept;
     lastTotal = ntotal;
   }
+  profile(END, MOVE);
 }
 
 template<class B, class F, class A, class R>
@@ -507,28 +515,6 @@ void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
-  if (lastResample) {
-    int rank = 0, naccept = lastAccept, ntotal = lastTotal;
-
-#ifdef ENABLE_MPI
-    boost::mpi::communicator world;
-    rank = world.rank();
-    boost::mpi::reduce(world, lastAccept, naccept, std::plus<int>(), 0);
-    boost::mpi::reduce(world, lastTotal, ntotal, std::plus<int>(), 0);
-#endif
-    if (rank == 0) {
-      std::cerr << now.indexOutput() << ":\ttime " << now.getTime();
-      std::cerr << "\tESS " << s.ess;
-      std::cerr << "\tmoves " << ntotal;
-      std::cerr << "\taccepts " << naccept;
-      std::cerr << "\trate " << (double(naccept) / ntotal);
-      std::cerr << std::endl;
-    }
-  }
-}
-
-template<class B, class F, class A, class R>
-void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   const int rank = world.rank();
@@ -536,9 +522,25 @@ void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now) {
   const int rank = 0;
 #endif
 
+  if (lastResample) {
+#ifdef ENABLE_MPI
+    int naccept = lastAccept, ntotal = lastTotal;
+    boost::mpi::reduce(world, lastAccept, naccept, std::plus<int>(), 0);
+    boost::mpi::reduce(world, lastTotal, ntotal, std::plus<int>(), 0);
+#endif
+  }
   if (rank == 0) {
-    std::cerr << now.indexOutput() << ":\ttime " << now.getTime()
-        << "\t...finished." << std::endl;
+    std::cerr << std::fixed << std::setprecision(3);
+    std::cerr << now.indexOutput() << ":\ttime " << now.getTime();
+    std::cerr << "\tESS " << s.ess;
+    std::cerr << "\tmoves " << lastTotal;
+    std::cerr << "\taccepts " << lastAccept;
+    std::cerr << "\trate " << (double(lastAccept) / lastTotal);
+    if (tmoves > 0.0) {
+      std::cerr << "\tstart " << tstart / 1e6;
+      std::cerr << "\tmilestone " << tmilestone / 1e6;
+    }
+    std::cerr << std::endl;
   }
 }
 
@@ -566,7 +568,7 @@ void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd,
     if (startOrEnd == START) {
       clock.tic();
     } else {
-      tinit = clock.toc()/1.0e6;
+      tinit = clock.toc();
     }
   }
 #if ENABLE_DIAGNOSTICS == 4
