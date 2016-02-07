@@ -109,6 +109,7 @@ private:
 #include "../math/temp_matrix.hpp"
 #include "../pdf/misc.hpp"
 #include "../primitive/vector_primitive.hpp"
+#include "../cuda/cuda.hpp"
 #include "../mpi/mpi.hpp"
 
 template<class S1>
@@ -225,8 +226,11 @@ void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
   BOOST_AUTO(theta1, vec(s1.get(P_VAR)));
   BOOST_AUTO(theta2, vec(s2.get(PY_VAR)));
 
-  typename temp_host_vector<real>::type htheta1(theta1), htheta2(theta2);
   const int N = theta1.size();
+  typename temp_host_vector<real>::type htheta1(N), htheta2(N);
+  htheta1 = theta1;
+  htheta2 = theta2;
+  synchronize();
 
   rng.gaussians(htheta2);
   s2.logProposal = -0.5 * dot(htheta2) - N * BI_HALF_LOG_TWO_PI
@@ -241,6 +245,7 @@ void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
 
   theta1 = htheta1;
   theta2 = htheta2;
+  synchronize();
 }
 
 #endif
