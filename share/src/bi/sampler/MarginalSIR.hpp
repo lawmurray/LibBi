@@ -397,7 +397,7 @@ void bi::MarginalSIR<B,F,A,R>::adapt(const ScheduleIterator first,
   double T = last->getTo() - t0;
   tstart = clock.toc();
   tmilestone = tinit
-      + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
+    + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
 
   /* adapt proposal */
   adapterReady = adapter.adapt(s);
@@ -492,6 +492,9 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
 
     lastAccept = naccept;
     lastTotal = ntotal;
+  } else {
+    lastAccept = 0;
+    lastTotal = 0;
   }
   profile(END, MOVE);
 }
@@ -523,12 +526,14 @@ void bi::MarginalSIR<B,F,A,R>::report(const ScheduleElement now, S1& s) {
     std::cerr << std::fixed << std::setprecision(3);
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime();
     std::cerr << "\tESS " << s.ess;
-    std::cerr << "\tmoves " << lastTotal;
-    std::cerr << "\taccepts " << lastAccept;
-    std::cerr << "\trate " << (double(lastAccept) / lastTotal);
-    if (tmoves > 0.0) {
-      std::cerr << "\tstart " << tstart / 1e6;
-      std::cerr << "\tmilestone " << tmilestone / 1e6;
+    if (lastResample) {
+      std::cerr << "\tmoves " << lastTotal;
+      std::cerr << "\taccepts " << lastAccept;
+      std::cerr << "\trate " << (double(lastAccept) / lastTotal);
+      if (tmoves > 0.0) {
+	std::cerr << "\tstart " << tstart / 1e6;
+	std::cerr << "\tmilestone " << tmilestone / 1e6;
+      }
     }
     std::cerr << std::endl;
   }

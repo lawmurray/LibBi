@@ -148,9 +148,6 @@ bool bi::GaussianAdapter::adapt(const S1& s) {
 
       /* determinant */
       detU = prod_reduce(diagonal(U));
-
-      std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
-          << ')' << std::endl;
     } catch (CholeskyException e) {
       ready = false;
     }
@@ -162,11 +159,12 @@ bool bi::GaussianAdapter::adapt(const S1& s) {
 template<class S1>
 bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
   boost::mpi::communicator world;
+  const int rank = world.rank();
   const int size = world.size();
   const int NP = s.s1s[0]->get(P_VAR).size2();
   const int P = s.size();
 
-  bool ready = s.ess >= essRel * P;
+  bool ready = s.ess >= essRel * P * size;
   if (ready) {
     try {
       typename temp_host_matrix<real>::type X(P, NP);
@@ -177,6 +175,7 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
       for (int p = 0; p < P; ++p) {
         row(X, p) = vec(s.s1s[p]->get(P_VAR));
       }
+      synchronize();
       expu_elements(s.logWeights(), ws);
 
       /* mean */
@@ -208,11 +207,6 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
 
       /* determinant */
       detU = prod_reduce(diagonal(U));
-
-      if (rank == 0) {
-        std::cerr << "Adapted proposal: N(" << mu(0) << ", " << U(0, 0)
-              << ')' << std::endl;
-      }
     } catch (CholeskyException e) {
       ready = false;
     }
@@ -235,9 +229,9 @@ void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
   rng.gaussians(htheta2);
   s2.logProposal = -0.5 * dot(htheta2) - N * BI_HALF_LOG_TWO_PI
       - bi::log(detU);
-  s1.logProposal = s2.logProposal;  // symmetric
   trmv(U, htheta2, 'U', 'T');
   if (local) {
+    s1.logProposal = s2.logProposal;  // symmetric
     axpy(1.0, htheta1, htheta2);
   } else {
     axpy(1.0, mu, htheta2);

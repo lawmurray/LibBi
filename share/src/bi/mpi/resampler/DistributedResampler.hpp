@@ -126,7 +126,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
   const int P = s.size();
 
   bool r = (now.isObserved() || now.hasBridge())
-      && s.ess < this->essRel * s.size()*P;
+      && s.ess < this->essRel * size * P;
   if (r) {
 #if ENABLE_DIAGNOSTICS == 2
     synchronize();
@@ -245,11 +245,13 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
     /* transfer particle */
     if (rank == recvr) {
-      reqs.push_back(world.irecv(sendr, tag, s.select(recvi)));
+      reqs.push_back(world.irecv(sendr, tag, *s.s1s[recvi]));
+      reqs.push_back(world.irecv(sendr, tag + 1, *s.out1s[recvi]));
     } else if (rank == sendr) {
-      reqs.push_back(world.isend(recvr, tag, s.select(sendi)));
+      reqs.push_back(world.isend(recvr, tag, *s.s1s[sendi]));
+      reqs.push_back(world.isend(recvr, tag + 1, *s.out1s[sendi]));
     }
-    ++tag;
+    tag += 2;
 
     if (Ps(sendj) == P) {
       --sendj;
@@ -263,7 +265,7 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
-
+  
 #if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
