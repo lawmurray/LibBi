@@ -46,17 +46,29 @@ public:
 
 private:
   /**
-   * Redistribute offspring around processes.
+   * Redistribute offspring around processes so that all processes have same
+   * number of particles.
    *
    * @tparam M1 Matrix type.
-   * @tparam O1
+   * @tparam O1 State type.
    *
    * @param[in,out] O Offspring matrix. Rows index particles, columns index
    * processes.
-   * @param[in,out] X Matrix of particles in this process.
+   * @param[in,out] s State.
    */
-  template<class M1, class O1>
-  void redistribute(M1 O, O1& s);
+  template<class M1, class S1>
+  void redistribute(M1 O, S1& s);
+
+  /**
+   * Rotate particles around process so that all processes have a random
+   * sample.
+   *
+   * @tparam S1 State type.
+   *
+   * @param[in,out] s State.
+   */
+  template<class S1>
+  void rotate(S1& s);
 
   /**
    * @name Timing
@@ -79,7 +91,6 @@ private:
 #include "../../math/temp_vector.hpp"
 #include "../../math/temp_matrix.hpp"
 #include "../../math/view.hpp"
-
 
 template<class R>
 bi::DistributedResampler<R>::DistributedResampler(const double essRel) :
@@ -156,7 +167,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
       R::precompute(vec(Lws), pre);
       R::offspring(rng, vec(Lws), P * size, vec(O), pre);
     }
-    boost::mpi::broadcast(world, O.buf(), P*size, 0);
+    boost::mpi::broadcast(world, O.buf(), P * size, 0);
 
 #if ENABLE_DIAGNOSTICS == 2
     long usecs = clock.toc();
@@ -169,6 +180,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
     permute(as1);
     s.gather(now, as1);
     set_elements(s.logWeights(), s.logLikelihood);
+    rotate(s);
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
   }
@@ -183,8 +195,8 @@ void bi::DistributedResampler<R>::reportResample(int timestep, int rank,
 }
 
 template<class R>
-template<class M1, class O1>
-void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
+template<class M1, class S1>
+void bi::DistributedResampler<R>::redistribute(M1 O, S1& s) {
   typedef typename temp_host_vector<int>::type int_vector_type;
 
 #if ENABLE_DIAGNOSTICS == 2
@@ -218,12 +230,12 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
     sendr = ranks(sendj);
     recvr = ranks(recvj);
 
-    /* advance to first nonzero of sender */
+    /* advance to next nonzero of sender */
     while (O(sendi, sendr) == 0) {
       ++sendi;
     }
 
-    /* advance to first zero of receiver */
+    /* advance to next zero of receiver */
     while (O(recvi, recvr) > 0) {
       ++recvi;
     }
@@ -265,12 +277,46 @@ void bi::DistributedResampler<R>::redistribute(M1 O, O1& s) {
 
   /* wait for all copies to complete */
   boost::mpi::wait_all(reqs.begin(), reqs.end());
-  
+
 #if ENABLE_DIAGNOSTICS == 2
   long usecs = clock.toc();
   const int timesteps = s.front()->getOutput().size() - 1;
   reportRedistribute(timesteps, rank, usecs);
 #endif
+}
+
+template<class R>
+template<class S1>
+void bi::DistributedResampler<R>::rotate(S1& s) {
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+  const int size = world.size();
+
+  const int P = s.size();
+  int sendr, recvr, tag = 0;
+  boost::mpi::request send1, send2;
+  std::list < boost::mpi::request > recvs;
+
+  for (int p = 1; p < P; ++p) {
+    if (p % size > 0) {
+      sendr = (rank - p) % size;
+      recvr = (rank + p) % size;
+
+      s.s2.swap(*s.s1s[p]);
+      s.out2.swap(*s.out1s[p]);
+
+      recvs.push_back(world.irecv(sendr, tag, *s.s1s[p]));
+      recvs.push_back(world.irecv(sendr, tag + 1, *s.out1s[p]));
+
+      send1 = world.isend(recvr, tag, s.s2);
+      send2 = world.isend(recvr, tag + 1, s.out2);
+      send1.wait();
+      send2.wait();
+
+      tag += 2;
+    }
+    boost::mpi::wait_all(recvs.begin(), recvs.end());
+  }
 }
 
 template<class R>
