@@ -288,34 +288,26 @@ void bi::DistributedResampler<R>::redistribute(M1 O, S1& s) {
 template<class R>
 template<class S1>
 void bi::DistributedResampler<R>::rotate(S1& s) {
+  const int P = s.size();
+
+  int sendr, recvr, tag = 0;
+  for (int p = 1; p < P; ++p) {
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();
 
-  const int P = s.size();
-  int sendr, recvr, tag = 0;
-  boost::mpi::request send1, send2;
-  std::list < boost::mpi::request > recvs;
-
-  for (int p = 1; p < P; ++p) {
-    if (p % size > 0) {
-      sendr = (rank - p) % size;
+  if (p % size > 0) {
+      sendr = (rank + size - (p % size)) % size;
       recvr = (rank + p) % size;
 
+      boost::mpi::request send = world.isend(recvr, tag + 2*rank, *s.s1s[p]);
+      world.recv(sendr, tag + 2*sendr, s.s2);
+      send.wait();
+      
       s.s2.swap(*s.s1s[p]);
-      s.out2.swap(*s.out1s[p]);
 
-      recvs.push_back(world.irecv(sendr, tag, *s.s1s[p]));
-      recvs.push_back(world.irecv(sendr, tag + 1, *s.out1s[p]));
-
-      send1 = world.isend(recvr, tag, s.s2);
-      send2 = world.isend(recvr, tag + 1, s.out2);
-      send1.wait();
-      send2.wait();
-
-      tag += 2;
+      tag += 2*size;
     }
-    boost::mpi::wait_all(recvs.begin(), recvs.end());
   }
 }
 

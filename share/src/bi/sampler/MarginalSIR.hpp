@@ -262,9 +262,9 @@ private:
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
-    m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-        1.0e6 * tmoves), tinit(0.0), lastResample(false), adapterReady(false), lastAccept(
-        0), lastTotal(0) {
+    m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves),
+    tmoves(1.0e6 * tmoves), tinit(0.0), lastResample(false),
+    adapterReady(false), lastAccept(0), lastTotal(0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
