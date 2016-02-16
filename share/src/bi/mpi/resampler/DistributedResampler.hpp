@@ -60,6 +60,17 @@ private:
   void redistribute(M1 O, S1& s);
 
   /**
+   * Randomly shuffle particles within each process.
+   *
+   * @param S1 State type.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] s State.
+   */
+  template<class S1>
+  void shuffle(Random& rng, S1& s);
+  
+  /**
    * Rotate particles around process so that all processes have a random
    * sample.
    *
@@ -180,6 +191,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
     permute(as1);
     s.gather(now, as1);
     set_elements(s.logWeights(), s.logLikelihood);
+    shuffle(rng, s);
     rotate(s);
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
@@ -287,26 +299,59 @@ void bi::DistributedResampler<R>::redistribute(M1 O, S1& s) {
 
 template<class R>
 template<class S1>
-void bi::DistributedResampler<R>::rotate(S1& s) {
+void bi::DistributedResampler<R>::shuffle(Random& rng, S1& s) {
   const int P = s.size();
+  for (int i = 0; i < P - 1; ++i) {
+    int j = rng.uniformInt(i, P - 1);
+    if (i != j) {
+      std::swap(s.s1s[i], s.s1s[j]);
+      std::swap(s.out1s[i], s.out1s[j]);
+    }
+  }
+}
 
-  int sendr, recvr, tag = 0;
-  for (int p = 1; p < P; ++p) {
+template<class R>
+template<class S1>
+void bi::DistributedResampler<R>::rotate(S1& s) {
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();
+  const int P = s.size();
 
-  if (p % size > 0) {
-      sendr = (rank + size - (p % size)) % size;
+  std::vector<boost::mpi::request> sends1(size), sends2(size);
+  int p, sendr, recvr;
+
+  /* pipeline first round of sends */
+  for (p = 0; p < size; ++p) {
+    if (p % size > 0) {
       recvr = (rank + p) % size;
+      sends1[recvr] = world.isend(recvr, 2*rank*p, *s.s1s[p]);
+      sends2[recvr] = world.isend(recvr, 2*rank*p + 1, *s.out1s[p]);
+    }
+  }
 
-      boost::mpi::request send = world.isend(recvr, tag + 2*rank, *s.s1s[p]);
-      world.recv(sendr, tag + 2*sendr, s.s2);
-      send.wait();
-      
+  /* receive incoming one by one */
+  for (p = 0; p < P; ++p) {
+    if (p % size > 0) {
+      /* receive new particle for this position */
+      sendr = (rank + size - (p % size)) % size;      
+      world.recv(sendr, 2*sendr*p, s.s2);
+      world.recv(sendr, 2*sendr*p + 1, s.out2);
+
+      /* ensure old particle in this position has been sent */
+      recvr = (rank + p) % size;
+      sends1[recvr].wait();
+      sends2[recvr].wait();
+
+      /* replace the old particle with the new particle */
       s.s2.swap(*s.s1s[p]);
+      s.out2.swap(*s.out1s[p]);
 
-      tag += 2*size;
+      /* continue the pipeline */
+      if (p + size < P) {
+	sends1[recvr] = world.isend(recvr, 2*rank*(p + size), *s.s1s[p]);
+	sends2[recvr] = world.isend(recvr, 2*rank*(p + size) + 1, *s.out1s[p]);
+      }
     }
   }
 }
