@@ -149,38 +149,28 @@ int main(int argc, char* argv[]) {
 
   /* resampler */
   [% IF client.get_named_arg('resampler') == 'metropolis' %]
-  BOOST_AUTO(resamBase, (ResamplerFactory::createMetropolisResampler(C, ESS_REL)));
+  BOOST_AUTO(resam, (ResamplerFactory::createMetropolisResampler(C, ESS_REL)));
   [% ELSIF client.get_named_arg('resampler') == 'rejection' %]
-  BOOST_AUTO(resamBase, ResamplerFactory::createRejectionResampler());
+  BOOST_AUTO(resam, ResamplerFactory::createRejectionResampler());
   [% ELSIF client.get_named_arg('resampler') == 'multinomial' %]
-  BOOST_AUTO(resamBase, ResamplerFactory::createMultinomialResampler(ESS_REL));
+  BOOST_AUTO(resam, ResamplerFactory::createMultinomialResampler(ESS_REL));
   [% ELSIF client.get_named_arg('resampler') == 'stratified' %]
-  BOOST_AUTO(resamBase, ResamplerFactory::createStratifiedResampler(ESS_REL));
+  BOOST_AUTO(resam, ResamplerFactory::createStratifiedResampler(ESS_REL));
   [% ELSE %]
-  BOOST_AUTO(resamBase, ResamplerFactory::createSystematicResampler(ESS_REL));
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  BOOST_AUTO(resam, (ResamplerFactory::createDistributedResampler(resamBase, ESS_REL)));
-  [% ELSE %]
-  BOOST_AUTO(resam, resamBase);
+  BOOST_AUTO(resam, ResamplerFactory::createSystematicResampler(ESS_REL));
   [% END %]
   
   /* stopper */
-  [% IF client.get_named_arg('stopper') == 'deterministic' %]
-  BOOST_AUTO(stopperBase, (StopperFactory::createStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
-  [% ELSIF client.get_named_arg('stopper') == 'sumofweights' %]
-  BOOST_AUTO(stopperBase, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  [% IF client.get_named_arg('stopper') == 'sumofweights' %]
+  BOOST_AUTO(stopper, (StopperFactory::createSumOfWeightsStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'miness' %]
-  BOOST_AUTO(stopperBase, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  BOOST_AUTO(stopper, (StopperFactory::createMinimumESSStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'stddev' %]
-  BOOST_AUTO(stopperBase, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
+  BOOST_AUTO(stopper, (StopperFactory::createStdDevStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSIF client.get_named_arg('stopper') == 'var' %]
-  BOOST_AUTO(stopperBase, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
-  [% END %]
-  [% IF client.get_named_arg('with-mpi') %]
-  BOOST_AUTO(stopper, (StopperFactory::createDistributedStopper(stopperBase)));
+  BOOST_AUTO(stopper, (StopperFactory::createVarStopper(STOPPER_THRESHOLD, STOPPER_MAX, sched.numObs())));
   [% ELSE %]
-  BOOST_AUTO(stopper, stopperBase);
+  BOOST_AUTO(stopper, (StopperFactory::createDefaultStopper(NPARTICLES, STOPPER_MAX, sched.numObs())));
   [% END %]
 
   /* filter */
@@ -206,7 +196,7 @@ int main(int argc, char* argv[]) {
   #endif
   
   filter->init(rng, *sched.begin(), s, out, bufInit);
-  filter->filter(rng, sched.begin(), sched.end(), s, out, bufInit);
+  filter->filter(rng, sched.begin(), sched.end(), s, out);
   out.flush();
   
   #ifdef ENABLE_TIMING
