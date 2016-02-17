@@ -12,6 +12,7 @@
 #include "../simulator/Simulator.hpp"
 #include "../state/BootstrapPFState.hpp"
 #include "../cache/BootstrapPFCache.hpp"
+#include "../misc/exception.hpp"
 
 namespace bi {
 /**
