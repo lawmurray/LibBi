@@ -189,23 +189,11 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
-  #ifdef ENABLE_TIMING
-  TicToc timer;
-  timer.sync();
-  timer.tic();
-  #endif
   
   filter->init(rng, *sched.begin(), s, out, bufInit);
   filter->filter(rng, sched.begin(), sched.end(), s, out);
   out.flush();
   
-  #ifdef ENABLE_TIMING
-  timer.sync();
-  /* output timing results */
-  if (rank == 0) {
-    std::cout << "total " << timer.toc() << " us" << std::endl;
-  }
-  #endif
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif

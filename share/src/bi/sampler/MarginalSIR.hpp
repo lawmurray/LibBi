@@ -259,6 +259,8 @@ private:
 };
 }
 
+#include "../misc/TicToc.hpp"
+
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
@@ -292,7 +294,7 @@ template<class S1, class IO1, class IO2>
 void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const ScheduleIterator first, const ScheduleIterator last, S1& s,
     const int C, IO1& out, IO2& inInit) {
-  // should look very similar to Filter::filter()
+  TicToc clock;
   ScheduleIterator iter = first;
   init(rng, iter, s, out, inInit);
 #if ENABLE_DIAGNOSTICS == 3
@@ -321,6 +323,7 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   move(rng, first, iter, last, s);
   report(*iter, s);
   term(rng, s);
+  s.clock = clock.toc();
   outputT(s, out);
 }
 
@@ -503,6 +506,7 @@ template<class B, class F, class A, class R>
 template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::outputT(const S1& s, IO1& out) {
   out.write(s);
+  out.writeClock(s.clock);
 }
 
 template<class B, class F, class A, class R>

@@ -47,10 +47,6 @@ production runs.
 Enable extra debugging options in compilation. This is recommended along with
 C<--with-gdb> or C<--with-cuda-gdb> when debugging.
 
-=item C<--enable-timing> (default off)
-
-Print detailed timing information to standard output.
-
 =item C<--enable-diagnostics n> (default 0)
 
 Enable diagnostic output n to standard error.
@@ -227,7 +223,6 @@ sub new {
     push(@builddir, 'vampir') if $self->{_vampir};
     push(@builddir, 'single') if $self->{_single};
     push(@builddir, 'extradebug') if $self->{_extra_debug};
-    push(@builddir, 'timing') if $self->{_timing};
     push(@builddir, 'diagnostics' . $self->{_diagnostics}) if $self->{_diagnostics};
     push(@builddir, 'gperftools') if $self->{_gperftools};
     

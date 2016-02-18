@@ -401,6 +401,11 @@ public:
    */
   double logProposal;
 
+  /**
+   * Execution time.
+   */
+  long clock;
+
 protected:
   /* net sizes, for convenience */
   static const int NR = B::NR;
@@ -465,7 +470,7 @@ private:
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const int P, const int Y, const int T) :
-    logPrior(-BI_INF), logProposal(-BI_INF),
+    logPrior(-BI_INF), logProposal(-BI_INF), clock(0),
     Xdn(P, NR + ND + NDX + NR + ND),  // includes dy- and ry-vars
     Kdn(1, NP + NPX + NF + NP + 2 * NO),// includes py- and oy-vars
     p(0), P(P) {
@@ -477,8 +482,8 @@ bi::State<B,L>::State(const int P, const int Y, const int T) :
 
 template<class B, bi::Location L>
 bi::State<B,L>::State(const State<B,L>& o) :
-    logPrior(o.logPrior), logProposal(o.logProposal), Xdn(o.Xdn), Kdn(o.Kdn), p(
-        o.p), P(o.P) {
+    logPrior(o.logPrior), logProposal(o.logProposal), clock(o.clock), Xdn(
+        o.Xdn), Kdn(o.Kdn), p(o.p), P(o.P) {
   for (int i = 0; i < NB; ++i) {
     builtin[i] = o.builtin[i];
   }
@@ -499,6 +504,7 @@ template<bi::Location L2>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L2>& o) {
   logPrior = o.logPrior;
   logProposal = o.logProposal;
+  clock = o.clock;
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {
@@ -511,6 +517,7 @@ template<class B, bi::Location L>
 void bi::State<B,L>::swap(State<B,L>& o) {
   std::swap(logPrior, o.logPrior);
   std::swap(logProposal, o.logProposal);
+  std::swap(clock, o.clock);
   Xdn.swap(o.Xdn);
   Kdn.swap(o.Kdn);
   for (int i = 0; i < NB; ++i) {
@@ -568,6 +575,7 @@ template<class B, bi::Location L>
 inline void bi::State<B,L>::clear() {
   logPrior = -BI_INF;
   logProposal = -BI_INF;
+  clock = 0;
   rows(Xdn, p, P).clear();
   Kdn.clear();
 }
@@ -904,6 +912,7 @@ template<class Archive>
 void bi::State<B,L>::save(Archive& ar, const unsigned version) const {
   ar & logPrior;
   ar & logProposal;
+  ar & clock;
   save_resizable_matrix(ar, version, Xdn);
   save_resizable_matrix(ar, version, Kdn);
   ar & builtin;
@@ -916,6 +925,7 @@ template<class Archive>
 void bi::State<B,L>::load(Archive& ar, const unsigned version) {
   ar & logPrior;
   ar & logProposal;
+  ar & clock;
   load_resizable_matrix(ar, version, Xdn);
   load_resizable_matrix(ar, version, Kdn);
   ar & builtin;

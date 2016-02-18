@@ -56,6 +56,7 @@ private:
 }
 
 inline bi::TicToc::TicToc() {
+  sync();
   tic();
 }
 

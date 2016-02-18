@@ -37,7 +37,7 @@ void bi::ParticleFilterNetCDFBuffer::create() {
     aVar = nc_def_var(ncid, "ancestor", NC_INT, nrDim, npDim);
     lwVar = nc_def_var(ncid, "logweight", NC_REAL, nrDim, npDim);
   }
-  llVar = nc_def_var(ncid, "LL", NC_REAL);
+  llVar = nc_def_var(ncid, "loglikelihood", NC_REAL);
 
   nc_enddef(ncid);
 }
@@ -79,11 +79,11 @@ void bi::ParticleFilterNetCDFBuffer::map() {
         "Second dimension of variable logweight should be np, in file " << file);
   }
 
-  llVar = nc_inq_varid(ncid, "LL");
-  BI_ERROR_MSG(llVar >= 0, "No variable LL in file " << file);
+  llVar = nc_inq_varid(ncid, "loglikelihood");
+  BI_ERROR_MSG(llVar >= 0, "No variable loglikelihood in file " << file);
   dimids = nc_inq_vardimid(ncid, llVar);
   BI_ERROR_MSG(dimids.size() == 0u,
-      "Variable LL has " << dimids.size() << " dimensions, should have 0, in file " << file);
+      "Variable loglikelihood has " << dimids.size() << " dimensions, should have 0, in file " << file);
 }
 
 void bi::ParticleFilterNetCDFBuffer::writeLogLikelihood(const real ll) {

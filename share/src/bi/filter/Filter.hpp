@@ -46,10 +46,13 @@ public:
 };
 }
 
+#include "../misc/TicToc.hpp"
+
 template<class F>
 template<class S1, class IO1>
 void bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out) {
+  TicToc clock;
   ScheduleIterator iter = first;
   this->output0(s, out);
   this->correct(rng, *iter, s);
@@ -58,6 +61,7 @@ void bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     this->step(rng, iter, last, s, out);
   }
   this->term(s);
+  s.clock = clock.toc();
   this->outputT(s, out);
 }
 

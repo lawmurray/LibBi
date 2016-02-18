@@ -49,7 +49,7 @@ public:
   void write(const size_t k, const real t, const S1& s);
 
   /**
-   * Write marginal log-likelihood
+   * Write marginal log-likelihood.
    *
    * @param ll Marginal log-likelihood.
    */
@@ -78,6 +78,7 @@ void bi::ParticleFilterBuffer<IO1>::write(const size_t k, const real t,
 template<class IO1>
 template<class S1>
 void bi::ParticleFilterBuffer<IO1>::writeT(const S1& s) {
+  parent_type::writeT(s);
   parent_type::writeLogLikelihood(s.logLikelihood);
 }
 

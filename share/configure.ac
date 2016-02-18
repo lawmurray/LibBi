@@ -85,14 +85,6 @@ AC_ARG_ENABLE([extradebug],
        no)  extradebug=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-extradebug]) ;;
      esac],[extradebug=false])
-     
-AC_ARG_ENABLE([timing],
-     [  --enable-timing    output timing information during run],
-     [case "${enableval}" in
-       yes) timing=true ;;
-       no)  timing=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-timing]) ;;
-     esac],[timing=false])
 
 AC_ARG_ENABLE([diagnostics],
      [  --enable-diagnostics    output diagnostics during run],
@@ -294,7 +286,6 @@ AM_CONDITIONAL([ENABLE_OPENMP], [test x$openmp = xtrue])
 AM_CONDITIONAL([ENABLE_MPI], [test x$mpi = xtrue])
 AM_CONDITIONAL([ENABLE_VAMPIR], [test x$vampir = xtrue])
 AM_CONDITIONAL([ENABLE_EXTRADEBUG], [test x$extradebug = xtrue])
-AM_CONDITIONAL([ENABLE_TIMING], [test x$timing = xtrue])
 AM_CONDITIONAL([ENABLE_GPERFTOOLS], [test x$gperftools = xtrue])
 
 AC_DEFINE_UNQUOTED([ENABLE_DIAGNOSTICS], [$diagnostics])

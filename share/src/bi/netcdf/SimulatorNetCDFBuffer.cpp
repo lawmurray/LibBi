@@ -84,7 +84,9 @@ void bi::SimulatorNetCDFBuffer::create(const size_t P, const size_t T) {
       }
     }
   }
+  clockVar = nc_def_var(ncid, "clock", NC_INT64);
 
+  /* execution time variable */
   nc_enddef(ncid);
 }
 
@@ -155,6 +157,13 @@ void bi::SimulatorNetCDFBuffer::map(const size_t P, const size_t T) {
       }
     }
   }
+
+  /* execution time variable */
+  clockVar = nc_inq_varid(ncid, "clock");
+  BI_ERROR_MSG(clockVar >= 0, "No variable clock in file " << file);
+  dimids = nc_inq_vardimid(ncid, clockVar);
+  BI_ERROR_MSG(dimids.size() == 0u,
+      "Variable clock has " << dimids.size() << " dimensions, should have 0, in file " << file);
 }
 
 int bi::SimulatorNetCDFBuffer::createVar(Var* var) {
@@ -265,4 +274,8 @@ void bi::SimulatorNetCDFBuffer::writeStart(const size_t k,
 
 void bi::SimulatorNetCDFBuffer::writeLen(const size_t k, const long& len) {
   nc_put_var1(ncid, lenVar, k, &len);
+}
+
+void bi::SimulatorNetCDFBuffer::writeClock(const long clock) {
+  nc_put_var(ncid, clockVar, &clock);
 }

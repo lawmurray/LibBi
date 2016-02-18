@@ -67,6 +67,11 @@ public:
    */
   IO1 out;
 
+  /**
+   * Execution time.
+   */
+  long clock;
+
 private:
   /**
    * Serialize.

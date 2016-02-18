@@ -24,3 +24,7 @@ void bi::SimulatorNullBuffer::writeStart(const size_t k, const long& start) {
 void bi::SimulatorNullBuffer::writeLen(const size_t k, const long& len) {
   //
 }
+
+void bi::SimulatorNullBuffer::writeClock(const long clock) {
+  //
+}

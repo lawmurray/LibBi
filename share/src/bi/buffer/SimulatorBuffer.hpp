@@ -93,7 +93,7 @@ void bi::SimulatorBuffer<IO1>::write0(const S1& s) {
 template<class IO1>
 template<class S1>
 void bi::SimulatorBuffer<IO1>::writeT(const S1& s) {
-  //
+  IO1::writeClock(s.clock);
 }
 
 #endif

@@ -150,6 +150,11 @@ public:
    */
   double ess;
 
+  /**
+   * Execution time.
+   */
+  long clock;
+
 private:
   /**
    * Log-weights.

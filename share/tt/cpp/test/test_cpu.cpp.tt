@@ -54,18 +54,11 @@ int main(int argc, char* argv[]) {
   [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   [% END %]
-  #ifdef ENABLE_TIMING
-  TicToc timer;
-  #endif
   
   bool passed = Test::test(rng);
   std::cerr << "passed = " << passed << std::endl;
   synchronize();
 
-  #ifdef ENABLE_TIMING
-  /* output timing results */
-  std::cout << timer.toc() << std::endl;
-  #endif
   [% IF client.get_named_arg('with-gperftools') %]
   ProfilerStop();
   [% END %]

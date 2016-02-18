@@ -135,6 +135,12 @@ public:
   void output(const int c, const S1& s1, IO1& out);
 
   /**
+   * @copydoc Simulator::outputT()
+   */
+  template<class S1, class IO1>
+  void outputT(const S1& s, IO1& out);
+
+  /**
    * Report progress on stderr.
    *
    * @tparam S1 State type.
@@ -181,6 +187,8 @@ private:
 };
 }
 
+#include "../misc/TicToc.hpp"
+
 template<class B, class F>
 bi::MarginalMH<B,F>::MarginalMH(B& m, F& filter) :
     m(m), filter(filter), lastAccepted(false), accepted(0), total(0) {
@@ -194,6 +202,7 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
   /* pre-condition */
   BI_ERROR(C > 0);
 
+  TicToc clock;
   init(rng, first, last, s.s1, s.out, inInit);
   output(0, s.s1, out);
   for (int c = 1; c < C; ++c) {
@@ -202,6 +211,8 @@ void bi::MarginalMH<B,F>::sample(Random& rng, const ScheduleIterator first,
     report(c, s.s1, s.s2);
     output(c, s.s1, out);
   }
+  s.clock = clock.toc();
+  outputT(s, out);
   term();
 }
 
@@ -271,6 +282,12 @@ void bi::MarginalMH<B,F>::output(const int c, const S1& s1, IO1& out) {
     out.flush();
     out.clear();
   }
+}
+
+template<class B, class F>
+template<class S1, class IO1>
+void bi::MarginalMH<B,F>::outputT(const S1& s, IO1& out) {
+  out.writeClock(s.clock);
 }
 
 template<class B, class F>

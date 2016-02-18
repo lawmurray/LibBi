@@ -85,6 +85,13 @@ public:
    * @copydoc SimulatorNetCDFBuffer::writeLen()
    */
   void writeLen(const size_t k, const long& len);
+
+  /**
+   * Write execution time.
+   *
+   * @param clock Execution time.
+   */
+  void writeClock(const long clock);
 };
 }
 

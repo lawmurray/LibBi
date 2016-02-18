@@ -145,6 +145,13 @@ public:
    */
   void writeLen(const size_t k, const long& len);
 
+  /**
+   * Write execution time.
+   *
+   * @param clock Execution time.
+   */
+  void writeClock(const long clock);
+
 protected:
   /**
    * Set up structure of NetCDF file.
@@ -268,6 +275,11 @@ protected:
    * Time variable.
    */
   int tVar;
+
+  /**
+   * Execution time variable.
+   */
+  int clockVar;
 
   /**
    * Variable holding starting index into nrp dimension for each time, flexi

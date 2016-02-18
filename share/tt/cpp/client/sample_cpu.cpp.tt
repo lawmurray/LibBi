@@ -338,9 +338,6 @@ int main(int argc, char* argv[]) {
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStart(GPERFTOOLS_FILE.c_str());
   #endif
-  #ifdef ENABLE_TIMING
-  TicToc timer;
-  #endif
 
   [% IF client.get_named_arg('target') == 'posterior' %]
   sampler->sample(rng, sched.begin(), sched.end(), s, NSAMPLES, out, bufInit);
@@ -349,13 +346,6 @@ int main(int argc, char* argv[]) {
   [% END %]
   out.flush();
   
-  #ifdef ENABLE_TIMING
-  /* output timing results */
-  timer.sync();
-  if (rank == 0) {
-    std::cout << "total " << timer.toc() << " us" << std::endl;
-  }
-  #endif
   #ifdef ENABLE_GPERFTOOLS
   ProfilerStop();
   #endif
