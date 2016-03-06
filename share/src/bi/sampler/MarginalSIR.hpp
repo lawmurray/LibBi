@@ -415,18 +415,11 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
   profile(END, RESAMPLE);
 }
 
-#include "../math/io.hpp"
-#include "boost/mpi/communicator.hpp"
-
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
   profile(START, MOVE);
-
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-
   if (lastResample) {
     /* compute budget */
     double t0 = first->indexObs();

@@ -160,7 +160,7 @@ template<class B, bi::Location L>
 template<class V1>
 void bi::AuxiliaryPFState<B,L>::gather(const ScheduleElement now,
     const V1 as) {
-  BootstrapPFState<B,L>::gather(as);
+  BootstrapPFState<B,L>::gather(now, as);
   if (!now.hasOutput()) {
     bi::gather(as, logAuxWeights(), logAuxWeights());
   }

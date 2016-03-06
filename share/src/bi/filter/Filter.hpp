@@ -52,9 +52,6 @@ template<class F>
 template<class S1, class IO1>
 void bi::Filter<F>::filter(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s, IO1& out) {
-  boost::mpi::communicator world;
-  const int rank = world.rank();
-  
   TicToc clock;
   ScheduleIterator iter = first;
   this->output0(s, out);
