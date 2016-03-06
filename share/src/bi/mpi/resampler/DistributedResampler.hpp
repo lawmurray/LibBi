@@ -134,6 +134,7 @@ double bi::DistributedResampler<R>::reduce(const V1 lws, double* lW) {
   if (lW != NULL) {
     *lW = mx + bi::log(sum1) - bi::log(double(lws.size()));
   }
+
   return (sum1 * sum1) / sum2;
 }
 
@@ -185,7 +186,6 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
     const int timesteps = s.front()->getOutput().size() - 1;
     reportResample(timesteps, rank, usecs);
 #endif
-
     redistribute(O, s);
     offspringToAncestors(column(O, rank), as1);
     permute(as1);
@@ -318,15 +318,16 @@ void bi::DistributedResampler<R>::rotate(S1& s) {
   const int size = world.size();
   const int P = s.size();
 
-  std::vector<boost::mpi::request> sends1(size), sends2(size);
+  std::vector<boost::mpi::request> sends1(P), sends2(P);
   int p, sendr, recvr;
 
   /* pipeline first round of sends */
-  for (p = 0; p < size; ++p) {
+  const int buf = 8;
+  for (p = 0; p < buf*size && p < P; ++p) {
     if (p % size > 0) {
       recvr = (rank + p) % size;
-      sends1[recvr] = world.isend(recvr, 2*rank*p, *s.s1s[p]);
-      sends2[recvr] = world.isend(recvr, 2*rank*p + 1, *s.out1s[p]);
+      sends1[p] = world.isend(recvr, 2*rank*p, *s.s1s[p]);
+      sends2[p] = world.isend(recvr, 2*rank*p + 1, *s.out1s[p]);
     }
   }
 
@@ -334,23 +335,23 @@ void bi::DistributedResampler<R>::rotate(S1& s) {
   for (p = 0; p < P; ++p) {
     if (p % size > 0) {
       /* receive new particle for this position */
-      sendr = (rank + size - (p % size)) % size;      
+      sendr = (rank + size - (p % size)) % size;
       world.recv(sendr, 2*sendr*p, s.s2);
       world.recv(sendr, 2*sendr*p + 1, s.out2);
 
       /* ensure old particle in this position has been sent */
-      recvr = (rank + p) % size;
-      sends1[recvr].wait();
-      sends2[recvr].wait();
-
+      sends1[p].wait();
+      sends2[p].wait();
+      
       /* replace the old particle with the new particle */
       s.s2.swap(*s.s1s[p]);
       s.out2.swap(*s.out1s[p]);
 
       /* continue the pipeline */
-      if (p + size < P) {
-	sends1[recvr] = world.isend(recvr, 2*rank*(p + size), *s.s1s[p]);
-	sends2[recvr] = world.isend(recvr, 2*rank*(p + size) + 1, *s.out1s[p]);
+      recvr = (rank + p) % size;
+      if (p + buf*size < P) {
+	sends1[p + buf*size] = world.isend(recvr, 2*rank*(p + buf*size), *s.s1s[p]);
+	sends2[p + buf*size] = world.isend(recvr, 2*rank*(p + buf*size) + 1, *s.out1s[p]);
       }
     }
   }

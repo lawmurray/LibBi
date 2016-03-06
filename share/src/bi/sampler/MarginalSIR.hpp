@@ -363,6 +363,9 @@ template<class B, class F, class A, class R>
 template<class S1, class IO1>
 void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
     ScheduleIterator& iter, const ScheduleIterator last, S1& s, IO1& out) {
+  /* pre-condition */
+  BI_ASSERT(s.size() > 0);
+  
   profile(START, STEP);
   ScheduleIterator iter1;
   do {
@@ -384,6 +387,9 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
   s.ess = resam.reduce(s.logWeights(), &lW);
   s.logIncrements(iter->indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
+  if (iter + 1 == last) {
+    resam.setEssRel(1.0); // to force resample
+  }
 
   profile(END, STEP);
 }
@@ -393,14 +399,6 @@ template<class S1>
 void bi::MarginalSIR<B,F,A,R>::adapt(const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, const S1& s) {
   profile(START, ADAPT);
-
-  /* compute budget */
-  double t0 = first->getFrom();
-  double t = (iter + 1)->getTo() - t0;
-  double T = last->getTo() - t0;
-  tstart = clock.toc();
-  tmilestone = tinit
-    + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
 
   /* adapt proposal */
   adapterReady = adapter.adapt(s);
@@ -417,12 +415,27 @@ void bi::MarginalSIR<B,F,A,R>::resample(Random& rng,
   profile(END, RESAMPLE);
 }
 
+#include "../math/io.hpp"
+#include "boost/mpi/communicator.hpp"
+
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
   profile(START, MOVE);
+
+  boost::mpi::communicator world;
+  const int rank = world.rank();
+
   if (lastResample) {
+    /* compute budget */
+    double t0 = first->indexObs();
+    double t = iter->indexObs() - t0 + 1;
+    double T = last->indexObs() - t0;
+    tstart = clock.toc();
+    tmilestone = tinit
+      + (tmoves - tinit) * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
+
     int naccept = 0;
     int ntotal = 0;
     int p = 0;
@@ -481,16 +494,16 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
           out1.swap(out2);
           ++naccept;
         }
+	++ntotal;
       }
       ++p;
-      ++ntotal;
       complete = (tmoves <= 0.0 && p >= s.size())
           || (tmoves > 0.0 && clock.toc() >= tmilestone);
     }
 
     if (tmoves > 0.0) {
       /* particle moving when time elapsed must be eliminated */
-      s.logWeights()(p % s.size()) = -BI_INF;
+      s.logWeights()((p - 1) % s.size()) = -BI_INF;
     }
 
     lastAccept = naccept;
@@ -559,9 +572,9 @@ template<class B, class F, class A, class R>
 void bi::MarginalSIR<B,F,A,R>::profile(const StartOrEnd startOrEnd,
     const Step step) {
 #if ENABLE_DIAGNOSTICS == 4
-  if (startOrEnd == START) {
-    clock.sync();
-  }
+  //if (startOrEnd == START) {
+  //  clock.sync();
+  //}
 #endif
   if (step == INIT) {
     if (startOrEnd == START) {

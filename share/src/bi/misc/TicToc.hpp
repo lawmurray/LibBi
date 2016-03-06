@@ -36,12 +36,6 @@ public:
   long toc();
 
   /**
-   * Synchronize host and device if CUDA is enabled, and across all processes
-   * if MPI is enabled.
-   */
-  void sync();
-
-  /**
    * Return absolute time.
    */
   long time();
@@ -56,7 +50,6 @@ private:
 }
 
 inline bi::TicToc::TicToc() {
-  sync();
   tic();
 }
 
@@ -69,17 +62,6 @@ inline long bi::TicToc::toc() {
   gettimeofday(&end, NULL);
 
   return (end.tv_sec - start.tv_sec)*1e6 + (end.tv_usec - start.tv_usec);
-}
-
-inline void bi::TicToc::sync() {
-  #ifdef ENABLE_CUDA
-  synchronize();
-  #endif
-
-  #ifdef ENABLE_MPI
-  boost::mpi::communicator world;
-  world.barrier();
-  #endif
 }
 
 inline long bi::TicToc::time() {
