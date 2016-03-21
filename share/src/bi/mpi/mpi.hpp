@@ -28,6 +28,21 @@ namespace bi {
 std::string append_rank(const std::string& name);
 
 /**
+ * Get rank.
+ */
+int mpi_rank();
+
+/**
+ * Get size.
+ */
+int mpi_size();
+
+/**
+ * Barrier.
+ */
+void mpi_barrier();
+
+/**
  * Message tags.
  */
 enum MPITag {
