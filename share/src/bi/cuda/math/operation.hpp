@@ -226,7 +226,6 @@ struct syevx_impl<ON_DEVICE,T1> {
 }
 
 #include "cublas.hpp"
-#include "magma.hpp"
 
 template<class T1>
 template<class M1, class V1, class V2>
@@ -447,24 +446,14 @@ template<class T1>
 template<class M1>
 void bi::potrf_impl<bi::ON_DEVICE,T1>::func(M1 U, char uplo)
     throw (CholeskyException) {
-  int info;
-  magma_potrf < T1 > ::func(uplo, U.size1(), U.buf(), U.lead(), &info);
-  if (info != 0) {
-    throw CholeskyException(info);
-  }
+  BI_ERROR_MSG(false, "Not implemented");
 }
 
 template<class T1>
 template<class M1, class M2>
 void bi::potrs_impl<bi::ON_DEVICE,T1>::func(const M1 U, M2 X, char uplo)
     throw (CholeskyException) {
-  int info;
-  magma_potrs < T1
-      > ::func(uplo, U.size1(), X.size2(), U.buf(), U.lead(), X.buf(),
-          X.lead(), &info);
-  if (info != 0) {
-    throw CholeskyException(info);
-  }
+  BI_ERROR_MSG(false, "Not implemented");
 }
 
 template<class T1>
@@ -473,19 +462,6 @@ void bi::syevx_impl<bi::ON_DEVICE,T1>::func(char jobz, char range, char uplo,
     M1 A, typename M1::value_type vl, typename M1::value_type vu, int il,
     int iu, typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work,
     V3 rwork, V4 iwork, V5 ifail) throw (EigenException) {
-  int info;
-  int N = A.size1();
-  int ldA = A.lead();
-  int ldZ = Z.lead();
-  int lwork = work.size();
-
-//  magma_syevx < T1
-//      > ::func(jobz, range, uplo, N, A.buf(), ldA, vl, vu, il, iu, abstol, m,
-//          w.buf(), Z.buf(), ldZ, work.buf(), lwork, rwork.buf(), iwork.buf(),
-//          ifail.buf(), &info);
-//  if (info != 0) {
-//    throw EigenException(info);
-//  }
   BI_ERROR_MSG(false, "Not implemented");
 }
 

@@ -70,7 +70,6 @@ endif
 if ENABLE_CUDA
 libbi_a_SOURCES += \
   src/bi/cuda/device.cu \
-  src/bi/cuda/math/magma.cu \
   src/bi/cuda/math/cublas.cu \
   src/bi/cuda/random/RandomGPU.cu \
   src/bi/cuda/random/RandomKernel.cu
