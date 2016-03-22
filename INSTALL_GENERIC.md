@@ -29,7 +29,6 @@ For GPU support, the following additional packages are required:
 
   * [CUDA](http://www.nvidia.com/cuda) 5.0 or later (including CUBLAS and
     CURAND),
-  * [MAGMA](icl.cs.utk.edu/magma/) 1.2.1 or later.
 
 The latter can be difficult to install and, in fact, is not required
 for almost everything that you might like to do with LibBi. You may

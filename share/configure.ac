@@ -161,7 +161,7 @@ if test x$mpi = xtrue; then
 	    fi
 		CXXCPP="mpicxx -E"
 		CXXFLAGS+=" `mpicxx -showme:compile`"
-		LDFLAGS+=" `mpicxx -showme:link`"
+		LIBS+=" `mpicxx -showme:link`"
 	fi
 fi
 
