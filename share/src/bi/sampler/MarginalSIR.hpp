@@ -393,24 +393,31 @@ template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     const ScheduleIterator iter, const ScheduleIterator last, S1& s) {
-  if (lastResample) {
-    /* compute budget */
-    double t0 = first->indexObs();
-    double t = iter->indexObs() - t0 + 1;
-    double T = last->indexObs() - t0;
-    tstart = clock.toc();
-    tmilestone = tmoves * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
+  /* compute budget */
+  double t0 = first->indexObs();
+  double t = iter->indexObs() - t0 + 1;
+  double T = last->indexObs() - t0;
+  tstart = clock.toc();
+  tmilestone = tmoves * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
 
+  if (lastResample) {
     int naccept = 0;
     int ntotal = 0;
+    int j = 0;
     int p = 0;
     bool accept = false;
     bool complete = (tmoves <= 0.0 && p >= s.size())
         || (tmoves > 0.0 && clock.toc() >= tmilestone);
 
     while (!complete) {
-      BOOST_AUTO(&s1, *s.s1s[p % s.size()]);
-      BOOST_AUTO(&out1, *s.out1s[p % s.size()]);
+      if (tmoves > 0.0) {
+        j = rng.uniformInt(0, s.size() - 1);
+        //j = p % s.size();  // systematic scheduler
+      } else {
+        j = p % s.size();
+      }
+      BOOST_AUTO(&s1, *s.s1s[j]);
+      BOOST_AUTO(&out1, *s.out1s[j]);
       BOOST_AUTO(&s2, s.s2);
       BOOST_AUTO(&out2, s.out2);
 
@@ -468,7 +475,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
 
     if (tmoves > 0.0) {
       /* particle moving when time elapsed must be eliminated */
-      s.logWeights()((p - 1) % s.size()) = -BI_INF;
+      s.logWeights()(j) = -BI_INF;
     }
 
     lastAccept = naccept;
