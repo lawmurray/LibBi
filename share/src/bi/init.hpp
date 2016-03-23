@@ -23,7 +23,6 @@ void bi_init(const int threads = 0);
 #include "ode/IntegratorConstants.hpp"
 
 #ifdef ENABLE_CUDA
-#include "cuda/math/magma.hpp"
 #include "cuda/cuda.hpp"
 #include "cuda/device.hpp"
 #endif
@@ -39,9 +38,6 @@ inline void bi::bi_init(const int threads) {
 
   #ifdef ENABLE_CUDA
   cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
-  #ifdef HAVE_MAGMA_H
-  magma_init();
-  #endif
   #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   int rank = world.rank();

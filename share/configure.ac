@@ -110,7 +110,7 @@ AC_ARG_ENABLE([gperftools],
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
-    CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
+    CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include -I$CUDA_ROOT/include"
     LDFLAGS="$LDFLAGS -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -Wl,-rpath,$CUDA_ROOT/lib64 -Wl,-rpath,$CUDA_ROOT/lib -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/local/cuda/lib"
 #fi
 
@@ -161,7 +161,7 @@ if test x$mpi = xtrue; then
 	    fi
 		CXXCPP="mpicxx -E"
 		CXXFLAGS+=" `mpicxx -showme:compile`"
-		LDFLAGS+=" `mpicxx -showme:link`"
+		LIBS+=" `mpicxx -showme:link`"
 	fi
 fi
 
@@ -192,8 +192,6 @@ if test x$cuda = xtrue; then
     AC_CHECK_LIB([cudart], [main], [], [AC_MSG_ERROR([CUDA library not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([curand], [main], [], [AC_MSG_ERROR([CURAND library (part of CUDA) not found (only required with --enable-cuda)])])
     AC_CHECK_LIB([cublas], [main], [], [AC_MSG_ERROR([CUBLAS library (part of CUDA) not found (only required with --enable-cuda)])])
-    AC_CHECK_LIB([magmablas], [magmablas_dgemv_MLU], [], []) # removed in MAGMA 1.4, so not required
-    AC_CHECK_LIB([magma], [magma_dpotrf], [], []) # MAGMA now optional
 fi
 
 if test x$mpi = xtrue; then
@@ -263,7 +261,6 @@ AC_CHECK_HEADERS([gsl/gsl_multimin.h], [], AC_MSG_ERROR([required GSL header not
 if test x$cuda = xtrue; then
     AC_CHECK_HEADERS([cublas_v2.h], [], AC_MSG_ERROR([CUBLAS header not found (only required with --enable-cuda)]), [-])
     AC_CHECK_HEADERS([curand.h], [], AC_MSG_ERROR([CURAND header not found (only required with --enable-cuda)]), [-])
-    AC_CHECK_HEADERS([magma.h], [], [], [-])  # now optional
 fi
 
 if test x$mpi = xtrue; then
