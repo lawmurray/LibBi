@@ -60,6 +60,11 @@ option to C<mpirun>.
 Number of processes per node under C<--enable-mpi>. Corresponds to the
 C<-npernode> option to C<mpirun>.
 
+=item C<--mpi-hostfile>
+
+Host file under C<--enable-mpi>, corresponding to the C<-hostfile> option to
+C<mpirun>.
+
 =item C<--role> (default C<client>)
 
 When a client-server architecture is used under MPI, the role of the process;
@@ -277,6 +282,10 @@ our @CLIENT_OPTIONS = (
     {
       name => 'mpi-npernode',
       type => 'int',
+    },
+    {
+      name => 'mpi-hostfile',
+      type => 'string'
     },
     {
       name => 'role',
@@ -688,6 +697,9 @@ sub exec {
         }
         if ($self->is_named_arg('mpi-npernode')) {
         	$np .= " -npernode " . int($self->get_named_arg('mpi-npernode'));
+        }
+        if ($self->is_named_arg('mpi-hostfile')) {
+            $np .= " -hostfile " . $self->get_named_arg('mpi-hostfile');
         }
         unshift(@argv, "mpirun$np ");
     }
