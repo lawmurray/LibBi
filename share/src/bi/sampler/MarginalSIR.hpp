@@ -258,8 +258,8 @@ template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
     const int nmoves, const double tmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-        1.0e6 * tmoves), lastResample(false), adapterReady(false), lastAccept(
-        0), lastTotal(0) {
+        1.0e6 * tmoves), tstart(0.0), tmilestone(0.0), lastResample(false), adapterReady(
+        false), lastAccept(0), lastTotal(0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
   boost::mpi::communicator world;
@@ -386,7 +386,7 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
     /* active particle eliminated by setting its weight to zero, which will
      * have affected marginal likelihood estimate. Correct for this. */
     const int K = s.size();
-    lW += bi::log(K/(K - 1.0));
+    lW += bi::log(K / (K - 1.0));
   }
   s.logIncrements(now.indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
@@ -406,8 +406,9 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
   double t0 = first->indexObs();
   double t = iter->indexObs() - t0 + 1;
   double T = last->indexObs() - t0;
+  const double c = 25.0;  ///@todo Allow this to be specified.
   tstart = clock.toc();
-  tmilestone = tmoves * (1.5 * t + 0.5 * t * t) / (1.5 * T + 0.5 * T * T);
+  tmilestone = tmoves * (t * (t + c + 2.0)) / (T * (T + c + 2.0));
 
   if (lastResample) {
     int naccept = 0;
@@ -509,10 +510,6 @@ void bi::MarginalSIR<B,F,A,R>::report0(const ScheduleElement now, S1& s) {
     std::cerr << std::fixed << std::setprecision(3);
     std::cerr << now.indexOutput() << ":\ttime " << now.getTime();
     std::cerr << "\tESS " << s.ess;
-    if (tmoves > 0.0) {
-      std::cerr << "\tstart " << tstart / 1e6;
-      std::cerr << "\tmilestone " << tmilestone / 1e6;
-    }
   }
 }
 
@@ -527,6 +524,10 @@ template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now, S1& s) {
   if (mpi_rank() == 0) {
+    if (tmoves > 0.0) {
+      std::cerr << "\tstart " << tstart / 1e6;
+      std::cerr << "\tmilestone " << tmilestone / 1e6;
+    }
     if (lastTotal > 0) {
       std::cerr << "\tmoves " << lastTotal;
       std::cerr << "\taccepts " << lastAccept;
