@@ -352,9 +352,12 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
       BOOST_AUTO(&s1, *s.s1s[p]);
       BOOST_AUTO(&out1, *s.out1s[p]);
 
-      iter1 = iter;
-      filter.step(rng, iter1, last, s1, out1);
-      s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
+      if (bi::is_finite(s.logWeights()(p))) {
+        /* otherwise no point, happens for eliminated active particle */
+        iter1 = iter;
+        filter.step(rng, iter1, last, s1, out1);
+        s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
+      }
     }
     iter = iter1;
   } while (iter + 1 != last && !iter->isObserved());
@@ -379,6 +382,12 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
   /* marginal likelihood */
   double lW;
   s.ess = resam.reduce(s.logWeights(), &lW);
+  if (lastResample && tmoves > 0.0) {
+    /* active particle eliminated by setting its weight to zero, which will
+     * have affected marginal likelihood estimate. Correct for this. */
+    const int K = s.size();
+    lW += bi::log(K/(K - 1.0));
+  }
   s.logIncrements(now.indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 
@@ -544,7 +553,7 @@ void bi::MarginalSIR<B,F,A,R>::profile(const Step step) {
   if (step == INIT) {
     mpi_barrier();
     clock.tic();
-  } else if (step == READY) {
+  } else if (step == INTERACT) {
 #if ENABLE_DIAGNOSTICS == 4
     mpi_barrier();
 #endif
