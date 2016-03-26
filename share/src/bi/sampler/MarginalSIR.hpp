@@ -289,9 +289,8 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
     const int C, IO1& out, IO2& inInit) {
   TicToc clock;
   ScheduleIterator iter = first;
-  profile(INIT);
   init(rng, iter, s, out, inInit);
-  profile(READY);
+  profile(INIT);
   profile(INTERACT);
   interact(rng, *iter, s);
   report0(*iter, s);
