@@ -253,11 +253,6 @@ bool bi::MarginalMH<B,F>::acceptReject(Random& rng, S1& s1, S2& s2, IO1& out) {
     double loglr = s2.logLikelihood - s1.logLikelihood;
     double logpr = s2.logPrior - s1.logPrior;
     double logqr = s1.logProposal - s2.logProposal;
-
-    if (!bi::is_finite(s1.logProposal)
-        && !bi::is_finite(s2.logProposal)) {
-      logqr = 0.0;
-    }
     double logratio = loglr + logpr + logqr;
     double u = rng.uniform<double>();
 

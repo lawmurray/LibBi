@@ -234,6 +234,12 @@ void bi::GaussianAdapter::propose(Random& rng, S1& s1, S2& s2) {
     s1.logProposal = s2.logProposal;  // symmetric
     axpy(1.0, htheta1, htheta2);
   } else {
+    axpy(-1.0, mu, htheta1);
+    trsv(U, htheta1, 'U', 'T');
+    s1.logProposal = -0.5 * dot(htheta1) - N * BI_HALF_LOG_TWO_PI
+        - bi::log(detU);
+    trmv(U, htheta1, 'U', 'T');
+    axpy(1.0, mu, htheta1);
     axpy(1.0, mu, htheta2);
   }
 

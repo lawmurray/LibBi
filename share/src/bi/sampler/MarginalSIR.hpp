@@ -438,9 +438,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
           } else {
             filter.propose(rng, *first, s1, s2, out2);
           }
-          if (bi::is_finite(s2.logPrior)) {
-            filter.filter(rng, first, iter + 1, s2, out2);
-          }
+          filter.filter(rng, first, iter + 1, s2, out2);
         } catch (CholeskyException e) {
           s2.logLikelihood = -BI_INF;
         } catch (ParticleFilterDegeneratedException e) {
@@ -456,11 +454,6 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
           double loglr = s2.logLikelihood - s1.logLikelihood;
           double logpr = s2.logPrior - s1.logPrior;
           double logqr = s1.logProposal - s2.logProposal;
-
-          if (!bi::is_finite(s1.logProposal)
-              && !bi::is_finite(s2.logProposal)) {
-            logqr = 0.0;
-          }
           double logratio = loglr + logpr + logqr;
           double u = rng.uniform<double>();
 
