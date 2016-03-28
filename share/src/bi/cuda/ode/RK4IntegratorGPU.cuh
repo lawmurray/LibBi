@@ -45,6 +45,7 @@ void bi::RK4IntegratorGPU<B,S,T1>::update(const T1 t1, const T1 t2,
     Dg.y = 1;
     Ns = 0;
 
+    BI_ERROR_MSG(Db.x*Dg.x == P, "Too many trajectories for CUDA ODE integrator.");
     BI_ERROR_MSG(P % Db.x == 0, "Number of trajectories must be multiple of " <<
         Db.x << " for CUDA ODE integrator");
 
