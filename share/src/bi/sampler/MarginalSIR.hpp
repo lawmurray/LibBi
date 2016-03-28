@@ -306,6 +306,15 @@ void bi::MarginalSIR<B,F,A,R>::sample(Random& rng,
   }
   profile(MOVE);
   move(rng, first, iter, last, s);
+
+  #ifdef ENABLE_MPI
+  /* reporting requirements */
+  boost::mpi::communicator world;
+  int naccept = lastAccept, ntotal = lastTotal;
+  boost::mpi::reduce(world, naccept, lastAccept, std::plus<int>(), 0);
+  boost::mpi::reduce(world, ntotal, lastTotal, std::plus<int>(), 0);
+  #endif
+
   reportT(*iter, s);
   profile(TERM);
   term(rng, s);
@@ -372,7 +381,6 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
 #ifdef ENABLE_MPI
   /* reporting requirements */
   boost::mpi::communicator world;
-  const int rank = world.rank();
   int naccept = lastAccept, ntotal = lastTotal;
   boost::mpi::reduce(world, naccept, lastAccept, std::plus<int>(), 0);
   boost::mpi::reduce(world, ntotal, lastTotal, std::plus<int>(), 0);
@@ -387,6 +395,7 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
     const int K = s.size();
     lW += bi::log(K / (K - 1.0));
   }
+
   s.logIncrements(now.indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 
@@ -405,7 +414,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
   double t0 = first->indexObs();
   double t = iter->indexObs() - t0 + 1;
   double T = last->indexObs() - t0;
-  const double c = 25.0;  ///@todo Allow this to be specified.
+  const double c = 20.0;  ///@todo Allow this to be specified.
   tstart = clock.toc();
   tmilestone = tmoves * (t * (t + c + 2.0)) / (T * (T + c + 2.0));
 
@@ -532,8 +541,6 @@ void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now, S1& s) {
 template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::term(Random& rng, S1& s) {
-  s.logLikelihood += logsumexp_reduce(s.logWeights())
-      - bi::log(double(s.size()));
   for (int p = 0; p < s.size(); ++p) {
     BOOST_AUTO(&s1, *s.s1s[p]);
     BOOST_AUTO(&out1, *s.out1s[p]);

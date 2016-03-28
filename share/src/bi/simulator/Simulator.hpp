@@ -375,6 +375,7 @@ void bi::Simulator<B,F,O>::propose(Random& rng, const ScheduleElement now,
   adapter.propose(rng, s1, s2);
 
   /* prior */
+  s2.get(PY_VAR) = s2.get(P_VAR);
   s2.logPrior = m.parameterLogDensity(s2);
 
   /* dynamic inputs */

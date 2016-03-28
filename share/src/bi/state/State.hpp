@@ -491,6 +491,9 @@ bi::State<B,L>::State(const State<B,L>& o) :
 
 template<class B, bi::Location L>
 bi::State<B,L>& bi::State<B,L>::operator=(const State<B,L>& o) {
+  logPrior = o.logPrior;
+  logProposal = o.logProposal;
+  clock = o.clock;
   rows(Xdn, p, P) = rows(o.Xdn, o.p, o.P);
   Kdn = o.Kdn;
   for (int i = 0; i < NB; ++i) {

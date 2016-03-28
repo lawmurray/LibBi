@@ -34,10 +34,8 @@ void bi_init(const int threads = 0);
 // need to keep in same compilation unit as caller for bi_ode_init()
 inline void bi::bi_init(const int threads) {
   bi_omp_init(threads);
-  bi_ode_init();
 
   #ifdef ENABLE_CUDA
-  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #ifdef ENABLE_MPI
   boost::mpi::communicator world;
   int rank = world.rank();
@@ -46,7 +44,10 @@ inline void bi::bi_init(const int threads) {
   #endif
   int dev = chooseDevice(rank);
   //std::cerr << "Rank " << rank << " using device " << dev << std::endl;
+  cudaThreadSetCacheConfig(cudaFuncCachePreferL1);
   #endif
+
+  bi_ode_init();
 }
 
 #endif
