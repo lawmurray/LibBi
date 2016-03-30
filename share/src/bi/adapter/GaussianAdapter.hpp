@@ -175,9 +175,13 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
         row(X, p) = vec(s.s1s[p]->get(P_VAR));
       }
       synchronize();
-      expu_elements(s.logWeights(), ws);
 
-      /* total weight */
+      /* weights */
+      ws = s.logWeights();
+      double Wmax = max_reduce(ws);
+      Wmax = boost::mpi::all_reduce(world, Wmax, boost::mpi::maximum<double>());
+      subscal_elements(ws, Wmax, ws);
+      exp_elements(ws, ws);
       double Wt = sum_reduce(ws);
       Wt = boost::mpi::all_reduce(world, Wt, std::plus<double>());
 
