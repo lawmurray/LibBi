@@ -167,9 +167,8 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
   bool ready = s.ess >= essRel * P * size;
   if (ready) {
     try {
-      typename temp_host_matrix<real>::type X(P, NP);
-      typename temp_host_vector<real>::type ws(P);
-      typename temp_host_matrix<real>::type Smu(NP, size), SSigma(NP*NP, size);
+      typename temp_host_matrix<real>::type X(P, NP), Y(P,NP), Z(P,NP), Smu(NP, size), SSigma(NP*NP, size);
+      typename temp_host_vector<real>::type ws(P), vs(P);
 
       /* copy samples into single matrix */
       for (int p = 0; p < P; ++p) {
@@ -178,23 +177,25 @@ bool bi::GaussianAdapter::distributedAdapt(const S1& s) {
       synchronize();
       expu_elements(s.logWeights(), ws);
 
+      /* total weight */
+      double Wt = sum_reduce(ws);
+      Wt = boost::mpi::all_reduce(world, Wt, std::plus<double>());
+
       /* mean */
       mu.resize(NP);
-      mean(X, ws, mu);
+      gemv(1.0/Wt, X, ws, 0.0, mu, 'T');
+      boost::mpi::all_gather(world, mu.buf(), NP, vec(Smu).buf());
+      sum_columns(Smu, mu);
 
       /* covariance */
       Sigma.resize(NP, NP);
-      cov(X, ws, mu, Sigma);
-
-      /* average across processors */
-      boost::mpi::all_gather(world, mu.buf(), NP, vec(Smu).buf());
+      Y = X;
+      sub_rows(Y, mu);
+      sqrt_elements(ws, vs);
+      gdmm(1.0, vs, Y, 0.0, Z);
+      syrk(1.0/Wt, Z, 0.0, Sigma, 'U', 'T');
       boost::mpi::all_gather(world, Sigma.buf(), NP*NP, vec(SSigma).buf());
-
-      sum_columns(Smu, mu);
       sum_columns(SSigma, vec(Sigma));
-
-      scal(1.0/size, mu);
-      scal(1.0/size, vec(Sigma));
 
       /* Cholesky factor of covariance */
       U.resize(NP, NP);
