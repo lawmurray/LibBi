@@ -73,6 +73,7 @@ union sse_double {
 
   sse_double& operator=(const double& o) {
     packed = _mm_set1_pd(o);
+    return *this;
   }
 };
 

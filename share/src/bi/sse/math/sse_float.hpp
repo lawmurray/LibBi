@@ -81,6 +81,7 @@ union sse_float {
 
   sse_float& operator=(const float& o) {
     packed = _mm_set1_ps(o);
+    return *this;
   }
 };
 
