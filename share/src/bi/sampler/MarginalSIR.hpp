@@ -47,7 +47,7 @@ public:
    * @param tmoves Total real time allocated to move steps, in seconds.
    */
   MarginalSIR(B& m, F& filter, A& adapter, R& resam, const int nmoves = 1,
-      const double tmoves = 0.0);
+      const long tmoves = 0.0);
 
   /**
    * @name High-level interface
@@ -218,17 +218,17 @@ private:
   /**
    * Total real time allocated to move steps.
    */
-  double tmoves;
+  long tmoves;
 
   /**
    * Start time for current step.
    */
-  double tstart;
+  long tstart;
 
   /**
    * Milestone (end) time for current step.
    */
-  double tmilestone;
+  long tmilestone;
 
   /**
    * Was a resample performed on the last step?
@@ -252,13 +252,11 @@ private:
 };
 }
 
-#include "../misc/TicToc.hpp"
-
 template<class B, class F, class A, class R>
 bi::MarginalSIR<B,F,A,R>::MarginalSIR(B& m, F& filter, A& adapter, R& resam,
-    const int nmoves, const double tmoves) :
+    const int nmoves, const long tmoves) :
     m(m), filter(filter), adapter(adapter), resam(resam), nmoves(nmoves), tmoves(
-        1.0e6 * tmoves), tstart(0.0), tmilestone(0.0), lastResample(false), adapterReady(
+        1e6 * tmoves), tstart(0), tmilestone(0), lastResample(false), adapterReady(
         false), lastAccept(0), lastTotal(0) {
 #if ENABLE_DIAGNOSTICS == 4
 #ifdef ENABLE_MPI
@@ -389,7 +387,7 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
   /* marginal likelihood */
   double lW;
   s.ess = resam.reduce(s.logWeights(), &lW);
-  if (lastResample && tmoves > 0.0) {
+  if (lastResample && tmoves > 0) {
     /* active particle eliminated by setting its weight to zero, which will
      * have affected marginal likelihood estimate. Correct for this. */
     const int K = s.size();
@@ -416,7 +414,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
   double T = last->indexObs() - t0;
   const double c = 20.0;  ///@todo Allow this to be specified.
   tstart = clock.toc();
-  tmilestone = tmoves * (t * (t + c + 2.0)) / (T * (T + c + 2.0));
+  tmilestone = tmoves * (t * (t + c + 2)) / (T * (T + c + 2));
 
   if (lastResample) {
     int naccept = 0;
@@ -424,11 +422,11 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     int j = 0;
     int p = 0;
     bool accept = false;
-    bool complete = (tmoves <= 0.0 && p >= s.size())
-        || (tmoves > 0.0 && clock.toc() >= tmilestone);
+    bool complete = (tmoves <= 0 && p >= s.size())
+        || (tmoves > 0 && clock.toc() >= tmilestone);
 
     while (!complete) {
-      if (tmoves > 0.0) {
+      if (tmoves > 0) {
         j = rng.uniformInt(0, s.size() - 1);
         //j = p % s.size();  // systematic scheduler
       } else {
@@ -447,44 +445,48 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
           } else {
             filter.propose(rng, *first, s1, s2, out2);
           }
-          filter.filter(rng, first, iter + 1, s2, out2);
+          if (tmoves > 0) {
+            filter.filter(rng, first, iter + 1, s2, out2, clock, tmilestone);
+          } else {
+            filter.filter(rng, first, iter + 1, s2, out2);
+          }
         } catch (CholeskyException e) {
           s2.logLikelihood = -BI_INF;
         } catch (ParticleFilterDegeneratedException e) {
           s2.logLikelihood = -BI_INF;
         }
+        if (tmoves <= 0 || clock.toc() < tmilestone) {
+          /* accept or reject */
+          if (!bi::is_finite(s2.logLikelihood)) {
+            accept = false;
+          } else if (!bi::is_finite(s1.logLikelihood)) {
+            accept = true;
+          } else {
+            double loglr = s2.logLikelihood - s1.logLikelihood;
+            double logpr = s2.logPrior - s1.logPrior;
+            double logqr = s1.logProposal - s2.logProposal;
+            double logratio = loglr + logpr + logqr;
+            double u = rng.uniform<double>();
 
-        /* accept or reject */
-        if (!bi::is_finite(s2.logLikelihood)) {
-          accept = false;
-        } else if (!bi::is_finite(s1.logLikelihood)) {
-          accept = true;
-        } else {
-          double loglr = s2.logLikelihood - s1.logLikelihood;
-          double logpr = s2.logPrior - s1.logPrior;
-          double logqr = s1.logProposal - s2.logProposal;
-          double logratio = loglr + logpr + logqr;
-          double u = rng.uniform<double>();
-
-          accept = bi::log(u) < logratio;
+            accept = bi::log(u) < logratio;
+          }
+          if (accept) {
+  #if ENABLE_DIAGNOSTICS == 3
+            filter.samplePath(rng, s2, out2);
+  #endif
+            s1.swap(s2);
+            out1.swap(out2);
+            ++naccept;
+          }
+          ++ntotal;
         }
-
-        if (accept) {
-#if ENABLE_DIAGNOSTICS == 3
-          filter.samplePath(rng, s2, out2);
-#endif
-          s1.swap(s2);
-          out1.swap(out2);
-          ++naccept;
-        }
-        ++ntotal;
       }
       ++p;
-      complete = (tmoves <= 0.0 && p >= s.size())
-          || (tmoves > 0.0 && clock.toc() >= tmilestone);
+      complete = (tmoves <= 0 && p >= s.size())
+          || (tmoves > 0 && clock.toc() >= tmilestone);
     }
 
-    if (tmoves > 0.0) {
+    if (tmoves > 0) {
       /* particle moving when time elapsed must be eliminated */
       s.logWeights()(j) = -BI_INF;
     }
@@ -525,9 +527,9 @@ template<class B, class F, class A, class R>
 template<class S1>
 void bi::MarginalSIR<B,F,A,R>::reportT(const ScheduleElement now, S1& s) {
   if (mpi_rank() == 0) {
-    if (tmoves > 0.0) {
-      std::cerr << "\tstart " << tstart / 1e6;
-      std::cerr << "\tmilestone " << tmilestone / 1e6;
+    if (tmoves > 0) {
+      std::cerr << "\tstart " << tstart / 1.0e6;
+      std::cerr << "\tmilestone " << tmilestone / 1.0e6;
     }
     if (lastTotal > 0) {
       std::cerr << "\tmoves " << lastTotal;
