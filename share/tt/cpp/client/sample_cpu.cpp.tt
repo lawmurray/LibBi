@@ -212,15 +212,15 @@ int main(int argc, char* argv[]) {
   #define SAMPLER_RESAMPLER_FACTORY ResamplerFactory
   #endif
   [% IF client.get_named_arg('sample-resampler') == 'metropolis' %]
-  BOOST_AUTO(sampleResam, (SAMPLER_RESAMPLER_FACTORY::createMetropolisResampler(C, SAMPLE_ESS_REL)));
+  BOOST_AUTO(sampleResam, (SAMPLER_RESAMPLER_FACTORY::createMetropolisResampler(C, SAMPLE_ESS_REL, TMOVES > 0)));
   [% ELSIF client.get_named_arg('sample-resampler') == 'rejection' %]
-  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createRejectionResampler());
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createRejectionResampler(TMOVES > 0));
   [% ELSIF client.get_named_arg('sample-resampler') == 'multinomial' %]
-  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createMultinomialResampler(SAMPLE_ESS_REL));
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createMultinomialResampler(SAMPLE_ESS_REL, TMOVES > 0));
   [% ELSIF client.get_named_arg('sample-resampler') == 'stratified' %]
-  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createStratifiedResampler(SAMPLE_ESS_REL));
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createStratifiedResampler(SAMPLE_ESS_REL, TMOVES > 0));
   [% ELSE %]
-  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createSystematicResampler(SAMPLE_ESS_REL));
+  BOOST_AUTO(sampleResam, SAMPLER_RESAMPLER_FACTORY::createSystematicResampler(SAMPLE_ESS_REL, TMOVES > 0));
   [% END %]
     
   /* stopper for theta-particles */

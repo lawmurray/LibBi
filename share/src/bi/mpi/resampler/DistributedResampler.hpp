@@ -28,8 +28,10 @@ public:
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param Use anytime mode? Triggers correction of marginal likelihood
+   * estimates for the elimination of active particles.
    */
-  DistributedResampler(const double essRel = 0.5);
+  DistributedResampler(const double essRel = 0.5, const bool anytime = false);
 
   /**
    * @copydoc Resampler::reduce(const V1, double*)
@@ -59,17 +61,6 @@ private:
   template<class M1, class S1>
   void redistribute(M1 O, S1& s);
 
-  /**
-   * Randomly shuffle particles within each process.
-   *
-   * @param S1 State type.
-   *
-   * @param rng Random number generator.
-   * @param[in,out] s State.
-   */
-  template<class S1>
-  void shuffle(Random& rng, S1& s);
-  
   /**
    * Rotate particles around process so that all processes have a random
    * sample.
@@ -104,8 +95,9 @@ private:
 #include "../../math/view.hpp"
 
 template<class R>
-bi::DistributedResampler<R>::DistributedResampler(const double essRel) :
-    Resampler<R>(essRel) {
+bi::DistributedResampler<R>::DistributedResampler(const double essRel,
+    const bool anytime) :
+    Resampler<R>(essRel, anytime) {
   //
 }
 
@@ -115,6 +107,7 @@ double bi::DistributedResampler<R>::reduce(const V1 lws, double* lW) {
   typedef typename V1::value_type T1;
 
   boost::mpi::communicator world;
+  const int size = world.size();
   T1 mx, sum1, sum2;
   int P;
 
@@ -132,9 +125,13 @@ double bi::DistributedResampler<R>::reduce(const V1 lws, double* lW) {
   sum2 = boost::mpi::all_reduce(world, sum2, std::plus<T1>());
 
   if (lW != NULL) {
-    *lW = mx + bi::log(sum1) - bi::log(double(lws.size()));
+    *lW = mx + bi::log(sum1);
+    if (this->anytime) {
+      *lW -= bi::log(double(size * (P - 1)));
+    } else {
+      *lW -= bi::log(double(size * P));
+    }
   }
-
   return (sum1 * sum1) / sum2;
 }
 
@@ -191,7 +188,7 @@ bool bi::DistributedResampler<R>::resample(Random& rng,
     permute(as1);
     s.gather(now, as1);
     set_elements(s.logWeights(), s.logLikelihood);
-    shuffle(rng, s);
+    this->shuffle(rng, s);
     rotate(s);
   } else if (now.hasOutput()) {
     seq_elements(s.ancestors(), 0);
@@ -299,35 +296,22 @@ void bi::DistributedResampler<R>::redistribute(M1 O, S1& s) {
 
 template<class R>
 template<class S1>
-void bi::DistributedResampler<R>::shuffle(Random& rng, S1& s) {
-  const int P = s.size();
-  for (int i = 0; i < P - 1; ++i) {
-    int j = rng.uniformInt(i, P - 1);
-    if (i != j) {
-      std::swap(s.s1s[i], s.s1s[j]);
-      std::swap(s.out1s[i], s.out1s[j]);
-    }
-  }
-}
-
-template<class R>
-template<class S1>
 void bi::DistributedResampler<R>::rotate(S1& s) {
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();
   const int P = s.size();
 
-  std::vector<boost::mpi::request> sends1(P), sends2(P);
+  std::vector < boost::mpi::request > sends1(P), sends2(P);
   int p, sendr, recvr;
 
   /* pipeline first round of sends */
   const int buf = 8;
-  for (p = 0; p < buf*size && p < P; ++p) {
+  for (p = 0; p < buf * size && p < P; ++p) {
     if (p % size > 0) {
       recvr = (rank + p) % size;
-      sends1[p] = world.isend(recvr, 2*rank*p, *s.s1s[p]);
-      sends2[p] = world.isend(recvr, 2*rank*p + 1, *s.out1s[p]);
+      sends1[p] = world.isend(recvr, 2 * rank * p, *s.s1s[p]);
+      sends2[p] = world.isend(recvr, 2 * rank * p + 1, *s.out1s[p]);
     }
   }
 
@@ -336,22 +320,24 @@ void bi::DistributedResampler<R>::rotate(S1& s) {
     if (p % size > 0) {
       /* receive new particle for this position */
       sendr = (rank + size - (p % size)) % size;
-      world.recv(sendr, 2*sendr*p, s.s2);
-      world.recv(sendr, 2*sendr*p + 1, s.out2);
+      world.recv(sendr, 2 * sendr * p, s.s2);
+      world.recv(sendr, 2 * sendr * p + 1, s.out2);
 
       /* ensure old particle in this position has been sent */
       sends1[p].wait();
       sends2[p].wait();
-      
+
       /* replace the old particle with the new particle */
       s.s2.swap(*s.s1s[p]);
       s.out2.swap(*s.out1s[p]);
 
       /* continue the pipeline */
       recvr = (rank + p) % size;
-      if (p + buf*size < P) {
-	sends1[p + buf*size] = world.isend(recvr, 2*rank*(p + buf*size), *s.s1s[p]);
-	sends2[p + buf*size] = world.isend(recvr, 2*rank*(p + buf*size) + 1, *s.out1s[p]);
+      if (p + buf * size < P) {
+        sends1[p + buf * size] = world.isend(recvr,
+            2 * rank * (p + buf * size), *s.s1s[p]);
+        sends2[p + buf * size] = world.isend(recvr,
+            2 * rank * (p + buf * size) + 1, *s.out1s[p]);
       }
     }
   }

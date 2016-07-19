@@ -226,7 +226,7 @@ private:
   long tstart;
 
   /**
-   * Milestone (end) time for current step.
+   * Milestone time for current step.
    */
   long tmilestone;
 
@@ -358,12 +358,9 @@ void bi::MarginalSIR<B,F,A,R>::step(Random& rng, const ScheduleIterator first,
       BOOST_AUTO(&s1, *s.s1s[p]);
       BOOST_AUTO(&out1, *s.out1s[p]);
 
-      if (bi::is_finite(s.logWeights()(p))) {
-        /* otherwise no point, happens for eliminated active particle */
-        iter1 = iter;
-        filter.step(rng, iter1, last, s1, out1);
-        s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
-      }
+      iter1 = iter;
+      filter.step(rng, iter1, last, s1, out1);
+      s.logWeights()(p) += s1.logIncrements(iter1->indexObs());
     }
     iter = iter1;
   } while (iter + 1 != last && !iter->isObserved());
@@ -387,13 +384,6 @@ void bi::MarginalSIR<B,F,A,R>::interact(Random& rng,
   /* marginal likelihood */
   double lW;
   s.ess = resam.reduce(s.logWeights(), &lW);
-  if (lastResample && tmoves > 0) {
-    /* active particle eliminated by setting its weight to zero, which will
-     * have affected marginal likelihood estimate. Correct for this. */
-    const int K = s.size();
-    lW += bi::log(K / (K - 1.0));
-  }
-
   s.logIncrements(now.indexObs()) = lW - s.logLikelihood;
   s.logLikelihood = lW;
 
@@ -414,7 +404,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
   double T = last->indexObs() - t0;
   const double c = 20.0;  ///@todo Allow this to be specified.
   tstart = clock.toc();
-  tmilestone = tmoves * (t * (t + c + 2)) / (T * (T + c + 2));
+  tmilestone = tstart + tmoves*2.0*(t + c)/(T*(T + 2*c + 1));
 
   if (lastResample) {
     int naccept = 0;
@@ -425,13 +415,12 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     bool complete = (tmoves <= 0 && p >= s.size())
         || (tmoves > 0 && clock.toc() >= tmilestone);
 
+    if (tmoves > 0) {
+      /* serial schedule, but random order */
+      resam.shuffle(rng, s);
+    }
     while (!complete) {
-      if (tmoves > 0) {
-        j = rng.uniformInt(0, s.size() - 1);
-        //j = p % s.size();  // systematic scheduler
-      } else {
-        j = p % s.size();
-      }
+      j = p % s.size();
       BOOST_AUTO(&s1, *s.s1s[j]);
       BOOST_AUTO(&out1, *s.out1s[j]);
       BOOST_AUTO(&s2, s.s2);
@@ -487,7 +476,8 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
     }
 
     if (tmoves > 0) {
-      /* particle moving when time elapsed must be eliminated */
+      /* eliminate active particle, note Resampler and DistributedResampler
+       * corrects the marginal likelihood estimate correctly for this */
       s.logWeights()(j) = -BI_INF;
     }
 

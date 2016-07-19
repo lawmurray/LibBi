@@ -40,8 +40,10 @@ public:
    *
    * @param essRel Minimum ESS, as proportion of total number of particles,
    * to trigger resampling.
+   * @param Use anytime mode? Triggers correction of marginal likelihood
+   * estimates for the elimination of active particles.
    */
-  Resampler(const double essRel = 0.5);
+  Resampler(const double essRel = 0.5, const bool anytime = false);
 
   /**
    * @name High-level interface
@@ -87,6 +89,17 @@ public:
   template<class S1>
   bool resample(Random& rng, const ScheduleElement now, S1& s)
       throw (ParticleFilterDegeneratedException);
+
+  /**
+   * Randomly shuffle particles.
+   *
+   * @param S1 State type.
+   *
+   * @param rng Random number generator.
+   * @param[in,out] s State.
+   */
+  template<class S1>
+  void shuffle(Random& rng, S1& s);
   //@}
 
 protected:
@@ -99,6 +112,11 @@ protected:
    * Maximum log-weight.
    */
   double maxLogWeight;
+
+  /**
+   * Use anytime mode?
+   */
+  bool anytime;
 };
 }
 
@@ -108,8 +126,8 @@ protected:
 #include "boost/mpl/if.hpp"
 
 template<class R>
-inline bi::Resampler<R>::Resampler(const double essRel) :
-    essRel(essRel), maxLogWeight(0.0) {
+inline bi::Resampler<R>::Resampler(const double essRel, const bool anytime) :
+    essRel(essRel), maxLogWeight(0.0), anytime(anytime) {
   /* pre-condition */
   BI_ASSERT(essRel >= 0.0 && essRel <= 1.0);
 
@@ -139,7 +157,12 @@ void bi::Resampler<R>::setMaxLogWeight(const double maxLogWeight) {
 template<class R>
 template<class V1>
 double bi::Resampler<R>::reduce(const V1 lws, double* lW) {
-  return ess_reduce(lws, lW);
+  double ess = ess_reduce(lws, lW);
+  if (anytime) {
+    const int P = lws.size();
+    *lW += bi::log(P / (P - 1.0));
+  }
+  return ess;
 }
 
 template<class R>
@@ -160,6 +183,19 @@ bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
     seq_elements(s.ancestors(), 0);
   }
   return r;
+}
+
+template<class R>
+template<class S1>
+void bi::Resampler<R>::shuffle(Random& rng, S1& s) {
+  const int P = s.size();
+  for (int i = 0; i < P - 1; ++i) {
+    int j = rng.uniformInt(i, P - 1);
+    if (i != j) {
+      std::swap(s.s1s[i], s.s1s[j]);
+      std::swap(s.out1s[i], s.out1s[j]);
+    }
+  }
 }
 
 #endif

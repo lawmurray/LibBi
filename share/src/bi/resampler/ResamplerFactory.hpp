@@ -28,30 +28,31 @@ public:
    * Create multinomial resampler.
    */
   static boost::shared_ptr<Resampler<MultinomialResampler> > createMultinomialResampler(
-      const double essRel = 0.5);
+      const double essRel = 0.5, const bool anytime = false);
 
   /**
    * Create stratified resampler.
    */
   static boost::shared_ptr<Resampler<StratifiedResampler> > createStratifiedResampler(
-      const double essRel = 0.5);
+      const double essRel = 0.5, const bool anytime = false);
 
   /**
    * Create systematic resampler.
    */
   static boost::shared_ptr<Resampler<SystematicResampler> > createSystematicResampler(
-      const double essRel = 0.5);
+      const double essRel = 0.5, const bool anytime = false);
 
   /**
    * Create Metropolis resampler.
    */
   static boost::shared_ptr<Resampler<MetropolisResampler> > createMetropolisResampler(
-      const int B, const double essRel = 0.5);
+      const int B, const double essRel = 0.5, const bool anytime = false);
 
   /**
    * Create rejection resampler.
    */
-  static boost::shared_ptr<Resampler<RejectionResampler> > createRejectionResampler();
+  static boost::shared_ptr<Resampler<RejectionResampler> > createRejectionResampler(
+      const bool anytime = false);
 };
 }
 
