@@ -264,7 +264,7 @@ void bi::MarginalSIRState<B,L,S1,IO1>::swap(MarginalSIRState<B,L,S1,IO1>& o) {
   std::swap(out1s, o.out1s);
   s2.swap(o.s2);
   out2.swap(o.out2);
-  std::swap(logIncrements, o.logIncrements);
+  logIncrements.swap(o.logIncrements);
   std::swap(logLikelihood, o.logLikelihood);
   std::swap(ess, o.ess);
   lws.swap(o.lws);

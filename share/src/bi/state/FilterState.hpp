@@ -127,9 +127,9 @@ void bi::FilterState<B,L>::clear() {
 template<class B, bi::Location L>
 void bi::FilterState<B,L>::swap(FilterState<B,L>& o) {
   State<B,L>::swap(o);
-  std::swap(path, o.path);
-  std::swap(times, o.times);
-  std::swap(logIncrements, o.logIncrements);
+  path.swap(o.path);
+  times.swap(o.times);
+  logIncrements.swap(o.logIncrements);
   std::swap(logLikelihood, o.logLikelihood);
 }
 
