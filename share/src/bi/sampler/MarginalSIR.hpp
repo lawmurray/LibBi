@@ -402,7 +402,7 @@ void bi::MarginalSIR<B,F,A,R>::move(Random& rng, const ScheduleIterator first,
   double t0 = first->indexObs();
   double t = iter->indexObs() - t0 + 1;
   double T = last->indexObs() - t0;
-  const double c = 20.0;  ///@todo Allow this to be specified.
+  const double c = 1.0;  ///@todo Allow this to be specified.
   tstart = clock.toc();
   tmilestone = tstart + tmoves*2.0*(t + c)/(T*(T + 2*c + 1));
 
