@@ -16,6 +16,8 @@ Please cite the following paper if you use LibBi:
 The following papers may be of interest, which detail novel contributions
 related to the development of LibBi:
 
+* L. M. Murray, S. Singh, P. E. Jacob and A. Lee. *Anytime Monte Carlo*. 2016. [\[arXiv\]](https://arxiv.org/abs/1612.03319).
+
 * Del Moral, P. & Murray, L. M. Sequential Monte Carlo with highly informative
   observations, 2014. [\[arXiv\]](http://arxiv.org/abs/1405.4081)
 
