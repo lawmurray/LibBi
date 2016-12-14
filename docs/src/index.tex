@@ -5,7 +5,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{alltt}
-\usepackage{html}
+%\usepackage{html}
 \usepackage{hyperref}
 \usepackage{makeidx}
 \usepackage{lmodern} % vertically centres tilde in code
@@ -38,13 +38,13 @@
 \newcommand\dokwref[1]{\hyperref[hyper][#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\actionref{\begingroup \catcode`_=12 \doactionref}
-\newcommand\doactionref[1]{\hyperref[hyper][action_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doactionref[1]{\hyperref[hyper][action\_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\blockref{\begingroup \catcode`_=12 \doblockref}
-\newcommand\doblockref[1]{\hyperref[hyper][block_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doblockref[1]{\hyperref[hyper][block\_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\clientref{\begingroup \catcode`_=12 \doclientref}
-\newcommand\doclientref[1]{\hyperref[hyper][client_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doclientref[1]{\hyperref[hyper][client\_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\secref{\begingroup \catcode`_=12 \dosecref}
 \newcommand\dosecref[2]{\hyperref[hyper][#1]{#2}\endgroup}
@@ -108,7 +108,7 @@ Developer Guide
 \vspace{6cm}
 
 \fontsize{16pt}{24pt}\selectfont
-Version 1.2.0
+Version 1.3.0
 
 \vspace{1cm}
 
@@ -128,9 +128,6 @@ Version 1.2.0
   Pierre Jacob \\
   Anthony Lee \\
   Josh Milthorpe
-\item[Copyright]
-  \copyright\ 2013--2014 CSIRO. This document is distributed under the same
-  terms as the LibBi software; see the \bitt{LICENSE} file therein.
 \end{description}
 }
 

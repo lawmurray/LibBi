@@ -67,11 +67,11 @@ The type of sampler to use for C<--target posterior>; one of:
 
 =item C<mh> or (deprecated) C<pmmh>
 
-Marginal Metropolis-Hastings (MH).
+Marginal Metropolis-Hastings (Andrieu, Doucet & Holenstein, 2010).
 
 =item C<sir> or (deprecated) C<smc2>
 
-Marginal sequential importance resampling (SIR).
+Marginal sequential importance resampling (Chopin, Jacob & Papaspiliopoulos, 2013).
 
 =item C<sis>
 
@@ -106,8 +106,8 @@ Number of move steps to perform after each resample.
  
 =item C<--tmoves> (default 0.0)
  
-Overall (approximate) real time, in seconds, to allocate to move steps. If
-positive, C<--nmoves> and C<--sample-ess-rel> are ignored. Resampling is
+Overall real time, in seconds, to allocate to move steps (Murray et al. 2016). 
+If positive, C<--nmoves> and C<--sample-ess-rel> are ignored. Resampling is
 performed after each step, and the number of moves subsequently made becomes
 a random variable dependent on C<--tmoves>.
 

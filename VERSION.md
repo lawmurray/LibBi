@@ -1,6 +1,12 @@
 LibBi VERSION.md
 ================
 
+v1.3.0
+------
+
+* Added SMC$^2$ with anytime moves, enabled with `--tmoves` command-line option.
+* Added `--mpi-hostfile` option.
+
 v1.2.0
 ------
 
