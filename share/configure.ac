@@ -110,8 +110,12 @@ AC_ARG_ENABLE([gperftools],
 # Add standard CUDA directories
 #if test x$cuda = xtrue; then
 # ^ don't test, may be using Thrust bundled with CUDA, even for host
-    CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include -I$CUDA_ROOT/include"
-    LDFLAGS="$LDFLAGS -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -Wl,-rpath,$CUDA_ROOT/lib64 -Wl,-rpath,$CUDA_ROOT/lib -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/local/cuda/lib"
+if test x$CUDA_ROOT != x; then
+  CPPFLAGS="$CPPFLAGS -I$CUDA_ROOT/include -DHAVE_CUBLAS" # -DHAVE_CUBLAS needed for MAGMA 1.4
+  LDFLAGS="$LDFLAGS -L$CUDA_ROOT/lib64 -L$CUDA_ROOT/lib -Wl,-rpath,$CUDA_ROOT/lib64 -Wl,-rpath,$CUDA_ROOT/lib"
+fi
+CPPFLAGS="$CPPFLAGS -I/usr/local/cuda/include"
+LDFLAGS="$LDFLAGS -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/local/cuda/lib"
 #fi
 
 # Compilers etc
@@ -143,6 +147,20 @@ AC_CHECK_HEADERS([omp.h], [], [openmp=false], [-])
 if test x$openmp = xtrue; then
   AC_OPENMP
 fi
+
+# Thrust backend
+if test x$cuda = xtrue; then
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CUDA])
+else
+  AC_DEFINE([THRUST_DEVICE_SYSTEM], [THRUST_DEVICE_SYSTEM_CPP])
+fi
+if test x$openmp = xtrue; then
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_OMP])
+else
+  AC_DEFINE([THRUST_HOST_SYSTEM], [THRUST_HOST_SYSTEM_CPP])
+fi
+# ^ OpenMP in Thrust 1.6 very slow, but seems to have been rectified in
+#   Thrust 1.7, so its OpenMP backend has been re-enabled.
 
 # Checks of programs
 if test x$mpi = xtrue; then
