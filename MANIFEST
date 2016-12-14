@@ -206,8 +206,6 @@ share/src/bi/cuda/global_store_visitor.cuh
 share/src/bi/cuda/math/cublas.cu
 share/src/bi/cuda/math/cublas.hpp
 share/src/bi/cuda/math/io.hpp
-share/src/bi/cuda/math/magma.cu
-share/src/bi/cuda/math/magma.hpp
 share/src/bi/cuda/math/matrix.hpp
 share/src/bi/cuda/math/multi_operation.hpp
 share/src/bi/cuda/math/operation.hpp
