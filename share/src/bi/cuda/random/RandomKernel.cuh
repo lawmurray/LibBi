@@ -118,4 +118,18 @@ CUDA_FUNC_GLOBAL void bi::kernelGammas(curandStateSA rng, V1 x,
   rng.store(q, rng1.r);
 }
 
+template<class V1>
+CUDA_FUNC_GLOBAL void bi::kernelPoissons(curandStateSA rng, V1 x,
+    const typename V1::value_type lambda) {
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
+  const int Q = blockDim.x*gridDim.x;
+
+  RngGPU rng1;
+  rng.load(q, rng1.r);
+  for (int p = q; p < x.size(); p += Q) {
+    x(p) = rng1.poisson(lambda);
+  }
+  rng.store(q, rng1.r);
+}
+
 #endif

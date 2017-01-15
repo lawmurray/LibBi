@@ -1,0 +1,90 @@
+[%
+## @file
+##
+## @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
+## $Rev$
+## $Date$
+%]
+
+[%-
+mean = action.get_named_arg('mean');
+shape = action.get_named_arg('shape');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+#include "bi/pdf/functor.hpp"
+#include "bi/random/generic.hpp"
+
+[% std_action_static_function('simulate') %]
+
+[% sig_action_static_function('sample') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real me = [% mean.to_cpp %];
+  real sh = [% shape.to_cpp %];
+  real u = bi::negbin(rng, me, sh);
+  
+  [% put_output(action, 'u') %]
+}
+
+[% sig_action_static_function('logdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real me = [% mean.to_cpp %];
+  real sh = [% shape.to_cpp %];
+  
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+
+  bi::negbin_log_density_functor<T1> f(me, sh);
+  lp += f(xy);
+
+  [% put_output(action, 'xy') %]
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real me = [% mean.to_cpp %];
+  real sh = [% shape.to_cpp %];
+
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+  
+  [% IF mean.is_common && shape.is_common %]
+  bi::negbin_log_density_functor<T1> f(me, sh);
+  if (me > BI_REAL(0.0) && sh > BI_REAL(0.0)) {
+    if (sh > BI_REAL(1.0)) {
+    	lp += f(bi::floor(me * (sh - 1) / sh));
+    } else {
+      lp += 0.0;
+    }
+  } else {
+    lp = BI_INF;
+  }
+  [% ELSE %]
+  lp = BI_INF;
+  [% END %]
+
+  [% put_output(action, 'xy') %]
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]
