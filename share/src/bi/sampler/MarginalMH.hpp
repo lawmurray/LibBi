@@ -234,7 +234,11 @@ void bi::MarginalMH<B,F>::propose(Random& rng, const ScheduleIterator first,
     const ScheduleIterator last, S1& s1, S2& s2, IO1& out) {
   try {
     filter.propose(rng, *first, s1, s2, out);
-    filter.filter(rng, first, last, s2, out);
+    if (bi::is_finite(s2.logPrior)) {
+      filter.filter(rng, first, last, s2, out);
+    } else {
+      s2.logLikelihood = -BI_INF;
+    }
   } catch (CholeskyException e) {
     s2.logLikelihood = -BI_INF;
   } catch (ParticleFilterDegeneratedException e) {
