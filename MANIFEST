@@ -551,6 +551,7 @@ share/src/bi/state/MarginalMHState.hpp
 share/src/bi/state/MarginalSIRState.hpp
 share/src/bi/state/MarginalSISState.hpp
 share/src/bi/state/Mask.hpp
+share/src/bi/state/OptimiserState.hpp
 share/src/bi/state/Ou.hpp
 share/src/bi/state/Pa.hpp
 share/src/bi/state/Schedule.hpp
