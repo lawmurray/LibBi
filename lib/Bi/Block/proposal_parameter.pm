@@ -1,6 +1,6 @@
 =head1 NAME
 
-parameter - a proposal distribution over parameters.
+proposal_parameter - a proposal distribution over parameters.
 
 =head1 SYNOPSIS
 

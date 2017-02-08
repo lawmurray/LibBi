@@ -140,6 +140,8 @@ sub process_index {
 sub process_pod {
     my $contents = shift;
 	
+    $contents =~ s/L\<(bridge|initial|lookahead_observation|lookahead_transition|observation|ode|parameter|proposal_initial|proposal_parameter|transition)\>/\\blockref\{$1\}/g;
+    $contents =~ s/L\<(draw|filter|help|optimise|optimize|package|rewrite|sample)\>/\\clientref\{$1\}/g;
     $contents =~ s/L\<(\w+)\>/\\actionref\{$1\}/g;
     $contents =~ s/L\<(\w+)\|(\w+)\>/\\secref\{$2\}\{$1\}/g;
 	
