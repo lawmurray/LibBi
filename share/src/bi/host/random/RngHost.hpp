@@ -66,6 +66,12 @@ public:
   T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
 
   /**
+   * @copydoc Random::poisson
+   */
+  template<class T1>
+  T1 poisson(const T1 lambda = 1.0);
+
+  /**
    * Random number generator type.
    */
   typedef boost::mt19937 rng_type;
@@ -84,6 +90,7 @@ public:
 #include "boost/random/uniform_real.hpp"
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/gamma_distribution.hpp"
+#include "boost/random/poisson_distribution.hpp"
 #include "boost/random/variate_generator.hpp"
 
 #include "thrust/binary_search.h"
@@ -158,6 +165,19 @@ inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
   return beta*gen();
+}
+
+template<class T1>
+inline T1 bi::RngHost::poisson(const T1 lambda) {
+  /* pre-condition */
+  BI_ASSERT(lambda > 0.0);
+
+  typedef boost::poisson_distribution<int,T1> dist_type;
+
+  dist_type dist(lambda);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return static_cast<T1>(gen());
 }
 
 #endif

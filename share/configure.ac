@@ -239,6 +239,7 @@ AC_CHECK_HEADERS([\
     boost/random/gamma_distribution.hpp \
     boost/random/mersenne_twister.hpp \
     boost/random/normal_distribution.hpp \
+    boost/random/poisson_distribution.hpp \
     boost/random/uniform_int.hpp \
     boost/random/uniform_real.hpp \
     boost/random/variate_generator.hpp \

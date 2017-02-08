@@ -47,6 +47,13 @@ struct RandomHost {
       1.0, const typename V1::value_type beta = 1.0);
 
   /**
+   * @copydoc Random::poissons
+   */
+  template<class V1>
+  static void poissons(Random& rng, V1 x, const typename V1::value_type lambda =
+                     1.0);
+
+  /**
    * @copydoc Random::betas
    */
   template<class V1>
