@@ -30,6 +30,14 @@ AC_ARG_ENABLE([cuda],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-cuda]) ;;
      esac],[cuda=false])
 
+AC_ARG_ENABLE([cuda],
+     [  --enable-cuda-fast-math use fast-but-inaccurate math in CUDA],
+     [case "${enableval}" in
+       yes) cudafastmath=true ;;
+       no)  cudafastmath=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-cuda-fast-math]) ;;
+     esac],[cudafastmath=false])
+
 AC_ARG_ENABLE([gpucache],
      [  --enable-gpucache       use GPU implementation of ancestry cache],
      [case "${enableval}" in
@@ -295,6 +303,7 @@ fi
 AM_CONDITIONAL([ENABLE_ASSERT], [test x$assert = xtrue])
 AM_CONDITIONAL([ENABLE_SINGLE], [test x$single = xtrue])
 AM_CONDITIONAL([ENABLE_CUDA], [test x$cuda = xtrue])
+AM_CONDITIONAL([ENABLE_CUDA_FAST_MATH], [test x$cudafastmath = xtrue])
 AM_CONDITIONAL([ENABLE_GPU_CACHE], [test x$gpucache = xtrue])
 AM_CONDITIONAL([ENABLE_SSE], [test x$sse = xtrue])
 AM_CONDITIONAL([ENABLE_AVX], [test x$avx = xtrue])
