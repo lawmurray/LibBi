@@ -6,6 +6,7 @@
 
 [%-
 A = action.get_named_arg('A');
+B = action.get_left;
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]
