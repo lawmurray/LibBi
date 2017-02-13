@@ -45,6 +45,17 @@ void bi::RandomGPU::gammas(Random& rng, V1 x,
   CUDA_CHECK;
 }
 
+template<class V1>
+void bi::RandomGPU::poissons(Random& rng, V1 x,
+    const typename V1::value_type lambda) {
+  dim3 Db, Dg;
+  Db.x = bi::min(x.size(), deviceIdealThreadsPerBlock());
+  Dg.x = (bi::min(x.size(), deviceIdealThreads()) + Db.x - 1) / Db.x;
+
+  kernelPoissons<<<Dg,Db>>>(rng.devRngs, x, lambda);
+  CUDA_CHECK;
+}
+
 template<class V1, class V2>
 void bi::RandomGPU::multinomials(Random& rng, const V1 lps, V2 xs) {
   BI_ERROR_MSG(false, "Not implemented on device");

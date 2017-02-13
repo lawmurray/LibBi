@@ -137,4 +137,12 @@ inline T1 bi::RngGPU::gamma(const T1 alpha, const T1 beta) {
   return scale*dv;
 }
 
+inline float bi::RngGPU::poisson(const float lambda) {
+  return curand_poisson(&r, lambda);
+}
+
+inline double bi::RngGPU::poisson(const double lambda) {
+  return curand_poisson(&r);
+}
+
 #endif

@@ -34,8 +34,10 @@ lib/Bi/Action/inclusive_scan.pm
 lib/Bi/Action/inverse_gamma.pm
 lib/Bi/Action/log_gaussian.pm
 lib/Bi/Action/log_normal.pm
+lib/Bi/Action/negbin.pm
 lib/Bi/Action/normal.pm
 lib/Bi/Action/ode_.pm
+lib/Bi/Action/poisson.pm
 lib/Bi/Action/pdf.pm
 lib/Bi/Action/std_.pm
 lib/Bi/Action/transpose.pm
@@ -551,6 +553,7 @@ share/src/bi/state/MarginalMHState.hpp
 share/src/bi/state/MarginalSIRState.hpp
 share/src/bi/state/MarginalSISState.hpp
 share/src/bi/state/Mask.hpp
+share/src/bi/state/OptimiserState.hpp
 share/src/bi/state/Ou.hpp
 share/src/bi/state/Pa.hpp
 share/src/bi/state/Schedule.hpp
@@ -631,7 +634,9 @@ share/tt/cpp/action/inclusive_scan.hpp.tt
 share/tt/cpp/action/inverse_gamma.hpp.tt
 share/tt/cpp/action/misc/footer.hpp.tt
 share/tt/cpp/action/misc/header.hpp.tt
+share/tt/cpp/action/negbin.hpp.tt
 share/tt/cpp/action/ode_.hpp.tt
+share/tt/cpp/action/poisson.hpp.tt
 share/tt/cpp/action/pdf.hpp.tt
 share/tt/cpp/action/std_.hpp.tt
 share/tt/cpp/action/transpose.hpp.tt

@@ -1,0 +1,81 @@
+[%
+## @file
+##
+## @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
+## $Rev$
+## $Date$
+%]
+
+[%-
+rate = action.get_named_arg('rate');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+#include "bi/pdf/functor.hpp"
+
+[% std_action_static_function('simulate') %]
+
+[% sig_action_static_function('sample') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real ra = [% rate.to_cpp %];
+  real u = static_cast<real>(rng.poisson(ra));
+  
+  [% put_output(action, 'u') %]
+}
+
+[% sig_action_static_function('logdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real ra = [% rate.to_cpp %];
+  
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+
+  bi::poisson_log_density_functor<T1> f(ra);
+  lp += f(xy);
+
+  [% put_output(action, 'xy') %]
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real ra = [% rate.to_cpp %];
+
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+  
+  [% IF rate.is_common %]
+  bi::poisson_log_density_functor<T1> f(ra);
+  if (ra > BI_REAL(0.0)) {
+  	lp += f(bi::floor(ra));
+  } else {
+    lp = BI_INF;
+  }
+  [% ELSE %]
+  lp = BI_INF;
+  [% END %]
+
+  [% put_output(action, 'xy') %]
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

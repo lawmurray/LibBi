@@ -224,6 +224,86 @@ struct gaussian_log_density_update_functor {
   const T1 logZ;
 };
 
+/**
+ * @ingroup math_pdf
+ *
+ * Poisson log-density functor.
+ */
+template<class T>
+struct poisson_log_density_functor: public std::unary_function<T,T> {
+  const T lambda;
+
+  CUDA_FUNC_HOST
+  poisson_log_density_functor(const T lambda) :
+    lambda(lambda) {
+    //
+  }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return x * log(lambda) - lambda + lgamma(x + 1);
+  }
+};
+
+/**
+ * @ingroup math_pdf
+ *
+ * Poisson density functor.
+ */
+template<class T>
+struct poisson_density_functor: private poisson_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  poisson_density_functor(const T lambda) :
+    poisson_log_density_functor<T>(lambda) {
+    //
+  }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return bi::exp(poisson_log_density_functor<T>::operator()(x));
+  }
+};
+
+/**
+ * @ingroup math_pdf
+ *
+ * Negative binomial log-density functor.
+ */
+template<class T>
+struct negbin_log_density_functor: public std::unary_function<T,T> {
+  const T mu, k, logZ, logY;
+
+  CUDA_FUNC_HOST
+  negbin_log_density_functor(const T mu, const T k) :
+    mu(mu), k(k), logZ(lgamma(k) - k * log(k / (k + mu))), logY(log(mu/(k + mu))) {
+    //
+    }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return lgamma(k + x + 1) - lgamma(x + 1) + x * logY - logZ;
+  }
+};
+
+/**
+ * @ingroup math_pdf
+ *
+ * Negative binomial density functor.
+ */
+template<class T>
+struct negbin_density_functor: private negbin_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  negbin_density_functor(const T mu, const T k) :
+    negbin_log_density_functor<T>(mu, k) {
+    //
+  }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return bi::exp(negbin_log_density_functor<T>::operator()(x));
+  }
+};
+
 }
 
 #endif

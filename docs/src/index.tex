@@ -35,19 +35,19 @@
 \newcommand\bitt[1]{\texttt{#1}}
 
 \newcommand\kwref{\begingroup \catcode`_=12 \dokwref}
-\newcommand\dokwref[1]{\hyperref[hyper][#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\dokwref[1]{\hyperref[#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\actionref{\begingroup \catcode`_=12 \doactionref}
-\newcommand\doactionref[1]{\hyperref[hyper][action\_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doactionref[1]{\hyperref[action_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\blockref{\begingroup \catcode`_=12 \doblockref}
-\newcommand\doblockref[1]{\hyperref[hyper][block\_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doblockref[1]{\hyperref[block_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\clientref{\begingroup \catcode`_=12 \doclientref}
-\newcommand\doclientref[1]{\hyperref[hyper][client\_#1]{\bitt{#1}}\index{#1}\endgroup}
+\newcommand\doclientref[1]{\hyperref[client_#1]{\bitt{#1}}\index{#1}\endgroup}
 
 \newcommand\secref{\begingroup \catcode`_=12 \dosecref}
-\newcommand\dosecref[2]{\hyperref[hyper][#1]{#2}\endgroup}
+\newcommand\dosecref[2]{\hyperref[#1]{#2}\endgroup}
 
 \newcommand\newseealso{\begingroup \catcode`_=12 \donewseealso}
 \newcommand\donewseealso[1]{\seealso{#1}\endgroup}
