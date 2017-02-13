@@ -70,6 +70,18 @@ CUDA_FUNC_GLOBAL void kernelGammas(curandStateSA rng, V1 x,
     const typename V1::value_type alpha = 1.0,
     const typename V1::value_type beta = 1.0);
 
+/**
+ * Kernel function to fill vector with poisson variates.
+ *
+ * @tparam V1 Vector type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param[out] x Vector to fill.
+ * @param lambda rate.
+ */
+template<class V1>
+CUDA_FUNC_GLOBAL void bi::kernelPoissons(curandStateSA rng, V1 x,
+    const typename V1::value_type lambda); 
 }
 
 #include "../../random/Random.hpp"

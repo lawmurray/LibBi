@@ -13,6 +13,7 @@
 
 #ifdef ENABLE_CUDA
 #include "curand_kernel.h"
+#include "curand_poisson.h"
 #endif
 
 namespace bi {
