@@ -64,6 +64,16 @@ public:
   CUDA_FUNC_DEVICE T1 gamma(const T1 alpha = 1.0, const T1 beta = 1.0);
 
   /**
+   * @copydoc Random::poisson
+   */
+  CUDA_FUNC_DEVICE float poisson(const float lambda = 0.0);
+
+  /**
+   * @copydoc Random::poisson
+   */
+  CUDA_FUNC_DEVICE double poisson(const double lambda = 0.0);
+
+   /**
    * CURAND state.
    */
   curandState r;
@@ -142,7 +152,7 @@ inline float bi::RngGPU::poisson(const float lambda) {
 }
 
 inline double bi::RngGPU::poisson(const double lambda) {
-  return curand_poisson(&r);
+  return curand_poisson(&r, lambda);
 }
 
 #endif
