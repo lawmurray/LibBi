@@ -30,7 +30,7 @@ AC_ARG_ENABLE([cuda],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-cuda]) ;;
      esac],[cuda=false])
 
-AC_ARG_ENABLE([cuda],
+AC_ARG_ENABLE([cudafastmath],
      [  --enable-cuda-fast-math use fast-but-inaccurate math in CUDA],
      [case "${enableval}" in
        yes) cudafastmath=true ;;
