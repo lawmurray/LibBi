@@ -67,6 +67,11 @@ Use OpenMP multithreading.
 
 Enable CUDA code for graphics processing units (GPU).
 
+=item C<--enable-cuda-fast-math> (default off)
+
+Enable fast-but-inaccurate instead of slow-but-accurate versions of functions
+sin and exp in CUDA.
+
 =item C<--enable-gpu-cache> (default off)
 
 For particle filters, enable ancestry caching in GPU memory. GPU memory is
@@ -141,6 +146,7 @@ sub new {
         _assert => 1,
         _openmp => 1,
         _cuda => 0,
+        _cuda_fast_math => 0,
         _gpu_cache => 0,
         _sse => 0,
         _avx => 0,
@@ -167,6 +173,8 @@ sub new {
         'disable-openmp' => sub { $self->{_openmp} = 0 },
         'enable-cuda' => sub { $self->{_cuda} = 1 },
         'disable-cuda' => sub { $self->{_cuda} = 0 },
+        'enable-cuda-fast-math' => sub { $self->{_cuda_fast_math} = 1 },
+        'disable-cuda-fast-math' => sub { $self->{_cuda_fast_math} = 0 },
         'enable-gpu-cache' => sub { $self->{_gpu_cache} = 1 },
         'disable-gpu-cache' => sub { $self->{_gpu_cache} = 0 },
         'enable-sse' => sub { $self->{_sse} = 1 },
@@ -216,6 +224,7 @@ sub new {
     push(@builddir, 'assert') if $self->{_assert};
     push(@builddir, 'openmp') if $self->{_openmp};
     push(@builddir, 'cuda') if $self->{_cuda};
+    push(@builddir, 'cudafastmath') if $self->{_cuda_fast_math};
     push(@builddir, 'gpucache') if $self->{_gpu_cache};
     push(@builddir, 'sse') if $self->{_sse};
     push(@builddir, 'avx') if $self->{_avx};
@@ -337,6 +346,7 @@ sub _configure {
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
+    $options .= $self->{_cuda_fast_math} ? ' --enable-cuda-fast-math' : ' --disable-cuda-fast-math';
     $options .= $self->{_gpu_cache} ? ' --enable-gpucache' : ' --disable-gpucache';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
     $options .= $self->{_avx} ? ' --enable-avx' : ' --disable-avx';

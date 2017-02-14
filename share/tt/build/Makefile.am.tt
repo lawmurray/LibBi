@@ -111,6 +111,12 @@ include src/$(DEPDIR)/[% client %]_gpu.Po
 [% END %]
 endif
 
+if ENABLE_CUDA_FAST_MATH
+CPPFLAGS += -DCUDA_FAST_MATH=1
+else
+CPPFLAGS += -DCUDA_FAST_MATH=0
+endif
+
 if ENABLE_GPU_CACHE
 CPPFLAGS += -DENABLE_GPU_CACHE
 endif
