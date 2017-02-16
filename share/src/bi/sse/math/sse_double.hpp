@@ -75,6 +75,8 @@ union sse_double {
     packed = _mm_set1_pd(o);
     return *this;
   }
+
+  operator bool() const { return (unpacked.a || unpacked.b); }
 };
 
 BI_FORCE_INLINE inline sse_double& operator+=(sse_double& o1,

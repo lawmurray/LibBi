@@ -83,6 +83,10 @@ union sse_float {
     packed = _mm_set1_ps(o);
     return *this;
   }
+
+  operator bool() const { 
+    return (unpacked.a || unpacked.b || unpacked.c || unpacked.c); 
+  }
 };
 
 BI_FORCE_INLINE inline sse_float& operator+=(sse_float& o1,
