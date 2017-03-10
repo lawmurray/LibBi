@@ -117,7 +117,24 @@ CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
 template<class R, class T1>
 CUDA_FUNC_BOTH T1 negbin(R& rng, const T1 mu = 1.0, const T1 k = 1.0);
 
+/**
+ * Generate a random number from a binomial distribution with given
+ * parameters.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param alpha Size.
+ * @param beta Prob.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 binomial(R& rng, const T1 size = 1.0, const T1 prob = 0.5);
+
 }
+
 
 template<class R, class T1>
 inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
@@ -192,4 +209,24 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   return u;
 }
 
+template<class R, class T1>
+inline T1 bi::binomial(R& rng, const T1 size, const T1 prob) {
+  /* pre-condition */
+  BI_ASSERT(size >= static_cast<T1>(0.0) && prob >= static_cast<T1>(0.0) && prob <= static_cast<T1>(1.0));
+
+  // The implementation is a variant of Luc Devroye's "Second Waiting Time Method" on page 522 of his text "Non-Uniform Random Variate Generation."
+  // This is not the fastest method, in time it would be better to move to
+  // another algorithm, such as the BTRD algorithm used in boost.
+  double log_q = bi::log(1.0 - prob);
+  T1 x = 0;
+  double sum = 0;
+  for(;;) {
+      sum += bi::log(rng.uniform(0.0,1.0)) / (BI_REAL(size) - BI_REAL(x));
+      if(sum < log_q) {
+          return x;
+      }
+      x++;
+  }
+  return x;
+}
 #endif

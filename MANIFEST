@@ -35,6 +35,7 @@ lib/Bi/Action/inverse_gamma.pm
 lib/Bi/Action/log_gaussian.pm
 lib/Bi/Action/log_normal.pm
 lib/Bi/Action/negbin.pm
+lib/Bi/Action/binomial.pm
 lib/Bi/Action/normal.pm
 lib/Bi/Action/ode_.pm
 lib/Bi/Action/poisson.pm
@@ -635,6 +636,7 @@ share/tt/cpp/action/inverse_gamma.hpp.tt
 share/tt/cpp/action/misc/footer.hpp.tt
 share/tt/cpp/action/misc/header.hpp.tt
 share/tt/cpp/action/negbin.hpp.tt
+share/tt/cpp/action/binomial.hpp.tt
 share/tt/cpp/action/ode_.hpp.tt
 share/tt/cpp/action/poisson.hpp.tt
 share/tt/cpp/action/pdf.hpp.tt

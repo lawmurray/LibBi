@@ -304,6 +304,46 @@ struct negbin_density_functor: private negbin_log_density_functor<T> {
   }
 };
 
+/**
+ * @ingroup math_pdf
+ *
+ * Binomial log-density functor.
+ */
+template<class T>
+struct binomial_log_density_functor: public std::unary_function<T,T> {
+  const T n, p, lN, logP, log1P;
+
+  CUDA_FUNC_HOST
+  binomial_log_density_functor(const T n, const T p) :
+    n(n), p(p), lN(lgamma(n+1)), logP(log(p)), log1P(log(1-p)) {
+    //
+    }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return lN - lgamma(x+1) - lgamma(n-x+1) + x*logP + (n-x)*log1P;
+  }
+};
+
+/**
+ * @ingroup math_pdf
+ *
+ * Binomial density functor.
+ */
+template<class T>
+struct binomial_density_functor: private binomial_log_density_functor<T> {
+  CUDA_FUNC_HOST
+  binomial_density_functor(const T n, const T p) :
+    binomial_log_density_functor<T>(n, p) {
+    //
+  }
+
+  CUDA_FUNC_BOTH
+  T operator()(const T& x) const {
+    return bi::exp(binomial_log_density_functor<T>::operator()(x));
+  }
+};
+
 }
 
 #endif
