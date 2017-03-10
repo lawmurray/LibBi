@@ -289,13 +289,13 @@ void bi::negbin_log_densities(const M1 Z, const T1 mean, const T1 shape,
   }
 }
 
-template<class M1, class T1, class V1>
-void bi::binomial_densities(const M1 Z, const T1 size, const T1 prob,
+template<class M1, class T1, class T2, class V1>
+void bi::binomial_densities(const M1 Z, const T1 size, const T2 prob,
                                  V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), binomial_density_functor<T1>(size, prob));
+  op_elements(vec(Z), vec(Z), binomial_density_functor<T1, T2>(size, prob));
   if (clear) {
     prod_columns(Z, p);
   } else {
@@ -305,13 +305,13 @@ void bi::binomial_densities(const M1 Z, const T1 size, const T1 prob,
   }
 }
 
-template<class M1, class T1, class V1>
-void bi::binomial_log_densities(const M1 Z, const T1 size, const T1 prob,
+template<class M1, class T1, class T2, class V1>
+void bi::binomial_log_densities(const M1 Z, const T1 size, const T2 prob,
                                      V1 p, const bool clear) {
   /* pre-condition */
   BI_ASSERT(Z.size1() == p.size());
 
-  op_elements(vec(Z), vec(Z), binomial_log_density_functor<T1>(size, prob));
+  op_elements(vec(Z), vec(Z), binomial_log_density_functor<T1, T2>(size, prob));
   if (clear) {
     sum_columns(Z, p);
   } else {
