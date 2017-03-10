@@ -1,12 +1,12 @@
 =head1 NAME
 
-negbin - Negative binomial distribution.
+binomial - Binomial distribution.
 
 =head1 SYNOPSIS
 
     x ~ binomial()
     x ~ binomial(1, 0.5)
-    x ~ poisson(size = 1, prob = 0.5)
+    x ~ binomial(size = 1, prob = 0.5)
 
 =head1 DESCRIPTION
 
