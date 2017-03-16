@@ -73,6 +73,16 @@ public:
    */
   CUDA_FUNC_DEVICE double poisson(const double lambda = 0.0);
 
+  /**
+   * @copydoc Random::binomial
+   *
+   * CURAND does not currently provide an API for the generation of binomial
+   * variates. This function is implemented using Knuth's algoirthm as
+   * implemented in GSL.
+   */
+  template<class T1, class T2>
+  CUDA_FUNC_DEVICE T1 binomial(T1 n = 1.0, T2 p = 0.5);
+
    /**
    * CURAND state.
    */
@@ -153,6 +163,44 @@ inline float bi::RngGPU::poisson(const float lambda) {
 
 inline double bi::RngGPU::poisson(const double lambda) {
   return curand_poisson(&r, lambda);
+}
+
+template<class T1, class T2>
+inline T1 bi::RngGPU::binomial(T1 n, T2 p) {
+  const T2 zero = static_cast<T1>(0.0);
+  const T2 one = static_cast<T1>(1.0);
+
+  T1 i, a, b, k = 0;
+
+  while (n > 10) {       /* This parameter is tunable */
+    T2 X;
+    a = 1 + (n / 2);
+    b = 1 + n - a;
+
+    T2 x = this->gamma(a, static_cast<T1>(1.0));
+    T2 y = this->gamma(b, static_cast<T1>(1.0));
+
+    X = x / (x + y);
+
+    if (X >= p) {
+      n = a - 1;
+      p /= X;
+    }
+    else
+      {
+        k += a;
+        n = b - 1;
+        p = (p - X) / (1 - X);
+      }
+  }
+
+  for (i = 0; i < n; i++) {
+    T2 u = this->uniform(zero, one);
+    if (u < p)
+      k++;
+  }
+
+  return k;
 }
 
 #endif

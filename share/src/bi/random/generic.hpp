@@ -125,16 +125,15 @@ CUDA_FUNC_BOTH T1 negbin(R& rng, const T1 mu = 1.0, const T1 k = 1.0);
  * @tparam T1 Scalar type.
  *
  * @param[in,out] rng Random number generator.
- * @param alpha Size.
- * @param beta Prob.
+ * @param n Size.
+ * @param p Probability.
  *
  * @return The random number.
  */
 template<class R, class T1, class T2>
-CUDA_FUNC_BOTH T1 binomial(R& rng, const T1 size = 1.0, const T2 prob = 0.5);
+CUDA_FUNC_BOTH T1 binomial(R& rng, T1 n = 1.0, T2 p = 0.5);
 
 }
-
 
 template<class R, class T1>
 inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
@@ -210,23 +209,15 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
 }
 
 template<class R, class T1, class T2>
-inline T1 bi::binomial(R& rng, const T1 size, const T2 prob) {
+inline T1 bi::binomial(R& rng, T1 n, T2 p) {
   /* pre-condition */
-  BI_ASSERT(size >= static_cast<T1>(0.0) && prob >= static_cast<T2>(0.0) && prob <= static_cast<T2>(1.0));
+  BI_ASSERT(n >= static_cast<T1>(0.0) &&
+            p >= static_cast<T2>(0.0) && p <= static_cast<T2>(1.0));
 
-  // The implementation is a variant of Luc Devroye's "Second Waiting Time Method" on page 522 of his text "Non-Uniform Random Variate Generation."
-  // This is not the fastest method, in time it would be better to move to
-  // another algorithm, such as the BTRD algorithm used in boost.
-  double log_q = bi::log(1.0 - prob);
-  T1 x = 0;
-  double sum = 0;
-  for(;;) {
-      sum += bi::log(rng.uniform(0.0,1.0)) / (BI_REAL(size) - BI_REAL(x));
-      if(sum < log_q) {
-          return x;
-      }
-      x++;
-  }
-  return x;
+  T1 u;
+
+  u = static_cast<T1>(rng.binomial(n, p));
+
+  return u;
 }
 #endif
