@@ -11,7 +11,7 @@ uniform - uniform distribution.
 =head1 DESCRIPTION
 
 A C<uniform> action specifies that a variable is uniformly distributed on a
-finite and closed interval given by the bounds C<lower> and C<upper>.
+finite and left-closed interval given by the bounds C<lower> and C<upper>.
 
 =cut
 
