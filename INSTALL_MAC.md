@@ -43,7 +43,20 @@ end up with a working environment.
 Install the Homebrew packages on which LibBi depends:
 
     brew tap homebrew/science
-    brew install gcc47 qrupdate netcdf gsl boost
+    brew install qrupdate netcdf gsl boost
+
+Finally, if you're on OSX 10.10 or greater, then you *might* have
+problems with boost, specifically an error like:
+
+    /usr/local/include/boost/serialization/detail/stack_constructor.hpp:50:31: error: no member named 'load_construct_data_adl' in namespace 'boost::serialization'
+            boost::serialization::load_construct_data_adl(
+            ~~~~~~~~~~~~~~~~~~~~~~^
+    1 warning and 1 error generated.
+
+In that case, if you delete the `boost::serialization::` explicit
+namespace and it should work. Seems like this is a problem which
+affects
+[other software](http://stackoverflow.com/questions/30926981/issue-with-dionysus-build-make-on-mac-os-x-10-10-yosemite).
 
 ## Step 5: Install LibBi
 
