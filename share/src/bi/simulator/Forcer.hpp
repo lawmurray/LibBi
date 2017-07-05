@@ -100,6 +100,8 @@ inline void bi::Forcer<IO1,CL>::update(const int k, State<B,L>& s) {
     in.read(k, F_VAR, s.get(F_VAR));
     cache.set(k, vec(s.get(F_VAR)));
   }
+  in.read(k, D_VAR, s.get(D_VAR));
+  in.read(k, R_VAR, s.get(R_VAR));
   s.setLastInputTime(in.getTime(k));
 }
 
@@ -112,6 +114,8 @@ inline void bi::Forcer<IO1,CL>::update0(State<B,L>& s) {
     in.read0(F_VAR, s.get(F_VAR));
     cache0.set(0, vec(s.get(F_VAR)));
   }
+  in.read0(D_VAR, s.get(D_VAR));
+  in.read0(R_VAR, s.get(R_VAR));
 }
 
 template<class IO1, bi::Location CL>
