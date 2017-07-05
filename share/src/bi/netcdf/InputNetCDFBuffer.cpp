@@ -276,7 +276,7 @@ std::pair<int,int> bi::InputNetCDFBuffer::mapVarDim(const Var* var) {
         ncDim = dimids[j];
 
         BI_ERROR_MSG(dim->getName().compare(nc_inq_dimname(ncid, ncDim)) == 0,
-            "Dimension " << j << " of variable " << nc_inq_dimname(ncid, ncVar) << " should be " << dim->getName() << " not " << nc_inq_dimname(ncid, ncDim) << ", in file " << file);
+            "Dimension " << j << " of variable " << var->getName() << " should be " << dim->getName() << " not " << nc_inq_dimname(ncid, ncDim) << ", in file " << file);
         BI_ERROR_MSG(k < 0 || coordVars[k] < 0,
             "Variable " << nc_inq_varname(ncid, ncVar) << " has both dense and sparse definitions, in file " << file);
       }
