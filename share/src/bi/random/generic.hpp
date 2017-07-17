@@ -109,8 +109,8 @@ CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
  * @tparam T1 Scalar type.
  *
  * @param[in,out] rng Random number generator.
- * @param alpha Shape.
- * @param beta Scale.
+ * @param mu Mean.
+ * @param k Shape.
  *
  * @return The random number.
  */
@@ -162,7 +162,7 @@ T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu,
   T1 u;
   do {
     u = rng.gaussian(mu, sigma);
-  } while (u < lower);
+  } while (u <= lower);
 
   return u;
 }
@@ -173,7 +173,7 @@ T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu,
   T1 u;
   do {
     u = rng.gaussian(mu, sigma);
-  } while (u > upper);
+  } while (u >= upper);
 
   return u;
 }
@@ -189,7 +189,7 @@ T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
     u = upper;
   } else do {
     u = rng.gaussian(mu, sigma);
-  } while (u < lower || u > upper);
+  } while (u <= lower || u >= upper);
 
   return u;
 }
@@ -197,13 +197,17 @@ T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
 template<class R, class T1>
 inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   /* pre-condition */
-  BI_ASSERT(mu > static_cast<T1>(0.0) && k > static_cast<T1>(0.0));
+  BI_ASSERT(mu >= static_cast<T1>(0.0) && k >= static_cast<T1>(0.0));
 
   T1 u;
 
-  const T1 x = rng.gamma(k, mu/k);
+  if (mu > 0) {
+    const T1 x = rng.gamma(k, mu/k);
 
-  u = static_cast<T1>(rng.poisson(x));
+    u = static_cast<T1>(rng.poisson(x));
+  } else {
+    u = 0;
+  }
 
   return u;
 }

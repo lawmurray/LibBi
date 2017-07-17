@@ -121,9 +121,13 @@ must be at least the number of samples.
 
 Index along the C<ns> dimension of C<--input-file> to use.
 
-=item C<--input-np> (default 0)
+=item C<--input-np> (default -1)
 
-Index along the C<np> dimension of C<--input-file> to use.
+Index along the C<np> dimension of C<--input-file> to use. -1 indicates that,
+when state variables are read from the input file, rather than initialising all
+state variables identically, the C<np> dimension is used to initialise them all
+differently. The size of the C<np> dimension must be at least the number of
+samples.
 
 =item C<--obs-ns> (default 0)
 
@@ -241,7 +245,7 @@ our @CLIENT_OPTIONS = (
     {
       name => 'input-np',
       type => 'int',
-      default => 0
+      default => -1
     },
     {
       name => 'obs-ns',

@@ -108,11 +108,11 @@ inline T1 bi::RngGPU::uniformInt(const T1 lower, const T1 upper) {
 }
 
 inline float bi::RngGPU::uniform(const float lower, const float upper) {
-  return lower + (upper - lower)*curand_uniform(&r);
+  return lower + (upper - lower)*(1 - curand_uniform(&r));
 }
 
 inline double bi::RngGPU::uniform(const double lower, const double upper) {
-  return lower + (upper - lower)*curand_uniform_double(&r);
+  return lower + (upper - lower)*(1 - curand_uniform_double(&r));
 }
 
 inline float bi::RngGPU::gaussian(const float mu, const float sigma) {

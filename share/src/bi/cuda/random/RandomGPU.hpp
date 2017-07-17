@@ -63,7 +63,7 @@ struct RandomGPU {
                         1.0, const typename V2::value_type p = 0.5);
 
   /**
-   * @copydoc Random::gammas
+   * @copydoc Random::betas
    */
   template<class V1>
   static void betas(Random& rng, V1 x, const typename V1::value_type alpha =

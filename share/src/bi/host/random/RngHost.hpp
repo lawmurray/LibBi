@@ -129,10 +129,15 @@ inline typename V1::difference_type bi::RngHost::multinomial(const V1 lps) {
   typename sim_temp_vector<V1>::type Ps(lps.size());
   sumexpu_inclusive_scan(lps, Ps);
 
-  dist_type dist(0.0, *(Ps.end() - 1));
-  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+  typename V1::value_type sumexpu(*(Ps.end() - 1));
+  if (sumexpu > 0) {
+    dist_type dist(0.0, sumexpu);
+    boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
-  return thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
+    return thrust::lower_bound(Ps.begin(), Ps.end(), gen()) - Ps.begin();
+  } else {
+    return thrust::lower_bound(Ps.begin(), Ps.end(), .0) - Ps.begin();
+  }
 }
 
 template<class T1>
