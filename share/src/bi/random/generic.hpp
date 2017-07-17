@@ -109,8 +109,8 @@ CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
  * @tparam T1 Scalar type.
  *
  * @param[in,out] rng Random number generator.
- * @param alpha Shape.
- * @param beta Scale.
+ * @param mu Mean.
+ * @param k Shape.
  *
  * @return The random number.
  */

@@ -77,7 +77,7 @@ CUDA_FUNC_GLOBAL void kernelGammas(curandStateSA rng, V1 x,
  *
  * @param[in,out] rng Random number generator.
  * @param[out] x Vector to fill.
- * @param lambda rate.
+ * @param lambda Rate.
  */
 template<class V1>
 CUDA_FUNC_GLOBAL void bi::kernelPoissons(curandStateSA rng, V1 x,

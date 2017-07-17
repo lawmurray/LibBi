@@ -6,12 +6,12 @@ negbin - Negative binomial distribution.
 
     x ~ negbin()
     x ~ negbin(1.0, 2.0)
-    x ~ poisson(mean = 1.0, shape = 2.0)
+    x ~ negbin(mean = 1.0, shape = 2.0)
 
 =head1 DESCRIPTION
 
 A C<negbin> action specifies that a variable is distributed according to
-a negative binomial distribution the given C<mean> and C<shape> parameters.
+a negative binomial distribution with the given C<mean> and C<shape> parameters.
 Note that the implementation will evaluate densities for any (not necessarily
 integer) x. It is left to the user to ensure consistency (e.g., using this only
 with integer observations).
