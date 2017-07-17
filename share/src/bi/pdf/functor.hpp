@@ -282,7 +282,8 @@ struct negbin_log_density_functor: public std::unary_function<T,T> {
 
   CUDA_FUNC_BOTH
   T operator()(const T& x) const {
-    return lgamma(k + x + 1) - lgamma(x + 1) + x * logY - logZ;
+    if (mu == 0) return (x == 0 ? 0 : -BI_INF);
+    else return lgamma(k + x + 1) - lgamma(x + 1) + x * logY - logZ;
   }
 };
 

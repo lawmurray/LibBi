@@ -181,13 +181,17 @@ T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
 template<class R, class T1>
 inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   /* pre-condition */
-  BI_ASSERT(mu > static_cast<T1>(0.0) && k > static_cast<T1>(0.0));
+  BI_ASSERT(mu >= static_cast<T1>(0.0) && k >= static_cast<T1>(0.0));
 
   T1 u;
 
-  const T1 x = rng.gamma(k, mu/k);
+  if (mu > 0) {
+    const T1 x = rng.gamma(k, mu/k);
 
-  u = static_cast<T1>(rng.poisson(x));
+    u = static_cast<T1>(rng.poisson(x));
+  } else {
+    u = 0;
+  }
 
   return u;
 }
