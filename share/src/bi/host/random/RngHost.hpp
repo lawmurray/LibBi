@@ -72,6 +72,12 @@ public:
   T1 poisson(const T1 lambda = 1.0);
 
   /**
+   * @copydoc Random::binomial
+   */
+  template<class T1, class T2>
+  T1 binomial(const T1 n = 1.0, const T2 p = 0.5);
+
+  /**
    * Random number generator type.
    */
   typedef boost::mt19937 rng_type;
@@ -90,6 +96,7 @@ public:
 #include "boost/random/uniform_real.hpp"
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/gamma_distribution.hpp"
+#include "boost/random/binomial_distribution.hpp"
 #include "boost/random/poisson_distribution.hpp"
 #include "boost/random/variate_generator.hpp"
 
@@ -180,6 +187,20 @@ inline T1 bi::RngHost::poisson(const T1 lambda) {
   typedef boost::poisson_distribution<int,T1> dist_type;
 
   dist_type dist(lambda);
+  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+
+  return static_cast<T1>(gen());
+}
+
+template<class T1, class T2>
+inline T1 bi::RngHost::binomial(const T1 n, const T2 p) {
+  /* pre-condition */
+  BI_ASSERT(n >= static_cast<T1>(0.0) &&
+            p >= static_cast<T2>(0.0) && p <= static_cast<T2>(1.0));
+
+  typedef boost::binomial_distribution<int,T2> dist_type;
+
+  dist_type dist(n, p);
   boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
   return static_cast<T1>(gen());

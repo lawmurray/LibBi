@@ -117,6 +117,22 @@ CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
 template<class R, class T1>
 CUDA_FUNC_BOTH T1 negbin(R& rng, const T1 mu = 1.0, const T1 k = 1.0);
 
+/**
+ * Generate a random number from a binomial distribution with given
+ * parameters.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param n Size.
+ * @param p Probability.
+ *
+ * @return The random number.
+ */
+template<class R, class T1, class T2>
+CUDA_FUNC_BOTH T1 binomial(R& rng, T1 n = 1.0, T2 p = 0.5);
+
 }
 
 template<class R, class T1>
@@ -196,4 +212,16 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   return u;
 }
 
+template<class R, class T1, class T2>
+inline T1 bi::binomial(R& rng, T1 n, T2 p) {
+  /* pre-condition */
+  BI_ASSERT(n >= static_cast<T1>(0.0) &&
+            p >= static_cast<T2>(0.0) && p <= static_cast<T2>(1.0));
+
+  T1 u;
+
+  u = static_cast<T1>(rng.binomial(n, p));
+
+  return u;
+}
 #endif

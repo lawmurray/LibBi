@@ -243,6 +243,7 @@ fi
 
 AC_CHECK_HEADERS([\
     boost/mpl/if.hpp \
+    boost/random/binomial_distribution.hpp \
     boost/random/bernoulli_distribution.hpp \
     boost/random/gamma_distribution.hpp \
     boost/random/mersenne_twister.hpp \

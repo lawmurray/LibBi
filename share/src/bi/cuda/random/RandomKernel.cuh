@@ -82,6 +82,21 @@ CUDA_FUNC_GLOBAL void kernelGammas(curandStateSA rng, V1 x,
 template<class V1>
 CUDA_FUNC_GLOBAL void bi::kernelPoissons(curandStateSA rng, V1 x,
     const typename V1::value_type lambda); 
+
+/**
+ * Kernel function to fill vector with binomial variates.
+ *
+ * @tparam V1 Vector type.
+ * @tparam V2 Vector type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param[out] x Vector to fill.
+ * @param n Size.
+ * @param p Probability.
+ */
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void bi::kernelBinomials(curandStateSA rng, V1 x,
+    const typename V1::value_type n, const typename V2::value_type p);
 }
 
 #include "../../random/Random.hpp"
@@ -140,6 +155,20 @@ CUDA_FUNC_GLOBAL void bi::kernelPoissons(curandStateSA rng, V1 x,
   rng.load(q, rng1.r);
   for (int p = q; p < x.size(); p += Q) {
     x(p) = rng1.poisson(lambda);
+  }
+  rng.store(q, rng1.r);
+}
+
+template<class V1, class V2>
+CUDA_FUNC_GLOBAL void bi::kernelBinomials(curandStateSA rng, V1 x,
+    const typename V1::value_type n, const typename V2::value_type p) {
+  const int q = blockIdx.x*blockDim.x + threadIdx.x;
+  const int Q = blockDim.x*gridDim.x;
+
+  RngGPU rng1;
+  rng.load(q, rng1.r);
+  for (int p = q; p < x.size(); p += Q) {
+    x(p) = rng1.binomial(n, p);
   }
   rng.store(q, rng1.r);
 }

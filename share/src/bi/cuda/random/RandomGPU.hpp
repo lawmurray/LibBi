@@ -56,6 +56,13 @@ struct RandomGPU {
                      1.0);
 
   /**
+   * @copydoc Random::binomial
+   */
+  template<class V1, class V2>
+  static void binomials(Random& rng, V1 x, const typename V1::value_type n =
+                        1.0, const typename V2::value_type p = 0.5);
+
+  /**
    * @copydoc Random::betas
    */
   template<class V1>
