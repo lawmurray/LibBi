@@ -310,6 +310,10 @@ void bi::InputNetCDFBuffer::read(const size_t k, const VarType type,
                 readVar(ncVar, start, len,
                     columns(X, var->getStart(), var->getSize()));
               } else if (mask.isSparse(var->getId())) {
+                BI_ERROR_MSG(len <= X.size2(),
+                    "Trying to read " << len << " values into dimension" <<
+                    " of length " << X.size2() << " in variable " <<
+                    var->getName() << " when reading file " << file);
                 readVar(ncVar, start, len, mask.getIndices(var->getId()),
                     columns(X, var->getStart(), var->getSize()));
               }
