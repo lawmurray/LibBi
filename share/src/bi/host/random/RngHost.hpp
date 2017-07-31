@@ -182,14 +182,19 @@ inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
 template<class T1>
 inline T1 bi::RngHost::poisson(const T1 lambda) {
   /* pre-condition */
-  BI_ASSERT(lambda > 0.0);
+  BI_ASSERT(lambda >= 0.0);
 
-  typedef boost::poisson_distribution<int,T1> dist_type;
+  if (lambda > 0) {
+    typedef boost::poisson_distribution<int,T1> dist_type;
 
-  dist_type dist(lambda);
-  boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
+    dist_type dist(lambda);
+    boost::variate_generator<rng_type&, dist_type> gen(rng, dist);
 
-  return static_cast<T1>(gen());
+    return static_cast<T1>(gen());
+  } else {
+    return 0;
+  }
+
 }
 
 template<class T1, class T2>
