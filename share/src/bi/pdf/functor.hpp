@@ -324,7 +324,12 @@ struct binomial_log_density_functor: public std::unary_function<T1,T2> {
 
   CUDA_FUNC_BOTH
   T2 operator()(const T1& x) const {
-    return lN - lgamma(x+1) - lgamma(n-x+1) + x*logP + (n-x)*log1P;
+    T2 log_density = lN - lgamma(x+1) - lgamma(n-x+1);
+    if (x>0)
+        log_density += x*logP;
+    if (x < n)
+        log_density += (n-x)*log1P;
+    return log_density; 
   }
 };
 
