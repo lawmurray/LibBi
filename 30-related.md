@@ -27,8 +27,8 @@ OctBi
 
 <ul class="buttons">
   <li><a
-  href="https://github.com/libbi/OctBi/archive/stable.tar.gz"><strong>Download</strong> Stable</a></li>
-  <li><a href="https://github.com/libbi/OctBi"><strong>View</strong> Dev</a></li>
+  href="https://github.com/lawmurray/OctBi/archive/stable.tar.gz"><strong>Download</strong> Stable</a></li>
+  <li><a href="https://github.com/lawmurray/OctBi"><strong>View</strong> Dev</a></li>
 </ul>
 
 OctBi is a package for [GNU Octave](http://www.octave.org) with functions for

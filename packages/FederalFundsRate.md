@@ -3,7 +3,7 @@ layout: package
 title: FederalFundsRate
 version: 1.0.0
 author: Lawrence Murray
-email: lawrence.murray@csiro.au
+email: lawrence.murray@it.uu.se
 website-url: http://www.github.com/lawmurray/FederalFundsRate
 download-url: http://www.github.com/lawmurray/FederalFundsRate/archive/master.tar.gz
 github-url: http://www.github.com/lawmurray/FederalFundsRate
@@ -20,7 +20,7 @@ Octave is required. Running it is optional, as a number of parameter sets are
 already included.
 
     ./run.sh
-    
+
 This runs a particle filter as well as samples from the posterior distribution
 using a Federal Funds Rate data set.
 
@@ -47,7 +47,7 @@ warnings:
 
 This is normal.
 
-   
+
 Description
 -----------
 

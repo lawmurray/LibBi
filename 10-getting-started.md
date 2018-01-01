@@ -18,7 +18,7 @@ Install
 -------
 
 LibBi runs on Linux, Mac OS X and Windows. Installation instructions are in the
-[INSTALL.md](https://github.com/libbi/LibBi/blob/master/INSTALL.md) file of
+[INSTALL.md](https://github.com/lawmurray/LibBi/blob/master/INSTALL.md) file of
 the distribution.
 
 Run
@@ -35,7 +35,7 @@ Share
 
 LibBi provides a packaging system for bundling model specifications and input
 files. If you have a package to share please contact <a
-href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. It can be readily
+href="http://www.indii.org/research">Lawrence Murray</a>. It can be readily
 added to the <a href="/examples.html">Examples</a> page via GitHub.
 
 Develop
@@ -50,6 +50,6 @@ Contributions to LibBi can take many forms:
   Julia.
 
 If you are interested in getting involved in the development of LibBi, please
-contact <a href="mailto:lawrence.murray@csiro.au">Lawrence Murray</a>. The
+contact <a href="mailto:lawrence.murray@it.uu.se">Lawrence Murray</a>. The
 [manual](/docs/LibBi-Manual.pdf) also contains a developer guide to help
 you get started.

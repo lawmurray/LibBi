@@ -3,7 +3,7 @@ layout: package
 title: OrnsteinUhlenbeckBridge
 version: 1.0.0
 author: Lawrence Murray
-email: lawrence.murray@csiro.au
+email: lawrence.murray@it.uu.se
 website-url: http://www.github.com/lawmurray/OrnsteinUhlenbeckBridge
 download-url: http://www.github.com/lawmurray/OrnsteinUhlenbeckBridge/archive/master.tar.gz
 github-url: http://www.github.com/lawmurray/OrnsteinUhlenbeckBridge

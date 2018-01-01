@@ -14,5 +14,5 @@ A new [Resampling](/packages/Resampling.html) package has also been added to
 the website. It can be used to reproduce the results of that paper using the
 `test_resampler` command that comes built into LibBi. At time of writing, the
 package requires the latest development version of LibBi from the [GitHub
-repository](https://github.com/libbi/LibBi) (to be released soon as stable
+repository](https://github.com/lawmurray/LibBi) (to be released soon as stable
 version 1.1.0).

@@ -3,7 +3,7 @@ layout: package
 title: Windkessel
 version: 1.0.1
 author: Lawrence Murray
-email: lawrence.murray@csiro.au
+email: lawrence.murray@it.uu.se
 website-url: http://www.github.com/lawmurray/Windkessel
 download-url: http://www.github.com/lawmurray/Windkessel/archive/stable.tar.gz
 github-url: http://www.github.com/lawmurray/Windkessel

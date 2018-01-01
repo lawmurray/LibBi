@@ -26,29 +26,17 @@ Whichever you prefer, and for as long as you like, until you settle on
 
 ### Who's behind LibBi?
 
-Development of LibBi began in 2009 under a [CSIRO](http://www.csiro.au)
-project that forms part of the [Computational and Simulation
-Sciences](http://www.csiro.au/en/Organisation-Structure/Divisions/Mathematics-Informatics-and-Statistics/Computational-simulation-sciences.aspx)
-platform. The aim of the project was to develop appropriate models and
-methodology for quantifying uncertainty in marine biogeochemical models. Work
-continues there and the project remains a major driver of the software's
-development. Recognising potential interest in the broader scientific
+Development of LibBi began in 2009 at [CSIRO](http://www.csiro.au). The aim of the initial project was to develop appropriate models and
+methodology for quantifying uncertainty in marine biogeochemical models. Recognising potential interest in the broader scientific
 community, the software was released under an open source licence in June
-2013.
+2013 and has since been used in several other problem domains.
 
-The main developer is Lawrence Murray. Other suspects in the abovementioned
-project are John Parslow, Noel Cressie, Eddy Campbell, Nugzar Margvelashvili
-and Emlyn Jones (see [this
-paper](http://www.esajournals.org/doi/abs/10.1890/12-0312.1), preprint also on
-[arXiv](http://arxiv.org/abs/1211.1717)). Emlyn Jones in particular suffered
-through the earliest versions of the software. Pierre Jacob and Anthony Lee
-have both made significant contributions. Dan Pagendam has suffered through
-later versions of the software.
+The main developer is [Lawrence Murray](http://www.indii.org/research/). [Sebastian Funk](http://sbfnk.github.io/) has made significant contributions, especially to the [RBi](/related.html) interface for R, and Homebrew packaging.
 
 ### How is LibBi licensed?
 
 LibBi is licensed under the [CSIRO Open Source Software License
-(GPL)](https://github.com/libbi/LibBi/blob/master/LICENSE). This is the full
+(GPL)](https://github.com/lawmurray/LibBi/blob/master/LICENSE). This is the full
 text of the GPL version 2 with some additional provisions.
 
 ### How can I cite LibBi?

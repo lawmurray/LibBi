@@ -3,7 +3,7 @@ layout: package
 title: Lorenz96
 version: 1.0.1
 author: Lawrence Murray
-email: lawrence.murray@csiro.au
+email: lawrence.murray@it.uu.se
 website-url: http://www.github.com/lawmurray/Lorenz96
 download-url: http://www.github.com/lawmurray/Lorenz96/archive/stable.tar.gz
 github-url: http://www.github.com/lawmurray/Lorenz96
