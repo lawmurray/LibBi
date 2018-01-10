@@ -154,7 +154,6 @@ sub new {
         _vampir => 0,
         _single => 0,
         _extra_debug => 0,
-        _timing => 0,
         _diagnostics => 0,
         _diagnostics2 => 0,
         _gperftools => 0,
@@ -189,8 +188,6 @@ sub new {
         'disable-single' => sub { $self->{_single} = 0 },
         'enable-extra-debug' => sub { $self->{_extra_debug} = 1 },
         'disable-extra-debug' => sub { $self->{_extra_debug} = 0 },
-        'enable-timing' => sub { $self->{_timing} = 1 },
-        'disable-timing' => sub { $self->{_timing} = 0 },
         'enable-diagnostics=i' => \$self->{_diagnostics},
         'disable-diagnostics' => sub { $self->{_diagnostics} = 0 },
         'disable-diagnostics2' => sub { $self->{_diagnostics2} = 0 },
@@ -354,7 +351,6 @@ sub _configure {
     $options .= $self->{_vampir} ? ' --enable-vampir' : ' --disable-vampir';
     $options .= $self->{_single} ? ' --enable-single' : ' --disable-single';
     $options .= $self->{_extra_debug} ? ' --enable-extradebug' : ' --disable-extradebug';
-    $options .= $self->{_timing} ? ' --enable-timing' : ' --disable-timing';
     $options .= $self->{_diagnostics} ? ' --enable-diagnostics=' . $self->{_diagnostics} : ' --disable-diagnostics';
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
