@@ -346,7 +346,7 @@ sub _configure {
     $options .= $self->{_assert} ? ' --enable-assert' : ' --disable-assert';
     $options .= $self->{_openmp} ? ' --enable-openmp' : ' --disable-openmp';
     $options .= $self->{_cuda} ? ' --enable-cuda' : ' --disable-cuda';
-    $options .= $self->{_cuda_fast_math} ? ' --enable-cuda-fast-math' : ' --disable-cuda-fast-math';
+    $options .= $self->{_cuda_fast_math} ? ' --enable-cudafastmath' : ' --disable-cudafastmath';
     $options .= $self->{_gpu_cache} ? ' --enable-gpucache' : ' --disable-gpucache';
     $options .= $self->{_sse} ? ' --enable-sse' : ' --disable-sse';
     $options .= $self->{_avx} ? ' --enable-avx' : ' --disable-avx';

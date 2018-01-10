@@ -31,11 +31,11 @@ AC_ARG_ENABLE([cuda],
      esac],[cuda=false])
 
 AC_ARG_ENABLE([cudafastmath],
-     [  --enable-cuda-fast-math use fast-but-inaccurate math in CUDA],
+     [  --enable-cudafastmath use fast-but-inaccurate math in CUDA],
      [case "${enableval}" in
        yes) cudafastmath=true ;;
        no)  cudafastmath=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-cuda-fast-math]) ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-cudafastmath]) ;;
      esac],[cudafastmath=false])
 
 AC_ARG_ENABLE([gpucache],
