@@ -190,7 +190,7 @@ inline T1 bi::RngGPU::binomial(T1 n, T2 p) {
     }
     else
       {
-        k += a;
+        k += floor(a);
         n = b - 1;
         p = (p - X) / (1 - X);
       }
