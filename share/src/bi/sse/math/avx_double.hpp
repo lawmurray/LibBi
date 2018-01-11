@@ -73,6 +73,8 @@ union avx_double {
   avx_double& operator=(const double& o) {
     packed = _mm256_set1_pd(o);
   }
+
+  operator bool() const { return (unpacked.a || unpacked.b); }
 };
 
 BI_FORCE_INLINE inline avx_double& operator+=(avx_double& o1,
