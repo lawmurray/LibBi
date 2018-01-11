@@ -28,8 +28,6 @@
  *
  * @todo Exponential pdf, poisson pdf.
  *
- * @todo Add --cuda-arch flag to set sm_13, sm_20 or sm_30 etc.
- *
  * @todo Tidy up output file variable names, perhaps precede internal
  * variables with the program or schema name, e.g. simulate.time,
  * filter.logweight etc.

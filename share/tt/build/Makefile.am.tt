@@ -26,7 +26,7 @@ AM_LDFLAGS = $(OPENMP_LDFLAGS)
 
 # CUDA files setup
 NVCPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(DEFS) -DBOOST_NOINLINE
-NVCXXFLAGS = -w -arch sm_20 -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
+NVCXXFLAGS = -w -arch $(CUDA_ARCH) -Xcompiler="$(AM_CXXFLAGS) $(CXXFLAGS)"
 LINK = $(CXXLINK) # force C++ linker for CUDA files
 
 # libraries

@@ -78,6 +78,12 @@ For particle filters, enable ancestry caching in GPU memory. GPU memory is
 typically much more limited than main memory. If sufficient GPU memory is
 available this may give some performance improvement.
 
+=item C<--cuda-arch> (default sm_30)
+
+For particle filters, enable ancestry caching in GPU memory. GPU memory is
+typically much more limited than main memory. If sufficient GPU memory is
+available this may give some performance improvement.
+
 =item C<--enable-sse> (default off)
 
 Enable SSE code.
@@ -148,6 +154,7 @@ sub new {
         _cuda => 0,
         _cuda_fast_math => 0,
         _gpu_cache => 0,
+        _cuda_arch => 'sm_30',
         _sse => 0,
         _avx => 0,
         _mpi => 0,
@@ -176,6 +183,7 @@ sub new {
         'disable-cuda-fast-math' => sub { $self->{_cuda_fast_math} = 0 },
         'enable-gpu-cache' => sub { $self->{_gpu_cache} = 1 },
         'disable-gpu-cache' => sub { $self->{_gpu_cache} = 0 },
+        'cuda-arch=s' => sub { my ($opt_name, $opt_value) = @_; $self->{_cuda_arch} = $opt_value },
         'enable-sse' => sub { $self->{_sse} = 1 },
         'disable-sse' => sub { $self->{_sse} = 0 },
         'enable-avx' => sub { $self->{_avx} = 1 },
@@ -231,6 +239,7 @@ sub new {
     push(@builddir, 'extradebug') if $self->{_extra_debug};
     push(@builddir, 'diagnostics' . $self->{_diagnostics}) if $self->{_diagnostics};
     push(@builddir, 'gperftools') if $self->{_gperftools};
+    push(@builddir, $self->{_cuda_arch});
     
     $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
     mkpath($self->{_builddir});
@@ -371,7 +380,7 @@ sub _configure {
         $self->_is_modified(File::Spec->catfile($builddir, 'configure')) ||
         !-e File::Spec->catfile($builddir, 'Makefile')) {
         
-        my $cmd = "./configure $options CXXFLAGS='$cxxflags' LINKFLAGS='$linkflags'";
+        my $cmd = "./configure $options CXXFLAGS='$cxxflags' LINKFLAGS='$linkflags' CUDA_ARCH='".($self->{_cuda_arch})."'";
         if ($self->{_verbose}) {
             print "$cmd\n";
         }
