@@ -40,10 +40,13 @@ sub new {
     assert (defined $expr1) if DEBUG;
     assert (defined $expr2) if DEBUG;
 
+    my $shape = determine_shape($expr1, $op, $expr2);
+
     my $self = {
         _expr1 => $expr1,
         _op => $op,
-        _expr2 => $expr2
+        _expr2 => $expr2,
+        _shape => $shape
     };
     bless $self, $class;
     
@@ -61,7 +64,8 @@ sub clone {
     my $clone = {
         _expr1 => $self->get_expr1->clone,
         _op => $self->get_op,
-        _expr2 => $self->get_expr2->clone
+        _expr2 => $self->get_expr2->clone,
+        _shape => $self->get_shape->clone
     };
     bless $clone, ref($self);
     
@@ -111,18 +115,16 @@ sub get_expr2 {
     return $self->{_expr2};
 }
 
-=item B<get_shape>
+=item B<determine_shape>
 
 Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
 object.
 
 =cut
-sub get_shape {
-    my $self = shift;
-
-    my $expr1 = $self->get_expr1;
-    my $op = $self->get_op;
-    my $expr2 = $self->get_expr2;
+sub determine_shape {
+    my $expr1 = shift;
+    my $op = shift;
+    my $expr2 = shift;
 
     if ($op eq '*' && ($expr1->is_vector || $expr1->is_matrix) && ($expr2->is_vector || $expr2->is_matrix)) {
     	if ($expr1->get_shape->get_size2 != $expr2->get_shape->get_size1) {
@@ -140,12 +142,24 @@ sub get_shape {
         unless ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) {
             die("incompatible sizes in element-wise operation\n");
         }
-        if (!$self->get_expr1->is_scalar) {
-	        return $self->get_expr1->get_shape;
+        if (!$expr1->is_scalar) {
+	        return $expr1->get_shape;
         } else {
-        	return $self->get_expr2->get_shape;
+        	return $expr2->get_shape;
         }
     }
+}
+
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    return $self->{_shape};
 }
 
 =item B<accept>(I<visitor>, ...)

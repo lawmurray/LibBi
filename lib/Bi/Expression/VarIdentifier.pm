@@ -61,10 +61,13 @@ sub new {
     if (!defined $indexes) {
         $indexes = [];
     }
+
+    my $shape = determine_shape($indexes, $var);
     
     my $self = {
         _var => $var,
-        _indexes => $indexes
+        _indexes => $indexes,
+        _shape => $shape
     };
     bless $self, $class;
    
@@ -81,7 +84,8 @@ sub clone {
     
     my $clone = {
         _var => $self->get_var,
-        _indexes => [ map { $_->clone } @{$self->get_indexes} ]
+        _indexes => [ map { $_->clone } @{$self->get_indexes} ],
+        _shape => $self->get_shape->clone
     };
     bless $clone, ref($self);
     
@@ -109,6 +113,33 @@ sub set_var {
     $self->{_var} = $var;
 }
 
+=item B<determine_shape>
+
+Determine the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub determine_shape {
+    my $indexes = shift;
+    my $var = shift;
+
+    if (@{$indexes}) {
+        my $shape = [];
+        for (my $i = 0; $i < @{$indexes}; ++$i) {
+            if ($indexes->[$i]->is_range) {
+            	if ($indexes->[$i]->get_size->is_const) {
+	                push(@$shape, $indexes->[$i]->get_size->eval_const);
+            	} else {
+            		push(@$shape, 1);
+            	}
+            }
+        }
+        return new Bi::Expression::Shape($shape);
+    } else {
+        return $var->get_shape;
+    }
+}
+
 =item B<get_shape>
 
 Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
@@ -118,21 +149,7 @@ object.
 sub get_shape {
     my $self = shift;
 
-    if (@{$self->get_indexes}) {
-        my $shape = [];
-        for (my $i = 0; $i < @{$self->get_indexes}; ++$i) {
-            if ($self->get_indexes->[$i]->is_range) {
-            	if ($self->get_indexes->[$i]->get_size->is_const) {
-	                push(@$shape, $self->get_indexes->[$i]->get_size->eval_const);
-            	} else {
-            		push(@$shape, 1);
-            	}
-            }
-        }
-        return new Bi::Expression::Shape($shape);
-    } else {
-        return $self->get_var->get_shape;
-    }
+    return $self->{_shape};
 }
 
 =item B<get_indexes>
