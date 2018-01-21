@@ -155,11 +155,6 @@ script/libbi
 share/autogen.sh
 share/bi.lex
 share/bi.yp
-share/bi/Gaussian.bi
-share/bi/GenCpp.bi
-share/bi/Operation.bi
-share/bi/RK43.bi
-share/bi/Type.bi
 share/configure.ac
 share/nvcc_wrapper.pl
 share/src/bi/adapter/Adapter.hpp
@@ -724,7 +719,6 @@ t/001_load.t
 t/002_help.t
 t/003_gen.t
 t/004_build_tools.t
-t/010_cpu.t
 Test.bi
 test.conf
 VERSION.md
