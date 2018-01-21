@@ -254,8 +254,7 @@ template<class V1>
 void bi::ExtendedKFCache<CL,IO1>::writePredictedMean(const int k,
     const V1 mu1) {
   if (!mu1Cache.isValid(k)) {
-    vector_type tmp;
-    mu1Cache.set(k, tmp);
+    mu1Cache.resize(k+1);
     mu1Cache.get(k).resize(mu1.size(), false);
   }
   mu1Cache.set(k, mu1);
@@ -273,8 +272,7 @@ template<class M1>
 void bi::ExtendedKFCache<CL,IO1>::writePredictedStd(const int k,
     const M1 U1) {
   if (!U1Cache.isValid(k)) {
-    matrix_type tmp;
-    U1Cache.set(k, tmp);
+    U1Cache.resize(k+1);
     U1Cache.get(k).resize(U1.size1(), U1.size2(), false);
   }
   U1Cache.set(k, U1);
@@ -293,8 +291,7 @@ template<class V1>
 void bi::ExtendedKFCache<CL,IO1>::writeCorrectedMean(const int k,
     const V1 mu2) {
   if (!mu2Cache.isValid(k)) {
-    vector_type tmp;
-    mu2Cache.set(k, tmp);
+    mu2Cache.resize(k+1);
     mu2Cache.get(k).resize(mu2.size(), false);
   }
   mu2Cache.set(k, mu2);
@@ -312,8 +309,7 @@ template<class M1>
 void bi::ExtendedKFCache<CL,IO1>::writeCorrectedStd(const int k,
     const M1 U2) {
   if (!U2Cache.isValid(k)) {
-    matrix_type tmp;
-    U2Cache.set(k, tmp);
+    U2Cache.resize(k+1);
     U2Cache.get(k).resize(U2.size1(), U2.size2(), false);
   }
   U2Cache.set(k, U2);
@@ -330,8 +326,7 @@ template<bi::Location CL, class IO1>
 template<class M1>
 void bi::ExtendedKFCache<CL,IO1>::writeCross(const int k, const M1 C) {
   if (!CCache.isValid(k)) {
-    matrix_type tmp;
-    CCache.set(k, tmp);
+    CCache.resize(k+1);
     CCache.get(k).resize(C.size1(), C.size2(), false);
   }
   CCache.set(k, C);
