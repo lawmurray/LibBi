@@ -47,10 +47,13 @@ sub new {
 
     assert (defined $op) if DEBUG;
     assert (defined $expr) if DEBUG;
+
+    my $shape = determine_shape($expr);
     
     my $self = {
         _op => $op,
-        _expr => $expr
+        _expr => $expr,
+        _shape => $shape
     };
     bless $self, $class;
     
@@ -67,7 +70,8 @@ sub clone {
     
     my $clone = {
         _op => $self->get_op,
-        _expr => $self->get_expr->clone
+        _expr => $self->get_expr->clone,
+        _shape => $self->get_shape->clone
     };
     bless $clone, ref($self);
     
@@ -106,6 +110,18 @@ sub get_expr {
     return $self->{_expr};
 }
 
+=item B<determine_shape>
+
+Determine the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub determine_shape {
+    my $expr = shift;
+
+    return $expr->get_shape;
+}
+
 =item B<get_shape>
 
 Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
@@ -115,7 +131,7 @@ object.
 sub get_shape {
     my $self = shift;
 
-    return $self->get_expr->get_shape;
+    return $self->{_shape};
 }
 
 =item B<accept>(I<visitor>, ...)

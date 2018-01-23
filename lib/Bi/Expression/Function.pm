@@ -59,7 +59,9 @@ sub new {
     my $named_args = shift;
 
     my $self = new Bi::ArgHandler($args, $named_args);
+    my $shape = determine_shape($self, $name);
     $self->{_name} = $name;
+    $self->{_shape} = $shape;
     bless $self, $class;
    
     return $self;
@@ -75,6 +77,7 @@ sub clone {
     
     my $clone = Bi::ArgHandler::clone($self);
     $clone->{_name} = $self->get_name;
+    $clone->{_shape} = $self->get_shape->clone;
     bless $clone, ref($self);
     
     return $clone; 
@@ -148,16 +151,15 @@ sub is_math {
     return exists $MATH_FUNCTIONS{$self->get_name};
 }
 
-=item B<get_shape>
+=item B<determine_shape>
 
-Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+Determine the shape of the result of the expression, as a L<Bi::Expression::Shape>
 object.
 
 =cut
-sub get_shape {
-    my $self = shift;
-
-    my $name = $self->get_name;
+sub determine_shape {
+  my $self = shift;
+  my $name = shift;
 	if ($name eq 'gemv_') {
 		my $expr1 = $self->get_arg(0);
 		my $expr2 = $self->get_arg(1);
@@ -191,6 +193,18 @@ sub get_shape {
     	# scalar
         return new Bi::Expression::Shape();
     }
+}
+
+=item B<get_shape>
+
+Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub get_shape {
+    my $self = shift;
+
+    return $self->{_shape};
 }
 
 =item B<accept>(I<visitor>, ...)

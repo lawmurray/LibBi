@@ -72,12 +72,15 @@ sub new {
     assert (defined $op2) if DEBUG;
     assert (defined $expr3 && $expr3->isa('Bi::Expression')) if DEBUG;
 
+    my $shape = determine_shape($expr2, $expr3);
+
     my $self = {
         _expr1 => $expr1,
         _op1 => $op1,
         _expr2 => $expr2,
         _op2 => $op2,
-        _expr3 => $expr3
+        _expr3 => $expr3,
+        _shape => $shape
     };
     bless $self, $class;
     
@@ -97,7 +100,8 @@ sub clone {
         _op1 => $self->get_op1,
         _expr2 => $self->get_expr2->clone,
         _op2 => $self->get_op2,
-        _expr3 => $self->get_expr3->clone
+        _expr3 => $self->get_expr3->clone,
+        _shape => $self->get_shape->clone
     };
     bless $clone, ref($self);
     
@@ -178,6 +182,21 @@ sub get_expr3 {
     return $self->{_expr3};
 }
 
+=item B<determine_shape>
+
+Determine the shape of the result of the expression, as a L<Bi::Expression::Shape>
+object.
+
+=cut
+sub determine_shape {
+    my $expr2 = shift;
+    my $expr3 = shift;
+
+    assert ($expr2->get_shape->equals($expr3->get_shape)) if DEBUG;
+
+    return $expr2->get_shape;
+}
+
 =item B<get_shape>
 
 Get the shape of the result of the expression, as a L<Bi::Expression::Shape>
@@ -187,12 +206,7 @@ object.
 sub get_shape {
     my $self = shift;
 
-    my $expr2 = $self->get_expr2;
-    my $expr3 = $self->get_expr3;
-
-    assert ($expr2->get_shape->equals($expr3->get_shape)) if DEBUG;
-
-    return $expr2->get_shape;
+    return $self->{_shape};
 }
 
 =item B<d>(I<ident>)
