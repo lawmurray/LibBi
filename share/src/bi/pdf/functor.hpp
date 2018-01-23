@@ -313,23 +313,21 @@ struct negbin_density_functor: private negbin_log_density_functor<T> {
  */
 template<class T1, class T2>
 struct binomial_log_density_functor: public std::unary_function<T1,T2> {
-  const T1 n; 
+  const T1 n;
   const T2 p, lN, logP, log1P;
 
   CUDA_FUNC_HOST
   binomial_log_density_functor(const T1 n, const T2 p) :
-    n(n), p(p), lN(lgamma(n+1)), logP(log(p)), log1P(log(1-p)) {
+    n(n), p(p), lN(lgamma(n + 1)), logP(log(p)), log1P(log(1 - p)) {
     //
     }
 
   CUDA_FUNC_BOTH
   T2 operator()(const T1& x) const {
-    T2 log_density = lN - lgamma(x+1) - lgamma(n-x+1);
-    if (x>0)
-        log_density += x*logP;
-    if (x < n)
-        log_density += (n-x)*log1P;
-    return log_density; 
+    T2 log_density = lN - lgamma(x + 1) - lgamma(n - x + 1);
+    if (x > 0) log_density += x * logP;
+    if (x < n) log_density += (n - x) * log1P;
+    return log_density;
   }
 };
 
