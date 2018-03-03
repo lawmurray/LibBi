@@ -36,6 +36,13 @@
 #define BI_SQRT_TWO_PI 2.5066282746310005024157652848110
 
 /**
+ * @def BI_SQRT_TWO_PI
+ *
+ * Value of \f$\frac{1}{\sqrt{2\pi}}\f$
+ */
+#define BI_1_SQRT_TWO_PI 0.398942280401432677939946059934
+
+/**
  * @def BI_HALF_LOG_TWO_PI
  *
  * Value of \f$\frac{1}{2}\ln 2\pi = \ln \sqrt{2\pi}\f$
