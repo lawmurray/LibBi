@@ -506,6 +506,7 @@ share/src/bi/primitive/vector_primitive.hpp
 share/src/bi/random/generic.hpp
 share/src/bi/random/Random.cpp
 share/src/bi/random/Random.hpp
+share/src/bi/random/truncated_gaussian.hpp
 share/src/bi/refs.hpp
 share/src/bi/resampler/MetropolisResampler.hpp
 share/src/bi/resampler/misc.hpp

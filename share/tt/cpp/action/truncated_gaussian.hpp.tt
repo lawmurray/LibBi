@@ -19,7 +19,7 @@ IF has_upper; upper = action.get_named_arg('upper'); END;
 
 [%-PROCESS action/misc/header.hpp.tt-%]
 
-#include "bi/random/generic.hpp"
+#include "bi/random/truncated_gaussian.hpp"
 
 /**
  * Action: [% action.get_name %].
