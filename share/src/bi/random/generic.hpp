@@ -63,6 +63,24 @@ template<class R, class T1>
 CUDA_FUNC_BOTH T1 negbin(R& rng, const T1 mu = 1.0, const T1 k = 1.0);
 
 /**
+ * Generate a random number from a Beta-binomial distribution with given
+ * parameters.
+ *
+ * @tparam R Random number generator type.
+ * @tparam T1 Scalar type.
+ *
+ * @param[in,out] rng Random number generator.
+ * @param n Number of trials.
+ * @param alpha Shape..
+ * @param beta Scale.
+ *
+ * @return The random number.
+ */
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 betabin(R& rng, const T1 n = 1.0, const T1 alpha = 1.0,
+                          const T1 beta = 1.0);
+
+/**
  * Generate a random number from a binomial distribution with given
  * parameters.
  *
@@ -112,6 +130,25 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
     const T1 x = rng.gamma(k, mu/k);
 
     u = static_cast<T1>(rng.poisson(x));
+  } else {
+    u = 0;
+  }
+
+  return u;
+}
+
+template<class R, class T1>
+inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
+  /* pre-condition */
+  BI_ASSERT(n >= static_cast<T1>(0.0) && alpha > static_cast<T1>(0.0) &&
+            beta > static_cast<T1>(0.0));
+
+  T1 u;
+
+  if (n > 0) {
+    const T1 p = bi::beta(rng, alpha, beta);
+
+    u = static_cast<T1>(rng.binomial(n, p));
   } else {
     u = 0;
   }

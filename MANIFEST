@@ -22,6 +22,7 @@ INSTALL_MAC.md
 INSTALL_WIN.md
 lib/Bi.pm
 lib/Bi/Action.pm
+lib/Bi/Action/betabin.pm
 lib/Bi/Action/beta.pm
 lib/Bi/Action/cholesky.pm
 lib/Bi/Action/eval_.pm
@@ -620,6 +621,7 @@ share/tt/bi/var.bi.tt
 share/tt/bi/var_group.bi.tt
 share/tt/build/Makefile.am.tt
 share/tt/cpp/action/beta.hpp.tt
+share/tt/cpp/action/betabin.hpp.tt
 share/tt/cpp/action/cholesky.hpp.tt
 share/tt/cpp/action/eval_.hpp.tt
 share/tt/cpp/action/exclusive_scan.hpp.tt
