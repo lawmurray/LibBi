@@ -38,7 +38,7 @@ public:
 
   real n = [% size.to_cpp %];
   real pr = [% prob.to_cpp %];
-  real u = bi::binomial(rng, n, pr);
+  real u = rng.binomial(n, pr);
   
   [% put_output(action, 'u') %]
 }

@@ -156,16 +156,4 @@ inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
   return u;
 }
 
-template<class R, class T1, class T2>
-inline T1 bi::binomial(R& rng, T1 n, T2 p) {
-  /* pre-condition */
-  BI_ASSERT(n >= static_cast<T1>(0.0) &&
-            p >= static_cast<T2>(0.0) && p <= static_cast<T2>(1.0));
-
-  T1 u;
-
-  u = static_cast<T1>(rng.binomial(n, p));
-
-  return u;
-}
 #endif
