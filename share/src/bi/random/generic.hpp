@@ -12,6 +12,7 @@
 #define BI_RANDOM_GENERIC_HPP
 
 #include "../cuda/cuda.hpp"
+#include "../math/function.hpp"
 
 namespace bi {
 /**
