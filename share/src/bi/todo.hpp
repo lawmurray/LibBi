@@ -26,8 +26,6 @@
  *
  * @todo Multivariate normal
  *
- * @todo Exponential pdf, poisson pdf.
- *
  * @todo Tidy up output file variable names, perhaps precede internal
  * variables with the program or schema name, e.g. simulate.time,
  * filter.logweight etc.

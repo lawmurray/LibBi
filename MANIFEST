@@ -27,6 +27,7 @@ lib/Bi/Action/beta.pm
 lib/Bi/Action/cholesky.pm
 lib/Bi/Action/eval_.pm
 lib/Bi/Action/exclusive_scan.pm
+lib/Bi/Action/exponential.pm
 lib/Bi/Action/gamma.pm
 lib/Bi/Action/gaussian.pm
 lib/Bi/Action/gemm_.pm
@@ -625,6 +626,7 @@ share/tt/cpp/action/betabin.hpp.tt
 share/tt/cpp/action/cholesky.hpp.tt
 share/tt/cpp/action/eval_.hpp.tt
 share/tt/cpp/action/exclusive_scan.hpp.tt
+share/tt/cpp/action/exponential.hpp.tt
 share/tt/cpp/action/gamma.hpp.tt
 share/tt/cpp/action/gaussian.hpp.tt
 share/tt/cpp/action/gemm_.hpp.tt

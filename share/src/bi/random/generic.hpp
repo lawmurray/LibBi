@@ -81,20 +81,19 @@ CUDA_FUNC_BOTH T1 betabin(R& rng, const T1 n = 1.0, const T1 alpha = 1.0,
                           const T1 beta = 1.0);
 
 /**
- * Generate a random number from a binomial distribution with given
- * parameters.
+ * Generate a random number from an exponential distribution with given
+ * rate.
  *
  * @tparam R Random number generator type.
  * @tparam T1 Scalar type.
  *
  * @param[in,out] rng Random number generator.
- * @param n Size.
- * @param p Probability.
+ * @param lambda Rate.
  *
  * @return The random number.
  */
-template<class R, class T1, class T2>
-CUDA_FUNC_BOTH T1 binomial(R& rng, T1 n = 1.0, T2 p = 0.5);
+template<class R, class T1>
+CUDA_FUNC_BOTH T1 exponential(R& rng, const T1 lambda = 1.0);
 
 }
 
@@ -137,7 +136,7 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   return u;
 }
 
-template<class R, class T1>
+template<class R, class T1, class T2>
 inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
   /* pre-condition */
   BI_ASSERT(n >= static_cast<T1>(0.0) && alpha > static_cast<T1>(0.0) &&
@@ -152,6 +151,20 @@ inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
   } else {
     u = 0;
   }
+
+  return u;
+}
+
+template<class R, class T1>
+inline T1 bi::exponential(R& rng, const T1 lambda) {
+  /* pre-condition */
+  BI_ASSERT(lambda > static_cast<T1>(0.0));
+
+  T1 u;
+
+  const T1 x = rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0));
+
+  u = -log(1 - x) / lambda;
 
   return u;
 }

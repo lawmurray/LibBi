@@ -1,0 +1,70 @@
+[%
+## @file
+##
+## @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
+## $Rev$
+## $Date$
+%]
+
+[%-
+lambda = action.get_named_arg('lambda');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_static_function('sample') %]
+  [% declare_action_static_function('logdensity') %]
+  [% declare_action_static_function('maxlogdensity') %]
+};
+
+#include "bi/random/generic.hpp"
+
+[% std_action_static_function('simulate') %]
+
+[% sig_action_static_function('sample') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real lambda = [% lambda.to_cpp %];
+
+  real u = bi::exponential(rng, lambda);
+  
+  [% put_output(action, 'u') %]
+}
+
+[% sig_action_static_function('logdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real lambda = [% lambda.to_cpp %];
+  
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+
+  lp += bi::log(lambda) - lambda * xy;
+
+  [% put_output(action, 'xy') %]
+}
+
+[% sig_action_static_function('maxlogdensity') %] {
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+  [% offset_coord(action) %]
+
+  real xy = pax.template fetch_alt<target_type>(s, p, cox_.index());
+
+  lp = 0;
+
+  [% put_output(action, 'xy') %]
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]
