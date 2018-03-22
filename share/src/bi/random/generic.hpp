@@ -137,7 +137,7 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   return u;
 }
 
-template<class R, class T1, class T2>
+template<class R, class T1>
 inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
   /* pre-condition */
   BI_ASSERT(n >= static_cast<T1>(0.0) && alpha > static_cast<T1>(0.0) &&
