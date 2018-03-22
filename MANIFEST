@@ -22,8 +22,9 @@ INSTALL_MAC.md
 INSTALL_WIN.md
 lib/Bi.pm
 lib/Bi/Action.pm
-lib/Bi/Action/betabin.pm
 lib/Bi/Action/beta.pm
+lib/Bi/Action/betabin.pm
+lib/Bi/Action/binomial.pm
 lib/Bi/Action/cholesky.pm
 lib/Bi/Action/eval_.pm
 lib/Bi/Action/exclusive_scan.pm
@@ -37,11 +38,10 @@ lib/Bi/Action/inverse_gamma.pm
 lib/Bi/Action/log_gaussian.pm
 lib/Bi/Action/log_normal.pm
 lib/Bi/Action/negbin.pm
-lib/Bi/Action/binomial.pm
 lib/Bi/Action/normal.pm
 lib/Bi/Action/ode_.pm
-lib/Bi/Action/poisson.pm
 lib/Bi/Action/pdf.pm
+lib/Bi/Action/poisson.pm
 lib/Bi/Action/std_.pm
 lib/Bi/Action/transpose.pm
 lib/Bi/Action/truncated_gaussian.pm
@@ -158,6 +158,7 @@ share/autogen.sh
 share/bi.lex
 share/bi.yp
 share/configure.ac
+share/emacs/bi-mode.el
 share/nvcc_wrapper.pl
 share/src/bi/adapter/Adapter.hpp
 share/src/bi/adapter/AdapterFactory.cpp
@@ -620,9 +621,11 @@ share/tt/bi/macro/dim_list.bi.tt
 share/tt/bi/model.bi.tt
 share/tt/bi/var.bi.tt
 share/tt/bi/var_group.bi.tt
+share/tt/build/.DS_Store
 share/tt/build/Makefile.am.tt
 share/tt/cpp/action/beta.hpp.tt
 share/tt/cpp/action/betabin.hpp.tt
+share/tt/cpp/action/binomial.hpp.tt
 share/tt/cpp/action/cholesky.hpp.tt
 share/tt/cpp/action/eval_.hpp.tt
 share/tt/cpp/action/exclusive_scan.hpp.tt
@@ -636,10 +639,9 @@ share/tt/cpp/action/inverse_gamma.hpp.tt
 share/tt/cpp/action/misc/footer.hpp.tt
 share/tt/cpp/action/misc/header.hpp.tt
 share/tt/cpp/action/negbin.hpp.tt
-share/tt/cpp/action/binomial.hpp.tt
 share/tt/cpp/action/ode_.hpp.tt
-share/tt/cpp/action/poisson.hpp.tt
 share/tt/cpp/action/pdf.hpp.tt
+share/tt/cpp/action/poisson.hpp.tt
 share/tt/cpp/action/std_.hpp.tt
 share/tt/cpp/action/transpose.hpp.tt
 share/tt/cpp/action/truncated_gaussian.hpp.tt
