@@ -181,12 +181,18 @@ T1 bi::urs_a_b(R& rng, const T1 a, const T1 b) {
 template<class R, class T1>
 T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu,
                                 const T1 sigma) {
+  BI_ASSERT(sigma > 0.0 || (sigma == 0 && lower <= mu));
   T1 u;
-  const T1 alpha = (lower - mu) / sigma;
-  if (alpha < _t4) {
-    u = mu + sigma * bi::nrs_a_inf(rng, alpha);
+
+  if (sigma == 0) {
+    u = mu;
   } else {
-    u = mu + sigma * bi::ers_a_inf(rng, alpha);
+    const T1 alpha = (lower - mu) / sigma;
+    if (alpha < _t4) {
+      u = mu + sigma * bi::nrs_a_inf(rng, alpha);
+    } else {
+      u = mu + sigma * bi::ers_a_inf(rng, alpha);
+    }
   }
 
   return u;
@@ -195,11 +201,19 @@ T1 bi::lower_truncated_gaussian(R& rng, const T1 lower, const T1 mu,
 template<class R, class T1>
 T1 bi::upper_truncated_gaussian(R& rng, const T1 upper, const T1 mu,
                                 const T1 sigma) {
-  T1 beta = (upper - mu) / sigma;
-  /* Exploit symmetry: */
-  T1 u = mu - sigma *
-    bi::lower_truncated_gaussian(rng, -beta,
-                                 static_cast<T1>(0.0), static_cast<T1>(1.0));
+  BI_ASSERT(sigma > 0.0 || (sigma == 0 && mu <= upper));
+
+  T1 u;
+
+  if (sigma == 0) {
+    u = mu;
+  } else {
+    T1 beta = (upper - mu) / sigma;
+    /* Exploit symmetry: */
+    u = mu - sigma *
+      bi::lower_truncated_gaussian(rng, -beta,
+                                   static_cast<T1>(0.0), static_cast<T1>(1.0));
+  }
   return u;
 }
 
@@ -207,37 +221,42 @@ template<class R, class T1>
 T1 bi::truncated_gaussian(R& rng, const T1 lower, const T1 upper, const T1 mu,
                           const T1 sigma) {
   BI_ASSERT(upper >= lower);
-
-  const T1 alpha = (lower - mu) / sigma;
-  const T1 beta = (upper - mu) / sigma;
-  const T1 phi_a = bi::std_normal_dens(alpha);
-  const T1 phi_b = bi::std_normal_dens(beta);
+  BI_ASSERT(sigma > 0.0 || (sigma == 0 && lower <= mu && mu <= upper));
 
   T1 u;
-  if (alpha <= 0 && 0 <= beta) {
-    if (phi_a <= _t1 || phi_b <= _t1) {
-      u = mu + sigma * bi::nrs_a_b(rng, alpha, beta);
-    } else {
-      u = mu + sigma * bi::urs_a_b(rng, alpha, beta);
-    }
-  } else if (alpha > 0) {
-    if (phi_a / phi_b <= _t2) {
-      u = mu + sigma * bi::urs_a_b(rng, alpha, beta);
-    } else {
-      if (alpha < _t3) {
-        u = mu + sigma * bi::hnrs_a_b(rng, alpha, beta);
-      } else {
-        u = mu + sigma * bi::ers_a_b(rng, alpha, beta);
-      }
-    }
+  if (sigma == 0) {
+    u = mu;
   } else {
-    if (phi_b / phi_a <= _t2) {
-      u = mu - sigma * bi::urs_a_b(rng, -beta, -alpha);
-    } else {
-      if (beta > -_t3) {
-        u = mu - sigma * bi::hnrs_a_b(rng, -beta, -alpha);
+    const T1 alpha = (lower - mu) / sigma;
+    const T1 beta = (upper - mu) / sigma;
+    const T1 phi_a = bi::std_normal_dens(alpha);
+    const T1 phi_b = bi::std_normal_dens(beta);
+
+    if (alpha <= 0 && 0 <= beta) {
+      if (phi_a <= _t1 || phi_b <= _t1) {
+        u = mu + sigma * bi::nrs_a_b(rng, alpha, beta);
       } else {
-        u = mu - sigma * bi::ers_a_b(rng, -beta, -alpha);
+        u = mu + sigma * bi::urs_a_b(rng, alpha, beta);
+      }
+    } else if (alpha > 0) {
+      if (phi_a / phi_b <= _t2) {
+        u = mu + sigma * bi::urs_a_b(rng, alpha, beta);
+      } else {
+        if (alpha < _t3) {
+          u = mu + sigma * bi::hnrs_a_b(rng, alpha, beta);
+        } else {
+          u = mu + sigma * bi::ers_a_b(rng, alpha, beta);
+        }
+      }
+    } else {
+      if (phi_b / phi_a <= _t2) {
+        u = mu - sigma * bi::urs_a_b(rng, -beta, -alpha);
+      } else {
+        if (beta > -_t3) {
+          u = mu - sigma * bi::hnrs_a_b(rng, -beta, -alpha);
+        } else {
+          u = mu - sigma * bi::ers_a_b(rng, -beta, -alpha);
+        }
       }
     }
   }
