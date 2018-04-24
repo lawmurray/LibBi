@@ -103,10 +103,9 @@ CUDA_FUNC_BOTH T1 truncated_gaussian(R& rng, const T1 lower, const T1 upper,
 /* Exponential rejection sampling (a,inf) */
 template<class R, class T1>
 T1 bi::ers_a_inf(R& rng, const T1 a) {
-  const T1 ainv = static_cast<T1>(1.0) / a;
   T1 x, rho;
   do {
-    x = bi::exponential(rng, ainv) + a;
+    x = bi::exponential(rng, a) + a;
     rho = bi::exp(-0.5 * bi::pow((x - a), 2));
   } while (rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0)) > rho);
   return x;
@@ -115,10 +114,9 @@ T1 bi::ers_a_inf(R& rng, const T1 a) {
 /* Exponential rejection sampling (a,b) */
 template<class R, class T1>
 T1 bi::ers_a_b(R& rng, const T1 a, const T1 b) {
-  const T1 ainv = static_cast<T1>(1.0) / a;
   T1 x, rho;
   do {
-    x = bi::exponential(rng, ainv) + a;
+    x = bi::exponential(rng, a) + a;
     rho = bi::exp(-0.5 * bi::pow((x - a), 2));
   } while (rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0)) > rho ||
            x > b);
