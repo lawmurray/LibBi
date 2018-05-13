@@ -1,6 +1,7 @@
 ---
 layout: post
 title: NPZD package for marine biogeochemical modelling now available
+author: Lawrence Murray
 ---
 
 A new [NPZD](/packages/NPZD.html) package is now linked from the website.

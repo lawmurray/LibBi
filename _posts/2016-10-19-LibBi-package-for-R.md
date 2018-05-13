@@ -1,6 +1,7 @@
 ---
 layout: post
 title: 'RBi package: Use LibBi within R'
+author: Lawrence Murray
 ---
 
 The [RBi](http://www.libbi.org/related.html) package for using LibBi within R is now available on [CRAN](https://cran.r-project.org/web/packages/rbi/index.html).

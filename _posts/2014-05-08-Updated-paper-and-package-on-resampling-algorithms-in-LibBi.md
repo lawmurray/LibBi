@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Updated paper and package on resampling algorithms in LibBi
+author: Lawrence Murray
 ---
 
 The following paper has been updated on arXiv, detailing the particle filter

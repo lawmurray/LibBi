@@ -1,6 +1,7 @@
 ---
 layout: post
 title: 'Easily install LibBi from Homebrew'
+author: Lawrence Murray
 ---
 
 LibBi can now be easily installed from Homebrew on any Mac OS X system, or from Linuxbrew, using:

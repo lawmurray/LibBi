@@ -1,6 +1,7 @@
 ---
 layout: post
 title: New LibBi mailing list
+author: Lawrence Murray
 ---
 
 A mailing list has been set up for LibBi users over at [Google

@@ -2,6 +2,7 @@
 layout: post
 title: Four new packages for diffusion bridge sampling
 date: 2014-05-19 12:00:00 +08:00
+author: Lawrence Murray
 ---
 
 Four new packages are now available to demonstrate the bridge particle filter

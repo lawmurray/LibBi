@@ -1,6 +1,7 @@
 ---
 layout: post
 title: LibBi on Windows and Mac OS X
+author: Lawrence Murray
 ---
 
 The latest development snapshot of LibBi can now run on Windows (under Cygwin)
