@@ -621,7 +621,6 @@ share/tt/bi/macro/dim_list.bi.tt
 share/tt/bi/model.bi.tt
 share/tt/bi/var.bi.tt
 share/tt/bi/var_group.bi.tt
-share/tt/build/.DS_Store
 share/tt/build/Makefile.am.tt
 share/tt/cpp/action/beta.hpp.tt
 share/tt/cpp/action/betabin.hpp.tt
