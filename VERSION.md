@@ -1,6 +1,14 @@
 LibBi VERSION.md
 ================
 
+v1.4.1
+------
+
+Fixes:
+
+* Fixed compatibility with automake 1.16
+* Fixes in truncated Gaussian and negative binomial probability distributions
+
 v1.4.0
 ------
 
@@ -11,20 +19,25 @@ New features:
 * Added `--enable-cudafastmath` option for using fast CUDA maths.
 
 Changes:
+
 * State and noise variables now can have inputs.
 
 Performance:
+
 * Improved truncated Gaussian sampler.
 * Models are now only simulated if the parameter prior probability density is >0
 * Parsing and translating models is now faster.
 
 Fixes:
+
 * No more error is thrown if all particle weights are 0
 * `optimise` now works again
 * No more warning is thrown if the model name does not match the file name
 
 v1.3.0
 ------
+
+New features:
 
 * Added SMC$^2$ with anytime moves, enabled with `--tmoves` command-line option.
 * Added `--mpi-hostfile` option.
