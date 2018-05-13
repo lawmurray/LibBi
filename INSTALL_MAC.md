@@ -19,37 +19,32 @@ If you have a CUDA-enabled GPU and would like LibBi to be able to use
 it, you must also download and install the CUDA Toolkit
 <https://developer.nvidia.com/cuda-toolkit>.
 
-## Step 3: Install Thrust
+## Step 3: Install LibBi
 
-If CUDA *is not* installed, it is necessary to install Thrust. If CUDA
-*is* installed, Thrust is already included with it, and need not be
-installed separately.
+### Option 1 (preferred): Using Homebrew
+
+First install the Homebrew package manager using the instructions
+[here](https://brew.sh). Then simply run the following command from a terminal
+window to install LibBi: 
+
+    brew install libbi
+    
+### Option 2: Using MacPorts
+
+#### Step 3a: Install Thrust
+
+If CUDA *is not* installed, it is necessary to install Thrust (this is not
+necessary if using the Homebrew route described above, as this will
+automatically download Thrust). If CUDA *is* installed, Thrust is already
+included with it, and need not be installed separately.  
 
 To install Thrust:
 
-    wget https://github.com/thrust/thrust/releases/download/v1.7.0/thrust-1.7.0.zip
-    unzip thrust-1.7.0.zip
+    wget https://github.com/thrust/thrust/releases/download/1.8.2/thrust-1.8.2.zip
+    unzip thrust-1.8.2.zip
     sudo mv thrust /usr/local/include
 
-## Step 4: Install Homebrew and dependencies
-
-Open Terminal and install Homebrew (<brew.sh>) with the following command:
-
-    ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/Homebrew/go/install)"
-
-This may give you additional instructions to follow to ensure that you
-end up with a working environment.
-
-Install the Homebrew packages on which LibBi depends:
-
-    brew tap homebrew/science
-    brew install gcc47 qrupdate netcdf gsl boost
-
-## Step 5: Install LibBi
-
-Install LibBi as per the instructions in `INSTALL.md`.
-
-## Alternative step 4: Install MacPorts and dependencies
+#### Step 3b: Install MacPorts and dependencies
 
 LibBi has also been successfully installed with MacPorts instead of
 Homebrew. This seems more difficult, in that (a) it is necessary to
@@ -89,3 +84,8 @@ each time you open a Terminal window.
 
 Quit Terminal then start it again, to ensure that these environment
 variables are set.
+
+#### Step 3c: Install LibBi
+
+Now you can install LibBi manually as per the instructions in `INSTALL.md`.
+

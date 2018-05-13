@@ -5,7 +5,13 @@ of LibBi itself is straighforward, but LibBi works by generating,
 compiling and running C++ code; this code has a number of dependencies
 that will also need to be installed.
 
-This file contains the instructions for installing LibBi itself. This
+If you are planning to run LibBi on a Mac, the easiest way to install it via the 
+[Homebrew](https://brew.sh) package manager. See `INSTALL_MAC.md` for details on
+this. On Linux, you can install LibBi using the [linuxbrew](http://linuxbrew.sh)
+package manager, but this can be more involved as the specific build
+environments are more heterogeneous. For details, refer to the instructions in `INSTALL_LINUX.md`.
+
+This file contains the instructions for installing LibBi manually. This
 process is the same on all platforms. To install dependencies of the
 C++ code that LibBi generates, see the walkthroughs for each platform
 in `INSTALL_LINUX.md`, `INSTALL_MAC.md` and `INSTALL_WIN.md` for Linux
