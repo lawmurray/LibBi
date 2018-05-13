@@ -11,7 +11,7 @@ negbin - Negative binomial distribution.
 =head1 DESCRIPTION
 
 A C<negbin> action specifies that a variable is distributed according to
-a negative binomial distribution with the given C<mean> and C<shape> parameters.
+a negative binomial distribution with the given C<mean> and C<shape> parameters (yielding variance C<mean> + C<mean>^2/C<shape>).
 Note that the implementation will evaluate densities for any (not necessarily
 integer) x. It is left to the user to ensure consistency (e.g., using this only
 with integer observations).
