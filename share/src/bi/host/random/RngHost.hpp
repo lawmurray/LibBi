@@ -169,7 +169,8 @@ inline T1 bi::RngHost::gaussian(const T1 mu, const T1 sigma) {
 template<class T1>
 inline T1 bi::RngHost::gamma(const T1 alpha, const T1 beta) {
   /* pre-condition */
-  BI_ASSERT(alpha > 0.0 && beta > 0.0);
+  BI_ASSERT(alpha > 0.0);
+  BI_ASSERT(beta > 0.0);
 
   typedef boost::gamma_distribution<T1> dist_type;
 
@@ -200,8 +201,9 @@ inline T1 bi::RngHost::poisson(const T1 lambda) {
 template<class T1, class T2>
 inline T1 bi::RngHost::binomial(const T1 n, const T2 p) {
   /* pre-condition */
-  BI_ASSERT(n >= static_cast<T1>(0.0) &&
-            p >= static_cast<T2>(0.0) && p <= static_cast<T2>(1.0));
+  BI_ASSERT(n >= static_cast<T1>(0.0));
+  BI_ASSERT(p >= static_cast<T2>(0.0));
+  BI_ASSERT(p <= static_cast<T2>(1.0));
 
   typedef boost::binomial_distribution<int,T2> dist_type;
 

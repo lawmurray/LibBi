@@ -101,7 +101,8 @@ CUDA_FUNC_BOTH T1 exponential(R& rng, const T1 lambda = 1.0);
 template<class R, class T1>
 inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
   /* pre-condition */
-  BI_ASSERT(alpha > static_cast<T1>(0.0) && beta > static_cast<T1>(0.0));
+  BI_ASSERT(alpha >= static_cast<T1>(0.0));
+  BI_ASSERT(beta >= static_cast<T1>(0.0));
 
   const T1 x = rng.gamma(alpha, static_cast<T1>(1.0));
   const T1 y = rng.gamma(beta, static_cast<T1>(1.0));
@@ -112,7 +113,8 @@ inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
 template<class R, class T1>
 inline T1 bi::inverse_gamma(R& rng, const T1 alpha, const T1 beta) {
   /* pre-condition */
-  BI_ASSERT(alpha > static_cast<T1>(0.0) && beta > static_cast<T1>(0.0));
+  BI_ASSERT(alpha > static_cast<T1>(0.0));
+  BI_ASSERT(beta > static_cast<T1>(0.0));
 
   const T1 x = rng.gamma(alpha, static_cast<T1>(1.0)/beta);
 
@@ -122,7 +124,8 @@ inline T1 bi::inverse_gamma(R& rng, const T1 alpha, const T1 beta) {
 template<class R, class T1>
 inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
   /* pre-condition */
-  BI_ASSERT(mu >= static_cast<T1>(0.0) && k >= static_cast<T1>(0.0));
+  BI_ASSERT(mu >= static_cast<T1>(0.0));
+  BI_ASSERT(k >= static_cast<T1>(0.0));
 
   T1 u;
 
@@ -140,8 +143,9 @@ inline T1 bi::negbin(R& rng, const T1 mu, const T1 k) {
 template<class R, class T1>
 inline T1 bi::betabin(R& rng, const T1 n, const T1 alpha, const T1 beta) {
   /* pre-condition */
-  BI_ASSERT(n >= static_cast<T1>(0.0) && alpha > static_cast<T1>(0.0) &&
-            beta > static_cast<T1>(0.0));
+  BI_ASSERT(n >= static_cast<T1>(0.0));
+  BI_ASSERT(alpha > static_cast<T1>(0.0));
+  BI_ASSERT(beta > static_cast<T1>(0.0));
 
   T1 u;
 
