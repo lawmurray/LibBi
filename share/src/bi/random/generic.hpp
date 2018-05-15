@@ -104,10 +104,49 @@ inline T1 bi::beta(R& rng, const T1 alpha, const T1 beta) {
   BI_ASSERT(alpha >= static_cast<T1>(0.0));
   BI_ASSERT(beta >= static_cast<T1>(0.0));
 
-  const T1 x = rng.gamma(alpha, static_cast<T1>(1.0));
-  const T1 y = rng.gamma(beta, static_cast<T1>(1.0));
 
-  return x / (x + y);
+  if (!bi::is_finite(alpha) && !bi::is_finite(beta)) // a = b = Inf: all mass at 1/2
+    return static_cast<T1>(0.5);
+  if (alpha == 0.0 && beta == 0.0) { // point mass 1/2 at each of {0,1} :
+    T1 u = rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0));
+    return (u < 0.5) ? static_cast<T1>(0.0) : static_cast<T1>(1.0);
+  }
+  if (!bi::is_finite(alpha) || beta == 0.0)
+    return static_cast<T1>(1.0);
+  if (!bi::is_finite(beta) || alpha == 0.0)
+    return static_cast<T1>(0.0);
+
+  // following M.D. Johnk, "Erzeugung von Betaverteilten und Gammaverteilten
+  // Zufallszahlen," Metrika, vol.8, pp. 5-15, 1964.
+  if (alpha <= 1.0 && beta <= 1.0) {
+    T1 u, v, x, y;
+    while (1) {
+      u = rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0));
+      v = rng.uniform(static_cast<T1>(0.0), static_cast<T1>(1.0));
+      x = bi::pow(u, static_cast<T1>(1.0)/alpha);
+      y = bi::pow(v, static_cast<T1>(1.0)/beta);
+
+      if ((x+y) <= 1.0) {
+        if (x+y > 0) {
+          return x / (x + y);
+        } else {
+          T1 logx = bi::log(u) / alpha;
+          T1 logy = bi::log(v) / beta;
+          const T1 logm = logx > logy ? logx : logy;
+          logx -= logm;
+          logy -= logm;
+
+          return bi::exp(logx - bi::log(bi::exp(logx) + bi::exp(logy)));
+        }
+      }
+    }
+  } else {
+
+    const T1 x = rng.gamma(alpha, static_cast<T1>(1.0));
+    const T1 y = rng.gamma(beta, static_cast<T1>(1.0));
+
+    return x / (x + y);
+  }
 }
 
 template<class R, class T1>
