@@ -242,7 +242,7 @@ struct poisson_log_density_functor: public std::unary_function<T,T> {
   CUDA_FUNC_BOTH
   T operator()(const T& x) const {
     if (lambda == 0) return (x == 0 ? 0 : -BI_INF);
-    else return x * log(lambda) - lambda - lgamma(x + 1);
+    else return x * bi::log(lambda) - lambda - bi::lgamma(x + 1);
   }
 };
 
@@ -323,17 +323,17 @@ struct negbin_density_functor: private negbin_log_density_functor<T> {
 template<class T1, class T2>
 struct binomial_log_density_functor: public std::unary_function<T1,T2> {
   const T1 n;
-  const T2 p, lN, logP, log1P;
+  const T2 lN, logP, log1P;
 
   CUDA_FUNC_HOST
   binomial_log_density_functor(const T1 n, const T2 p) :
-    n(n), p(p), lN(lgamma(n + 1)), logP(log(p)), log1P(log(1 - p)) {
+    n(n), lN(bi::lgamma(n + 1)), logP(bi::log(p)), log1P(bi::log1p(p)) {
     //
     }
 
   CUDA_FUNC_BOTH
   T2 operator()(const T1& x) const {
-    T2 log_density = lN - lgamma(x + 1) - lgamma(n - x + 1);
+    T2 log_density = lN - bi::lgamma(x + 1) - bi::lgamma(n - x + 1);
     if (x > 0) log_density += x * logP;
     if (x < n) log_density += (n - x) * log1P;
     return log_density;
