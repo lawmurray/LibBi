@@ -272,18 +272,27 @@ struct poisson_density_functor: private poisson_log_density_functor<T> {
  */
 template<class T>
 struct negbin_log_density_functor: public std::unary_function<T,T> {
-  const T mu, k, logZ, logY;
+  const T mu, k;
 
   CUDA_FUNC_HOST
   negbin_log_density_functor(const T mu, const T k) :
-    mu(mu), k(k), logZ(lgamma(k) - k * log(k / (k + mu))), logY(log(mu/(k + mu))) {
+    mu(mu), k(k) {
     //
     }
 
   CUDA_FUNC_BOTH
   T operator()(const T& x) const {
-    if (mu == 0) return (x == 0 ? 0 : -BI_INF);
-    else return lgamma(k + x) - lgamma(x + 1) + x * logY - logZ;
+    if (x == 0 && k == 0)
+      return (k * (k < mu ? bi::log(k / (k + mu)) : bi::log1p(-mu / (k + mu))));
+    if (x < 1e-10 * k) {
+      T p = (k < mu ? bi::log(k / (1 + k/mu)) : bi::log(mu / (1 + mu/k)));
+      return (x * p - mu - bi::lgamma(x + 1) + bi::log1p(x * (x - 1) / (2 * k)));
+    } else {
+      T ans = bi::lgamma(k + x + 1) - bi::lgamma(k + 1) - bi::lgamma(x + 1);
+      if (k > 0) ans += k * bi::log(k / (k + mu));
+      if (x > 0) ans += x * bi::log(mu / (k + mu));
+      return ans + log(k / (k + x));
+    }
   }
 };
 

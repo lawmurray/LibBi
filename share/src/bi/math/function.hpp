@@ -26,6 +26,8 @@ CUDA_FUNC_BOTH float abs(const float x);
 CUDA_FUNC_BOTH int abs(const int x);
 CUDA_FUNC_BOTH double log(const double x);
 CUDA_FUNC_BOTH float log(const float x);
+CUDA_FUNC_BOTH double log1p(const double x);
+CUDA_FUNC_BOTH float log1p(const float x);
 CUDA_FUNC_BOTH double nanlog(const double x);
 CUDA_FUNC_BOTH float nanlog(const float x);
 CUDA_FUNC_BOTH double exp(const double x);
@@ -129,6 +131,14 @@ inline double bi::log(const double x) {
 
 inline float bi::log(const float x) {
   return ::logf(x);
+}
+
+inline double bi::log1p(const double x) {
+  return ::log1p(x);
+}
+
+inline float bi::log1p(const float x) {
+  return ::log1pf(x);
 }
 
 inline double bi::nanlog(const double x) {
