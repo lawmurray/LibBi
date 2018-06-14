@@ -1,6 +1,13 @@
 LibBi VERSION.md
 ================
 
+v1.4.2
+------
+
+Performance:
+
+* Improved beta and negative binomial random generators
+
 v1.4.1
 ------
 
