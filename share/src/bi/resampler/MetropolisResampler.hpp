@@ -63,6 +63,12 @@ public:
   void offspring(Random& rng, const V1 lws, const int P, V2 os,
       ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
 
+  /**
+   * @copydoc MultinomialResampler::precompute
+   */
+  template<class V1, Location L>
+  void precompute(const V1 lws, ResamplerPrecompute<L>& pre);
+
 private:
   /**
    * Number of Metropolis steps to take.
@@ -129,6 +135,11 @@ void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, const int P, 
   typename sim_temp_vector<V1>::type as(P);
   ancestors(rng, lws, as);
   ancestorsToOffspring(as, os);
+}
+
+template<class V1, bi::Location L>
+void bi::MetropolisResampler::precompute(const V1 lws,
+   ResamplerPrecompute<L>& pre) {
 }
 
 #endif
