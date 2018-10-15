@@ -293,10 +293,9 @@ bi::Schedule::Schedule(B& m, const real t, const real T, const int K,
     elem.bDelta = elem.k > 0 && elem.kDelta < int(tDeltas.size())
         && tDeltas[elem.kDelta] == ts[elem.k - 1];
 
-    /* inputs persist on half-open intervals (t, t+1], except for the first,
-     * which is on the closed interval [t, t+1] */
+    /* inputs persist on half-open intervals [t, t+1) */
     elem.bInput = elem.kInput < int(tInputs.size())
-        && ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k - 1])
+        && ((elem.k > 0 && tInputs[elem.kInput] == ts[elem.k])
             || (elem.k == 0 && tInputs[elem.kInput] <= ts[elem.k]));
 
     elem.bOutput = elem.kOutput < int(tOutputs.size())
