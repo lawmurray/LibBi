@@ -33,6 +33,10 @@ default for OpenMP on the platform.
 
 Run within the C<gdb> debugger.
 
+=item C<--with-lldb> (default off)
+
+Run within the C<lldb> debugger.
+
 =item C<--with-valgrind> (default off)
 
 Run within C<valgrind>.
@@ -187,6 +191,11 @@ our @EXEC_OPTIONS = (
       name => 'with-gdb',
       type => 'bool',
       default => 0
+    },
+    {
+        name => 'with-lldb',
+        type => 'bool',
+        default => 0
     },
     {
       name => 'with-valgrind',
@@ -689,6 +698,8 @@ sub exec {
         unshift(@argv, "cuda-memcheck \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-gdb')) {
         unshift(@argv, "gdb -q -ex run --args \"$binary\"");
+    } elsif ($self->get_named_exec_arg('with-lldb')) {
+        unshift(@argv, "lldb -- \"$binary\"");
     } elsif ($self->get_named_exec_arg('with-valgrind')) {
         unshift(@argv, "valgrind --leak-check=full \"$binary\"");
     } else {
