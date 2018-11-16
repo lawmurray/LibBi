@@ -91,7 +91,7 @@
   { \
     cudaError_t cudaErr; \
     cudaErr = call; \
-    cudaThreadSynchronize(); \
+    cudaDeviceSynchronize(); \
     BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
 #else
@@ -114,7 +114,7 @@
 #define CUDA_CHECK \
   { \
     cudaError_t cudaErr; \
-    cudaThreadSynchronize(); \
+    cudaDeviceSynchronize(); \
     cudaErr = cudaGetLastError(); \
     BI_ASSERT_MSG(cudaErr == cudaSuccess, cudaGetErrorString(cudaErr)); \
   }
@@ -136,7 +136,7 @@ namespace bi {
   inline void synchronize(const bool sync = true) {
     #ifdef ENABLE_CUDA
     if (sync) {
-      CUDA_CHECKED_CALL(cudaThreadSynchronize());
+      CUDA_CHECKED_CALL(cudaDeviceSynchronize());
     }
     #endif
   }
