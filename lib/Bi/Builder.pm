@@ -364,7 +364,10 @@ sub _configure {
     $options .= $self->{_gperftools} ? ' --enable-gperftools' : ' --disable-gperftools';
     
     if ($self->{_extra_debug}) {
-    	$cxxflags = '-O0 -g3 -fno-inline -D_GLIBCXX_DEBUG';
+    	$cxxflags = '-O0 -g3 -fno-inline ';
+      if (!$self->{_cuda}) {
+          $cxxflags .= ' -D_GLIBCXX_DEBUG';
+      }
     }
 
     if (!$self->{_verbose}) {
