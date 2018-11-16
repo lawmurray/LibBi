@@ -106,9 +106,9 @@ endif
 if ENABLE_CUDA
 CPPFLAGS += -DENABLE_CUDA
 # ensure dependency files included - removed because of incompatibility with automake 1.16
-# [%-FOREACH client IN CLIENTS %]
-# include src/$(DEPDIR)/[% client %]_gpu.Po # am--include-marker
-# [% END %]
+[%-FOREACH client IN CLIENTS %]
+include src/$(DEPDIR)/[% client %]_gpu.Po # am--include-marker
+[% END %]
 endif
 
 if ENABLE_CUDA_FAST_MATH
