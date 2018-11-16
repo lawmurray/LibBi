@@ -283,7 +283,11 @@ struct negbin_log_density_functor: public std::unary_function<T,T> {
   CUDA_FUNC_BOTH
   T operator()(const T& x) const {
     if (x == 0 && k == 0)
+      return 0;
+    if (x == 0) {
+      if (k == 0) return(0);
       return (k * (k < mu ? bi::log(k / (k + mu)) : bi::log1p(-mu / (k + mu))));
+    }
     if (x < 1e-10 * k) {
       T p = (k < mu ? bi::log(k / (1 + k/mu)) : bi::log(mu / (1 + mu/k)));
       return (x * p - mu - bi::lgamma(x + 1) + bi::log1p(x * (x - 1) / (2 * k)));
