@@ -265,7 +265,6 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
   in.update0(s);
 
   /* parameters */
-  m.parameterSample(rng, s);
   if (!equals<IO2,InputNullBuffer>::value) {
     inInit.readTimes(ts);
     inInit.read0(P_VAR, s.get(P_VAR));
@@ -277,9 +276,22 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
       int k = std::distance(ts.begin(), iter);
       inInit.read(k, P_VAR, s.get(P_VAR));
     }
-
+  }
+  m.parameterSample(rng, s);
+  if (!equals<IO2,InputNullBuffer>::value) {
     s.get(PY_VAR) = s.get(P_VAR);
     m.parameterSimulate(s);
+
+    inInit.readTimes(ts);
+    inInit.read0(P_VAR, s.get(P_VAR));
+
+    /* when --with-transform-initial-to-param active, need to read parameters
+     * that represent initial states from dynamic variables in input file */
+    BOOST_AUTO(iter, std::find(ts.begin(), ts.end(), now.getTime()));
+    if (iter != ts.end()) {
+      int k = std::distance(ts.begin(), iter);
+      inInit.read(k, P_VAR, s.get(P_VAR));
+    }
   }
 
   /* prior log-density */
@@ -297,7 +309,6 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
   }
 
   /* state variable initial values */
-  m.initialSamples(rng, s);
   if (!equals<IO2,InputNullBuffer>::value) {  // if there's actually a buffer...
     inInit.read0(D_VAR, s.get(D_VAR));
     inInit.read0(R_VAR, s.get(R_VAR));
@@ -308,10 +319,22 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
       inInit.read(k, D_VAR, s.get(D_VAR));
       inInit.read(k, R_VAR, s.get(R_VAR));
     }
-
+  }
+  m.initialSamples(rng, s);
+  if (!equals<IO2,InputNullBuffer>::value) {  // if there's actually a buffer...
     s.get(DY_VAR) = s.get(D_VAR);
     s.get(RY_VAR) = s.get(R_VAR);
     m.initialSimulates(s);
+
+    inInit.read0(D_VAR, s.get(D_VAR));
+    inInit.read0(R_VAR, s.get(R_VAR));
+
+    BOOST_AUTO(iter, std::find(ts.begin(), ts.end(), now.getTime()));
+    if (iter != ts.end()) {
+      int k = std::distance(ts.begin(), iter);
+      inInit.read(k, D_VAR, s.get(D_VAR));
+      inInit.read(k, R_VAR, s.get(R_VAR));
+    }
   }
 
   out.clear();
