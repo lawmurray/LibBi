@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+my $version="1.4.2.9999";
 
 =head1 NAME
 
@@ -93,6 +94,7 @@ sub new {
     # command line options
     my @args = (
         'help' => \$self->{_help},
+        'version' => \$self->{_version},
         'verbose!' => \$self->{_verbose},
         'dry-parse!' => \$self->{_dry_parse},
         'dry-gen!' => \$self->{_dry_gen},
@@ -101,6 +103,8 @@ sub new {
         'model-file=s' => \$self->{_model_file},
         );
     GetOptions(@args) || die("could not read command line arguments\n");
+
+    if ($self->{_version}) { print "LibBi version $version\n"; exit 0; }
     
     # error and warning handlers
   	$SIG{__DIE__} = sub { $self->_error(@_) };
