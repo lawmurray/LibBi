@@ -418,7 +418,6 @@ sub new {
     my $builddir = shift;
     my $verbose = shift;
 
-    $builddir = abs_path($builddir);
     my $self = {
         _builddir => $builddir,
         _verbose => $verbose,
@@ -675,7 +674,7 @@ returns.
 sub exec {
     my $self = shift;
 
-    my $builddir = $self->{_builddir};
+    my $builddir = abs_path($self->{_builddir});
     my $exeext = ($^O eq 'cygwin' || $^O eq 'MSWin32') ? '.exe' : '';
     my $binary = File::Spec->catfile($builddir, $self->get_binary . $exeext);
     my @argv;

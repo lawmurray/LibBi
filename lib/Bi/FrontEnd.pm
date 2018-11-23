@@ -187,6 +187,10 @@ sub client {
         die("no model specified\n");
     }
 
+    if ($client->needs_model) {
+        $builder->mk_dir();
+    }
+
     # process args
     $self->_report("Processing arguments...");
     $client->process_args;

@@ -16,6 +16,10 @@ with C<--disable->.
 
 =over 4
 
+=item C<--build-dir> (default current directory)
+
+Directory in which to build and compile the model; this will be done in a subdirectory 
+
 =item C<--dry-parse> (default off)
 
 Do not parse model file. Implies C<--dry-gen>.
@@ -171,6 +175,7 @@ sub new {
     # command line options
     my @args = (
         'force' => \$self->{_force},
+        'build-dir=s' => \$self->{_builddir},
         'enable-warnings' => sub { $self->{_warnings} = 1 },
         'disable-warnings' => sub { $self->{_warnings} = 0 },
         'enable-assert' => sub { $self->{_assert} = 1 },
@@ -241,18 +246,12 @@ sub new {
     push(@builddir, 'gperftools') if $self->{_gperftools};
     push(@builddir, $self->{_cuda_arch});
     
-    $self->{_builddir} = File::Spec->catdir(".$name", join('_', @builddir));
-    mkpath($self->{_builddir});
-    
-    # time stamp dependencies
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'autogen.sh'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'configure.ac'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile.am'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'configure'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.lpp'));
-    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.ypp'));
-    
+    if ($self->{_builddir} eq '') {
+        $self->{_builddir} = getcwd();
+    }
+
+    $self->{_builddir} = File::Spec->catdir($self->{_builddir}, ".$name", join('_', @builddir));
+
     return $self;
 }
 
@@ -277,6 +276,26 @@ sub build {
     $self->_autogen;
     $self->_configure;
     $self->_make($client);
+}
+
+=item B<mk_dir>
+
+Create the build directory or, if it exists already, time stamp dependencies
+
+=cut
+sub mk_dir {
+    my $self = shift;
+
+    mkpath($self->{_builddir});
+
+    # time stamp dependencies
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'autogen.sh'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'configure.ac'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile.am'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'configure'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'Makefile'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.lpp'));
+    $self->_stamp(File::Spec->catfile($self->{_builddir}, 'bi.ypp'));
 }
 
 =item B<get_dir>
