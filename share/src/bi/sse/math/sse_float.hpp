@@ -305,6 +305,10 @@ BI_FORCE_INLINE inline sse_float ceil(const sse_float x) {
   BI_SSEFLOAT_UNIVARIATE(ceil, x)
 }
 
+BI_FORCE_INLINE inline sse_float round(const sse_float x) {
+  BI_SSEFLOAT_UNIVARIATE(round, x)
+}
+
 BI_FORCE_INLINE inline sse_float floor(const sse_float x) {
   BI_SSEFLOAT_UNIVARIATE(floor, x)
 }

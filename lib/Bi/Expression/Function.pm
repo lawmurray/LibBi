@@ -129,6 +129,7 @@ sub is_math {
       'mod' => 1,
       'ceil' => 1,
       'floor' => 1,
+      'round' => 1,
       'gamma' => 1,
       'lgamma' => 1,
       'sin' => 1,

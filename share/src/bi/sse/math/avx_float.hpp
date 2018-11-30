@@ -299,6 +299,10 @@ BI_FORCE_INLINE inline avx_float floor(const avx_float x) {
   BI_AVXFLOAT_UNIVARIATE(floor, x)
 }
 
+BI_FORCE_INLINE inline avx_float round(const avx_float x) {
+  BI_AVXFLOAT_UNIVARIATE(round, x)
+}
+
 BI_FORCE_INLINE inline avx_float gamma(const avx_float x) {
   BI_AVXFLOAT_UNIVARIATE(gamma, x)
 }

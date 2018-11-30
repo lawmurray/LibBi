@@ -299,6 +299,10 @@ BI_FORCE_INLINE inline avx_double ceil(const avx_double x) {
   BI_AVXDOUBLE_UNIVARIATE(ceil, x)
 }
 
+BI_FORCE_INLINE inline avx_double round(const avx_double x) {
+  BI_AVXDOUBLE_UNIVARIATE(round, x)
+}
+
 BI_FORCE_INLINE inline avx_double floor(const avx_double x) {
   BI_AVXDOUBLE_UNIVARIATE(floor, x)
 }

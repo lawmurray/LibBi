@@ -305,6 +305,10 @@ BI_FORCE_INLINE inline sse_double floor(const sse_double x) {
   BI_SSEDOUBLE_UNIVARIATE(floor, x)
 }
 
+BI_FORCE_INLINE inline sse_double round(const sse_double x) {
+  BI_SSEDOUBLE_UNIVARIATE(round, x)
+}
+
 BI_FORCE_INLINE inline sse_double gamma(const sse_double x) {
   BI_SSEDOUBLE_UNIVARIATE(gamma, x)
 }
