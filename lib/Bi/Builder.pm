@@ -49,7 +49,7 @@ production runs.
 =item C<--enable-extra-debug> (default off)
 
 Enable extra debugging options in compilation. This is recommended along with
-C<--with-gdb> or C<--with-cuda-gdb> when debugging.
+C<--with-gdb>, C<--with-lldb> or C<--with-cuda-gdb> when debugging.
 
 =item C<--enable-diagnostics n> (default 0)
 
