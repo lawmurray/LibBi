@@ -277,9 +277,6 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
   }
   m.parameterSample(rng, s);
   if (!equals<IO2,InputNullBuffer>::value) {
-    s.get(PY_VAR) = s.get(P_VAR);
-    m.parameterSimulate(s);
-
     inInit.readTimes(ts);
     inInit.read0(P_VAR, s.get(P_VAR));
 
@@ -320,10 +317,6 @@ void bi::Simulator<B,F,O>::init(Random& rng, const ScheduleElement now, S1& s,
   }
   m.initialSamples(rng, s);
   if (!equals<IO2,InputNullBuffer>::value) {  // if there's actually a buffer...
-    s.get(DY_VAR) = s.get(D_VAR);
-    s.get(RY_VAR) = s.get(R_VAR);
-    m.initialSimulates(s);
-
     inInit.read0(D_VAR, s.get(D_VAR));
     inInit.read0(R_VAR, s.get(R_VAR));
 
