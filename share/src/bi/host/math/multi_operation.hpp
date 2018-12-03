@@ -13,8 +13,7 @@ namespace bi {
 template<class T1>
 struct multi_ch1dn_impl<ON_HOST,T1> {
   template<class M1, class V1, class V2>
-  static void func(const int P, M1 U, V1 a, V2 b)
-      throw (CholeskyException);
+  static void func(const int P, M1 U, V1 a, V2 b);
 };
 
 /**
@@ -84,7 +83,7 @@ struct multi_trsm_impl<ON_HOST,T1> {
 template<class T1>
 struct multi_potrf_impl<ON_HOST,T1> {
   template<class M1>
-  static void func(const int P, M1 Us, char uplo) throw (CholeskyException);
+  static void func(const int P, M1 Us, char uplo);
 };
 
 }
@@ -96,8 +95,7 @@ struct multi_potrf_impl<ON_HOST,T1> {
 
 template<class T1>
 template<class M1, class V1, class V2>
-void bi::multi_ch1dn_impl<bi::ON_HOST,T1>::func(const int P, M1 Us, V1 as, V2 bs)
-    throw (CholeskyException) {
+void bi::multi_ch1dn_impl<bi::ON_HOST,T1>::func(const int P, M1 Us, V1 as, V2 bs) {
   #pragma omp parallel
   {
     typename sim_temp_matrix<M1>::type U(Us.size1()/P, Us.size2());
@@ -263,7 +261,7 @@ void bi::multi_trsm_impl<bi::ON_HOST,T1>::func(const int P,
 template<class T1>
 template<class M1>
 void bi::multi_potrf_impl<bi::ON_HOST,T1>::func(const int P, M1 Us,
-    char uplo) throw (CholeskyException) {
+    char uplo) {
   int nerrs = 0;
 
   #pragma omp parallel reduction(+:nerrs)

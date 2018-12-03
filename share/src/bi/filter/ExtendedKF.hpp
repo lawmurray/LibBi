@@ -44,7 +44,7 @@ public:
    */
   template<class S1, class IO1>
   void step(Random& rng, ScheduleIterator& iter, const ScheduleIterator last,
-      S1& s, IO1& out) throw (CholeskyException);
+      S1& s, IO1& out);
 
   /**
    * @copydoc BootstrapPF::samplePath()
@@ -70,8 +70,7 @@ public:
    * @param[in,out] s State.
    */
   template<class S1>
-  void predict(Random& rng, const ScheduleElement next, S1& s)
-      throw (CholeskyException);
+  void predict(Random& rng, const ScheduleElement next, S1& s);
 
   /**
    * Correct prediction with observation to produce filter density.
@@ -85,8 +84,7 @@ public:
    * @return Incremental log-likelihood.
    */
   template<class S1>
-  void correct(Random& rng, const ScheduleElement now, S1& s)
-      throw (CholeskyException);
+  void correct(Random& rng, const ScheduleElement now, S1& s);
   //@}
 
 protected:
@@ -155,7 +153,7 @@ void bi::ExtendedKF<B,F,O>::samplePath(Random& rng, S1& s, IO1& out) {
 template<class B, class F, class O>
 template<class S1, class IO1>
 void bi::ExtendedKF<B,F,O>::step(Random& rng, ScheduleIterator& iter,
-    const ScheduleIterator last, S1& s, IO1& out) throw (CholeskyException) {
+    const ScheduleIterator last, S1& s, IO1& out) {
   do {
     ++iter;
     this->predict(rng, *iter, s);
@@ -167,7 +165,7 @@ void bi::ExtendedKF<B,F,O>::step(Random& rng, ScheduleIterator& iter,
 template<class B, class F, class O>
 template<class S1>
 void bi::ExtendedKF<B,F,O>::predict(Random& rng, const ScheduleElement next,
-    S1& s) throw (CholeskyException) {
+    S1& s) {
   typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
 
   /* predict */
@@ -208,7 +206,7 @@ void bi::ExtendedKF<B,F,O>::predict(Random& rng, const ScheduleElement next,
 template<class B, class F, class O>
 template<class S1>
 void bi::ExtendedKF<B,F,O>::correct(Random& rng, const ScheduleElement now,
-    S1& s) throw (CholeskyException) {
+    S1& s) {
   typedef typename loc_temp_matrix<S1::location,real>::type matrix_type;
   typedef typename loc_temp_vector<S1::location,real>::type vector_type;
   typedef typename loc_temp_vector<S1::location,int>::type int_vector_type;

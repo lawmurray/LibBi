@@ -85,8 +85,7 @@ public:
    * @return Was resampling performed?
    */
   template<class S1>
-  bool resample(Random& rng, const ScheduleElement now, S1& s)
-      throw (ParticleFilterDegeneratedException);
+  bool resample(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * Randomly shuffle particles.
@@ -165,8 +164,7 @@ double bi::Resampler<R>::reduce(const V1 lws, double* lW) {
 
 template<class R>
 template<class S1>
-bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s)
-    throw (ParticleFilterDegeneratedException) {
+bool bi::Resampler<R>::resample(Random& rng, const ScheduleElement now, S1& s) {
   bool r = (now.isObserved() || now.hasBridge()) && s.ess < essRel * s.size();
   if (r) {
     typename precompute_type<R,S1::temp_int_vector_type::location>::type pre;

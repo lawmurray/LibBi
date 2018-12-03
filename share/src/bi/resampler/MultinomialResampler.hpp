@@ -31,8 +31,7 @@ public:
    */
   template<class V1, class V2, Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
   /**
    * Select ancestors and permute.
@@ -46,8 +45,7 @@ public:
    */
   template<class V1, class V2, Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
   /**
    * Select offspring.
@@ -62,7 +60,7 @@ public:
    */
   template<class V1, class V2, Location L>
   void offspring(Random& rng, const V1 lws, const int P, V2 os,
-      ScanResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
 };
 
@@ -83,8 +81,7 @@ struct precompute_type<MultinomialResampler,L> {
 
 template<class V1, class V2, bi::Location L>
 void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    ScanResamplerPrecompute<L>& pre) {
 #ifdef __CUDACC__
   typedef typename boost::mpl::if_c<L,MultinomialResamplerGPU,
   MultinomialResamplerHost>::type impl;
@@ -96,15 +93,14 @@ void bi::MultinomialResampler::ancestors(Random& rng, const V1 lws, V2 as,
 
 template<class V1, class V2, bi::Location L>
 void bi::MultinomialResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    V2 as, ScanResamplerPrecompute<L>& pre) {
   ancestors(rng, lws, as, pre);
   permute(as);
 }
 
 template<class V1, class V2, bi::Location L>
 void bi::MultinomialResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
-    ScanResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+    ScanResamplerPrecompute<L>& pre) {
   typename sim_temp_vector<V1>::type as(P);
   ancestors(rng, lws, as, pre);
   ancestorsToOffspring(as, os);

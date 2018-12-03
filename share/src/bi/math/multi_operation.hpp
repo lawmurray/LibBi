@@ -87,7 +87,7 @@ void multi_transpose(const int P, const M1 A, M2 B);
  */
 template<class M1, class M2>
 void multi_chol(const int P, const M1 A, M2 U, char uplo = 'U',
-    const CholeskyStrategy = ADJUST_DIAGONAL) throw (CholeskyException);
+    const CholeskyStrategy = ADJUST_DIAGONAL);
 
 /**
  * Multiple #matrix_axpy.
@@ -150,7 +150,7 @@ struct multi_ch1up_impl {
  * @ingroup math_multi_op
  */
 template<class M1, class M2, class V2>
-void multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException);
+void multi_chkdn(const int P, M1 U, M2 A, V2 b);
 
 /**
  * Multiple #ch1dn.
@@ -158,7 +158,7 @@ void multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException);
  * @ingroup math_multi_op
  */
 template<class M1, class V1, class V2>
-void multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyException);
+void multi_ch1dn(const int P, M1 U, V1 a, V2 b);
 
 /**
  * @internal
@@ -166,7 +166,7 @@ void multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyException);
 template<Location L, class T1>
 struct multi_ch1dn_impl {
   template<class M1, class V1, class V2>
-  static void func(const int P, M1 U, V1 a, V2 b) throw (CholeskyException);
+  static void func(const int P, M1 U, V1 a, V2 b);
 };
 
 //@}
@@ -493,7 +493,7 @@ struct multi_trsm_impl {
  * @ingroup math_multi_op
  */
 template<class M1>
-void multi_potrf(const int P, M1 U, char uplo = 'U') throw (CholeskyException);
+void multi_potrf(const int P, M1 U, char uplo = 'U');
 
 /**
  * @internal
@@ -501,7 +501,7 @@ void multi_potrf(const int P, M1 U, char uplo = 'U') throw (CholeskyException);
 template<Location L, class T1>
 struct multi_potrf_impl {
   template<class M1>
-  static void func(const int P, M1 U, char uplo) throw (CholeskyException);
+  static void func(const int P, M1 U, char uplo);
 };
 
 /**
@@ -510,7 +510,7 @@ struct multi_potrf_impl {
  * @ingroup math_multi_op
  */
 template<class M1, class M2>
-void multi_potrs(const int P, const M1 U, M2 X, char uplo = 'U') throw (CholeskyException);
+void multi_potrs(const int P, const M1 U, M2 X, char uplo = 'U');
 
 /**
  * @internal
@@ -518,7 +518,7 @@ void multi_potrs(const int P, const M1 U, M2 X, char uplo = 'U') throw (Cholesky
 template<Location L, class T1>
 struct multi_potrs_impl {
   template<class M1, class M2>
-  static void func(const int P, const M1 U, M2 X, char uplo) throw (CholeskyException);
+  static void func(const int P, const M1 U, M2 X, char uplo);
 };
 //@}
 }
@@ -590,7 +590,7 @@ void bi::multi_transpose(const int P, const M1 A, M2 B) {
 
 template<class M1, class M2>
 void bi::multi_chol(const int P, const M1 A, M2 U, char uplo,
-    const CholeskyStrategy strat) throw (CholeskyException) {
+    const CholeskyStrategy strat) {
   BI_ASSERT(A.size1() == U.size1() && A.size2() == U.size2());
 
   #pragma omp parallel
@@ -709,7 +709,7 @@ void bi::multi_ch1up(const int P, M1 U, V1 a, V2 b) {
 }
 
 template<class M1, class M2, class V2>
-void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException) {
+void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
     multi_ch1dn(P, U, column(A,j), b);
@@ -717,7 +717,7 @@ void bi::multi_chkdn(const int P, M1 U, M2 A, V2 b) throw (CholeskyException) {
 }
 
 template<class M1, class V1, class V2>
-void bi::multi_ch1dn(const int P, M1 U, V1 a, V2 b) throw (CholeskyException) {
+void bi::multi_ch1dn(const int P, M1 U, V1 a, V2 b) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
@@ -971,7 +971,7 @@ void bi::multi_syrk(const int P, const typename M1::value_type alpha, const M1 A
 }
 
 template<class M1>
-void bi::multi_potrf(const int P, const M1 U, char uplo) throw (CholeskyException) {
+void bi::multi_potrf(const int P, const M1 U, char uplo) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
 
@@ -983,7 +983,7 @@ void bi::multi_potrf(const int P, const M1 U, char uplo) throw (CholeskyExceptio
 }
 
 template<class M1, class M2>
-void bi::multi_potrs(const int P, const M1 U, M2 X, char uplo) throw (CholeskyException) {
+void bi::multi_potrs(const int P, const M1 U, M2 X, char uplo) {
   static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;

@@ -41,8 +41,7 @@ public:
    * @copydoc Resampler::resample(Random&, V1, V2, O1&)
    */
   template<class S1>
-  bool resample(Random& rng, const ScheduleElement now, S1& s)
-      throw (ParticleFilterDegeneratedException);
+  bool resample(Random& rng, const ScheduleElement now, S1& s);
 
 private:
   /**
@@ -136,8 +135,7 @@ double bi::DistributedResampler<R>::reduce(const V1 lws, double* lW) {
 template<class R>
 template<class S1>
 bool bi::DistributedResampler<R>::resample(Random& rng,
-    const ScheduleElement now, S1& s)
-        throw (ParticleFilterDegeneratedException) {
+    const ScheduleElement now, S1& s) {
   boost::mpi::communicator world;
   const int rank = world.rank();
   const int size = world.size();

@@ -21,15 +21,13 @@ public:
    */
   template<class V1, class V2>
   static void ancestors(Random& rng, const V1 lws, V2 as,
-      ScanResamplerPrecompute<ON_HOST>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<ON_HOST>& pre);
 };
 }
 
 template<class V1, class V2>
 void bi::MultinomialResamplerHost::ancestors(Random& rng, const V1 lws, V2 as,
-    ScanResamplerPrecompute<ON_HOST>& pre)
-    throw (ParticleFilterDegeneratedException) {
+    ScanResamplerPrecompute<ON_HOST>& pre) {
   typedef typename V1::value_type T1;
 
   const int P = as.size();

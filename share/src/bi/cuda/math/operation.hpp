@@ -22,7 +22,7 @@ struct ch1up_impl<ON_DEVICE,T1> {
 template<class T1>
 struct ch1dn_impl<ON_DEVICE,T1> {
   template<class M1, class V1, class V2>
-  static void func(M1 U, V1 a, V2 b) throw (CholeskyException);
+  static void func(M1 U, V1 a, V2 b);
 };
 
 /**
@@ -196,7 +196,7 @@ struct trsm_impl<ON_DEVICE,T1> {
 template<class T1>
 struct potrf_impl<ON_DEVICE,T1> {
   template<class M1>
-  static void func(M1 U, char uplo) throw (CholeskyException);
+  static void func(M1 U, char uplo);
 };
 
 /**
@@ -205,7 +205,7 @@ struct potrf_impl<ON_DEVICE,T1> {
 template<class T1>
 struct potrs_impl<ON_DEVICE,T1> {
   template<class M1, class M2>
-  static void func(const M1 U, M2 X, char uplo) throw (CholeskyException);
+  static void func(const M1 U, M2 X, char uplo);
 };
 
 /**
@@ -218,7 +218,7 @@ struct syevx_impl<ON_DEVICE,T1> {
   static void func(char jobz, char range, char uplo, M1 A,
       typename M1::value_type vl, typename M1::value_type vu, int il, int iu,
       typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work, V3 rwork,
-      V4 iwork, V5 ifail) throw (EigenException);
+      V4 iwork, V5 ifail);
 };
 
 }
@@ -233,8 +233,7 @@ void bi::ch1up_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) {
 
 template<class T1>
 template<class M1, class V1, class V2>
-void bi::ch1dn_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b)
-    throw (CholeskyException) {
+void bi::ch1dn_impl<bi::ON_DEVICE,T1>::func(M1 U, V1 a, V2 b) {
   BI_ERROR_MSG(false, "ch1dn not implemented for device");
 }
 
@@ -442,15 +441,13 @@ void bi::trsm_impl<bi::ON_DEVICE,T1>::func(const T1 alpha, const M1 A, M2 B,
 
 template<class T1>
 template<class M1>
-void bi::potrf_impl<bi::ON_DEVICE,T1>::func(M1 U, char uplo)
-    throw (CholeskyException) {
+void bi::potrf_impl<bi::ON_DEVICE,T1>::func(M1 U, char uplo) {
   BI_ERROR_MSG(false, "Not implemented");
 }
 
 template<class T1>
 template<class M1, class M2>
-void bi::potrs_impl<bi::ON_DEVICE,T1>::func(const M1 U, M2 X, char uplo)
-    throw (CholeskyException) {
+void bi::potrs_impl<bi::ON_DEVICE,T1>::func(const M1 U, M2 X, char uplo) {
   BI_ERROR_MSG(false, "Not implemented");
 }
 
@@ -459,7 +456,7 @@ template<class M1, class V1, class M2, class V2, class V3, class V4, class V5>
 void bi::syevx_impl<bi::ON_DEVICE,T1>::func(char jobz, char range, char uplo,
     M1 A, typename M1::value_type vl, typename M1::value_type vu, int il,
     int iu, typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work,
-    V3 rwork, V4 iwork, V5 ifail) throw (EigenException) {
+    V3 rwork, V4 iwork, V5 ifail) {
   BI_ERROR_MSG(false, "Not implemented");
 }
 

@@ -69,7 +69,7 @@ void transpose(const M1 A, M2 B);
  */
 template<class M1, class M2>
 void chol(const M1 A, M2 U, char uplo = 'U', const CholeskyStrategy strat =
-    ADJUST_DIAGONAL) throw (CholeskyException);
+    ADJUST_DIAGONAL);
 
 /**
  * Scalar multiply and matrix add.
@@ -176,7 +176,7 @@ struct ch1up_impl {
  * @see dch1dn, sch1dn of qrupdate.
  */
 template<class M1, class M2, class V2>
-void chkdn(M1 U, M2 A, V2 b) throw (CholeskyException);
+void chkdn(M1 U, M2 A, V2 b);
 
 /**
  * Rank-1 downdate of upper triangular Cholesky factor.
@@ -186,7 +186,7 @@ void chkdn(M1 U, M2 A, V2 b) throw (CholeskyException);
  * @see dch1dn, sch1dn of qrupdate.
  */
 template<class M1, class V1, class V2>
-void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyException);
+void ch1dn(M1 U, V1 a, V2 b);
 
 /**
  * @internal
@@ -194,7 +194,7 @@ void ch1dn(M1 U, V1 a, V2 b) throw (CholeskyException);
 template<Location L, class T1>
 struct ch1dn_impl {
   template<class M1, class V1, class V2>
-  static void func(M1 U, V1 a, V2 b) throw (CholeskyException);
+  static void func(M1 U, V1 a, V2 b);
 };
 
 //@}
@@ -565,7 +565,7 @@ struct trsm_impl {
  * @seealso chol
  */
 template<class M1>
-void potrf(M1 U, char uplo = 'U') throw (CholeskyException);
+void potrf(M1 U, char uplo = 'U');
 
 /**
  * @internal
@@ -573,7 +573,7 @@ void potrf(M1 U, char uplo = 'U') throw (CholeskyException);
 template<Location L, class T1>
 struct potrf_impl {
   template<class M1>
-  static void func(M1 U, char uplo) throw (CholeskyException);
+  static void func(M1 U, char uplo);
 };
 
 /**
@@ -582,7 +582,7 @@ struct potrf_impl {
  * @ingroup math_op
  */
 template<class M1, class M2>
-void potrs(const M1 U, M2 X, char uplo = 'U') throw (CholeskyException);
+void potrs(const M1 U, M2 X, char uplo = 'U');
 
 /**
  * @internal
@@ -590,7 +590,7 @@ void potrs(const M1 U, M2 X, char uplo = 'U') throw (CholeskyException);
 template<Location L, class T1>
 struct potrs_impl {
   template<class M1, class M2>
-  static void func(const M1 U, M2 X, char uplo) throw (CholeskyException);
+  static void func(const M1 U, M2 X, char uplo);
 };
 
 /**
@@ -602,7 +602,7 @@ template<class M1, class V1, class M2, class V2, class V3, class V4, class V5>
 void syevx(char jobz, char range, char uplo, M1 A, typename M1::value_type vl,
     typename M1::value_type vu, int il, int iu,
     typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work, V3 rwork,
-    V4 iwork, V5 ifail) throw (EigenException);
+    V4 iwork, V5 ifail);
 
 /**
  * @internal
@@ -614,8 +614,7 @@ struct syevx_impl {
   static void func(const char jobz, const char range, const char uplo, M1 A,
       const typename M1::value_type vl, const typename M1::value_type vu,
       const int il, const int iu, const typename M1::value_type abstol,
-      int* m, V1 w, M2 Z, V2 work, V3 rwork, V4 iwork, V5 ifail)
-          throw (EigenException);
+      int* m, V1 w, M2 Z, V2 work, V3 rwork, V4 iwork, V5 ifail);
 };
 //@}
 }
@@ -652,8 +651,7 @@ inline void bi::transpose(const M1 A, M2 B) {
 }
 
 template<class M1, class M2>
-void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat)
-    throw (CholeskyException) {
+void bi::chol(const M1 A, M2 U, char uplo, const CholeskyStrategy strat) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -893,7 +891,7 @@ void bi::ch1up(M1 U, V1 a, V2 b) {
 }
 
 template<class M1, class M2, class V2>
-void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyException) {
+void bi::chkdn(M1 U, M2 A, V2 b) {
   int j;
   for (j = 0; j < A.size2(); ++j) {
     ch1dn(U, column(A, j), b);
@@ -901,7 +899,7 @@ void bi::chkdn(M1 U, M2 A, V2 b) throw (CholeskyException) {
 }
 
 template<class M1, class V1, class V2>
-void bi::ch1dn(M1 U, V1 a, V2 b) throw (CholeskyException) {
+void bi::ch1dn(M1 U, V1 a, V2 b) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename V1::value_type T2;
@@ -1294,7 +1292,7 @@ void bi::trsm(const typename M1::value_type alpha, const M1 A, M2 B,
 }
 
 template<class M1>
-void bi::potrf(const M1 U, char uplo) throw (CholeskyException) {
+void bi::potrf(const M1 U, char uplo) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
 
@@ -1307,7 +1305,7 @@ void bi::potrf(const M1 U, char uplo) throw (CholeskyException) {
 }
 
 template<class M1, class M2>
-void bi::potrs(const M1 U, M2 X, char uplo) throw (CholeskyException) {
+void bi::potrs(const M1 U, M2 X, char uplo) {
   static const Location L = M2::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
   typedef typename M2::value_type T2;
@@ -1327,7 +1325,7 @@ template<class M1, class V1, class M2, class V2, class V3, class V4, class V5>
 void bi::syevx(char jobz, char range, char uplo, M1 A,
     typename M1::value_type vl, typename M1::value_type vu, int il, int iu,
     typename M1::value_type abstol, int* m, V1 w, M2 Z, V2 work, V3 rwork,
-    V4 iwork, V5 ifail) throw (EigenException) {
+    V4 iwork, V5 ifail) {
   static const Location L = M1::on_device ? ON_DEVICE : ON_HOST;
   typedef typename M1::value_type T1;
 

@@ -36,32 +36,28 @@ public:
    */
   template<class V1, class V2, Location L>
   void cumulativeOffspring(Random& rng, const V1 lws, const int P, V2 Os,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::ancestors
    */
   template<class V1, class V2, Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::ancestorsPermute
    */
   template<class V1, class V2, Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::offspring
    */
   template<class V1, class V2, Location L>
   void offspring(Random& rng, const V1 lws, const int P, V2 os,
-      ScanResamplerPrecompute<L>& pre)
-          throw (ParticleFilterDegeneratedException);
+      ScanResamplerPrecompute<L>& pre);
 };
 
 /**
@@ -86,8 +82,7 @@ struct precompute_type<StratifiedResampler,L> {
 
 template<class V1, class V2, bi::Location L>
 void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws, const int P,
-    V2 Os, ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    V2 Os, ScanResamplerPrecompute<L>& pre) {
   /* pre-condition */
   BI_ASSERT(lws.size() == Os.size());
 
@@ -112,8 +107,7 @@ void bi::StratifiedResampler::cumulativeOffspring(Random& rng, const V1 lws, con
 
 template<class V1, class V2, bi::Location L>
 void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    ScanResamplerPrecompute<L>& pre) {
   typename sim_temp_vector<V2>::type Os(lws.size());
 
   cumulativeOffspring(rng, lws, as.size(), Os, pre);
@@ -122,8 +116,7 @@ void bi::StratifiedResampler::ancestors(Random& rng, const V1 lws, V2 as,
 
 template<class V1, class V2, bi::Location L>
 void bi::StratifiedResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    V2 as, ScanResamplerPrecompute<L>& pre) {
   typename sim_temp_vector<V2>::type Os(lws.size());
 
   cumulativeOffspring(rng, lws, as.size(), Os, pre);
@@ -132,8 +125,7 @@ void bi::StratifiedResampler::ancestorsPermute(Random& rng, const V1 lws,
 
 template<class V1, class V2, bi::Location L>
 void bi::StratifiedResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
-    ScanResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    ScanResamplerPrecompute<L>& pre) {
   typename sim_temp_vector<V1>::type Os(os.size());
   cumulativeOffspring(rng, lws, P, Os, pre);
   cumulativeOffspringToOffspring(Os, os);

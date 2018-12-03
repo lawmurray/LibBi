@@ -45,21 +45,21 @@ public:
    */
   template<class V1, class V2, Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+      ResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::ancestorsPermute
    */
   template<class V1, class V2, Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+      ResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::offspring
    */
   template<class V1, class V2, Location L>
   void offspring(Random& rng, const V1 lws, const int P, V2 os,
-      ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException);
+      ResamplerPrecompute<L>& pre);
 
   /**
    * @copydoc MultinomialResampler::precompute
@@ -104,7 +104,7 @@ inline void bi::MetropolisResampler::setSteps(const int B) {
 
 template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+    ResamplerPrecompute<L>& pre) {
 #ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
   MetropolisResamplerHost>::type impl;
@@ -116,8 +116,7 @@ void bi::MetropolisResampler::ancestors(Random& rng, const V1 lws, V2 as,
 
 template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, ResamplerPrecompute<L>& pre)
-        throw (ParticleFilterDegeneratedException) {
+    V2 as, ResamplerPrecompute<L>& pre) {
 #ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,MetropolisResamplerGPU,
   MetropolisResamplerHost>::type impl;
@@ -129,7 +128,7 @@ void bi::MetropolisResampler::ancestorsPermute(Random& rng, const V1 lws,
 
 template<class V1, class V2, bi::Location L>
 void bi::MetropolisResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
-    ResamplerPrecompute<L>& pre) throw (ParticleFilterDegeneratedException) {
+    ResamplerPrecompute<L>& pre) {
   typename sim_temp_vector<V1>::type as(P);
   ancestors(rng, lws, as);
   ancestorsToOffspring(as, os);

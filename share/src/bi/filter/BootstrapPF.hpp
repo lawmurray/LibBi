@@ -104,8 +104,7 @@ public:
    * @param[in,out] s State.
    */
   template<class S1>
-  void resample(Random& rng, const ScheduleElement now, S1& s)
-      throw (ParticleFilterDegeneratedException);
+  void resample(Random& rng, const ScheduleElement now, S1& s);
 
   /**
    * Finalise.
@@ -184,8 +183,7 @@ void bi::BootstrapPF<B,F,O,R>::correct(Random& rng, const ScheduleElement now,
 template<class B, class F, class O, class R>
 template<class S1>
 void bi::BootstrapPF<B,F,O,R>::resample(Random& rng,
-    const ScheduleElement now, S1& s)
-        throw (ParticleFilterDegeneratedException) {
+    const ScheduleElement now, S1& s) {
   resam.resample(rng, now, s);
 }
 

@@ -46,24 +46,21 @@ public:
    */
   template<class V1, class V2, bi::Location L>
   void ancestors(Random& rng, const V1 lws, V2 as,
-      RejectionResamplerPrecompute& pre)
-          throw (ParticleFilterDegeneratedException);
+      RejectionResamplerPrecompute& pre);
 
   /**
    * @copydoc Multinomial::ancestorsPermute()
    */
   template<class V1, class V2, bi::Location L>
   void ancestorsPermute(Random& rng, const V1 lws, V2 as,
-      RejectionResamplerPrecompute& pre)
-          throw (ParticleFilterDegeneratedException);
+      RejectionResamplerPrecompute& pre);
 
   /**
    * @copydoc MultinomialResampler::offspring
    */
   template<class V1, class V2, Location L>
   void offspring(Random& rng, const V1 lws, const int P, V2 os,
-      RejectionResamplerPrecompute& pre)
-          throw (ParticleFilterDegeneratedException);
+      RejectionResamplerPrecompute& pre);
 
   /**
    * @copydoc Resampler::precompute
@@ -97,8 +94,7 @@ struct resampler_needs_max<RejectionResampler> {
 
 template<class V1, class V2, bi::Location L>
 void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as,
-    RejectionResamplerPrecompute& pre)
-        throw (ParticleFilterDegeneratedException) {
+    RejectionResamplerPrecompute& pre) {
 #ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
   RejectionResamplerHost>::type impl;
@@ -110,8 +106,7 @@ void bi::RejectionResampler::ancestors(Random& rng, const V1 lws, V2 as,
 
 template<class V1, class V2, bi::Location L>
 void bi::RejectionResampler::ancestorsPermute(Random& rng, const V1 lws,
-    V2 as, RejectionResamplerPrecompute& pre)
-        throw (ParticleFilterDegeneratedException) {
+    V2 as, RejectionResamplerPrecompute& pre) {
 #ifdef __CUDACC__
   typedef typename boost::mpl::if_c<V1::on_device,RejectionResamplerGPU,
   RejectionResamplerHost>::type impl;
@@ -129,7 +124,7 @@ void bi::RejectionResampler::precompute(const V1 lws,
 
 template<class V1, class V2, bi::Location L>
 void bi::RejectionResampler::offspring(Random& rng, const V1 lws, const int P, V2 os,
-    RejectionResamplerPrecompute& pre) throw (ParticleFilterDegeneratedException) {
+    RejectionResamplerPrecompute& pre) {
   typename sim_temp_vector<V1>::type as(P);
   ancestors(rng, lws, as);
   ancestorsToOffspring(as, os);
