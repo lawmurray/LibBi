@@ -90,7 +90,15 @@ public:
   [% END %]
 
   if (inside) {
-    lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+    if (sigma == 0) {
+      if (xy == mu) {
+        lp = BI_INF;
+      } else {
+        lp = -BI_INF;
+      }
+    } else {
+      lp += BI_REAL(-0.5)*bi::pow((xy - mu)/sigma, BI_REAL(2.0)) - BI_REAL(BI_HALF_LOG_TWO_PI) - bi::log(sigma) - bi::log(Z);
+    }
   } else {
     lp = -BI_INF;
   }
