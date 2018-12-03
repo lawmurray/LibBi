@@ -41,6 +41,3 @@ Standard deviation of the log-transformed variable.
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev$ $Date$

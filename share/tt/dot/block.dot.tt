@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-FOREACH ref IN block.get_vars(['input', 'param', 'noise', 'state', 'obs']) %]
 [%-INCLUDE ref.dot.tt FILTER indent(2) %]

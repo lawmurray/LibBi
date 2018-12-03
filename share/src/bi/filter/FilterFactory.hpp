@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_FILTER_FILTERFACTORY_HPP
 #define BI_FILTER_FILTERFACTORY_HPP

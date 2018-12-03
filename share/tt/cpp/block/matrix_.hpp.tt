@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev: 3232 $
-## $Date: 2012-10-16 14:09:21 +0800 (Tue, 16 Oct 2012) $
 %]
 
 [%-PROCESS block/eval_.hpp.tt %]

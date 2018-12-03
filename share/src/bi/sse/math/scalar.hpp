@@ -4,8 +4,6 @@
  * Types and operators for Streaming SIMD Extensions (SSE).
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_SSE_MATH_SCALAR_HPP
 #define BI_SSE_MATH_SCALAR_HPP

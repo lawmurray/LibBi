@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_STATE_PA_HPP
 #define BI_STATE_PA_HPP

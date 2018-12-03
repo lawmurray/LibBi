@@ -5,8 +5,6 @@
  * via the simulation of other more basic distributions.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_RANDOM_GENERIC_HPP
 #define BI_RANDOM_GENERIC_HPP

@@ -3,8 +3,6 @@
  *
  * @author Pierre Jacob <jacob@ceremade.dauphine.fr>
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_SAMPLER_MARGINALSIR_HPP
 #define BI_SAMPLER_MARGINALSIR_HPP

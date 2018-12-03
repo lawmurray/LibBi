@@ -296,6 +296,3 @@ sub _op_mul {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev: 3742 $ $Date: 2013-04-17 19:31:57 +1000 (Wed, 17 Apr 2013) $

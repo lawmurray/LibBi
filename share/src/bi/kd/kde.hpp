@@ -4,8 +4,6 @@
  * Provides convenience methods for working with kernel density estimates.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/kde.hpp
  */

@@ -4,8 +4,6 @@
  * Macros for CUBLAS usage.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_CUDA_CUBLAS_HPP
 #define BI_CUDA_CUBLAS_HPP

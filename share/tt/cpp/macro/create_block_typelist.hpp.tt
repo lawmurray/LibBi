@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-MACRO create_block_typelist(block) BLOCK %]
 /**

@@ -88,6 +88,3 @@ sub mean {
 
 Edwin van Leeuwen <edwinvanl@gmail.com>
 
-=head1 VERSION
-
-$Rev$ $Date$

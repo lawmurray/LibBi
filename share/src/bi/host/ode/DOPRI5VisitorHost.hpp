@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_HOST_ODE_DOPRI5VISITORHOST_HPP
 #define BI_HOST_ODE_DOPRI5VISITORHOST_HPP

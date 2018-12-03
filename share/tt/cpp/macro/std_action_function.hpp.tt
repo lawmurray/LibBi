@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-MACRO std_action_static_function(function) BLOCK %]
   [% sig_action_static_function(function) %] {

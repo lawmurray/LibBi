@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_BUFFER_BUFFER_HPP
 #define BI_BUFFER_BUFFER_HPP

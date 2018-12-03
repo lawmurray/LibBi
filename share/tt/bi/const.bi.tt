@@ -2,7 +2,5 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 const [% const.get_name %] = [% const.get_expr.to_bi %]

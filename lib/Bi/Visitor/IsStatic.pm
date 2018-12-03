@@ -87,6 +87,3 @@ sub visit_after {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev: 3752 $ $Date: 2013-04-19 15:40:33 +0800 (Fri, 19 Apr 2013) $

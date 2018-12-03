@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-MACRO fetch_parents(action) BLOCK %]
   [%-IF action.get_all_const_refs.size > 0 %]

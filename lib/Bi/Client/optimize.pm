@@ -18,7 +18,3 @@ use parent 'Bi::Client::optimise';
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev: 3483 $ $Date: 2013-02-13 12:08:35 +0800 (Wed, 13 Feb 2013) $
-

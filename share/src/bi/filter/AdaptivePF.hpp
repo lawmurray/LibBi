@@ -2,8 +2,6 @@
  * @file
  *
  * @author
- * $Rev$
- * $Date$
  */
 #ifndef BI_FILTER_ADAPTIVEPF_HPP
 #define BI_FILTER_ADAPTIVEPF_HPP

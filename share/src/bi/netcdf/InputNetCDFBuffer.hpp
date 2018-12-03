@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_NETCDF_INPUTNETCDFBUFFER_HPP
 #define BI_NETCDF_INPUTNETCDFBUFFER_HPP

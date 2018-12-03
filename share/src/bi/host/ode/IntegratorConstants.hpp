@@ -4,8 +4,6 @@
  * Global variables for ODE integrators.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_HOST_ODE_INTEGRATORCONSTANTS_HPP
 #define BI_HOST_ODE_INTEGRATORCONSTANTS_HPP

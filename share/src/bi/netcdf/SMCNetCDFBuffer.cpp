@@ -2,8 +2,6 @@
  * @file
  *
  * @author Pierre Jacob <jacob@ceremade.dauphine.fr>
- * $Rev $
- * $Date$
  */
 #include "SMCNetCDFBuffer.hpp"
 

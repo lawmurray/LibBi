@@ -93,6 +93,3 @@ sub set {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev: 3738 $ $Date: 2013-04-16 23:24:15 +1000 (Tue, 16 Apr 2013) $

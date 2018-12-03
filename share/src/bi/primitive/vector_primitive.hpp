@@ -8,8 +8,6 @@
  * outside of *.cu files).
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_PRIMITIVE_VECTORPRIMITIVE_HPP
 #define BI_PRIMITIVE_VECTORPRIMITIVE_HPP

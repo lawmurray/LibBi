@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_TYPELIST_INDEX_HPP
 #define BI_TYPELIST_INDEX_HPP

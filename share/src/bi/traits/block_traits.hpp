@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_TRAITS_BLOCK_TRAITS_HPP
 #define BI_TRAITS_BLOCK_TRAITS_HPP

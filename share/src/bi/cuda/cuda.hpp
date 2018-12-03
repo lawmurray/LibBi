@@ -4,8 +4,6 @@
  * Macros for CUDA usage.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_CUDA_CUDA_HPP
 #define BI_CUDA_CUDA_HPP

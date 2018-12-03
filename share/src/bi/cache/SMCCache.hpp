@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_CACHE_SMCCACHE_HPP
 #define BI_CACHE_SMCCACHE_HPP

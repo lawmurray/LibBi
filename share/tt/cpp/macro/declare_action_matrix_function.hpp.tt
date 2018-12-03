@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-MACRO declare_action_static_matrix_function(function) BLOCK %]
   [% IF function == 'simulate' %]

@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 %]
 
 [%-PROCESS action/misc/header.hpp.tt-%]

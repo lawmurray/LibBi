@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_SSE_ODE_RK43INTEGRATORSSE_HPP
 #define BI_SSE_ODE_RK43INTEGRATORSSE_HPP

@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 PROCESS macro/arg_list.bi.tt
 -%]
 [% IF block.get_top_level %]sub [% END %][% IF block.is_named %][% block.get_name %][% END %][% arg_list(block) %] { // Block[% block.get_id %]

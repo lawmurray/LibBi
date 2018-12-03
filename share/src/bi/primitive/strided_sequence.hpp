@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  *
  * Implementation based on discussion at
  * http://groups.google.com/group/thrust-users/browse_thread/thread/a506470f5c634813

@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-MACRO put_output(action, expr) BLOCK-%]
 x.template fetch<target_type>(s, p, cox_.index()) = [% expr.to_cpp %];

@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  *
  * This file provides a fairly thin wrapper around the NetCDF C Interface
  * designed to:

@@ -85,6 +85,3 @@ sub mean {
 
 Sebastian Funk <sebastian.funk@lshtm.ac.uk>
 
-=head1 VERSION
-
-$Rev$ $Date$

@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-FOREACH ref IN action.get_all_right_var_refs %]
 [% ref.get_var.get_name %] -> [% action.get_left.get_var.get_name %];

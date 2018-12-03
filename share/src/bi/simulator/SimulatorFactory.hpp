@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_METHOD_SIMULATORFACTORY_HPP
 #define BI_METHOD_SIMULATORFACTORY_HPP

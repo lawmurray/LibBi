@@ -780,6 +780,3 @@ sub _load_options {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev$ $Date$

@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 -%]
 [%-PROCESS macro/alias_dims.hpp.tt-%]
 [%-PROCESS macro/create_action_typedef.hpp.tt-%]

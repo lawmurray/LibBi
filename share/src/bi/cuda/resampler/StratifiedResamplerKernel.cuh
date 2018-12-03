@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_CUDA_RESAMPLER_STRATIFIEDRESAMPLERKERNEL_CUH
 #define BI_CUDA_RESAMPLER_STRATIFIEDRESAMPLERKERNEL_CUH

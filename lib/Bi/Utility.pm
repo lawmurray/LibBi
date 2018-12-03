@@ -210,6 +210,3 @@ sub _equals {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev$ $Date$

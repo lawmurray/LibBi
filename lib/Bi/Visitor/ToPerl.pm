@@ -132,6 +132,3 @@ L<Bi::Expression>
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev$ $Date$

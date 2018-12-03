@@ -172,6 +172,3 @@ sub visit_after {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
-
-$Rev$ $Date$

@@ -4,8 +4,6 @@
  * IO functions for matrix and vector types.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 3055 $
- * $Date: 2012-09-06 17:39:02 +0800 (Thu, 06 Sep 2012) $
  */
 #ifndef BI_HOST_MATH_IO_HPP
 #define BI_HOST_MATH_IO_HPP

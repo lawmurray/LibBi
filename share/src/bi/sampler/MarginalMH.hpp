@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_SAMPLER_MARGINALMH_HPP
 #define BI_SAMPLER_MARGINALMH_HPP

@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_RESAMPLER_MULTINOMIALRESAMPLER_HPP
 #define BI_RESAMPLER_MULTINOMIALRESAMPLER_HPP

@@ -4,8 +4,6 @@
  * Macros for compiler specific language elements.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_MISC_COMPILE_HPP
 #define BI_MISC_COMPILE_HPP

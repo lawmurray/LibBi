@@ -2,8 +2,6 @@
  * @file
  *
  * @author lee27x
- * $Rev$
- * $Date$
  */
 
 #ifndef TEST_HPP_

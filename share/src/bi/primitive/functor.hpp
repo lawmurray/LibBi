@@ -4,8 +4,6 @@
  * Functors for STL and Thrust transformations.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_PRIMITIVE_FUNCTOR_HPP
 #define BI_PRIMITIVE_FUNCTOR_HPP

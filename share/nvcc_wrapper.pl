@@ -4,8 +4,6 @@
 ## Wrapper around nvcc for compatibility with libtool.
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 ##
 
 my @host_args;

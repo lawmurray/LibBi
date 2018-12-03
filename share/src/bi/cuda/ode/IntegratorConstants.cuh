@@ -6,8 +6,6 @@
  * NonStiffIntegrator there.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_CUDA_ODE_INTEGRATORCONSTANTS_CUH
 #define BI_CUDA_ODE_INTEGRATORCONSTANTS_CUH

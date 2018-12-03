@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  *
  * Imported from dysii 1.4.0, originally indii/ml/aux/Partitioner.hpp
  */

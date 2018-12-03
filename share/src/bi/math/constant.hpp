@@ -6,8 +6,6 @@
  * do at least ensure decent accuracy before casting to single precision.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_MATH_CONSTANT_HPP
 #define BI_MATH_CONSTANT_HPP

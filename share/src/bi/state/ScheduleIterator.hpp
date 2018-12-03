@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_STATE_SCHEDULEITERATOR_HPP
 #define BI_STATE_SCHEDULEITERATOR_HPP

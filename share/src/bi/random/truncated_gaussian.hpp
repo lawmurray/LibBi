@@ -7,8 +7,6 @@
  * https://github.com/cran/truncnorm/blob/master/src/rtruncnorm.c
  *
  * @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
- * $Rev$
- * $Date$
  */
 
 #ifndef BI_TRUNCATED_NORMAL_HPP

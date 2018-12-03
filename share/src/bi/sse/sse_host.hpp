@@ -5,8 +5,6 @@
  * instructions. Use host.hpp methods to bind.
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_SSE_SSEHOST_HPP
 #define BI_SSE_SSEHOST_HPP

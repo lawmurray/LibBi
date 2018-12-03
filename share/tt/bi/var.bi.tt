@@ -2,8 +2,6 @@
 ## @file
 ##
 ## @author Lawrence Murray <lawrence.murray@csiro.au>
-## $Rev$
-## $Date$
 PROCESS macro/dim_list.bi.tt
 -%]
 [% var.get_type %] [% var.get_name %][% dim_list(var) %][% arg_list(var) %] // Var[% var.get_id %]

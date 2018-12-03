@@ -163,6 +163,3 @@ sub visit_after {
 
 Lawrence Murray <lawrence.murray@csiro.au> & Pierre Jacob
 
-=head1 VERSION
-
-$Rev: 3826 $ $Date: 2013-05-09 11:39:03 +0800 (Thu, 09 May 2013) $

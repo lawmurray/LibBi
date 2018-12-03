@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev: 2867 $
- * $Date: 2012-07-31 15:38:06 +0800 (Tue, 31 Jul 2012) $
  */
 #ifndef BI_MISC_SERIALIZATION_HPP
 #define BI_MISC_SERIALIZATION_HPP

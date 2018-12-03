@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_NULL_SIMULATORNULLBUFFER_HPP
 #define BI_NULL_SIMULATORNULLBUFFER_HPP

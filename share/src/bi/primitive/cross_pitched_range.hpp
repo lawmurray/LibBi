@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_PRIMITIVE_CROSSPITCHEDRANGE_HPP
 #define BI_PRIMITIVE_CROSSPITCHEDRANGE_HPP

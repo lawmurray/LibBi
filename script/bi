@@ -42,6 +42,4 @@ $frontend->do;
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
-=head1 VERSION
 
-$Rev: 3864 $ $Date: 2013-05-22 17:48:18 +0800 (Wed, 22 May 2013) $

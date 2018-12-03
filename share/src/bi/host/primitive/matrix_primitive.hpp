@@ -2,8 +2,6 @@
  * @file
  *
  * @author Lawrence Murray <lawrence.murray@csiro.au>
- * $Rev$
- * $Date$
  */
 #ifndef BI_HOST_PRIMITIVE_MATRIXPRIMITIVE_HPP
 #define BI_HOST_PRIMITIVE_MATRIXPRIMITIVE_HPP
