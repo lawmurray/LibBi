@@ -1,0 +1,50 @@
+[%
+## @file
+##
+## @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
+%]
+
+[%-
+a = action.get_named_arg('x');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_dynamic_function('simulate') %]
+};
+
+#include "bi/math/view.hpp"
+
+[% sig_action_static_function('simulate') %] {
+
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+
+  BOOST_AUTO(a, [% get_var(a) %]);
+
+  [% offset_coord(action) %]
+  [% put_output(action, "bi::sum(a)") %]
+  
+}
+
+[% sig_action_dynamic_function('simulate') %] {  
+
+  [% alias_dims(action) %]
+  [% fetch_parents(action) %]
+
+  BOOST_AUTO(a, [% get_var(a) %]);
+
+  [% offset_coord(action) %]
+  [% put_output(action, "bi::sum(a)") %]
+
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

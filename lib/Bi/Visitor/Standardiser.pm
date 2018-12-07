@@ -72,6 +72,9 @@ sub visit_after {
                 	$result = new Bi::Expression::Function('gemm_', [ $node->get_expr1, $node->get_expr2 ]);
                 }
             }
+        } elsif ($node->get_op =~ /^\.$/) {
+            # scalar multiplication of vectors
+            $result = new Bi::Expression::Function('scv_', [ $node->get_expr1, $node->get_expr2 ]);
         } elsif ($node->get_op =~ /^\.(.*?)$/) {
             # convert element-wise op back to standard scalar ops
             $node->set_op($1);
@@ -97,3 +100,6 @@ sub visit_after {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
+=head1 VERSION
+
+$Rev$ $Date$

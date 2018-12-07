@@ -225,6 +225,11 @@ public:
   const T& operator()(const size_type i, const size_type j) const;
 
   /**
+   * Total size
+   */
+  int size() const { return this->size1() * this->size2(); };
+
+  /**
    * Check if two handles are the same.
    *
    * @tparam M1 Matrix type.

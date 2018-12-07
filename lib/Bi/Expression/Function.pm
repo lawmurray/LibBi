@@ -179,7 +179,9 @@ sub determine_shape {
     	}
     	my $sizes = [ $expr1->get_shape->get_size1, $expr2->get_shape->get_size2 ];
         return new Bi::Expression::Shape($sizes);
-	} elsif ($name eq 'transpose') {
+	} elsif ($name eq 'scv_' || $name eq 'sum') {
+      return new Bi::Expression::Shape();
+  } elsif ($name eq 'transpose') {
 		my $expr1 = $self->get_arg(0);
     	my $shape = [];
     	push(@$shape, $expr1->get_shape->get_size2);
@@ -248,3 +250,6 @@ sub equals {
 
 Lawrence Murray <lawrence.murray@csiro.au>
 
+=head1 VERSION
+
+$Rev$ $Date$

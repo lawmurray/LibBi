@@ -363,6 +363,7 @@ multiplicative_expression
     | multiplicative_expression '/' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
     | multiplicative_expression ELEM_DIV_OP pow_expression { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
     | multiplicative_expression '%' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
+    | multiplicative_expression '.' pow_expression         { $_[0]->binary_operator($_[1], $_[2], $_[3]) }
     ;
 
 additive_expression

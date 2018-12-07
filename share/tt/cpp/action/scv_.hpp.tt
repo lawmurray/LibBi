@@ -1,0 +1,47 @@
+[%
+## @file
+##
+## @author Sebastian Funk <sebastian.funk@lshtm.ac.uk>
+%]
+
+[%-
+a = action.get_named_arg('x');
+b = action.get_named_arg('y');
+%]
+
+[%-PROCESS action/misc/header.hpp.tt-%]
+
+/**
+ * Action: [% action.get_name %].
+ */
+class [% class_name %] {
+public:
+  [% std_action %]
+
+  [% declare_action_static_function('simulate') %]
+  [% declare_action_dynamic_function('simulate') %]
+};
+
+#include "bi/math/view.hpp"
+
+[% sig_action_static_function('simulate') %] {
+
+  BOOST_AUTO(a, [% get_var(a) %]);
+  BOOST_AUTO(b, [% get_var(b) %]);
+
+  [% offset_coord(action) %]
+  [% put_output(action, "bi::scv(a, b)") %]
+  
+}
+
+[% sig_action_dynamic_function('simulate') %] {  
+
+  BOOST_AUTO(a, [% get_var(a) %]);
+  BOOST_AUTO(b, [% get_var(b) %]);
+
+  [% offset_coord(action) %]
+  [% put_output(action, "bi::scv(a, b)") %]
+
+}
+
+[%-PROCESS action/misc/footer.hpp.tt-%]

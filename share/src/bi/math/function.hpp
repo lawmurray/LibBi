@@ -100,6 +100,9 @@ CUDA_FUNC_BOTH void gemv(const M1 A, const V1 x, V2 y);
 template<class M1, class M2, class M3>
 CUDA_FUNC_BOTH void gemm(const M1 A, const M2 X, M3 Y);
 
+template<class V1, class V2>
+CUDA_FUNC_BOTH typename V1::value_type scv(const V1 x, const V2 y);
+
 template<class M1, class M2>
 CUDA_FUNC_BOTH void trans(const M1 X, M2 Y);
 
@@ -108,6 +111,9 @@ CUDA_FUNC_BOTH void inclusive_scan(const V1 x, V2 y);
 
 template<class V1, class V2>
 CUDA_FUNC_BOTH void exclusive_scan(const V1 x, V2 y);
+
+template<class M>
+CUDA_FUNC_BOTH typename M::value_type sum(const M x);
 
 }
 
@@ -428,6 +434,29 @@ inline void bi::gemm(const M1 A, const M2 X, M3 Y) {
   }
 }
 
+template<class V1, class V2>
+inline typename V1::value_type bi::scv(const V1 x, const V2 y) {
+  /* pre-condition */
+  BI_ASSERT(x.size() == y.size());
+
+  typedef typename V1::value_type T1;
+  typedef typename V2::value_type T2;
+
+  bool equal_types = std::is_same<T1,T2>::value;
+  BI_ASSERT(equal_types);
+
+  ///@todo Improve upon naive implementation
+  int i;
+
+  T1 ret = static_cast<T1>(0.0);
+
+  for (i = 0; i < x.size(); ++i) {
+    ret += x(i) * y(i); 
+  }
+
+  return(ret);
+}
+
 template<class M1, class M2>
 inline void bi::trans(const M1 X, M2 Y) {
   /* pre-condition */
@@ -475,6 +504,22 @@ inline void bi::exclusive_scan(const V1 x, V2 y) {
     y(i) = val;
     val += next;
   }
+}
+
+template<class M>
+CUDA_FUNC_BOTH typename M::value_type bi::sum(const M x)
+{
+	typedef typename M::value_type value_type;
+	
+	int i;
+
+	value_type ret = static_cast<value_type>(0.0);
+	const value_type* buf = x.buf();
+
+	for (i = 0; i < x.size(); ++i) {
+		ret += buf[i];
+	}
+	return(ret);
 }
 
 #endif

@@ -39,6 +39,6 @@ ELEM_DIV_OP      \.\/
 ELEM_ADD_OP      \.\+
 ELEM_SUB_OP      \.\-
 ELEM_POW_OP      \.\*\*
-OP               [;,:=()\[\]\{\}&!~\-+*\/%<>\^|?]
+OP               [\.;,:=()\[\]\{\}&!~\-+*\/%<>\^|?]
 NEW_LINE         \n
 OTHER            .

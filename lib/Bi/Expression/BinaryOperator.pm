@@ -138,6 +138,11 @@ sub determine_shape {
     		push(@$shape, $expr2->get_shape->get_size2);
     	}
         return new Bi::Expression::Shape($shape);
+    } elsif ($op eq '.') {
+    	if ($expr1->get_shape->get_size1 != $expr2->get_shape->get_size1) {
+    		die("incompatible sizes in scalar multiply\n");
+    	}
+        return new Bi::Expression::Shape;
     } else {
         unless ($expr1->is_scalar || $expr2->is_scalar || $expr1->get_shape->equals($expr2->get_shape)) {
             die("incompatible sizes in element-wise operation\n");
