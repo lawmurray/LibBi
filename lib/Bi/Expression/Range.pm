@@ -53,8 +53,11 @@ sub new {
     my $start = shift;
     my $end = shift;
     
-    assert(defined $start && $start->isa('Bi::Expression')) if DEBUG;
-    assert(defined $end && $end->isa('Bi::Expression')) if DEBUG;
+    assert(!(defined $start) || $start->isa('Bi::Expression')) if DEBUG;
+    assert(!(defined $end) || $end->isa('Bi::Expression')) if DEBUG;
+    
+    $start = "min" unless (defined $start);
+    $end = "max" unless (defined $end);
     
     my $self = {
         _start => $start,
