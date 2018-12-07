@@ -4,7 +4,7 @@ use inc::Module::Install;
 name 'LibBi';
 abstract 'LibBi is used for state-space modelling and Bayesian inference on modern computer hardware, including multi-core CPUs, many-core GPUs (graphics processing units) and distributed-memory clusters.';
 author 'Lawrence Murray <lawrence.murray@csiro.au>';
-version '1.4.2';
+version '1.4.3';
 license 'gpl';
 
 # dependencies
