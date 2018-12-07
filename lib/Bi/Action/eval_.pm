@@ -54,7 +54,7 @@ sub validate {
     $self->set_unroll_args(0);
     $self->set_shape($self->get_named_arg('expr')->get_shape);
     unless ($self->get_shape->get_count == 0 || $self->get_left->get_shape->compat($self->get_shape)) {
-    	die("incompatible sizes on left and right sides of action.\n");
+    	die("incompatible sizes on left and right sides of action: ", $self->get_shape->get_count, " ", $self->get_left->get_shape, " ", $self->get_shape, ".\n");
     }
 }
 
