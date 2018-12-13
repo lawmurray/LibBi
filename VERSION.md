@@ -6,30 +6,30 @@ v1.4.3
 
 New features:
 
-* Metropolis-Hastings sampling with gaussian proposals now work if the standard deviation is zero; this makes it possible to repeatedly propose the same theta, for example to adjust the number of particles, without the need to change the model and recompile.
-* 'build-dir', 'version' and 'with-lldb' command line options
-* Parameter or initial condition assignmetns are now overwritten by a given init file
+* Metropolis-Hastings sampling with Gaussian proposals now work if the standard deviation is zero; this makes it possible to repeatedly propose the same theta, for example to adjust the number of particles, without the need to change the model and recompile.
+* `build-dir`, `version` and `with-lldb` command line options.
+* Parameter or initial condition assignments are now overwritten by a given init file.
 
 Fixes:
 
-* The input-interval has been changed to run from [t, t+1) so that timings are preserved if output from a previous run is used as input
-* Fixed compile error in Metropolis resampler
-* Fixed some CUDA problems
+* The input-interval has been changed to run from [t, t+1) so that timings are preserved if output from a previous run is used as input.
+* Fixed compile error in Metropolis resampler.
+* Fixed some CUDA problems.
 
 v1.4.2
 ------
 
 Performance:
 
-* Improved beta and negative binomial random generators
+* Improved beta and negative binomial random generators.
 
 v1.4.1
 ------
 
 Fixes:
 
-* Fixed compatibility with automake 1.16
-* Fixes in truncated Gaussian and negative binomial probability distributions
+* Fixed compatibility with automake 1.16.
+* Fixes in truncated Gaussian and negative binomial probability distributions.
 
 v1.4.0
 ------
@@ -47,14 +47,14 @@ Changes:
 Performance:
 
 * Improved truncated Gaussian sampler.
-* Models are now only simulated if the parameter prior probability density is >0
+* Models are now only simulated if the parameter prior probability density is >0.
 * Parsing and translating models is now faster.
 
 Fixes:
 
-* No more error is thrown if all particle weights are 0
-* `optimise` now works again
-* No more warning is thrown if the model name does not match the file name
+* No more error is thrown if all particle weights are 0.
+* `optimise` now works again.
+* No more warning is thrown if the model name does not match the file name.
 
 v1.3.0
 ------
