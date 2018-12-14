@@ -127,11 +127,17 @@ sub determine_shape {
         my $shape = [];
         for (my $i = 0; $i < @{$indexes}; ++$i) {
             if ($indexes->[$i]->is_range) {
-            	if ($indexes->[$i]->get_size->is_const) {
-	                push(@$shape, $indexes->[$i]->get_size->eval_const);
-            	} else {
-            		push(@$shape, 1);
-            	}
+                if ($indexes->[$i]->{_start} eq "min") {
+                    $indexes->[$i]->{_start} = $var->{_dims}->[$i]->gen_range->{_start};
+                }
+                if ($indexes->[$i]->{_end} eq "max") {
+                    $indexes->[$i]->{_end} = $var->{_dims}->[$i]->gen_range->{_end};
+                }
+                if ($indexes->[$i]->get_size->is_const) {
+                    push(@$shape, $indexes->[$i]->get_size->eval_const);
+                } else {
+                    push(@$shape, 1);
+                }
             }
         }
         return new Bi::Expression::Shape($shape);
