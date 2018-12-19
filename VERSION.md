@@ -1,6 +1,13 @@
 LibBi VERSION.md
 ================
 
+v1.4.4
+------
+
+Fixes:
+
+* Fixed a bug in the calculation of binomial densities
+
 v1.4.3
 ------
 

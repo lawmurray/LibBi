@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-my $version="1.4.3";
+my $version="1.4.4";
 
 =head1 NAME
 
