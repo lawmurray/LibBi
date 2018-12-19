@@ -329,7 +329,7 @@ struct binomial_log_density_functor: public std::unary_function<T1,T2> {
 
   CUDA_FUNC_HOST
   binomial_log_density_functor(const T1 n, const T2 p) :
-    n(n), lN(bi::lgamma(n + 1)), logP(bi::log(p)), log1P(bi::log1p(p)) {
+    n(n), lN(bi::lgamma(n + 1)), logP(bi::log(p)), log1P(bi::log1p(-p)) {
     //
     }
 
