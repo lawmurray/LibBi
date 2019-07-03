@@ -63,7 +63,7 @@ Enable another type of diagnostic.
 
 Use single-precision floating point.
 
-=item C<--enable-openmp> (default on)
+=item C<--enable-openmp> (default off)
 
 Use OpenMP multithreading.
 
@@ -154,7 +154,7 @@ sub new {
         _force => 0,
         _warnings => 0,
         _assert => 1,
-        _openmp => 1,
+        _openmp => 0,
         _cuda => 0,
         _cuda_fast_math => 0,
         _gpu_cache => 0,
