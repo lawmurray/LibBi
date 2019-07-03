@@ -84,9 +84,7 @@ available this may give some performance improvement.
 
 =item C<--cuda-arch> (default sm_30)
 
-For particle filters, enable ancestry caching in GPU memory. GPU memory is
-typically much more limited than main memory. If sufficient GPU memory is
-available this may give some performance improvement.
+CUDA architecture to use.
 
 =item C<--enable-sse> (default off)
 
