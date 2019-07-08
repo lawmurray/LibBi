@@ -1,6 +1,14 @@
 LibBi VERSION.md
 ================
 
+v1.4.5
+------
+
+Fixes:
+
+* Fixed OpenMP check
+* Fixed border case for binomial distribution
+
 v1.4.4
 ------
 
