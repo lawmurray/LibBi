@@ -153,7 +153,10 @@ AC_PROG_RANLIB
 # Compiler characteristics
 AC_CHECK_HEADERS([omp.h], [], [openmp=false], [-])
 if test x$openmp = xtrue; then
-  AC_OPENMP
+    AC_OPENMP
+    if test x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp = xunsupported; then
+        openmp=false
+    fi
 fi
 
 # Thrust backend
