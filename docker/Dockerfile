@@ -1,4 +1,4 @@
-FROM rhub/ubuntu
+FROM ubuntu:22.04
 
 LABEL maintainer="Sebastian Funk <sebastian.funk@lshtm.ac.uk>"
 
@@ -34,9 +34,18 @@ RUN curl -fLo /tmp/LibBi.tar.gz https://github.com/lawmurray/LibBi/archive/stabl
     rm /tmp/LibBi.tar.gz && \
     rm -rf ~/LibBi-stable
 
+# Ensure apt runs in non-interactive mode
+ARG DEBIAN_FRONTEND=noninteractive
+
 # utils for GitHub Actions CI
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     npm \
-    sudo
+    sudo \
+    tzdata \
+    locales
+
+## Configure default locale,
+## see https://github.com/rocker-org/rocker/issues/19
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen en_US.utf8 && /usr/sbin/update-locale LANG=en_US.UTF-8
