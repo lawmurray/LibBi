@@ -34,15 +34,25 @@ RUN curl -fLo /tmp/LibBi.tar.gz https://github.com/lawmurray/LibBi/archive/stabl
     rm /tmp/LibBi.tar.gz && \
     rm -rf ~/LibBi-stable
 
-# Ensure apt runs in non-interactive mode
-ARG DEBIAN_FRONTEND=noninteractive
-
 # utils for GitHub Actions CI
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     npm \
     sudo \
+
+# tzdata and locales are required dependencies for a large range of software,
+# in particular R and can cause issues if automatically installed within a
+# GitHub Actions runner and apt does not detect it should run in non-interactive
+# mode.
+
+# Ensure apt runs in non-interactive mode for the next step. ARG rather than ENV
+# ensures this doesn't leak into the environment once the image is done
+# building.
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     tzdata \
     locales
 
