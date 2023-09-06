@@ -42,8 +42,8 @@ RUN apt-get update && \
     sudo \
 
 # tzdata and locales are required dependencies for a large range of software,
-# in particular R and can cause issues if automatically installed within a
-# GitHub Actions runner and apt does not detect it should run in non-interactive
+# in particular R, and can cause issues if automatically installed within a
+# GitHub Actions runner as apt does not detect it should run in non-interactive
 # mode.
 
 # Ensure apt runs in non-interactive mode for the next step. ARG rather than ENV
