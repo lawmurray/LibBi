@@ -39,7 +39,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     npm \
-    sudo \
+    sudo
 
 # tzdata and locales are required dependencies for a large range of software,
 # in particular R, and can cause issues if automatically installed within a
